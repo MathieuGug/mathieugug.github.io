@@ -1,0 +1,3374 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#faf6ec">
+<title>Anatomie d'un système agentique en production</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #faf6ec;
+  --bg-2: #f3eedf;
+  --surface: #ffffff;
+  --surface-2: #fdfaf0;
+  --line: rgba(30,30,44,0.08);
+  --line-strong: rgba(30,30,44,0.18);
+  --text: #1e1e2a;
+  --text-dim: #4a5060;
+  --text-faint: #8a8e99;
+  --accent: #b8582e;
+  --pink: #a83e55;
+  --core: #c34e3a;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 300;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background:
+    radial-gradient(ellipse at 28% 12%, rgba(195,78,58,0.06) 0%, transparent 55%),
+    radial-gradient(ellipse at 78% 88%, rgba(75,148,102,0.06) 0%, transparent 55%),
+    var(--bg);
+  min-height: 100vh;
+}
+
+body.lock-scroll { overflow: hidden; }
+
+/* Paper grain */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.35;
+  mix-blend-mode: multiply;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(80,60,40,0.015) 1px, transparent 1px),
+    radial-gradient(circle at 70% 80%, rgba(80,60,40,0.01) 1px, transparent 1px);
+  background-size: 3px 3px, 5px 5px;
+}
+
+/* ═════ INTRO ═════ */
+.intro {
+  min-height: 100dvh;
+  padding: 5vh 5vw 3vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  z-index: 2;
+}
+.eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 14px;
+}
+h1 {
+  font-family: 'Fraunces', serif;
+  font-weight: 400;
+  font-size: clamp(26px, 7vw, 48px);
+  line-height: 1.08;
+  letter-spacing: -0.018em;
+  color: var(--text);
+}
+h1 em { font-style: italic; color: var(--accent); font-weight: 500; }
+.intro-sub {
+  margin-top: 14px;
+  font-size: clamp(13px, 3.5vw, 15px);
+  color: var(--text-dim);
+  line-height: 1.55;
+  max-width: 560px;
+}
+.intro-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.case-inline {
+  flex: 1;
+  min-width: 240px;
+  padding: 14px 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: linear-gradient(180deg, var(--surface), var(--surface-2));
+  font-size: 12px;
+  color: var(--text-dim);
+  box-shadow: 0 2px 8px rgba(30,30,44,0.04);
+}
+.case-inline .label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.case-inline strong { color: var(--text); font-weight: 500; }
+.case-inline .metrics {
+  display: flex;
+  gap: 20px;
+  margin-top: 10px;
+  font-size: 10.5px;
+  color: var(--text-faint);
+}
+.case-inline .metrics strong {
+  color: var(--accent);
+  font-family: 'Fraunces', serif;
+  font-size: 16px;
+  font-weight: 500;
+  display: block;
+  letter-spacing: -0.01em;
+}
+.scroll-cue {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.scroll-cue .arrow {
+  width: 20px;
+  height: 34px;
+  border: 1px solid var(--text-faint);
+  border-radius: 100px;
+  position: relative;
+}
+.scroll-cue .arrow::before {
+  content: '';
+  position: absolute;
+  top: 7px;
+  left: 50%;
+  width: 3px;
+  height: 6px;
+  background: var(--accent);
+  transform: translateX(-50%);
+  border-radius: 2px;
+  animation: scrollDown 1.8s ease-in-out infinite;
+}
+@keyframes scrollDown {
+  0%, 100% { opacity: 0; transform: translate(-50%, 0); }
+  50% { opacity: 1; transform: translate(-50%, 12px); }
+}
+
+/* ═════ SCROLLY ═════ */
+.scrolly { position: relative; z-index: 2; }
+
+.pin {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100dvh;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* ── ONION as background ── */
+.pin-viz {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+.viz-wrap {
+  width: min(92vh, 92vw);
+  aspect-ratio: 1;
+  max-width: 780px;
+  position: relative;
+}
+svg.viz { width: 100%; height: 100%; overflow: visible; display: block; }
+
+/* ── HUD ── */
+.hud {
+  position: absolute;
+  top: 16px;
+  left: 18px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  padding: 6px 12px;
+  background: rgba(255,251,242,0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 100px;
+  border: 1px solid var(--line-strong);
+  box-shadow: 0 2px 8px rgba(30,30,44,0.05);
+}
+.hud-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  transition: background 0.5s;
+}
+.hud b { color: var(--accent); font-weight: 500; }
+
+/* ── COUNTER (clickable, opens TOC) ── */
+.counter {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: var(--text-faint);
+  padding: 6px 10px 6px 12px;
+  background: rgba(255,251,242,0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 100px;
+  border: 1px solid var(--line-strong);
+  box-shadow: 0 2px 8px rgba(30,30,44,0.05);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.2s;
+  font-weight: 500;
+}
+.counter:hover {
+  background: var(--surface);
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+.counter-icon {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 12px;
+}
+.counter-icon span {
+  display: block;
+  height: 1.3px;
+  background: currentColor;
+  border-radius: 2px;
+  transition: background 0.2s;
+}
+.counter-icon span:nth-child(1) { width: 100%; }
+.counter-icon span:nth-child(2) { width: 70%; }
+.counter-icon span:nth-child(3) { width: 85%; }
+
+/* ── PROGRESS SEGMENTS (10 parts, one per layer) ── */
+.prog-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 15;
+  display: flex;
+  gap: 1.5px;
+  padding: 6px 2px 4px;
+  background: transparent;
+  cursor: pointer;
+  align-items: center;
+  transition: padding 0.2s ease;
+}
+.prog-line:hover { padding-top: 3px; padding-bottom: 7px; }
+.prog-seg {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  opacity: 0.16;
+  transition: opacity 0.3s ease, height 0.25s cubic-bezier(.2,.8,.2,1);
+}
+.prog-line:hover .prog-seg { opacity: 0.5; height: 5px; }
+.prog-seg.visited { opacity: 0.55; }
+.prog-seg.current { opacity: 1; height: 5px; }
+.prog-line:hover .prog-seg.current { opacity: 1; height: 7px; }
+
+/* ═════ BEATS ═════ */
+.beats-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+.beat {
+  position: absolute;
+  opacity: 0;
+  transition: opacity 0.4s ease, transform 0.55s cubic-bezier(.2,.8,.2,1);
+  pointer-events: none;
+}
+.beat.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ━━ QUESTION ━━ */
+.beat-question {
+  top: 7vh;
+  left: 50%;
+  width: calc(100% - 40px);
+  max-width: 760px;
+  transform: translate(-50%, -24px);
+  text-align: center;
+  padding: 0 16px;
+}
+.beat-question.active { transform: translate(-50%, 0); }
+.q-kicker {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.22em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.q-kicker::before, .q-kicker::after {
+  content: '';
+  width: 20px;
+  height: 1px;
+  background: var(--accent);
+}
+.q-text {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(18px, 4.5vw, 28px);
+  line-height: 1.25;
+  color: var(--text);
+  letter-spacing: -0.005em;
+  text-shadow: 0 1px 20px rgba(250,246,236,0.95);
+}
+
+/* ━━ NARRATIVE ━━ */
+.beat-narrative {
+  bottom: 7vh;
+  left: 16px;
+  right: 16px;
+  transform: translateY(22px);
+  max-width: 400px;
+  padding: 16px 18px;
+  background: rgba(255,253,246,0.94);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  box-shadow: 0 12px 36px rgba(30,30,44,0.08);
+}
+.beat-narrative.active { transform: translateY(0); }
+.n-kicker {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.2em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.n-kicker::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--accent), transparent);
+}
+.n-text {
+  font-size: 13.5px;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+.n-text strong { color: var(--text); font-weight: 500; }
+.n-text em { color: var(--text); font-style: italic; }
+.n-text code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  background: rgba(195,78,58,0.08);
+  color: var(--accent);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* ━━ CONCEPTS (clickable) ━━ */
+.beat-concepts {
+  inset: 0;
+}
+.concepts-kicker {
+  position: absolute;
+  top: 7vh;
+  left: 50%;
+  transform: translate(-50%, -14px);
+  opacity: 0;
+  transition: all 0.4s ease;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.22em;
+  color: var(--accent);
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.concepts-kicker::before, .concepts-kicker::after {
+  content: '';
+  width: 16px;
+  height: 1px;
+  background: var(--accent);
+}
+.beat-concepts.active .concepts-kicker {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  transition-delay: 0.1s;
+}
+.concepts-hint {
+  position: absolute;
+  top: calc(7vh + 22px);
+  left: 50%;
+  transform: translate(-50%, -6px);
+  opacity: 0;
+  transition: opacity 0.4s ease 0.2s, transform 0.4s ease 0.2s;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8.5px;
+  letter-spacing: 0.15em;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.beat-concepts.active .concepts-hint {
+  opacity: 0.75;
+  transform: translate(-50%, 0);
+}
+.kw {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  --tx: 0px;
+  --ty: 0px;
+  transform: translate(-50%, -50%) scale(0.3);
+  opacity: 0;
+  transition:
+    transform 0.75s cubic-bezier(.2,.8,.2,1),
+    opacity 0.5s ease,
+    box-shadow 0.25s ease,
+    background 0.25s ease,
+    border-color 0.25s ease,
+    color 0.25s ease;
+  padding: 5px 12px 5px 14px;
+  background: rgba(255,253,246,0.96);
+  border: 1px solid var(--accent);
+  border-radius: 100px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--accent);
+  white-space: nowrap;
+  letter-spacing: 0.04em;
+  box-shadow: 0 4px 16px rgba(30,30,44,0.08);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.kw::after {
+  content: '+';
+  font-family: 'Fraunces', serif;
+  font-size: 13px;
+  line-height: 1;
+  opacity: 0.55;
+  transition: opacity 0.2s, transform 0.25s;
+  transform: rotate(0deg);
+}
+.beat-concepts.active .kw {
+  opacity: 1;
+  transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(1);
+}
+.beat-concepts.active .kw:hover {
+  background: var(--surface);
+  border-color: var(--core);
+  color: var(--core);
+  box-shadow: 0 10px 28px rgba(195,78,58,0.28);
+  z-index: 3;
+}
+.beat-concepts.active .kw:hover::after {
+  opacity: 1;
+  transform: rotate(90deg);
+}
+.beat-concepts.active .kw:nth-child(3) { transition-delay: 0s, 0.05s, 0s, 0s, 0s, 0s; }
+.beat-concepts.active .kw:nth-child(4) { transition-delay: 0s, 0.12s, 0s, 0s, 0s, 0s; }
+.beat-concepts.active .kw:nth-child(5) { transition-delay: 0s, 0.19s, 0s, 0s, 0s, 0s; }
+.beat-concepts.active .kw:nth-child(6) { transition-delay: 0s, 0.26s, 0s, 0s, 0s, 0s; }
+.beat-concepts.active .kw:nth-child(7) { transition-delay: 0s, 0.33s, 0s, 0s, 0s, 0s; }
+.beat-concepts.active .kw:nth-child(8) { transition-delay: 0s, 0.40s, 0s, 0s, 0s, 0s; }
+
+/* ━━ ROLES ━━ */
+.beat-roles {
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 0 0 8vh 0;
+}
+.roles-kicker {
+  position: absolute;
+  left: 50%;
+  bottom: calc(8vh + 90px);
+  transform: translate(-50%, 16px);
+  opacity: 0;
+  transition: all 0.4s ease;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.22em;
+  color: var(--accent);
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+.roles-kicker::before, .roles-kicker::after {
+  content: '';
+  width: 16px;
+  height: 1px;
+  background: var(--accent);
+}
+.beat-roles.active .roles-kicker {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  transition-delay: 0.1s;
+}
+.roles-rail {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 16px 12px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  justify-content: flex-start;
+}
+.roles-rail::-webkit-scrollbar { display: none; }
+@media (min-width: 700px) {
+  .roles-rail { justify-content: center; overflow: visible; flex-wrap: wrap; }
+}
+.role-chip {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 14px 7px 7px;
+  background: rgba(255,253,246,0.95);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--line-strong);
+  border-radius: 100px;
+  flex-shrink: 0;
+  transform: translateX(60px);
+  opacity: 0;
+  transition: transform 0.55s cubic-bezier(.2,.8,.2,1), opacity 0.4s ease;
+  box-shadow: 0 2px 10px rgba(30,30,44,0.05);
+}
+.beat-roles.active .role-chip { transform: translateX(0); opacity: 1; }
+.beat-roles.active .role-chip:nth-child(1) { transition-delay: 0.1s; }
+.beat-roles.active .role-chip:nth-child(2) { transition-delay: 0.2s; }
+.beat-roles.active .role-chip:nth-child(3) { transition-delay: 0.3s; }
+.beat-roles.active .role-chip:nth-child(4) { transition-delay: 0.4s; }
+.beat-roles.active .role-chip:nth-child(5) { transition-delay: 0.5s; }
+.beat-roles.active .role-chip:nth-child(6) { transition-delay: 0.6s; }
+.role-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 12px;
+  font-weight: 500;
+  color: #fff;
+  flex-shrink: 0;
+}
+.role-chip-label {
+  font-size: 12px;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+/* ━━ RISK ━━ */
+.beat-risk {
+  top: 5vh;
+  left: 50%;
+  width: calc(100% - 40px);
+  max-width: 720px;
+  transform: translate(-50%, -40px);
+  background: linear-gradient(135deg, rgba(168,62,85,0.1), rgba(255,253,246,0.96));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(168,62,85,0.35);
+  border-left-width: 3px;
+  border-radius: 8px;
+  padding: 16px 20px;
+  box-shadow: 0 12px 36px rgba(168,62,85,0.12);
+}
+.beat-risk.active { transform: translate(-50%, 0); }
+.r-kicker {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.22em;
+  color: var(--pink);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+.r-kicker::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--pink), transparent);
+}
+.r-text {
+  font-size: 13.5px;
+  color: var(--text);
+  line-height: 1.55;
+}
+.r-text strong { color: var(--pink); font-weight: 500; }
+.r-text em { color: var(--text); font-style: italic; }
+
+/* ═════ VIZ RINGS ═════ */
+.ring { transition: opacity 0.5s ease, transform 0.5s ease; transform-origin: center; transform-box: fill-box; }
+.ring.pending { opacity: 0; transform: scale(0.84); }
+.ring.visible { opacity: 1; }
+.ring.active .ring-fill { fill-opacity: 0.4 !important; }
+.ring.active .ring-stroke { stroke-opacity: 1 !important; stroke-width: 1.8 !important; }
+.ring.pulse .ring-stroke { animation: ringPulse 1s ease-out; }
+@keyframes ringPulse {
+  0% { stroke-width: 1.8; stroke-opacity: 1; }
+  50% { stroke-width: 4; stroke-opacity: 0.5; }
+  100% { stroke-width: 1.8; stroke-opacity: 1; }
+}
+.ring-text {
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.ring-text.visible { opacity: 0.55; }
+.ring-text.active { opacity: 1; }
+.ring-idx {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  fill: var(--text-faint);
+  transition: fill 0.3s;
+}
+.ring-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  fill: var(--text);
+  transition: fill 0.3s;
+}
+.ring-text.active .ring-idx,
+.ring-text.active .ring-label { fill: var(--accent); }
+.core-t1 { font-family: 'Fraunces', serif; font-style: italic; font-weight: 500; fill: #ffffff; font-size: 26px; text-anchor: middle; }
+.core-t2 { font-family: 'JetBrains Mono', monospace; fill: #ffffff; font-size: 12px; text-anchor: middle; opacity: 0.85; letter-spacing: 0.08em; }
+
+/* ═════ CONCEPT MODAL ═════ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(30,30,44,0.35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0s linear 0.25s;
+}
+.modal-overlay.active {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.25s ease, visibility 0s linear 0s;
+}
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  padding: 28px 30px 26px;
+  max-width: 540px;
+  width: 100%;
+  box-shadow: 0 30px 80px rgba(30,30,44,0.22);
+  transform: translateY(18px) scale(0.98);
+  transition: transform 0.35s cubic-bezier(.2,.8,.2,1);
+  position: relative;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.modal-overlay.active .modal { transform: translateY(0) scale(1); }
+.modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-faint);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Inter', sans-serif;
+  font-weight: 300;
+  line-height: 1;
+  transition: all 0.2s ease;
+}
+.modal-close:hover {
+  border-color: var(--core);
+  color: var(--core);
+  background: var(--surface-2);
+}
+.modal-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-right: 40px;
+}
+.modal-label-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.modal-title {
+  font-family: 'Fraunces', serif;
+  font-weight: 400;
+  font-style: italic;
+  font-size: 28px;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+.modal-title code {
+  font-family: 'JetBrains Mono', monospace;
+  font-style: normal;
+  font-size: 22px;
+  color: var(--accent);
+}
+.modal-def {
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: var(--text-dim);
+  margin-bottom: 18px;
+}
+.modal-def strong { color: var(--text); font-weight: 500; }
+.modal-def em { color: var(--text); font-style: italic; }
+.modal-def code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12.5px;
+  background: rgba(195,78,58,0.08);
+  color: var(--accent);
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+.modal-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 100px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text);
+  text-decoration: none;
+  letter-spacing: 0.04em;
+  transition: all 0.2s ease;
+  background: var(--surface-2);
+}
+.modal-link:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+}
+.modal-link .arr {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+}
+
+/* ═════ TOC OVERLAY ═════ */
+.toc-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(30,30,44,0.35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 95;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 6vh 20px 20px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0s linear 0.25s;
+  overflow-y: auto;
+}
+.toc-overlay.active {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.25s ease, visibility 0s linear 0s;
+}
+.toc-panel {
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  max-width: 680px;
+  width: 100%;
+  transform: translateY(-24px) scale(0.98);
+  transition: transform 0.35s cubic-bezier(.2,.8,.2,1);
+  box-shadow: 0 30px 80px rgba(30,30,44,0.22);
+  overflow: hidden;
+  margin-bottom: 40px;
+}
+.toc-overlay.active .toc-panel { transform: translateY(0) scale(1); }
+.toc-head {
+  padding: 22px 26px 18px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+}
+.toc-head-text {
+  flex: 1;
+}
+.toc-head-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+.toc-head-title {
+  font-family: 'Fraunces', serif;
+  font-weight: 400;
+  font-size: 22px;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  line-height: 1.2;
+}
+.toc-head-title em { font-style: italic; color: var(--accent); }
+.toc-head-sub {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.toc-close {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-faint);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Inter', sans-serif;
+  font-weight: 300;
+  line-height: 1;
+  transition: all 0.2s ease;
+}
+.toc-close:hover {
+  border-color: var(--core);
+  color: var(--core);
+  background: var(--surface-2);
+}
+.toc-list {
+  list-style: none;
+  max-height: 62vh;
+  overflow-y: auto;
+}
+.toc-item {
+  display: grid;
+  grid-template-columns: 32px 18px 1fr auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 26px;
+  cursor: pointer;
+  border-top: 1px solid var(--line);
+  transition: background 0.18s ease, padding-left 0.2s ease;
+  position: relative;
+}
+.toc-item:first-child { border-top: none; }
+.toc-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: transparent;
+  transition: background 0.2s ease;
+}
+.toc-item:hover { background: var(--bg-2); padding-left: 30px; }
+.toc-item.current { background: var(--surface-2); }
+.toc-item.current::before { background: var(--layer-color, var(--accent)); }
+.toc-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  color: var(--text-faint);
+  letter-spacing: 0.1em;
+  text-align: right;
+}
+.toc-item.current .toc-num { color: var(--accent); }
+.toc-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  transition: transform 0.2s ease;
+}
+.toc-item:hover .toc-dot { transform: scale(1.25); }
+.toc-text { min-width: 0; }
+.toc-title {
+  font-family: 'Fraunces', serif;
+  font-weight: 400;
+  font-size: 16px;
+  color: var(--text);
+  line-height: 1.2;
+  margin-bottom: 3px;
+}
+.toc-short {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  color: var(--text-faint);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+.toc-arrow {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  color: var(--text-faint);
+  font-size: 16px;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+.toc-item:hover .toc-arrow { transform: translateX(4px); color: var(--accent); }
+.toc-item.current .toc-arrow { color: var(--accent); content: '●'; }
+
+/* ═════ DESKTOP ═════ */
+@media (min-width: 900px) {
+  .intro { padding: 8vh 6vw 5vh; }
+  .intro-sub { font-size: 16px; }
+  .case-inline { max-width: 420px; }
+
+  .q-text { font-size: 32px; }
+  .beat-question { top: 8vh; }
+
+  .beat-narrative {
+    bottom: auto;
+    top: 50%;
+    left: 4vw;
+    right: auto;
+    transform: translate(-20px, -50%);
+    width: 380px;
+    max-width: 380px;
+  }
+  .beat-narrative.active { transform: translate(0, -50%); }
+  .n-text { font-size: 14.5px; }
+
+  .beat-risk { top: 8vh; padding: 20px 26px; }
+  .r-text { font-size: 15px; }
+
+  .kw { font-size: 12.5px; padding: 6px 14px 6px 16px; }
+
+  .role-avatar { width: 32px; height: 32px; font-size: 13px; }
+  .role-chip-label { font-size: 13px; }
+  .role-chip { padding: 8px 16px 8px 8px; }
+
+  .modal { padding: 32px 36px 30px; }
+  .modal-title { font-size: 32px; }
+  .modal-def { font-size: 15px; }
+}
+
+@media (max-width: 380px) {
+  .q-text { font-size: 17px; }
+  .kw { font-size: 10px; padding: 4px 10px 4px 11px; gap: 5px; }
+  .role-avatar { width: 24px; height: 24px; font-size: 10.5px; }
+  .role-chip-label { font-size: 11px; }
+  .role-chip { padding: 5px 12px 5px 5px; }
+  .ring-label { font-size: 10px; letter-spacing: 0.06em; }
+  .core-t1 { font-size: 20px; }
+  .core-t2 { font-size: 10px; }
+  .beat-narrative { padding: 14px 16px; }
+  .n-text { font-size: 12.5px; }
+  .hud, .counter { font-size: 9px; padding: 5px 10px; }
+  .counter { padding-right: 8px; }
+  .modal-title { font-size: 22px; }
+  .modal-def { font-size: 13.5px; }
+  .toc-head-title { font-size: 18px; }
+  .toc-item { padding: 12px 18px; grid-template-columns: 28px 10px 1fr auto; gap: 10px; }
+}
+
+/* ═════ OUTRO ═════ */
+.outro {
+  padding: 10vh 5vw 4vh;
+  position: relative;
+  z-index: 3;
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+}
+.outro-head { max-width: 780px; margin: 0 auto 40px; }
+.outro-head h2 {
+  font-family: 'Fraunces', serif;
+  font-weight: 400;
+  font-size: clamp(24px, 5vw, 36px);
+  line-height: 1.15;
+  margin-bottom: 14px;
+  letter-spacing: -0.01em;
+}
+.outro-head h2 em { font-style: italic; color: var(--accent); }
+.outro-head p {
+  font-size: 14.5px;
+  color: var(--text-dim);
+  line-height: 1.65;
+}
+.outro-grid {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+}
+.outro-card {
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  border-left-width: 3px;
+  box-shadow: 0 2px 8px rgba(30,30,44,0.03);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.outro-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(30,30,44,0.08);
+}
+.outro-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.outro-card-idx {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text-faint);
+  letter-spacing: 0.15em;
+}
+.outro-card-dot { width: 10px; height: 10px; border-radius: 50%; }
+.outro-card-title {
+  font-family: 'Fraunces', serif;
+  font-weight: 400;
+  font-size: 17px;
+  line-height: 1.2;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+.outro-card-q {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 12.5px;
+  color: var(--text-dim);
+  line-height: 1.45;
+  margin-bottom: 10px;
+}
+.outro-card-roles { display: flex; flex-wrap: wrap; gap: 4px; }
+.outro-card-roles .chip {
+  padding: 2px 8px;
+  border: 1px solid var(--line);
+  border-radius: 100px;
+  font-size: 10.5px;
+  color: var(--text-dim);
+  background: var(--surface-2);
+}
+
+/* ═════ SOURCES ═════ */
+.sources {
+  max-width: 1180px;
+  margin: 80px auto 0;
+  padding-top: 40px;
+  border-top: 1px solid var(--line);
+}
+.sources h3 {
+  font-family: 'Fraunces', serif;
+  font-weight: 400;
+  font-size: 22px;
+  margin-bottom: 8px;
+  letter-spacing: -0.01em;
+}
+.sources h3 em { font-style: italic; color: var(--accent); }
+.sources-intro {
+  font-size: 13.5px;
+  color: var(--text-dim);
+  max-width: 620px;
+  margin-bottom: 28px;
+  line-height: 1.6;
+}
+.sources-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+}
+.source-group h4 {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+  font-weight: 500;
+}
+.source-group ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.source-group a {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--text-dim);
+  text-decoration: none;
+  line-height: 1.4;
+  transition: color 0.2s ease;
+}
+.source-group a:hover { color: var(--accent); }
+.source-group a .arr {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-faint);
+  font-size: 10px;
+  flex-shrink: 0;
+}
+.source-group a:hover .arr { color: var(--accent); }
+.source-group a strong {
+  color: var(--text);
+  font-weight: 500;
+}
+.source-group a:hover strong { color: var(--accent); }
+
+.footer {
+  max-width: 1180px;
+  margin: 60px auto 0;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 18px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.back-top {
+  color: var(--accent);
+  cursor: pointer;
+  border: 1px solid var(--line-strong);
+  padding: 8px 14px;
+  border-radius: 100px;
+  background: var(--surface);
+  transition: all 0.2s;
+}
+.back-top:hover { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+
+/* ═════ SCHEMA BUTTON (in narrative card) ═════ */
+.n-schema-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 7px 14px 7px 11px;
+  border: 1px solid var(--line-strong);
+  border-radius: 100px;
+  background: var(--surface-2);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+.n-schema-btn:hover {
+  background: var(--surface);
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 12px rgba(195,78,58,0.14);
+}
+.n-schema-btn svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  stroke: currentColor;
+  fill: none;
+}
+
+/* ═════ SCHEMA MODAL ═════ */
+.schema-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(30,30,44,0.42);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 110;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3vh 16px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0s linear 0.25s;
+}
+.schema-overlay.active {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.25s ease, visibility 0s linear 0s;
+}
+.schema-modal {
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  max-width: 1000px;
+  width: 100%;
+  max-height: 94vh;
+  display: flex;
+  flex-direction: column;
+  transform: translateY(18px) scale(0.985);
+  transition: transform 0.35s cubic-bezier(.2,.8,.2,1);
+  box-shadow: 0 30px 80px rgba(30,30,44,0.22);
+  overflow: hidden;
+}
+.schema-overlay.active .schema-modal { transform: translateY(0) scale(1); }
+.schema-head {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  flex-shrink: 0;
+}
+.schema-head-text { flex: 1; min-width: 0; }
+.schema-head-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.schema-head-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.schema-head-title {
+  font-family: 'Fraunces', serif;
+  font-weight: 400;
+  font-size: 22px;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+.schema-head-title em { font-style: italic; color: var(--accent); }
+.schema-head-sub {
+  margin-top: 6px;
+  font-size: 12.5px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+.schema-body {
+  padding: 20px 24px;
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+}
+.schema-svg-wrap {
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+}
+.schema-svg-inner {
+  min-width: 720px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+.schema-svg-inner svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.schema-scroll-hint {
+  display: none;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.12em;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  padding: 10px 0 2px;
+}
+
+/* Schema SVG element styles */
+.schema-svg-wrap .z-border {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-width: 1.5;
+}
+.schema-svg-wrap .z-header rect { fill: var(--text); }
+.schema-svg-wrap .z-header text {
+  fill: #ffffff;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+.schema-svg-wrap .cmp-box {
+  fill: var(--surface);
+  stroke: var(--line-strong);
+  stroke-width: 1.2;
+}
+.schema-svg-wrap .cmp-box-rogue {
+  stroke: var(--pink);
+  stroke-width: 2;
+  stroke-dasharray: 5 3;
+}
+.schema-svg-wrap .cmp-icon {
+  fill: none;
+  stroke: var(--text-dim);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.schema-svg-wrap .cmp-icon-fill { fill: var(--text-dim); }
+.schema-svg-wrap .cmp-label {
+  fill: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  text-anchor: middle;
+}
+.schema-svg-wrap .flow-arrow {
+  fill: none;
+  stroke: var(--text-faint);
+  stroke-width: 1.4;
+}
+.schema-svg-wrap marker path { fill: var(--text-faint); }
+.schema-svg-wrap .asi-pill rect { fill: var(--text); }
+.schema-svg-wrap .asi-pill text {
+  fill: #ffffff;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+/* Shared schema primitives (flow labels, emphasis, phase pills) */
+.schema-svg-wrap .flow-label {
+  fill: var(--text-faint);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-anchor: middle;
+}
+.schema-svg-wrap .cmp-sub {
+  fill: var(--text-dim);
+  font-family: 'Inter', sans-serif;
+  font-size: 11.5px;
+  text-anchor: middle;
+}
+.schema-svg-wrap .cmp-emph {
+  fill: var(--text);
+  font-family: 'Fraunces', serif;
+  font-size: 18px;
+  font-style: italic;
+  text-anchor: middle;
+}
+.schema-svg-wrap .code-text {
+  fill: var(--accent);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  text-anchor: middle;
+}
+.schema-svg-wrap .phase-pill rect { fill: var(--accent); }
+.schema-svg-wrap .phase-pill text {
+  fill: #ffffff;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-anchor: middle;
+  dominant-baseline: central;
+  text-transform: uppercase;
+}
+/* Pattern mini-grid primitives */
+.schema-svg-wrap .pattern-cell {
+  fill: var(--surface-2);
+  stroke: var(--line);
+  stroke-width: 1;
+}
+.schema-svg-wrap .pattern-title {
+  fill: var(--text);
+  font-family: 'Fraunces', serif;
+  font-size: 15px;
+  font-style: italic;
+  text-anchor: middle;
+}
+.schema-svg-wrap .pattern-sub {
+  fill: var(--text-faint);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-anchor: middle;
+  text-transform: uppercase;
+}
+.schema-svg-wrap .mini-box {
+  fill: var(--surface);
+  stroke: var(--text-dim);
+  stroke-width: 1.2;
+}
+.schema-svg-wrap .mini-box-accent {
+  fill: var(--surface);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+}
+.schema-svg-wrap .mini-label {
+  fill: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+.schema-svg-wrap .mini-arrow {
+  fill: none;
+  stroke: var(--text-dim);
+  stroke-width: 1.2;
+}
+.schema-svg-wrap .mini-arrow-emph {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.4;
+}
+.schema-svg-wrap .gate-diamond { fill: var(--accent); stroke: none; }
+/* OTel trace waterfall primitives */
+.schema-svg-wrap .trace-bar-root { fill: var(--core); opacity: 0.92; }
+.schema-svg-wrap .trace-bar-llm { fill: #D26E3E; opacity: 0.88; }
+.schema-svg-wrap .trace-bar-tool { fill: #4B9466; opacity: 0.88; }
+.schema-svg-wrap .trace-bar-http { fill: #3F75A5; opacity: 0.88; }
+.schema-svg-wrap .trace-label {
+  fill: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  dominant-baseline: central;
+}
+.schema-svg-wrap .trace-attr {
+  fill: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  dominant-baseline: central;
+}
+.schema-svg-wrap .trace-axis {
+  stroke: var(--line);
+  stroke-width: 1;
+  stroke-dasharray: 2 3;
+}
+.schema-svg-wrap .trace-axis-label {
+  fill: var(--text-faint);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  text-anchor: middle;
+}
+
+/* Shared schema element styles (used by loop, patterns, protocols, trace) */
+.schema-svg-wrap .flow-label {
+  fill: var(--text-faint);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-anchor: middle;
+}
+.schema-svg-wrap .cmp-emph {
+  fill: var(--text);
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 17px;
+  text-anchor: middle;
+}
+.schema-svg-wrap .cmp-sub {
+  fill: var(--text-dim);
+  font-family: 'Inter', sans-serif;
+  font-size: 11.5px;
+  text-anchor: middle;
+}
+.schema-svg-wrap .code-text {
+  fill: var(--accent);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+}
+.schema-svg-wrap .phase-pill rect { fill: var(--accent); }
+.schema-svg-wrap .phase-pill text {
+  fill: #ffffff;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+.schema-svg-wrap .loop-arrow {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.6;
+}
+.schema-svg-wrap marker.accent-head path { fill: var(--accent); }
+
+/* Patterns grid */
+.schema-svg-wrap .pattern-cell {
+  fill: var(--surface-2);
+  stroke: var(--line);
+  stroke-width: 1;
+}
+.schema-svg-wrap .pattern-title {
+  fill: var(--text);
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 16px;
+}
+.schema-svg-wrap .pattern-num {
+  fill: var(--accent);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+}
+.schema-svg-wrap .pattern-sub {
+  fill: var(--text-faint);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.schema-svg-wrap .mini-box {
+  fill: var(--surface);
+  stroke: var(--line-strong);
+  stroke-width: 1.1;
+}
+.schema-svg-wrap .mini-box-accent {
+  fill: var(--surface);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+}
+.schema-svg-wrap .mini-label {
+  fill: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+.schema-svg-wrap .mini-arrow {
+  fill: none;
+  stroke: var(--text-dim);
+  stroke-width: 1.2;
+}
+.schema-svg-wrap .gate-diamond {
+  fill: var(--surface);
+  stroke: var(--accent);
+  stroke-width: 1.4;
+}
+.schema-svg-wrap .gate-label {
+  fill: var(--accent);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+/* Trace waterfall */
+.schema-svg-wrap .trace-lane {
+  fill: var(--surface-2);
+  stroke: none;
+}
+.schema-svg-wrap .trace-bar-root { fill: #C34E3A; }
+.schema-svg-wrap .trace-bar-llm { fill: #D26E3E; }
+.schema-svg-wrap .trace-bar-tool { fill: #4B9466; }
+.schema-svg-wrap .trace-bar-http { fill: #3F75A5; }
+.schema-svg-wrap .trace-label {
+  fill: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+}
+.schema-svg-wrap .trace-label-dim {
+  fill: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+}
+.schema-svg-wrap .trace-duration {
+  fill: #ffffff;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 500;
+  dominant-baseline: central;
+}
+.schema-svg-wrap .trace-axis {
+  stroke: var(--line-strong);
+  stroke-width: 1;
+  fill: none;
+}
+.schema-svg-wrap .trace-tick {
+  stroke: var(--line-strong);
+  stroke-width: 1;
+}
+.schema-svg-wrap .trace-tick-label {
+  fill: var(--text-faint);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  text-anchor: middle;
+}
+.schema-svg-wrap .trace-summary-box {
+  fill: var(--surface-2);
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+/* Legend (below SVG) */
+.schema-legend {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 10px 20px;
+}
+.schema-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+.schema-legend-code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  background: var(--text);
+  color: #ffffff;
+  padding: 3px 8px;
+  border-radius: 100px;
+  flex-shrink: 0;
+}
+.schema-legend-label { color: var(--text); }
+.schema-foot {
+  padding: 14px 24px 18px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+.schema-caption {
+  font-size: 11.5px;
+  color: var(--text-faint);
+  line-height: 1.4;
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 600px) {
+  .schema-head { padding: 16px 18px 12px; gap: 12px; }
+  .schema-head-title { font-size: 18px; }
+  .schema-head-sub { font-size: 11.5px; }
+  .schema-body { padding: 14px 16px; }
+  .schema-svg-inner { width: 760px; min-width: 760px; max-width: none; margin: 0; }
+  .schema-scroll-hint {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    text-align: center;
+    margin-bottom: 8px;
+  }
+  .schema-svg-wrap::-webkit-scrollbar { height: 6px; }
+  .schema-svg-wrap::-webkit-scrollbar-track { background: var(--line); border-radius: 3px; }
+  .schema-svg-wrap::-webkit-scrollbar-thumb { background: var(--text-dim); border-radius: 3px; }
+  .schema-legend { grid-template-columns: 1fr; gap: 8px; margin-top: 18px; padding-top: 16px; }
+  .schema-foot {
+    padding: 12px 18px 16px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .schema-caption {
+    flex: 1 1 auto;
+    width: 100%;
+  }
+  .schema-foot .modal-link {
+    align-self: flex-start;
+  }
+}
+
+/* ═════ BACK TO WIKIME ═════ */
+.back-wikime {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 99;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(255,251,242,0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--line-strong);
+  border-radius: 100px;
+  color: var(--text-faint);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  text-decoration: none;
+  text-transform: uppercase;
+  box-shadow: 0 2px 8px rgba(30,30,44,0.05);
+  transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.2s;
+}
+.back-wikime:hover {
+  background: var(--surface);
+  color: var(--accent);
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+/* Push the HUD right so it doesn't overlap the back link when scrolly pins */
+.pin .hud { left: 132px; }
+@media (max-width: 640px) {
+  .back-wikime { display: none; }
+  .pin .hud { left: 18px; }
+}
+</style>
+</head>
+<body>
+
+<a href="index.html" class="back-wikime">&larr; Accueil</a>
+
+<section class="intro">
+  <div>
+    <div class="eyebrow">Anatomie — systèmes agentiques en production</div>
+    <h1>Au cœur, <em>un tirage probabiliste</em>.<br>Autour, dix couches pour qu'il tienne.</h1>
+    <p class="intro-sub">D'un LLM stochastique jusqu'à la gouvernance d'entreprise — dix couches qui transforment un POC magique en système tenable, observable et réversible. L'oignon reste au cœur de l'écran&nbsp;; autour de lui, les éléments apparaissent d'où ils doivent venir. Cliquez sur les concepts pour en lire la définition, sur le compteur pour naviguer entre les couches.</p>
+  </div>
+  <div class="intro-bottom">
+    <div class="case-inline">
+      <div class="label">Cas d'école</div>
+      <div><strong>Agent de deep research enterprise</strong> · 1 orchestrateur + 4 workers parallèles · MCP Confluence/Jira/Snowflake · HITL + OTel GenAI</div>
+      <div class="metrics">
+        <div><strong>3 h → 18 min</strong><span>par dossier</span></div>
+        <div><strong>~0,80 €</strong><span>coût par run</span></div>
+      </div>
+    </div>
+    <div class="scroll-cue">
+      <span>Défilez</span>
+      <div class="arrow"></div>
+    </div>
+  </div>
+</section>
+
+<div class="scrolly" id="scrolly">
+  <div class="pin">
+    <div class="hud">
+      <span class="hud-dot" id="hudDot"></span>
+      <span><b id="hudIdx">00</b> · <span id="hudName">Non-déterminisme</span></span>
+    </div>
+
+    <button class="counter" id="counter" aria-label="Ouvrir le sommaire des couches">
+      <span id="counterText">1 / 50</span>
+      <span class="counter-icon" aria-hidden="true"><span></span><span></span><span></span></span>
+    </button>
+
+    <div class="pin-viz">
+      <div class="viz-wrap">
+        <svg class="viz" viewBox="0 0 1000 1000" id="viz"></svg>
+      </div>
+    </div>
+
+    <div class="beats-layer" id="beatsLayer"></div>
+
+    <div class="prog-line" id="progLine" role="button" aria-label="Ouvrir le sommaire"></div>
+  </div>
+</div>
+
+<section class="outro">
+  <div class="outro-head">
+    <h2>Dix couches, <em>un système vivant</em>.</h2>
+    <p>Chaque couche est à la fois un métier, une stack et une discipline de gouvernance. Les sous-estimer au cadrage se paie en production — quand l'agent dérive, hallucine, brûle la facture ou se fait hijacker. La dichotomie Anthropic (<em>Building Effective Agents</em>, déc. 2024) reste la boussole : <em>start simple, measure, add complexity only when it delivers measurable value</em>.</p>
+  </div>
+  <div class="outro-grid" id="outroGrid"></div>
+
+  <div class="sources">
+    <h3>Ressources <em>&amp; lectures</em> de référence</h3>
+    <p class="sources-intro">Les sources primaires qui structurent ce panorama — publications fondatrices, documentations officielles des cinq hyperscalers, protocoles standardisés et frameworks de sécurité. Tout est ouvert et public.</p>
+    <div class="sources-grid">
+      <div class="source-group">
+        <h4>Fondations conceptuelles</h4>
+        <ul>
+          <li><a href="https://www.anthropic.com/research/building-effective-agents" target="_blank" rel="noopener"><span class="arr">↗</span><span><strong>Building Effective Agents</strong> · Schluntz &amp; Zhang, Anthropic, déc. 2024</span></a></li>
+          <li><a href="https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents" target="_blank" rel="noopener"><span class="arr">↗</span><span><strong>Effective Context Engineering</strong> · Anthropic Engineering, 2026</span></a></li>
+          <li><a href="https://arxiv.org/abs/2210.03629" target="_blank" rel="noopener"><span class="arr">↗</span><span><strong>ReAct: Synergizing Reasoning and Acting</strong> · Yao et al., 2022</span></a></li>
+        </ul>
+      </div>
+
+      <div class="source-group">
+        <h4>SDK &amp; runtimes</h4>
+        <ul>
+          <li><a href="https://platform.claude.com/docs/en/agent-sdk/overview" target="_blank" rel="noopener"><span class="arr">↗</span><span><strong>Claude Agent SDK</strong> · Anthropic</span></a></li>
+          <li><a href="https://platform.claude.com/docs/en/managed-agents/" target="_blank" rel="noopener"><span class="arr">↗</span><span><strong>Claude Managed Agents</strong> · public beta, avr. 2026</span></a></li>
+          <li><a href="https://openai.github.io/openai-agents-python/" target="_blank" rel="noopener"><span class="arr">↗</span><span><strong>OpenAI Agents SDK</strong> · Python + TypeScript</span></a></li>
+          <li><a href="https://google.github.io/adk-docs" target="_blank" rel="noopener"><span class="arr">↗</span><span><strong>Google Agent Development Kit (ADK)</strong></span></a></li>
+          <li><a href="https://learn.microsoft.com/en-us/agent-framework/overview/" target="_blank" rel="noopener"><span class="arr">↗</span><span><strong>Microsoft Agent Framework 1.0</strong></span></a></li>
+          <li><a href="https://aws.amazon.com/bedrock/agentcore/" target="_blank" rel="noopener"><span class="arr">↗</span><span><strong>AWS Bedrock AgentCore</strong> · 8 services composables</span></a></li>
+          <li><a href="https://docs.langchain.com/oss/python/langgraph/overview" target="_blank" rel="noopener"><span class="arr">↗</span><span><strong>LangGraph 1.0</strong> · durable execution</span></a></li>
+        </ul>
+      </div>
+
+      <div class="source-group">
+        <h4>Protocoles &amp; interopérabilité</h4>
+        <ul>
+          <li><a href="https://modelcontextprotocol.io" target="_blank" rel="noopener"><span class="arr">↗</span><span><strong>Model Context Protocol (MCP)</strong> · agent ↔ tools</span></a></li>
+          <li><a href="https://a2a-protocol.org" target="_blank" rel="noopener"><span class="arr">↗</span><span><strong>Agent2Agent (A2A)</strong> · agent ↔ agent</span></a></li>
+          <li><a href="https://developers.googleblog.com/en/agents-adk-agent-engine-a2a-enhancements-google-io/" target="_blank" rel="noopener"><span class="arr">↗</span><span><strong>Developer's Guide to AI Agent Protocols</strong> · Google, 2026</span></a></li>
+        </ul>
+      </div>
+
+      <div class="source-group">
+        <h4>Observabilité &amp; évaluation</h4>
+        <ul>
+          <li><a href="https://opentelemetry.io/docs/specs/semconv/gen-ai/" target="_blank" rel="noopener"><span class="arr">↗</span><span><strong>OpenTelemetry GenAI Semantic Conventions</strong></span></a></li>
+          <li><a href="https://langfuse.com/docs" target="_blank" rel="noopener"><span class="arr">↗</span><span><strong>Langfuse</strong> · observabilité LLM open source</span></a></li>
+          <li><a href="https://docs.smith.langchain.com/" target="_blank" rel="noopener"><span class="arr">↗</span><span><strong>LangSmith</strong> · traces, evals, Multi-Turn Evals</span></a></li>
+        </ul>
+      </div>
+
+      <div class="source-group">
+        <h4>Sécurité &amp; guardrails</h4>
+        <ul>
+          <li><a href="https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/" target="_blank" rel="noopener"><span class="arr">↗</span><span><strong>OWASP Top 10 for Agentic Applications 2026</strong></span></a></li>
+          <li><a href="https://genai.owasp.org/resource/agentic-ai-threats-and-mitigations/" target="_blank" rel="noopener"><span class="arr">↗</span><span><strong>Agentic AI — Threats &amp; Mitigations</strong> · OWASP ASI</span></a></li>
+          <li><a href="https://aws.amazon.com/bedrock/guardrails/" target="_blank" rel="noopener"><span class="arr">↗</span><span><strong>Amazon Bedrock Guardrails</strong> + Automated Reasoning</span></a></li>
+        </ul>
+      </div>
+
+      <div class="source-group">
+        <h4>Gouvernance &amp; FinOps</h4>
+        <ul>
+          <li><a href="https://www.gartner.com/en/articles/what-it-leaders-should-know-about-agentic-ai" target="_blank" rel="noopener"><span class="arr">↗</span><span><strong>Gartner — 40% de projets agentiques annulés d'ici 2027</strong></span></a></li>
+          <li><a href="https://artificialintelligenceact.eu/" target="_blank" rel="noopener"><span class="arr">↗</span><span><strong>EU AI Act</strong> · texte officiel</span></a></li>
+          <li><a href="https://www.finops.org/introduction/what-is-finops/" target="_blank" rel="noopener"><span class="arr">↗</span><span><strong>FinOps Foundation</strong> · cadre cost-aware engineering</span></a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>Anatomie d'un système agentique en production · Avril 2026</span>
+    <a class="back-top" id="backTop">↑ Revenir au début</a>
+  </div>
+</section>
+
+<!-- ═════ CONCEPT MODAL ═════ -->
+<div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal" role="document">
+    <button class="modal-close" id="modalClose" aria-label="Fermer">×</button>
+    <div class="modal-label">
+      <span class="modal-label-dot" id="modalDot"></span>
+      <span id="modalLayer">COUCHE 00 · NON-DÉTERMINISME</span>
+    </div>
+    <div class="modal-title" id="modalTitle">—</div>
+    <div class="modal-def" id="modalDef">—</div>
+    <a class="modal-link" id="modalLink" href="#" target="_blank" rel="noopener" style="display:none">
+      <span id="modalLinkLabel">En savoir plus</span><span class="arr">↗</span>
+    </a>
+  </div>
+</div>
+
+<!-- ═════ TOC OVERLAY ═════ -->
+<div class="toc-overlay" id="tocOverlay" role="dialog" aria-modal="true" aria-labelledby="tocTitle">
+  <div class="toc-panel" role="document">
+    <div class="toc-head">
+      <div class="toc-head-text">
+        <div class="toc-head-eyebrow">Sommaire</div>
+        <div class="toc-head-title" id="tocTitle">Dix couches, <em>un système vivant</em></div>
+        <div class="toc-head-sub" id="tocSub">Cliquez sur une couche pour y sauter</div>
+      </div>
+      <button class="toc-close" id="tocClose" aria-label="Fermer">×</button>
+    </div>
+    <ul class="toc-list" id="tocList"></ul>
+  </div>
+</div>
+
+<!-- ═════ SCHEMA MODAL ═════ -->
+<div class="schema-overlay" id="schemaOverlay" role="dialog" aria-modal="true" aria-labelledby="schemaTitle">
+  <div class="schema-modal" role="document">
+    <div class="schema-head">
+      <div class="schema-head-text">
+        <div class="schema-head-eyebrow">
+          <span class="schema-head-dot" id="schemaDot"></span>
+          <span id="schemaLayerLabel">COUCHE 06 · GUARDRAILS · SCHÉMA</span>
+        </div>
+        <div class="schema-head-title" id="schemaTitle">—</div>
+        <div class="schema-head-sub" id="schemaSub">—</div>
+      </div>
+      <button class="modal-close" id="schemaClose" aria-label="Fermer">×</button>
+    </div>
+    <div class="schema-body">
+      <div class="schema-scroll-hint">↔ faire glisser horizontalement</div>
+      <div class="schema-svg-wrap" id="schemaSvgWrap"></div>
+      <div class="schema-legend" id="schemaLegend"></div>
+    </div>
+    <div class="schema-foot">
+      <div class="schema-caption" id="schemaCaption">—</div>
+      <a class="modal-link" id="schemaLink" href="#" target="_blank" rel="noopener" style="display:none">
+        <span id="schemaLinkLabel">Source</span><span class="arr">↗</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+const LAYERS = [
+  // ═════════════════ 00 — CORE : NON-DÉTERMINISME ═════════════════
+  { title: 'Le cœur probabiliste', short: 'Non-déterminisme', color: '#C34E3A',
+    question: "Le même prompt, deux réponses différentes à dix secondes d'intervalle. Est-ce un bug — ou la nature profonde du système ?",
+    narrative: "Au cœur, un LLM. À température &gt; 0, il tire son prochain token dans une distribution de probabilités. Même contexte, même question&nbsp;: <strong>deux exécutions, deux trajectoires</strong>. L'agentique hérite de cette stochasticité — et la démultiplie à chaque tool call, chaque handoff, chaque boucle.",
+    concepts: ['Température', 'Top-p sampling', 'Softmax', 'Stochasticité', 'Seed &amp; reproductibilité'],
+    roles: ['Research Scientist', 'ML Engineer'],
+    risk: "Traiter l'agent comme un programme déterministe. Écrire des tests unitaires exacts sur des sorties stochastiques, c'est <strong>programmer la frustration</strong> — et rater les vrais risques de dérive." },
+
+  // ═════════════════ 01 — BOUCLE AGENT / REACT ═════════════════
+  { title: 'La boucle agent', short: 'Agent Loop', color: '#D26E3E',
+    question: "Comment faire passer un LLM d'un one-shot prédictif à un système qui <em>raisonne, agit, observe</em> et recommence ?",
+    narrative: "C'est le <strong>harness</strong>. Une boucle simple&nbsp;: <code>while stop_reason == 'tool_use'</code>. Le modèle lit, pense, choisit un outil&nbsp;; on l'exécute&nbsp;; on réinjecte le résultat&nbsp;; on recommence. Nommé <em>ReAct</em> par Yao et al. (2022), démontré à l'échelle par Anthropic dans <em>Building Effective Agents</em> (Schluntz &amp; Zhang, 2024).",
+    concepts: ['ReAct', 'Reason → Act → Observe', 'stop_reason', 'Harness', 'Runner', 'Graph execution'],
+    roles: ['Agent Engineer', 'ML Engineer', 'Backend Developer'],
+    risk: "Boucles infinies. Agents qui tournent en rond sur un outil cassé. <strong>Sans <code>max_turns</code>, sans timeout, sans kill-switch</strong>, un bug en prod brûle 200&nbsp;€ en trois minutes. Et recommence demain.",
+    schema: {
+      buttonLabel: "Boucle ReAct",
+      title: "La boucle agentique · <em>Reason → Act → Observe</em>",
+      subtitle: "La primitive fondamentale introduite par ReAct (Yao et al., 2022) et généralisée par les APIs modernes via les content blocks et le champ <code>stop_reason</code>.",
+      svg: `<svg viewBox="0 0 1100 560" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Boucle agent Reason Act Observe">
+        <defs>
+          <marker id="agent-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 1 L 9 5 L 0 9 z"/>
+          </marker>
+        </defs>
+        <rect class="cmp-box" x="60" y="40" width="200" height="60" rx="8"/>
+        <text class="cmp-label" x="160" y="76">User</text>
+        <rect class="cmp-box" x="60" y="175" width="320" height="170" rx="10"/>
+        <text class="cmp-emph" x="220" y="222">LLM</text>
+        <text class="cmp-sub" x="220" y="248">model · sampler · content blocks</text>
+        <g class="phase-pill">
+          <rect x="140" y="300" width="160" height="28" rx="14"/>
+          <text x="220" y="314">① REASON</text>
+        </g>
+        <rect class="cmp-box" x="470" y="200" width="230" height="130" rx="8"/>
+        <text class="cmp-label" x="585" y="230">stop_reason</text>
+        <text class="code-text" x="585" y="258">end_turn</text>
+        <text class="code-text" x="585" y="278">tool_use</text>
+        <text class="code-text" x="585" y="298" fill="#8a8e99" font-size="10">max_tokens · pause_turn</text>
+        <rect class="cmp-box" x="810" y="50" width="240" height="70" rx="8"/>
+        <text class="cmp-label" x="930" y="80">Response</text>
+        <text class="cmp-sub" x="930" y="102" font-size="11">final text to user</text>
+        <rect class="cmp-box" x="470" y="415" width="280" height="120" rx="8"/>
+        <text class="cmp-label" x="610" y="448">Tool runtime</text>
+        <text class="cmp-sub" x="610" y="470" font-size="11">execute · fetch · compute</text>
+        <g class="phase-pill">
+          <rect x="530" y="490" width="160" height="28" rx="14"/>
+          <text x="610" y="504">② ACT</text>
+        </g>
+        <line class="flow-arrow" x1="160" y1="105" x2="160" y2="170" marker-end="url(#agent-arrow)"/>
+        <text class="flow-label" x="195" y="142">prompt</text>
+        <line class="flow-arrow" x1="385" y1="265" x2="465" y2="265" marker-end="url(#agent-arrow)"/>
+        <text class="flow-label" x="425" y="255">content</text>
+        <path class="flow-arrow" d="M 700 230 L 780 230 L 780 85 L 805 85" marker-end="url(#agent-arrow)" fill="none"/>
+        <text class="flow-label" x="740" y="220">end_turn</text>
+        <line class="flow-arrow" x1="585" y1="332" x2="585" y2="410" marker-end="url(#agent-arrow)"/>
+        <text class="flow-label" x="620" y="375">tool_use</text>
+        <path class="flow-arrow" d="M 465 475 L 40 475 L 40 260 L 55 260" marker-end="url(#agent-arrow)" fill="none"/>
+        <g class="phase-pill">
+          <rect x="130" y="462" width="180" height="28" rx="14"/>
+          <text x="220" y="476">③ OBSERVE</text>
+        </g>
+        <text class="flow-label" x="380" y="467">tool_result</text>
+      </svg>`,
+      legend: [
+        { code: "end_turn", label: "Fin naturelle · réponse finale à l'utilisateur" },
+        { code: "tool_use", label: "LLM demande l'exécution d'un outil" },
+        { code: "max_tokens", label: "Limite de tokens de sortie atteinte (tronqué)" },
+        { code: "stop_sequence", label: "Séquence d'arrêt personnalisée rencontrée" },
+        { code: "pause_turn", label: "Outil long · continuation attendue" }
+      ],
+      caption: "Source primaire · Yao et al., <em>ReAct: Synergizing Reasoning and Acting in Language Models</em> (ICLR 2023). Implémentation moderne&nbsp;: Anthropic Messages API, content blocks et <code>stop_reason</code>.",
+      link: "https://arxiv.org/abs/2210.03629",
+      linkLabel: "arXiv · ReAct"
+    } },
+
+  // ═════════════════ 02 — TOOLS ═════════════════
+  { title: 'Les outils — les mains de l\'agent', short: 'Tools', color: '#DC9042',
+    question: "Quelles actions l'agent peut-il vraiment exécuter, avec quels droits, sur quels systèmes — et <em>qui l'a autorisé</em> ?",
+    narrative: "Sans outils, le LLM génère du texte. Avec outils, il <strong>agit</strong>&nbsp;: il interroge une base, écrit un fichier, appelle une API, exécute du code. Chaque outil est décrit par un schéma JSON&nbsp;; le modèle choisit, le runtime exécute. Web search, code execution, file ops, browser — les briques d'action qui font la différence entre un chat et un agent.",
+    concepts: ['Function calling', 'tool_use / tool_result', 'JSON Schema', 'Web search', 'Code execution', 'Browser tool'],
+    roles: ['Agent Engineer', 'Integrations Engineer', 'API Designer'],
+    risk: "Exposer un outil <code>execute_sql</code> sans scoping. Sous prompt injection, l'agent exfiltre la base. <strong>Tool poisoning</strong>&nbsp;: une description malicieuse détourne l'intention de l'outil. Voir OWASP ASI02." },
+
+  // ═════════════════ 03 — CONTEXT ═════════════════
+  { title: 'Contexte & mémoire', short: 'Context', color: '#C5A23A',
+    question: "Comment un agent se souvient-il de la conversation d'hier, du projet en cours, du dernier résultat de son sous-agent ?",
+    narrative: "La fenêtre de contexte est un <strong>budget</strong>. La mémoire court terme vit dans la session&nbsp;; la long terme s'externalise vers un memory bank, une base vectorielle, un résumé condensé. Anthropic formalise la <em>compaction</em>, Google propose <em>Memory Bank</em>, Mem0 capitalise sur la mémoire inter-conversations. Context engineering est devenu un métier à part entière.",
+    concepts: ['Context window', 'Compaction', 'Memory Bank', 'Sessions', 'Mem0', 'RAG / Chunking'],
+    roles: ['Context Engineer', 'RAG Engineer', 'Data Engineer'],
+    risk: "Rejouer tout l'historique à chaque tour. <strong>La facture grimpe exponentiellement</strong>. Sans stratégie de compaction, un agent en run 2h coûte 10× un agent en run 20 min. Et rate la question simple posée il y a 40 minutes." },
+
+  // ═════════════════ 04 — PATTERNS ═════════════════
+  { title: 'Patterns de référence', short: 'Patterns', color: '#8FA446',
+    question: "Agent autonome ou workflow orchestré ? Quelle topologie pour quelle tâche — et <em>quand ne pas multi-agent</em> ?",
+    narrative: "Schluntz &amp; Zhang (Anthropic, déc. 2024) distinguent six patterns canoniques&nbsp;: Augmented LLM, Prompt chaining, Routing, Parallelization, Orchestrator-workers, Evaluator-optimizer. Règle de design&nbsp;: <em>start simple, measure, add complexity only when it delivers measurable value</em>. Un workflow bien routé résout 70&nbsp;% des cas.",
+    concepts: ['Augmented LLM', 'Prompt chaining', 'Routing', 'Parallelization', 'Orchestrator-workers', 'Evaluator-optimizer'],
+    roles: ['Solutions Architect', 'Agent Engineer', 'Technical Lead'],
+    risk: "Sortir l'artillerie multi-agent pour un besoin qu'un workflow aurait résolu. <strong>Multi-agent = 10–15× plus de tokens</strong> qu'un single-agent. Mois vs semaines de delivery. Debugging exponentiellement plus dur.",
+    schema: {
+      buttonLabel: "6 patterns canoniques",
+      title: "Les six patterns de Schluntz &amp; Zhang · <em>Building Effective Agents</em>",
+      subtitle: "La taxonomie Anthropic (décembre 2024) qui structure toute conception agentique moderne. <em>Augmented LLM</em> est l'unité de base&nbsp;; les cinq autres sont des compositions.",
+      svg: `<svg viewBox="0 0 1200 700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Six patterns agentiques canoniques">
+        <defs>
+          <marker id="pattern-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+            <path d="M 0 1 L 9 5 L 0 9 z"/>
+          </marker>
+        </defs>
+
+        <!-- PATTERN 1: Augmented LLM -->
+        <rect class="pattern-cell" x="20" y="30" width="380" height="300" rx="12"/>
+        <text class="pattern-title" x="210" y="60">Augmented LLM</text>
+        <text class="pattern-sub" x="210" y="80">Unité de base</text>
+        <rect class="mini-box-accent" x="165" y="195" width="90" height="55" rx="6"/>
+        <text class="mini-label" x="210" y="223" font-size="12" font-weight="500">LLM</text>
+        <line class="mini-arrow" x1="38" y1="223" x2="160" y2="223" marker-end="url(#pattern-arrow)"/>
+        <text class="pattern-sub" x="100" y="215">input</text>
+        <line class="mini-arrow" x1="255" y1="223" x2="380" y2="223" marker-end="url(#pattern-arrow)"/>
+        <text class="pattern-sub" x="315" y="215">output</text>
+        <rect class="mini-box" x="170" y="120" width="80" height="30" rx="4"/>
+        <text class="mini-label" x="210" y="135">Memory</text>
+        <line class="mini-arrow" x1="210" y1="150" x2="210" y2="195"/>
+        <rect class="mini-box" x="55" y="285" width="95" height="30" rx="4"/>
+        <text class="mini-label" x="102" y="300">Retrieval</text>
+        <line class="mini-arrow" x1="150" y1="287" x2="185" y2="250"/>
+        <rect class="mini-box" x="270" y="285" width="85" height="30" rx="4"/>
+        <text class="mini-label" x="312" y="300">Tools</text>
+        <line class="mini-arrow" x1="270" y1="287" x2="235" y2="250"/>
+
+        <!-- PATTERN 2: Prompt Chaining -->
+        <rect class="pattern-cell" x="420" y="30" width="380" height="300" rx="12"/>
+        <text class="pattern-title" x="610" y="60">Prompt Chaining</text>
+        <text class="pattern-sub" x="610" y="80">Étapes séquentielles + gates</text>
+        <rect class="mini-box" x="438" y="200" width="48" height="35" rx="4"/>
+        <text class="mini-label" x="462" y="217" font-size="9">IN</text>
+        <rect class="mini-box-accent" x="504" y="200" width="48" height="35" rx="4"/>
+        <text class="mini-label" x="528" y="217" font-size="9">L₁</text>
+        <polygon class="gate-diamond" points="578,202 596,218 578,234 560,218"/>
+        <rect class="mini-box-accent" x="606" y="200" width="48" height="35" rx="4"/>
+        <text class="mini-label" x="630" y="217" font-size="9">L₂</text>
+        <polygon class="gate-diamond" points="680,202 698,218 680,234 662,218"/>
+        <rect class="mini-box-accent" x="708" y="200" width="48" height="35" rx="4"/>
+        <text class="mini-label" x="732" y="217" font-size="9">L₃</text>
+        <rect class="mini-box" x="774" y="200" width="48" height="35" rx="4"/>
+        <text class="mini-label" x="798" y="217" font-size="9">OUT</text>
+        <line class="mini-arrow" x1="488" y1="218" x2="502" y2="218" marker-end="url(#pattern-arrow)"/>
+        <line class="mini-arrow" x1="554" y1="218" x2="562" y2="218" marker-end="url(#pattern-arrow)"/>
+        <line class="mini-arrow" x1="596" y1="218" x2="604" y2="218" marker-end="url(#pattern-arrow)"/>
+        <line class="mini-arrow" x1="656" y1="218" x2="664" y2="218" marker-end="url(#pattern-arrow)"/>
+        <line class="mini-arrow" x1="698" y1="218" x2="706" y2="218" marker-end="url(#pattern-arrow)"/>
+        <line class="mini-arrow" x1="758" y1="218" x2="772" y2="218" marker-end="url(#pattern-arrow)"/>
+        <text class="flow-label" x="610" y="290">◆ gate · validate · score · route</text>
+
+        <!-- PATTERN 3: Routing -->
+        <rect class="pattern-cell" x="820" y="30" width="380" height="300" rx="12"/>
+        <text class="pattern-title" x="1010" y="60">Routing</text>
+        <text class="pattern-sub" x="1010" y="80">Classifier + workflow spécialisé</text>
+        <rect class="mini-box" x="840" y="200" width="42" height="35" rx="4"/>
+        <text class="mini-label" x="861" y="217" font-size="9">IN</text>
+        <polygon class="gate-diamond" points="925,188 955,218 925,248 895,218"/>
+        <text class="mini-label" x="925" y="218" font-size="10" fill="#ffffff" font-weight="500">R</text>
+        <rect class="mini-box-accent" x="1000" y="135" width="60" height="32" rx="4"/>
+        <text class="mini-label" x="1030" y="151" font-size="9">L-A</text>
+        <rect class="mini-box-accent" x="1000" y="200" width="60" height="32" rx="4"/>
+        <text class="mini-label" x="1030" y="216" font-size="9">L-B</text>
+        <rect class="mini-box-accent" x="1000" y="265" width="60" height="32" rx="4"/>
+        <text class="mini-label" x="1030" y="281" font-size="9">L-C</text>
+        <line class="mini-arrow" x1="950" y1="208" x2="998" y2="155" marker-end="url(#pattern-arrow)"/>
+        <line class="mini-arrow" x1="955" y1="218" x2="998" y2="216" marker-end="url(#pattern-arrow)"/>
+        <line class="mini-arrow" x1="950" y1="228" x2="998" y2="280" marker-end="url(#pattern-arrow)"/>
+        <rect class="mini-box" x="1110" y="200" width="42" height="35" rx="4"/>
+        <text class="mini-label" x="1131" y="217" font-size="9">OUT</text>
+        <line class="mini-arrow" x1="1060" y1="153" x2="1108" y2="212" marker-end="url(#pattern-arrow)"/>
+        <line class="mini-arrow" x1="1060" y1="216" x2="1108" y2="217" marker-end="url(#pattern-arrow)"/>
+        <line class="mini-arrow" x1="1060" y1="282" x2="1108" y2="224" marker-end="url(#pattern-arrow)"/>
+        <line class="mini-arrow" x1="882" y1="217" x2="896" y2="218" marker-end="url(#pattern-arrow)"/>
+        <text class="flow-label" x="1010" y="310">un chemin actif à la fois</text>
+
+        <!-- PATTERN 4: Parallelization -->
+        <rect class="pattern-cell" x="20" y="350" width="380" height="300" rx="12"/>
+        <text class="pattern-title" x="210" y="380">Parallelization</text>
+        <text class="pattern-sub" x="210" y="400">Sectioning · Voting</text>
+        <rect class="mini-box" x="40" y="502" width="42" height="35" rx="4"/>
+        <text class="mini-label" x="61" y="519" font-size="9">IN</text>
+        <polygon class="gate-diamond" points="118,505 140,520 118,535 96,520"/>
+        <rect class="mini-box-accent" x="165" y="450" width="60" height="32" rx="4"/>
+        <text class="mini-label" x="195" y="466" font-size="9">L₁</text>
+        <rect class="mini-box-accent" x="165" y="505" width="60" height="32" rx="4"/>
+        <text class="mini-label" x="195" y="521" font-size="9">L₂</text>
+        <rect class="mini-box-accent" x="165" y="560" width="60" height="32" rx="4"/>
+        <text class="mini-label" x="195" y="576" font-size="9">L₃</text>
+        <polygon class="gate-diamond" points="278,505 300,520 278,535 256,520"/>
+        <rect class="mini-box" x="325" y="502" width="42" height="35" rx="4"/>
+        <text class="mini-label" x="346" y="519" font-size="9">OUT</text>
+        <line class="mini-arrow" x1="82" y1="519" x2="95" y2="520" marker-end="url(#pattern-arrow)"/>
+        <line class="mini-arrow" x1="136" y1="515" x2="163" y2="466" marker-end="url(#pattern-arrow)"/>
+        <line class="mini-arrow" x1="140" y1="520" x2="163" y2="521" marker-end="url(#pattern-arrow)"/>
+        <line class="mini-arrow" x1="136" y1="528" x2="163" y2="574" marker-end="url(#pattern-arrow)"/>
+        <line class="mini-arrow" x1="225" y1="466" x2="258" y2="515" marker-end="url(#pattern-arrow)"/>
+        <line class="mini-arrow" x1="225" y1="521" x2="255" y2="520" marker-end="url(#pattern-arrow)"/>
+        <line class="mini-arrow" x1="225" y1="574" x2="258" y2="528" marker-end="url(#pattern-arrow)"/>
+        <line class="mini-arrow" x1="300" y1="520" x2="323" y2="519" marker-end="url(#pattern-arrow)"/>
+        <text class="flow-label" x="210" y="625">fan-out · fan-in</text>
+
+        <!-- PATTERN 5: Orchestrator-Workers -->
+        <rect class="pattern-cell" x="420" y="350" width="380" height="300" rx="12"/>
+        <text class="pattern-title" x="610" y="380">Orchestrator-Workers</text>
+        <text class="pattern-sub" x="610" y="400">Délégation dynamique</text>
+        <rect class="mini-box-accent" x="570" y="430" width="80" height="45" rx="5"/>
+        <text class="mini-label" x="610" y="453" font-size="10">Orchestrator</text>
+        <rect class="mini-box" x="440" y="530" width="50" height="30" rx="4"/>
+        <text class="mini-label" x="465" y="545" font-size="9">W₁</text>
+        <rect class="mini-box" x="500" y="530" width="50" height="30" rx="4"/>
+        <text class="mini-label" x="525" y="545" font-size="9">W₂</text>
+        <rect class="mini-box" x="560" y="530" width="50" height="30" rx="4"/>
+        <text class="mini-label" x="585" y="545" font-size="9">W₃</text>
+        <rect class="mini-box" x="620" y="530" width="50" height="30" rx="4"/>
+        <text class="mini-label" x="645" y="545" font-size="9">W₄</text>
+        <text class="mini-label" x="690" y="546" font-size="13">…</text>
+        <rect class="mini-box" x="710" y="530" width="50" height="30" rx="4"/>
+        <text class="mini-label" x="735" y="545" font-size="9">Wₙ</text>
+        <line class="mini-arrow" x1="590" y1="475" x2="465" y2="530"/>
+        <line class="mini-arrow" x1="600" y1="475" x2="525" y2="530"/>
+        <line class="mini-arrow" x1="615" y1="475" x2="585" y2="530"/>
+        <line class="mini-arrow" x1="625" y1="475" x2="645" y2="530"/>
+        <line class="mini-arrow" x1="635" y1="475" x2="735" y2="530"/>
+        <text class="flow-label" x="610" y="600">n workers décidés à l'exécution</text>
+
+        <!-- PATTERN 6: Evaluator-Optimizer -->
+        <rect class="pattern-cell" x="820" y="350" width="380" height="300" rx="12"/>
+        <text class="pattern-title" x="1010" y="380">Evaluator-Optimizer</text>
+        <text class="pattern-sub" x="1010" y="400">Boucle de raffinement</text>
+        <rect class="mini-box" x="840" y="502" width="42" height="35" rx="4"/>
+        <text class="mini-label" x="861" y="519" font-size="9">IN</text>
+        <rect class="mini-box-accent" x="910" y="490" width="85" height="55" rx="5"/>
+        <text class="mini-label" x="952" y="510" font-size="10">Generator</text>
+        <text class="mini-label" x="952" y="527" font-size="8" fill="#8a8e99">(LLM)</text>
+        <rect class="mini-box-accent" x="1050" y="490" width="85" height="55" rx="5"/>
+        <text class="mini-label" x="1092" y="510" font-size="10">Evaluator</text>
+        <text class="mini-label" x="1092" y="527" font-size="8" fill="#8a8e99">(LLM)</text>
+        <rect class="mini-box" x="1155" y="502" width="42" height="35" rx="4"/>
+        <text class="mini-label" x="1176" y="519" font-size="9">OUT</text>
+        <line class="mini-arrow" x1="882" y1="519" x2="908" y2="519" marker-end="url(#pattern-arrow)"/>
+        <line class="mini-arrow" x1="995" y1="510" x2="1048" y2="510" marker-end="url(#pattern-arrow)"/>
+        <text class="pattern-sub" x="1022" y="500" fill="#8a8e99">candidate</text>
+        <path class="mini-arrow-emph" d="M 1050 540 Q 1022 585 995 540" marker-end="url(#pattern-arrow)"/>
+        <text class="pattern-sub" x="1022" y="595" fill="#c34e3a">feedback</text>
+        <line class="mini-arrow" x1="1135" y1="519" x2="1153" y2="519" marker-end="url(#pattern-arrow)"/>
+        <text class="flow-label" x="1010" y="625">↻ jusqu'au critère de qualité</text>
+      </svg>`,
+      legend: [
+        { code: "Augmented LLM", label: "Unité de base · LLM + mémoire + retrieval + outils" },
+        { code: "Prompt Chaining", label: "Décomposition en étapes avec gates de validation" },
+        { code: "Routing", label: "Classifier qui dispatch vers un pipeline spécialisé" },
+        { code: "Parallelization", label: "Fan-out + fan-in · sectioning ou voting ensemble" },
+        { code: "Orchestrator-W.", label: "Orchestrateur qui délègue dynamiquement à N workers" },
+        { code: "Evaluator-Opt.", label: "Generator + Evaluator en boucle de raffinement" }
+      ],
+      caption: "Source primaire · Erik Schluntz &amp; Barry Zhang, <em>Building Effective Agents</em>, Anthropic Engineering (décembre 2024). Principe transversal&nbsp;: <em>commencer simple, ajouter de la complexité seulement quand elle est démontrée nécessaire</em>.",
+      link: "https://www.anthropic.com/research/building-effective-agents",
+      linkLabel: "anthropic · building effective agents"
+    } },
+
+  // ═════════════════ 05 — PROTOCOLES ═════════════════
+  { title: 'Multi-agent & protocoles', short: 'Protocoles', color: '#4B9466',
+    question: "Comment des agents hétérogènes se parlent-ils, découvrent leurs outils, sans se coupler à un SDK propriétaire ?",
+    narrative: "Trois protocoles dessinent l'interopérabilité. <strong>MCP</strong> (Anthropic, nov. 2024 → Linux Foundation AAIF)&nbsp;: agent ↔ tools. <strong>A2A</strong> (Google, avr. 2025 → Linux Foundation)&nbsp;: agent ↔ agent, via <em>Agent Card</em> publié à <code>/.well-known/agent-card.json</code>. <strong>AG-UI</strong>&nbsp;: agent ↔ frontend. 97&nbsp;M+ téléchargements SDK MCP mensuels, 100+ supporters A2A.",
+    concepts: ['MCP', 'A2A', 'AG-UI', 'Agent Card', 'Handoffs', 'Sub-agents'],
+    roles: ['Integrations Engineer', 'Platform Architect', 'Protocol Designer'],
+    risk: "Réinventer MCP en propriétaire. Chaque SDK qui fige son propre protocole <strong>enferme ses outils dans sa chapelle</strong>. La gouvernance neutre (Linux Foundation AAIF, déc. 2025) n'existe pas pour rien.",
+    schema: {
+      buttonLabel: "MCP · A2A · AG-UI",
+      title: "Placement des trois protocoles dans la stack agentique",
+      subtitle: "Où s'insèrent <em>MCP</em> (agent↔outils), <em>A2A</em> (agent↔agent) et <em>AG-UI</em> (agent↔frontend) dans l'architecture canonique. Les trois sont désormais gouvernés par la Linux Foundation AAIF.",
+      svg: `<svg viewBox="0 0 1100 620" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placement MCP A2A AG-UI">
+        <defs>
+          <marker id="proto-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 1 L 9 5 L 0 9 z"/>
+          </marker>
+          <marker id="proto-arrow-s" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 10 1 L 1 5 L 10 9 z"/>
+          </marker>
+        </defs>
+
+        <!-- Frontend -->
+        <rect class="cmp-box" x="420" y="40" width="260" height="75" rx="10"/>
+        <rect class="cmp-icon" x="535" y="56" width="30" height="22" rx="2"/>
+        <line class="cmp-icon" x1="540" y1="63" x2="560" y2="63"/>
+        <line class="cmp-icon" x1="540" y1="68" x2="555" y2="68"/>
+        <line class="cmp-icon" x1="540" y1="73" x2="550" y2="73"/>
+        <text class="cmp-label" x="550" y="102">User · Frontend</text>
+
+        <!-- Agent -->
+        <rect class="cmp-box" x="385" y="255" width="330" height="160" rx="12"/>
+        <rect class="cmp-icon" x="535" y="276" width="30" height="22" rx="3"/>
+        <circle class="cmp-icon-fill" cx="543" cy="286" r="1.8"/>
+        <circle class="cmp-icon-fill" cx="557" cy="286" r="1.8"/>
+        <line class="cmp-icon" x1="550" y1="276" x2="550" y2="271"/>
+        <circle class="cmp-icon-fill" cx="550" cy="269" r="1.3"/>
+        <text class="cmp-emph" x="550" y="326">Agent</text>
+        <text class="cmp-sub" x="550" y="350">LLM + harness + loop</text>
+        <text class="cmp-sub" x="550" y="370" font-size="10" fill="#8a8e99">MCP client · A2A client · AG-UI emitter</text>
+        <g class="phase-pill">
+          <rect x="470" y="385" width="160" height="22" rx="11"/>
+          <text x="550" y="396">orchestrateur</text>
+        </g>
+
+        <!-- Tools cluster (bottom-left) -->
+        <rect class="cmp-box" x="80" y="490" width="360" height="105" rx="10"/>
+        <text class="cmp-label" x="260" y="515">MCP Servers · Tools · Resources</text>
+        <rect class="cmp-box" x="100" y="535" width="95" height="32" rx="16"/>
+        <text class="mini-label" x="147" y="555">web_search</text>
+        <rect class="cmp-box" x="205" y="535" width="85" height="32" rx="16"/>
+        <text class="mini-label" x="247" y="555">file_ops</text>
+        <rect class="cmp-box" x="300" y="535" width="120" height="32" rx="16"/>
+        <text class="mini-label" x="360" y="555">confluence_mcp</text>
+
+        <!-- A2A Peers cluster (bottom-right) -->
+        <rect class="cmp-box" x="660" y="490" width="360" height="105" rx="10"/>
+        <text class="cmp-label" x="840" y="515">A2A Peers · Agent Cards</text>
+        <rect class="cmp-box" x="680" y="535" width="105" height="32" rx="5"/>
+        <text class="mini-label" x="732" y="555">Billing Agent</text>
+        <rect class="cmp-box" x="795" y="535" width="100" height="32" rx="5"/>
+        <text class="mini-label" x="845" y="555">Legal Agent</text>
+        <rect class="cmp-box" x="905" y="535" width="95" height="32" rx="5"/>
+        <text class="mini-label" x="952" y="555">CRM Agent</text>
+
+        <!-- AG-UI (Frontend ↔ Agent) -->
+        <line class="flow-arrow" x1="550" y1="117" x2="550" y2="252" marker-start="url(#proto-arrow-s)" marker-end="url(#proto-arrow)"/>
+        <g class="phase-pill">
+          <rect x="490" y="165" width="120" height="30" rx="15"/>
+          <text x="550" y="180" font-size="13">AG-UI</text>
+        </g>
+        <text class="flow-label" x="550" y="218" font-size="9.5">SSE · 16+ event types</text>
+
+        <!-- MCP (Agent ↔ Tools, diagonal) -->
+        <line class="flow-arrow" x1="430" y1="418" x2="300" y2="487" marker-start="url(#proto-arrow-s)" marker-end="url(#proto-arrow)"/>
+        <g class="phase-pill">
+          <rect x="302" y="438" width="100" height="30" rx="15"/>
+          <text x="352" y="453" font-size="13">MCP</text>
+        </g>
+        <text class="flow-label" x="352" y="480" font-size="9">JSON-RPC · 97M+ DL/mo</text>
+
+        <!-- A2A (Agent ↔ Peers, diagonal) -->
+        <line class="flow-arrow" x1="670" y1="418" x2="800" y2="487" marker-start="url(#proto-arrow-s)" marker-end="url(#proto-arrow)"/>
+        <g class="phase-pill">
+          <rect x="697" y="438" width="100" height="30" rx="15"/>
+          <text x="747" y="453" font-size="13">A2A</text>
+        </g>
+        <text class="flow-label" x="747" y="480" font-size="9">stateful · Agent Card</text>
+      </svg>`,
+      legend: [
+        { code: "MCP", label: "Model Context Protocol · agent ↔ outils · JSON-RPC · standard de fait" },
+        { code: "A2A", label: "Agent-to-Agent · agent ↔ agent · stateful · Agent Card discovery" },
+        { code: "AG-UI", label: "Agent-User Interaction · agent ↔ frontend · SSE streaming" }
+      ],
+      caption: "Sources · <em>modelcontextprotocol.io</em> (Anthropic, nov. 2024), <em>a2a-protocol.org</em> (Google → Linux Foundation, 2025), <em>ag-ui.com</em> (CopilotKit). Les trois rejoignent l'Agentic AI Foundation (AAIF) en décembre 2025.",
+      link: "https://modelcontextprotocol.io",
+      linkLabel: "modelcontextprotocol.io"
+    } },
+
+  // ═════════════════ 06 — GUARDRAILS ═════════════════
+  { title: 'Guardrails, HITL & sécurité', short: 'Guardrails', color: '#3E8A8F',
+    question: "À quel moment bloquer, demander confirmation, ou laisser passer — et <em>qui porte le risque</em> d'une action autonome qui tourne mal ?",
+    narrative: "OWASP Top 10 for Agentic Applications (déc. 2025) cartographie 10 risques&nbsp;: <em>Agent Goal Hijack</em>, <em>Tool Misuse</em>, <em>Identity &amp; Privilege Abuse</em>, <em>Rogue Agents</em>. Principe-clé&nbsp;: <strong>least agency</strong> — ne jamais donner plus d'autonomie que le problème ne le justifie. Sandboxing (AgentCore Runtime, Claude Managed Agents, OpenAI Sandbox), <code>permission_mode</code>, <code>interrupt()</code>, approval flows.",
+    concepts: ['Least agency', 'HITL interrupt()', 'Prompt injection', 'Tool poisoning', 'Sandboxing', 'OWASP ASI 2026'],
+    roles: ['Security Engineer', 'AI Safety Lead', 'RSSI', 'Red Team'],
+    risk: "48&nbsp;% des pros cyber placent l'agentique en <strong>top vecteur d'attaque 2026</strong>, mais seules 34&nbsp;% des entreprises ont des contrôles spécifiques. Un agent admin sans HITL&nbsp;+ une injection indirecte&nbsp;= <em>l'incident post-mortem télévisé</em>.",
+    schema: {
+      buttonLabel: "OWASP ASI 2026",
+      title: "OWASP Top 10 for Agentic Applications · <em>At a Glance</em>",
+      subtitle: "Les dix risques cartographiés sur l'architecture canonique d'un système agentique — <em>Inputs / Processing / Outputs</em>. Publié par l'OWASP GenAI Security Project en décembre 2025.",
+      svg: `<svg viewBox="0 0 1200 640" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="OWASP Top 10 for Agentic Applications 2026 diagram">
+        <defs>
+          <marker id="owasp-arrow-head" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 1 L 9 5 L 0 9 z"/>
+          </marker>
+        </defs>
+
+        <!-- ZONE CONTAINERS -->
+        <rect class="z-border" x="30" y="60" width="280" height="540" rx="16"/>
+        <rect class="z-border" x="340" y="60" width="540" height="540" rx="16"/>
+        <rect class="z-border" x="910" y="60" width="260" height="540" rx="16"/>
+
+        <!-- ZONE HEADERS -->
+        <g class="z-header">
+          <rect x="128" y="44" width="84" height="32" rx="16"/>
+          <text x="170" y="60">Inputs</text>
+        </g>
+        <g class="z-header">
+          <rect x="482" y="44" width="256" height="32" rx="16"/>
+          <text x="610" y="60">Integration / Processing</text>
+        </g>
+        <g class="z-header">
+          <rect x="998" y="44" width="84" height="32" rx="16"/>
+          <text x="1040" y="60">Outputs</text>
+        </g>
+
+        <!-- INPUT COMPONENTS -->
+        <rect class="cmp-box" x="80" y="100" width="180" height="80" rx="8"/>
+        <rect class="cmp-icon" x="156" y="118" width="28" height="18" rx="3"/>
+        <line class="cmp-icon" x1="162" y1="124" x2="178" y2="124"/>
+        <line class="cmp-icon" x1="162" y1="130" x2="174" y2="130"/>
+        <text class="cmp-label" x="170" y="164">User Prompts</text>
+
+        <rect class="cmp-box" x="80" y="220" width="180" height="80" rx="8"/>
+        <circle class="cmp-icon" cx="170" cy="248" r="10"/>
+        <ellipse class="cmp-icon" cx="170" cy="248" rx="4" ry="10"/>
+        <line class="cmp-icon" x1="160" y1="248" x2="180" y2="248"/>
+        <text class="cmp-label" x="170" y="284">API</text>
+
+        <rect class="cmp-box" x="80" y="340" width="180" height="80" rx="8"/>
+        <rect class="cmp-icon" x="160" y="360" width="20" height="16" rx="2"/>
+        <circle class="cmp-icon-fill" cx="166" cy="367" r="1.5"/>
+        <circle class="cmp-icon-fill" cx="174" cy="367" r="1.5"/>
+        <line class="cmp-icon" x1="170" y1="360" x2="170" y2="355"/>
+        <circle class="cmp-icon-fill" cx="170" cy="353" r="1.3"/>
+        <text class="cmp-label" x="170" y="404">External Agents</text>
+
+        <!-- PROCESSING COMPONENTS -->
+        <rect class="cmp-box" x="380" y="100" width="160" height="80" rx="8"/>
+        <rect class="cmp-icon" x="452" y="117" width="16" height="22" rx="1.5"/>
+        <line class="cmp-icon" x1="456" y1="124" x2="464" y2="124"/>
+        <line class="cmp-icon" x1="456" y1="129" x2="464" y2="129"/>
+        <line class="cmp-icon" x1="456" y1="134" x2="461" y2="134"/>
+        <text class="cmp-label" x="460" y="164">Policy &amp; Governance</text>
+
+        <rect class="cmp-box" x="580" y="100" width="160" height="80" rx="8"/>
+        <circle class="cmp-icon" cx="660" cy="122" r="5"/>
+        <path class="cmp-icon" d="M 650 140 Q 660 126 670 140"/>
+        <text class="cmp-label" x="660" y="164">Human-in-the-loop</text>
+
+        <rect class="cmp-box" x="380" y="240" width="160" height="110" rx="8"/>
+        <rect class="cmp-icon" x="448" y="270" width="24" height="20" rx="2.5"/>
+        <circle class="cmp-icon-fill" cx="455" cy="280" r="1.8"/>
+        <circle class="cmp-icon-fill" cx="465" cy="280" r="1.8"/>
+        <line class="cmp-icon" x1="460" y1="270" x2="460" y2="264"/>
+        <circle class="cmp-icon-fill" cx="460" cy="262" r="1.5"/>
+        <text class="cmp-label" x="460" y="328">Agent</text>
+
+        <rect class="cmp-box cmp-box-rogue" x="580" y="240" width="160" height="110" rx="8"/>
+        <rect class="cmp-icon" x="648" y="270" width="24" height="20" rx="2.5"/>
+        <circle class="cmp-icon-fill" cx="655" cy="280" r="1.8"/>
+        <circle class="cmp-icon-fill" cx="665" cy="280" r="1.8"/>
+        <line class="cmp-icon" x1="660" y1="270" x2="660" y2="264"/>
+        <circle class="cmp-icon-fill" cx="660" cy="262" r="1.5"/>
+        <text class="cmp-label" x="660" y="328">Agent</text>
+
+        <rect class="cmp-box" x="380" y="410" width="160" height="80" rx="8"/>
+        <ellipse class="cmp-icon" cx="460" cy="430" rx="14" ry="3"/>
+        <line class="cmp-icon" x1="446" y1="430" x2="446" y2="446"/>
+        <line class="cmp-icon" x1="474" y1="430" x2="474" y2="446"/>
+        <path class="cmp-icon" d="M 446 446 Q 460 450 474 446"/>
+        <ellipse class="cmp-icon" cx="460" cy="438" rx="14" ry="3"/>
+        <text class="cmp-label" x="460" y="475">Connected data / RAG</text>
+
+        <rect class="cmp-box" x="580" y="410" width="160" height="80" rx="8"/>
+        <ellipse class="cmp-icon" cx="660" cy="432" rx="14" ry="3"/>
+        <path class="cmp-icon" d="M 646 432 L 646 448 Q 660 452 674 448 L 674 432"/>
+        <text class="cmp-label" x="660" y="475">Memory</text>
+
+        <!-- OUTPUT COMPONENTS -->
+        <rect class="cmp-box" x="960" y="100" width="180" height="80" rx="8"/>
+        <circle class="cmp-icon" cx="1050" cy="128" r="8"/>
+        <circle class="cmp-icon" cx="1050" cy="128" r="3"/>
+        <line class="cmp-icon" x1="1050" y1="114" x2="1050" y2="118"/>
+        <line class="cmp-icon" x1="1050" y1="138" x2="1050" y2="142"/>
+        <line class="cmp-icon" x1="1036" y1="128" x2="1040" y2="128"/>
+        <line class="cmp-icon" x1="1060" y1="128" x2="1064" y2="128"/>
+        <text class="cmp-label" x="1050" y="164">Tools</text>
+
+        <rect class="cmp-box" x="960" y="240" width="180" height="80" rx="8"/>
+        <rect class="cmp-icon" x="1038" y="256" width="24" height="24" rx="2"/>
+        <line class="cmp-icon" x1="1042" y1="262" x2="1058" y2="262"/>
+        <line class="cmp-icon" x1="1042" y1="268" x2="1054" y2="268"/>
+        <line class="cmp-icon" x1="1042" y1="274" x2="1052" y2="274"/>
+        <text class="cmp-label" x="1050" y="304">APIs / Resources</text>
+
+        <rect class="cmp-box" x="960" y="380" width="180" height="80" rx="8"/>
+        <rect class="cmp-icon" x="1040" y="400" width="20" height="16" rx="2"/>
+        <circle class="cmp-icon-fill" cx="1046" cy="407" r="1.5"/>
+        <circle class="cmp-icon-fill" cx="1054" cy="407" r="1.5"/>
+        <line class="cmp-icon" x1="1050" y1="400" x2="1050" y2="395"/>
+        <circle class="cmp-icon-fill" cx="1050" cy="393" r="1.3"/>
+        <text class="cmp-label" x="1050" y="444">External Agents</text>
+
+        <!-- FLOW ARROWS: Inputs → Processing -->
+        <line class="flow-arrow" x1="265" y1="140" x2="375" y2="140" marker-end="url(#owasp-arrow-head)"/>
+        <line class="flow-arrow" x1="265" y1="260" x2="375" y2="260" marker-end="url(#owasp-arrow-head)"/>
+        <line class="flow-arrow" x1="265" y1="380" x2="375" y2="380" marker-end="url(#owasp-arrow-head)"/>
+
+        <!-- FLOW ARROWS: Processing → Outputs -->
+        <line class="flow-arrow" x1="745" y1="140" x2="955" y2="140" marker-end="url(#owasp-arrow-head)"/>
+        <line class="flow-arrow" x1="745" y1="295" x2="955" y2="280" marker-end="url(#owasp-arrow-head)"/>
+        <line class="flow-arrow" x1="745" y1="450" x2="955" y2="420" marker-end="url(#owasp-arrow-head)"/>
+
+        <!-- INTER-AGENT BIDIRECTIONAL arrows -->
+        <line class="flow-arrow" x1="545" y1="288" x2="575" y2="288" marker-end="url(#owasp-arrow-head)"/>
+        <line class="flow-arrow" x1="575" y1="302" x2="545" y2="302" marker-end="url(#owasp-arrow-head)"/>
+
+        <!-- Vertical arrows (governance ↔ agents, agents ↔ data) -->
+        <line class="flow-arrow" x1="460" y1="184" x2="460" y2="236" marker-end="url(#owasp-arrow-head)"/>
+        <line class="flow-arrow" x1="660" y1="184" x2="660" y2="236" marker-end="url(#owasp-arrow-head)"/>
+        <line class="flow-arrow" x1="460" y1="354" x2="460" y2="406" marker-end="url(#owasp-arrow-head)"/>
+        <line class="flow-arrow" x1="660" y1="354" x2="660" y2="406" marker-end="url(#owasp-arrow-head)"/>
+
+        <!-- ASI RISK PILLS -->
+        <g class="asi-pill"><rect x="294" y="118" width="52" height="22" rx="11"/><text x="320" y="129">ASI01</text></g>
+        <g class="asi-pill"><rect x="294" y="154" width="52" height="22" rx="11"/><text x="320" y="165">ASI03</text></g>
+        <g class="asi-pill"><rect x="294" y="190" width="52" height="22" rx="11"/><text x="320" y="201">ASI09</text></g>
+        <g class="asi-pill"><rect x="712" y="228" width="52" height="22" rx="11"/><text x="738" y="239">ASI10</text></g>
+        <g class="asi-pill"><rect x="534" y="362" width="52" height="22" rx="11"/><text x="560" y="373">ASI07</text></g>
+        <g class="asi-pill"><rect x="1024" y="184" width="52" height="22" rx="11"/><text x="1050" y="195">ASI02</text></g>
+        <g class="asi-pill"><rect x="534" y="512" width="52" height="22" rx="11"/><text x="560" y="523">ASI06</text></g>
+        <g class="asi-pill"><rect x="454" y="555" width="52" height="22" rx="11"/><text x="480" y="566">ASI04</text></g>
+        <g class="asi-pill"><rect x="534" y="555" width="52" height="22" rx="11"/><text x="560" y="566">ASI05</text></g>
+        <g class="asi-pill"><rect x="614" y="555" width="52" height="22" rx="11"/><text x="640" y="566">ASI08</text></g>
+      </svg>`,
+      legend: [
+        { code: "ASI01", label: "Agent Goal Hijack" },
+        { code: "ASI02", label: "Tool Misuse &amp; Exploitation" },
+        { code: "ASI03", label: "Identity &amp; Privilege Abuse" },
+        { code: "ASI04", label: "Agentic Supply Chain Vulnerabilities" },
+        { code: "ASI05", label: "Unexpected Code Execution (RCE)" },
+        { code: "ASI06", label: "Memory &amp; Context Poisoning" },
+        { code: "ASI07", label: "Insecure Inter-Agent Communication" },
+        { code: "ASI08", label: "Cascading Failures" },
+        { code: "ASI09", label: "Human-Agent Trust Exploitation" },
+        { code: "ASI10", label: "Rogue Agents" }
+      ],
+      caption: "Source primaire · OWASP GenAI Security Project, décembre 2025. Rédigé par 100+ experts industrie ; principe directeur du référentiel&nbsp;: <em>least agency</em>.",
+      link: "https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/",
+      linkLabel: "genai.owasp.org"
+    } },
+
+  // ═════════════════ 07 — OBSERVABILITÉ ═════════════════
+  { title: 'Observabilité & évaluation', short: 'Observability', color: '#3F75A5',
+    question: "L'agent ne <em>crashe</em> pas, il <em>dérive</em>. Comment voir sa trajectoire, ses coûts, sa qualité — en temps réel, en prod ?",
+    narrative: "<strong>OpenTelemetry GenAI Semantic Conventions</strong> unifie les traces. Trajectory inspection, <em>tool-use accuracy</em>, task completion rate, <em>LLM-as-a-Judge</em>. Langfuse, Braintrust, Arize, LangSmith, Dynatrace, AgentCore Observability convergent sur le même standard. 89&nbsp;% des orgs avec agents en prod ont déjà une forme d'observabilité.",
+    concepts: ['OTel GenAI', 'Trajectory eval', 'LLM-as-a-Judge', 'Task completion', 'Drift detection', 'Cost attribution'],
+    roles: ['Observability Engineer', 'Evaluation Engineer', 'SRE'],
+    risk: "POC sans observabilité = <strong>dette technique massive</strong> au passage en prod. On ne corrige pas ce qu'on ne voit pas — on invente des hypothèses. L'<em>APM classique est aveugle</em> aux glissements comportementaux.",
+    schema: {
+      buttonLabel: "Trace OTel GenAI",
+      title: "Un tour d'agent vu par OpenTelemetry · <em>trace waterfall</em>",
+      subtitle: "Anatomie d'un single turn instrumenté selon les <em>GenAI Semantic Conventions</em>&nbsp;: spans imbriqués, attributs <code>gen_ai.*</code> normalisés, propagation context→tool→HTTP.",
+      svg: `<svg viewBox="0 0 1200 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Trace OpenTelemetry GenAI d'un tour d'agent">
+        <text class="pattern-sub" x="20" y="28">SPAN HIERARCHY</text>
+        <text class="pattern-sub" x="600" y="28">DURATION  →</text>
+        <text class="pattern-sub" x="1020" y="28">gen_ai.* ATTRIBUTES</text>
+        <line x1="20" y1="42" x2="1180" y2="42" class="trace-axis"/>
+
+        <!-- Row 1: agent_turn (root) -->
+        <text class="trace-label" x="20" y="70" font-weight="500">agent_turn</text>
+        <rect class="trace-bar-root" x="200" y="56" width="800" height="30" rx="3"/>
+        <text class="trace-label" x="210" y="71" fill="#ffffff" font-size="10" font-weight="500">2.80s · root</text>
+        <text class="trace-attr" x="1020" y="64">gen_ai.agent.name=deep_research</text>
+        <text class="trace-attr" x="1020" y="78">gen_ai.operation.name=invoke_agent</text>
+
+        <!-- Row 2: chat (LLM call #1) -->
+        <text class="trace-label" x="35" y="115" font-size="10.5">↳ chat · LLM #1</text>
+        <rect class="trace-bar-llm" x="215" y="101" width="230" height="22" rx="3"/>
+        <text class="trace-label" x="225" y="114" fill="#ffffff" font-size="9.5">0.80s</text>
+        <text class="trace-attr" x="1020" y="108">gen_ai.system=anthropic</text>
+        <text class="trace-attr" x="1020" y="122">claude-sonnet-4-6 · in:1247 out:186</text>
+
+        <!-- Row 3: execute_tool -->
+        <text class="trace-label" x="35" y="160" font-size="10.5">↳ execute_tool · web_search</text>
+        <rect class="trace-bar-tool" x="460" y="146" width="370" height="22" rx="3"/>
+        <text class="trace-label" x="470" y="159" fill="#ffffff" font-size="9.5">1.30s</text>
+        <text class="trace-attr" x="1020" y="153">gen_ai.operation.name=execute_tool</text>
+        <text class="trace-attr" x="1020" y="167">gen_ai.tool.name=web_search</text>
+
+        <!-- Row 4: HTTP GET (child of tool) -->
+        <text class="trace-label" x="55" y="195" font-size="10" fill="#8a8e99">↳↳ http.get</text>
+        <rect class="trace-bar-http" x="475" y="183" width="300" height="18" rx="3"/>
+        <text class="trace-label" x="482" y="194" fill="#ffffff" font-size="9">1.05s</text>
+        <text class="trace-attr" x="1020" y="188">http.method=GET</text>
+        <text class="trace-attr" x="1020" y="202">http.response.status_code=200</text>
+
+        <!-- Row 5: chat (LLM call #2) -->
+        <text class="trace-label" x="35" y="235" font-size="10.5">↳ chat · LLM #2</text>
+        <rect class="trace-bar-llm" x="843" y="221" width="157" height="22" rx="3"/>
+        <text class="trace-label" x="850" y="234" fill="#ffffff" font-size="9.5">0.55s</text>
+        <text class="trace-attr" x="1020" y="228">gen_ai.system=anthropic</text>
+        <text class="trace-attr" x="1020" y="242">claude-sonnet-4-6 · in:1433 out:412</text>
+
+        <!-- Time axis -->
+        <line x1="200" y1="280" x2="1000" y2="280" stroke="#8a8e99" stroke-width="1"/>
+        <line x1="200" y1="278" x2="200" y2="286" stroke="#8a8e99"/>
+        <text class="trace-axis-label" x="200" y="300">0</text>
+        <line x1="343" y1="278" x2="343" y2="286" stroke="#8a8e99"/>
+        <text class="trace-axis-label" x="343" y="300">500ms</text>
+        <line x1="486" y1="278" x2="486" y2="286" stroke="#8a8e99"/>
+        <text class="trace-axis-label" x="486" y="300">1000ms</text>
+        <line x1="629" y1="278" x2="629" y2="286" stroke="#8a8e99"/>
+        <text class="trace-axis-label" x="629" y="300">1500ms</text>
+        <line x1="771" y1="278" x2="771" y2="286" stroke="#8a8e99"/>
+        <text class="trace-axis-label" x="771" y="300">2000ms</text>
+        <line x1="914" y1="278" x2="914" y2="286" stroke="#8a8e99"/>
+        <text class="trace-axis-label" x="914" y="300">2500ms</text>
+        <line x1="1000" y1="278" x2="1000" y2="286" stroke="#8a8e99"/>
+        <text class="trace-axis-label" x="1000" y="300">2800ms</text>
+      </svg>`,
+      legend: [
+        { code: "agent_turn", label: "Span racine · cycle complet d'un tour d'agent · 2,80&nbsp;s" },
+        { code: "chat", label: "Inférence LLM · gen_ai.system + model + tokens · deux appels ici" },
+        { code: "execute_tool", label: "Exécution d'outil · gen_ai.tool.name · ici web_search" },
+        { code: "http.*", label: "Span HTTP enfant d'un outil · propagation du context OTel" }
+      ],
+      caption: "Exemple de trace&nbsp;: 2,80&nbsp;s · 2 LLM calls · 1 tool call · 2680 / 598 tokens · ~$0,0234. Source primaire · <em>OpenTelemetry Semantic Conventions for GenAI Systems</em> (SIG, 2025). Supportées par Langfuse, Dynatrace, Datadog LLM Observability, Grafana Tempo.",
+      link: "https://opentelemetry.io/docs/specs/semconv/gen-ai/",
+      linkLabel: "opentelemetry · gen-ai"
+    } },
+
+  // ═════════════════ 08 — RUNTIME MANAGÉ ═════════════════
+  { title: 'Runtime managé & déploiement', short: 'Runtime', color: '#5461A0',
+    question: "Sessions, sandbox, scaling, isolation — qui opère ces services au quotidien, <em>vous ou le cloud</em> ?",
+    narrative: "La couche la plus récente. <strong>Claude Managed Agents</strong> (public beta, avr. 2026), <strong>OpenAI Agent Builder</strong>, <strong>Vertex AI Agent Engine</strong>, <strong>Azure AI Foundry Agent Service</strong> (GA mai 2025, 10&nbsp;000+ orgs), <strong>AWS Bedrock AgentCore</strong> (GA oct. 2025, 8 services composables). Consumption-based pricing, I/O wait souvent gratuit, sandbox managé, session isolation.",
+    concepts: ['Claude Managed Agents', 'AgentCore', 'Vertex Agent Engine', 'Agent Builder', 'Foundry Agent Service', 'Sandbox managé'],
+    roles: ['Platform Engineer', 'Cloud Architect', 'SRE', 'FinOps'],
+    risk: "Vendor lock-in managé sans portabilité. Le jour où les prix changent ou le vendeur dé-supporte, <strong>le coût de migration dépasse le gain initial</strong>. Code-first + protocoles ouverts (MCP, A2A) restent la meilleure assurance." },
+
+  // ═════════════════ 09 — GOUVERNANCE ═════════════════
+  { title: 'Gouvernance, FinOps & adoption', short: 'Gouvernance', color: '#7C5092',
+    question: "Qui paie, qui valide, qui arrête — et l'utilisateur final, <em>s'en sert-il vraiment</em> ?",
+    narrative: "Gartner&nbsp;: <strong>40&nbsp;% des projets d'IA agentique seront annulés d'ici 2027</strong>. Les cinq causes&nbsp;: valeur business floue, data pas prête, TCO qui explose, Responsible AI en afterthought, change management négligé. L'<em>AI Act</em> européen ajoute la couche réglementaire — obligations par niveau de risque, documentation technique, surveillance humaine.",
+    concepts: ['AI Canvas', 'FinOps by design', 'TCO', 'EU AI Act', 'Responsible AI', 'Change management'],
+    roles: ['CDO / CAIO', 'Sponsor', 'Product Manager', 'Change Manager', 'DPO'],
+    risk: "L'échec n'est pas technique — il est de <strong>valeur, de coût, de confiance</strong>. Un agent brillant dont personne ne se sert est juste une facture. Une gouvernance saine <em>sait tuer</em> un cas d'usage au bon moment." }
+];
+
+// ═════════════════ CONCEPT DEFINITIONS ═════════════════
+// Each key matches a label from LAYERS[*].concepts
+const CONCEPT_DEFS = {
+  // Layer 00
+  'Température': {
+    def: "Scalaire qui contracte ou aplatit la distribution softmax avant le tirage du prochain token. <code>T=0</code> ≈ argmax déterministe&nbsp;; <code>T&gt;0</code> = sampling pondéré. Au-delà de 0,7 la créativité grimpe et la reproductibilité s'effondre."
+  },
+  'Top-p sampling': {
+    def: "<em>Nucleus sampling</em>. Ne tire que parmi le plus petit sous-ensemble de tokens dont la probabilité cumulée atteint <code>p</code>. Typiquement <code>p=0,9</code>, souvent couplé à la température. Holtzman et al., 2019.",
+    link: "https://arxiv.org/abs/1904.09751",
+    linkLabel: "arXiv · Holtzman 2019"
+  },
+  'Softmax': {
+    def: "Fonction qui transforme les logits bruts du modèle en distribution de probabilité sommant à 1. Dernière étape avant le tirage du prochain token — le lieu précis où la stochasticité prend forme."
+  },
+  'Stochasticité': {
+    def: "Propriété fondamentale du sampling LLM à <code>T&gt;0</code>&nbsp;: mêmes inputs, outputs variables. L'agentique accumule cette variance à chaque tool call, chaque sous-agent, chaque boucle. Elle n'est pas un bug à corriger, mais une nature à gouverner."
+  },
+  'Seed &amp; reproductibilité': {
+    def: "Fixer un seed déterministe est un leurre&nbsp;: les opérations GPU non associatives, le batching dynamique et les versions de modèle introduisent des variations résiduelles. <strong>La reproductibilité exacte reste un Graal</strong> — on vise la reproductibilité statistique, pas bit-à-bit."
+  },
+
+  // Layer 01
+  'ReAct': {
+    def: "Paradigme <em>Reasoning + Acting</em> proposé par Yao et al. (ICLR 2023). L'agent alterne explicitement étapes de raisonnement (<code>Thought</code>) et d'action (<code>Act</code>) avec observation des résultats. Base conceptuelle de tous les harness actuels.",
+    link: "https://arxiv.org/abs/2210.03629",
+    linkLabel: "arXiv · Yao et al. 2023"
+  },
+  'Reason → Act → Observe': {
+    def: "La boucle canonique. Le LLM pense, propose un outil, le runtime exécute, le résultat est réinjecté, le LLM ré-observe — jusqu'à <code>stop_reason == \"end_turn\"</code>. Trois verbes&nbsp;; toute l'agentique."
+  },
+  'stop_reason': {
+    def: "Champ de l'API Anthropic indiquant pourquoi le modèle s'est arrêté&nbsp;: <code>end_turn</code>, <code>tool_use</code>, <code>max_tokens</code>, <code>stop_sequence</code>, <code>pause_turn</code>. La boucle agent pivote sur ce champ — c'est le commutateur qui décide de continuer ou d'arrêter."
+  },
+  'Harness': {
+    def: "Code qui orchestre la boucle agent&nbsp;: gestion des tools, compaction de contexte, hooks, permissions, retries. Terme popularisé par Anthropic (<em>Effective Harnesses for Long-Running Agents</em>, 2026). Le harness est ce qui reste quand on retire le modèle.",
+    link: "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents",
+    linkLabel: "Anthropic Engineering"
+  },
+  'Runner': {
+    def: "Équivalent OpenAI du harness. <code>Runner.run()</code> exécute la boucle d'un <code>Agent</code> jusqu'à complétion ou interruption, gérant tools, handoffs, sessions et guardrails.",
+    link: "https://openai.github.io/openai-agents-python/",
+    linkLabel: "OpenAI Agents SDK"
+  },
+  'Graph execution': {
+    def: "Approche LangGraph&nbsp;: l'agent est modélisé comme un <code>StateGraph</code> avec nœuds, arcs et checkpointing. Permet <code>interrupt()</code> pour HITL, <em>durable execution</em>, reprise après crash. Le choix pour les cas complexes à plusieurs sorties.",
+    link: "https://docs.langchain.com/oss/python/langgraph/overview",
+    linkLabel: "LangGraph docs"
+  },
+
+  // Layer 02
+  'Function calling': {
+    def: "Capacité du modèle à produire un appel structuré vers une fonction externe, décrite par un schéma JSON. Introduit par OpenAI en juin 2023, désormais universel&nbsp;: Anthropic <code>tool_use</code>, Gemini <code>functionCall</code>, Bedrock <code>Converse</code>."
+  },
+  'tool_use / tool_result': {
+    def: "Types de <em>content blocks</em> Anthropic. Le modèle émet un <code>tool_use</code> (nom + input JSON)&nbsp;; le harness exécute et répond avec un <code>tool_result</code> (output ou error). Le cycle se répète jusqu'à <code>end_turn</code>."
+  },
+  'JSON Schema': {
+    def: "Standard de description de la forme des inputs attendus par un outil. Le modèle s'en sert pour valider et générer des arguments structurés. Bien écrit, c'est la moitié du travail d'un bon tool&nbsp;; mal écrit, c'est la source de 80&nbsp;% des bugs silencieux."
+  },
+  'Web search': {
+    def: "Outil built-in qui donne au modèle un accès live au web. <strong>GA chez Anthropic depuis avril 2026</strong> (sans beta header), également disponible chez OpenAI et Google. Utilisation payante au nombre de requêtes — pas juste au token."
+  },
+  'Code execution': {
+    def: "Sandbox Python/JS permettant au modèle de calculer, transformer, visualiser sur des données. <strong>Gratuit chez Anthropic quand couplé à web_search/web_fetch</strong>. Le code tourne dans un environnement isolé, jetable entre les turns."
+  },
+  'Browser tool': {
+    def: "Outil de navigation web interactif — cliquer, remplir des formulaires, défiler. AgentCore Browser (AWS), Operator (OpenAI), Claude in Chrome. La couche où l'agent sort du texte et interagit avec le vrai web vivant."
+  },
+
+  // Layer 03
+  'Context window': {
+    def: "Taille maximale de l'historique + prompt + outputs que le modèle peut traiter en un tour. Jusqu'à 1&nbsp;M tokens chez Claude Sonnet/Opus 4.6+ (2025). Mais une fenêtre longue n'est pas synonyme d'attention parfaite&nbsp;: les études <em>lost in the middle</em> restent valides."
+  },
+  'Compaction': {
+    def: "Stratégie Anthropic pour résumer automatiquement l'historique quand il approche le budget. Préserve les infos clés, libère de l'espace pour la tâche en cours. Évite le cycle <em>context explosion → lag → facture</em>."
+  },
+  'Memory Bank': {
+    def: "Service managé Google (Vertex Agent Engine, <strong>GA déc. 2025</strong>) pour mémoire inter-sessions avec extraction automatique des faits persistants. L'équivalent opérationnel d'un Mem0 mais intégré au runtime Vertex.",
+    link: "https://cloud.google.com/vertex-ai/generative-ai/docs/agent-engine/memory-bank/overview",
+    linkLabel: "Vertex AI docs"
+  },
+  'Sessions': {
+    def: "Mémoire court terme d'une conversation. <code>SQLiteSession</code> (OpenAI Agents SDK), <code>Sessions</code> (Google ADK), threads (Azure Foundry). L'état qui survit le temps d'un échange, pas davantage."
+  },
+  'Mem0': {
+    def: "Framework open source de mémoire long terme pour agents&nbsp;: extraction, consolidation, retrieval. Adopté par la communauté comme standard de facto quand on ne veut pas se coupler à un cloud.",
+    link: "https://mem0.ai/",
+    linkLabel: "mem0.ai"
+  },
+  'RAG / Chunking': {
+    def: "Retrieval-Augmented Generation. Indexer les documents en chunks, les vectoriser, récupérer les plus pertinents au moment de la query, les injecter dans le prompt. Le chunking est le choix design le plus sous-estimé&nbsp;: 80&nbsp;% des échecs RAG viennent de là."
+  },
+
+  // Layer 04
+  'Augmented LLM': {
+    def: "Brique de base (Schluntz &amp; Zhang, 2024)&nbsp;: LLM + retrieval + tools + memory. Tous les patterns supérieurs composent celui-ci. Commencez toujours là — un Augmented LLM bien fait résout plus que 50&nbsp;% des cas d'usage.",
+    link: "https://www.anthropic.com/research/building-effective-agents",
+    linkLabel: "Building Effective Agents"
+  },
+  'Prompt chaining': {
+    def: "Décomposer une tâche en étapes séquentielles avec <em>gates</em> programmatiques entre elles. Exemple&nbsp;: extraire → valider → transformer → synthétiser. Prédictible, debuggable, peu coûteux."
+  },
+  'Routing': {
+    def: "Classifier l'input puis diriger vers le sous-workflow spécialisé. Parfait pour le support client multi-intent, la triage, le tiering. Un routeur fin bat un agent généraliste sur 80&nbsp;% des conversations."
+  },
+  'Parallelization': {
+    def: "Deux variantes. <em>Sectioning</em>&nbsp;: diviser le travail, un worker par sous-tâche. <em>Voting</em>&nbsp;: N agents en parallèle pour robustesse (ensemble/consensus). Gain de latence perçue + résilience."
+  },
+  'Orchestrator-workers': {
+    def: "Un orchestrateur planifie et délègue dynamiquement à des workers dont le nombre et la nature ne sont <strong>pas fixés à l'avance</strong>. Pattern des agents de coding Anthropic et du deep research.",
+    link: "https://www.anthropic.com/research/building-effective-agents",
+    linkLabel: "Building Effective Agents"
+  },
+  'Evaluator-optimizer': {
+    def: "Boucle itérative — un agent génère, un autre critique, le premier révise. Convergence jusqu'à un critère de qualité. Utile pour l'écriture longue, la traduction, le code de qualité production."
+  },
+
+  // Layer 05
+  'MCP': {
+    def: "<strong>Model Context Protocol</strong>. Standard JSON-RPC agent↔tools. Créé par Anthropic (nov. 2024), donné à la Linux Foundation AAIF (déc. 2025). <strong>97&nbsp;M+ téléchargements SDK mensuels</strong>, adopté par Anthropic, OpenAI, Google, Microsoft, AWS.",
+    link: "https://modelcontextprotocol.io",
+    linkLabel: "modelcontextprotocol.io"
+  },
+  'A2A': {
+    def: "<strong>Agent-to-Agent Protocol</strong>. Standard stateful pour communication agent↔agent. Créé par Google (avr. 2025), Linux Foundation (juin 2025). 100+ supporters enterprise. Cycle de vie de tâche explicite, respect de l'opacité interne.",
+    link: "https://a2a-protocol.org",
+    linkLabel: "a2a-protocol.org"
+  },
+  'AG-UI': {
+    def: "<strong>Agent-User Interaction Protocol</strong>. Standard événementiel pour streamer raisonnements, états, tool results vers les frontends. Supporté par AgentCore Runtime depuis mars 2026 (14 régions)."
+  },
+  'Agent Card': {
+    def: "Manifeste A2A publié à <code>/.well-known/agent-card.json</code>. Décrit capacités, endpoints, modalités, authentification. <strong>Base de la découverte inter-agents</strong> — l'équivalent du <code>robots.txt</code> pour les agents."
+  },
+  'Handoffs': {
+    def: "Pattern OpenAI où le contrôle passe d'un agent à un autre (via un tool-call spécial). Alternative aux sub-agents&nbsp;: <strong>un seul agent actif à la fois</strong>, stack-like. Conversation unique, contexte transmis."
+  },
+  'Sub-agents': {
+    def: "Pattern Anthropic via le <code>Task</code> tool. L'agent principal délègue à un sous-agent avec un <strong>contexte propre, isolé</strong>. Plus flexible que les handoffs, meilleur pour les tâches parallèles et l'économie de contexte."
+  },
+
+  // Layer 06
+  'Least agency': {
+    def: "Principe-clé OWASP ASI 2026. <strong>Ne jamais donner à un agent plus d'autonomie que la tâche ne l'exige</strong>. Restrictive-by-default sur tools, credentials, authority. Le moins qu'il puisse faire, le moins qu'il puisse casser.",
+    link: "https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/",
+    linkLabel: "OWASP ASI 2026"
+  },
+  'HITL interrupt()': {
+    def: "Point de pause explicite où l'agent demande validation humaine avant une action critique. <code>interrupt()</code> (LangGraph), <code>permission_mode</code> (Anthropic), approval flow (Google ADK). Obligatoire pour paiements, suppressions, déploiements prod."
+  },
+  'Prompt injection': {
+    def: "Attaque où un input contourne ou détourne les instructions système. Version <em>indirecte</em>&nbsp;: instructions cachées dans un document, email, page web lue par l'agent. OWASP ASI01. <strong>Les agents ne distinguent pas fiablement instructions et données</strong>."
+  },
+  'Tool poisoning': {
+    def: "Manipulation de la description d'un outil (dans un MCP server compromis) pour détourner l'intention du modèle. Risque ASI02 OWASP. La description du tool fait partie du prompt — donc partie de la surface d'attaque."
+  },
+  'Sandboxing': {
+    def: "Exécution isolée des actions — code, browser, fichiers — dans un environnement cloisonné. AgentCore Runtime, Claude Managed Agents, OpenAI Sandbox agents. La seule défense efficace contre les actions imprévues d'un agent compromis."
+  },
+  'OWASP ASI 2026': {
+    def: "<strong>OWASP Top 10 for Agentic Applications</strong>, publié déc. 2025. Dix risques&nbsp;: goal hijack, tool misuse, identity abuse, rogue agents… Rédigé par 100+ experts industrie. Ratio machine-humain actuel&nbsp;: 82:1. <strong>48&nbsp;% des pros cyber le placent en top vecteur d'attaque 2026</strong>.",
+    link: "https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/",
+    linkLabel: "OWASP GenAI Project"
+  },
+
+  // Layer 07
+  'OTel GenAI': {
+    def: "<strong>OpenTelemetry Semantic Conventions for Generative AI</strong>. Standard ouvert pour tracer appels LLM, tool calls, prompts. Adopté par Langfuse, LangSmith, Dynatrace, Azure Foundry, AgentCore. La base commune qui permet de changer d'outil sans tout ré-instrumenter.",
+    link: "https://opentelemetry.io/docs/specs/semconv/gen-ai/",
+    linkLabel: "OTel GenAI spec"
+  },
+  'Trajectory eval': {
+    def: "Évaluation de la <strong>séquence complète</strong> des décisions et actions de l'agent, pas juste du résultat final. Détecte les détours, tool calls ratés, bouclage. Complémentaire des evals output-only."
+  },
+  'LLM-as-a-Judge': {
+    def: "Utiliser un LLM pour évaluer les outputs d'un autre LLM selon des critères (factualité, helpfulness, safety). Rapide et scalable, <strong>moins fiable qu'un juge humain</strong> — à calibrer contre un golden set humain avant de s'y fier."
+  },
+  'Task completion': {
+    def: "Taux de tâches que l'agent accomplit de bout en bout sans intervention. <strong>La métrique business qui résume la fiabilité</strong> d'un système agentique. Si elle n'est pas mesurée, le projet navigue à l'estime."
+  },
+  'Drift detection': {
+    def: "Surveillance des dérives comportementales dans le temps&nbsp;: data drift, concept drift, trajectory drift. Invisibles à l'APM classique, centrales en observabilité agentique. L'agent ne crashe pas — il dérive."
+  },
+  'Cost attribution': {
+    def: "Affecter les coûts de tokens aux users, tenants, features. <strong>Prérequis du FinOps GenAI</strong> et d'un pricing interne soutenable. Sans attribution, la facture arrive sans responsable — le pire scénario pour un CFO."
+  },
+
+  // Layer 08
+  'Claude Managed Agents': {
+    def: "Runtime Anthropic en <strong>public beta (avr. 2026)</strong>. Beta header <code>managed-agents-2026-04-01</code>. Architecture <em>brain/hands separation</em>&nbsp;: Claude décide, le runtime exécute. Sandbox, sessions isolées, checkpointing, SSE streaming.",
+    link: "https://platform.claude.com/docs/en/managed-agents/",
+    linkLabel: "Anthropic docs"
+  },
+  'AgentCore': {
+    def: "<strong>Amazon Bedrock AgentCore</strong>, GA octobre 2025. Huit services composables et framework-agnostic&nbsp;: Runtime, Memory, Gateway, Identity, Observability, Browser, Code Interpreter, Policy. Consumption-based, I/O wait gratuit.",
+    link: "https://aws.amazon.com/bedrock/agentcore/",
+    linkLabel: "AWS AgentCore"
+  },
+  'Vertex Agent Engine': {
+    def: "Runtime managé Google. Sessions + Memory Bank (<strong>GA déc. 2025</strong>), Agent Garden (templates), Agent Designer (low-code). Intégré Cloud Trace et IAM pour la gouvernance d'accès.",
+    link: "https://cloud.google.com/products/agent-builder",
+    linkLabel: "Google Cloud"
+  },
+  'Agent Builder': {
+    def: "Éditeur visuel hébergé OpenAI + <strong>ChatKit</strong> (composants UI pré-construits). Pour publier des workflows sans écrire le code d'orchestration. La porte d'entrée low-code de l'écosystème OpenAI."
+  },
+  'Foundry Agent Service': {
+    def: "Runtime <strong>Azure AI Foundry</strong>, GA mai 2025. 10&nbsp;000+ orgs utilisatrices. Agents persistants, threads, outils built-in, Entra Agent ID pour l'identité managée, Connected Agents (preview) pour orchestration stateful.",
+    link: "https://learn.microsoft.com/en-us/azure/ai-foundry/",
+    linkLabel: "Azure AI Foundry"
+  },
+  'Sandbox managé': {
+    def: "Environnement d'exécution isolé opéré par le cloud. Libère le développeur du plumbing (VM, container, cleanup) mais <strong>impose son modèle de coût et de capacités</strong>. Le compromis classique managé&nbsp;: vitesse contre portabilité."
+  },
+
+  // Layer 09
+  'AI Canvas': {
+    def: "Outil de cadrage par cas d'usage. Aligne valeur business, faisabilité technique, risques, KPI, coûts. <strong>Équivalent du Business Model Canvas pour l'IA</strong>. Un go/no-go structuré vaut mille PowerPoints d'ambition."
+  },
+  'FinOps by design': {
+    def: "Intégrer le suivi coût <strong>dès le jour 1</strong>, pas en post-mortem. Prompt caching, model routing, budgets tenant, visibilité continue. Gartner identifie le TCO hors de contrôle comme cause #3 d'annulation."
+  },
+  'TCO': {
+    def: "<strong>Total Cost of Ownership</strong>. Tokens + infra + stockage vectoriel + observabilité + licences + équipe + réentraînement + incidents. La facture par-token semble négligeable&nbsp;; le TCO en production, pas du tout."
+  },
+  'EU AI Act': {
+    def: "Règlement européen 2024/1689, entré en application progressivement <strong>2025-2027</strong>. Obligations par niveau de risque, documentation technique, surveillance humaine, transparence. Le corpus réglementaire le plus dense au monde.",
+    link: "https://artificialintelligenceact.eu/",
+    linkLabel: "artificialintelligenceact.eu"
+  },
+  'Responsible AI': {
+    def: "Cadre à quatre piliers (Gartner)&nbsp;: <strong>safety, privacy, accountability, fairness</strong>. À placer au cœur dès l'inception, pas en afterthought. Les failles de Responsible AI sont celles qui remontent au COMEX et au board."
+  },
+  'Change management': {
+    def: "Discipline de conduite humaine du changement&nbsp;: littératie IA, ambassadeurs, droit à l'override, workflows intégrés. <strong>Cause #5 d'annulation selon Gartner</strong>. Un agent brillant que personne n'adopte n'est qu'une facture."
+  }
+};
+
+// Handle the HTML-entity variant for key lookup
+CONCEPT_DEFS['Seed & reproductibilité'] = CONCEPT_DEFS['Seed &amp; reproductibilité'];
+
+const BEATS = [];
+LAYERS.forEach((layer, li) => {
+  BEATS.push({ type: 'question', layer: li });
+  BEATS.push({ type: 'narrative', layer: li });
+  BEATS.push({ type: 'concepts', layer: li });
+  BEATS.push({ type: 'roles', layer: li });
+  BEATS.push({ type: 'risk', layer: li });
+});
+
+function initials(name) {
+  return name.split(/[ \/]+/).filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase();
+}
+
+function decodeHtml(s) {
+  const t = document.createElement('textarea');
+  t.innerHTML = s;
+  return t.value;
+}
+
+// ════════ VIZ ════════
+const SVGNS = 'http://www.w3.org/2000/svg';
+const VIZ = document.getElementById('viz');
+const CX = 500, CY = 500;
+const CORE_R = 92;
+const OUTER_R = 468;
+const N = LAYERS.length;
+const ringThickness = (OUTER_R - CORE_R) / (N - 1);
+
+function svg(tag, attrs = {}, parent = null) {
+  const e = document.createElementNS(SVGNS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+function annulus(cx, cy, rIn, rOut) {
+  return `M ${cx - rOut} ${cy}
+          A ${rOut} ${rOut} 0 1 0 ${cx + rOut} ${cy}
+          A ${rOut} ${rOut} 0 1 0 ${cx - rOut} ${cy} Z
+          M ${cx - rIn} ${cy}
+          A ${rIn} ${rIn} 0 1 1 ${cx + rIn} ${cy}
+          A ${rIn} ${rIn} 0 1 1 ${cx - rIn} ${cy} Z`;
+}
+
+function buildViz() {
+  svg('circle', { cx: CX, cy: CY, r: OUTER_R + 18, fill: 'none', stroke: 'rgba(30,30,44,0.06)', 'stroke-width': 1, 'stroke-dasharray': '2 6' }, VIZ);
+  for (let i = N - 1; i >= 1; i--) {
+    const layer = LAYERS[i];
+    const outerR = CORE_R + i * ringThickness;
+    const innerR = CORE_R + (i - 1) * ringThickness;
+    const g = svg('g', { class: 'ring pending', 'data-idx': i }, VIZ);
+    svg('path', { d: annulus(CX, CY, innerR, outerR), fill: layer.color, 'fill-opacity': '0.18', 'fill-rule': 'evenodd', class: 'ring-fill' }, g);
+    svg('circle', { cx: CX, cy: CY, r: outerR, fill: 'none', stroke: layer.color, 'stroke-opacity': '0.55', 'stroke-width': '1.2', class: 'ring-stroke' }, g);
+    svg('circle', { cx: CX, cy: CY, r: innerR, fill: 'none', stroke: layer.color, 'stroke-opacity': '0.22', 'stroke-width': '0.5' }, g);
+    const midR = (innerR + outerR) / 2;
+    const txtG = svg('text', { x: CX, y: CY - midR + 4, class: 'ring-text', 'data-idx': i, 'text-anchor': 'middle' }, VIZ);
+    const idxT = svg('tspan', { class: 'ring-idx' }, txtG);
+    idxT.textContent = String(i).padStart(2, '0');
+    const lbl = svg('tspan', { class: 'ring-label', dx: '12' }, txtG);
+    lbl.textContent = layer.short;
+  }
+  const coreG = svg('g', { class: 'ring', 'data-idx': 0 }, VIZ);
+  svg('circle', { cx: CX, cy: CY, r: CORE_R + 11, fill: 'none', stroke: LAYERS[0].color, 'stroke-opacity': '0.38', 'stroke-width': '1', 'stroke-dasharray': '4 4' }, coreG);
+  svg('circle', { cx: CX, cy: CY, r: CORE_R, fill: LAYERS[0].color, 'fill-opacity': '0.96' }, coreG);
+  const t1 = svg('text', { x: CX, y: CY - 10, class: 'core-t1' }, coreG);
+  t1.textContent = 'p(token';
+  const t2 = svg('text', { x: CX, y: CY + 18, class: 'core-t1' }, coreG);
+  t2.textContent = '| contexte)';
+  const t3 = svg('text', { x: CX, y: CY + 44, class: 'core-t2' }, coreG);
+  t3.textContent = 'T > 0';
+}
+
+// ════════ PROGRESS SEGMENTS ════════
+const PROG_LINE = document.getElementById('progLine');
+function buildProgSegments() {
+  LAYERS.forEach((layer, i) => {
+    const seg = document.createElement('div');
+    seg.className = 'prog-seg';
+    seg.style.background = layer.color;
+    seg.dataset.layer = i;
+    seg.title = `${String(i).padStart(2,'0')} · ${layer.short}`;
+    PROG_LINE.appendChild(seg);
+  });
+}
+
+// ════════ BUILD BEATS ════════
+const BEATS_LAYER = document.getElementById('beatsLayer');
+
+function buildBeats() {
+  BEATS.forEach((beat, idx) => {
+    const layer = LAYERS[beat.layer];
+    const el = document.createElement('div');
+    el.className = `beat beat-${beat.type}`;
+    el.dataset.idx = idx;
+
+    if (beat.type === 'question') {
+      el.innerHTML = `
+        <div class="q-kicker">Couche ${String(beat.layer).padStart(2, '0')} · Problématique</div>
+        <div class="q-text">${layer.question}</div>`;
+    } else if (beat.type === 'narrative') {
+      let html = `
+        <div class="n-kicker">Mise en scène</div>
+        <div class="n-text">${layer.narrative}</div>`;
+      if (layer.schema) {
+        html += `<button class="n-schema-btn" type="button" data-layer="${beat.layer}" aria-label="Ouvrir le schéma">
+          <svg viewBox="0 0 16 16" stroke-width="1.5" stroke-linecap="round">
+            <rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/>
+            <line x1="1.5" y1="6.5" x2="14.5" y2="6.5"/>
+            <line x1="5" y1="6.5" x2="5" y2="13.5"/>
+          </svg>
+          <span>Schéma · ${layer.schema.buttonLabel}</span>
+        </button>`;
+      }
+      el.innerHTML = html;
+      if (layer.schema) {
+        el.querySelector('.n-schema-btn').addEventListener('click', (e) => {
+          e.stopPropagation();
+          openSchemaModal(Number(e.currentTarget.dataset.layer));
+        });
+      }
+    } else if (beat.type === 'concepts') {
+      const kicker = document.createElement('div');
+      kicker.className = 'concepts-kicker';
+      kicker.textContent = `Concepts & stack · ${layer.short}`;
+      el.appendChild(kicker);
+      const hint = document.createElement('div');
+      hint.className = 'concepts-hint';
+      hint.textContent = '↓ cliquez pour la définition';
+      el.appendChild(hint);
+      const n = layer.concepts.length;
+      const radiusVmin = 30;
+      layer.concepts.forEach((kw, i) => {
+        const angle = (-90 + (i * 360 / n)) * Math.PI / 180;
+        const tx = Math.cos(angle) * radiusVmin;
+        const ty = Math.sin(angle) * radiusVmin;
+        const chip = document.createElement('span');
+        chip.className = 'kw';
+        chip.style.setProperty('--tx', `${tx.toFixed(2)}vmin`);
+        chip.style.setProperty('--ty', `${ty.toFixed(2)}vmin`);
+        chip.dataset.concept = kw;
+        chip.dataset.layer = beat.layer;
+        chip.setAttribute('role', 'button');
+        chip.setAttribute('tabindex', '0');
+        chip.setAttribute('title', `Cliquer pour la définition de ${decodeHtml(kw)}`);
+        // first content: label
+        const lbl = document.createElement('span');
+        lbl.innerHTML = kw;
+        chip.appendChild(lbl);
+        chip.addEventListener('click', onConceptClick);
+        chip.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onConceptClick(e); }
+        });
+        el.appendChild(chip);
+      });
+    } else if (beat.type === 'roles') {
+      const kicker = document.createElement('div');
+      kicker.className = 'roles-kicker';
+      kicker.textContent = `Profils mobilisés · ${layer.short}`;
+      el.appendChild(kicker);
+      const rail = document.createElement('div');
+      rail.className = 'roles-rail';
+      layer.roles.forEach(role => {
+        const chip = document.createElement('div');
+        chip.className = 'role-chip';
+        chip.innerHTML = `
+          <div class="role-avatar" style="background:${layer.color}">${initials(role)}</div>
+          <div class="role-chip-label">${role}</div>`;
+        rail.appendChild(chip);
+      });
+      el.appendChild(rail);
+    } else if (beat.type === 'risk') {
+      el.innerHTML = `
+        <div class="r-kicker">⚠ Piège · ${layer.short}</div>
+        <div class="r-text">${layer.risk}</div>`;
+    }
+    BEATS_LAYER.appendChild(el);
+  });
+}
+
+// ════════ STATE ════════
+const HUD_DOT = document.getElementById('hudDot');
+const HUD_IDX = document.getElementById('hudIdx');
+const HUD_NAME = document.getElementById('hudName');
+const COUNTER_TEXT = document.getElementById('counterText');
+const SCROLLY = document.getElementById('scrolly');
+
+let currentBeatIdx = -1;
+let currentLayer = -1;
+
+function setLayerActive(li, pulse) {
+  document.querySelectorAll('.ring').forEach(r => {
+    const i = Number(r.dataset.idx);
+    r.classList.remove('pending', 'visible', 'active', 'pulse');
+    if (i <= li) r.classList.add(i === li ? 'active' : 'visible');
+    else r.classList.add('pending');
+  });
+  document.querySelectorAll('.ring-text').forEach(r => {
+    const i = Number(r.dataset.idx);
+    r.classList.remove('visible', 'active');
+    if (i <= li) r.classList.add(i === li ? 'active' : 'visible');
+  });
+  if (pulse && li > 0) {
+    const ring = document.querySelector(`.ring[data-idx="${li}"]`);
+    if (ring) {
+      ring.classList.add('pulse');
+      setTimeout(() => ring.classList.remove('pulse'), 1000);
+    }
+  }
+  HUD_DOT.style.background = LAYERS[li].color;
+  HUD_IDX.textContent = String(li).padStart(2, '0');
+  HUD_NAME.textContent = LAYERS[li].short;
+  // Update progress segments
+  document.querySelectorAll('.prog-seg').forEach(s => {
+    const i = Number(s.dataset.layer);
+    s.classList.remove('visited', 'current');
+    if (i < li) s.classList.add('visited');
+    else if (i === li) s.classList.add('current');
+  });
+  // Update TOC current state if rendered
+  document.querySelectorAll('.toc-item').forEach(item => {
+    const i = Number(item.dataset.layer);
+    item.classList.toggle('current', i === li);
+  });
+}
+
+function setActiveBeat(idx) {
+  if (idx === currentBeatIdx) return;
+  const beat = BEATS[idx];
+  if (!beat) return;
+  const layerChanged = beat.layer !== currentLayer;
+  if (layerChanged) {
+    setLayerActive(beat.layer, currentLayer !== -1);
+    currentLayer = beat.layer;
+  }
+  document.querySelectorAll('.beat').forEach((b, i) => {
+    b.classList.toggle('active', i === idx);
+  });
+  COUNTER_TEXT.textContent = `${idx + 1} / ${BEATS.length}`;
+  currentBeatIdx = idx;
+}
+
+// ════════ SCROLL ════════
+const BEAT_VH = 0.5;
+function setScrollyHeight() {
+  const vh = window.innerHeight;
+  SCROLLY.style.height = (vh + BEATS.length * BEAT_VH * vh) + 'px';
+}
+let ticking = false;
+function onScroll() {
+  if (!ticking) {
+    requestAnimationFrame(update);
+    ticking = true;
+  }
+}
+function update() {
+  ticking = false;
+  const rect = SCROLLY.getBoundingClientRect();
+  const vh = window.innerHeight;
+  const total = SCROLLY.offsetHeight - vh;
+  if (total <= 0) return;
+  const p = Math.max(0, Math.min(1, Math.max(0, -rect.top) / total));
+  let idx = Math.floor(p * BEATS.length);
+  if (idx >= BEATS.length) idx = BEATS.length - 1;
+  if (idx < 0) idx = 0;
+  setActiveBeat(idx);
+}
+
+function scrollToBeat(targetIdx) {
+  const vh = window.innerHeight;
+  const total = SCROLLY.offsetHeight - vh;
+  const y = SCROLLY.offsetTop + ((targetIdx + 0.5) / BEATS.length) * total;
+  window.scrollTo({ top: y, behavior: 'smooth' });
+}
+
+function scrollToLayer(li) {
+  // Go to the "question" beat of that layer (first of 5)
+  scrollToBeat(li * 5);
+}
+
+// ════════ CONCEPT MODAL ════════
+const MODAL_OVERLAY = document.getElementById('modalOverlay');
+const MODAL_CLOSE = document.getElementById('modalClose');
+const MODAL_LAYER = document.getElementById('modalLayer');
+const MODAL_DOT = document.getElementById('modalDot');
+const MODAL_TITLE = document.getElementById('modalTitle');
+const MODAL_DEF = document.getElementById('modalDef');
+const MODAL_LINK = document.getElementById('modalLink');
+const MODAL_LINK_LABEL = document.getElementById('modalLinkLabel');
+
+function onConceptClick(e) {
+  e.stopPropagation();
+  const chip = e.currentTarget;
+  const concept = chip.dataset.concept;
+  const layerIdx = Number(chip.dataset.layer);
+  openConceptModal(concept, layerIdx);
+}
+
+function openConceptModal(conceptRaw, layerIdx) {
+  const layer = LAYERS[layerIdx];
+  const conceptClean = decodeHtml(conceptRaw);
+  const def = CONCEPT_DEFS[conceptRaw] || CONCEPT_DEFS[conceptClean] || null;
+
+  MODAL_DOT.style.background = layer.color;
+  MODAL_LAYER.textContent = `Couche ${String(layerIdx).padStart(2,'0')} · ${layer.short.toUpperCase()}`;
+  MODAL_TITLE.innerHTML = conceptRaw;
+
+  if (def) {
+    MODAL_DEF.innerHTML = def.def;
+    if (def.link) {
+      MODAL_LINK.href = def.link;
+      MODAL_LINK_LABEL.textContent = def.linkLabel || 'En savoir plus';
+      MODAL_LINK.style.display = 'inline-flex';
+    } else {
+      MODAL_LINK.style.display = 'none';
+    }
+  } else {
+    MODAL_DEF.innerHTML = `<em>Définition à compléter — cette notion fait partie de la stack mais n'a pas encore sa fiche détaillée dans ce panorama.</em>`;
+    MODAL_LINK.style.display = 'none';
+  }
+
+  MODAL_OVERLAY.classList.add('active');
+  document.body.classList.add('lock-scroll');
+}
+
+function closeConceptModal() {
+  MODAL_OVERLAY.classList.remove('active');
+  if (!document.getElementById('tocOverlay').classList.contains('active')) {
+    document.body.classList.remove('lock-scroll');
+  }
+}
+
+MODAL_CLOSE.addEventListener('click', closeConceptModal);
+MODAL_OVERLAY.addEventListener('click', (e) => {
+  if (e.target === MODAL_OVERLAY) closeConceptModal();
+});
+
+// ════════ TOC ════════
+const TOC_OVERLAY = document.getElementById('tocOverlay');
+const TOC_CLOSE = document.getElementById('tocClose');
+const TOC_LIST = document.getElementById('tocList');
+const COUNTER = document.getElementById('counter');
+
+function buildTOC() {
+  LAYERS.forEach((layer, i) => {
+    const li = document.createElement('li');
+    li.className = 'toc-item';
+    li.dataset.layer = i;
+    li.style.setProperty('--layer-color', layer.color);
+    li.innerHTML = `
+      <span class="toc-num">${String(i).padStart(2, '0')}</span>
+      <span class="toc-dot" style="background:${layer.color}"></span>
+      <div class="toc-text">
+        <div class="toc-title">${layer.title}</div>
+        <div class="toc-short">${layer.short}</div>
+      </div>
+      <span class="toc-arrow">→</span>`;
+    li.addEventListener('click', () => {
+      scrollToLayer(i);
+      closeTOC();
+    });
+    TOC_LIST.appendChild(li);
+  });
+}
+
+function openTOC() {
+  TOC_OVERLAY.classList.add('active');
+  document.body.classList.add('lock-scroll');
+}
+
+function closeTOC() {
+  TOC_OVERLAY.classList.remove('active');
+  if (!MODAL_OVERLAY.classList.contains('active')) {
+    document.body.classList.remove('lock-scroll');
+  }
+}
+
+COUNTER.addEventListener('click', openTOC);
+PROG_LINE.addEventListener('click', openTOC);
+TOC_CLOSE.addEventListener('click', closeTOC);
+TOC_OVERLAY.addEventListener('click', (e) => {
+  if (e.target === TOC_OVERLAY) closeTOC();
+});
+
+// ════════ SCHEMA MODAL ════════
+const SCHEMA_OVERLAY = document.getElementById('schemaOverlay');
+const SCHEMA_CLOSE = document.getElementById('schemaClose');
+const SCHEMA_DOT = document.getElementById('schemaDot');
+const SCHEMA_LAYER_LABEL = document.getElementById('schemaLayerLabel');
+const SCHEMA_TITLE = document.getElementById('schemaTitle');
+const SCHEMA_SUB = document.getElementById('schemaSub');
+const SCHEMA_SVG_WRAP = document.getElementById('schemaSvgWrap');
+const SCHEMA_LEGEND = document.getElementById('schemaLegend');
+const SCHEMA_CAPTION = document.getElementById('schemaCaption');
+const SCHEMA_LINK = document.getElementById('schemaLink');
+const SCHEMA_LINK_LABEL = document.getElementById('schemaLinkLabel');
+
+function openSchemaModal(layerIdx) {
+  const layer = LAYERS[layerIdx];
+  if (!layer || !layer.schema) return;
+  const s = layer.schema;
+  SCHEMA_DOT.style.background = layer.color;
+  SCHEMA_LAYER_LABEL.textContent = `Couche ${String(layerIdx).padStart(2,'0')} · ${layer.short.toUpperCase()} · Schéma`;
+  SCHEMA_TITLE.innerHTML = s.title;
+  SCHEMA_SUB.innerHTML = s.subtitle || '';
+  SCHEMA_SVG_WRAP.innerHTML = s.svg ? `<div class="schema-svg-inner">${s.svg}</div>` : '';
+  if (s.legend && s.legend.length) {
+    SCHEMA_LEGEND.style.display = '';
+    SCHEMA_LEGEND.innerHTML = s.legend.map(item =>
+      `<div class="schema-legend-item"><span class="schema-legend-code">${item.code}</span><span class="schema-legend-label">${item.label}</span></div>`
+    ).join('');
+  } else {
+    SCHEMA_LEGEND.style.display = 'none';
+    SCHEMA_LEGEND.innerHTML = '';
+  }
+  SCHEMA_CAPTION.innerHTML = s.caption || '';
+  if (s.link) {
+    SCHEMA_LINK.href = s.link;
+    SCHEMA_LINK_LABEL.textContent = s.linkLabel || 'Source';
+    SCHEMA_LINK.style.display = 'inline-flex';
+  } else {
+    SCHEMA_LINK.style.display = 'none';
+  }
+  SCHEMA_OVERLAY.classList.add('active');
+  document.body.classList.add('lock-scroll');
+}
+
+function closeSchemaModal() {
+  SCHEMA_OVERLAY.classList.remove('active');
+  if (!MODAL_OVERLAY.classList.contains('active') && !TOC_OVERLAY.classList.contains('active')) {
+    document.body.classList.remove('lock-scroll');
+  }
+}
+
+SCHEMA_CLOSE.addEventListener('click', closeSchemaModal);
+SCHEMA_OVERLAY.addEventListener('click', (e) => {
+  if (e.target === SCHEMA_OVERLAY) closeSchemaModal();
+});
+
+// ════════ OUTRO ════════
+const OUTRO_GRID = document.getElementById('outroGrid');
+LAYERS.forEach((layer, i) => {
+  const c = document.createElement('div');
+  c.className = 'outro-card';
+  c.style.borderLeftColor = layer.color;
+  c.innerHTML = `
+    <div class="outro-card-head">
+      <span class="outro-card-dot" style="background:${layer.color}"></span>
+      <span class="outro-card-idx">COUCHE ${String(i).padStart(2, '0')}</span>
+    </div>
+    <div class="outro-card-title">${layer.title}</div>
+    <div class="outro-card-q">${layer.question}</div>
+    <div class="outro-card-roles">${layer.roles.map(r => `<span class="chip">${r}</span>`).join('')}</div>`;
+  OUTRO_GRID.appendChild(c);
+});
+
+document.getElementById('backTop').addEventListener('click', () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+// ════════ INIT ════════
+buildViz();
+buildProgSegments();
+buildBeats();
+buildTOC();
+setScrollyHeight();
+setActiveBeat(0);
+
+window.addEventListener('scroll', onScroll, { passive: true });
+window.addEventListener('resize', () => { setScrollyHeight(); update(); });
+
+// ════════ KEYBOARD ════════
+document.addEventListener('keydown', (e) => {
+  // Escape closes any open overlay
+  if (e.key === 'Escape') {
+    if (SCHEMA_OVERLAY.classList.contains('active')) { closeSchemaModal(); return; }
+    if (MODAL_OVERLAY.classList.contains('active')) { closeConceptModal(); return; }
+    if (TOC_OVERLAY.classList.contains('active')) { closeTOC(); return; }
+  }
+  // Disable arrow navigation when modals are open
+  if (SCHEMA_OVERLAY.classList.contains('active') || MODAL_OVERLAY.classList.contains('active') || TOC_OVERLAY.classList.contains('active')) return;
+  if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp' && e.key !== ' ') return;
+  e.preventDefault();
+  const dir = e.key === 'ArrowUp' ? -1 : 1;
+  const target = Math.max(0, Math.min(BEATS.length - 1, currentBeatIdx + dir));
+  scrollToBeat(target);
+});
+</script>
+
+</body>
+</html>

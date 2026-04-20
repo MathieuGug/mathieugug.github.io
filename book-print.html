@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Anatomie d'un système agentique — version imprimable</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300;1,9..144,400;1,9..144,500&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #faf6ec;
+  --paper-2: #f3eedf;
+  --paper-3: #ede6d2;
+  --ink: #1e1e2a;
+  --ink-2: #3b3f4d;
+  --ink-3: #6b6f7c;
+  --ink-faint: #9a9ca5;
+  --line: rgba(30,30,44,0.10);
+  --line-strong: rgba(30,30,44,0.22);
+  --accent: #b8582e;
+  --pink: #a83e55;
+  --gold: #8a6a2c;
+  --core: #c34e3a;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  font-family: 'Inter', sans-serif;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  background: #fff;
+}
+
+/* Each spread = one landscape page (1600×1100 scaled via media print) */
+.spread-print {
+  width: 1600px;
+  height: 1131px;
+  position: relative;
+  display: flex;
+  background: var(--paper);
+  page-break-after: always;
+  break-after: page;
+  overflow: hidden;
+  margin: 0 auto;
+}
+.spread-print:last-child { page-break-after: auto; break-after: auto; }
+
+.page {
+  position: relative;
+  width: 800px;
+  height: 1131px;
+  background: var(--paper);
+  overflow: hidden;
+}
+.page.left {
+  background: linear-gradient(270deg, rgba(30,20,10,0.10) 0%, transparent 4%), var(--paper);
+}
+.page.right {
+  background: linear-gradient(90deg, rgba(30,20,10,0.12) 0%, transparent 5%), var(--paper);
+}
+
+/* Paper grain (soft) */
+.page::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle at 12% 22%, rgba(80,60,40,0.03) 0.8px, transparent 1px),
+    radial-gradient(circle at 68% 74%, rgba(80,60,40,0.02) 1px, transparent 1.2px),
+    radial-gradient(circle at 35% 88%, rgba(80,60,40,0.025) 0.8px, transparent 1px);
+  background-size: 7px 7px, 11px 11px, 13px 13px;
+  opacity: 0.7;
+  mix-blend-mode: multiply;
+  z-index: 2;
+}
+
+/* Spine seam */
+.spread-print::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 14px;
+  background: linear-gradient(90deg,
+    rgba(0,0,0,0.04) 0%, rgba(0,0,0,0.18) 40%,
+    rgba(0,0,0,0.22) 50%, rgba(0,0,0,0.18) 60%,
+    rgba(0,0,0,0.04) 100%);
+  z-index: 5;
+  pointer-events: none;
+}
+
+.page-inner {
+  position: absolute; inset: 0;
+  padding: 90px 80px 80px 80px;
+  display: flex; flex-direction: column;
+  z-index: 3;
+}
+.page.left .page-inner { padding-left: 90px; padding-right: 70px; }
+.page.right .page-inner { padding-left: 70px; padding-right: 90px; }
+
+.running-head {
+  position: absolute; top: 42px; left: 80px; right: 80px;
+  display: flex; justify-content: space-between;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--ink-faint); z-index: 4;
+}
+.running-head .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; vertical-align: middle; margin: 0 8px; }
+.folio {
+  position: absolute; bottom: 42px; left: 0; right: 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; letter-spacing: 0.18em; color: var(--ink-faint); z-index: 4;
+}
+.page.left .folio { text-align: left; padding-left: 90px; }
+.page.right .folio { text-align: right; padding-right: 90px; }
+
+/* [Shared styles copied verbatim from book.html so layout matches exactly] */
+.layer-num { font-family: 'Fraunces', serif; font-style: italic; font-weight: 300; font-size: 140px; line-height: 0.9; letter-spacing: -0.04em; color: var(--ink); margin-bottom: 6px; display: flex; align-items: baseline; gap: 20px; }
+.layer-num .couche { font-family: 'JetBrains Mono', monospace; font-style: normal; font-weight: 500; font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-faint); align-self: flex-end; padding-bottom: 18px; }
+.layer-title { font-family: 'Fraunces', serif; font-weight: 400; font-size: 44px; line-height: 1.08; letter-spacing: -0.015em; color: var(--ink); margin-top: 8px; margin-bottom: 28px; max-width: 580px; }
+.layer-title em { font-style: italic; color: var(--accent); font-weight: 500; }
+.rule { width: 44px; height: 2px; background: var(--accent); margin: 0 0 26px; }
+.question { font-family: 'Fraunces', serif; font-style: italic; font-weight: 300; font-size: 22px; line-height: 1.35; color: var(--ink-2); letter-spacing: -0.005em; margin-bottom: 30px; padding-left: 18px; border-left: 2px solid var(--layer-color, var(--accent)); max-width: 560px; }
+.section-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--layer-color, var(--accent)); margin-bottom: 10px; display: flex; align-items: center; gap: 10px; font-weight: 500; }
+.section-label::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, var(--layer-color, var(--accent)) 0%, transparent 100%); opacity: 0.35; }
+.narrative { font-family: 'Inter', sans-serif; font-weight: 300; font-size: 15.5px; line-height: 1.7; color: var(--ink-2); margin-bottom: 28px; max-width: 580px; text-wrap: pretty; hyphens: auto; }
+.narrative strong { color: var(--ink); font-weight: 500; } .narrative em { color: var(--ink); font-style: italic; }
+.narrative code { font-family: 'JetBrains Mono', monospace; font-size: 13px; background: rgba(184,88,46,0.08); color: var(--accent); padding: 1px 6px; border-radius: 3px; }
+.kw-cloud { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 26px; max-width: 580px; }
+.kw-chip { font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 4px 10px; border: 1px solid var(--line-strong); border-radius: 100px; color: var(--ink-2); background: rgba(255,253,246,0.6); }
+.roles-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 26px; max-width: 580px; }
+.role-chip { display: flex; align-items: flex-start; gap: 10px; padding: 9px 11px 9px 9px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper-2); font-size: 12px; color: var(--ink-2); min-width: 0; }
+.role-chip .av { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-family: 'Fraunces', serif; font-style: italic; font-weight: 500; font-size: 11.5px; color: #fff; flex-shrink: 0; margin-top: 1px; }
+.role-chip .role-txt { min-width: 0; flex: 1; }
+.role-chip .role-name { font-family: 'Inter', sans-serif; font-weight: 500; font-size: 12px; color: var(--ink); line-height: 1.2; margin-bottom: 2px; }
+.role-chip .role-mission { font-family: 'Inter', sans-serif; font-weight: 300; font-size: 10.5px; line-height: 1.4; color: var(--ink-3); text-wrap: pretty; }
+.role-chip .role-mission em { color: var(--ink-2); font-style: italic; }
+.risk { margin-top: auto; padding: 18px 20px; background: linear-gradient(135deg, rgba(168,62,85,0.08), rgba(255,253,246,0.5)); border: 1px solid rgba(168,62,85,0.25); border-left-width: 3px; border-radius: 4px; max-width: 580px; }
+.risk-label { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--pink); margin-bottom: 8px; font-weight: 500; }
+.risk-text { font-family: 'Inter', sans-serif; font-size: 13.5px; line-height: 1.55; color: var(--ink-2); font-weight: 300; }
+.risk-text strong { color: var(--pink); font-weight: 500; } .risk-text em { color: var(--ink); font-style: italic; }
+.risk-text code { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; background: rgba(168,62,85,0.1); color: var(--pink); padding: 1px 5px; border-radius: 3px; }
+
+.illus-wrap { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 80px; z-index: 3; }
+.illus-svg { width: 100%; height: 100%; overflow: visible; }
+.illus-caption { position: absolute; bottom: 90px; left: 90px; right: 90px; text-align: center; z-index: 4; }
+.illus-cap-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 6px; }
+.illus-cap-title { font-family: 'Fraunces', serif; font-style: italic; font-weight: 400; font-size: 17px; color: var(--ink-2); line-height: 1.35; }
+.illus-cap-title em { color: var(--accent); }
+
+.concepts-inner { position: absolute; inset: 0; padding: 90px 90px 80px 70px; display: flex; flex-direction: column; z-index: 3; }
+.concepts-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px; }
+.concepts-title { font-family: 'Fraunces', serif; font-weight: 400; font-size: 30px; letter-spacing: -0.015em; color: var(--ink); }
+.concepts-title em { font-style: italic; color: var(--layer-color, var(--accent)); }
+.concepts-mini { display: flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-faint); }
+.concepts-mini .mini-svg { width: 38px; height: 38px; }
+.concepts-lede { font-family: 'Inter', sans-serif; font-weight: 300; font-size: 13px; line-height: 1.55; color: var(--ink-3); margin-top: 6px; margin-bottom: 22px; max-width: 560px; font-style: italic; }
+.concepts-rule { height: 2px; background: var(--layer-color, var(--accent)); width: 44px; margin-bottom: 24px; }
+.defs-list { display: flex; flex-direction: column; }
+.def-item { display: grid; grid-template-columns: 32px 1fr; gap: 18px; padding: 14px 0; border-top: 1px solid var(--line); align-items: baseline; }
+.def-item:last-child { border-bottom: 1px solid var(--line); }
+.def-num { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; color: var(--layer-color, var(--accent)); padding-top: 3px; font-weight: 500; }
+.def-term { font-family: 'Fraunces', serif; font-weight: 500; font-size: 17px; color: var(--ink); letter-spacing: -0.005em; margin-bottom: 4px; line-height: 1.2; }
+.def-term em { font-style: italic; }
+.def-body { font-family: 'Inter', sans-serif; font-weight: 300; font-size: 12.5px; line-height: 1.55; color: var(--ink-2); text-wrap: pretty; }
+.def-body strong { color: var(--ink); font-weight: 500; } .def-body em { color: var(--ink); font-style: italic; }
+.def-body code { font-family: 'JetBrains Mono', monospace; font-size: 11px; background: rgba(184,88,46,0.08); color: var(--layer-color, var(--accent)); padding: 1px 5px; border-radius: 3px; }
+.concepts-footer { margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--line); font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-faint); display: flex; justify-content: space-between; }
+
+.cover-left { display: flex; flex-direction: column; justify-content: space-between; align-items: flex-start; padding: 120px 90px 100px; position: absolute; inset: 0; z-index: 3; }
+.cover-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--accent); font-weight: 500; }
+.cover-eyebrow span.bar { display: inline-block; width: 40px; height: 2px; background: var(--accent); vertical-align: middle; margin-right: 14px; }
+.cover-title { font-family: 'Fraunces', serif; font-weight: 300; font-size: 88px; line-height: 0.94; letter-spacing: -0.03em; color: var(--ink); margin-top: 40px; }
+.cover-title em { font-style: italic; color: var(--accent); font-weight: 400; }
+.cover-sub { margin-top: 32px; font-family: 'Fraunces', serif; font-style: italic; font-weight: 300; font-size: 24px; line-height: 1.35; color: var(--ink-2); max-width: 520px; }
+.cover-meta { margin-top: auto; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-faint); line-height: 1.9; }
+.cover-meta strong { color: var(--ink-2); font-weight: 500; }
+.cover-right-content { position: absolute; inset: 0; display: grid; place-items: center; z-index: 3; }
+
+.toc-inner { padding: 90px 80px 80px; height: 100%; display: flex; flex-direction: column; }
+.toc-head { font-family: 'Fraunces', serif; font-weight: 400; font-size: 38px; letter-spacing: -0.01em; margin-bottom: 8px; }
+.toc-head em { font-style: italic; color: var(--accent); }
+.toc-sub { font-family: 'Inter', sans-serif; font-weight: 300; font-size: 14px; color: var(--ink-3); max-width: 560px; line-height: 1.6; margin-bottom: 44px; }
+.toc-list { display: flex; flex-direction: column; }
+.toc-item { display: grid; grid-template-columns: 36px 16px 1fr auto; gap: 16px; align-items: center; padding: 14px 4px; border-top: 1px solid var(--line); font-family: 'Fraunces', serif; }
+.toc-item:last-child { border-bottom: 1px solid var(--line); }
+.toc-num { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.12em; color: var(--ink-faint); text-align: right; }
+.toc-dot { width: 10px; height: 10px; border-radius: 50%; }
+.toc-title { font-size: 18px; color: var(--ink); letter-spacing: -0.005em; }
+.toc-short { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-faint); }
+.toc-folio { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--ink-3); letter-spacing: 0.08em; text-align: right; }
+
+.closing-inner { padding: 120px 90px 100px; position: absolute; inset: 0; display: flex; flex-direction: column; z-index: 3; }
+.closing-quote { font-family: 'Fraunces', serif; font-style: italic; font-weight: 300; font-size: 32px; line-height: 1.3; color: var(--ink); letter-spacing: -0.01em; margin-bottom: 28px; max-width: 560px; }
+.closing-quote::before { content: '“'; font-family: 'Fraunces', serif; font-style: italic; font-size: 96px; line-height: 0.6; color: var(--accent); display: block; margin-bottom: 8px; }
+.closing-attr { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 48px; }
+.closing-body { font-family: 'Inter', sans-serif; font-weight: 300; font-size: 15.5px; line-height: 1.75; color: var(--ink-2); max-width: 560px; margin-bottom: auto; }
+.closing-body strong { color: var(--ink); font-weight: 500; } .closing-body em { color: var(--ink); font-style: italic; }
+.closing-sig { font-family: 'Fraunces', serif; font-style: italic; font-size: 18px; color: var(--ink-2); padding-top: 18px; border-top: 1px solid var(--line); }
+
+.colophon-inner { padding: 100px 90px 100px; position: absolute; inset: 0; display: flex; flex-direction: column; z-index: 3; }
+.colophon-head { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--accent); margin-bottom: 20px; }
+.colophon-title { font-family: 'Fraunces', serif; font-weight: 400; font-size: 28px; line-height: 1.2; margin-bottom: 8px; }
+.colophon-title em { font-style: italic; color: var(--accent); }
+.colophon-intro { font-family: 'Inter', sans-serif; font-weight: 300; font-size: 13.5px; line-height: 1.6; color: var(--ink-3); margin-bottom: 32px; max-width: 540px; }
+.col-group { margin-bottom: 24px; }
+.col-group h4 { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--accent); font-weight: 500; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+.col-group ul { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+.col-group li { font-family: 'Inter', sans-serif; font-weight: 300; font-size: 12px; color: var(--ink-3); line-height: 1.4; }
+.col-group li strong { color: var(--ink); font-weight: 500; } .col-group li em { color: var(--ink-2); font-style: italic; }
+
+.mini-onion-wrap { margin: 22px 0 18px; display: flex; align-items: center; gap: 20px; padding: 14px 18px; background: var(--paper-2); border-left: 3px solid var(--layer-color, var(--accent)); border-radius: 3px; }
+.mini-onion-wrap svg { flex-shrink: 0; }
+.mini-onion-text { font-family: 'Fraunces', serif; font-style: italic; font-weight: 300; font-size: 13px; color: var(--ink-3); line-height: 1.4; }
+.mini-onion-text strong { font-style: normal; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: var(--layer-color, var(--accent)); display: block; margin-bottom: 4px; }
+
+/* Schemas */
+.sch-left-inner { position: absolute; inset: 0; padding: 100px 70px 90px 90px; display: flex; flex-direction: column; z-index: 3; }
+.sch-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; font-weight: 500; display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+.sch-eye-dot { width: 8px; height: 8px; border-radius: 50%; }
+.sch-title { font-family: 'Fraunces', serif; font-weight: 400; font-size: 48px; line-height: 1.06; letter-spacing: -0.02em; color: var(--ink); margin-bottom: 20px; max-width: 560px; }
+.sch-title em { font-style: italic; color: var(--layer-color, var(--accent)); font-weight: 500; }
+.sch-rule { width: 44px; height: 2px; margin-bottom: 22px; }
+.sch-subtitle { font-family: 'Fraunces', serif; font-style: italic; font-weight: 300; font-size: 18px; line-height: 1.5; color: var(--ink-2); max-width: 560px; margin-bottom: 36px; text-wrap: pretty; }
+.sch-subtitle code { font-family: 'JetBrains Mono', monospace; font-style: normal; font-size: 13px; background: rgba(30,30,44,0.06); padding: 1px 6px; border-radius: 3px; color: var(--ink); }
+.sch-subtitle em { color: var(--ink); }
+.sch-legend { display: flex; flex-direction: column; gap: 10px; margin-bottom: auto; padding-top: 6px; }
+.sch-legend-item { display: flex; align-items: baseline; gap: 14px; font-size: 13px; line-height: 1.45; color: var(--ink-2); }
+.sch-legend-code { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; font-weight: 500; letter-spacing: 0.08em; color: #fff; padding: 3px 8px; border-radius: 3px; flex-shrink: 0; min-width: 62px; text-align: center; }
+.sch-legend-lbl { font-family: 'Inter', sans-serif; font-weight: 300; }
+.sch-source { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--line); }
+.sch-source-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 6px; font-weight: 500; }
+.sch-source-text { font-family: 'Fraunces', serif; font-style: italic; font-size: 14px; color: var(--ink-2); }
+.sch-svg-wrap { position: absolute; inset: 0; padding: 90px 80px 80px 70px; display: flex; align-items: center; justify-content: center; z-index: 3; }
+.sch-svg-inner { width: 100%; max-width: 640px; background: #fdfaf0; border: 1px solid rgba(30,30,44,0.12); border-radius: 4px; padding: 24px 20px; }
+.sch-svg-inner svg { width: 100%; height: auto; display: block; }
+
+.sch-opener-inner { position: absolute; inset: 0; padding: 120px 80px 90px 90px; display: flex; flex-direction: column; z-index: 3; }
+.sch-opener-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--accent); font-weight: 500; margin-bottom: 20px; }
+.sch-opener-title { font-family: 'Fraunces', serif; font-weight: 300; font-size: 72px; line-height: 0.96; letter-spacing: -0.025em; color: var(--ink); }
+.sch-opener-title em { font-style: italic; color: var(--accent); font-weight: 400; }
+.sch-opener-rule { width: 60px; height: 2px; background: var(--accent); margin: 28px 0 24px; }
+.sch-opener-lede { font-family: 'Fraunces', serif; font-style: italic; font-weight: 300; font-size: 19px; line-height: 1.5; color: var(--ink-2); max-width: 540px; margin-bottom: 40px; }
+.planche-list { display: flex; flex-direction: column; }
+.planche-item { display: grid; grid-template-columns: 44px 14px 1fr; gap: 16px; align-items: center; padding: 16px 4px; border-top: 1px solid var(--line); }
+.planche-item:last-child { border-bottom: 1px solid var(--line); }
+.planche-num { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--ink-faint); font-weight: 500; }
+.planche-dot { width: 10px; height: 10px; border-radius: 50%; }
+.planche-layer { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--layer-color, var(--ink-faint)); margin-bottom: 4px; font-weight: 500; }
+.planche-title { font-family: 'Fraunces', serif; font-size: 18px; line-height: 1.2; color: var(--ink); letter-spacing: -0.005em; }
+.planche-title em { font-style: italic; }
+.sch-opener-right { position: absolute; inset: 0; display: grid; place-items: center; z-index: 3; background: radial-gradient(ellipse at center, rgba(184,88,46,0.05) 0%, transparent 70%); }
+.sch-opener-right-inner { text-align: center; }
+.sch-opener-right-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.26em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 18px; }
+.sch-opener-right-big { font-family: 'Fraunces', serif; font-style: italic; font-weight: 300; font-size: 340px; line-height: 0.85; color: var(--accent); letter-spacing: -0.05em; }
+.sch-opener-right-cap { font-family: 'Fraunces', serif; font-style: italic; font-weight: 300; font-size: 18px; line-height: 1.4; color: var(--ink-2); margin-top: 24px; }
+
+/* SVG rings - static (no transitions) for print */
+.ring-fill, .ring-stroke, .ring-tick, .ring-label-text { transition: none; }
+
+/* ═════ PRINT RULES ═════ */
+@page {
+  size: A4 landscape;
+  margin: 0;
+}
+@media print {
+  html, body { background: white; margin: 0; padding: 0; }
+  /* Each wrapper = one A4 landscape page (297×210mm) */
+  .spread-wrap {
+    width: 297mm;
+    height: 210mm;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    page-break-after: always;
+    break-after: page;
+    position: relative;
+  }
+  .spread-wrap:last-child { page-break-after: auto; break-after: auto; }
+  /* Scale the 1600×1131 spread to fit 297×210mm exactly.
+     297mm = 1122.5px @96dpi, 210mm = 793.7px @96dpi
+     Scale = min(1122.5/1600, 793.7/1131) = min(0.7016, 0.7018) ≈ 0.7016 */
+  .spread-print {
+    margin: 0 !important;
+    box-shadow: none !important;
+    transform: scale(0.7015);
+    transform-origin: top left;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  svg, svg * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+/* Screen preview: stack spreads with gap */
+@media screen {
+  body { padding: 40px 0; background: #2b2620; }
+  .spread-print {
+    margin: 0 auto 40px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.4);
+  }
+}
+</style>
+</head>
+<body>
+
+<div id="book"></div>
+
+<script src="book-data.js"></script>
+<script src="book-schemas.js"></script>
+<script>
+/* Inline simplified renderer — same as book-render.js but outputs .spread-print
+   and skips all navigation, localStorage, scaling */
+
+function initials(name) {
+  return name.split(/[\s-]/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+}
+
+function buildOnionSVG({ activeLayer = null, size = 800, detailed = true, showLabels = true } = {}) {
+  const cx = 400, cy = 400;
+  const coreR = 52;
+  const outerR = 360;
+  const step = (outerR - coreR) / 9;
+  const layers = LAYERS;
+  let svg = `<svg class="illus-svg" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">`;
+  svg += `<defs>
+    <radialGradient id="coreGrad" cx="50%" cy="45%" r="55%">
+      <stop offset="0%" stop-color="#e68063"/><stop offset="60%" stop-color="#c34e3a"/><stop offset="100%" stop-color="#9b3a2b"/>
+    </radialGradient>
+    <radialGradient id="coreGradDim" cx="50%" cy="45%" r="55%">
+      <stop offset="0%" stop-color="#d67361"/><stop offset="60%" stop-color="#b04a3a"/><stop offset="100%" stop-color="#8c3528"/>
+    </radialGradient>
+  </defs>`;
+  for (let i = 9; i >= 1; i--) {
+    const r = coreR + step * i;
+    const layer = layers[i];
+    const isActive = activeLayer === i;
+    const isPast = activeLayer !== null && i < activeLayer;
+    let fillOpacity, strokeOpacity, strokeWidth;
+    if (activeLayer === null) { fillOpacity = 0.10 + i * 0.008; strokeOpacity = 0.42; strokeWidth = 1.1; }
+    else if (isActive) { fillOpacity = 0.32; strokeOpacity = 1; strokeWidth = 2.6; }
+    else if (isPast) { fillOpacity = 0.10; strokeOpacity = 0.55; strokeWidth = 1.0; }
+    else { fillOpacity = 0.04; strokeOpacity = 0.22; strokeWidth = 0.8; }
+    svg += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${layer.color}" fill-opacity="${fillOpacity}"/>`;
+    svg += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${layer.color}" stroke-opacity="${strokeOpacity}" stroke-width="${strokeWidth}"/>`;
+  }
+  const coreActive = activeLayer === 0;
+  const coreFaded = activeLayer !== null && activeLayer > 0;
+  const coreFill = coreFaded ? 'url(#coreGradDim)' : 'url(#coreGrad)';
+  const coreStroke = coreActive ? 3 : (coreFaded ? 0.8 : 1.4);
+  const coreStrokeOp = coreActive ? 1 : (coreFaded ? 0.5 : 0.85);
+  svg += `<circle cx="${cx}" cy="${cy}" r="${coreR}" fill="${coreFill}"/>`;
+  svg += `<circle cx="${cx}" cy="${cy}" r="${coreR}" fill="none" stroke="#9b3a2b" stroke-opacity="${coreStrokeOp}" stroke-width="${coreStroke}"/>`;
+  if (coreActive || activeLayer === null) {
+    svg += `<text x="${cx}" y="${cy - 4}" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-weight="500" font-size="22" fill="#fff">LLM</text>`;
+    svg += `<text x="${cx}" y="${cy + 18}" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="0.2em" fill="#fff" opacity="0.85">00</text>`;
+  } else {
+    svg += `<text x="${cx}" y="${cy + 5}" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" letter-spacing="0.2em" fill="#fff" opacity="0.78">00</text>`;
+  }
+  // ticks removed for print clarity
+  if (showLabels && activeLayer !== null) {
+    const i = activeLayer;
+    if (i > 0) {
+      const layer = layers[i];
+      const ang = -30 * Math.PI / 180;
+      const lx = cx + Math.cos(ang) * (coreR + step * i + 18);
+      const ly = cy + Math.sin(ang) * (coreR + step * i + 18);
+      const lEndX = cx + Math.cos(ang) * (coreR + step * i + 80);
+      const lEndY = cy + Math.sin(ang) * (coreR + step * i + 80);
+      svg += `<line x1="${lx}" y1="${ly}" x2="${lEndX}" y2="${lEndY}" stroke="${layer.color}" stroke-width="1.2" stroke-opacity="0.7"/>`;
+      svg += `<circle cx="${lx}" cy="${ly}" r="3" fill="${layer.color}"/>`;
+      svg += `<text x="${lEndX + 6}" y="${lEndY - 4}" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="0.18em" fill="${layer.color}" font-weight="500">COUCHE ${layer.num}</text>`;
+      svg += `<text x="${lEndX + 6}" y="${lEndY + 14}" font-family="Fraunces, serif" font-style="italic" font-size="19" fill="#1e1e2a">${layer.short}</text>`;
+    } else if (i === 0) {
+      const ang = -30 * Math.PI / 180;
+      const lx = cx + Math.cos(ang) * coreR;
+      const ly = cy + Math.sin(ang) * coreR;
+      const lEndX = cx + Math.cos(ang) * (coreR + 140);
+      const lEndY = cy + Math.sin(ang) * (coreR + 140);
+      svg += `<line x1="${lx}" y1="${ly}" x2="${lEndX}" y2="${lEndY}" stroke="#c34e3a" stroke-width="1.2" stroke-opacity="0.7"/>`;
+      svg += `<circle cx="${lx}" cy="${ly}" r="3" fill="#c34e3a"/>`;
+      svg += `<text x="${lEndX + 6}" y="${lEndY - 4}" font-family="JetBrains Mono, monospace" font-size="10" letter-spacing="0.18em" fill="#c34e3a" font-weight="500">COUCHE 00</text>`;
+      svg += `<text x="${lEndX + 6}" y="${lEndY + 14}" font-family="Fraunces, serif" font-style="italic" font-size="19" fill="#1e1e2a">${layers[0].short}</text>`;
+    }
+  }
+  if (activeLayer === null && showLabels) {
+    for (let i = 1; i <= 9; i++) {
+      const r = coreR + step * i - step/2;
+      const ang = (-90 + (i * 33) % 360) * Math.PI / 180;
+      const lx = cx + Math.cos(ang) * r;
+      const ly = cy + Math.sin(ang) * r;
+      svg += `<text x="${lx}" y="${ly + 3}" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9.5" letter-spacing="0.1em" fill="${layers[i].color}" fill-opacity="0.85" font-weight="500">${layers[i].num}</text>`;
+    }
+  }
+  svg += `</svg>`;
+  return svg;
+}
+
+function buildMiniOnion(activeLayer) {
+  const cx = 40, cy = 40;
+  const coreR = 5.2; const outerR = 36; const step = (outerR - coreR) / 9;
+  let s = `<svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">`;
+  for (let i = 9; i >= 1; i--) {
+    const r = coreR + step * i;
+    const l = LAYERS[i];
+    const active = i === activeLayer;
+    const past = activeLayer !== null && i < activeLayer;
+    const fillOp = active ? 0.5 : past ? 0.14 : 0.05;
+    const strokeOp = active ? 1 : past ? 0.5 : 0.2;
+    const sw = active ? 1.4 : 0.6;
+    s += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${l.color}" fill-opacity="${fillOp}"/>`;
+    s += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${l.color}" stroke-opacity="${strokeOp}" stroke-width="${sw}"/>`;
+  }
+  const coreActive = activeLayer === 0;
+  s += `<circle cx="${cx}" cy="${cy}" r="${coreR}" fill="#c34e3a" opacity="${coreActive ? 1 : 0.7}"/>`;
+  s += `</svg>`;
+  return s;
+}
+
+function renderCover() {
+  return `<div class="spread-print">
+    <div class="page left"><div class="cover-left">
+      <div class="cover-eyebrow"><span class="bar"></span>Anatomie · en dix couches</div>
+      <div>
+        <h1 class="cover-title">Au cœur,<br><em>un tirage<br>probabiliste.</em></h1>
+        <p class="cover-sub">Autour de lui, dix couches pour qu'il tienne — d'un LLM stochastique jusqu'à la gouvernance d'entreprise.</p>
+      </div>
+      <div class="cover-meta">
+        <div><strong>Un livre en dix couches</strong></div>
+        <div>Systèmes agentiques en production · 2026</div>
+      </div>
+    </div><div class="folio">A</div></div>
+    <div class="page right"><div class="cover-right-content">${buildOnionSVG({ activeLayer: null, showLabels: true })}</div><div class="folio">B</div></div>
+  </div>`;
+}
+
+function renderTOC() {
+  const rows = LAYERS.map((l, i) => `
+    <a class="toc-item" href="#layer-${i}" style="text-decoration:none;color:inherit;display:grid;grid-template-columns:36px 16px 1fr auto;gap:16px;align-items:center;padding:14px 4px;border-top:1px solid var(--line);font-family:'Fraunces',serif;">
+      <span class="toc-num">${l.num}</span>
+      <span class="toc-dot" style="background:${l.color}"></span>
+      <div><div class="toc-title">${l.title.replace(/<\/?em>/g,'')}</div>
+      <div class="toc-short">${l.short}</div></div>
+      <span class="toc-folio">p. ${(i * 2 + 5).toString().padStart(2, '0')}</span>
+    </a>`).join('');
+  return `<div class="spread-print">
+    <div class="page left"><div class="toc-inner">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.24em;text-transform:uppercase;color:var(--accent);margin-bottom:12px;font-weight:500;">Sommaire</div>
+      <h2 class="toc-head">Dix couches, <em>un système vivant</em>.</h2>
+      <p class="toc-sub">Chaque couche est à la fois un métier, une stack et une discipline de gouvernance. Les pages qui suivent déplient chaque anneau&nbsp;: la problématique, la mise en scène, les concepts-clés, les profils mobilisés, le piège classique.</p>
+      <div class="toc-list">${rows}</div>
+    </div><div class="folio">p. 02</div></div>
+    <div class="page right"><div class="illus-wrap">${buildOnionSVG({ activeLayer: null, detailed: true, showLabels: true })}</div>
+      <div class="illus-caption"><div class="illus-cap-eyebrow">Planche — l'oignon complet</div>
+      <div class="illus-cap-title">Dix anneaux concentriques autour d'un noyau stochastique. Chaque page tournée <em>allume</em> un anneau.</div></div>
+      <div class="folio">p. 03</div></div>
+  </div>`;
+}
+
+function renderLayerSpread(layerIdx, folioLeft, folioRight) {
+  const l = LAYERS[layerIdx];
+  const roleChips = l.roles.map(r => {
+    const mission = (typeof ROLE_DEFS !== 'undefined' && ROLE_DEFS[r]) || '';
+    return `<div class="role-chip"><span class="av" style="background:${l.color}">${initials(r)}</span><div class="role-txt"><div class="role-name">${r}</div>${mission ? `<div class="role-mission">${mission}</div>` : ''}</div></div>`;
+  }).join('');
+  const defsHtml = l.concepts.map((key, i) => {
+    const def = (typeof CONCEPT_DEFS !== 'undefined' && CONCEPT_DEFS[key]) ? CONCEPT_DEFS[key] : `<em>Définition à préciser.</em>`;
+    return `<div class="def-item"><div class="def-num">${String(i + 1).padStart(2, '0')}</div>
+      <div><div class="def-term">${key}</div><div class="def-body">${def}</div></div></div>`;
+  }).join('');
+  return `<div class="spread-print" id="layer-${layerIdx}" style="--layer-color:${l.color};">
+    <div class="page left">
+      <div class="running-head"><span>Couche ${l.num} <span class="dot" style="background:${l.color}"></span> ${l.short}</span><span>Anatomie · I</span></div>
+      <div class="page-inner">
+        <div class="layer-num">${l.num}<span class="couche">Couche · ${l.short}</span></div>
+        <h2 class="layer-title">${l.title}</h2>
+        <div class="rule" style="background:${l.color};"></div>
+        <div class="question">${l.question}</div>
+        <div class="section-label">Mise en scène</div>
+        <p class="narrative">${l.narrative}</p>
+        <div class="mini-onion-wrap">${buildMiniOnion(layerIdx)}
+          <div class="mini-onion-text"><strong>Anneau ${l.num} · ${l.short}</strong>${l.illusCaption}</div></div>
+        <div class="section-label">Profils mobilisés</div>
+        <div class="roles-row">${roleChips}</div>
+      </div><div class="folio">p. ${String(folioLeft).padStart(2,'0')}</div></div>
+    <div class="page right">
+      <div class="running-head"><span>Anatomie · II</span><span>${l.short} <span class="dot" style="background:${l.color}"></span> Couche ${l.num}</span></div>
+      <div class="concepts-inner">
+        <div class="concepts-head"><h3 class="concepts-title">Concepts <em>&amp; stack</em></h3>
+          <div class="concepts-mini"><span>${l.num}</span><span class="mini-svg">${buildMiniOnion(layerIdx)}</span></div></div>
+        <div class="concepts-lede">Le vocabulaire opérationnel de la couche ${l.num} — ${l.short.toLowerCase()}. ${l.concepts.length} notions à maîtriser avant d'aller plus loin.</div>
+        <div class="concepts-rule"></div>
+        <div class="defs-list">${defsHtml}</div>
+        <div class="risk"><div class="risk-label">⚠ Piège classique · ${l.short}</div><div class="risk-text">${l.risk}</div></div>
+        <div class="concepts-footer"><span>Fiche · ${l.concepts.length} définitions</span><span>Couche ${l.num} / 09</span></div>
+      </div><div class="folio">p. ${String(folioRight).padStart(2,'0')}</div></div>
+  </div>`;
+}
+
+function renderSchemasOpenerPrint(leftFolio, rightFolio) {
+  const items = SCHEMAS.map((s, i) => {
+    const layer = LAYERS[s.layerIdx];
+    return `<div class="planche-item" style="--layer-color:${layer.color};">
+      <div class="planche-num">${String(i+1).padStart(2,'0')}</div>
+      <div class="planche-dot" style="background:${layer.color}"></div>
+      <div><div class="planche-layer">${s.layerLabel}</div><div class="planche-title">${s.title}</div></div></div>`;
+  }).join('');
+  return `<div class="spread-print">
+    <div class="page left"><div class="sch-opener-inner">
+      <div class="sch-opener-eyebrow">Troisième partie</div>
+      <h2 class="sch-opener-title">Planches <em>&amp; schémas</em></h2>
+      <div class="sch-opener-rule"></div>
+      <p class="sch-opener-lede">Quatre schémas de référence, un par discipline-clé. Chacun est conçu pour être extrait du livre et affiché au mur&nbsp;: boucle ReAct, six patterns Anthropic, carte des risques OWASP, trace OpenTelemetry GenAI.</p>
+      <div class="planche-list">${items}</div>
+    </div><div class="folio">p. ${String(leftFolio).padStart(2,'0')}</div></div>
+    <div class="page right"><div class="sch-opener-right"><div class="sch-opener-right-inner">
+      <div class="sch-opener-right-eyebrow">Quatre planches</div>
+      <div class="sch-opener-right-big">04</div>
+      <div class="sch-opener-right-cap">schémas de référence<br>à annoter, imprimer, afficher</div>
+    </div></div><div class="folio">p. ${String(rightFolio).padStart(2,'0')}</div></div>
+  </div>`;
+}
+
+function renderSchemaSpreadPrint(schemaIdx, leftFolio, rightFolio) {
+  const s = SCHEMAS[schemaIdx];
+  const layer = LAYERS[s.layerIdx];
+  const legendHtml = s.legend.length ? `<div class="sch-legend">${s.legend.map(it => `
+    <div class="sch-legend-item"><span class="sch-legend-code" style="background:${layer.color}">${it.code}</span>
+    <span class="sch-legend-lbl">${it.label}</span></div>`).join('')}</div>` : '';
+  return `<div class="spread-print" style="--layer-color:${layer.color};">
+    <div class="page left">
+      <div class="running-head"><span>${s.layerLabel} <span class="dot" style="background:${layer.color}"></span> Schéma</span><span>Anatomie · Planches III</span></div>
+      <div class="sch-left-inner">
+        <div class="sch-eyebrow" style="color:${layer.color};"><span class="sch-eye-dot" style="background:${layer.color}"></span>Planche ${String(schemaIdx + 1).padStart(2,'0')} · Schéma de référence</div>
+        <h2 class="sch-title">${s.title}</h2>
+        <div class="sch-rule" style="background:${layer.color};"></div>
+        <p class="sch-subtitle">${s.subtitle}</p>
+        ${legendHtml}
+        <div class="sch-source"><div class="sch-source-label">Source primaire</div><div class="sch-source-text">${s.source}</div></div>
+      </div><div class="folio">p. ${String(leftFolio).padStart(2,'0')}</div></div>
+    <div class="page right">
+      <div class="running-head"><span>Anatomie · Planches III</span><span>Schéma <span class="dot" style="background:${layer.color}"></span> ${s.layerLabel}</span></div>
+      <div class="sch-svg-wrap"><div class="sch-svg-inner">${s.svg}</div></div>
+      <div class="folio">p. ${String(rightFolio).padStart(2,'0')}</div></div>
+  </div>`;
+}
+
+function renderClosing(folioLeft, folioRight) {
+  return `<div class="spread-print">
+    <div class="page left"><div class="closing-inner">
+      <div class="closing-quote">Start simple, measure, add complexity only when it delivers measurable value.</div>
+      <div class="closing-attr">— Schluntz &amp; Zhang, Anthropic · Building Effective Agents, déc. 2024</div>
+      <div class="closing-body">
+        Les dix couches ne sont pas un ordre d'implémentation, mais une <strong>grille de lecture</strong>. On ne part pas de la gouvernance&nbsp;; on n'arrive pas par miracle au LLM. On avance, on mesure, on recule, on renforce — couche après couche, à mesure que l'usage se révèle.<br><br>
+        Un agent qui tient en production est <em>la rencontre</em> d'un noyau probabiliste et d'une discipline d'ingénierie. Ni l'un ni l'autre ne suffit. Le cœur sans la discipline dérive&nbsp;; la discipline sans le cœur ne sert à rien.<br><br>
+        Ce livre se referme ici. La stack, elle, ne fait que s'ouvrir.
+      </div>
+      <div class="closing-sig">— Fin du panorama.</div>
+    </div><div class="folio">p. ${String(folioLeft).padStart(2,'0')}</div></div>
+    <div class="page right"><div class="illus-wrap">${buildOnionSVG({ activeLayer: null, detailed: true, showLabels: false })}</div>
+      <div class="illus-caption"><div class="illus-cap-eyebrow">Planche de clôture</div>
+      <div class="illus-cap-title">L'oignon complet — dix anneaux autour d'un <em>tirage probabiliste</em>.</div></div>
+      <div class="folio">p. ${String(folioRight).padStart(2,'0')}</div></div>
+  </div>`;
+}
+
+function renderColophon(folioLeft, folioRight) {
+  const lfolio = folioLeft;
+  return `<div class="spread-print">
+    <div class="page left"><div class="colophon-inner">
+      <div class="colophon-head">Colophon · sources &amp; remerciements</div>
+      <h3 class="colophon-title">Ce que l'on a <em>lu, vu, consulté</em></h3>
+      <p class="colophon-intro">Les sources primaires qui structurent ce panorama — publications fondatrices, documentations officielles des cinq hyperscalers, protocoles standardisés et frameworks de sécurité. Tout est ouvert et public.</p>
+      <div class="col-group"><h4>Fondations conceptuelles</h4><ul>
+        <li><strong>Building Effective Agents</strong> · Schluntz &amp; Zhang, Anthropic, déc. 2024</li>
+        <li><strong>Effective Context Engineering</strong> · Anthropic Engineering, 2026</li>
+        <li><em>ReAct: Synergizing Reasoning and Acting</em> · Yao et al., ICLR 2023</li></ul></div>
+      <div class="col-group"><h4>SDK, runtimes &amp; plateformes</h4><ul>
+        <li><strong>Claude Agent SDK</strong> · <strong>Managed Agents</strong> (beta publique, avr. 2026)</li>
+        <li><strong>OpenAI Agents SDK</strong> · <strong>Agent Builder</strong></li>
+        <li><strong>Google ADK</strong> · <strong>Vertex AI Agent Engine</strong></li>
+        <li><strong>Microsoft Agent Framework 1.0</strong> · <strong>Azure AI Foundry Agent Service</strong></li>
+        <li><strong>AWS Bedrock AgentCore</strong> (GA, octobre 2025)</li>
+        <li><strong>LangGraph 1.0</strong> · durable execution</li></ul></div>
+      <div class="col-group"><h4>Protocoles &amp; gouvernance</h4><ul>
+        <li><strong>Model Context Protocol (MCP)</strong> · Anthropic → Linux Foundation AAIF</li>
+        <li><strong>Agent2Agent (A2A)</strong> · Google → Linux Foundation AAIF</li>
+        <li><strong>AG-UI</strong> · CopilotKit</li>
+        <li><strong>OWASP Top 10 for Agentic Applications</strong> · décembre 2025</li>
+        <li><strong>OpenTelemetry GenAI Semantic Conventions</strong></li></ul></div>
+    </div><div class="folio">p. ${String(lfolio).padStart(2,'0')}</div></div>
+    <div class="page right"><div class="colophon-inner">
+      <div class="colophon-head">Fabrication</div>
+      <h3 class="colophon-title">De la typographie, <em>surtout</em></h3>
+      <p class="colophon-intro">Ce livre est composé en <em>Fraunces</em> pour le display (Phaedra Charles &amp; Flavia Zimbardi) et <em>Inter</em> pour le texte courant (Rasmus Andersson). Les métadonnées, ticks et codes sont en <em>JetBrains Mono</em>. La couleur papier évoque un vieil ouvrage de bureau, la couleur d'accent — un orange brûlé — vient de l'image de l'oignon coupé.</p>
+      <div class="col-group"><h4>Méthode</h4><ul>
+        <li><strong>Une couche par double page</strong> — gauche l'explication, droite l'illustration.</li>
+        <li>L'oignon reste <em>une seule</em> image. Seul le focus change&nbsp;: chaque anneau s'allume à son tour.</li>
+        <li>Dix couches ordonnées du cœur vers l'extérieur&nbsp;: <em>du modèle à la gouvernance</em>.</li></ul></div>
+      <div class="col-group"><h4>Fin</h4><ul>
+        <li><em>Anatomie d'un système agentique en production</em> — un livre en dix couches.</li>
+        <li>Paris, 2026. Relié à la main, imprimé sur un tirage probabiliste.</li></ul></div>
+    </div><div class="folio">p. ${String(folioRight).padStart(2,'0')}</div></div>
+  </div>`;
+}
+
+/* Build everything — use SPREADS order (schemas interleaved with layers) */
+// Compute folio for each spread (cover/toc use letters; layers start at 04)
+function folioFor(spreadIdx) {
+  // Count 'content' spreads (layer/schema/closing/colophon) from 0
+  // Skip cover (A/B) and toc (02/03)
+  if (spreadIdx === 0) return 'A';
+  if (spreadIdx === 1) return '02';
+  // For spreadIdx >= 2: page number = 4 + (spreadIdx - 2) * 2
+  return null; // will be computed below with left/right
+}
+
+function renderAnySpread(spread, spreadIdx) {
+  if (spread.kind === 'cover') return renderCover();
+  if (spread.kind === 'toc') return renderTOC();
+  const baseLeft = 4 + (spreadIdx - 2) * 2;
+  const baseRight = baseLeft + 1;
+  if (spread.kind === 'layer') return renderLayerSpread(spread.layerIdx, baseLeft, baseRight);
+  if (spread.kind === 'schema') return renderSchemaSpreadPrint(spread.schemaIdx, baseLeft, baseRight);
+  if (spread.kind === 'closing') return renderClosing(baseLeft, baseRight);
+  if (spread.kind === 'colophon') return renderColophon(baseLeft, baseRight);
+  return '';
+}
+
+document.getElementById('book').innerHTML =
+  SPREADS.map((sp, i) => `<div class="spread-wrap">${renderAnySpread(sp, i)}</div>`).join('');
+
+/* Auto-print once fonts + layout ready (skip when ?noprint is present) */
+(async () => {
+  try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch (e) {}
+  await new Promise(r => setTimeout(r, 700));
+  if (!/[?&]noprint/.test(location.search)) window.print();
+})();
+</script>
+
+</body>
+</html>
