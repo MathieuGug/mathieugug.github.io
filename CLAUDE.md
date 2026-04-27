@@ -23,6 +23,7 @@ Site personnel de Mathieu Guglielmino, hébergé sur GitHub Pages. Il publie des
 - Un dossier par artefact (`anatomie/`, `gouvernance/`, `proces-musk-altman/`, …).
 - **Chaque dossier d'artefact contient son propre `index.html`** qui sert de hub d'entrée. Le hub présente l'artefact (eyebrow + titre + lede + métadonnées) et liste les formats disponibles (1 ou plusieurs cartes). Quand l'artefact n'a qu'un format, le hub propose une seule grosse carte ; sinon, une grille.
 - Les liens depuis l'accueil pointent vers le **dossier** (`anatomie/`, `gouvernance/`, …), jamais directement vers un fichier interne. C'est le hub qui aiguille ensuite.
+- **Bouton retour des hubs** : pointe vers `../index.html#series` avec le label `← Retour aux dossiers` — ramène à la grille des séries de l'accueil, pas à la hero/CV.
 - Un dossier peut aussi contenir : scrollytelling HTML, livre/app interactive, version print, README, médias.
 
 ## Index : tri et typologie
