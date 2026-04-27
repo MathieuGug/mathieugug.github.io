@@ -15,6 +15,7 @@ Site personnel de Mathieu Guglielmino, hébergé sur GitHub Pages. Il publie des
 - Polices : Google Fonts (Fraunces / Inter / JetBrains Mono).
 - Palette définie en haut de `index.html` (`--bg #faf6ec`, `--accent #b8582e`, etc.). Réutiliser ces variables pour la cohérence visuelle.
 - Illustrations : SVG inline pour l'accessibilité et l'interactivité.
+- **Favicon** : `/favicon.svg` à la racine (monogramme MG italique sur fond accent). Toute nouvelle page HTML publiée doit inclure `<link rel="icon" type="image/svg+xml" href="/favicon.svg">` dans son `<head>`.
 - Pas de tracker, pas d'analytics, pas de tiers en dehors de Google Fonts.
 
 ## Structure du repo
