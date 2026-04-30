@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" data-schema-id="schema-04">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- HEADER -->
+  <text x="60" y="55" class="mono" font-size="11" font-weight="600"
+        letter-spacing="0.12em" fill="#B7332C">SCHÉMA 04</text>
+  <text x="60" y="92" class="display" font-size="26" font-weight="600"
+        letter-spacing="-0.01em" fill="#1A1A1A">Anatomie d'une trace OpenTelemetry GenAI</text>
+  <text x="60" y="118" class="display" font-size="16" font-style="italic"
+        fill="#5A5A5A">Hiérarchie de spans pour un agent multi-step avec tool call et évaluation attachée</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- Time axis indicator -->
+  <text x="60" y="180" class="body" font-size="10" font-weight="500"
+        letter-spacing="0.08em" fill="#5A5A5A">PROFONDEUR</text>
+  <text x="980" y="180" class="body" font-size="10" font-weight="500"
+        letter-spacing="0.08em" fill="#5A5A5A" text-anchor="end">DURÉE (ms)</text>
+  <text x="1130" y="180" class="body" font-size="10" font-weight="500"
+        letter-spacing="0.08em" fill="#5A5A5A" text-anchor="end">ATTRIBUTS GenAI</text>
+
+  <line x1="60" y1="195" x2="1140" y2="195" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- ROOT SPAN: invoke_agent -->
+  <g class="interactive" data-card="invoke-agent" tabindex="0" role="button"
+     aria-label="Span racine invoke_agent">
+    <rect x="60" y="220" width="900" height="42" rx="3"
+          fill="#B7332C" fill-opacity="0.07" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="80" y="237" class="mono" font-size="11" font-weight="600" fill="#B7332C">invoke_agent TravelConcierge</text>
+    <text x="80" y="253" class="body" font-size="10" font-style="italic" fill="#5A5A5A">SpanKind: CLIENT — span racine de l'orchestration agent</text>
+    <text x="975" y="245" class="mono" font-size="11" fill="#1A1A1A" text-anchor="end">1240</text>
+  </g>
+  <text x="990" y="245" class="body" font-size="9" fill="#1A1A1A">gen_ai.operation.name=invoke_agent</text>
+
+  <!-- Indentation guide line for child spans -->
+  <line x1="80" y1="270" x2="80" y2="660" stroke="#B8B5AE" stroke-width="0.5" stroke-dasharray="1 3"/>
+
+  <!-- CHILD 1: chat (first LLM call) -->
+  <g class="interactive" data-card="chat-1" tabindex="0" role="button"
+     aria-label="Premier appel LLM chat">
+    <rect x="100" y="290" width="270" height="42" rx="3"
+          fill="#1F5560" fill-opacity="0.07" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="118" y="307" class="mono" font-size="10" font-weight="600" fill="#1F5560">chat claude-sonnet-4</text>
+    <text x="118" y="322" class="body" font-size="9" font-style="italic" fill="#5A5A5A">SpanKind: CLIENT · 1er tour : demande tool_call</text>
+    <text x="362" y="315" class="mono" font-size="10" fill="#1A1A1A" text-anchor="end">320</text>
+  </g>
+  <line x1="80" y1="311" x2="100" y2="311" stroke="#B8B5AE" stroke-width="0.5"/>
+  <text x="990" y="315" class="body" font-size="9" fill="#1A1A1A">request.model · usage.input_tokens · usage.output_tokens</text>
+
+  <!-- CHILD 2: execute_tool -->
+  <g class="interactive" data-card="execute-tool" tabindex="0" role="button"
+     aria-label="Span execute_tool">
+    <rect x="100" y="358" width="180" height="42" rx="3"
+          fill="#B58A2C" fill-opacity="0.09" stroke="#B58A2C" stroke-width="1.25"/>
+    <text x="118" y="375" class="mono" font-size="10" font-weight="600" fill="#B58A2C">execute_tool get_weather</text>
+    <text x="118" y="390" class="body" font-size="9" font-style="italic" fill="#5A5A5A">SpanKind: INTERNAL · function tool</text>
+    <text x="272" y="383" class="mono" font-size="10" fill="#1A1A1A" text-anchor="end">105</text>
+  </g>
+  <line x1="80" y1="379" x2="100" y2="379" stroke="#B8B5AE" stroke-width="0.5"/>
+  <text x="990" y="383" class="body" font-size="9" fill="#1A1A1A">tool.name · tool.call.id · tool.type=function</text>
+
+  <!-- Sub-child: external API call inside tool -->
+  <g class="interactive" data-card="external-api" tabindex="0" role="button"
+     aria-label="Sous-span appel API externe">
+    <rect x="140" y="418" width="120" height="36" rx="3"
+          fill="#FAF8F3" stroke="#B58A2C" stroke-width="0.75" stroke-dasharray="2 2"/>
+    <text x="155" y="434" class="mono" font-size="9" font-weight="500" fill="#B58A2C">HTTP weather API</text>
+    <text x="155" y="446" class="body" font-size="8" font-style="italic" fill="#5A5A5A">span imbriqué externe</text>
+    <text x="252" y="441" class="mono" font-size="9" fill="#1A1A1A" text-anchor="end">87</text>
+  </g>
+  <line x1="100" y1="436" x2="140" y2="436" stroke="#B8B5AE" stroke-width="0.5"/>
+
+  <!-- CHILD 3: chat (second LLM call - synthesis) -->
+  <g class="interactive" data-card="chat-2" tabindex="0" role="button"
+     aria-label="Deuxième appel LLM chat avec évaluation">
+    <rect x="100" y="476" width="290" height="42" rx="3"
+          fill="#1F5560" fill-opacity="0.07" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="118" y="493" class="mono" font-size="10" font-weight="600" fill="#1F5560">chat claude-sonnet-4</text>
+    <text x="118" y="508" class="body" font-size="9" font-style="italic" fill="#5A5A5A">SpanKind: CLIENT · synthèse finale</text>
+    <text x="382" y="501" class="mono" font-size="10" fill="#1A1A1A" text-anchor="end">340</text>
+  </g>
+  <line x1="80" y1="497" x2="100" y2="497" stroke="#B8B5AE" stroke-width="0.5"/>
+  <text x="990" y="501" class="body" font-size="9" fill="#1A1A1A">request.model · usage.input_tokens · response.model</text>
+
+  <!-- ATTACHED EVENT: gen_ai.evaluation.result -->
+  <g class="interactive" data-card="eval-event" tabindex="0" role="button"
+     aria-label="Événement d'évaluation attaché">
+    <rect x="160" y="535" width="220" height="38" rx="3"
+          fill="#FAF8F3" stroke="#B7332C" stroke-width="0.75" stroke-dasharray="3 2"/>
+    <text x="175" y="551" class="mono" font-size="9" font-weight="600" fill="#B7332C">⚡ gen_ai.evaluation.result</text>
+    <text x="175" y="565" class="body" font-size="9" font-style="italic" fill="#5A5A5A">Event sur le span chat #2 — score=0.87</text>
+  </g>
+  <path d="M 245 518 L 245 535" stroke="#B7332C" stroke-width="0.5" stroke-dasharray="2 2"/>
+
+  <!-- LEGEND of attribute color coding -->
+  <line x1="60" y1="610" x2="1140" y2="610" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <text x="60" y="635" class="body" font-size="11" font-weight="500" fill="#5A5A5A">LÉGENDE — TYPES DE SPAN OTel GenAI</text>
+
+  <rect x="60" y="650" width="14" height="14" rx="2" fill="#B7332C" fill-opacity="0.07" stroke="#B7332C" stroke-width="1"/>
+  <text x="80" y="661" class="body" font-size="11" fill="#1A1A1A">Agent</text>
+  <text x="80" y="674" class="body" font-size="9" font-style="italic" fill="#5A5A5A">invoke_agent</text>
+
+  <rect x="180" y="650" width="14" height="14" rx="2" fill="#1F5560" fill-opacity="0.07" stroke="#1F5560" stroke-width="1"/>
+  <text x="200" y="661" class="body" font-size="11" fill="#1A1A1A">Modèle</text>
+  <text x="200" y="674" class="body" font-size="9" font-style="italic" fill="#5A5A5A">chat, text_completion</text>
+
+  <rect x="320" y="650" width="14" height="14" rx="2" fill="#B58A2C" fill-opacity="0.09" stroke="#B58A2C" stroke-width="1"/>
+  <text x="340" y="661" class="body" font-size="11" fill="#1A1A1A">Outil</text>
+  <text x="340" y="674" class="body" font-size="9" font-style="italic" fill="#5A5A5A">execute_tool</text>
+
+  <rect x="440" y="650" width="14" height="14" rx="2" fill="#FAF8F3" stroke="#B7332C" stroke-width="0.75" stroke-dasharray="2 2"/>
+  <text x="460" y="661" class="body" font-size="11" fill="#1A1A1A">Événement</text>
+  <text x="460" y="674" class="body" font-size="9" font-style="italic" fill="#5A5A5A">gen_ai.evaluation.result, content capture</text>
+
+  <!-- Annotated callouts -->
+  <text x="640" y="650" class="body" font-size="10" font-style="italic" fill="#5A5A5A">
+    <tspan x="640" dy="0">Le span racine englobe toute la durée totale ; les enfants sont</tspan>
+    <tspan x="640" dy="14">imbriqués à profondeur croissante. Chaque span porte les attributs</tspan>
+    <tspan x="640" dy="14">standardisés `gen_ai.*` qui rendent la trace lisible par n'importe</tspan>
+    <tspan x="640" dy="14">quel backend conforme aux conventions sémantiques.</tspan>
+  </text>
+
+  <!-- FOOTER -->
+  <line x1="60" y1="745" x2="1140" y2="745" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="770" class="body" font-size="10" font-style="italic"
+        fill="#5A5A5A">Sources : OpenTelemetry GenAI Spec v1.37+, GenAI Agent Spans, GenAI Events ; représentation simplifiée d'une trace réelle</text>
+  <text x="60" y="785" class="body" font-size="10" font-style="italic"
+        fill="#B8B5AE">Méthodologie : trace synthétique illustrant les 4 types de spans GenAI canoniques</text>
+</svg>

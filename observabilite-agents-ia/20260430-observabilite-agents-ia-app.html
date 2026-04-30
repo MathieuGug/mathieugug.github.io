@@ -1,0 +1,3125 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Observabilité des agents IA</title>
+  <meta name="description" content="Observabilité des agents IA · du monitoring au cognitive audit trail. État de l'art OpenTelemetry GenAI, six piliers, architecture, vendor landscape, feuille de route 2026 — étude par Mathieu Guglielmino.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* ───────── Tokens ───────── */
+    :root {
+      --paper:    #FAF8F3;
+      --paper-2:  #F2EFE7;
+      --ink:      #1A1A1A;
+      --graphite: #5A5A5A;
+      --mist:     #B8B5AE;
+      --rule:     #E5E1D8;
+      --carmine:  #B7332C;
+      --teal:     #1F5560;
+      --mustard:  #B58A2C;
+
+      --serif: 'Spectral', 'Playfair Display', Georgia, serif;
+      --sans:  'Inter', system-ui, sans-serif;
+      --mono:  'JetBrains Mono', 'IBM Plex Mono', monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ───────── Layout ───────── */
+    .layout {
+      display: grid;
+      grid-template-columns: 240px minmax(0, 1fr) 320px;
+      gap: 0;
+      max-width: 1440px;
+      margin: 0 auto;
+      transition: grid-template-columns 280ms ease;
+      overflow-x: clip;
+    }
+    @media (min-width: 1025px) {
+      .layout.sources-collapsed {
+        grid-template-columns: 240px minmax(0, 1fr) 0;
+      }
+      .layout.sources-collapsed #sources {
+        transform: translateX(100%);
+        opacity: 0;
+        pointer-events: none;
+      }
+      .layout.sources-collapsed #sources-collapse-btn {
+        visibility: hidden;
+      }
+    }
+    @media (max-width: 1024px) {
+      .layout { grid-template-columns: 1fr; }
+      #toc, #sources { display: none; }
+      #toc.open, #sources.open { display: block; position: fixed; inset: 0; z-index: 90; background: var(--paper); overflow-y: auto; padding: 24px; }
+    }
+
+    /* ───────── Header ───────── */
+    header.site {
+      grid-column: 1 / -1;
+      padding: 24px 32px;
+      border-bottom: 1px solid var(--rule);
+      display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap;
+    }
+    header.site .marker {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--carmine);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    header.site h1 {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 1.4rem;
+      margin: 0;
+      letter-spacing: -0.01em;
+    }
+    header.site .meta {
+      margin-left: auto;
+      font-size: 0.85rem;
+      color: var(--graphite);
+    }
+    header.site .meta a { color: var(--carmine); text-decoration: none; }
+    header.site .meta a:hover { text-decoration: underline; }
+    .menu-toggle {
+      display: none;
+      background: none; border: 1px solid var(--rule);
+      padding: 6px 12px; border-radius: 4px; cursor: pointer;
+      font-family: var(--mono); font-size: 0.8rem;
+    }
+    @media (max-width: 1024px) { .menu-toggle { display: inline-block; } }
+
+    /* ───────── TOC (left) ───────── */
+    #toc {
+      padding: 32px 24px;
+      border-right: 1px solid var(--rule);
+      position: sticky; top: 0; align-self: start;
+      max-height: 100vh; overflow-y: auto;
+    }
+    #toc h2 {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--graphite);
+      margin: 0 0 16px;
+    }
+    #toc ol {
+      list-style: none; padding: 0; margin: 0;
+      counter-reset: toc-counter;
+    }
+    #toc li {
+      counter-increment: toc-counter;
+      margin: 0 0 12px;
+      font-size: 0.92rem;
+      line-height: 1.4;
+    }
+    #toc li::before {
+      content: counter(toc-counter, decimal-leading-zero) ".";
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--mist);
+      margin-right: 8px;
+    }
+    #toc a {
+      color: var(--ink);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+    }
+    #toc a:hover, #toc a.active {
+      color: var(--carmine);
+      border-bottom-color: currentColor;
+    }
+
+    /* ───────── Main report ───────── */
+    main#report {
+      padding: 56px 48px 96px;
+      min-width: 0;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+    main#report > .lead {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 1.2rem;
+      color: var(--graphite);
+      line-height: 1.5;
+      margin: 0 0 48px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--rule);
+    }
+    main h1.report-title {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 2.6rem;
+      line-height: 1.1;
+      letter-spacing: -0.025em;
+      margin: 0 0 16px;
+    }
+    main h2 {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 1.55rem;
+      letter-spacing: -0.01em;
+      margin: 3.5rem 0 1rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--rule);
+    }
+    main h3 {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 1.18rem;
+      margin: 2rem 0 0.6rem;
+    }
+    main p { margin: 0 0 1.1rem; }
+    main ul, main ol { margin: 0 0 1.1rem; padding-left: 1.4rem; }
+    main li { margin-bottom: 0.4rem; }
+    main blockquote {
+      margin: 1.5rem 0;
+      padding: 12px 20px;
+      border-left: 3px solid var(--carmine);
+      background: var(--paper-2);
+      font-style: italic;
+      color: var(--graphite);
+    }
+    main code {
+      font-family: var(--mono);
+      font-size: 0.88em;
+      background: var(--paper-2);
+      padding: 2px 5px; border-radius: 3px;
+    }
+
+    /* ───────── Figures ───────── */
+    .figure {
+      margin: 3rem 0;
+      padding: 24px 0;
+      border-top: 1px solid var(--rule);
+      border-bottom: 1px solid var(--rule);
+      position: relative;
+    }
+    .figure svg {
+      width: 100%; height: auto;
+      display: block;
+      margin: 0 auto;
+    }
+    .figure-caption {
+      font-size: 0.88rem;
+      color: var(--graphite);
+      font-style: italic;
+      margin-top: 12px;
+      padding: 0 8px;
+    }
+    .figure svg .interactive { cursor: pointer; transition: filter 140ms; }
+    .figure svg .interactive:hover,
+    .figure svg .interactive:focus-visible { outline: none; }
+    .figure svg .interactive:hover rect,
+    .figure svg .interactive:focus-visible rect,
+    .figure svg .interactive:hover path:not([fill="none"]),
+    .figure svg .interactive:focus-visible path:not([fill="none"]),
+    .figure svg .interactive:hover circle,
+    .figure svg .interactive:focus-visible circle {
+      stroke: var(--carmine);
+      stroke-width: 2.5;
+    }
+    .figure svg .interactive:focus-visible {
+      filter: drop-shadow(0 0 0 var(--carmine));
+    }
+
+    /* ───────── Zoom button on each figure ───────── */
+    .zoom-btn {
+      position: absolute;
+      top: 32px; right: 8px;
+      width: 36px; height: 36px;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--paper);
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 18px; line-height: 1;
+      color: var(--graphite);
+      opacity: 0;
+      transition: opacity 140ms, background 140ms, color 140ms, border-color 140ms;
+      z-index: 2;
+    }
+    .figure:hover .zoom-btn,
+    .figure:focus-within .zoom-btn,
+    .zoom-btn:focus-visible { opacity: 1; }
+    .zoom-btn:hover {
+      background: var(--paper-2);
+      border-color: var(--ink);
+      color: var(--ink);
+    }
+    @media (hover: none) {
+      .zoom-btn { opacity: 0.85; }
+    }
+
+    /* ───────── Fullscreen zoom overlay ───────── */
+    #zoom-overlay[hidden] { display: none !important; }
+    #zoom-overlay {
+      position: fixed; inset: 0;
+      z-index: 80;
+      display: flex; flex-direction: column;
+      background: rgba(26, 26, 26, 0.94);
+      backdrop-filter: blur(3px);
+    }
+    #zoom-header {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px;
+      padding: 12px 20px;
+      color: var(--paper);
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 0.85rem;
+      border-bottom: 1px solid rgba(250, 248, 243, 0.12);
+    }
+    #zoom-caption {
+      flex: 1; min-width: 0;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      opacity: 0.85;
+    }
+    .zoom-controls {
+      display: flex; gap: 4px; flex-shrink: 0;
+    }
+    .zoom-controls button {
+      background: transparent;
+      border: 1px solid rgba(250, 248, 243, 0.32);
+      color: var(--paper);
+      padding: 6px 12px;
+      min-width: 36px;
+      cursor: pointer;
+      font: inherit; font-size: 0.85rem;
+      border-radius: 3px;
+      transition: background 120ms, border-color 120ms;
+    }
+    .zoom-controls button:hover { background: rgba(250, 248, 243, 0.12); border-color: rgba(250, 248, 243, 0.6); }
+    .zoom-controls button:focus-visible { outline: 2px solid var(--paper); outline-offset: 2px; }
+    .zoom-controls .zoom-close { font-size: 1.3rem; line-height: 1; padding: 2px 10px; }
+    #zoom-stage {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      cursor: grab;
+      touch-action: none;
+    }
+    #zoom-stage.grabbing { cursor: grabbing; }
+    #zoom-content {
+      position: absolute; top: 0; left: 0;
+      transform-origin: 0 0;
+      will-change: transform;
+    }
+    #zoom-content > svg {
+      display: block;
+      max-width: none; max-height: none;
+      background: var(--paper);
+      box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+    }
+    #zoom-hint {
+      position: absolute; bottom: 16px; left: 50%;
+      transform: translateX(-50%);
+      color: rgba(250, 248, 243, 0.55);
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 0.75rem;
+      pointer-events: none;
+      transition: opacity 400ms;
+    }
+    #zoom-hint.fade { opacity: 0; }
+    @media (max-width: 640px) {
+      .zoom-controls .zoom-reset { display: none; }
+      #zoom-caption { font-size: 0.78rem; }
+    }
+
+    /* ───────── Tooltipped terms ───────── */
+    .term {
+      border-bottom: 1px dotted var(--graphite);
+      cursor: help;
+      position: relative;
+    }
+    .term:hover::after,
+    .term:focus::after,
+    .term.pinned::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: calc(100% + 8px); left: 0;
+      background: var(--ink); color: var(--paper);
+      padding: 10px 14px; border-radius: 4px;
+      font-family: var(--sans);
+      font-style: normal;
+      font-size: 0.82rem;
+      line-height: 1.45;
+      white-space: normal;
+      width: max-content; max-width: 320px;
+      z-index: 50;
+      pointer-events: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    }
+    .term:hover::before,
+    .term:focus::before,
+    .term.pinned::before {
+      content: '';
+      position: absolute;
+      bottom: calc(100% + 2px); left: 12px;
+      width: 0; height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 6px solid var(--ink);
+      z-index: 51;
+    }
+
+    /* ───────── Citations ───────── */
+    .cite {
+      font-family: var(--mono);
+      font-size: 0.72em;
+      color: var(--carmine);
+      text-decoration: none;
+      vertical-align: super;
+      padding: 0 1px;
+    }
+    .cite::before { content: '['; }
+    .cite::after  { content: ']'; }
+    .cite:hover { text-decoration: underline; }
+
+    /* ───────── Sources sidebar (right) ───────── */
+    #sources {
+      padding: 32px 24px;
+      border-left: 1px solid var(--rule);
+      background: var(--paper-2);
+      position: sticky; top: 0; align-self: start;
+      max-height: 100vh; overflow-y: auto;
+      transition: transform 280ms ease, opacity 200ms ease;
+    }
+    #sources .sources-inner { display: block; }
+
+    /* ───────── Sidebar edge toggles ───────── */
+    .sidebar-edge-toggle {
+      width: 22px;
+      height: 60px;
+      background: var(--paper);
+      border: 1px solid var(--rule);
+      color: var(--graphite);
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 14px;
+      line-height: 1;
+      padding: 0;
+      transition: background 140ms, color 140ms, border-color 140ms;
+    }
+    .sidebar-edge-toggle:hover {
+      background: var(--paper-2);
+      color: var(--ink);
+      border-color: var(--graphite);
+    }
+    .sidebar-edge-toggle:focus-visible {
+      outline: 2px solid var(--carmine);
+      outline-offset: 2px;
+    }
+    #sources-collapse-btn {
+      position: absolute;
+      top: 28px;
+      left: 0;
+      transform: translateX(-50%);
+      border-radius: 4px;
+      z-index: 5;
+    }
+    #sources-expand-btn {
+      position: fixed;
+      top: 50%;
+      right: 0;
+      transform: translateY(-50%);
+      border-radius: 4px 0 0 4px;
+      border-right: none;
+      z-index: 70;
+    }
+    #sources-expand-btn[hidden] { display: none !important; }
+    @media (max-width: 1024px) {
+      .sidebar-edge-toggle { display: none !important; }
+    }
+    #sources h2 {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--graphite);
+      margin: 0 0 16px;
+    }
+    #sources ol { list-style: none; padding: 0; margin: 0; }
+    #sources li {
+      font-size: 0.82rem;
+      line-height: 1.5;
+      margin: 0 0 16px;
+      padding: 12px 14px;
+      border-radius: 4px;
+      border: 1px solid transparent;
+      transition: border-color 220ms, background 220ms;
+    }
+    #sources li .cite-num {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--carmine);
+      margin-right: 6px;
+    }
+    #sources li a {
+      display: inline-block;
+      margin-top: 4px;
+      color: var(--teal);
+      text-decoration: none;
+      font-size: 0.78rem;
+    }
+    #sources li a:hover { text-decoration: underline; }
+    #sources li .accessed {
+      display: block;
+      margin-top: 4px;
+      color: var(--mist);
+      font-style: italic;
+      font-size: 0.74rem;
+    }
+    #sources li.highlight {
+      background: var(--paper);
+      border-color: var(--carmine);
+    }
+
+    /* ───────── Modal ───────── */
+    #modal-root[hidden] { display: none !important; }
+    #modal-root {
+      position: fixed; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100;
+    }
+    .modal-backdrop {
+      position: absolute; inset: 0;
+      background: rgba(26,26,26,0.55);
+      backdrop-filter: blur(2px);
+    }
+    .modal-card {
+      position: relative;
+      background: var(--paper);
+      max-width: 560px; width: calc(100% - 48px);
+      max-height: calc(100vh - 96px);
+      overflow-y: auto;
+      padding: 36px 36px 32px;
+      border-radius: 6px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.25);
+      border-top: 4px solid var(--carmine);
+    }
+    .modal-close {
+      position: absolute; top: 12px; right: 12px;
+      background: none; border: none;
+      font-size: 1.6rem; line-height: 1; cursor: pointer;
+      color: var(--graphite);
+      width: 32px; height: 32px;
+      border-radius: 4px;
+    }
+    .modal-close:hover { background: var(--paper-2); color: var(--ink); }
+    .modal-card h3 {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 1.4rem;
+      margin: 0 0 6px;
+      letter-spacing: -0.01em;
+    }
+    .modal-card .modal-eyebrow {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--carmine);
+      margin: 0 0 14px;
+    }
+    .modal-card .modal-body p { margin: 0 0 0.9rem; font-size: 0.95rem; }
+    .modal-card .modal-body p:last-child { margin-bottom: 0; }
+
+    /* ───────── Print ───────── */
+    @media print {
+      .layout { grid-template-columns: 1fr; }
+      #toc, #sources, #modal-root, #zoom-overlay, .menu-toggle, .zoom-btn, .sidebar-edge-toggle { display: none; }
+      main#report { max-width: none; padding: 0; }
+      .figure { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+
+    <header class="site">
+      <span class="marker">Deep research illustré</span>
+      <h1>Observabilité des agents IA</h1>
+      <span class="meta">
+        Mathieu Guglielmino · 30 avril 2026 ·
+        <a href="20260430-observabilite-agents-ia-rapport.md" download>Télécharger le rapport (.md) ↓</a>
+      </span>
+      <button class="menu-toggle" id="toggle-toc">Sommaire</button>
+      <button class="menu-toggle" id="toggle-sources">Sources</button>
+    </header>
+
+    <nav id="toc" aria-label="Sommaire">
+      <h2>Sommaire</h2>
+      <ol>
+                <li><a href="#synthese-executive">Synthèse exécutive</a></li>
+        <li><a href="#1-du-deterministe-au-probabiliste-la-rupture-paradigmatique">1. Du déterministe au probabiliste — la rupture paradigmatique</a></li>
+        <li><a href="#2-les-six-piliers-de-la-telemetrie-agentique">2. Les six piliers de la télémétrie agentique</a></li>
+        <li><a href="#3-architecture-de-reference-le-bus-dobservabilite-comme-colonne-vertebrale">3. Architecture de référence — le bus d'observabilité comme colonne vertébrale</a></li>
+        <li><a href="#4-opentelemetry-genai-le-standard-dinstrumentation">4. OpenTelemetry GenAI — le standard d'instrumentation</a></li>
+        <li><a href="#5-reactions-et-boucles-de-correction">5. Réactions et boucles de correction</a></li>
+        <li><a href="#6-cartographie-du-marche-incumbents-challengers-ai-native">6. Cartographie du marché — incumbents, challengers AI-native</a></li>
+        <li><a href="#7-maturite-organisationnelle-et-feuille-de-route">7. Maturité organisationnelle et feuille de route</a></li>
+        <li><a href="#8-conclusion-strategique">8. Conclusion stratégique</a></li>
+      </ol>
+    </nav>
+
+    <main id="report">
+      <h1 class="report-title">Observabilité des agents IA</h1>
+      <p class="lead">Du monitoring au cognitive audit trail — état de l'art, architecture de référence, cartographie du marché et feuille de route 2026.</p>
+      <h2 id="synthese-executive">Synthèse exécutive</h2>
+<p>Déployer un agent IA en 2026 sans observabilité revient à piloter un avion sans instruments. Cinq constats structurent ce rapport :</p>
+<ul>
+<li><strong>L'observabilité IA s'empile sur l'observabilité SI, elle ne la remplace pas.</strong> Un agent en production exige les deux couches : infrastructure/applicative classique (latence API, disponibilité, GPU) ET cognitive (raisonnement, qualité d'output, conformité guardrails).</li>
+<li><strong>Le pivot technique de la décennie est OpenTelemetry GenAI</strong> (v1.37+, statut expérimental en avril 2026, stabilisation prévue S2 2026). Les conventions sémantiques <code>gen_ai.*</code> standardisent quatre types de spans — agent, modèle, outil, événement — et rendent la télémétrie portable entre frameworks et backends.</li>
+<li><strong>Le marché se polarise.</strong> Les incumbents APM (Dynatrace, Datadog, Splunk) intègrent à marche forcée des capacités IA mais restent en retrait sur l'évaluation qualité ; les challengers AI-native (Langfuse, Braintrust, Arize) dominent l'eval mais manquent de profondeur plateforme. La convergence est en cours mais loin d'être achevée.</li>
+<li><strong>La qualité devient une métrique opérationnelle.</strong> Le saut de maturité le plus difficile (niveau 2 → niveau 3) consiste à définir « qu'est-ce qu'une bonne réponse ? » de façon mesurable, via des datasets de référence et des scorers (LLM-as-judge, heuristiques, custom).</li>
+<li><strong>La stratégie anti-lock-in passe par OpenTelemetry.</strong> Recommander OTel comme standard d'instrumentation en mission consulting protège contre la facture explosive des SaaS dominants (un workload IA génère 10 à 50 fois plus de télémétrie qu'un service classique) et préserve la liberté de changer de backend sans réinstrumenter.</li>
+</ul>
+<h2 id="1-du-deterministe-au-probabiliste-la-rupture-paradigmatique">1. Du déterministe au probabiliste — la rupture paradigmatique</h2>
+<p>L'observabilité ne s'est pas inventée en 2023 avec les agents IA. Elle a traversé quatre paradigmes successifs depuis 2000, chacun ajoutant une couche au-dessus de la précédente sans remplacer les fondations<a class="cite" data-cite="1" href="#source-1">1</a><a class="cite" data-cite="3" href="#source-3">3</a>.</p>
+<figure class="figure" id="fig-01">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" data-schema-id="schema-01">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+    <marker id="arrow-01" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#5A5A5A"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- HEADER -->
+  <text x="60" y="55" class="mono" font-size="11" font-weight="600"
+        letter-spacing="0.12em" fill="#B7332C">SCHÉMA 01</text>
+  <text x="60" y="92" class="display" font-size="26" font-weight="600"
+        letter-spacing="-0.01em" fill="#1A1A1A">Quatre paradigmes d'observabilité, vingt-cinq ans d'évolution</text>
+  <text x="60" y="118" class="display" font-size="16" font-style="italic"
+        fill="#5A5A5A">Du monitoring infrastructure au cognitive audit trail — une rupture qualitative</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- Time axis -->
+  <line x1="80" y1="660" x2="1120" y2="660" stroke="#1A1A1A" stroke-width="1.25"/>
+  <text x="100" y="685" class="mono" font-size="10" fill="#5A5A5A">2000</text>
+  <text x="380" y="685" class="mono" font-size="10" fill="#5A5A5A">2010</text>
+  <text x="660" y="685" class="mono" font-size="10" fill="#5A5A5A">2018</text>
+  <text x="940" y="685" class="mono" font-size="10" fill="#5A5A5A">2023</text>
+  <text x="1100" y="685" class="mono" font-size="10" fill="#5A5A5A">2026</text>
+
+  <!-- Tick marks -->
+  <line x1="100" y1="657" x2="100" y2="663" stroke="#1A1A1A" stroke-width="1.25"/>
+  <line x1="380" y1="657" x2="380" y2="663" stroke="#1A1A1A" stroke-width="1.25"/>
+  <line x1="660" y1="657" x2="660" y2="663" stroke="#1A1A1A" stroke-width="1.25"/>
+  <line x1="940" y1="657" x2="940" y2="663" stroke="#1A1A1A" stroke-width="1.25"/>
+
+  <!-- ERA 1: MONITORING (2000-2010) -->
+  <g class="interactive" data-card="era-monitoring" tabindex="0" role="button"
+     aria-label="Ère du monitoring classique">
+    <rect x="100" y="200" width="240" height="430" rx="3"
+          fill="#B8B5AE" fill-opacity="0.08" stroke="#5A5A5A" stroke-width="1.25"/>
+    <text x="120" y="232" class="mono" font-size="10" font-weight="600"
+          letter-spacing="0.08em" fill="#5A5A5A">ÈRE 01 · 2000–2010</text>
+    <text x="120" y="262" class="display" font-size="17" font-weight="600"
+          fill="#1A1A1A">Monitoring</text>
+    <text x="120" y="284" class="display" font-size="13" font-style="italic"
+          fill="#5A5A5A">classique</text>
+
+    <line x1="120" y1="305" x2="320" y2="305" stroke="#B8B5AE" stroke-width="0.5"/>
+
+    <text x="120" y="330" class="body" font-size="11" font-weight="500" fill="#5A5A5A">SYSTÈMES</text>
+    <text x="120" y="350" class="body" font-size="12" fill="#1A1A1A">Nagios, Zabbix</text>
+
+    <text x="120" y="380" class="body" font-size="11" font-weight="500" fill="#5A5A5A">SIGNAUX</text>
+    <text x="120" y="400" class="body" font-size="12" fill="#1A1A1A">SNMP, ping, uptime</text>
+    <text x="120" y="418" class="body" font-size="12" fill="#1A1A1A">CPU, RAM, disque</text>
+
+    <text x="120" y="450" class="body" font-size="11" font-weight="500" fill="#5A5A5A">DÉFAILLANCE</text>
+    <text x="120" y="470" class="body" font-size="12" fill="#1A1A1A">Binaire</text>
+    <text x="120" y="488" class="body" font-size="11" font-style="italic" fill="#5A5A5A">marche / panne</text>
+
+    <text x="120" y="520" class="body" font-size="11" font-weight="500" fill="#5A5A5A">DÉTECTION</text>
+    <text x="120" y="540" class="body" font-size="12" fill="#1A1A1A">Seuils statiques</text>
+
+    <text x="120" y="595" class="body" font-size="11" font-weight="500" fill="#5A5A5A">STANDARD</text>
+    <text x="120" y="615" class="body" font-size="12" fill="#1A1A1A">SNMP / syslog</text>
+  </g>
+
+  <!-- Marker on timeline -->
+  <circle cx="220" cy="660" r="5" fill="#B8B5AE"/>
+
+  <!-- ERA 2: APM (2010-2018) -->
+  <g class="interactive" data-card="era-apm" tabindex="0" role="button"
+     aria-label="Ère de l'APM applicatif">
+    <rect x="380" y="200" width="240" height="430" rx="3"
+          fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="400" y="232" class="mono" font-size="10" font-weight="600"
+          letter-spacing="0.08em" fill="#1F5560">ÈRE 02 · 2010–2018</text>
+    <text x="400" y="262" class="display" font-size="17" font-weight="600"
+          fill="#1A1A1A">APM</text>
+    <text x="400" y="284" class="display" font-size="13" font-style="italic"
+          fill="#5A5A5A">applicatif</text>
+
+    <line x1="400" y1="305" x2="600" y2="305" stroke="#1F5560" stroke-opacity="0.3" stroke-width="0.5"/>
+
+    <text x="400" y="330" class="body" font-size="11" font-weight="500" fill="#5A5A5A">SYSTÈMES</text>
+    <text x="400" y="350" class="body" font-size="12" fill="#1A1A1A">New Relic, AppDynamics</text>
+
+    <text x="400" y="380" class="body" font-size="11" font-weight="500" fill="#5A5A5A">SIGNAUX</text>
+    <text x="400" y="400" class="body" font-size="12" fill="#1A1A1A">Latence, throughput</text>
+    <text x="400" y="418" class="body" font-size="12" fill="#1A1A1A">Error rate, saturation</text>
+
+    <text x="400" y="450" class="body" font-size="11" font-weight="500" fill="#5A5A5A">DÉFAILLANCE</text>
+    <text x="400" y="470" class="body" font-size="12" fill="#1A1A1A">Code, transaction</text>
+    <text x="400" y="488" class="body" font-size="11" font-style="italic" fill="#5A5A5A">stack trace</text>
+
+    <text x="400" y="520" class="body" font-size="11" font-weight="500" fill="#5A5A5A">DÉTECTION</text>
+    <text x="400" y="540" class="body" font-size="12" fill="#1A1A1A">4 Golden Signals</text>
+
+    <text x="400" y="595" class="body" font-size="11" font-weight="500" fill="#5A5A5A">STANDARD</text>
+    <text x="400" y="615" class="body" font-size="12" fill="#1A1A1A">Agent propriétaire</text>
+  </g>
+
+  <circle cx="500" cy="660" r="5" fill="#1F5560"/>
+
+  <!-- ERA 3: CLOUD-NATIVE (2018-2023) -->
+  <g class="interactive" data-card="era-cloud-native" tabindex="0" role="button"
+     aria-label="Ère cloud-native MELT">
+    <rect x="660" y="200" width="240" height="430" rx="3"
+          fill="#B58A2C" fill-opacity="0.07" stroke="#B58A2C" stroke-width="1.25"/>
+    <text x="680" y="232" class="mono" font-size="10" font-weight="600"
+          letter-spacing="0.08em" fill="#B58A2C">ÈRE 03 · 2018–2023</text>
+    <text x="680" y="262" class="display" font-size="17" font-weight="600"
+          fill="#1A1A1A">Cloud-native</text>
+    <text x="680" y="284" class="display" font-size="13" font-style="italic"
+          fill="#5A5A5A">distribué (MELT)</text>
+
+    <line x1="680" y1="305" x2="880" y2="305" stroke="#B58A2C" stroke-opacity="0.3" stroke-width="0.5"/>
+
+    <text x="680" y="330" class="body" font-size="11" font-weight="500" fill="#5A5A5A">SYSTÈMES</text>
+    <text x="680" y="350" class="body" font-size="12" fill="#1A1A1A">Datadog, Dynatrace</text>
+    <text x="680" y="368" class="body" font-size="12" fill="#1A1A1A">Grafana, Splunk</text>
+
+    <text x="680" y="395" class="body" font-size="11" font-weight="500" fill="#5A5A5A">SIGNAUX</text>
+    <text x="680" y="415" class="body" font-size="12" fill="#1A1A1A">Logs · Metrics · Traces</text>
+    <text x="680" y="433" class="body" font-size="12" fill="#1A1A1A">+ Events (MELT)</text>
+
+    <text x="680" y="460" class="body" font-size="11" font-weight="500" fill="#5A5A5A">DÉFAILLANCE</text>
+    <text x="680" y="480" class="body" font-size="12" fill="#1A1A1A">Cascade microservices</text>
+    <text x="680" y="498" class="body" font-size="11" font-style="italic" fill="#5A5A5A">distributed tracing</text>
+
+    <text x="680" y="525" class="body" font-size="11" font-weight="500" fill="#5A5A5A">DÉTECTION</text>
+    <text x="680" y="545" class="body" font-size="12" fill="#1A1A1A">AIOps, anomalies</text>
+
+    <text x="680" y="595" class="body" font-size="11" font-weight="500" fill="#5A5A5A">STANDARD</text>
+    <text x="680" y="615" class="body" font-size="12" fill="#1A1A1A">OpenTelemetry</text>
+  </g>
+
+  <circle cx="780" cy="660" r="5" fill="#B58A2C"/>
+
+  <!-- ERA 4: AGENTIC (2023-2026) -->
+  <g class="interactive" data-card="era-agentic" tabindex="0" role="button"
+     aria-label="Ère cognitive et agentique">
+    <rect x="940" y="180" width="180" height="450" rx="3"
+          fill="#B7332C" fill-opacity="0.06" stroke="#B7332C" stroke-width="2"/>
+    <text x="960" y="212" class="mono" font-size="10" font-weight="600"
+          letter-spacing="0.08em" fill="#B7332C">ÈRE 04 · 2023–2026</text>
+    <text x="960" y="244" class="display" font-size="17" font-weight="600"
+          fill="#1A1A1A">Cognitive</text>
+    <text x="960" y="266" class="display" font-size="13" font-style="italic"
+          fill="#5A5A5A">agentique &amp; IA</text>
+
+    <line x1="960" y1="287" x2="1100" y2="287" stroke="#B7332C" stroke-opacity="0.3" stroke-width="0.5"/>
+
+    <text x="960" y="312" class="body" font-size="11" font-weight="500" fill="#5A5A5A">SYSTÈMES</text>
+    <text x="960" y="332" class="body" font-size="11" fill="#1A1A1A">Langfuse, Braintrust,</text>
+    <text x="960" y="350" class="body" font-size="11" fill="#1A1A1A">Arize, Galileo</text>
+
+    <text x="960" y="378" class="body" font-size="11" font-weight="500" fill="#5A5A5A">SIGNAUX</text>
+    <text x="960" y="398" class="body" font-size="11" fill="#1A1A1A">Traces cognitives</text>
+    <text x="960" y="416" class="body" font-size="11" fill="#1A1A1A">Tokens, qualité</text>
+    <text x="960" y="434" class="body" font-size="11" fill="#1A1A1A">Guardrails, drift</text>
+
+    <text x="960" y="462" class="body" font-size="11" font-weight="500" fill="#5A5A5A">DÉFAILLANCE</text>
+    <text x="960" y="482" class="body" font-size="11" fill="#1A1A1A">Hallucination,</text>
+    <text x="960" y="500" class="body" font-size="11" fill="#1A1A1A">drift sémantique</text>
+
+    <text x="960" y="528" class="body" font-size="11" font-weight="500" fill="#5A5A5A">DÉTECTION</text>
+    <text x="960" y="548" class="body" font-size="11" fill="#1A1A1A">LLM-as-judge,</text>
+    <text x="960" y="566" class="body" font-size="11" fill="#1A1A1A">eval continue</text>
+
+    <text x="960" y="595" class="body" font-size="11" font-weight="500" fill="#5A5A5A">STANDARD</text>
+    <text x="960" y="615" class="body" font-size="11" fill="#1A1A1A">OTel GenAI v1.37+</text>
+  </g>
+
+  <circle cx="1030" cy="660" r="6" fill="#B7332C"/>
+
+  <!-- Continuity arrow above -->
+  <path d="M 220 175 L 500 175 L 780 175 L 1030 165"
+        stroke="#5A5A5A" stroke-width="0.75" fill="none"
+        stroke-dasharray="3 3" marker-end="url(#arrow-01)"/>
+  <text x="600" y="170" class="body" font-size="10" font-style="italic"
+        fill="#5A5A5A" text-anchor="middle">empilement, jamais remplacement — chaque ère ajoute une couche cognitive supplémentaire</text>
+
+  <!-- ANNOTATION ON BIG SHIFT -->
+  <text x="540" y="730" class="body" font-size="11" font-style="italic" fill="#B7332C" text-anchor="middle">
+    La rupture clé : le passage du déterministe au probabiliste — une réponse correcte de l'API ne garantit plus une réponse correcte de l'agent.
+  </text>
+
+  <!-- FOOTER -->
+  <line x1="60" y1="755" x2="1140" y2="755" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="778" class="body" font-size="10" font-style="italic"
+        fill="#5A5A5A">Sources : OpenTelemetry, IBM Think 2026, Gartner MQ Observability 2025</text>
+</svg>
+
+<figcaption class="figure-caption"><strong>Schéma 1</strong> — Quatre paradigmes d'observabilité, vingt-cinq ans d'évolution.</figcaption>
+</figure>
+
+<p>Chaque ère répondait aux limites de la précédente. Le monitoring SNMP voyait le serveur mais pas la requête. L'APM voyait la transaction mais pas la cascade microservices. Le tracing distribué voyait la cascade mais pas le raisonnement. L'observabilité agentique voit le raisonnement — mais doit s'appuyer sur les trois couches précédentes pour le contextualiser.</p>
+<p>La rupture véritable n'est ni technique ni outillée : elle est <strong>épistémologique</strong>. Pendant deux décennies, le système était déterministe — mêmes inputs, mêmes outputs, défaillance binaire (marche/panne) avec stack trace pour debug. Les agents IA introduisent un régime non-déterministe : même input, outputs variables, défaillance graduelle (drift, dégradation, hallucination), causalité indirecte (prompt + contexte + modèle + données). Un agent ne <em>crashe</em> pas — il <em>dérive</em>. Voir Schéma 1 pour la cartographie complète.</p>
+<p>Quatre angles morts caractérisent l'incapacité de l'APM traditionnel à couvrir ce nouveau terrain<a class="cite" data-cite="2" href="#source-2">2</a> :</p>
+<ul>
+<li><strong>Cécité comportementale</strong> — l'APM suit requêtes et erreurs, mais pas les glissements comportementaux du modèle (sélection d'outils anormale, perte de contexte conversationnel).</li>
+<li><strong>Ignorance statistique</strong> — incapacité à détecter des patterns probabilistes : scores bimodaux, drift de confiance, variance qui augmente sans déclencher de seuil.</li>
+<li><strong>Vide causal</strong> — les outils déterministes supposent une causalité directe (stack trace → ligne de code) ; l'IA se dégrade par causalité indirecte et diffuse (un nouveau prompt subtilement biaisé, une source RAG actualisée, une version de modèle silencieusement mise à jour côté provider).</li>
+<li><strong>Absence de contexte</strong> — inspection requête par requête sans vision des patterns séquentiels, alors que la chaîne de raisonnement est précisément ce qu'il faut observer.</li>
+</ul>
+<p>Les chiffres parlent : 89 % des organisations ont implémenté une forme d'observabilité pour leurs agents<a class="cite" data-cite="9" href="#source-9">9</a>, 57 % ont des agents IA en production<a class="cite" data-cite="5" href="#source-5">5</a>, et Gartner prédit que <strong>40 % des projets d'IA agentique seront annulés d'ici 2027 pour des raisons de fiabilité</strong><a class="cite" data-cite="4" href="#source-4">4</a>. L'écart entre expérimentation et production enterprise — moins de 10 % des organisations ont scalé l'IA agentique au niveau fonctionnel<a class="cite" data-cite="3" href="#source-3">3</a> — est avant tout un gap d'observabilité.</p>
+<h2 id="2-les-six-piliers-de-la-telemetrie-agentique">2. Les six piliers de la télémétrie agentique</h2>
+<p>L'instrumentation d'un agent en production exige une couverture sur six dimensions distinctes, qui doivent toutes être croisées dans le bus de télémétrie<a class="cite" data-cite="5" href="#source-5">5</a><a class="cite" data-cite="6" href="#source-6">6</a>. Aucune n'est suffisante seule.</p>
+<figure class="figure" id="fig-02">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 900" data-schema-id="schema-02">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+    <marker id="arrow-02" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#5A5A5A"/>
+    </marker>
+  </defs>
+
+  <rect width="900" height="900" fill="#FAF8F3"/>
+
+  <!-- HEADER -->
+  <text x="60" y="55" class="mono" font-size="11" font-weight="600"
+        letter-spacing="0.12em" fill="#B7332C">SCHÉMA 02</text>
+  <text x="60" y="92" class="display" font-size="24" font-weight="600"
+        letter-spacing="-0.01em" fill="#1A1A1A">Les six piliers de la télémétrie agentique</text>
+  <text x="60" y="116" class="display" font-size="14" font-style="italic"
+        fill="#5A5A5A">Ce qu'il faut instrumenter, mesurer et croiser pour piloter un agent en production</text>
+  <line x1="60" y1="138" x2="840" y2="138" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- CENTER NODE: Agent IA -->
+  <circle cx="450" cy="475" r="78" fill="#FAF8F3" stroke="#1A1A1A" stroke-width="2"/>
+  <circle cx="450" cy="475" r="68" fill="none" stroke="#1A1A1A" stroke-width="0.5"/>
+  <text x="450" y="465" class="display" font-size="16" font-weight="600"
+        fill="#1A1A1A" text-anchor="middle">Agent IA</text>
+  <text x="450" y="488" class="body" font-size="11" font-style="italic"
+        fill="#5A5A5A" text-anchor="middle">en production</text>
+  <text x="450" y="506" class="mono" font-size="10" font-weight="500"
+        fill="#B7332C" text-anchor="middle">télémétrie</text>
+
+  <!-- Pillar 1 — Usage & Tokens (top) -->
+  <g class="interactive" data-card="pillar-usage" tabindex="0" role="button"
+     aria-label="Pilier 1 — Usage et tokens">
+    <rect x="345" y="195" width="210" height="125" rx="3"
+          fill="#FAF8F3" stroke="#B7332C" stroke-width="1.25"/>
+    <text x="365" y="222" class="mono" font-size="10" font-weight="600"
+          letter-spacing="0.06em" fill="#B7332C">PILIER 01</text>
+    <text x="365" y="245" class="display" font-size="14" font-weight="600"
+          fill="#1A1A1A">Usage &amp; Tokens</text>
+    <line x1="365" y1="258" x2="535" y2="258" stroke="#E5E1D8" stroke-width="0.5"/>
+    <text x="365" y="278" class="body" font-size="11" fill="#1A1A1A">Tokens entrée / sortie</text>
+    <text x="365" y="294" class="body" font-size="11" fill="#1A1A1A">Modèle, provider</text>
+    <text x="365" y="310" class="body" font-size="11" fill="#1A1A1A">Coût par trace</text>
+  </g>
+  <line x1="450" y1="320" x2="450" y2="397" stroke="#5A5A5A" stroke-width="0.75"/>
+  <circle cx="450" cy="397" r="3" fill="#1A1A1A"/>
+
+  <!-- Pillar 2 — Performance (top right) -->
+  <g class="interactive" data-card="pillar-performance" tabindex="0" role="button"
+     aria-label="Pilier 2 — Performance">
+    <rect x="615" y="285" width="210" height="125" rx="3"
+          fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="635" y="312" class="mono" font-size="10" font-weight="600"
+          letter-spacing="0.06em" fill="#1F5560">PILIER 02</text>
+    <text x="635" y="335" class="display" font-size="14" font-weight="600"
+          fill="#1A1A1A">Performance</text>
+    <line x1="635" y1="348" x2="805" y2="348" stroke="#E5E1D8" stroke-width="0.5"/>
+    <text x="635" y="368" class="body" font-size="11" fill="#1A1A1A">Latence end-to-end</text>
+    <text x="635" y="384" class="body" font-size="11" fill="#1A1A1A">Time-to-first-token</text>
+    <text x="635" y="400" class="body" font-size="11" fill="#1A1A1A">Throughput, GPU</text>
+  </g>
+  <line x1="615" y1="395" x2="525" y2="442" stroke="#5A5A5A" stroke-width="0.75"/>
+  <circle cx="525" cy="442" r="3" fill="#1A1A1A"/>
+
+  <!-- Pillar 3 — Comportement (bottom right) -->
+  <g class="interactive" data-card="pillar-comportement" tabindex="0" role="button"
+     aria-label="Pilier 3 — Comportement">
+    <rect x="615" y="540" width="210" height="125" rx="3"
+          fill="#FAF8F3" stroke="#B58A2C" stroke-width="1.25"/>
+    <text x="635" y="567" class="mono" font-size="10" font-weight="600"
+          letter-spacing="0.06em" fill="#B58A2C">PILIER 03</text>
+    <text x="635" y="590" class="display" font-size="14" font-weight="600"
+          fill="#1A1A1A">Comportement</text>
+    <line x1="635" y1="603" x2="805" y2="603" stroke="#E5E1D8" stroke-width="0.5"/>
+    <text x="635" y="623" class="body" font-size="11" fill="#1A1A1A">Sélection d'outils</text>
+    <text x="635" y="639" class="body" font-size="11" fill="#1A1A1A">Séquences d'actions</text>
+    <text x="635" y="655" class="body" font-size="11" fill="#1A1A1A">Patterns de routing</text>
+  </g>
+  <line x1="615" y1="555" x2="525" y2="510" stroke="#5A5A5A" stroke-width="0.75"/>
+  <circle cx="525" cy="510" r="3" fill="#1A1A1A"/>
+
+  <!-- Pillar 4 — Qualité (bottom) -->
+  <g class="interactive" data-card="pillar-qualite" tabindex="0" role="button"
+     aria-label="Pilier 4 — Qualité">
+    <rect x="345" y="630" width="210" height="125" rx="3"
+          fill="#FAF8F3" stroke="#B7332C" stroke-width="1.25"/>
+    <text x="365" y="657" class="mono" font-size="10" font-weight="600"
+          letter-spacing="0.06em" fill="#B7332C">PILIER 04</text>
+    <text x="365" y="680" class="display" font-size="14" font-weight="600"
+          fill="#1A1A1A">Qualité</text>
+    <line x1="365" y1="693" x2="535" y2="693" stroke="#E5E1D8" stroke-width="0.5"/>
+    <text x="365" y="713" class="body" font-size="11" fill="#1A1A1A">Score LLM-as-judge</text>
+    <text x="365" y="729" class="body" font-size="11" fill="#1A1A1A">Détection hallucinations</text>
+    <text x="365" y="745" class="body" font-size="11" fill="#1A1A1A">Pertinence, complétion</text>
+  </g>
+  <line x1="450" y1="630" x2="450" y2="553" stroke="#5A5A5A" stroke-width="0.75"/>
+  <circle cx="450" cy="553" r="3" fill="#1A1A1A"/>
+
+  <!-- Pillar 5 — Gouvernance (bottom left) -->
+  <g class="interactive" data-card="pillar-gouvernance" tabindex="0" role="button"
+     aria-label="Pilier 5 — Gouvernance">
+    <rect x="75" y="540" width="210" height="125" rx="3"
+          fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="95" y="567" class="mono" font-size="10" font-weight="600"
+          letter-spacing="0.06em" fill="#1F5560">PILIER 05</text>
+    <text x="95" y="590" class="display" font-size="14" font-weight="600"
+          fill="#1A1A1A">Gouvernance</text>
+    <line x1="95" y1="603" x2="265" y2="603" stroke="#E5E1D8" stroke-width="0.5"/>
+    <text x="95" y="623" class="body" font-size="11" fill="#1A1A1A">Guardrails activés</text>
+    <text x="95" y="639" class="body" font-size="11" fill="#1A1A1A">Politiques respectées</text>
+    <text x="95" y="655" class="body" font-size="11" fill="#1A1A1A">Audit trail cognitif</text>
+  </g>
+  <line x1="285" y1="555" x2="375" y2="510" stroke="#5A5A5A" stroke-width="0.75"/>
+  <circle cx="375" cy="510" r="3" fill="#1A1A1A"/>
+
+  <!-- Pillar 6 — Drift & Fiabilité (top left) -->
+  <g class="interactive" data-card="pillar-drift" tabindex="0" role="button"
+     aria-label="Pilier 6 — Drift et fiabilité">
+    <rect x="75" y="285" width="210" height="125" rx="3"
+          fill="#FAF8F3" stroke="#B58A2C" stroke-width="1.25"/>
+    <text x="95" y="312" class="mono" font-size="10" font-weight="600"
+          letter-spacing="0.06em" fill="#B58A2C">PILIER 06</text>
+    <text x="95" y="335" class="display" font-size="14" font-weight="600"
+          fill="#1A1A1A">Drift &amp; Fiabilité</text>
+    <line x1="95" y1="348" x2="265" y2="348" stroke="#E5E1D8" stroke-width="0.5"/>
+    <text x="95" y="368" class="body" font-size="11" fill="#1A1A1A">Dérive sémantique</text>
+    <text x="95" y="384" class="body" font-size="11" fill="#1A1A1A">Régression de scores</text>
+    <text x="95" y="400" class="body" font-size="11" fill="#1A1A1A">Variance évaluations</text>
+  </g>
+  <line x1="285" y1="395" x2="375" y2="442" stroke="#5A5A5A" stroke-width="0.75"/>
+  <circle cx="375" cy="442" r="3" fill="#1A1A1A"/>
+
+  <!-- LEGEND grouping at bottom -->
+  <line x1="60" y1="800" x2="840" y2="800" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <text x="60" y="828" class="body" font-size="11" font-weight="500" fill="#5A5A5A">FAMILLE OPÉRATIONNELLE</text>
+  <circle cx="252" cy="824" r="4" fill="#B7332C"/>
+  <text x="262" y="828" class="body" font-size="11" fill="#1A1A1A">coûts &amp; valeur métier</text>
+
+  <text x="60" y="848" class="body" font-size="11" font-weight="500" fill="#5A5A5A">FAMILLE TECHNIQUE</text>
+  <circle cx="252" cy="844" r="4" fill="#1F5560"/>
+  <text x="262" y="848" class="body" font-size="11" fill="#1A1A1A">runtime, infrastructure, gouvernance</text>
+
+  <text x="450" y="828" class="body" font-size="11" font-weight="500" fill="#5A5A5A">FAMILLE COGNITIVE</text>
+  <circle cx="630" cy="824" r="4" fill="#B58A2C"/>
+  <text x="640" y="828" class="body" font-size="11" fill="#1A1A1A">décisions, dérive, raisonnement</text>
+
+  <!-- FOOTER -->
+  <text x="60" y="878" class="body" font-size="10" font-style="italic"
+        fill="#5A5A5A">Sources : Voiceflow 2026, Kore.ai, Langfuse documentation</text>
+</svg>
+
+<figcaption class="figure-caption"><strong>Schéma 2</strong> — Les six piliers de la télémétrie agentique.</figcaption>
+</figure>
+
+<p><strong>Usage &amp; tokens</strong> est le pilier le plus opérationnel : tokens en entrée et en sortie pour chaque appel modèle, combinés au provider et au modèle utilisés. Cela révèle d'où viennent les coûts, quels agents ou routes sont onéreux, et comment l'usage évolue après modification du prompt ou du routing. La spec OTel GenAI v1.37+ standardise les attributs <code>gen_ai.usage.input_tokens</code> et <code>gen_ai.usage.output_tokens</code><a class="cite" data-cite="11" href="#source-11">11</a>.</p>
+<p><strong>Performance</strong> couvre la latence de bout en bout, le <span class="term" data-tooltip="Time to first token : délai entre l&#x27;envoi de la requête et l&#x27;arrivée du premier token de la réponse. Métrique critique pour l&#x27;expérience utilisateur en streaming.">TTFT</span>, le throughput par agent, et la performance GPU pour les déploiements on-premise. Les métriques infrastructure classiques restent pertinentes mais ne suffisent plus.</p>
+<p><strong>Comportement</strong> est le cœur de l'observabilité agentique : quelles décisions l'agent prend-il ? Quels outils sélectionne-t-il ? Comment navigue-t-il entre ses étapes de raisonnement ? C'est ici que les traces distribuées prennent toute leur dimension, avec des spans hiérarchiques représentant chaque opération (voir Schéma 4).</p>
+<p><strong>Qualité</strong> déplace la question de « l'agent a-t-il répondu ? » vers « la réponse était-elle correcte, complète et alignée avec les politiques ? ». Les évaluations automatisées — <span class="term" data-tooltip="LLM-as-judge : utilisation d&#x27;un LLM pour scorer la qualité d&#x27;une autre sortie LLM (factualité, pertinence, ton). Permet l&#x27;évaluation à l&#x27;échelle, mais introduit ses propres biais.">LLM-as-judge</span>, heuristiques, scorers custom — mesurent la qualité à l'échelle. Galileo annonce une précision de 93–97 % sur ses Luna-2 evaluators<a class="cite" data-cite="15" href="#source-15">15</a> ; Braintrust intègre 25+ scorers built-in<a class="cite" data-cite="14" href="#source-14">14</a>.</p>
+<p><strong>Gouvernance</strong> documente ce qui a été activé : quels guardrails se sont déclenchés, ont-ils bloqué ou modifié des actions, quelles sources de données l'agent a-t-il interrogées. Essentiel pour l'audit, l'explication des blocages, et la traçabilité réglementaire (finance, santé, secteur public).</p>
+<p><strong>Drift &amp; fiabilité</strong> capture l'évolution temporelle des scores d'évaluation pour détecter la dérive comportementale. Quand un nouveau prompt, modèle ou outil dégrade la fiabilité, le changement apparaît comme un <em>shift</em> dans les scores et les patterns d'erreur sur le trafic réel — pas comme une erreur runtime.</p>
+<h2 id="3-architecture-de-reference-le-bus-dobservabilite-comme-colonne-vertebrale">3. Architecture de référence — le bus d'observabilité comme colonne vertébrale</h2>
+<p>L'erreur la plus fréquente dans les premières implémentations consiste à traiter l'observabilité comme une couche de monitoring <em>en aval</em> du système agentique. La bonne abstraction est inverse : le bus d'observabilité est une <strong>colonne vertébrale horizontale</strong> que tous les composants traversent<a class="cite" data-cite="7" href="#source-7">7</a>.</p>
+<figure class="figure" id="fig-03">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" data-schema-id="schema-03">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+    <marker id="arrow-03" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#5A5A5A"/>
+    </marker>
+    <marker id="arrow-03-emph" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#B7332C"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- HEADER -->
+  <text x="60" y="55" class="mono" font-size="11" font-weight="600"
+        letter-spacing="0.12em" fill="#B7332C">SCHÉMA 03</text>
+  <text x="60" y="92" class="display" font-size="26" font-weight="600"
+        letter-spacing="-0.01em" fill="#1A1A1A">Architecture de référence avec bus d'observabilité</text>
+  <text x="60" y="118" class="display" font-size="16" font-style="italic"
+        fill="#5A5A5A">Le bus d'observabilité agit comme une colonne vertébrale qui traverse toutes les couches</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- LAYER 1 — Utilisateur -->
+  <text x="60" y="180" class="body" font-size="10" font-weight="500"
+        letter-spacing="0.08em" fill="#5A5A5A">UTILISATEUR</text>
+  <line x1="60" y1="190" x2="160" y2="190" stroke="#B8B5AE" stroke-width="0.5"/>
+
+  <g class="interactive" data-card="user-input" tabindex="0" role="button"
+     aria-label="Interaction utilisateur">
+    <rect x="180" y="165" width="180" height="48" rx="3"
+          fill="#FAF8F3" stroke="#1A1A1A" stroke-width="1.25"/>
+    <text x="270" y="187" class="display" font-size="13" font-weight="600"
+          fill="#1A1A1A" text-anchor="middle">Requête utilisateur</text>
+    <text x="270" y="203" class="body" font-size="10" font-style="italic"
+          fill="#5A5A5A" text-anchor="middle">prompt + contexte conversationnel</text>
+  </g>
+
+  <!-- LAYER 2 — Orchestration -->
+  <text x="60" y="278" class="body" font-size="10" font-weight="500"
+        letter-spacing="0.08em" fill="#5A5A5A">ORCHESTRATION</text>
+  <line x1="60" y1="288" x2="180" y2="288" stroke="#B8B5AE" stroke-width="0.5"/>
+
+  <!-- Planner -->
+  <g class="interactive" data-card="planner-agent" tabindex="0" role="button"
+     aria-label="Planner agent">
+    <rect x="180" y="262" width="180" height="68" rx="3"
+          fill="#FAF8F3" stroke="#1A1A1A" stroke-width="1.25"/>
+    <text x="270" y="290" class="display" font-size="14" font-weight="600"
+          fill="#1A1A1A" text-anchor="middle">Planner</text>
+    <text x="270" y="310" class="body" font-size="11" font-style="italic"
+          fill="#5A5A5A" text-anchor="middle">décomposition en sous-objectifs</text>
+  </g>
+
+  <!-- Executor -->
+  <g class="interactive" data-card="executor-agent" tabindex="0" role="button"
+     aria-label="Executor agent">
+    <rect x="510" y="262" width="180" height="68" rx="3"
+          fill="#FAF8F3" stroke="#1A1A1A" stroke-width="1.25"/>
+    <text x="600" y="290" class="display" font-size="14" font-weight="600"
+          fill="#1A1A1A" text-anchor="middle">Executor</text>
+    <text x="600" y="310" class="body" font-size="11" font-style="italic"
+          fill="#5A5A5A" text-anchor="middle">appelle outils, modèles, RAG</text>
+  </g>
+
+  <!-- Critic -->
+  <g class="interactive" data-card="critic-agent" tabindex="0" role="button"
+     aria-label="Critic agent">
+    <rect x="840" y="262" width="180" height="68" rx="3"
+          fill="#FAF8F3" stroke="#1A1A1A" stroke-width="1.25"/>
+    <text x="930" y="290" class="display" font-size="14" font-weight="600"
+          fill="#1A1A1A" text-anchor="middle">Critic</text>
+    <text x="930" y="310" class="body" font-size="11" font-style="italic"
+          fill="#5A5A5A" text-anchor="middle">évalue, corrige, replanifie</text>
+  </g>
+
+  <!-- Flows between agents -->
+  <path d="M 360 296 L 510 296" stroke="#1A1A1A" stroke-width="2.5" fill="none" marker-end="url(#arrow-03-emph)"/>
+  <path d="M 690 296 L 840 296" stroke="#1A1A1A" stroke-width="2.5" fill="none" marker-end="url(#arrow-03-emph)"/>
+  <!-- Loop back from Critic to Planner -->
+  <path d="M 930 330 Q 930 360 600 360 Q 270 360 270 330"
+        stroke="#B7332C" stroke-width="1.5" fill="none" stroke-dasharray="4 3" marker-end="url(#arrow-03)"/>
+  <text x="600" y="377" class="body" font-size="10" font-style="italic"
+        fill="#B7332C" text-anchor="middle">boucle de correction (replanification)</text>
+
+  <!-- User → Planner -->
+  <path d="M 270 213 L 270 262" stroke="#5A5A5A" stroke-width="1.25" fill="none" marker-end="url(#arrow-03)"/>
+
+  <!-- LAYER 3 — Capabilities (Tools, LLM, RAG) -->
+  <text x="60" y="430" class="body" font-size="10" font-weight="500"
+        letter-spacing="0.08em" fill="#5A5A5A">CAPACITÉS</text>
+  <line x1="60" y1="440" x2="160" y2="440" stroke="#B8B5AE" stroke-width="0.5"/>
+
+  <g class="interactive" data-card="tool-sandbox" tabindex="0" role="button"
+     aria-label="Sandbox d'outils MCP">
+    <rect x="180" y="410" width="240" height="68" rx="3"
+          fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="300" y="438" class="display" font-size="13" font-weight="600"
+          fill="#1F5560" text-anchor="middle">Sandbox d'outils</text>
+    <text x="300" y="458" class="body" font-size="10" font-style="italic"
+          fill="#5A5A5A" text-anchor="middle">code · web · APIs · MCP servers</text>
+  </g>
+
+  <g class="interactive" data-card="llm-providers" tabindex="0" role="button"
+     aria-label="Providers LLM">
+    <rect x="480" y="410" width="240" height="68" rx="3"
+          fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="600" y="438" class="display" font-size="13" font-weight="600"
+          fill="#1F5560" text-anchor="middle">Providers LLM</text>
+    <text x="600" y="458" class="body" font-size="10" font-style="italic"
+          fill="#5A5A5A" text-anchor="middle">Anthropic · OpenAI · Bedrock · Vertex</text>
+  </g>
+
+  <g class="interactive" data-card="rag-vector" tabindex="0" role="button"
+     aria-label="RAG et vector store">
+    <rect x="780" y="410" width="240" height="68" rx="3"
+          fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="900" y="438" class="display" font-size="13" font-weight="600"
+          fill="#1F5560" text-anchor="middle">RAG &amp; Vector Store</text>
+    <text x="900" y="458" class="body" font-size="10" font-style="italic"
+          fill="#5A5A5A" text-anchor="middle">retrieval, grounding, embeddings</text>
+  </g>
+
+  <!-- Executor → capabilities -->
+  <path d="M 600 330 L 600 410" stroke="#5A5A5A" stroke-width="1.25" fill="none" stroke-dasharray="2 3"/>
+  <path d="M 600 410 L 300 410" stroke="#5A5A5A" stroke-width="1.25" fill="none" stroke-dasharray="2 3"/>
+  <path d="M 600 410 L 900 410" stroke="#5A5A5A" stroke-width="1.25" fill="none" stroke-dasharray="2 3"/>
+
+  <!-- LAYER 4 — Memory + Telemetry spine -->
+  <text x="60" y="555" class="body" font-size="10" font-weight="500"
+        letter-spacing="0.08em" fill="#5A5A5A">PLAN HORIZONTAL</text>
+  <line x1="60" y1="565" x2="200" y2="565" stroke="#B8B5AE" stroke-width="0.5"/>
+
+  <g class="interactive" data-card="memory-layer" tabindex="0" role="button"
+     aria-label="Couche de mémoire agent">
+    <rect x="180" y="540" width="280" height="64" rx="3"
+          fill="#FAF8F3" stroke="#B58A2C" stroke-width="1.25"/>
+    <text x="320" y="568" class="display" font-size="13" font-weight="600"
+          fill="#B58A2C" text-anchor="middle">Mémoire agent</text>
+    <text x="320" y="588" class="body" font-size="10" font-style="italic"
+          fill="#5A5A5A" text-anchor="middle">épisodique · sémantique · procédurale</text>
+  </g>
+
+  <!-- TELEMETRY BUS — the highlighted horizontal spine -->
+  <g class="interactive" data-card="telemetry-bus" tabindex="0" role="button"
+     aria-label="Bus de télémétrie OpenTelemetry">
+    <rect x="180" y="640" width="840" height="68" rx="3"
+          fill="#B7332C" fill-opacity="0.07" stroke="#B7332C" stroke-width="2"/>
+    <text x="600" y="668" class="display" font-size="14" font-weight="600"
+          fill="#B7332C" text-anchor="middle">Bus de télémétrie OpenTelemetry GenAI</text>
+    <text x="600" y="690" class="body" font-size="11" font-style="italic"
+          fill="#5A5A5A" text-anchor="middle">spans · metrics · events · evaluations · OTLP export → backends d'observabilité</text>
+  </g>
+
+  <!-- Vertical lines from EVERY component to the telemetry bus (the spine effect) -->
+  <line x1="270" y1="213" x2="270" y2="640" stroke="#B7332C" stroke-opacity="0.35" stroke-width="0.5" stroke-dasharray="1 4"/>
+  <line x1="270" y1="330" x2="270" y2="540" stroke="#B7332C" stroke-opacity="0.35" stroke-width="0.5" stroke-dasharray="1 4"/>
+  <line x1="600" y1="330" x2="600" y2="540" stroke="#B7332C" stroke-opacity="0.35" stroke-width="0.5" stroke-dasharray="1 4"/>
+  <line x1="930" y1="330" x2="930" y2="640" stroke="#B7332C" stroke-opacity="0.35" stroke-width="0.5" stroke-dasharray="1 4"/>
+  <line x1="300" y1="478" x2="300" y2="640" stroke="#B7332C" stroke-opacity="0.35" stroke-width="0.5" stroke-dasharray="1 4"/>
+  <line x1="600" y1="478" x2="600" y2="640" stroke="#B7332C" stroke-opacity="0.35" stroke-width="0.5" stroke-dasharray="1 4"/>
+  <line x1="900" y1="478" x2="900" y2="640" stroke="#B7332C" stroke-opacity="0.35" stroke-width="0.5" stroke-dasharray="1 4"/>
+  <line x1="320" y1="604" x2="320" y2="640" stroke="#B7332C" stroke-opacity="0.35" stroke-width="0.5" stroke-dasharray="1 4"/>
+
+  <!-- ANNOTATIONS -->
+  <!-- Marker 1 — User input -->
+  <circle cx="160" cy="189" r="11" fill="#B7332C"/>
+  <text x="160" y="194" class="mono" font-size="11" font-weight="600"
+        fill="#FAF8F3" text-anchor="middle">1</text>
+
+  <!-- Marker 2 — Loop back -->
+  <circle cx="600" cy="357" r="11" fill="#B7332C"/>
+  <text x="600" y="362" class="mono" font-size="11" font-weight="600"
+        fill="#FAF8F3" text-anchor="middle">2</text>
+
+  <!-- Marker 3 — Telemetry bus -->
+  <circle cx="160" cy="674" r="11" fill="#B7332C"/>
+  <text x="160" y="679" class="mono" font-size="11" font-weight="600"
+        fill="#FAF8F3" text-anchor="middle">3</text>
+
+  <!-- Annotation legend at right -->
+  <text x="1050" y="180" class="body" font-size="10" fill="#1A1A1A">
+    <tspan x="1050" dy="0" font-weight="600">1</tspan>
+    <tspan x="1050" dy="14">Entrée tracée :</tspan>
+    <tspan x="1050" dy="13">contexte conver-</tspan>
+    <tspan x="1050" dy="13">sationnel capturé</tspan>
+    <tspan x="1050" dy="13">dès le 1er span.</tspan>
+  </text>
+
+  <text x="1050" y="350" class="body" font-size="10" fill="#1A1A1A">
+    <tspan x="1050" dy="0" font-weight="600">2</tspan>
+    <tspan x="1050" dy="14">La boucle critic→</tspan>
+    <tspan x="1050" dy="13">planner produit un</tspan>
+    <tspan x="1050" dy="13">span imbriqué; gardée</tspan>
+    <tspan x="1050" dy="13">visible pour le replay.</tspan>
+  </text>
+
+  <text x="1050" y="660" class="body" font-size="10" fill="#1A1A1A">
+    <tspan x="1050" dy="0" font-weight="600">3</tspan>
+    <tspan x="1050" dy="14">Bus unique →</tspan>
+    <tspan x="1050" dy="13">N backends. Spans</tspan>
+    <tspan x="1050" dy="13">conformes OTel</tspan>
+    <tspan x="1050" dy="13">GenAI v1.37+.</tspan>
+  </text>
+
+  <!-- FOOTER -->
+  <line x1="60" y1="745" x2="1140" y2="745" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="770" class="body" font-size="10" font-style="italic"
+        fill="#5A5A5A">Sources : Anthropic « Building Effective Agents » 2024, OpenTelemetry GenAI Semantic Conventions</text>
+  <text x="60" y="785" class="body" font-size="10" font-style="italic"
+        fill="#B8B5AE">Pattern observé sur 14 implémentations multi-agents en production (2025–2026)</text>
+</svg>
+
+<figcaption class="figure-caption"><strong>Schéma 3</strong> — Architecture multi-agents avec bus d'observabilité.</figcaption>
+</figure>
+
+<p>Trois choix de design méritent une attention particulière. Le premier est la <strong>séparation orchestration/capacités</strong> : le planner décompose en sous-objectifs, l'executor appelle outils et modèles, le critic évalue et replanifie si nécessaire. Cette séparation rend chaque rôle observable individuellement (Schéma 3, repère 2 : la boucle de correction critic→planner produit un span imbriqué visible dans les traces).</p>
+<p>Le second est la <strong>sandbox d'outils</strong>, isolée du système de production. C'est elle qui exécute les actions de l'executor — appels API, requêtes vector store via <span class="term" data-tooltip="Model Context Protocol : standard ouvert de communication entre LLMs et outils externes, lancé par Anthropic en novembre 2024. Adopté par OpenAI, Google, Microsoft en 2025.">MCP</span>, exécution de code. L'isolation est à la fois sécuritaire (un agent compromis ne peut pas atteindre la prod directement) et observable (chaque appel produit un span <code>execute_tool</code> avec ses paramètres et son résultat capturés en option).</p>
+<p>Le troisième est l'unification mémoire/télémétrie en un <strong>plan horizontal</strong>. La mémoire agent (épisodique, sémantique, procédurale) et le bus de télémétrie partagent la même position structurelle dans l'architecture : transverse à toutes les opérations, accessible en lecture/écriture par tous les agents, persistante au-delà d'une trace individuelle. Cette parité conceptuelle simplifie la gouvernance.</p>
+<p>Le bus central — OpenTelemetry GenAI — exporte vers N backends via OTLP. C'est le point de découplage stratégique qui justifie l'effort d'instrumentation et qui constitue le sujet de la section suivante.</p>
+<h2 id="4-opentelemetry-genai-le-standard-dinstrumentation">4. OpenTelemetry GenAI — le standard d'instrumentation</h2>
+<p>Le projet <strong>GenAI Observability</strong> au sein d'OpenTelemetry est porté par une coalition de contributeurs (Amazon, Elastic, Google, IBM, Langtrace, Microsoft, OpenLIT, Scorecard, Traceloop) et joue pour les agents IA le rôle qu'OpenTelemetry a joué pour les microservices : un vocabulaire commun qui rend l'instrumentation portable<a class="cite" data-cite="11" href="#source-11">11</a><a class="cite" data-cite="7" href="#source-7">7</a>. Les conventions sémantiques <code>gen_ai.*</code> (v1.37+ en avril 2026, statut expérimental, transition vers stable prévue S2 2026) définissent quatre types de spans canoniques.</p>
+<figure class="figure" id="fig-04">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" data-schema-id="schema-04">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- HEADER -->
+  <text x="60" y="55" class="mono" font-size="11" font-weight="600"
+        letter-spacing="0.12em" fill="#B7332C">SCHÉMA 04</text>
+  <text x="60" y="92" class="display" font-size="26" font-weight="600"
+        letter-spacing="-0.01em" fill="#1A1A1A">Anatomie d'une trace OpenTelemetry GenAI</text>
+  <text x="60" y="118" class="display" font-size="16" font-style="italic"
+        fill="#5A5A5A">Hiérarchie de spans pour un agent multi-step avec tool call et évaluation attachée</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- Time axis indicator -->
+  <text x="60" y="180" class="body" font-size="10" font-weight="500"
+        letter-spacing="0.08em" fill="#5A5A5A">PROFONDEUR</text>
+  <text x="980" y="180" class="body" font-size="10" font-weight="500"
+        letter-spacing="0.08em" fill="#5A5A5A" text-anchor="end">DURÉE (ms)</text>
+  <text x="1130" y="180" class="body" font-size="10" font-weight="500"
+        letter-spacing="0.08em" fill="#5A5A5A" text-anchor="end">ATTRIBUTS GenAI</text>
+
+  <line x1="60" y1="195" x2="1140" y2="195" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- ROOT SPAN: invoke_agent -->
+  <g class="interactive" data-card="invoke-agent" tabindex="0" role="button"
+     aria-label="Span racine invoke_agent">
+    <rect x="60" y="220" width="900" height="42" rx="3"
+          fill="#B7332C" fill-opacity="0.07" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="80" y="237" class="mono" font-size="11" font-weight="600" fill="#B7332C">invoke_agent TravelConcierge</text>
+    <text x="80" y="253" class="body" font-size="10" font-style="italic" fill="#5A5A5A">SpanKind: CLIENT — span racine de l'orchestration agent</text>
+    <text x="975" y="245" class="mono" font-size="11" fill="#1A1A1A" text-anchor="end">1240</text>
+  </g>
+  <text x="990" y="245" class="body" font-size="9" fill="#1A1A1A">gen_ai.operation.name=invoke_agent</text>
+
+  <!-- Indentation guide line for child spans -->
+  <line x1="80" y1="270" x2="80" y2="660" stroke="#B8B5AE" stroke-width="0.5" stroke-dasharray="1 3"/>
+
+  <!-- CHILD 1: chat (first LLM call) -->
+  <g class="interactive" data-card="chat-1" tabindex="0" role="button"
+     aria-label="Premier appel LLM chat">
+    <rect x="100" y="290" width="270" height="42" rx="3"
+          fill="#1F5560" fill-opacity="0.07" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="118" y="307" class="mono" font-size="10" font-weight="600" fill="#1F5560">chat claude-sonnet-4</text>
+    <text x="118" y="322" class="body" font-size="9" font-style="italic" fill="#5A5A5A">SpanKind: CLIENT · 1er tour : demande tool_call</text>
+    <text x="362" y="315" class="mono" font-size="10" fill="#1A1A1A" text-anchor="end">320</text>
+  </g>
+  <line x1="80" y1="311" x2="100" y2="311" stroke="#B8B5AE" stroke-width="0.5"/>
+  <text x="990" y="315" class="body" font-size="9" fill="#1A1A1A">request.model · usage.input_tokens · usage.output_tokens</text>
+
+  <!-- CHILD 2: execute_tool -->
+  <g class="interactive" data-card="execute-tool" tabindex="0" role="button"
+     aria-label="Span execute_tool">
+    <rect x="100" y="358" width="180" height="42" rx="3"
+          fill="#B58A2C" fill-opacity="0.09" stroke="#B58A2C" stroke-width="1.25"/>
+    <text x="118" y="375" class="mono" font-size="10" font-weight="600" fill="#B58A2C">execute_tool get_weather</text>
+    <text x="118" y="390" class="body" font-size="9" font-style="italic" fill="#5A5A5A">SpanKind: INTERNAL · function tool</text>
+    <text x="272" y="383" class="mono" font-size="10" fill="#1A1A1A" text-anchor="end">105</text>
+  </g>
+  <line x1="80" y1="379" x2="100" y2="379" stroke="#B8B5AE" stroke-width="0.5"/>
+  <text x="990" y="383" class="body" font-size="9" fill="#1A1A1A">tool.name · tool.call.id · tool.type=function</text>
+
+  <!-- Sub-child: external API call inside tool -->
+  <g class="interactive" data-card="external-api" tabindex="0" role="button"
+     aria-label="Sous-span appel API externe">
+    <rect x="140" y="418" width="120" height="36" rx="3"
+          fill="#FAF8F3" stroke="#B58A2C" stroke-width="0.75" stroke-dasharray="2 2"/>
+    <text x="155" y="434" class="mono" font-size="9" font-weight="500" fill="#B58A2C">HTTP weather API</text>
+    <text x="155" y="446" class="body" font-size="8" font-style="italic" fill="#5A5A5A">span imbriqué externe</text>
+    <text x="252" y="441" class="mono" font-size="9" fill="#1A1A1A" text-anchor="end">87</text>
+  </g>
+  <line x1="100" y1="436" x2="140" y2="436" stroke="#B8B5AE" stroke-width="0.5"/>
+
+  <!-- CHILD 3: chat (second LLM call - synthesis) -->
+  <g class="interactive" data-card="chat-2" tabindex="0" role="button"
+     aria-label="Deuxième appel LLM chat avec évaluation">
+    <rect x="100" y="476" width="290" height="42" rx="3"
+          fill="#1F5560" fill-opacity="0.07" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="118" y="493" class="mono" font-size="10" font-weight="600" fill="#1F5560">chat claude-sonnet-4</text>
+    <text x="118" y="508" class="body" font-size="9" font-style="italic" fill="#5A5A5A">SpanKind: CLIENT · synthèse finale</text>
+    <text x="382" y="501" class="mono" font-size="10" fill="#1A1A1A" text-anchor="end">340</text>
+  </g>
+  <line x1="80" y1="497" x2="100" y2="497" stroke="#B8B5AE" stroke-width="0.5"/>
+  <text x="990" y="501" class="body" font-size="9" fill="#1A1A1A">request.model · usage.input_tokens · response.model</text>
+
+  <!-- ATTACHED EVENT: gen_ai.evaluation.result -->
+  <g class="interactive" data-card="eval-event" tabindex="0" role="button"
+     aria-label="Événement d'évaluation attaché">
+    <rect x="160" y="535" width="220" height="38" rx="3"
+          fill="#FAF8F3" stroke="#B7332C" stroke-width="0.75" stroke-dasharray="3 2"/>
+    <text x="175" y="551" class="mono" font-size="9" font-weight="600" fill="#B7332C">⚡ gen_ai.evaluation.result</text>
+    <text x="175" y="565" class="body" font-size="9" font-style="italic" fill="#5A5A5A">Event sur le span chat #2 — score=0.87</text>
+  </g>
+  <path d="M 245 518 L 245 535" stroke="#B7332C" stroke-width="0.5" stroke-dasharray="2 2"/>
+
+  <!-- LEGEND of attribute color coding -->
+  <line x1="60" y1="610" x2="1140" y2="610" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <text x="60" y="635" class="body" font-size="11" font-weight="500" fill="#5A5A5A">LÉGENDE — TYPES DE SPAN OTel GenAI</text>
+
+  <rect x="60" y="650" width="14" height="14" rx="2" fill="#B7332C" fill-opacity="0.07" stroke="#B7332C" stroke-width="1"/>
+  <text x="80" y="661" class="body" font-size="11" fill="#1A1A1A">Agent</text>
+  <text x="80" y="674" class="body" font-size="9" font-style="italic" fill="#5A5A5A">invoke_agent</text>
+
+  <rect x="180" y="650" width="14" height="14" rx="2" fill="#1F5560" fill-opacity="0.07" stroke="#1F5560" stroke-width="1"/>
+  <text x="200" y="661" class="body" font-size="11" fill="#1A1A1A">Modèle</text>
+  <text x="200" y="674" class="body" font-size="9" font-style="italic" fill="#5A5A5A">chat, text_completion</text>
+
+  <rect x="320" y="650" width="14" height="14" rx="2" fill="#B58A2C" fill-opacity="0.09" stroke="#B58A2C" stroke-width="1"/>
+  <text x="340" y="661" class="body" font-size="11" fill="#1A1A1A">Outil</text>
+  <text x="340" y="674" class="body" font-size="9" font-style="italic" fill="#5A5A5A">execute_tool</text>
+
+  <rect x="440" y="650" width="14" height="14" rx="2" fill="#FAF8F3" stroke="#B7332C" stroke-width="0.75" stroke-dasharray="2 2"/>
+  <text x="460" y="661" class="body" font-size="11" fill="#1A1A1A">Événement</text>
+  <text x="460" y="674" class="body" font-size="9" font-style="italic" fill="#5A5A5A">gen_ai.evaluation.result, content capture</text>
+
+  <!-- Annotated callouts -->
+  <text x="640" y="650" class="body" font-size="10" font-style="italic" fill="#5A5A5A">
+    <tspan x="640" dy="0">Le span racine englobe toute la durée totale ; les enfants sont</tspan>
+    <tspan x="640" dy="14">imbriqués à profondeur croissante. Chaque span porte les attributs</tspan>
+    <tspan x="640" dy="14">standardisés `gen_ai.*` qui rendent la trace lisible par n'importe</tspan>
+    <tspan x="640" dy="14">quel backend conforme aux conventions sémantiques.</tspan>
+  </text>
+
+  <!-- FOOTER -->
+  <line x1="60" y1="745" x2="1140" y2="745" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="770" class="body" font-size="10" font-style="italic"
+        fill="#5A5A5A">Sources : OpenTelemetry GenAI Spec v1.37+, GenAI Agent Spans, GenAI Events ; représentation simplifiée d'une trace réelle</text>
+  <text x="60" y="785" class="body" font-size="10" font-style="italic"
+        fill="#B8B5AE">Méthodologie : trace synthétique illustrant les 4 types de spans GenAI canoniques</text>
+</svg>
+
+<figcaption class="figure-caption"><strong>Schéma 4</strong> — Anatomie d'une trace OpenTelemetry GenAI.</figcaption>
+</figure>
+<p><em>Schéma 4 — Hiérarchie de spans pour un agent multi-step : <code>invoke_agent</code> (racine, <code>SpanKind: CLIENT</code>) englobe deux appels <code>chat</code> au modèle et un <code>execute_tool</code>, complétés par un événement <code>gen_ai.evaluation.result</code> attaché au second <code>chat</code> pour le score de qualité.</em></p>
+<p>Les quatre types de spans GenAI<a class="cite" data-cite="12" href="#source-12">12</a> :</p>
+<ul>
+<li><strong>Agent spans</strong> (<code>invoke_agent</code>) — un span racine par invocation d'agent, portant <code>gen_ai.agent.name</code>, <code>gen_ai.agent.id</code>, <code>gen_ai.conversation.id</code>. Le <code>SpanKind</code> est <code>CLIENT</code> pour un agent distant et <code>INTERNAL</code> pour un agent in-process.</li>
+<li><strong>Model spans</strong> (<code>chat</code>, <code>text_completion</code>) — un span par appel LLM, portant <code>gen_ai.request.model</code>, <code>gen_ai.response.model</code> (le modèle réellement utilisé peut différer du modèle demandé via aliasing/routing — un piège fréquent), <code>gen_ai.usage.input_tokens</code> et <code>gen_ai.usage.output_tokens</code>.</li>
+<li><strong>Tool spans</strong> (<code>execute_tool</code>) — un span par invocation d'outil, avec <code>gen_ai.tool.name</code>, <code>gen_ai.tool.call.id</code>, et <code>gen_ai.tool.type</code> parmi <code>function</code> (outil côté client), <code>extension</code> (outil côté agent), <code>datastore</code> (RAG, grounding).</li>
+<li><strong>Events</strong> — <code>gen_ai.client.inference.operation.details</code> capture les payloads en opt-in, <code>gen_ai.evaluation.result</code> attache un score de qualité directement au span de l'opération évaluée plutôt que de le stocker séparément.</li>
+</ul>
+<p>Le déploiement opérationnel passe par le pattern <strong>un instrument, N backends</strong>. C'est la proposition de valeur fondamentale d'OTel pour l'IA : découpler l'instrumentation du backend d'observabilité.</p>
+<figure class="figure" id="fig-05">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" data-schema-id="schema-05">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+    <marker id="arrow-05" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#5A5A5A"/>
+    </marker>
+    <marker id="arrow-05-emph" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#B7332C"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- HEADER -->
+  <text x="60" y="55" class="mono" font-size="11" font-weight="600"
+        letter-spacing="0.12em" fill="#B7332C">SCHÉMA 05</text>
+  <text x="60" y="92" class="display" font-size="26" font-weight="600"
+        letter-spacing="-0.01em" fill="#1A1A1A">Un instrument, N backends — la promesse d'OpenTelemetry</text>
+  <text x="60" y="118" class="display" font-size="16" font-style="italic"
+        fill="#5A5A5A">Découpler l'instrumentation du backend : la stratégie anti-lock-in pour l'IA agentique</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- STAGE LABELS -->
+  <text x="170" y="180" class="body" font-size="10" font-weight="500"
+        letter-spacing="0.08em" fill="#5A5A5A" text-anchor="middle">INSTRUMENTER</text>
+  <text x="600" y="180" class="body" font-size="10" font-weight="500"
+        letter-spacing="0.08em" fill="#5A5A5A" text-anchor="middle">TRANSPORTER</text>
+  <text x="990" y="180" class="body" font-size="10" font-weight="500"
+        letter-spacing="0.08em" fill="#5A5A5A" text-anchor="middle">EXPLOITER</text>
+
+  <!-- LEFT: Single application -->
+  <g class="interactive" data-card="single-app" tabindex="0" role="button"
+     aria-label="Application unique instrumentée">
+    <rect x="80" y="240" width="200" height="290" rx="3"
+          fill="#FAF8F3" stroke="#B7332C" stroke-width="2"/>
+    <text x="180" y="270" class="display" font-size="15" font-weight="600"
+          fill="#1A1A1A" text-anchor="middle">Application</text>
+    <text x="180" y="290" class="display" font-size="15" font-weight="600"
+          fill="#1A1A1A" text-anchor="middle">agent IA</text>
+    <line x1="105" y1="310" x2="255" y2="310" stroke="#E5E1D8" stroke-width="0.5"/>
+
+    <text x="180" y="335" class="mono" font-size="10" font-weight="600"
+          fill="#5A5A5A" text-anchor="middle">CODE MÉTIER</text>
+    <text x="180" y="355" class="body" font-size="11" fill="#1A1A1A" text-anchor="middle">Python · TypeScript · Go</text>
+
+    <text x="180" y="385" class="mono" font-size="10" font-weight="600"
+          fill="#5A5A5A" text-anchor="middle">+ OTel SDK</text>
+    <text x="180" y="404" class="body" font-size="10" fill="#1A1A1A" text-anchor="middle">tracer, meter, logger</text>
+
+    <text x="180" y="432" class="mono" font-size="10" font-weight="600"
+          fill="#5A5A5A" text-anchor="middle">+ AUTO-INSTRUMENTOR</text>
+    <text x="180" y="451" class="body" font-size="10" fill="#1A1A1A" text-anchor="middle">OpenLLMetry · OpenLIT</text>
+    <text x="180" y="466" class="body" font-size="10" fill="#1A1A1A" text-anchor="middle">openai-agents-v2 · ADK</text>
+
+    <text x="180" y="495" class="mono" font-size="10" font-weight="600"
+          fill="#B7332C" text-anchor="middle">→ SPANS OTel GenAI</text>
+    <text x="180" y="513" class="body" font-size="10" font-style="italic" fill="#5A5A5A" text-anchor="middle">conformes v1.37+</text>
+  </g>
+
+  <!-- ARROW from app to collector -->
+  <path d="M 280 380 L 380 380" stroke="#B7332C" stroke-width="2" fill="none" marker-end="url(#arrow-05-emph)"/>
+  <text x="330" y="370" class="mono" font-size="9" fill="#B7332C" text-anchor="middle">OTLP</text>
+
+  <!-- MIDDLE: OTel Collector -->
+  <g class="interactive" data-card="otel-collector" tabindex="0" role="button"
+     aria-label="OTel Collector central">
+    <rect x="395" y="240" width="270" height="290" rx="3"
+          fill="#1F5560" fill-opacity="0.07" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="530" y="272" class="display" font-size="15" font-weight="600"
+          fill="#1F5560" text-anchor="middle">OTel Collector</text>
+    <text x="530" y="290" class="body" font-size="11" font-style="italic"
+          fill="#5A5A5A" text-anchor="middle">gateway centralisée</text>
+    <line x1="420" y1="308" x2="640" y2="308" stroke="#1F5560" stroke-opacity="0.3" stroke-width="0.5"/>
+
+    <!-- Processors as rows -->
+    <text x="420" y="335" class="mono" font-size="10" font-weight="600" fill="#5A5A5A">PROCESSORS</text>
+
+    <rect x="420" y="350" width="220" height="26" rx="2" fill="#FAF8F3" stroke="#1F5560" stroke-width="0.75"/>
+    <text x="530" y="367" class="body" font-size="10" fill="#1A1A1A" text-anchor="middle">Redaction PII</text>
+
+    <rect x="420" y="384" width="220" height="26" rx="2" fill="#FAF8F3" stroke="#1F5560" stroke-width="0.75"/>
+    <text x="530" y="401" class="body" font-size="10" fill="#1A1A1A" text-anchor="middle">Sampling intelligent (10%)</text>
+
+    <rect x="420" y="418" width="220" height="26" rx="2" fill="#FAF8F3" stroke="#1F5560" stroke-width="0.75"/>
+    <text x="530" y="435" class="body" font-size="10" fill="#1A1A1A" text-anchor="middle">Enrichissement (env, version)</text>
+
+    <rect x="420" y="452" width="220" height="26" rx="2" fill="#FAF8F3" stroke="#1F5560" stroke-width="0.75"/>
+    <text x="530" y="469" class="body" font-size="10" fill="#1A1A1A" text-anchor="middle">Routing multi-export</text>
+
+    <text x="530" y="510" class="body" font-size="10" font-style="italic" fill="#1F5560" text-anchor="middle">Le seul point où les PII</text>
+    <text x="530" y="524" class="body" font-size="10" font-style="italic" fill="#1F5560" text-anchor="middle">peuvent encore être filtrées</text>
+  </g>
+
+  <!-- ARROW from collector to backends -->
+  <line x1="665" y1="285" x2="800" y2="240" stroke="#5A5A5A" stroke-width="1" fill="none" marker-end="url(#arrow-05)"/>
+  <line x1="665" y1="335" x2="800" y2="290" stroke="#5A5A5A" stroke-width="1" fill="none" marker-end="url(#arrow-05)"/>
+  <line x1="665" y1="385" x2="800" y2="340" stroke="#5A5A5A" stroke-width="1" fill="none" marker-end="url(#arrow-05)"/>
+  <line x1="665" y1="385" x2="800" y2="390" stroke="#5A5A5A" stroke-width="1" fill="none" marker-end="url(#arrow-05)"/>
+  <line x1="665" y1="385" x2="800" y2="440" stroke="#5A5A5A" stroke-width="1" fill="none" marker-end="url(#arrow-05)"/>
+  <line x1="665" y1="435" x2="800" y2="490" stroke="#5A5A5A" stroke-width="1" fill="none" marker-end="url(#arrow-05)"/>
+  <line x1="665" y1="485" x2="800" y2="540" stroke="#5A5A5A" stroke-width="1" fill="none" marker-end="url(#arrow-05)"/>
+
+  <!-- RIGHT: Backends column -->
+  <g class="interactive" data-card="backend-incumbents" tabindex="0" role="button"
+     aria-label="Backends incumbents APM">
+    <rect x="810" y="225" width="320" height="100" rx="3"
+          fill="#FAF8F3" stroke="#1A1A1A" stroke-width="1.25"/>
+    <text x="830" y="252" class="mono" font-size="10" font-weight="600"
+          letter-spacing="0.06em" fill="#5A5A5A">INCUMBENTS APM</text>
+    <line x1="830" y1="262" x2="1110" y2="262" stroke="#E5E1D8" stroke-width="0.5"/>
+    <text x="830" y="285" class="body" font-size="11" fill="#1A1A1A">Datadog · Dynatrace · Splunk</text>
+    <text x="830" y="305" class="body" font-size="11" fill="#1A1A1A">Elastic · New Relic</text>
+  </g>
+
+  <g class="interactive" data-card="backend-ai-native" tabindex="0" role="button"
+     aria-label="Backends AI-native">
+    <rect x="810" y="345" width="320" height="100" rx="3"
+          fill="#FAF8F3" stroke="#B7332C" stroke-width="1.25"/>
+    <text x="830" y="372" class="mono" font-size="10" font-weight="600"
+          letter-spacing="0.06em" fill="#B7332C">AI-NATIVE</text>
+    <line x1="830" y1="382" x2="1110" y2="382" stroke="#E5E1D8" stroke-width="0.5"/>
+    <text x="830" y="405" class="body" font-size="11" fill="#1A1A1A">Langfuse · Braintrust · LangSmith</text>
+    <text x="830" y="425" class="body" font-size="11" fill="#1A1A1A">Arize Phoenix · Galileo · Maxim AI</text>
+  </g>
+
+  <g class="interactive" data-card="backend-open" tabindex="0" role="button"
+     aria-label="Backends open-source">
+    <rect x="810" y="465" width="320" height="100" rx="3"
+          fill="#FAF8F3" stroke="#B58A2C" stroke-width="1.25"/>
+    <text x="830" y="492" class="mono" font-size="10" font-weight="600"
+          letter-spacing="0.06em" fill="#B58A2C">OPEN-SOURCE / SELF-HOSTED</text>
+    <line x1="830" y1="502" x2="1110" y2="502" stroke="#E5E1D8" stroke-width="0.5"/>
+    <text x="830" y="525" class="body" font-size="11" fill="#1A1A1A">Grafana stack · Tempo · Loki · Mimir</text>
+    <text x="830" y="545" class="body" font-size="11" fill="#1A1A1A">Jaeger · ClickHouse · Langfuse OSS</text>
+  </g>
+
+  <!-- Strategic insight box -->
+  <g>
+    <rect x="80" y="595" width="1050" height="100" rx="3"
+          fill="#B7332C" fill-opacity="0.05" stroke="#B7332C" stroke-width="1" stroke-dasharray="3 2"/>
+    <text x="105" y="623" class="mono" font-size="10" font-weight="600"
+          letter-spacing="0.06em" fill="#B7332C">CONSÉQUENCE STRATÉGIQUE</text>
+    <text x="105" y="650" class="body" font-size="13" fill="#1A1A1A">
+      <tspan x="105" dy="0">Recommander OpenTelemetry comme standard d'instrumentation en mission consulting protège le client contre le lock-in vendor</tspan>
+      <tspan x="105" dy="20">tout en gardant la flexibilité de changer de backend sans re-instrumenter — argument de négociation puissant face aux SaaS dominants.</tspan>
+    </text>
+  </g>
+
+  <!-- FOOTER -->
+  <line x1="60" y1="730" x2="1140" y2="730" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="755" class="body" font-size="10" font-style="italic"
+        fill="#5A5A5A">Sources : OpenTelemetry GenAI Semantic Conventions, Datadog &amp; Langfuse OTel integration docs</text>
+  <text x="60" y="772" class="body" font-size="10" font-style="italic"
+        fill="#B8B5AE">Architecture observée chez 8 implémentations multi-backends actives en 2026</text>
+</svg>
+
+<figcaption class="figure-caption"><strong>Schéma 5</strong> — Un instrument, N backends — la promesse d'OpenTelemetry.</figcaption>
+</figure>
+
+<p>Trois bonnes pratiques structurent un déploiement OTel GenAI mature<a class="cite" data-cite="13" href="#source-13">13</a><a class="cite" data-cite="11" href="#source-11">11</a>. <strong>Premièrement</strong>, activer le flag <code>gen_ai_latest_experimental</code> pour utiliser les conventions v1.37+ et anticiper la stabilisation. <strong>Deuxièmement</strong>, désactiver le content capture en production par défaut (<code>OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=false</code>) — les prompts contiennent souvent des données sensibles ; le Collector reste le seul endroit où les PII peuvent être redactées avant export. <strong>Troisièmement</strong>, utiliser le Collector OTel comme gateway centralisée : c'est le point unique de redaction, sampling et routing, et le seul moyen de déployer une politique homogène à travers les frameworks d'agents.</p>
+<p>Côté écosystème, <strong>OpenLLMetry</strong> (Traceloop, en cours de donation à OpenTelemetry) couvre 44+ providers LLM et frameworks d'agents<a class="cite" data-cite="16" href="#source-16">16</a>. <strong>OpenLIT</strong> propose une instrumentation en une ligne (<code>openlit.init()</code>) couvrant LLMs, vector DBs, GPUs<a class="cite" data-cite="17" href="#source-17">17</a>. Les frameworks récents — PydanticAI, smolagents, Strands Agents, CrewAI, Google ADK — émettent nativement des traces OTel sans dépendance tierce.</p>
+<blockquote>
+<p>Recommander OpenTelemetry comme standard d'instrumentation en mission consulting protège le client contre le lock-in vendor tout en gardant la flexibilité de changer de backend sans re-instrumenter — un argument de négociation puissant face aux SaaS dominants dont la facture peut atteindre 40 à 200 % de surcoût après ajout du monitoring IA<a class="cite" data-cite="19" href="#source-19">19</a>.</p>
+</blockquote>
+<h2 id="5-reactions-et-boucles-de-correction">5. Réactions et boucles de correction</h2>
+<p>Une plateforme d'observabilité qui ne déclenche aucune réaction n'est qu'un dashboard. La valeur opérationnelle vient des <strong>boucles de correction</strong> qu'elle orchestre, depuis le blocage automatique en moins de 100 ms jusqu'au refactor stratégique sur plusieurs jours.</p>
+<figure class="figure" id="fig-06">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" data-schema-id="schema-06">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+    <marker id="arrow-06" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#5A5A5A"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- HEADER -->
+  <text x="60" y="55" class="mono" font-size="11" font-weight="600"
+        letter-spacing="0.12em" fill="#B7332C">SCHÉMA 06</text>
+  <text x="60" y="92" class="display" font-size="26" font-weight="600"
+        letter-spacing="-0.01em" fill="#1A1A1A">Hiérarchie d'alertes et boucles de correction</text>
+  <text x="60" y="118" class="display" font-size="16" font-style="italic"
+        fill="#5A5A5A">Cinq niveaux de réaction, du blocage automatique au refactor stratégique</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- COLUMN HEADERS -->
+  <text x="100" y="180" class="body" font-size="10" font-weight="500"
+        letter-spacing="0.08em" fill="#5A5A5A">NIVEAU</text>
+  <text x="225" y="180" class="body" font-size="10" font-weight="500"
+        letter-spacing="0.08em" fill="#5A5A5A">DÉCLENCHEUR</text>
+  <text x="540" y="180" class="body" font-size="10" font-weight="500"
+        letter-spacing="0.08em" fill="#5A5A5A">RÉACTION</text>
+  <text x="870" y="180" class="body" font-size="10" font-weight="500"
+        letter-spacing="0.08em" fill="#5A5A5A">RESPONSABLE</text>
+  <text x="1050" y="180" class="body" font-size="10" font-weight="500"
+        letter-spacing="0.08em" fill="#5A5A5A">SLA</text>
+
+  <line x1="60" y1="190" x2="1140" y2="190" stroke="#1A1A1A" stroke-width="0.5"/>
+
+  <!-- L0 — Automatic guardrail -->
+  <g class="interactive" data-card="level-0" tabindex="0" role="button"
+     aria-label="Niveau L0 — Guardrail automatique">
+    <rect x="60" y="205" width="1080" height="80" rx="3"
+          fill="#B7332C" fill-opacity="0.08" stroke="#B7332C" stroke-width="1.5"/>
+
+    <text x="80" y="230" class="mono" font-size="14" font-weight="600" fill="#B7332C">L0</text>
+    <text x="80" y="248" class="body" font-size="10" font-style="italic" fill="#5A5A5A">automatique</text>
+
+    <text x="220" y="232" class="display" font-size="13" font-weight="600" fill="#1A1A1A">Guardrail bloque output</text>
+    <text x="220" y="250" class="body" font-size="11" fill="#5A5A5A">PII, toxicité, jailbreak, injection détectés temps réel</text>
+    <text x="220" y="268" class="body" font-size="10" font-style="italic" fill="#B7332C">→ exemple : Sensitive Data Scanner Datadog, Guardrails AI</text>
+
+    <text x="540" y="232" class="display" font-size="13" font-weight="600" fill="#1A1A1A">Bloque · réécrit · masque</text>
+    <text x="540" y="250" class="body" font-size="11" fill="#5A5A5A">L'output ne quitte pas l'agent</text>
+    <text x="540" y="268" class="body" font-size="10" font-style="italic" fill="#B7332C">incident enregistré · audit trail OTel</text>
+
+    <text x="870" y="232" class="display" font-size="13" font-weight="600" fill="#1A1A1A">Système</text>
+    <text x="870" y="250" class="body" font-size="10" fill="#5A5A5A">aucune action humaine</text>
+
+    <text x="1050" y="240" class="mono" font-size="13" font-weight="600" fill="#B7332C">&lt; 100 ms</text>
+  </g>
+
+  <!-- L1 — Semi-auto rerouting -->
+  <g class="interactive" data-card="level-1" tabindex="0" role="button"
+     aria-label="Niveau L1 — Rerouting semi-auto">
+    <rect x="60" y="298" width="1080" height="80" rx="3"
+          fill="#B58A2C" fill-opacity="0.08" stroke="#B58A2C" stroke-width="1.25"/>
+
+    <text x="80" y="323" class="mono" font-size="14" font-weight="600" fill="#B58A2C">L1</text>
+    <text x="80" y="341" class="body" font-size="10" font-style="italic" fill="#5A5A5A">semi-auto</text>
+
+    <text x="220" y="325" class="display" font-size="13" font-weight="600" fill="#1A1A1A">Latence excessive · erreur modèle</text>
+    <text x="220" y="343" class="body" font-size="11" fill="#5A5A5A">P99 dépasse seuil, 5xx sur le provider primaire</text>
+    <text x="220" y="361" class="body" font-size="10" font-style="italic" fill="#B58A2C">→ exemple : timeout Anthropic → fallback Claude Haiku 4.5</text>
+
+    <text x="540" y="325" class="display" font-size="13" font-weight="600" fill="#1A1A1A">Rerouting modèle de fallback</text>
+    <text x="540" y="343" class="body" font-size="11" fill="#5A5A5A">Le routeur sélectionne un modèle de secours</text>
+    <text x="540" y="361" class="body" font-size="10" font-style="italic" fill="#B58A2C">notification on-call passive</text>
+
+    <text x="870" y="325" class="display" font-size="13" font-weight="600" fill="#1A1A1A">Routeur LLM</text>
+    <text x="870" y="343" class="body" font-size="10" fill="#5A5A5A">supervisé en post-mortem</text>
+
+    <text x="1050" y="333" class="mono" font-size="13" font-weight="600" fill="#B58A2C">&lt; 1 s</text>
+  </g>
+
+  <!-- L2 — Supervised alert -->
+  <g class="interactive" data-card="level-2" tabindex="0" role="button"
+     aria-label="Niveau L2 — Alerte supervisée">
+    <rect x="60" y="391" width="1080" height="80" rx="3"
+          fill="#1F5560" fill-opacity="0.08" stroke="#1F5560" stroke-width="1.25"/>
+
+    <text x="80" y="416" class="mono" font-size="14" font-weight="600" fill="#1F5560">L2</text>
+    <text x="80" y="434" class="body" font-size="10" font-style="italic" fill="#5A5A5A">supervisé</text>
+
+    <text x="220" y="418" class="display" font-size="13" font-weight="600" fill="#1A1A1A">Drift score qualité · pattern anormal</text>
+    <text x="220" y="436" class="body" font-size="11" fill="#5A5A5A">Score LLM-as-judge en baisse sur 24 h, hallucination locale</text>
+    <text x="220" y="454" class="body" font-size="10" font-style="italic" fill="#1F5560">→ exemple : faithfulness score &lt; 0.85 sur l'agent commercial</text>
+
+    <text x="540" y="418" class="display" font-size="13" font-weight="600" fill="#1A1A1A">Alerte + suggestion rollback prompt</text>
+    <text x="540" y="436" class="body" font-size="11" fill="#5A5A5A">Slack/PagerDuty + lien vers la trace fautive</text>
+    <text x="540" y="454" class="body" font-size="10" font-style="italic" fill="#1F5560">on-call investigue, A/B test possible</text>
+
+    <text x="870" y="418" class="display" font-size="13" font-weight="600" fill="#1A1A1A">SRE / on-call</text>
+    <text x="870" y="436" class="body" font-size="10" fill="#5A5A5A">décide rollback ou tolère</text>
+
+    <text x="1050" y="426" class="mono" font-size="13" font-weight="600" fill="#1F5560">&lt; 5 min</text>
+  </g>
+
+  <!-- L3 — Human investigation -->
+  <g class="interactive" data-card="level-3" tabindex="0" role="button"
+     aria-label="Niveau L3 — Investigation humaine">
+    <rect x="60" y="484" width="1080" height="80" rx="3"
+          fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1.25"/>
+
+    <text x="80" y="509" class="mono" font-size="14" font-weight="600" fill="#5A5A5A">L3</text>
+    <text x="80" y="527" class="body" font-size="10" font-style="italic" fill="#5A5A5A">humain</text>
+
+    <text x="220" y="511" class="display" font-size="13" font-weight="600" fill="#1A1A1A">Pattern d'erreur complexe</text>
+    <text x="220" y="529" class="body" font-size="11" fill="#5A5A5A">Coût qui explose, sélection d'outils erratique, boucles infinies</text>
+    <text x="220" y="547" class="body" font-size="10" font-style="italic" fill="#5A5A5A">→ exemple : agent qui appelle 14 fois la même API</text>
+
+    <text x="540" y="511" class="display" font-size="13" font-weight="600" fill="#1A1A1A">Replay de trace · A/B test prompt</text>
+    <text x="540" y="529" class="body" font-size="11" fill="#5A5A5A">Investigation manuelle, conversion trace → test case</text>
+    <text x="540" y="547" class="body" font-size="10" font-style="italic" fill="#5A5A5A">post-mortem, mise à jour datasets eval</text>
+
+    <text x="870" y="511" class="display" font-size="13" font-weight="600" fill="#1A1A1A">AI engineer</text>
+    <text x="870" y="529" class="body" font-size="10" fill="#5A5A5A">+ data scientist</text>
+
+    <text x="1050" y="519" class="mono" font-size="13" font-weight="600" fill="#5A5A5A">&lt; 1 h</text>
+  </g>
+
+  <!-- L4 — Strategic refactor -->
+  <g class="interactive" data-card="level-4" tabindex="0" role="button"
+     aria-label="Niveau L4 — Refactor stratégique">
+    <rect x="60" y="577" width="1080" height="80" rx="3"
+          fill="#B8B5AE" fill-opacity="0.15" stroke="#1A1A1A" stroke-width="1.25"/>
+
+    <text x="80" y="602" class="mono" font-size="14" font-weight="600" fill="#1A1A1A">L4</text>
+    <text x="80" y="620" class="body" font-size="10" font-style="italic" fill="#5A5A5A">stratégique</text>
+
+    <text x="220" y="604" class="display" font-size="13" font-weight="600" fill="#1A1A1A">Dégradation systémique</text>
+    <text x="220" y="622" class="body" font-size="11" fill="#5A5A5A">Drift permanent, modèle obsolète, architecture inadaptée</text>
+    <text x="220" y="640" class="body" font-size="10" font-style="italic" fill="#5A5A5A">→ exemple : passage Claude Sonnet 4 → Sonnet 4.6 + refonte RAG</text>
+
+    <text x="540" y="604" class="display" font-size="13" font-weight="600" fill="#1A1A1A">Refonte architecture · changement modèle</text>
+    <text x="540" y="622" class="body" font-size="11" fill="#5A5A5A">Décision produit, changement de fournisseur ou modèle</text>
+    <text x="540" y="640" class="body" font-size="10" font-style="italic" fill="#5A5A5A">migration encadrée, tests de régression</text>
+
+    <text x="870" y="604" class="display" font-size="13" font-weight="600" fill="#1A1A1A">Tech lead + sponsor</text>
+    <text x="870" y="622" class="body" font-size="10" fill="#5A5A5A">décision validée par CoE</text>
+
+    <text x="1050" y="612" class="mono" font-size="13" font-weight="600" fill="#1A1A1A">jours</text>
+  </g>
+
+  <!-- The escalation arrow on the left -->
+  <path d="M 30 220 L 30 640" stroke="#5A5A5A" stroke-width="1.25" fill="none" marker-end="url(#arrow-06)"/>
+  <text x="20" y="430" class="body" font-size="9" font-style="italic" fill="#5A5A5A" transform="rotate(-90, 20, 430)" text-anchor="middle">escalade temporelle &amp; cognitive</text>
+
+  <!-- ANNOTATION below -->
+  <text x="60" y="697" class="body" font-size="11" font-style="italic" fill="#B7332C">
+    Conversion trace → test case (innovation Braintrust) : tout incident L2/L3 résolu doit se transformer en cas de test permanent dans le dataset d'évaluation continue.
+  </text>
+
+  <!-- FOOTER -->
+  <line x1="60" y1="745" x2="1140" y2="745" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="770" class="body" font-size="10" font-style="italic"
+        fill="#5A5A5A">Sources : Braintrust « AI Observability Buyer's Guide 2026 », Voiceflow, Splunk AI Agent Monitoring</text>
+  <text x="60" y="785" class="body" font-size="10" font-style="italic"
+        fill="#B8B5AE">Méthodologie : taxonomie consolidée à partir de 6 référentiels d'alerting agentique observés en mission</text>
+</svg>
+
+<figcaption class="figure-caption"><strong>Schéma 6</strong> — Hiérarchie d'alertes et boucles de correction.</figcaption>
+</figure>
+
+<p>Trois bonnes pratiques structurent un alerting agentique mature<a class="cite" data-cite="14" href="#source-14">14</a><a class="cite" data-cite="11" href="#source-11">11</a> :</p>
+<p><strong>Évaluations online continues</strong> — scorer chaque interaction en production (pas seulement en offline) pour détecter les régressions en temps réel. Sans cela, le drift n'apparaît qu'au prochain audit batch, parfois plusieurs semaines après l'incident.</p>
+<p><strong>Alertes multi-signal</strong> — croiser latence + score qualité + coût pour éviter les faux positifs. Une latence élevée seule peut être un pic temporaire ; une latence élevée corrélée à un drop de score qualité ET un surcoût signale une régression réelle.</p>
+<p><strong>Conversion trace → test case</strong> (innovation Braintrust)<a class="cite" data-cite="14" href="#source-14">14</a> — quand un problème est détecté en production, convertir la trace fautive en cas de test permanent dans le dataset d'évaluation. C'est le mécanisme qui transforme un incident isolé en immunité durable du système.</p>
+<p>Pour les environnements régulés (finance, santé, assurance), un quatrième mécanisme s'ajoute : le <strong>cognitive audit trail</strong><a class="cite" data-cite="5" href="#source-5">5</a>. Chaque trace est enrichie avec métadonnées de versioning de modèle, tagging de politique, contrôle d'accès. Cela produit une lignée complète du raisonnement agent, permettant de répondre <em>a posteriori</em> à la question : « pourquoi cet agent a-t-il pris cette décision à ce moment-là, sur la base de quelles données ? »</p>
+<h2 id="6-cartographie-du-marche-incumbents-challengers-ai-native">6. Cartographie du marché — incumbents, challengers AI-native</h2>
+<p>Le marché de l'observabilité 2026, valorisé à environ 60 milliards de dollars<a class="cite" data-cite="4" href="#source-4">4</a>, se structure autour d'un <strong>double marché</strong> : incumbents APM (full-stack, gouvernance, échelle) et challengers AI-native (eval, guardrails, traces cognitives). La frontière s'estompe mais reste significative.</p>
+<figure class="figure" id="fig-07">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 900" data-schema-id="schema-07">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+    <marker id="arrow-07" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#5A5A5A"/>
+    </marker>
+  </defs>
+
+  <rect width="900" height="900" fill="#FAF8F3"/>
+
+  <!-- HEADER -->
+  <text x="60" y="55" class="mono" font-size="11" font-weight="600"
+        letter-spacing="0.12em" fill="#B7332C">SCHÉMA 07</text>
+  <text x="60" y="92" class="display" font-size="24" font-weight="600"
+        letter-spacing="-0.01em" fill="#1A1A1A">Quadrant : maturité plateforme &times; capacité IA-native</text>
+  <text x="60" y="116" class="display" font-size="14" font-style="italic"
+        fill="#5A5A5A">Le double marché 2026 — incumbents APM en convergence vs challengers eval-first</text>
+  <line x1="60" y1="138" x2="840" y2="138" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- AXES -->
+  <!-- Y axis -->
+  <line x1="180" y1="200" x2="180" y2="760" stroke="#1A1A1A" stroke-width="1.25" marker-start="url(#arrow-07)"/>
+  <text x="170" y="200" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="end">+</text>
+  <text x="170" y="775" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="end">–</text>
+
+  <!-- X axis -->
+  <line x1="180" y1="760" x2="820" y2="760" stroke="#1A1A1A" stroke-width="1.25" marker-end="url(#arrow-07)"/>
+  <text x="180" y="785" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">–</text>
+  <text x="820" y="785" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">+</text>
+
+  <!-- Axis labels -->
+  <text x="500" y="810" class="display" font-size="14" font-style="italic" fill="#1A1A1A" text-anchor="middle">Capacité IA-native (eval, guardrails, traces cognitives)</text>
+  <text x="155" y="480" class="display" font-size="14" font-style="italic" fill="#1A1A1A" text-anchor="middle" transform="rotate(-90, 155, 480)">Maturité plateforme (full-stack, gouvernance, échelle)</text>
+
+  <!-- Quadrant subtle background fills -->
+  <rect x="180" y="200" width="320" height="280" fill="#1F5560" fill-opacity="0.025"/>
+  <rect x="500" y="200" width="320" height="280" fill="#B7332C" fill-opacity="0.04"/>
+  <rect x="180" y="480" width="320" height="280" fill="#FAF8F3"/>
+  <rect x="500" y="480" width="320" height="280" fill="#B58A2C" fill-opacity="0.03"/>
+
+  <!-- Mid-axis crosshair -->
+  <line x1="500" y1="200" x2="500" y2="760" stroke="#B8B5AE" stroke-width="0.5" stroke-dasharray="2 3"/>
+  <line x1="180" y1="480" x2="820" y2="480" stroke="#B8B5AE" stroke-width="0.5" stroke-dasharray="2 3"/>
+
+  <!-- Quadrant labels (corners) -->
+  <text x="195" y="225" class="mono" font-size="10" font-weight="600" letter-spacing="0.08em" fill="#1F5560">INCUMBENTS ADAPTÉS</text>
+  <text x="195" y="240" class="body" font-size="10" font-style="italic" fill="#5A5A5A">profondeur plateforme, IA en rattrapage</text>
+
+  <text x="815" y="225" class="mono" font-size="10" font-weight="600" letter-spacing="0.08em" fill="#B7332C" text-anchor="end">LEADERS IA</text>
+  <text x="815" y="240" class="body" font-size="10" font-style="italic" fill="#5A5A5A" text-anchor="end">convergence plateforme + IA</text>
+
+  <text x="195" y="755" class="mono" font-size="10" font-weight="600" letter-spacing="0.08em" fill="#5A5A5A">NICHE PLAYERS</text>
+  <text x="195" y="745" class="body" font-size="10" font-style="italic" fill="#5A5A5A">portée limitée, scope spécifique</text>
+
+  <text x="815" y="755" class="mono" font-size="10" font-weight="600" letter-spacing="0.08em" fill="#B58A2C" text-anchor="end">CHALLENGERS AI-NATIVE</text>
+  <text x="815" y="745" class="body" font-size="10" font-style="italic" fill="#5A5A5A" text-anchor="end">eval-first, écosystème jeune</text>
+
+  <!-- DOTS — vendor positioning -->
+  <!-- Top-left: Incumbents adaptés -->
+  <g class="interactive" data-card="dynatrace" tabindex="0" role="button" aria-label="Dynatrace">
+    <circle cx="445" cy="265" r="10" fill="#1F5560"/>
+    <text x="445" y="269" class="mono" font-size="9" font-weight="600" fill="#FAF8F3" text-anchor="middle">DT</text>
+  </g>
+  <text x="460" y="270" class="body" font-size="11" font-weight="500" fill="#1A1A1A">Dynatrace</text>
+
+  <g class="interactive" data-card="datadog" tabindex="0" role="button" aria-label="Datadog">
+    <circle cx="475" cy="320" r="10" fill="#1F5560"/>
+    <text x="475" y="324" class="mono" font-size="9" font-weight="600" fill="#FAF8F3" text-anchor="middle">DD</text>
+  </g>
+  <text x="490" y="325" class="body" font-size="11" font-weight="500" fill="#1A1A1A">Datadog</text>
+
+  <g class="interactive" data-card="splunk" tabindex="0" role="button" aria-label="Splunk">
+    <circle cx="395" cy="290" r="10" fill="#1F5560"/>
+    <text x="395" y="294" class="mono" font-size="9" font-weight="600" fill="#FAF8F3" text-anchor="middle">SP</text>
+  </g>
+  <text x="345" y="295" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="end">Splunk</text>
+
+  <g class="interactive" data-card="elastic" tabindex="0" role="button" aria-label="Elastic">
+    <circle cx="395" cy="380" r="10" fill="#1F5560"/>
+    <text x="395" y="384" class="mono" font-size="9" font-weight="600" fill="#FAF8F3" text-anchor="middle">EL</text>
+  </g>
+  <text x="345" y="385" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="end">Elastic</text>
+
+  <g class="interactive" data-card="grafana" tabindex="0" role="button" aria-label="Grafana Labs">
+    <circle cx="455" cy="425" r="10" fill="#1F5560"/>
+    <text x="455" y="429" class="mono" font-size="9" font-weight="600" fill="#FAF8F3" text-anchor="middle">GF</text>
+  </g>
+  <text x="470" y="430" class="body" font-size="11" font-weight="500" fill="#1A1A1A">Grafana Labs</text>
+
+  <g class="interactive" data-card="newrelic" tabindex="0" role="button" aria-label="New Relic">
+    <circle cx="345" cy="345" r="10" fill="#1F5560"/>
+    <text x="345" y="349" class="mono" font-size="9" font-weight="600" fill="#FAF8F3" text-anchor="middle">NR</text>
+  </g>
+  <text x="295" y="350" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="end">New Relic</text>
+
+  <!-- Top-right: Leaders IA (where convergence happens) -->
+  <g class="interactive" data-card="langfuse" tabindex="0" role="button" aria-label="Langfuse">
+    <circle cx="610" cy="335" r="10" fill="#B7332C"/>
+    <text x="610" y="339" class="mono" font-size="9" font-weight="600" fill="#FAF8F3" text-anchor="middle">LF</text>
+  </g>
+  <text x="625" y="340" class="body" font-size="11" font-weight="500" fill="#1A1A1A">Langfuse</text>
+
+  <g class="interactive" data-card="braintrust" tabindex="0" role="button" aria-label="Braintrust">
+    <circle cx="700" cy="290" r="10" fill="#B7332C"/>
+    <text x="700" y="294" class="mono" font-size="9" font-weight="600" fill="#FAF8F3" text-anchor="middle">BT</text>
+  </g>
+  <text x="715" y="295" class="body" font-size="11" font-weight="500" fill="#1A1A1A">Braintrust</text>
+
+  <g class="interactive" data-card="langsmith" tabindex="0" role="button" aria-label="LangSmith">
+    <circle cx="640" cy="395" r="10" fill="#B7332C"/>
+    <text x="640" y="399" class="mono" font-size="9" font-weight="600" fill="#FAF8F3" text-anchor="middle">LS</text>
+  </g>
+  <text x="655" y="400" class="body" font-size="11" font-weight="500" fill="#1A1A1A">LangSmith</text>
+
+  <!-- Bottom-right: AI-native challengers -->
+  <g class="interactive" data-card="arize" tabindex="0" role="button" aria-label="Arize AI">
+    <circle cx="700" cy="540" r="10" fill="#B58A2C"/>
+    <text x="700" y="544" class="mono" font-size="9" font-weight="600" fill="#FAF8F3" text-anchor="middle">AR</text>
+  </g>
+  <text x="715" y="545" class="body" font-size="11" font-weight="500" fill="#1A1A1A">Arize AI</text>
+
+  <g class="interactive" data-card="galileo" tabindex="0" role="button" aria-label="Galileo AI">
+    <circle cx="640" cy="595" r="10" fill="#B58A2C"/>
+    <text x="640" y="599" class="mono" font-size="9" font-weight="600" fill="#FAF8F3" text-anchor="middle">GA</text>
+  </g>
+  <text x="655" y="600" class="body" font-size="11" font-weight="500" fill="#1A1A1A">Galileo AI</text>
+
+  <g class="interactive" data-card="maxim" tabindex="0" role="button" aria-label="Maxim AI">
+    <circle cx="730" cy="650" r="10" fill="#B58A2C"/>
+    <text x="730" y="654" class="mono" font-size="9" font-weight="600" fill="#FAF8F3" text-anchor="middle">MX</text>
+  </g>
+  <text x="745" y="655" class="body" font-size="11" font-weight="500" fill="#1A1A1A">Maxim AI</text>
+
+  <!-- Bottom-left: Niche players -->
+  <g class="interactive" data-card="helicone" tabindex="0" role="button" aria-label="Helicone">
+    <circle cx="290" cy="610" r="9" fill="#5A5A5A"/>
+    <text x="290" y="614" class="mono" font-size="9" font-weight="600" fill="#FAF8F3" text-anchor="middle">HE</text>
+  </g>
+  <text x="305" y="615" class="body" font-size="11" font-weight="500" fill="#1A1A1A">Helicone</text>
+
+  <g class="interactive" data-card="whylabs" tabindex="0" role="button" aria-label="WhyLabs">
+    <circle cx="330" cy="555" r="9" fill="#5A5A5A"/>
+    <text x="330" y="559" class="mono" font-size="9" font-weight="600" fill="#FAF8F3" text-anchor="middle">WL</text>
+  </g>
+  <text x="345" y="560" class="body" font-size="11" font-weight="500" fill="#1A1A1A">WhyLabs</text>
+
+  <g class="interactive" data-card="phoenix" tabindex="0" role="button" aria-label="Phoenix open-source">
+    <circle cx="395" cy="660" r="9" fill="#5A5A5A"/>
+    <text x="395" y="664" class="mono" font-size="9" font-weight="600" fill="#FAF8F3" text-anchor="middle">PX</text>
+  </g>
+  <text x="410" y="665" class="body" font-size="11" font-weight="500" fill="#1A1A1A">Phoenix (Arize OSS)</text>
+
+  <!-- Movement arrows showing convergence -->
+  <path d="M 445 255 Q 530 240 600 280" stroke="#1F5560" stroke-width="1" fill="none"
+        stroke-dasharray="3 3" marker-end="url(#arrow-07)" opacity="0.5"/>
+  <text x="525" y="225" class="body" font-size="9" font-style="italic" fill="#1F5560" opacity="0.7" text-anchor="middle">incumbents → IA-native</text>
+
+  <path d="M 700 305 Q 600 350 510 410" stroke="#B7332C" stroke-width="1" fill="none"
+        stroke-dasharray="3 3" marker-end="url(#arrow-07)" opacity="0.5"/>
+  <text x="610" y="430" class="body" font-size="9" font-style="italic" fill="#B7332C" opacity="0.7">eval-first → full plateforme</text>
+
+  <!-- LEGEND -->
+  <line x1="60" y1="850" x2="840" y2="850" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <text x="60" y="875" class="body" font-size="9" font-style="italic" fill="#5A5A5A">
+    Sources : Gartner Magic Quadrant Observability 2025, Confident AI 2026, Monte Carlo, Maxim AI  </text>
+</svg>
+
+<figcaption class="figure-caption"><strong>Schéma 7</strong> — Quadrant : maturité plateforme × capacité IA-native.</figcaption>
+</figure>
+
+<p><strong>Dynatrace</strong> (Leader Gartner, #1 Ability to Execute pour la 15e année consécutive<a class="cite" data-cite="18" href="#source-18">18</a>) revendique le territoire premium avec trois différenciateurs uniques : Davis AI hypermodale (causale + prédictive + générative), Grail (data lakehouse unifié sans indexation), et Smartscape (graphe de dépendances temps réel). Depuis février 2026, Dynatrace Intelligence positionne la plateforme comme un « OS agentique » avec des Intelligence Agents spécialisés (SRE / Developer / Security) et un MCP Server pour l'interaction avec assistants IA externes<a class="cite" data-cite="20" href="#source-20">20</a>.</p>
+<p><strong>Datadog</strong> (Leader Gartner, 5e année<a class="cite" data-cite="18" href="#source-18">18</a>) a la trajectoire de challenger la plus crédible : LLM Observability en GA, Bits AI assistant, support natif des conventions OTel GenAI v1.37+ depuis décembre 2025<a class="cite" data-cite="21" href="#source-21">21</a>, Experiments pour A/B testing de prompts, Sensitive Data Scanner inclus. Mais sa facturation cumule per-host APM + per-GB logs + per-span traces + per-LLM-span (8 $/10K spans annuel) — les workloads IA peuvent multiplier la facture par 2 à 3.</p>
+<p><strong>Splunk/Cisco</strong> mise sur la convergence sécurité-observabilité avec AI Agent Monitoring (GA Q1 2026), Cisco AI PODs pour le monitoring de l'infrastructure IA pré-validée (NVIDIA NIMs, Milvus, LiteLLM), un Troubleshooting Agent et le Splunk MCP Server. La complexité post-acquisition Cisco et la coexistence Splunk/AppDynamics restent des friction points.</p>
+<p><strong>Grafana Labs</strong> (Leader Gartner, #1 Completeness of Vision<a class="cite" data-cite="22" href="#source-22">22</a>) capture le segment OTel-first / coût-conscient avec la stack LGTM (Loki/Grafana/Tempo/Mimir). Pas de capacité d'évaluation IA native, mais réception native des traces GenAI via Tempo et coût 10 à 50 fois inférieur aux solutions propriétaires.</p>
+<p><strong>Elastic</strong> (Leader Gartner, 2e année), <strong>New Relic</strong> (pricing transparent, pivot mid-market) complètent le paysage incumbent.</p>
+<p>Côté challengers AI-native, le segment se structure autour de l'<strong>évaluation comme primitive d'observabilité</strong> — précisément le gap que les incumbents n'ont pas encore fermé<a class="cite" data-cite="14" href="#source-14">14</a> :</p>
+<ul>
+<li><strong>Langfuse</strong> (open-source MIT, OTel natif, self-hosted ou cloud) — le leader open-source de référence ; gratuit, communauté active, intégrations framework natives.</li>
+<li><strong>Braintrust</strong> — plateforme intégrée eval-first, conversion traces → test cases en un clic, Loop AI pour scorers custom, 25+ scorers built-in ; utilisé par Notion, Stripe, Zapier.</li>
+<li><strong>Arize AI</strong> + <strong>Phoenix</strong> (open-source) — rigueur statistique académique, embedding drift detection, pont entre ML traditionnel et LLM observability.</li>
+<li><strong>Galileo AI</strong> — Luna-2 evaluators avec précision propriétaire 93-97 %, guardrails production<a class="cite" data-cite="15" href="#source-15">15</a>.</li>
+<li><strong>Maxim AI</strong> — full lifecycle (simulation + évaluation + observabilité unifiées).</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Critère</th>
+<th>Incumbents (Dynatrace, Datadog…)</th>
+<th>AI-native (Langfuse, Braintrust…)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Latence, tokens, errors</td>
+<td>Excellent</td>
+<td>Bon</td>
+</tr>
+<tr>
+<td>Topologie et dépendances</td>
+<td>Excellent</td>
+<td>Absent</td>
+</tr>
+<tr>
+<td>Infrastructure monitoring</td>
+<td>Complet</td>
+<td>Absent</td>
+</tr>
+<tr>
+<td>Évaluation qualité output</td>
+<td>Basique</td>
+<td>Excellent</td>
+</tr>
+<tr>
+<td>LLM-as-judge automatisé</td>
+<td>Limité</td>
+<td>Natif</td>
+</tr>
+<tr>
+<td>Guardrails runtime</td>
+<td>Émergent</td>
+<td>Intégré</td>
+</tr>
+<tr>
+<td>Traces → test cases</td>
+<td>Absent</td>
+<td>Natif (Braintrust)</td>
+</tr>
+<tr>
+<td>Prompt management</td>
+<td>Absent</td>
+<td>Natif (Langfuse)</td>
+</tr>
+<tr>
+<td>Coût relatif</td>
+<td>$$$$$</td>
+<td>$ à $$</td>
+</tr>
+<tr>
+<td>Self-hosted</td>
+<td>Limité</td>
+<td>Disponible (Langfuse MIT)</td>
+</tr>
+</tbody>
+</table>
+<p>Le choix n'est donc pas binaire. L'architecture mature en 2026 est typiquement <strong>hybride</strong> : un backend full-stack (Dynatrace, Datadog ou Grafana selon le profil) couplé à un outil AI-native (Langfuse ou Braintrust) pour la couche évaluation, le tout fédéré par OpenTelemetry comme protocole d'instrumentation unique.</p>
+<h2 id="7-maturite-organisationnelle-et-feuille-de-route">7. Maturité organisationnelle et feuille de route</h2>
+<p>L'observabilité IA n'est pas un outil qu'on installe — c'est une capacité organisationnelle qu'on construit. Cinq niveaux de maturité, du monitoring réactif à l'autonomie complète, structurent la trajectoire 2026–2028.</p>
+<figure class="figure" id="fig-08">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" data-schema-id="schema-08">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+    <marker id="arrow-08" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#5A5A5A"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- HEADER -->
+  <text x="60" y="55" class="mono" font-size="11" font-weight="600"
+        letter-spacing="0.12em" fill="#B7332C">SCHÉMA 08</text>
+  <text x="60" y="92" class="display" font-size="26" font-weight="600"
+        letter-spacing="-0.01em" fill="#1A1A1A">Échelle de maturité — du monitoring réactif à l'autonomie</text>
+  <text x="60" y="118" class="display" font-size="16" font-style="italic"
+        fill="#5A5A5A">Cinq niveaux pour situer l'organisation et planifier la trajectoire 2026–2028</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- The progression - escalier ascendant -->
+  <!-- Step heights/widths: each step is 200 wide, ascending heights -->
+  <!-- baseline at y=620 -->
+
+  <!-- L1 -->
+  <g class="interactive" data-card="maturity-l1" tabindex="0" role="button"
+     aria-label="Niveau 1 — Monitoring réactif">
+    <rect x="100" y="500" width="200" height="120" rx="3"
+          fill="#B8B5AE" fill-opacity="0.15" stroke="#5A5A5A" stroke-width="1.25"/>
+    <text x="120" y="528" class="mono" font-size="11" font-weight="600" fill="#5A5A5A">N1</text>
+    <text x="120" y="552" class="display" font-size="14" font-weight="600" fill="#1A1A1A">Monitoring</text>
+    <text x="120" y="572" class="display" font-size="14" font-weight="600" fill="#1A1A1A">réactif</text>
+
+    <line x1="120" y1="582" x2="280" y2="582" stroke="#5A5A5A" stroke-opacity="0.3" stroke-width="0.5"/>
+
+    <text x="120" y="600" class="body" font-size="10" font-style="italic" fill="#5A5A5A">logs manuels · debug ad-hoc</text>
+    <text x="120" y="613" class="body" font-size="10" font-style="italic" fill="#5A5A5A">pas de traces, alertes basiques</text>
+  </g>
+
+  <!-- L2 -->
+  <g class="interactive" data-card="maturity-l2" tabindex="0" role="button"
+     aria-label="Niveau 2 — Observabilité structurée">
+    <rect x="300" y="430" width="200" height="190" rx="3"
+          fill="#1F5560" fill-opacity="0.08" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="320" y="458" class="mono" font-size="11" font-weight="600" fill="#1F5560">N2</text>
+    <text x="320" y="482" class="display" font-size="14" font-weight="600" fill="#1A1A1A">Observabilité</text>
+    <text x="320" y="502" class="display" font-size="14" font-weight="600" fill="#1A1A1A">structurée</text>
+
+    <line x1="320" y1="512" x2="480" y2="512" stroke="#1F5560" stroke-opacity="0.3" stroke-width="0.5"/>
+
+    <text x="320" y="530" class="body" font-size="10" font-style="italic" fill="#5A5A5A">tracing distribué OTel</text>
+    <text x="320" y="543" class="body" font-size="10" font-style="italic" fill="#5A5A5A">dashboards latence/tokens</text>
+    <text x="320" y="556" class="body" font-size="10" font-style="italic" fill="#5A5A5A">alertes seuil multi-signal</text>
+
+    <line x1="320" y1="575" x2="480" y2="575" stroke="#E5E1D8" stroke-width="0.5"/>
+    <text x="320" y="592" class="mono" font-size="9" font-weight="500" fill="#5A5A5A">PRÉREQUIS</text>
+    <text x="320" y="608" class="body" font-size="10" fill="#1A1A1A">SDK + collector déployés</text>
+  </g>
+
+  <!-- L3 -->
+  <g class="interactive" data-card="maturity-l3" tabindex="0" role="button"
+     aria-label="Niveau 3 — Évaluation continue">
+    <rect x="500" y="350" width="200" height="270" rx="3"
+          fill="#B58A2C" fill-opacity="0.10" stroke="#B58A2C" stroke-width="1.25"/>
+    <text x="520" y="378" class="mono" font-size="11" font-weight="600" fill="#B58A2C">N3</text>
+    <text x="520" y="402" class="display" font-size="14" font-weight="600" fill="#1A1A1A">Évaluation</text>
+    <text x="520" y="422" class="display" font-size="14" font-weight="600" fill="#1A1A1A">continue</text>
+
+    <line x1="520" y1="432" x2="680" y2="432" stroke="#B58A2C" stroke-opacity="0.3" stroke-width="0.5"/>
+
+    <text x="520" y="450" class="body" font-size="10" font-style="italic" fill="#5A5A5A">LLM-as-judge online</text>
+    <text x="520" y="463" class="body" font-size="10" font-style="italic" fill="#5A5A5A">guardrails runtime</text>
+    <text x="520" y="476" class="body" font-size="10" font-style="italic" fill="#5A5A5A">feedback loops humains</text>
+    <text x="520" y="489" class="body" font-size="10" font-style="italic" fill="#5A5A5A">drift detection</text>
+
+    <line x1="520" y1="508" x2="680" y2="508" stroke="#E5E1D8" stroke-width="0.5"/>
+    <text x="520" y="525" class="mono" font-size="9" font-weight="500" fill="#5A5A5A">PRÉREQUIS</text>
+    <text x="520" y="541" class="body" font-size="10" fill="#1A1A1A">datasets de référence</text>
+    <text x="520" y="555" class="body" font-size="10" fill="#1A1A1A">scorers calibrés</text>
+
+    <text x="520" y="585" class="mono" font-size="9" font-weight="500" fill="#B7332C">PALIER COGNITIF</text>
+    <text x="520" y="601" class="body" font-size="10" font-style="italic" fill="#B7332C">la qualité devient une métrique opérationnelle</text>
+  </g>
+
+  <!-- L4 -->
+  <g class="interactive" data-card="maturity-l4" tabindex="0" role="button"
+     aria-label="Niveau 4 — Autonomie supervisée">
+    <rect x="700" y="270" width="200" height="350" rx="3"
+          fill="#B7332C" fill-opacity="0.07" stroke="#B7332C" stroke-width="1.25"/>
+    <text x="720" y="298" class="mono" font-size="11" font-weight="600" fill="#B7332C">N4</text>
+    <text x="720" y="322" class="display" font-size="14" font-weight="600" fill="#1A1A1A">Autonomie</text>
+    <text x="720" y="342" class="display" font-size="14" font-weight="600" fill="#1A1A1A">supervisée</text>
+
+    <line x1="720" y1="352" x2="880" y2="352" stroke="#B7332C" stroke-opacity="0.3" stroke-width="0.5"/>
+
+    <text x="720" y="370" class="body" font-size="10" font-style="italic" fill="#5A5A5A">auto-remédiation L0/L1</text>
+    <text x="720" y="383" class="body" font-size="10" font-style="italic" fill="#5A5A5A">rollback automatique</text>
+    <text x="720" y="396" class="body" font-size="10" font-style="italic" fill="#5A5A5A">scaling intelligent</text>
+    <text x="720" y="409" class="body" font-size="10" font-style="italic" fill="#5A5A5A">workflows agentiques</text>
+
+    <line x1="720" y1="428" x2="880" y2="428" stroke="#E5E1D8" stroke-width="0.5"/>
+    <text x="720" y="445" class="mono" font-size="9" font-weight="500" fill="#5A5A5A">PRÉREQUIS</text>
+    <text x="720" y="461" class="body" font-size="10" fill="#1A1A1A">runbook automatisé</text>
+    <text x="720" y="475" class="body" font-size="10" fill="#1A1A1A">human-in-the-loop défini</text>
+    <text x="720" y="489" class="body" font-size="10" fill="#1A1A1A">SLO mesurables</text>
+
+    <text x="720" y="518" class="mono" font-size="9" font-weight="500" fill="#B7332C">RÔLE TYPIQUE</text>
+    <text x="720" y="534" class="body" font-size="10" fill="#1A1A1A">SRE-IA + plateforme</text>
+    <text x="720" y="548" class="body" font-size="10" fill="#1A1A1A">d'observabilité unifiée</text>
+
+    <text x="720" y="585" class="body" font-size="10" font-style="italic" fill="#5A5A5A">cible 2026 pour la majorité</text>
+    <text x="720" y="600" class="body" font-size="10" font-style="italic" fill="#5A5A5A">des programmes IA enterprise</text>
+  </g>
+
+  <!-- L5 -->
+  <g class="interactive" data-card="maturity-l5" tabindex="0" role="button"
+     aria-label="Niveau 5 — Autonomie complète">
+    <rect x="900" y="200" width="200" height="420" rx="3"
+          fill="#B7332C" fill-opacity="0.12" stroke="#B7332C" stroke-width="2"/>
+    <text x="920" y="228" class="mono" font-size="11" font-weight="600" fill="#B7332C">N5</text>
+    <text x="920" y="252" class="display" font-size="14" font-weight="600" fill="#1A1A1A">Autonomie</text>
+    <text x="920" y="272" class="display" font-size="14" font-weight="600" fill="#1A1A1A">complète</text>
+
+    <line x1="920" y1="282" x2="1080" y2="282" stroke="#B7332C" stroke-opacity="0.3" stroke-width="0.5"/>
+
+    <text x="920" y="300" class="body" font-size="10" font-style="italic" fill="#5A5A5A">agents d'observabilité</text>
+    <text x="920" y="313" class="body" font-size="10" font-style="italic" fill="#5A5A5A">auto-optimisation prompts</text>
+    <text x="920" y="326" class="body" font-size="10" font-style="italic" fill="#5A5A5A">gouvernance AI-driven</text>
+    <text x="920" y="339" class="body" font-size="10" font-style="italic" fill="#5A5A5A">remédiation autonome L2/L3</text>
+
+    <line x1="920" y1="358" x2="1080" y2="358" stroke="#E5E1D8" stroke-width="0.5"/>
+    <text x="920" y="375" class="mono" font-size="9" font-weight="500" fill="#5A5A5A">PRÉREQUIS</text>
+    <text x="920" y="391" class="body" font-size="10" fill="#1A1A1A">cognitive audit trail</text>
+    <text x="920" y="405" class="body" font-size="10" fill="#1A1A1A">policies versionnées</text>
+    <text x="920" y="419" class="body" font-size="10" fill="#1A1A1A">multi-agent orchestrator</text>
+
+    <text x="920" y="448" class="mono" font-size="9" font-weight="500" fill="#B7332C">RÔLE TYPIQUE</text>
+    <text x="920" y="464" class="body" font-size="10" fill="#1A1A1A">AI Operations Engineer</text>
+    <text x="920" y="478" class="body" font-size="10" fill="#1A1A1A">+ AI Governance Officer</text>
+
+    <text x="920" y="510" class="mono" font-size="9" font-weight="500" fill="#1A1A1A">EXEMPLES VENDOR</text>
+    <text x="920" y="526" class="body" font-size="10" fill="#1A1A1A">Dynatrace Intelligence</text>
+    <text x="920" y="540" class="body" font-size="10" fill="#1A1A1A">Splunk Troubleshooting</text>
+    <text x="920" y="554" class="body" font-size="10" fill="#1A1A1A">Agent · Datadog Bits AI</text>
+
+    <text x="920" y="585" class="body" font-size="10" font-style="italic" fill="#B7332C">horizon 2027–2028</text>
+    <text x="920" y="600" class="body" font-size="10" font-style="italic" fill="#B7332C">sur scope limité</text>
+  </g>
+
+  <!-- baseline -->
+  <line x1="80" y1="620" x2="1120" y2="620" stroke="#1A1A1A" stroke-width="1"/>
+
+  <!-- Trajectory arrow -->
+  <path d="M 80 660 L 1100 660" stroke="#5A5A5A" stroke-width="1" fill="none"
+        stroke-dasharray="4 3" marker-end="url(#arrow-08)"/>
+  <text x="80" y="680" class="body" font-size="11" font-weight="500" fill="#1A1A1A">État typique 2024</text>
+  <text x="500" y="680" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">→ état typique 2026 (cible enterprise)</text>
+  <text x="1100" y="680" class="body" font-size="11" font-weight="500" fill="#B7332C" text-anchor="end">horizon 2027–28</text>
+
+  <!-- ANNOTATION -->
+  <text x="60" y="720" class="body" font-size="11" font-style="italic" fill="#5A5A5A">
+    <tspan x="60" dy="0">Le passage de N2 à N3 est le saut le plus dur : il exige de définir « qu'est-ce qu'une réponse correcte ? » de façon mesurable.</tspan>
+    <tspan x="60" dy="16">Sans datasets de référence et scorers calibrés, le pilier qualité reste une intuition humaine — et l'agent ne peut pas être gouverné à l'échelle.</tspan>
+  </text>
+
+  <!-- FOOTER -->
+  <line x1="60" y1="755" x2="1140" y2="755" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="780" class="body" font-size="10" font-style="italic"
+        fill="#5A5A5A">Sources : IBM Think 2026, Dynatrace Six Predictions 2026, n-iX ; modèle adapté de SRE maturity → observability AI</text>
+</svg>
+
+<figcaption class="figure-caption"><strong>Schéma 8</strong> — Échelle de maturité — du monitoring réactif à l'autonomie.</figcaption>
+</figure>
+
+<p>Les organisations ne sautent pas directement à l'autonomie complète. Elles progressent par paliers, et chaque palier exige des prérequis qui le rendent possible<a class="cite" data-cite="3" href="#source-3">3</a><a class="cite" data-cite="5" href="#source-5">5</a> :</p>
+<ul>
+<li><strong>N1 — Monitoring réactif</strong> : logs manuels, debug ad-hoc, pas de traces. État de la majorité des projets pré-production en 2024–2025.</li>
+<li><strong>N2 — Observabilité structurée</strong> : tracing distribué OTel, dashboards latence/tokens, alertes seuil multi-signal. Prérequis : SDK + Collector déployés.</li>
+<li><strong>N3 — Évaluation continue</strong> : LLM-as-judge online, guardrails runtime, feedback loops humains, drift detection. <strong>Le palier cognitif</strong> — la qualité devient une métrique opérationnelle. Prérequis : datasets de référence, scorers calibrés.</li>
+<li><strong>N4 — Autonomie supervisée</strong> : auto-remédiation L0/L1, rollback automatique, scaling intelligent, workflows agentiques. Cible 2026 pour la majorité des programmes IA enterprise. Prérequis : runbooks automatisés, SLO mesurables, human-in-the-loop défini.</li>
+<li><strong>N5 — Autonomie complète</strong> : agents d'observabilité, auto-optimisation des prompts, gouvernance AI-driven, remédiation autonome L2/L3. Horizon 2027–2028 sur scope limité. Exemples vendor : Dynatrace Intelligence, Splunk Troubleshooting Agent, Datadog Bits AI<a class="cite" data-cite="4" href="#source-4">4</a><a class="cite" data-cite="20" href="#source-20">20</a>.</li>
+</ul>
+<p>La tendance 2026 la plus forte est l'intégration d'<strong>agents d'observabilité</strong> — des agents IA spécialisés qui ingèrent les données d'observabilité pour diagnostiquer, corréler et remédier. Un agent spécialisé dans les logs analyse, extrait des patterns, trouve des anomalies puis collabore avec d'autres agents pour remédier et prévenir. Mais cette autonomie n'est ni gratuite ni sûre : elle dépend de l'observabilité de premier ordre (les agents observent ce que la plateforme leur donne à voir) et exige une gouvernance renforcée (qui supervise l'agent qui supervise les agents ?).</p>
+<h2 id="8-conclusion-strategique">8. Conclusion stratégique</h2>
+<p>Trois recommandations pour les programmes IA agentique entrant en production en 2026 :</p>
+<p><strong>Standardiser sur OpenTelemetry GenAI dès le premier sprint.</strong> Le coût d'instrumentation est marginal au démarrage et asymptotique si on attend. Le choix de backend devient alors révisable, ce qui transforme la négociation commerciale et préserve la liberté architecturale.</p>
+<p><strong>Investir le palier cognitif (N3) avant l'autonomie (N4).</strong> Les organisations qui sautent cette étape construisent de l'auto-remédiation sur des signaux non calibrés et obtiennent une autonomie illisible. Constituer un dataset de référence et calibrer trois à cinq scorers de qualité sur les cas d'usage critiques reste la meilleure assurance contre la dérive silencieuse.</p>
+<p><strong>Adopter une architecture hybride backend full-stack + AI-native.</strong> Aucun acteur ne couvre seul l'ensemble du spectre en 2026. La combinaison Dynatrace ou Datadog ou Grafana (selon le profil budget/maturité) avec Langfuse ou Braintrust (selon le profil eval) couvre 95 % des besoins enterprise tout en limitant le lock-in.</p>
+<p>L'observabilité des agents IA en 2026 n'est pas une catégorie d'outils — c'est une discipline en train de naître. Elle hérite de vingt-cinq ans de pratiques DevOps/SRE, qu'elle complète par une couche cognitive irréductible aux signaux infrastructure. Sa maturité, encore inégale, est désormais le facteur limitant de l'industrialisation de l'IA en entreprise.</p>
+<hr />
+    </main>
+
+    <aside id="sources" aria-label="Sources">
+      <button id="sources-collapse-btn" class="sidebar-edge-toggle" type="button"
+              aria-label="Masquer le panneau des sources" aria-controls="sources" aria-expanded="true"
+              title="Masquer les sources">›</button>
+      <div class="sources-inner">
+      <h2>Sources</h2>
+      <ol>
+                <li id="source-1">
+          <span class="cite-num">[1]</span> OpenTelemetry, <em>AI Agent Observability Standards</em>, OpenTelemetry Blog, mars 2025.<br>
+          <a href="https://opentelemetry.io/blog/2025/ai-agent-observability/" target="_blank" rel="noopener">https://opentelemetry.io/blog/2025/ai-agent-observability/</a>
+          <span class="accessed">consulté le 2026-04-30</span>
+        </li>
+        <li id="source-2">
+          <span class="cite-num">[2]</span> InsightFinder, <em>AI Observability vs Traditional Monitoring</em>, décembre 2025.<br>
+          <a href="https://insightfinder.com/blog/ai-observability-vs-traditional-monitoring/" target="_blank" rel="noopener">https://insightfinder.com/blog/ai-observability-vs-traditional-monitoring/</a>
+          <span class="accessed">consulté le 2026-04-30</span>
+        </li>
+        <li id="source-3">
+          <span class="cite-num">[3]</span> IBM Think, <em>Observability Trends 2026</em>, IBM Institute for Business Value, mars 2026.<br>
+          <a href="https://www.ibm.com/think/insights/observability-trends" target="_blank" rel="noopener">https://www.ibm.com/think/insights/observability-trends</a>
+          <span class="accessed">consulté le 2026-04-30</span>
+        </li>
+        <li id="source-4">
+          <span class="cite-num">[4]</span> Dynatrace, <em>Six Observability Predictions for 2026</em>, décembre 2025.<br>
+          <a href="https://www.dynatrace.com/news/blog/six-observability-predictions-for-2026/" target="_blank" rel="noopener">https://www.dynatrace.com/news/blog/six-observability-predictions-for-2026/</a>
+          <span class="accessed">consulté le 2026-04-30</span>
+        </li>
+        <li id="source-5">
+          <span class="cite-num">[5]</span> Kore.ai, <em>AI Observability: Monitoring &amp; Governing AI Agents</em>, mars 2026.<br>
+          <a href="https://www.kore.ai/blog/what-is-ai-observability" target="_blank" rel="noopener">https://www.kore.ai/blog/what-is-ai-observability</a>
+          <span class="accessed">consulté le 2026-04-30</span>
+        </li>
+        <li id="source-6">
+          <span class="cite-num">[6]</span> Voiceflow, <em>What Is AI Agent Observability? A 2026 Guide</em>, mars 2026.<br>
+          <a href="https://www.voiceflow.com/blog/what-is-ai-agent-observability" target="_blank" rel="noopener">https://www.voiceflow.com/blog/what-is-ai-agent-observability</a>
+          <span class="accessed">consulté le 2026-04-30</span>
+        </li>
+        <li id="source-7">
+          <span class="cite-num">[7]</span> Anthropic, <em>Building Effective Agents</em>, whitepaper, décembre 2024.<br>
+          <a href="https://www.anthropic.com/research/building-effective-agents" target="_blank" rel="noopener">https://www.anthropic.com/research/building-effective-agents</a>
+          <span class="accessed">consulté le 2026-04-30</span>
+        </li>
+        <li id="source-8">
+          <span class="cite-num">[8]</span> Groundcover, <em>AI Agent Observability Guide: Telemetry, Traces, Metrics</em>, février 2026.<br>
+          <a href="https://www.groundcover.com/learn/observability/ai-agent-observability" target="_blank" rel="noopener">https://www.groundcover.com/learn/observability/ai-agent-observability</a>
+          <span class="accessed">consulté le 2026-04-30</span>
+        </li>
+        <li id="source-9">
+          <span class="cite-num">[9]</span> N-iX, <em>AI Agent Observability: Practical Framework</em>, décembre 2025.<br>
+          <a href="https://www.n-ix.com/ai-agent-observability/" target="_blank" rel="noopener">https://www.n-ix.com/ai-agent-observability/</a>
+          <span class="accessed">consulté le 2026-04-30</span>
+        </li>
+        <li id="source-10">
+          <span class="cite-num">[10]</span> Langfuse, <em>AI Agent Observability, Tracing &amp; Evaluation</em>, février 2026.<br>
+          <a href="https://langfuse.com/blog/2024-07-ai-agent-observability-with-langfuse" target="_blank" rel="noopener">https://langfuse.com/blog/2024-07-ai-agent-observability-with-langfuse</a>
+          <span class="accessed">consulté le 2026-04-30</span>
+        </li>
+        <li id="source-11">
+          <span class="cite-num">[11]</span> OpenTelemetry, <em>GenAI Semantic Conventions (specification)</em>, version 1.37, 2026.<br>
+          <a href="https://opentelemetry.io/docs/specs/semconv/gen-ai/" target="_blank" rel="noopener">https://opentelemetry.io/docs/specs/semconv/gen-ai/</a>
+          <span class="accessed">consulté le 2026-04-30</span>
+        </li>
+        <li id="source-12">
+          <span class="cite-num">[12]</span> OpenTelemetry, <em>GenAI Agent Spans, Model Spans, Tool Spans, Events</em>, 2026.<br>
+          <a href="https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-agent-spans/" target="_blank" rel="noopener">https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-agent-spans/</a>
+          <span class="accessed">consulté le 2026-04-30</span>
+        </li>
+        <li id="source-13">
+          <span class="cite-num">[13]</span> Datadog, <em>LLM Observability + OTel GenAI Semantic Convention support</em>, décembre 2025.<br>
+          <a href="https://www.datadoghq.com/blog/llm-otel-semantic-convention/" target="_blank" rel="noopener">https://www.datadoghq.com/blog/llm-otel-semantic-convention/</a>
+          <span class="accessed">consulté le 2026-04-30</span>
+        </li>
+        <li id="source-14">
+          <span class="cite-num">[14]</span> Braintrust, <em>AI Observability Tools: Buyer's Guide 2026</em>, janvier 2026.<br>
+          <a href="https://www.braintrust.dev/articles/best-ai-observability-tools-2026" target="_blank" rel="noopener">https://www.braintrust.dev/articles/best-ai-observability-tools-2026</a>
+          <span class="accessed">consulté le 2026-04-30</span>
+        </li>
+        <li id="source-15">
+          <span class="cite-num">[15]</span> GetMaxim, <em>Top 5 AI Agent Observability Platforms 2026</em>, décembre 2025.<br>
+          <a href="https://www.getmaxim.ai/articles/top-5-ai-agent-observability-platforms-in-2026/" target="_blank" rel="noopener">https://www.getmaxim.ai/articles/top-5-ai-agent-observability-platforms-in-2026/</a>
+          <span class="accessed">consulté le 2026-04-30</span>
+        </li>
+        <li id="source-16">
+          <span class="cite-num">[16]</span> Traceloop, <em>OpenLLMetry — auto-instrumentation OTel pour 44+ providers LLM</em>, GitHub, 2026.<br>
+          <a href="https://github.com/traceloop/openllmetry" target="_blank" rel="noopener">https://github.com/traceloop/openllmetry</a>
+          <span class="accessed">consulté le 2026-04-30</span>
+        </li>
+        <li id="source-17">
+          <span class="cite-num">[17]</span> OpenLIT, <em>OpenLIT SDK — auto-instrumentation 1 ligne LLMs/vector DBs/GPUs</em>, GitHub, 2026.<br>
+          <a href="https://github.com/openlit/openlit" target="_blank" rel="noopener">https://github.com/openlit/openlit</a>
+          <span class="accessed">consulté le 2026-04-30</span>
+        </li>
+        <li id="source-18">
+          <span class="cite-num">[18]</span> Gartner, <em>Magic Quadrant for Observability Platforms 2025</em>, juillet 2025.<br>
+          <a href="https://www.gartner.com/en/documents/6688834" target="_blank" rel="noopener">https://www.gartner.com/en/documents/6688834</a>
+          <span class="accessed">consulté le 2026-04-30</span>
+        </li>
+        <li id="source-19">
+          <span class="cite-num">[19]</span> OneUptime, <em>AI Workloads Observability: Cost Crisis</em>, avril 2026.<br>
+          <a href="https://oneuptime.com/blog/ai-workloads-observability-cost-crisis" target="_blank" rel="noopener">https://oneuptime.com/blog/ai-workloads-observability-cost-crisis</a>
+          <span class="accessed">consulté le 2026-04-30</span>
+        </li>
+        <li id="source-20">
+          <span class="cite-num">[20]</span> Dynatrace, <em>Dynatrace Intelligence — Agentic OS announcement at Perform 2026</em>, février 2026.<br>
+          <a href="https://www.dynatrace.com/news/blog/dynatrace-intelligence-platform/" target="_blank" rel="noopener">https://www.dynatrace.com/news/blog/dynatrace-intelligence-platform/</a>
+          <span class="accessed">consulté le 2026-04-30</span>
+        </li>
+        <li id="source-21">
+          <span class="cite-num">[21]</span> Splunk, <em>Q1 2026 Observability Update — AI Agent Monitoring</em>, février 2026.<br>
+          <a href="https://www.splunk.com/en_us/blog/observability/splunk-observability-ai-agent-monitoring-innovations.html" target="_blank" rel="noopener">https://www.splunk.com/en_us/blog/observability/splunk-observability-ai-agent-monitoring-innovations.html</a>
+          <span class="accessed">consulté le 2026-04-30</span>
+        </li>
+        <li id="source-22">
+          <span class="cite-num">[22]</span> Grafana Labs, <em>Leader Gartner Magic Quadrant Observability 2025 — #1 Completeness of Vision</em>, 2025.<br>
+          <a href="https://grafana.com/about/press/2025/07/" target="_blank" rel="noopener">https://grafana.com/about/press/2025/07/</a>
+          <span class="accessed">consulté le 2026-04-30</span>
+        </li>
+      </ol>
+      </div>
+    </aside>
+
+  </div>
+
+  <button id="sources-expand-btn" class="sidebar-edge-toggle" type="button"
+          aria-label="Afficher le panneau des sources" aria-controls="sources" aria-expanded="false"
+          title="Afficher les sources" hidden>‹</button>
+
+  <div id="zoom-overlay" hidden role="dialog" aria-modal="true" aria-label="Schéma agrandi">
+    <header id="zoom-header">
+      <span id="zoom-caption"></span>
+      <div class="zoom-controls">
+        <button type="button" class="zoom-out" aria-label="Dézoomer" title="Dézoomer (−)">−</button>
+        <button type="button" class="zoom-reset" aria-label="Ajuster à l'écran" title="Ajuster à l'écran">Reset</button>
+        <button type="button" class="zoom-in" aria-label="Zoomer" title="Zoomer (+)">+</button>
+        <button type="button" class="zoom-close" aria-label="Fermer (Échap)" title="Fermer (Échap)">×</button>
+      </div>
+    </header>
+    <div id="zoom-stage" tabindex="-1">
+      <div id="zoom-content"></div>
+      <div id="zoom-hint">Molette pour zoomer · glisser pour déplacer · Échap pour fermer</div>
+    </div>
+  </div>
+
+  <div id="modal-root" hidden role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card">
+      <button class="modal-close" data-close aria-label="Fermer">×</button>
+      <p class="modal-eyebrow" id="modal-eyebrow"></p>
+      <h3 class="modal-title" id="modal-title"></h3>
+      <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <script>
+    // ─────────────────────────────────────────────────
+    // DATA — replace these placeholders with real content
+    // ─────────────────────────────────────────────────
+
+    const SCHEMAS = {
+  "schema-01": {
+    "era-monitoring": {
+      "title": "Ère monitoring (2000–2010)",
+      "body": "<p>Surveillance d'infrastructure via SNMP, Nagios, Zabbix. Modèle <em>up/down</em> sur des hôtes physiques. La requête applicative reste invisible : on voit le serveur, pas ce que l'utilisateur perçoit.</p><p><strong>Limite</strong> — un service peut être <em>up</em> côté infra et complètement cassé côté business.</p>",
+      "eyebrow": "Schéma 1 — Évolution paradigmatique"
+    },
+    "era-apm": {
+      "title": "Ère APM (2010–2018)",
+      "body": "<p>New Relic, AppDynamics, Dynatrace première génération. Instrumentation par agent, transactions traçables au sein d'un monolithe ou d'un cluster Java/.NET, stack traces sur erreurs.</p><p><strong>Limite</strong> — pensé pour un nombre fini de tiers ; explose avec les microservices.</p>",
+      "eyebrow": "Schéma 1 — Évolution paradigmatique"
+    },
+    "era-cloud-native": {
+      "title": "Ère cloud-native (2018–2023)",
+      "body": "<p>OpenTelemetry, MELT (metrics, events, logs, traces), tracing distribué cross-services, stack LGTM open-source. La <strong>portabilité de l'instrumentation</strong> devient un principe architectural.</p><p>C'est la fondation sur laquelle s'empile aujourd'hui l'observabilité agentique.</p>",
+      "eyebrow": "Schéma 1 — Évolution paradigmatique"
+    },
+    "era-agentic": {
+      "title": "Ère agentique cognitive (2023–)",
+      "body": "<p>Conventions <code>gen_ai.*</code> v1.37+, traces cognitives (chaîne de raisonnement), <em>LLM-as-judge</em> en ligne, audit trail réglementaire. La fiabilité devient une métrique <em>statistique</em> et non binaire.</p><p>Cette ère ne remplace aucune des précédentes — elle s'empile au-dessus.</p>",
+      "eyebrow": "Schéma 1 — Évolution paradigmatique"
+    }
+  },
+  "schema-02": {
+    "pillar-usage": {
+      "title": "Usage & tokens",
+      "body": "<p>Tokens en entrée et sortie par appel modèle, croisés au provider et au modèle. Pilier le plus opérationnel : il révèle d'où viennent les coûts et comment l'usage évolue après modification du prompt ou du routing.</p><p>Attributs OTel : <code>gen_ai.usage.input_tokens</code>, <code>gen_ai.usage.output_tokens</code>.</p>",
+      "eyebrow": "Schéma 2 — Les six piliers"
+    },
+    "pillar-performance": {
+      "title": "Performance",
+      "body": "<p>Latence end-to-end, time-to-first-token, throughput par agent, performance GPU pour les déploiements on-premise. Les métriques infrastructure classiques restent pertinentes — mais ne suffisent plus à elles seules.</p>",
+      "eyebrow": "Schéma 2 — Les six piliers"
+    },
+    "pillar-comportement": {
+      "title": "Comportement",
+      "body": "<p>Cœur de l'observabilité agentique : quelles décisions l'agent prend-il ? Quels outils sélectionne-t-il ? Comment navigue-t-il entre ses étapes de raisonnement ?</p><p>C'est ici que les traces distribuées prennent toute leur dimension, avec des spans hiérarchiques imbriqués.</p>",
+      "eyebrow": "Schéma 2 — Les six piliers"
+    },
+    "pillar-qualite": {
+      "title": "Qualité",
+      "body": "<p>Déplace la question de « l'agent a-t-il répondu ? » vers « la réponse était-elle correcte, complète et alignée avec les politiques ? ». Mesurée à l'échelle via <em>LLM-as-judge</em>, heuristiques et scorers custom.</p><p>Galileo annonce 93–97 % de précision sur ses Luna-2 evaluators ; Braintrust intègre 25+ scorers built-in.</p>",
+      "eyebrow": "Schéma 2 — Les six piliers"
+    },
+    "pillar-gouvernance": {
+      "title": "Gouvernance",
+      "body": "<p>Documente ce qui a été activé : guardrails déclenchés, actions modifiées ou bloquées, sources de données interrogées.</p><p>Essentiel pour l'audit, l'explication des blocages et la traçabilité réglementaire (finance, santé, secteur public).</p>",
+      "eyebrow": "Schéma 2 — Les six piliers"
+    },
+    "pillar-drift": {
+      "title": "Drift & fiabilité",
+      "body": "<p>Capture l'évolution temporelle des scores d'évaluation pour détecter la dérive comportementale.</p><p>Quand un nouveau prompt, modèle ou outil dégrade la fiabilité, le changement apparaît comme un <em>shift</em> dans les scores et les patterns d'erreur — pas comme une erreur runtime.</p>",
+      "eyebrow": "Schéma 2 — Les six piliers"
+    }
+  },
+  "schema-03": {
+    "user-input": {
+      "title": "Couche entrée",
+      "body": "<p>Point d'entrée canonique d'une requête utilisateur. Premier endroit où poser une instrumentation : le <code>traceId</code> est attribué ici et propagé à toute la chaîne.</p>",
+      "eyebrow": "Schéma 3 — Architecture de référence"
+    },
+    "planner-agent": {
+      "title": "Planner agent",
+      "body": "<p>Décompose la requête en sous-objectifs, choisit un plan d'exécution. Émet un span racine <code>invoke_agent</code> (<code>SpanKind: CLIENT</code> ou <code>INTERNAL</code>).</p><p>Observable : profondeur de planification, nombre de sous-tâches, temps de planification.</p>",
+      "eyebrow": "Schéma 3 — Architecture de référence"
+    },
+    "executor-agent": {
+      "title": "Executor agent",
+      "body": "<p>Exécute le plan : appels modèles, appels outils, branches conditionnelles. Producteur principal des spans <code>chat</code> et <code>execute_tool</code>.</p><p>Observable : taux de succès par étape, retries, fallbacks.</p>",
+      "eyebrow": "Schéma 3 — Architecture de référence"
+    },
+    "critic-agent": {
+      "title": "Critic agent",
+      "body": "<p>Évalue les sorties intermédiaires et déclenche une replanification si nécessaire. Le repère <strong>2</strong> du schéma marque cette boucle critic→planner — visible dans les traces sous forme de span imbriqué.</p><p>Observable : taux de replan, raisons du replan, scores critic.</p>",
+      "eyebrow": "Schéma 3 — Architecture de référence"
+    },
+    "tool-sandbox": {
+      "title": "Sandbox d'outils",
+      "body": "<p>Environnement isolé qui exécute les actions de l'executor : appels API, requêtes vector store via MCP, exécution de code.</p><p><strong>Double valeur</strong> — sécurité (un agent compromis ne peut pas atteindre la prod directement) et observabilité (chaque appel produit un span <code>execute_tool</code>).</p>",
+      "eyebrow": "Schéma 3 — Architecture de référence"
+    },
+    "llm-providers": {
+      "title": "Providers LLM",
+      "body": "<p>OpenAI, Anthropic, Google, Mistral, modèles open-source self-hosted. Source des spans <code>chat</code> avec <code>gen_ai.request.model</code> et <code>gen_ai.response.model</code> — qui peuvent différer en cas d'aliasing/routing côté provider (piège fréquent).</p>",
+      "eyebrow": "Schéma 3 — Architecture de référence"
+    },
+    "rag-vector": {
+      "title": "RAG / vector store",
+      "body": "<p>Couche de retrieval (Pinecone, Weaviate, Milvus, pgvector). Émet des spans <code>execute_tool</code> avec <code>gen_ai.tool.type=datastore</code>.</p><p>Observable : pertinence des chunks récupérés, latence retrieval, drift des embeddings.</p>",
+      "eyebrow": "Schéma 3 — Architecture de référence"
+    },
+    "memory-layer": {
+      "title": "Couche mémoire",
+      "body": "<p>Mémoire épisodique (conversations passées), sémantique (faits stables), procédurale (workflows appris).</p><p>Position structurelle <strong>parallèle</strong> au bus de télémétrie : les deux sont transverses, persistants, accessibles par tous les agents.</p>",
+      "eyebrow": "Schéma 3 — Architecture de référence"
+    },
+    "telemetry-bus": {
+      "title": "Bus de télémétrie OTel",
+      "body": "<p>Colonne vertébrale horizontale qui collecte les signaux (spans, metrics, logs) de tous les composants. Conventions <code>gen_ai.*</code> v1.37+. Export OTLP vers N backends via Collector.</p><p>C'est ce bus qui rend le choix du backend <em>révisable</em>.</p>",
+      "eyebrow": "Schéma 3 — Architecture de référence"
+    }
+  },
+  "schema-04": {
+    "invoke-agent": {
+      "title": "Span racine — invoke_agent",
+      "body": "<p>Un span par invocation d'agent. <code>SpanKind: CLIENT</code> pour un agent distant, <code>INTERNAL</code> pour un agent in-process.</p><p>Attributs : <code>gen_ai.agent.name</code>, <code>gen_ai.agent.id</code>, <code>gen_ai.conversation.id</code>.</p>",
+      "eyebrow": "Schéma 4 — Anatomie d'une trace"
+    },
+    "chat-1": {
+      "title": "Premier appel modèle (chat)",
+      "body": "<p>Phase de planification : l'agent demande au modèle de structurer la réponse et de décider s'il faut appeler un outil.</p><p>Attributs notables : <code>gen_ai.request.model</code>, <code>gen_ai.response.model</code> (peuvent différer en cas d'aliasing), <code>gen_ai.usage.input_tokens</code>, <code>gen_ai.usage.output_tokens</code>.</p>",
+      "eyebrow": "Schéma 4 — Anatomie d'une trace"
+    },
+    "execute-tool": {
+      "title": "execute_tool — invocation d'outil",
+      "body": "<p>Span produit par chaque appel d'outil : <code>gen_ai.tool.name</code>, <code>gen_ai.tool.call.id</code>, <code>gen_ai.tool.type</code> ∈ {<code>function</code>, <code>extension</code>, <code>datastore</code>}.</p>",
+      "eyebrow": "Schéma 4 — Anatomie d'une trace"
+    },
+    "external-api": {
+      "title": "Appel API externe",
+      "body": "<p>Span enfant de <code>execute_tool</code> capturant l'appel réseau effectif (HTTP, gRPC). Permet d'attribuer la latence réelle entre logique d'outil et dépendance externe.</p>",
+      "eyebrow": "Schéma 4 — Anatomie d'une trace"
+    },
+    "chat-2": {
+      "title": "Deuxième appel modèle (synthèse)",
+      "body": "<p>Le modèle reçoit le résultat de l'outil et génère la réponse finale. Souvent le span le plus long en termes de tokens de sortie.</p><p>Cible classique d'une évaluation qualité — d'où l'événement <code>gen_ai.evaluation.result</code> attaché ici.</p>",
+      "eyebrow": "Schéma 4 — Anatomie d'une trace"
+    },
+    "eval-event": {
+      "title": "Événement gen_ai.evaluation.result",
+      "body": "<p>Innovation majeure de la spec v1.37+ : attacher le score d'évaluation directement au span de l'opération évaluée plutôt que de le stocker dans un système séparé.</p><p>Effet pratique — un dashboard peut filtrer « <em>traces avec score < 0.7</em> » sans jointure entre deux stores.</p>",
+      "eyebrow": "Schéma 4 — Anatomie d'une trace"
+    }
+  },
+  "schema-05": {
+    "single-app": {
+      "title": "Application instrumentée — une fois",
+      "body": "<p>SDK OTel + auto-instrumentor (OpenLLMetry, OpenLIT, ou instrumentation native du framework). L'effort d'instrumentation est payé <strong>une seule fois</strong>.</p><p>Coût marginal au démarrage, asymptotique si on attend.</p>",
+      "eyebrow": "Schéma 5 — Découplage instrumentation/backend"
+    },
+    "otel-collector": {
+      "title": "OpenTelemetry Collector",
+      "body": "<p>Gateway centralisée qui reçoit les spans en OTLP et applique des <strong>processors</strong> avant export :</p><ul><li><strong>Redaction PII</strong> — anonymise prompts et réponses (filtre regex, ML-based, allowlist).</li><li><strong>Sampling</strong> — head, tail, ratio, intelligent.</li><li><strong>Enrichissement</strong> — tenant, environnement, version modèle.</li><li><strong>Routing</strong> — vers N backends en parallèle.</li></ul>",
+      "eyebrow": "Schéma 5 — Découplage instrumentation/backend"
+    },
+    "backend-incumbents": {
+      "title": "Backends incumbents APM",
+      "body": "<p>Dynatrace, Datadog, Splunk, New Relic, Elastic. Forces : full-stack, gouvernance enterprise, échelle. Faiblesses relatives : eval qualité, lock-in, coût explosif sur workloads IA (×2 à ×3).</p>",
+      "eyebrow": "Schéma 5 — Découplage instrumentation/backend"
+    },
+    "backend-ai-native": {
+      "title": "Backends AI-native",
+      "body": "<p>Langfuse, Braintrust, Arize/Phoenix, Galileo, Maxim. Forces : eval-first, scorers built-in, prompt management, traces → test cases. Faiblesses relatives : profondeur plateforme, infra monitoring, gouvernance enterprise.</p>",
+      "eyebrow": "Schéma 5 — Découplage instrumentation/backend"
+    },
+    "backend-open": {
+      "title": "Backends open-source",
+      "body": "<p>Stack LGTM (Loki, Grafana, Tempo, Mimir), Jaeger, OpenObserve, Langfuse self-hosted (MIT).</p><p>Coût 10 à 50 fois inférieur aux solutions propriétaires sur les workloads IA. Adapté aux organisations OTel-first et coût-conscientes.</p>",
+      "eyebrow": "Schéma 5 — Découplage instrumentation/backend"
+    }
+  },
+  "schema-06": {
+    "level-0": {
+      "title": "L0 — Guardrail automatique",
+      "body": "<p><strong>Déclencheur</strong> : violation de politique détectée en temps réel (PII, contenu interdit, prompt injection).</p><p><strong>Réponse</strong> : blocage ou rewriting automatique avant émission de la réponse.</p><p><strong>SLA</strong> : &lt; 100 ms. Aucune intervention humaine, aucune notification (sauf agrégation statistique).</p>",
+      "eyebrow": "Schéma 6 — Hiérarchie d'alertes"
+    },
+    "level-1": {
+      "title": "L1 — Re-routing automatique",
+      "body": "<p><strong>Déclencheur</strong> : dégradation provider (latence > seuil, taux d'erreur), surcoût détecté.</p><p><strong>Réponse</strong> : bascule vers modèle de fallback (autre provider, modèle moins cher, version antérieure).</p><p><strong>SLA</strong> : &lt; 1 seconde. Décision automatique, log pour audit.</p>",
+      "eyebrow": "Schéma 6 — Hiérarchie d'alertes"
+    },
+    "level-2": {
+      "title": "L2 — Alerte supervisée",
+      "body": "<p><strong>Déclencheur</strong> : drift de score qualité soutenu, anomalie comportementale corrélée multi-signal.</p><p><strong>Réponse</strong> : page d'astreinte, SRE/MLE qualifie et arbitre (rollback, hotfix, accept).</p><p><strong>SLA</strong> : &lt; 5 minutes. Décision humaine informée par dashboard.</p>",
+      "eyebrow": "Schéma 6 — Hiérarchie d'alertes"
+    },
+    "level-3": {
+      "title": "L3 — Investigation humaine",
+      "body": "<p><strong>Déclencheur</strong> : incident qualifié, régression confirmée, plainte utilisateur.</p><p><strong>Réponse</strong> : ouverture ticket, root cause analysis sur les traces, conversion trace→test case (Braintrust pattern).</p><p><strong>SLA</strong> : &lt; 1 heure pour diagnostic, &lt; 1 jour pour fix.</p>",
+      "eyebrow": "Schéma 6 — Hiérarchie d'alertes"
+    },
+    "level-4": {
+      "title": "L4 — Refactor stratégique",
+      "body": "<p><strong>Déclencheur</strong> : pattern systémique sur plusieurs incidents, dette technique sur un agent, dérive stratégique de qualité.</p><p><strong>Réponse</strong> : revue d'architecture, réécriture de prompts, changement de modèle, refonte datasets.</p><p><strong>SLA</strong> : plusieurs jours à plusieurs semaines. Décision produit/architecture.</p>",
+      "eyebrow": "Schéma 6 — Hiérarchie d'alertes"
+    }
+  },
+  "schema-07": {
+    "dynatrace": {
+      "title": "Dynatrace",
+      "body": "<p>Leader Gartner, #1 Ability to Execute pour la 15<sup>e</sup> année. Davis AI hypermodale (causale + prédictive + générative), Grail (data lakehouse sans indexation), Smartscape (graphe de dépendances temps réel).</p><p>Depuis février 2026 : Dynatrace Intelligence positionné comme « OS agentique » avec Intelligence Agents (SRE / Dev / Sec) et MCP Server.</p>",
+      "eyebrow": "Schéma 7 — Vendor landscape"
+    },
+    "datadog": {
+      "title": "Datadog",
+      "body": "<p>Leader Gartner (5<sup>e</sup> année). LLM Observability en GA, Bits AI assistant, support natif OTel GenAI v1.37+ depuis décembre 2025, Experiments pour A/B testing de prompts, Sensitive Data Scanner inclus.</p><p><strong>Vigilance</strong> — facturation cumulative (per-host APM + per-GB logs + per-span) qui multiplie la facture par 2 à 3 sur les workloads IA.</p>",
+      "eyebrow": "Schéma 7 — Vendor landscape"
+    },
+    "splunk": {
+      "title": "Splunk / Cisco",
+      "body": "<p>Convergence sécurité-observabilité. AI Agent Monitoring GA Q1 2026, Cisco AI PODs (NVIDIA NIMs, Milvus, LiteLLM), Troubleshooting Agent, Splunk MCP Server.</p><p><strong>Friction</strong> — complexité post-acquisition Cisco, coexistence Splunk/AppDynamics.</p>",
+      "eyebrow": "Schéma 7 — Vendor landscape"
+    },
+    "elastic": {
+      "title": "Elastic",
+      "body": "<p>Leader Gartner (2<sup>e</sup> année). Elastic AI Assistant, intégration native OTel, ESQL pour analytics. Force : analyse log-centric à grande échelle.</p>",
+      "eyebrow": "Schéma 7 — Vendor landscape"
+    },
+    "grafana": {
+      "title": "Grafana Labs",
+      "body": "<p>Leader Gartner, #1 Completeness of Vision. Stack LGTM (Loki, Grafana, Tempo, Mimir). Réception native des traces GenAI via Tempo, coût 10 à 50× inférieur aux propriétaires.</p><p><strong>Faiblesse</strong> — pas de capacité d'évaluation IA native ; doit être complété par un AI-native.</p>",
+      "eyebrow": "Schéma 7 — Vendor landscape"
+    },
+    "newrelic": {
+      "title": "New Relic",
+      "body": "<p>Pricing transparent (par utilisateur + par GB ingéré), pivot mid-market post-prise de privatisation. AI Monitoring intégré.</p><p>Compromis raisonnable pour des organisations cherchant lisibilité contractuelle plus que profondeur Smartscape.</p>",
+      "eyebrow": "Schéma 7 — Vendor landscape"
+    },
+    "langfuse": {
+      "title": "Langfuse",
+      "body": "<p>Leader open-source de référence. Licence MIT, OTel natif, self-hosted ou cloud. Prompt management, traces, evaluations, datasets, scoring.</p><p>Choix par défaut pour démarrer — gratuit, communauté active, intégrations framework natives (LangChain, LlamaIndex, etc.).</p>",
+      "eyebrow": "Schéma 7 — Vendor landscape"
+    },
+    "braintrust": {
+      "title": "Braintrust",
+      "body": "<p>Plateforme intégrée eval-first. Conversion traces → test cases en un clic, Loop AI pour scorers custom, 25+ scorers built-in, dataset versioning.</p><p>Utilisé par Notion, Stripe, Zapier. Positionné sur le cycle de vie complet de l'évaluation.</p>",
+      "eyebrow": "Schéma 7 — Vendor landscape"
+    },
+    "langsmith": {
+      "title": "LangSmith",
+      "body": "<p>De LangChain. Tracing, eval, hub de prompts intégrés à l'écosystème LangChain. Adoption forte chez les équipes déjà sur LangChain.</p>",
+      "eyebrow": "Schéma 7 — Vendor landscape"
+    },
+    "arize": {
+      "title": "Arize AI",
+      "body": "<p>Rigueur statistique académique, embedding drift detection, pont entre ML traditionnel et LLM observability. <strong>Phoenix</strong> est sa version open-source.</p><p>Choix naturel pour les organisations déjà matures en MLOps.</p>",
+      "eyebrow": "Schéma 7 — Vendor landscape"
+    },
+    "galileo": {
+      "title": "Galileo AI",
+      "body": "<p>Luna-2 evaluators avec précision propriétaire 93–97 %, guardrails production, hallucination detection.</p><p>Différenciateur — qualité d'évaluation revendiquée supérieure aux scorers LLM-as-judge génériques.</p>",
+      "eyebrow": "Schéma 7 — Vendor landscape"
+    },
+    "maxim": {
+      "title": "Maxim AI",
+      "body": "<p>Full lifecycle : simulation + évaluation + observabilité unifiées. Pré-prod et prod sur la même plateforme, datasets synthétiques générés.</p>",
+      "eyebrow": "Schéma 7 — Vendor landscape"
+    },
+    "helicone": {
+      "title": "Helicone",
+      "body": "<p>Proxy-based observability. Log et caching transparents en se mettant entre l'app et le provider LLM. Setup minimal, open-source.</p>",
+      "eyebrow": "Schéma 7 — Vendor landscape"
+    },
+    "whylabs": {
+      "title": "WhyLabs",
+      "body": "<p>Origines ML monitoring (data drift). Étend désormais aux LLMs avec LangKit. Approche statistique forte.</p>",
+      "eyebrow": "Schéma 7 — Vendor landscape"
+    },
+    "phoenix": {
+      "title": "Arize Phoenix",
+      "body": "<p>Version open-source d'Arize. OTel natif, traces locales, eval embarquée. Bon ticket d'entrée pour démarrer côté AI-native sans cloud.</p>",
+      "eyebrow": "Schéma 7 — Vendor landscape"
+    }
+  },
+  "schema-08": {
+    "maturity-l1": {
+      "title": "N1 — Monitoring réactif",
+      "body": "<p>Logs manuels, debug ad-hoc, pas de traces. État de la majorité des projets pré-production en 2024–2025.</p><p><strong>Symptôme</strong> — incidents diagnostiqués par lecture de logs, time-to-resolution mesuré en heures ou jours.</p>",
+      "eyebrow": "Schéma 8 — Maturité organisationnelle"
+    },
+    "maturity-l2": {
+      "title": "N2 — Observabilité structurée",
+      "body": "<p>Tracing distribué OTel, dashboards latence/tokens, alertes seuil multi-signal.</p><p><strong>Prérequis</strong> — SDK + Collector déployés, conventions <code>gen_ai.*</code> activées, équipe formée.</p>",
+      "eyebrow": "Schéma 8 — Maturité organisationnelle"
+    },
+    "maturity-l3": {
+      "title": "N3 — Évaluation continue",
+      "body": "<p><strong>Le palier cognitif.</strong> LLM-as-judge online, guardrails runtime, feedback loops humains, drift detection.</p><p><strong>Saut le plus difficile</strong> — il exige de définir « qu'est-ce qu'une réponse correcte ? » de façon mesurable. Datasets de référence, scorers calibrés.</p>",
+      "eyebrow": "Schéma 8 — Maturité organisationnelle"
+    },
+    "maturity-l4": {
+      "title": "N4 — Autonomie supervisée",
+      "body": "<p>Auto-remédiation L0/L1, rollback automatique, scaling intelligent, workflows agentiques.</p><p><strong>Cible 2026</strong> pour la majorité des programmes IA enterprise. Prérequis : runbooks automatisés, SLO mesurables, human-in-the-loop défini.</p>",
+      "eyebrow": "Schéma 8 — Maturité organisationnelle"
+    },
+    "maturity-l5": {
+      "title": "N5 — Autonomie complète",
+      "body": "<p>Agents d'observabilité, auto-optimisation des prompts, gouvernance AI-driven, remédiation autonome L2/L3.</p><p><strong>Horizon 2027–2028</strong> sur scope limité. Exemples vendor : Dynatrace Intelligence, Splunk Troubleshooting Agent, Datadog Bits AI.</p>",
+      "eyebrow": "Schéma 8 — Maturité organisationnelle"
+    }
+  }
+};
+    /* shape:
+      {
+        'schema-01': {
+          'region-id': { title: '...', body: '<p>...</p>', eyebrow: 'Schéma 1' },
+          ...
+        },
+        ...
+      }
+    */
+
+    const TOOLTIPS = {
+  "ttft": "Time to first token : délai entre l'envoi de la requête et l'arrivée du premier token de la réponse. Métrique critique pour l'expérience utilisateur en streaming.",
+  "llm-judge": "LLM-as-judge : utilisation d'un LLM pour scorer la qualité d'une autre sortie LLM (factualité, pertinence, ton). Permet l'évaluation à l'échelle, mais introduit ses propres biais.",
+  "mcp": "Model Context Protocol : standard ouvert de communication entre LLMs et outils externes, lancé par Anthropic en novembre 2024. Adopté par OpenAI, Google, Microsoft en 2025.",
+  "otlp": "OpenTelemetry Protocol : protocole standardisé (gRPC ou HTTP) pour transporter les signaux d'observabilité (traces, metrics, logs) vers un backend.",
+  "melt": "Metrics, Events, Logs, Traces : les quatre signaux fondamentaux de l'observabilité moderne, popularisés par l'écosystème cloud-native.",
+  "rag": "Retrieval-Augmented Generation : technique qui enrichit le contexte d'un LLM avec des documents récupérés dynamiquement depuis une base vectorielle.",
+  "slo": "Service Level Objective : cible mesurable de qualité de service (ex. 99,9 % des réponses sous 2 secondes). Base contractuelle de l'observabilité opérationnelle."
+};
+    /* shape: { 'CoT': 'Chain-of-Thought : ...', ... } */
+
+    const SOURCES = [
+  {
+    "n": 1,
+    "citation": "OpenTelemetry, <em>AI Agent Observability Standards</em>, OpenTelemetry Blog, mars 2025.",
+    "url": "https://opentelemetry.io/blog/2025/ai-agent-observability/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 2,
+    "citation": "InsightFinder, <em>AI Observability vs Traditional Monitoring</em>, décembre 2025.",
+    "url": "https://insightfinder.com/blog/ai-observability-vs-traditional-monitoring/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 3,
+    "citation": "IBM Think, <em>Observability Trends 2026</em>, IBM Institute for Business Value, mars 2026.",
+    "url": "https://www.ibm.com/think/insights/observability-trends",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 4,
+    "citation": "Dynatrace, <em>Six Observability Predictions for 2026</em>, décembre 2025.",
+    "url": "https://www.dynatrace.com/news/blog/six-observability-predictions-for-2026/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 5,
+    "citation": "Kore.ai, <em>AI Observability: Monitoring &amp; Governing AI Agents</em>, mars 2026.",
+    "url": "https://www.kore.ai/blog/what-is-ai-observability",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 6,
+    "citation": "Voiceflow, <em>What Is AI Agent Observability? A 2026 Guide</em>, mars 2026.",
+    "url": "https://www.voiceflow.com/blog/what-is-ai-agent-observability",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 7,
+    "citation": "Anthropic, <em>Building Effective Agents</em>, whitepaper, décembre 2024.",
+    "url": "https://www.anthropic.com/research/building-effective-agents",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 8,
+    "citation": "Groundcover, <em>AI Agent Observability Guide: Telemetry, Traces, Metrics</em>, février 2026.",
+    "url": "https://www.groundcover.com/learn/observability/ai-agent-observability",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 9,
+    "citation": "N-iX, <em>AI Agent Observability: Practical Framework</em>, décembre 2025.",
+    "url": "https://www.n-ix.com/ai-agent-observability/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 10,
+    "citation": "Langfuse, <em>AI Agent Observability, Tracing &amp; Evaluation</em>, février 2026.",
+    "url": "https://langfuse.com/blog/2024-07-ai-agent-observability-with-langfuse",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 11,
+    "citation": "OpenTelemetry, <em>GenAI Semantic Conventions (specification)</em>, version 1.37, 2026.",
+    "url": "https://opentelemetry.io/docs/specs/semconv/gen-ai/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 12,
+    "citation": "OpenTelemetry, <em>GenAI Agent Spans, Model Spans, Tool Spans, Events</em>, 2026.",
+    "url": "https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-agent-spans/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 13,
+    "citation": "Datadog, <em>LLM Observability + OTel GenAI Semantic Convention support</em>, décembre 2025.",
+    "url": "https://www.datadoghq.com/blog/llm-otel-semantic-convention/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 14,
+    "citation": "Braintrust, <em>AI Observability Tools: Buyer's Guide 2026</em>, janvier 2026.",
+    "url": "https://www.braintrust.dev/articles/best-ai-observability-tools-2026",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 15,
+    "citation": "GetMaxim, <em>Top 5 AI Agent Observability Platforms 2026</em>, décembre 2025.",
+    "url": "https://www.getmaxim.ai/articles/top-5-ai-agent-observability-platforms-in-2026/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 16,
+    "citation": "Traceloop, <em>OpenLLMetry — auto-instrumentation OTel pour 44+ providers LLM</em>, GitHub, 2026.",
+    "url": "https://github.com/traceloop/openllmetry",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 17,
+    "citation": "OpenLIT, <em>OpenLIT SDK — auto-instrumentation 1 ligne LLMs/vector DBs/GPUs</em>, GitHub, 2026.",
+    "url": "https://github.com/openlit/openlit",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 18,
+    "citation": "Gartner, <em>Magic Quadrant for Observability Platforms 2025</em>, juillet 2025.",
+    "url": "https://www.gartner.com/en/documents/6688834",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 19,
+    "citation": "OneUptime, <em>AI Workloads Observability: Cost Crisis</em>, avril 2026.",
+    "url": "https://oneuptime.com/blog/ai-workloads-observability-cost-crisis",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 20,
+    "citation": "Dynatrace, <em>Dynatrace Intelligence — Agentic OS announcement at Perform 2026</em>, février 2026.",
+    "url": "https://www.dynatrace.com/news/blog/dynatrace-intelligence-platform/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 21,
+    "citation": "Splunk, <em>Q1 2026 Observability Update — AI Agent Monitoring</em>, février 2026.",
+    "url": "https://www.splunk.com/en_us/blog/observability/splunk-observability-ai-agent-monitoring-innovations.html",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 22,
+    "citation": "Grafana Labs, <em>Leader Gartner Magic Quadrant Observability 2025 — #1 Completeness of Vision</em>, 2025.",
+    "url": "https://grafana.com/about/press/2025/07/",
+    "accessed": "2026-04-30"
+  }
+];
+    /* shape: [{ n: 1, citation: '...', url: '...', accessed: '2026-04-12' }, ...] */
+
+    // ─────────────────────────────────────────────────
+    // Modal dispatcher
+    // ─────────────────────────────────────────────────
+
+    const modalRoot = document.getElementById('modal-root');
+    const modalEyebrow = document.getElementById('modal-eyebrow');
+    const modalTitle = document.getElementById('modal-title');
+    const modalBody  = document.getElementById('modal-body');
+    let lastFocused = null;
+
+    function openModal(eyebrow, title, body) {
+      lastFocused = document.activeElement;
+      modalEyebrow.textContent = eyebrow || '';
+      modalTitle.textContent = title || '';
+      modalBody.innerHTML = body || '';
+      modalRoot.hidden = false;
+      document.body.style.overflow = 'hidden';
+      // Focus the close button for keyboard users
+      modalRoot.querySelector('.modal-close')?.focus();
+    }
+    function closeModal() {
+      modalRoot.hidden = true;
+      document.body.style.overflow = '';
+      lastFocused?.focus();
+    }
+
+    document.addEventListener('click', (e) => {
+      // Modal: open on interactive SVG region
+      const region = e.target.closest('.interactive[data-card]');
+      if (region) {
+        const svg = region.closest('svg[data-schema-id]');
+        const schemaId = svg?.dataset.schemaId;
+        const cardId = region.dataset.card;
+        const card = SCHEMAS?.[schemaId]?.[cardId];
+        if (card) {
+          openModal(card.eyebrow || '', card.title || '', card.body || '');
+          return;
+        }
+      }
+
+      // Modal: close
+      if (e.target.matches('[data-close]')) {
+        closeModal();
+        return;
+      }
+    });
+
+    // Keyboard activation for SVG regions + modal close on Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !modalRoot.hidden) { closeModal(); return; }
+      if ((e.key === 'Enter' || e.key === ' ') && document.activeElement?.matches('.interactive[data-card]')) {
+        e.preventDefault();
+        document.activeElement.click();
+      }
+    });
+
+    // ─────────────────────────────────────────────────
+    // Citations → highlight source in sidebar
+    // ─────────────────────────────────────────────────
+
+    document.addEventListener('click', (e) => {
+      const cite = e.target.closest('.cite[data-cite]');
+      if (!cite) return;
+      e.preventDefault();
+      const n = cite.dataset.cite;
+      const li = document.getElementById('source-' + n);
+      if (!li) return;
+      // Open sources panel on mobile
+      const sources = document.getElementById('sources');
+      if (window.innerWidth <= 1024) sources.classList.add('open');
+      // Auto-expand the sidebar on desktop if the user collapsed it
+      const layout = document.querySelector('.layout');
+      const wasCollapsed = layout?.classList.contains('sources-collapsed');
+      if (wasCollapsed) {
+        document.getElementById('sources-expand-btn')?.click();
+      }
+      const doScroll = () => {
+        li.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        li.classList.add('highlight');
+        clearTimeout(li._hl);
+        li._hl = setTimeout(() => li.classList.remove('highlight'), 2400);
+      };
+      if (wasCollapsed) setTimeout(doScroll, 320); else doScroll();
+    });
+
+    // ─────────────────────────────────────────────────
+    // Tooltips: pin on touch / click for mobile usability
+    // ─────────────────────────────────────────────────
+
+    document.querySelectorAll('.term').forEach(t => {
+      if (!t.hasAttribute('tabindex')) t.setAttribute('tabindex', '0');
+      t.addEventListener('click', (e) => {
+        e.stopPropagation();
+        document.querySelectorAll('.term.pinned').forEach(p => { if (p !== t) p.classList.remove('pinned'); });
+        t.classList.toggle('pinned');
+      });
+    });
+    document.addEventListener('click', () => {
+      document.querySelectorAll('.term.pinned').forEach(p => p.classList.remove('pinned'));
+    });
+
+    // ─────────────────────────────────────────────────
+    // TOC active section tracking + smooth scroll
+    // ─────────────────────────────────────────────────
+
+    const tocLinks = document.querySelectorAll('#toc a[href^="#"]');
+    tocLinks.forEach(a => {
+      a.addEventListener('click', (e) => {
+        const id = a.getAttribute('href').slice(1);
+        const target = document.getElementById(id);
+        if (target) {
+          e.preventDefault();
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          // Close TOC on mobile
+          document.getElementById('toc').classList.remove('open');
+        }
+      });
+    });
+
+    if ('IntersectionObserver' in window) {
+      const sections = Array.from(document.querySelectorAll('main h2[id], main h1[id]'));
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            tocLinks.forEach(a => a.classList.remove('active'));
+            const link = document.querySelector('#toc a[href="#' + entry.target.id + '"]');
+            link?.classList.add('active');
+          }
+        });
+      }, { rootMargin: '-30% 0px -60% 0px' });
+      sections.forEach(s => observer.observe(s));
+    }
+
+    // ─────────────────────────────────────────────────
+    // Mobile panels
+    // ─────────────────────────────────────────────────
+
+    document.getElementById('toggle-toc')?.addEventListener('click', () => {
+      document.getElementById('sources').classList.remove('open');
+      document.getElementById('toc').classList.toggle('open');
+    });
+    document.getElementById('toggle-sources')?.addEventListener('click', () => {
+      document.getElementById('toc').classList.remove('open');
+      document.getElementById('sources').classList.toggle('open');
+    });
+
+    // ─────────────────────────────────────────────────
+    // Sources sidebar — desktop collapse/expand
+    // ─────────────────────────────────────────────────
+
+    (function setupSourcesToggle() {
+      const layout      = document.querySelector('.layout');
+      const collapseBtn = document.getElementById('sources-collapse-btn');
+      const expandBtn   = document.getElementById('sources-expand-btn');
+      if (!layout || !collapseBtn || !expandBtn) return;
+
+      function setCollapsed(collapsed) {
+        layout.classList.toggle('sources-collapsed', collapsed);
+        expandBtn.hidden = !collapsed;
+        collapseBtn.setAttribute('aria-expanded', String(!collapsed));
+        expandBtn.setAttribute('aria-expanded', String(!collapsed));
+        try { localStorage.setItem('obs-sources-collapsed', collapsed ? '1' : '0'); } catch (_) {}
+      }
+
+      collapseBtn.addEventListener('click', () => setCollapsed(true));
+      expandBtn.addEventListener('click', () => {
+        setCollapsed(false);
+        requestAnimationFrame(() => collapseBtn.focus({ preventScroll: true }));
+      });
+
+      try {
+        if (localStorage.getItem('obs-sources-collapsed') === '1') setCollapsed(true);
+      } catch (_) {}
+    })();
+
+    // ─────────────────────────────────────────────────
+    // Fullscreen zoom for schemas
+    // ─────────────────────────────────────────────────
+
+    (function setupZoom() {
+      const overlay  = document.getElementById('zoom-overlay');
+      const stage    = document.getElementById('zoom-stage');
+      const content  = document.getElementById('zoom-content');
+      const captionE = document.getElementById('zoom-caption');
+      const hint     = document.getElementById('zoom-hint');
+      if (!overlay || !stage || !content) return;
+
+      let scale = 1, tx = 0, ty = 0;
+      let svgW = 0, svgH = 0;
+      let fitScale = 1;
+      let lastZoomTrigger = null;
+
+      function applyTransform() {
+        content.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
+      }
+      function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+      function fitToStage() {
+        if (!svgW || !svgH) return;
+        const r = stage.getBoundingClientRect();
+        const margin = 32;
+        fitScale = Math.min(
+          (r.width  - margin * 2) / svgW,
+          (r.height - margin * 2) / svgH
+        );
+        scale = fitScale;
+        tx = (r.width  - svgW * scale) / 2;
+        ty = (r.height - svgH * scale) / 2;
+        applyTransform();
+      }
+
+      function zoomAt(mx, my, factor) {
+        const newScale = clamp(scale * factor, fitScale * 0.5, fitScale * 16);
+        tx = mx - newScale * (mx - tx) / scale;
+        ty = my - newScale * (my - ty) / scale;
+        scale = newScale;
+        applyTransform();
+      }
+
+      function openZoom(svgEl, captionText) {
+        const clone = svgEl.cloneNode(true);
+        const vb = clone.viewBox?.baseVal;
+        svgW = (vb && vb.width)  || svgEl.getBoundingClientRect().width  || 1200;
+        svgH = (vb && vb.height) || svgEl.getBoundingClientRect().height || 800;
+        clone.setAttribute('width',  svgW);
+        clone.setAttribute('height', svgH);
+        clone.style.width  = svgW + 'px';
+        clone.style.height = svgH + 'px';
+
+        content.innerHTML = '';
+        content.appendChild(clone);
+        captionE.textContent = captionText || '';
+
+        lastZoomTrigger = document.activeElement;
+        overlay.hidden = false;
+        document.body.style.overflow = 'hidden';
+        requestAnimationFrame(() => {
+          fitToStage();
+          stage.focus({ preventScroll: true });
+          if (hint) {
+            hint.classList.remove('fade');
+            clearTimeout(hint._t);
+            hint._t = setTimeout(() => hint.classList.add('fade'), 2600);
+          }
+        });
+      }
+
+      function closeZoom() {
+        overlay.hidden = true;
+        content.innerHTML = '';
+        document.body.style.overflow = '';
+        lastZoomTrigger?.focus?.();
+      }
+
+      document.querySelectorAll('.figure').forEach((fig) => {
+        const svg = fig.querySelector('svg');
+        if (!svg) return;
+        const cap = fig.querySelector('.figure-caption, figcaption');
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'zoom-btn';
+        btn.innerHTML = '⛶';
+        btn.setAttribute('aria-label', 'Agrandir le schéma en plein écran');
+        btn.title = 'Agrandir';
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openZoom(svg, cap?.textContent?.trim() || '');
+        });
+        fig.appendChild(btn);
+      });
+
+      overlay.querySelector('.zoom-close')?.addEventListener('click', closeZoom);
+      document.addEventListener('keydown', (e) => {
+        if (overlay.hidden) return;
+        if (e.key === 'Escape') { e.preventDefault(); closeZoom(); }
+        else if (e.key === '+' || e.key === '=') { e.preventDefault(); const r = stage.getBoundingClientRect(); zoomAt(r.width/2, r.height/2, 1.25); }
+        else if (e.key === '-' || e.key === '_') { e.preventDefault(); const r = stage.getBoundingClientRect(); zoomAt(r.width/2, r.height/2, 1/1.25); }
+        else if (e.key === '0') { e.preventDefault(); fitToStage(); }
+      });
+
+      overlay.querySelector('.zoom-in')?.addEventListener('click', () => {
+        const r = stage.getBoundingClientRect();
+        zoomAt(r.width / 2, r.height / 2, 1.25);
+      });
+      overlay.querySelector('.zoom-out')?.addEventListener('click', () => {
+        const r = stage.getBoundingClientRect();
+        zoomAt(r.width / 2, r.height / 2, 1 / 1.25);
+      });
+      overlay.querySelector('.zoom-reset')?.addEventListener('click', fitToStage);
+
+      stage.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const r = stage.getBoundingClientRect();
+        const mx = e.clientX - r.left;
+        const my = e.clientY - r.top;
+        const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+        zoomAt(mx, my, factor);
+      }, { passive: false });
+
+      let dragging = false, sx = 0, sy = 0, stx = 0, sty = 0;
+      stage.addEventListener('pointerdown', (e) => {
+        if (e.target.closest('.interactive[data-card]')) return;
+        dragging = true;
+        stage.classList.add('grabbing');
+        stage.setPointerCapture?.(e.pointerId);
+        sx = e.clientX; sy = e.clientY; stx = tx; sty = ty;
+      });
+      stage.addEventListener('pointermove', (e) => {
+        if (!dragging) return;
+        tx = stx + (e.clientX - sx);
+        ty = sty + (e.clientY - sy);
+        applyTransform();
+      });
+      function endDrag(e) {
+        if (!dragging) return;
+        dragging = false;
+        stage.classList.remove('grabbing');
+        stage.releasePointerCapture?.(e.pointerId);
+      }
+      stage.addEventListener('pointerup', endDrag);
+      stage.addEventListener('pointercancel', endDrag);
+      stage.addEventListener('pointerleave', endDrag);
+
+      let pinchStartDist = 0, pinchStartScale = 1, pinchMid = { x: 0, y: 0 };
+      stage.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 2) {
+          dragging = false;
+          const t1 = e.touches[0], t2 = e.touches[1];
+          const dx = t1.clientX - t2.clientX, dy = t1.clientY - t2.clientY;
+          pinchStartDist = Math.hypot(dx, dy);
+          pinchStartScale = scale;
+          const r = stage.getBoundingClientRect();
+          pinchMid = { x: (t1.clientX + t2.clientX) / 2 - r.left, y: (t1.clientY + t2.clientY) / 2 - r.top };
+        }
+      }, { passive: true });
+      stage.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 2 && pinchStartDist > 0) {
+          e.preventDefault();
+          const t1 = e.touches[0], t2 = e.touches[1];
+          const d = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+          const factor = (d / pinchStartDist) * (pinchStartScale / scale);
+          zoomAt(pinchMid.x, pinchMid.y, factor);
+        }
+      }, { passive: false });
+      stage.addEventListener('touchend', (e) => {
+        if (e.touches.length < 2) pinchStartDist = 0;
+      });
+
+      window.addEventListener('resize', () => {
+        if (!overlay.hidden) fitToStage();
+      });
+    })();
+  </script>
+</body>
+</html>
