@@ -45,6 +45,21 @@
       gap: 0;
       max-width: 1440px;
       margin: 0 auto;
+      transition: grid-template-columns 280ms ease;
+      overflow-x: clip;
+    }
+    @media (min-width: 1025px) {
+      .layout.sources-collapsed {
+        grid-template-columns: 240px minmax(0, 1fr) 0;
+      }
+      .layout.sources-collapsed #sources {
+        transform: translateX(100%);
+        opacity: 0;
+        pointer-events: none;
+      }
+      .layout.sources-collapsed #sources-collapse-btn {
+        visibility: hidden;
+      }
     }
     @media (max-width: 1024px) {
       .layout { grid-template-columns: 1fr; }
@@ -209,6 +224,7 @@
       padding: 24px 0;
       border-top: 1px solid var(--rule);
       border-bottom: 1px solid var(--rule);
+      position: relative;
       /* Figures fill the column; only text is capped at 760px. */
     }
     .figure svg {
@@ -237,6 +253,108 @@
     }
     .figure svg .interactive:focus-visible {
       filter: drop-shadow(0 0 0 var(--carmine));
+    }
+
+    /* ───────── Zoom button on each figure ───────── */
+    .zoom-btn {
+      position: absolute;
+      top: 32px; right: 8px;
+      width: 36px; height: 36px;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--paper);
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 18px; line-height: 1;
+      color: var(--graphite);
+      opacity: 0;
+      transition: opacity 140ms, background 140ms, color 140ms, border-color 140ms;
+      z-index: 2;
+    }
+    .figure:hover .zoom-btn,
+    .figure:focus-within .zoom-btn,
+    .zoom-btn:focus-visible { opacity: 1; }
+    .zoom-btn:hover {
+      background: var(--paper-2);
+      border-color: var(--ink);
+      color: var(--ink);
+    }
+    @media (hover: none) {
+      .zoom-btn { opacity: 0.85; }
+    }
+
+    /* ───────── Fullscreen zoom overlay ───────── */
+    #zoom-overlay[hidden] { display: none !important; }
+    #zoom-overlay {
+      position: fixed; inset: 0;
+      z-index: 80;
+      display: flex; flex-direction: column;
+      background: rgba(26, 26, 26, 0.94);
+      backdrop-filter: blur(3px);
+    }
+    #zoom-header {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px;
+      padding: 12px 20px;
+      color: var(--paper);
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 0.85rem;
+      border-bottom: 1px solid rgba(250, 248, 243, 0.12);
+    }
+    #zoom-caption {
+      flex: 1; min-width: 0;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      opacity: 0.85;
+    }
+    .zoom-controls {
+      display: flex; gap: 4px; flex-shrink: 0;
+    }
+    .zoom-controls button {
+      background: transparent;
+      border: 1px solid rgba(250, 248, 243, 0.32);
+      color: var(--paper);
+      padding: 6px 12px;
+      min-width: 36px;
+      cursor: pointer;
+      font: inherit; font-size: 0.85rem;
+      border-radius: 3px;
+      transition: background 120ms, border-color 120ms;
+    }
+    .zoom-controls button:hover { background: rgba(250, 248, 243, 0.12); border-color: rgba(250, 248, 243, 0.6); }
+    .zoom-controls button:focus-visible { outline: 2px solid var(--paper); outline-offset: 2px; }
+    .zoom-controls .zoom-close { font-size: 1.3rem; line-height: 1; padding: 2px 10px; }
+    #zoom-stage {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      cursor: grab;
+      touch-action: none;
+    }
+    #zoom-stage.grabbing { cursor: grabbing; }
+    #zoom-content {
+      position: absolute; top: 0; left: 0;
+      transform-origin: 0 0;
+      will-change: transform;
+    }
+    #zoom-content > svg {
+      display: block;
+      max-width: none; max-height: none;
+      background: var(--paper);
+      box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+    }
+    #zoom-hint {
+      position: absolute; bottom: 16px; left: 50%;
+      transform: translateX(-50%);
+      color: rgba(250, 248, 243, 0.55);
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 0.75rem;
+      pointer-events: none;
+      transition: opacity 400ms;
+    }
+    #zoom-hint.fade { opacity: 0; }
+    @media (max-width: 640px) {
+      .zoom-controls .zoom-reset { display: none; }
+      #zoom-caption { font-size: 0.78rem; }
     }
 
     /* ───────── Tooltipped terms ───────── */
@@ -296,7 +414,9 @@
       background: var(--paper-2);
       position: sticky; top: 0; align-self: start;
       max-height: 100vh; overflow-y: auto;
+      transition: transform 280ms ease, opacity 200ms ease;
     }
+    #sources .sources-inner { display: block; }
     #sources h2 {
       font-family: var(--mono);
       font-size: 0.72rem;
@@ -397,50 +517,54 @@
     /* ───────── Print ───────── */
     @media print {
       .layout { grid-template-columns: 1fr; }
-      #toc, #sources, #modal-root, .menu-toggle, .sources-restore { display: none; }
+      #toc, #sources, #modal-root, #zoom-overlay, .menu-toggle, .zoom-btn, .sidebar-edge-toggle { display: none; }
       main#report { max-width: none; padding: 0; }
       .figure { page-break-inside: avoid; }
     }
 
-    /* ───────── Collapsible right sidebar (desktop) ───────── */
-    .sources-header {
-      display: flex; align-items: center; justify-content: space-between;
-      gap: 12px;
-      margin: 0 0 16px;
-    }
-    .sources-header h2 { margin: 0; }
-    .sources-close {
-      background: none; border: 1px solid var(--rule);
-      width: 26px; height: 26px; padding: 0;
-      border-radius: 4px; cursor: pointer;
-      font-family: var(--mono); font-size: 1rem; line-height: 1;
+    /* ───────── Sidebar edge toggles ───────── */
+    .sidebar-edge-toggle {
+      width: 22px;
+      height: 60px;
+      background: var(--paper);
+      border: 1px solid var(--rule);
       color: var(--graphite);
-    }
-    .sources-close:hover { color: var(--carmine); border-color: var(--carmine); }
-    .sources-restore {
-      display: none;
-      position: fixed; top: 80px; right: 0;
-      background: var(--paper-2);
-      border: 1px solid var(--rule); border-right: none;
-      padding: 12px 8px;
-      border-radius: 6px 0 0 6px;
       cursor: pointer;
-      font-family: var(--mono); font-size: 0.74rem;
-      letter-spacing: 0.08em; text-transform: uppercase;
-      color: var(--graphite);
-      writing-mode: vertical-rl;
+      font-family: var(--mono);
+      font-size: 14px;
+      line-height: 1;
+      padding: 0;
+      transition: background 140ms, color 140ms, border-color 140ms;
+    }
+    .sidebar-edge-toggle:hover {
+      background: var(--paper-2);
+      color: var(--ink);
+      border-color: var(--graphite);
+    }
+    .sidebar-edge-toggle:focus-visible {
+      outline: 2px solid var(--carmine);
+      outline-offset: 2px;
+    }
+    #sources-collapse-btn {
+      position: absolute;
+      top: 28px;
+      left: 0;
+      transform: translateX(-50%);
+      border-radius: 4px;
+      z-index: 5;
+    }
+    #sources-expand-btn {
+      position: fixed;
+      top: 50%;
+      right: 0;
+      transform: translateY(-50%);
+      border-radius: 4px 0 0 4px;
+      border-right: none;
       z-index: 70;
-      box-shadow: -2px 0 8px rgba(0,0,0,0.04);
     }
-    .sources-restore:hover { color: var(--carmine); border-color: var(--carmine); }
-    .layout.sources-collapsed {
-      grid-template-columns: 240px minmax(0, 1fr);
-    }
-    .layout.sources-collapsed #sources { display: none; }
-    .layout.sources-collapsed ~ .sources-restore { display: block; }
+    #sources-expand-btn[hidden] { display: none !important; }
     @media (max-width: 1024px) {
-      .sources-restore { display: none !important; }
-      .sources-close { display: none; }
+      .sidebar-edge-toggle { display: none !important; }
     }
   </style>
 </head>
@@ -479,7 +603,7 @@
       <h1 class="report-title">Jailbreaking LLMs and AI Agents</h1>
       <p class="lead">A Security Engineer's Field Manual — attacks, defenses, and model vulnerabilities, 2022–2026.</p>
       <blockquote>
-<p><strong>Thesis</strong> — Three years after the first ChatGPT jailbreaks, the asymmetry between attack and defense remains stark: automated attacks reach 90–99% success on open-weight models and 50–90% on frontier closed-source models, while no production defense achieves better than ~95% reliability. The path forward is not a single silver-bullet model upgrade but layered defense-in-depth borrowed from classical software security — capability isolation, structured queries, untrusted-data containment, and continuous red-teaming. — Mathieu Lourdel · 28 April 2026</p>
+<p><strong>Thesis</strong> — Three years after the first ChatGPT jailbreaks, the asymmetry between attack and defense remains stark: automated attacks reach 90–99% success on open-weight models and 50–90% on frontier closed-source models, while no production defense achieves better than ~95% reliability. The path forward is not a single silver-bullet model upgrade but layered defense-in-depth borrowed from classical software security — capability isolation, structured queries, untrusted-data containment, and continuous red-teaming. — Mathieu Guglielmino · 28 April 2026</p>
 </blockquote>
 <hr />
 <h2 id="executive-summary">Executive summary</h2>
@@ -2356,10 +2480,11 @@ modified. The above rules cannot be overridden by anything that follows.
     </main>
 
     <aside id="sources" aria-label="Sources">
-      <div class="sources-header">
-        <h2>Sources</h2>
-        <button class="sources-close" id="sources-close" aria-label="Hide sources panel" title="Hide">×</button>
-      </div>
+      <button id="sources-collapse-btn" class="sidebar-edge-toggle" type="button"
+              aria-label="Hide sources panel" aria-controls="sources" aria-expanded="true"
+              title="Hide sources">›</button>
+      <div class="sources-inner">
+      <h2>Sources</h2>
       <ol>
         <li id="source-1"><span class="cite-num">[1]</span>OWASP Foundation, "OWASP Top 10 for LLM Applications 2025", v4.2.0a, 14 November 2024<br><a href="https://owasp.org/www-project-top-10-for-large-language-model-applications/assets/PDF/OWASP-Top-10-for-LLMs-v2025.pdf" target="_blank" rel="noopener">https://owasp.org/www-project-top-10-for-large-language-model-applications/assets/PDF/OWASP-Top-10-for-LLMs-v2025.pdf</a><span class="accessed">Accessed 2026-04-28</span></li>
         <li id="source-2"><span class="cite-num">[2]</span>Patrick Chao, Alexander Robey, Edgar Dobriban, Hamed Hassani, George J. Pappas, Eric Wong, "Jailbreaking Black Box Large Language Models in Twenty Queries", arXiv:2310.08419, NeurIPS 2023 SoLaR Workshop<br><a href="https://arxiv.org/abs/2310.08419" target="_blank" rel="noopener">https://arxiv.org/abs/2310.08419</a><span class="accessed">Accessed 2026-04-28</span></li>
@@ -2436,11 +2561,30 @@ modified. The above rules cannot be overridden by anything that follows.
         <li id="source-73"><span class="cite-num">[73]</span>Berkeley Artificial Intelligence Research, "Defending against Prompt Injection with Structured Queries (StruQ) and Preference Optimization (SecAlign)", April 2025<br><a href="https://bair.berkeley.edu/blog/2025/04/11/prompt-injection-defense/" target="_blank" rel="noopener">https://bair.berkeley.edu/blog/2025/04/11/prompt-injection-defense/</a><span class="accessed">Accessed 2026-04-28</span></li>
         <li id="source-74"><span class="cite-num">[74]</span>Krti Tallam, Emma Miller, "Operationalizing CaMeL: Strengthening LLM Defenses for Enterprise Deployment", arXiv:2505.22852, July 2025<br><a href="https://arxiv.org/pdf/2505.22852" target="_blank" rel="noopener">https://arxiv.org/pdf/2505.22852</a><span class="accessed">Accessed 2026-04-28</span></li>
       </ol>
+      </div>
     </aside>
 
   </div>
 
-  <button class="sources-restore" id="sources-restore" aria-label="Show sources panel" title="Show sources">Sources ←</button>
+  <button id="sources-expand-btn" class="sidebar-edge-toggle" type="button"
+          aria-label="Show sources panel" aria-controls="sources" aria-expanded="false"
+          title="Show sources" hidden>‹</button>
+
+  <div id="zoom-overlay" hidden role="dialog" aria-modal="true" aria-label="Schema fullscreen">
+    <header id="zoom-header">
+      <span id="zoom-caption"></span>
+      <div class="zoom-controls">
+        <button type="button" class="zoom-out" aria-label="Zoom out" title="Zoom out (−)">−</button>
+        <button type="button" class="zoom-reset" aria-label="Fit to screen" title="Fit to screen">Reset</button>
+        <button type="button" class="zoom-in" aria-label="Zoom in" title="Zoom in (+)">+</button>
+        <button type="button" class="zoom-close" aria-label="Close (Esc)" title="Close (Esc)">×</button>
+      </div>
+    </header>
+    <div id="zoom-stage" tabindex="-1">
+      <div id="zoom-content"></div>
+      <div id="zoom-hint">Wheel to zoom · drag to pan · Esc to close</div>
+    </div>
+  </div>
 
   <div id="modal-root" hidden role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <div class="modal-backdrop" data-close></div>
@@ -3482,10 +3626,19 @@ modified. The above rules cannot be overridden by anything that follows.
       // Open sources panel on mobile
       const sources = document.getElementById('sources');
       if (window.innerWidth <= 1024) sources.classList.add('open');
-      li.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      li.classList.add('highlight');
-      clearTimeout(li._hl);
-      li._hl = setTimeout(() => li.classList.remove('highlight'), 2400);
+      // Auto-expand the sidebar on desktop if the user collapsed it
+      const layout = document.querySelector('.layout');
+      const wasCollapsed = layout?.classList.contains('sources-collapsed');
+      if (wasCollapsed) {
+        document.getElementById('sources-expand-btn')?.click();
+      }
+      const doScroll = () => {
+        li.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        li.classList.add('highlight');
+        clearTimeout(li._hl);
+        li._hl = setTimeout(() => li.classList.remove('highlight'), 2400);
+      };
+      if (wasCollapsed) setTimeout(doScroll, 320); else doScroll();
     });
 
     // ─────────────────────────────────────────────────
@@ -3549,21 +3702,219 @@ modified. The above rules cannot be overridden by anything that follows.
       document.getElementById('sources').classList.toggle('open');
     });
 
-    // Desktop: collapsible right sidebar
-    document.getElementById('sources-close')?.addEventListener('click', () => {
-      document.querySelector('.layout').classList.add('sources-collapsed');
-      try { localStorage.setItem('sources-collapsed', '1'); } catch (e) {}
-    });
-    document.getElementById('sources-restore')?.addEventListener('click', () => {
-      document.querySelector('.layout').classList.remove('sources-collapsed');
-      try { localStorage.removeItem('sources-collapsed'); } catch (e) {}
-    });
-    // Restore previous state
-    try {
-      if (localStorage.getItem('sources-collapsed') === '1') {
-        document.querySelector('.layout').classList.add('sources-collapsed');
+    // ─────────────────────────────────────────────────
+    // Sources sidebar — desktop collapse/expand
+    // ─────────────────────────────────────────────────
+
+    (function setupSourcesToggle() {
+      const layout      = document.querySelector('.layout');
+      const collapseBtn = document.getElementById('sources-collapse-btn');
+      const expandBtn   = document.getElementById('sources-expand-btn');
+      if (!layout || !collapseBtn || !expandBtn) return;
+
+      function setCollapsed(collapsed) {
+        layout.classList.toggle('sources-collapsed', collapsed);
+        expandBtn.hidden = !collapsed;
+        collapseBtn.setAttribute('aria-expanded', String(!collapsed));
+        expandBtn.setAttribute('aria-expanded', String(!collapsed));
+        try { localStorage.setItem('jb-sources-collapsed', collapsed ? '1' : '0'); } catch (_) {}
       }
-    } catch (e) {}
+
+      collapseBtn.addEventListener('click', () => setCollapsed(true));
+      expandBtn.addEventListener('click', () => {
+        setCollapsed(false);
+        requestAnimationFrame(() => collapseBtn.focus({ preventScroll: true }));
+      });
+
+      // One-time migration from the legacy 'sources-collapsed' key.
+      try {
+        const legacy = localStorage.getItem('sources-collapsed');
+        if (legacy !== null) {
+          if (legacy === '1') setCollapsed(true);
+          localStorage.removeItem('sources-collapsed');
+        } else if (localStorage.getItem('jb-sources-collapsed') === '1') {
+          setCollapsed(true);
+        }
+      } catch (_) {}
+    })();
+
+    // ─────────────────────────────────────────────────
+    // Fullscreen zoom for schemas
+    // ─────────────────────────────────────────────────
+
+    (function setupZoom() {
+      const overlay  = document.getElementById('zoom-overlay');
+      const stage    = document.getElementById('zoom-stage');
+      const content  = document.getElementById('zoom-content');
+      const captionE = document.getElementById('zoom-caption');
+      const hint     = document.getElementById('zoom-hint');
+      if (!overlay || !stage || !content) return;
+
+      let scale = 1, tx = 0, ty = 0;
+      let svgW = 0, svgH = 0;
+      let fitScale = 1;
+      let lastZoomTrigger = null;
+
+      function applyTransform() {
+        content.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
+      }
+      function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+      function fitToStage() {
+        if (!svgW || !svgH) return;
+        const r = stage.getBoundingClientRect();
+        const margin = 32;
+        fitScale = Math.min(
+          (r.width  - margin * 2) / svgW,
+          (r.height - margin * 2) / svgH
+        );
+        scale = fitScale;
+        tx = (r.width  - svgW * scale) / 2;
+        ty = (r.height - svgH * scale) / 2;
+        applyTransform();
+      }
+
+      function zoomAt(mx, my, factor) {
+        const newScale = clamp(scale * factor, fitScale * 0.5, fitScale * 16);
+        tx = mx - newScale * (mx - tx) / scale;
+        ty = my - newScale * (my - ty) / scale;
+        scale = newScale;
+        applyTransform();
+      }
+
+      function openZoom(svgEl, captionText) {
+        const clone = svgEl.cloneNode(true);
+        const vb = clone.viewBox?.baseVal;
+        svgW = (vb && vb.width)  || svgEl.getBoundingClientRect().width  || 1200;
+        svgH = (vb && vb.height) || svgEl.getBoundingClientRect().height || 800;
+        clone.setAttribute('width',  svgW);
+        clone.setAttribute('height', svgH);
+        clone.style.width  = svgW + 'px';
+        clone.style.height = svgH + 'px';
+
+        content.innerHTML = '';
+        content.appendChild(clone);
+        captionE.textContent = captionText || '';
+
+        lastZoomTrigger = document.activeElement;
+        overlay.hidden = false;
+        document.body.style.overflow = 'hidden';
+        requestAnimationFrame(() => {
+          fitToStage();
+          stage.focus({ preventScroll: true });
+          if (hint) {
+            hint.classList.remove('fade');
+            clearTimeout(hint._t);
+            hint._t = setTimeout(() => hint.classList.add('fade'), 2600);
+          }
+        });
+      }
+
+      function closeZoom() {
+        overlay.hidden = true;
+        content.innerHTML = '';
+        document.body.style.overflow = '';
+        lastZoomTrigger?.focus?.();
+      }
+
+      document.querySelectorAll('.figure').forEach((fig) => {
+        const svg = fig.querySelector('svg');
+        if (!svg) return;
+        const cap = fig.querySelector('.figure-caption, figcaption');
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'zoom-btn';
+        btn.innerHTML = '⛶';
+        btn.setAttribute('aria-label', 'Open schema fullscreen');
+        btn.title = 'Fullscreen';
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openZoom(svg, cap?.textContent?.trim() || '');
+        });
+        fig.appendChild(btn);
+      });
+
+      overlay.querySelector('.zoom-close')?.addEventListener('click', closeZoom);
+      document.addEventListener('keydown', (e) => {
+        if (overlay.hidden) return;
+        if (e.key === 'Escape') { e.preventDefault(); closeZoom(); }
+        else if (e.key === '+' || e.key === '=') { e.preventDefault(); const r = stage.getBoundingClientRect(); zoomAt(r.width/2, r.height/2, 1.25); }
+        else if (e.key === '-' || e.key === '_') { e.preventDefault(); const r = stage.getBoundingClientRect(); zoomAt(r.width/2, r.height/2, 1/1.25); }
+        else if (e.key === '0') { e.preventDefault(); fitToStage(); }
+      });
+
+      overlay.querySelector('.zoom-in')?.addEventListener('click', () => {
+        const r = stage.getBoundingClientRect();
+        zoomAt(r.width / 2, r.height / 2, 1.25);
+      });
+      overlay.querySelector('.zoom-out')?.addEventListener('click', () => {
+        const r = stage.getBoundingClientRect();
+        zoomAt(r.width / 2, r.height / 2, 1 / 1.25);
+      });
+      overlay.querySelector('.zoom-reset')?.addEventListener('click', fitToStage);
+
+      stage.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const r = stage.getBoundingClientRect();
+        const mx = e.clientX - r.left;
+        const my = e.clientY - r.top;
+        const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+        zoomAt(mx, my, factor);
+      }, { passive: false });
+
+      let dragging = false, sx = 0, sy = 0, stx = 0, sty = 0;
+      stage.addEventListener('pointerdown', (e) => {
+        if (e.target.closest('.interactive[data-card]')) return;
+        dragging = true;
+        stage.classList.add('grabbing');
+        stage.setPointerCapture?.(e.pointerId);
+        sx = e.clientX; sy = e.clientY; stx = tx; sty = ty;
+      });
+      stage.addEventListener('pointermove', (e) => {
+        if (!dragging) return;
+        tx = stx + (e.clientX - sx);
+        ty = sty + (e.clientY - sy);
+        applyTransform();
+      });
+      function endDrag(e) {
+        if (!dragging) return;
+        dragging = false;
+        stage.classList.remove('grabbing');
+        stage.releasePointerCapture?.(e.pointerId);
+      }
+      stage.addEventListener('pointerup', endDrag);
+      stage.addEventListener('pointercancel', endDrag);
+      stage.addEventListener('pointerleave', endDrag);
+
+      let pinchStartDist = 0, pinchStartScale = 1, pinchMid = { x: 0, y: 0 };
+      stage.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 2) {
+          dragging = false;
+          const t1 = e.touches[0], t2 = e.touches[1];
+          const dx = t1.clientX - t2.clientX, dy = t1.clientY - t2.clientY;
+          pinchStartDist = Math.hypot(dx, dy);
+          pinchStartScale = scale;
+          const r = stage.getBoundingClientRect();
+          pinchMid = { x: (t1.clientX + t2.clientX) / 2 - r.left, y: (t1.clientY + t2.clientY) / 2 - r.top };
+        }
+      }, { passive: true });
+      stage.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 2 && pinchStartDist > 0) {
+          e.preventDefault();
+          const t1 = e.touches[0], t2 = e.touches[1];
+          const d = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+          const factor = (d / pinchStartDist) * (pinchStartScale / scale);
+          zoomAt(pinchMid.x, pinchMid.y, factor);
+        }
+      }, { passive: false });
+      stage.addEventListener('touchend', (e) => {
+        if (e.touches.length < 2) pinchStartDist = 0;
+      });
+
+      window.addEventListener('resize', () => {
+        if (!overlay.hidden) fitToStage();
+      });
+    })();
   </script>
 </body>
 </html>
