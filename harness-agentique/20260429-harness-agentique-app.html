@@ -723,6 +723,266 @@
 <p>La <strong>mémoire</strong> distingue trois plans — épisodique (l'historique de cette session), sémantique (faits durables sur le projet, l'utilisateur, l'environnement), procédurale (patterns de résolution déjà éprouvés). Les implémentations vont du fichier <code>CLAUDE.md</code> à la mémoire persistante de Claude Managed Agents (beta avril 2026) en passant par le <code>SessionService</code> de Google ADK et les Durable Objects de Cloudflare Agents.</p>
 <p>L'<strong>observabilité</strong> est traitée en section 6 ; elle mérite son plan horizontal car elle traverse toutes les autres couches.</p>
 <p>La <strong>gouvernance</strong> — politiques d'usage, RBAC, <span class="term" data-tooltip="Enregistrement immuable de chaque exécution d'agent — exigible dans les secteurs régulés (BFSI, healthcare, legal).">audit trail</span>, hooks d'approbation — est la couche qu'on ajoute en dernier et que les équipes de production découvrent indispensable en premier. Les <em><span class="term" data-tooltip="Points d'extension dans une boucle d'agent permettant d'injecter des contrôles (approbation, validation, modification) avant ou après chaque action.">agent hooks</span></em> d'Azure SRE Agent (stop hooks, PostToolUse hooks, global hooks) en sont l'illustration récente. <a class="cite" data-cite="9" href="#source-9">9</a></p>
+<p><strong>Du conceptuel au système.</strong> Ces sept couches sont des fonctions, pas des fichiers. En production, elles s'incarnent dans des composants logiciels précis, organisés en quatre zones — entrée, agent (isolé), outils &amp; contexte, persistance — traversées par un bus d'observabilité commun. Le Schéma 1 bis donne cette vue système.</p>
+<figure class="figure" id="fig-01b"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" data-schema-id="schema-01b">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+    <marker id="arrow-01b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#5A5A5A"/>
+    </marker>
+    <marker id="arrow-01b-loop" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#B7332C"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <text x="60" y="55" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 01 BIS</text>
+  <text x="60" y="92" class="display" font-size="26" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Architecture système d'un harness de production</text>
+  <text x="60" y="118" class="display" font-size="16" font-style="italic" fill="#5A5A5A">Quatre zones — entrée, agent (sandbox), outils &amp; contexte, persistance</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <text x="145" y="168" class="mono" font-size="10" font-weight="600" letter-spacing="0.14em" fill="#5A5A5A" text-anchor="middle">ENTRÉE / UI</text>
+  <text x="435" y="168" class="mono" font-size="10" font-weight="600" letter-spacing="0.14em" fill="#B7332C" text-anchor="middle">COUCHE AGENT</text>
+  <text x="780" y="168" class="mono" font-size="10" font-weight="600" letter-spacing="0.14em" fill="#1F5560" text-anchor="middle">OUTILS &amp; CONTEXTE</text>
+  <text x="1045" y="168" class="mono" font-size="10" font-weight="600" letter-spacing="0.14em" fill="#B58A2C" text-anchor="middle">PERSISTANCE</text>
+
+  <rect x="60" y="183" width="170" height="442" rx="4" fill="#FFFFFF" fill-opacity="0.5" stroke="#1A1A1A" stroke-width="0.6"/>
+  <rect x="260" y="183" width="350" height="442" rx="4" fill="#B7332C" fill-opacity="0.03" stroke="#B7332C" stroke-width="1" stroke-dasharray="4 3"/>
+  <rect x="640" y="183" width="280" height="442" rx="4" fill="#1F5560" fill-opacity="0.04" stroke="#1F5560" stroke-width="0.8"/>
+  <rect x="950" y="183" width="190" height="442" rx="4" fill="#B58A2C" fill-opacity="0.04" stroke="#B58A2C" stroke-width="0.8"/>
+
+  <line x1="245" y1="185" x2="245" y2="623" stroke="#B7332C" stroke-width="0.6" stroke-dasharray="2 4"/>
+  <text x="245" y="404" class="mono" font-size="8.5" letter-spacing="0.22em" fill="#B7332C" text-anchor="middle" transform="rotate(-90, 245, 404)">ISOLATION SANDBOX</text>
+
+  <g class="interactive" data-card="cli-entry" tabindex="0" role="button" aria-label="Point d'entrée CLI">
+    <rect x="78" y="205" width="134" height="74" rx="3" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1"/>
+    <text x="145" y="228" class="display" font-size="13" font-weight="600" fill="#1A1A1A" text-anchor="middle">CLI</text>
+    <text x="145" y="245" class="body" font-size="9.5" font-style="italic" fill="#5A5A5A" text-anchor="middle">argument parser</text>
+    <text x="145" y="259" class="body" font-size="9.5" font-style="italic" fill="#5A5A5A" text-anchor="middle">slash commands</text>
+    <text x="145" y="273" class="mono" font-size="8" fill="#B8B5AE" text-anchor="middle">claude · codex · gemini</text>
+  </g>
+
+  <g class="interactive" data-card="ui-surface" tabindex="0" role="button" aria-label="Interface TUI ou IDE">
+    <rect x="78" y="295" width="134" height="74" rx="3" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1"/>
+    <text x="145" y="318" class="display" font-size="13" font-weight="600" fill="#1A1A1A" text-anchor="middle">TUI / IDE</text>
+    <text x="145" y="335" class="body" font-size="9.5" font-style="italic" fill="#5A5A5A" text-anchor="middle">terminal app · widgets</text>
+    <text x="145" y="349" class="body" font-size="9.5" font-style="italic" fill="#5A5A5A" text-anchor="middle">VS Code · JetBrains</text>
+    <text x="145" y="363" class="mono" font-size="8" fill="#B8B5AE" text-anchor="middle">approval flow</text>
+  </g>
+
+  <g class="interactive" data-card="web-api" tabindex="0" role="button" aria-label="Surface web ou API">
+    <rect x="78" y="385" width="134" height="74" rx="3" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1"/>
+    <text x="145" y="408" class="display" font-size="13" font-weight="600" fill="#1A1A1A" text-anchor="middle">Web / API</text>
+    <text x="145" y="425" class="body" font-size="9.5" font-style="italic" fill="#5A5A5A" text-anchor="middle">REST · WS · SDK</text>
+    <text x="145" y="439" class="body" font-size="9.5" font-style="italic" fill="#5A5A5A" text-anchor="middle">batch · webhook</text>
+    <text x="145" y="453" class="mono" font-size="8" fill="#B8B5AE" text-anchor="middle">applicatif tiers</text>
+  </g>
+
+  <g class="interactive" data-card="approval-layer" tabindex="0" role="button" aria-label="Couche d'approbation humaine">
+    <rect x="78" y="478" width="134" height="62" rx="3" fill="#FAF8F3" stroke="#1A1A1A" stroke-width="0.75" stroke-dasharray="3 2"/>
+    <text x="145" y="500" class="display" font-size="11" font-weight="600" fill="#1A1A1A" text-anchor="middle">Approval gate</text>
+    <text x="145" y="515" class="body" font-size="9" font-style="italic" fill="#5A5A5A" text-anchor="middle">human-in-the-loop</text>
+    <text x="145" y="529" class="mono" font-size="8" fill="#B8B5AE" text-anchor="middle">policy · RBAC</text>
+  </g>
+
+  <text x="145" y="568" class="body" font-size="9" font-style="italic" fill="#B8B5AE" text-anchor="middle">surfaces banalisées</text>
+  <text x="145" y="582" class="body" font-size="9" font-style="italic" fill="#B8B5AE" text-anchor="middle">— différenciation faible</text>
+
+  <g class="interactive" data-card="model-routing" tabindex="0" role="button" aria-label="Routing modèle et cache provider">
+    <rect x="278" y="205" width="318" height="60" rx="3" fill="#FFFFFF" stroke="#B7332C" stroke-width="1.25"/>
+    <text x="437" y="227" class="display" font-size="13" font-weight="600" fill="#B7332C" text-anchor="middle">Routing modèle &amp; cache provider</text>
+    <text x="437" y="244" class="body" font-size="10" font-style="italic" fill="#5A5A5A" text-anchor="middle">Sonnet 4.6 · Opus 4.7 · GPT-5.4 · Gemini 3.1 · vLLM (oss)</text>
+    <text x="437" y="258" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">prompt cache 5 min · 1M ctx · fallback budget</text>
+  </g>
+
+  <g class="interactive" data-card="mode-normal" tabindex="0" role="button" aria-label="Mode normal">
+    <rect x="278" y="278" width="155" height="44" rx="3" fill="#FFFFFF" stroke="#B7332C" stroke-width="0.9"/>
+    <text x="355.5" y="298" class="display" font-size="12" font-weight="600" fill="#1A1A1A" text-anchor="middle">Mode Normal</text>
+    <text x="355.5" y="313" class="body" font-size="9" font-style="italic" fill="#5A5A5A" text-anchor="middle">execute · auto-edit</text>
+  </g>
+  <g class="interactive" data-card="mode-plan" tabindex="0" role="button" aria-label="Mode plan ou auto">
+    <rect x="441" y="278" width="155" height="44" rx="3" fill="#FFFFFF" stroke="#B7332C" stroke-width="0.9"/>
+    <text x="518.5" y="298" class="display" font-size="12" font-weight="600" fill="#1A1A1A" text-anchor="middle">Plan / Auto</text>
+    <text x="518.5" y="313" class="body" font-size="9" font-style="italic" fill="#5A5A5A" text-anchor="middle">propose → approve</text>
+  </g>
+
+  <text x="378" y="358" class="mono" font-size="9" font-weight="600" letter-spacing="0.1em" fill="#B7332C" text-anchor="middle">BOUCLE TAOR ÉTENDUE</text>
+
+  <g class="interactive" data-card="phase-0" tabindex="0" role="button" aria-label="Phase 0 — auto-compaction">
+    <rect x="288" y="368" width="180" height="42" rx="3" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="0.8"/>
+    <text x="378" y="386" class="display" font-size="11" font-weight="600" fill="#1A1A1A" text-anchor="middle">Phase 0 · Compaction</text>
+    <text x="378" y="400" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">~92 % threshold → résumé</text>
+  </g>
+  <g class="interactive" data-card="phase-1" tabindex="0" role="button" aria-label="Phase 1 — réflexion">
+    <rect x="288" y="418" width="180" height="42" rx="3" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="0.8"/>
+    <text x="378" y="436" class="display" font-size="11" font-weight="600" fill="#1A1A1A" text-anchor="middle">Phase 1 · Think</text>
+    <text x="378" y="450" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">off → deep → self-critique</text>
+  </g>
+  <g class="interactive" data-card="phase-2" tabindex="0" role="button" aria-label="Phase 2 — critique">
+    <rect x="288" y="468" width="180" height="42" rx="3" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="0.8"/>
+    <text x="378" y="486" class="display" font-size="11" font-weight="600" fill="#1A1A1A" text-anchor="middle">Phase 2 · Critique</text>
+    <text x="378" y="500" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">evaluator (LLM-as-judge)</text>
+  </g>
+  <g class="interactive" data-card="phase-3" tabindex="0" role="button" aria-label="Phase 3 — action">
+    <rect x="288" y="518" width="180" height="42" rx="3" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="0.8"/>
+    <text x="378" y="536" class="display" font-size="11" font-weight="600" fill="#1A1A1A" text-anchor="middle">Phase 3 · Act</text>
+    <text x="378" y="550" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">reason → act → observe</text>
+  </g>
+
+  <path d="M 468 539 C 488 539 488 389 468 389" stroke="#B7332C" stroke-width="1.1" fill="none" marker-end="url(#arrow-01b-loop)"/>
+  <text x="497" y="468" class="body" font-size="8" font-style="italic" fill="#B7332C" text-anchor="middle" transform="rotate(90, 497, 468)">while tool_use</text>
+
+  <rect x="278" y="335" width="216" height="278" rx="3" fill="none" stroke="#B7332C" stroke-width="1" stroke-dasharray="3 2"/>
+
+  <g class="interactive" data-card="subagents" tabindex="0" role="button" aria-label="Sous-agents et pattern GAN">
+    <rect x="508" y="335" width="88" height="278" rx="3" fill="#B7332C" fill-opacity="0.07" stroke="#B7332C" stroke-width="1"/>
+    <text x="552" y="358" class="mono" font-size="9" font-weight="600" letter-spacing="0.1em" fill="#B7332C" text-anchor="middle">SUB-AGENTS</text>
+    <line x1="518" y1="370" x2="586" y2="370" stroke="#B7332C" stroke-width="0.5"/>
+    <text x="552" y="392" class="display" font-size="10.5" font-weight="600" fill="#1A1A1A" text-anchor="middle">Planner</text>
+    <text x="552" y="406" class="body" font-size="8.5" font-style="italic" fill="#5A5A5A" text-anchor="middle">spec produit</text>
+    <text x="552" y="436" class="display" font-size="10.5" font-weight="600" fill="#1A1A1A" text-anchor="middle">Generator</text>
+    <text x="552" y="450" class="body" font-size="8.5" font-style="italic" fill="#5A5A5A" text-anchor="middle">implémente</text>
+    <text x="552" y="480" class="display" font-size="10.5" font-weight="600" fill="#1A1A1A" text-anchor="middle">Evaluator</text>
+    <text x="552" y="494" class="body" font-size="8.5" font-style="italic" fill="#5A5A5A" text-anchor="middle">teste · note</text>
+    <text x="552" y="524" class="display" font-size="10.5" font-weight="600" fill="#1A1A1A" text-anchor="middle">Explorer</text>
+    <text x="552" y="538" class="body" font-size="8.5" font-style="italic" fill="#5A5A5A" text-anchor="middle">code-base</text>
+    <line x1="518" y1="558" x2="586" y2="558" stroke="#B7332C" stroke-width="0.4" stroke-dasharray="2 2"/>
+    <text x="552" y="576" class="body" font-size="8" font-style="italic" fill="#B7332C" text-anchor="middle">contexte</text>
+    <text x="552" y="588" class="body" font-size="8" font-style="italic" fill="#B7332C" text-anchor="middle">propre · isolé</text>
+    <text x="552" y="604" class="mono" font-size="7.5" fill="#B8B5AE" text-anchor="middle">→ pattern GAN</text>
+  </g>
+
+  <text x="780" y="208" class="display" font-size="13" font-weight="600" fill="#1F5560" text-anchor="middle">Tool Registry</text>
+  <line x1="660" y1="216" x2="900" y2="216" stroke="#1F5560" stroke-width="0.5"/>
+
+  <g class="interactive" data-card="tool-fileops" tabindex="0" role="button" aria-label="Opérations fichier">
+    <rect x="660" y="225" width="115" height="56" rx="3" fill="#FFFFFF" stroke="#1F5560" stroke-width="0.85"/>
+    <text x="717.5" y="246" class="display" font-size="11" font-weight="600" fill="#1A1A1A" text-anchor="middle">File Ops</text>
+    <text x="717.5" y="262" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">Read · Write · Edit</text>
+    <text x="717.5" y="275" class="mono" font-size="8" fill="#B8B5AE" text-anchor="middle">Glob · Grep</text>
+  </g>
+  <g class="interactive" data-card="tool-process" tabindex="0" role="button" aria-label="Process et Bash">
+    <rect x="785" y="225" width="115" height="56" rx="3" fill="#FFFFFF" stroke="#1F5560" stroke-width="0.85"/>
+    <text x="842.5" y="246" class="display" font-size="11" font-weight="600" fill="#1A1A1A" text-anchor="middle">Process</text>
+    <text x="842.5" y="262" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">Bash · spawn</text>
+    <text x="842.5" y="275" class="mono" font-size="8" fill="#B8B5AE" text-anchor="middle">sandbox</text>
+  </g>
+  <g class="interactive" data-card="tool-web" tabindex="0" role="button" aria-label="Outils web">
+    <rect x="660" y="287" width="115" height="56" rx="3" fill="#FFFFFF" stroke="#1F5560" stroke-width="0.85"/>
+    <text x="717.5" y="308" class="display" font-size="11" font-weight="600" fill="#1A1A1A" text-anchor="middle">Web</text>
+    <text x="717.5" y="324" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">Fetch · Search</text>
+    <text x="717.5" y="337" class="mono" font-size="8" fill="#B8B5AE" text-anchor="middle">throttle · cache</text>
+  </g>
+  <g class="interactive" data-card="tool-mcp" tabindex="0" role="button" aria-label="MCP servers">
+    <rect x="785" y="287" width="115" height="56" rx="3" fill="#FFFFFF" stroke="#1F5560" stroke-width="0.85"/>
+    <text x="842.5" y="308" class="display" font-size="11" font-weight="600" fill="#1A1A1A" text-anchor="middle">MCP</text>
+    <text x="842.5" y="324" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">dynamic tools</text>
+    <text x="842.5" y="337" class="mono" font-size="8" fill="#B8B5AE" text-anchor="middle">stdio · http · sse</text>
+  </g>
+
+  <g class="interactive" data-card="skills" tabindex="0" role="button" aria-label="Skills system">
+    <rect x="660" y="356" width="240" height="56" rx="3" fill="#FFFFFF" stroke="#1F5560" stroke-width="1.1"/>
+    <text x="780" y="377" class="display" font-size="12" font-weight="600" fill="#1F5560" text-anchor="middle">Skills System</text>
+    <text x="780" y="392" class="body" font-size="9.5" font-style="italic" fill="#5A5A5A" text-anchor="middle">discovery (builtin · projet · user) · lazy load</text>
+    <text x="780" y="406" class="mono" font-size="8.5" fill="#B8B5AE" text-anchor="middle">.claude/skills · ~/.claude/skills</text>
+  </g>
+
+  <text x="780" y="436" class="display" font-size="13" font-weight="600" fill="#1F5560" text-anchor="middle">Context Engineering</text>
+  <line x1="660" y1="444" x2="900" y2="444" stroke="#1F5560" stroke-width="0.5"/>
+
+  <g class="interactive" data-card="system-reminders" tabindex="0" role="button" aria-label="System reminders et hooks">
+    <rect x="660" y="453" width="240" height="48" rx="3" fill="#FFFFFF" stroke="#1F5560" stroke-width="0.85"/>
+    <text x="780" y="471" class="display" font-size="11" font-weight="600" fill="#1A1A1A" text-anchor="middle">System reminders &amp; hooks</text>
+    <text x="780" y="485" class="body" font-size="9" font-style="italic" fill="#5A5A5A" text-anchor="middle">error nudges · injection points</text>
+    <text x="780" y="496" class="mono" font-size="8" fill="#B8B5AE" text-anchor="middle">Stop · PostToolUse · UserPromptSubmit</text>
+  </g>
+
+  <g class="interactive" data-card="prompt-composer" tabindex="0" role="button" aria-label="Prompt composer">
+    <rect x="660" y="507" width="240" height="48" rx="3" fill="#FFFFFF" stroke="#1F5560" stroke-width="0.85"/>
+    <text x="780" y="525" class="display" font-size="11" font-weight="600" fill="#1A1A1A" text-anchor="middle">Prompt composer</text>
+    <text x="780" y="539" class="body" font-size="9" font-style="italic" fill="#5A5A5A" text-anchor="middle">section assembly · templates</text>
+    <text x="780" y="550" class="mono" font-size="8" fill="#B8B5AE" text-anchor="middle">CLAUDE.md · GEMINI.md · AGENTS.md</text>
+  </g>
+
+  <g class="interactive" data-card="memory-system" tabindex="0" role="button" aria-label="Système de mémoire">
+    <rect x="660" y="561" width="240" height="48" rx="3" fill="#FFFFFF" stroke="#1F5560" stroke-width="0.85"/>
+    <text x="780" y="579" class="display" font-size="11" font-weight="600" fill="#1A1A1A" text-anchor="middle">Memory system</text>
+    <text x="780" y="593" class="body" font-size="9" font-style="italic" fill="#5A5A5A" text-anchor="middle">épisodique · sémantique · procédurale</text>
+    <text x="780" y="604" class="mono" font-size="8" fill="#B8B5AE" text-anchor="middle">MEMORY.md · topic files</text>
+  </g>
+
+  <g class="interactive" data-card="session-mgr" tabindex="0" role="button" aria-label="Session manager">
+    <rect x="968" y="205" width="154" height="86" rx="3" fill="#FFFFFF" stroke="#B58A2C" stroke-width="1"/>
+    <text x="1045" y="227" class="display" font-size="12" font-weight="600" fill="#B58A2C" text-anchor="middle">Session manager</text>
+    <text x="1045" y="246" class="body" font-size="9.5" font-style="italic" fill="#5A5A5A" text-anchor="middle">sessions.json · index</text>
+    <text x="1045" y="261" class="body" font-size="9.5" font-style="italic" fill="#5A5A5A" text-anchor="middle">auto-save · resume</text>
+    <text x="1045" y="278" class="mono" font-size="8" fill="#B8B5AE" text-anchor="middle">branch · fork session</text>
+  </g>
+
+  <g class="interactive" data-card="config-mgr" tabindex="0" role="button" aria-label="Config manager">
+    <rect x="968" y="305" width="154" height="86" rx="3" fill="#FFFFFF" stroke="#B58A2C" stroke-width="1"/>
+    <text x="1045" y="327" class="display" font-size="12" font-weight="600" fill="#B58A2C" text-anchor="middle">Config manager</text>
+    <text x="1045" y="346" class="body" font-size="9.5" font-style="italic" fill="#5A5A5A" text-anchor="middle">hierarchical loading</text>
+    <text x="1045" y="361" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">projet &gt; user &gt; env</text>
+    <text x="1045" y="378" class="mono" font-size="8" fill="#B8B5AE" text-anchor="middle">settings.json · permissions</text>
+  </g>
+
+  <g class="interactive" data-card="provider-cache" tabindex="0" role="button" aria-label="Provider cache local">
+    <rect x="968" y="405" width="154" height="86" rx="3" fill="#FFFFFF" stroke="#B58A2C" stroke-width="1"/>
+    <text x="1045" y="427" class="display" font-size="12" font-weight="600" fill="#B58A2C" text-anchor="middle">Provider cache</text>
+    <text x="1045" y="446" class="body" font-size="9.5" font-style="italic" fill="#5A5A5A" text-anchor="middle">prompt caching local</text>
+    <text x="1045" y="461" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">5 min · 1 h opt-in</text>
+    <text x="1045" y="478" class="mono" font-size="8" fill="#B8B5AE" text-anchor="middle">cache_control breakpoints</text>
+  </g>
+
+  <g class="interactive" data-card="output-cloud" tabindex="0" role="button" aria-label="Outputs et déployables">
+    <rect x="968" y="505" width="154" height="100" rx="3" fill="#FFFFFF" stroke="#B58A2C" stroke-width="1"/>
+    <text x="1045" y="527" class="display" font-size="12" font-weight="600" fill="#B58A2C" text-anchor="middle">Outputs / livrables</text>
+    <text x="1045" y="546" class="body" font-size="9.5" font-style="italic" fill="#5A5A5A" text-anchor="middle">artefacts file-based</text>
+    <text x="1045" y="561" class="body" font-size="9.5" font-style="italic" fill="#5A5A5A" text-anchor="middle">git · cloud sync</text>
+    <text x="1045" y="578" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">PR · commit · doc</text>
+    <text x="1045" y="594" class="mono" font-size="8" fill="#B8B5AE" text-anchor="middle">→ environnement métier</text>
+  </g>
+
+  <line x1="216" y1="332" x2="276" y2="332" stroke="#5A5A5A" stroke-width="1" marker-end="url(#arrow-01b)"/>
+  <text x="246" y="324" class="body" font-size="8" font-style="italic" fill="#5A5A5A" text-anchor="middle">prompt</text>
+
+  <line x1="598" y1="280" x2="658" y2="280" stroke="#5A5A5A" stroke-width="1" marker-end="url(#arrow-01b)"/>
+  <text x="628" y="272" class="body" font-size="8" font-style="italic" fill="#5A5A5A" text-anchor="middle">tool_use</text>
+
+  <line x1="658" y1="540" x2="598" y2="540" stroke="#5A5A5A" stroke-width="0.9" stroke-dasharray="3 2" marker-end="url(#arrow-01b)"/>
+  <text x="628" y="532" class="body" font-size="8" font-style="italic" fill="#5A5A5A" text-anchor="middle">observation</text>
+
+  <line x1="922" y1="332" x2="966" y2="332" stroke="#5A5A5A" stroke-width="1" marker-end="url(#arrow-01b)"/>
+
+  <path d="M 596 235 Q 800 195 968 235" stroke="#5A5A5A" stroke-width="0.8" stroke-dasharray="2 3" fill="none" marker-end="url(#arrow-01b)"/>
+  <text x="780" y="200" class="body" font-size="8" font-style="italic" fill="#B8B5AE" text-anchor="middle">sessions · cache hits</text>
+
+  <g class="interactive" data-card="obs-bus" tabindex="0" role="button" aria-label="Bus d'observabilité transversal">
+    <rect x="60" y="638" width="1080" height="40" rx="3" fill="#FAF8F3" stroke="#B58A2C" stroke-width="1.25" stroke-dasharray="4 3"/>
+    <text x="80" y="662" class="display" font-size="12" font-weight="600" fill="#B58A2C">Bus d'observabilité (transversal)</text>
+    <text x="335" y="662" class="body" font-size="10.5" fill="#5A5A5A">OpenTelemetry GenAI traces</text>
+    <text x="555" y="662" class="body" font-size="10.5" fill="#5A5A5A">LLM-as-Judge</text>
+    <text x="685" y="662" class="body" font-size="10.5" fill="#5A5A5A">token economics</text>
+    <text x="830" y="662" class="body" font-size="10.5" fill="#5A5A5A">drift detection · alerts</text>
+  </g>
+
+  <line x1="145" y1="625" x2="145" y2="638" stroke="#B58A2C" stroke-width="0.6" stroke-dasharray="1 2"/>
+  <line x1="437" y1="625" x2="437" y2="638" stroke="#B58A2C" stroke-width="0.6" stroke-dasharray="1 2"/>
+  <line x1="780" y1="625" x2="780" y2="638" stroke="#B58A2C" stroke-width="0.6" stroke-dasharray="1 2"/>
+  <line x1="1045" y1="625" x2="1045" y2="638" stroke="#B58A2C" stroke-width="0.6" stroke-dasharray="1 2"/>
+
+  <line x1="60" y1="710" x2="1140" y2="710" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="734" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Source : architecture composite — Anthropic Claude Agent SDK · OpenAI Agents SDK · Google ADK · OpenDev (figure 2)</text>
+  <text x="60" y="751" class="body" font-size="10" font-style="italic" fill="#B8B5AE">Méthodologie : matérialisation des sept couches du Schéma 1 sous forme de composants logiciels d'un harness CLI de production observé entre Q1 et Q2 2026</text>
+</svg>
+<figcaption class="figure-caption">Schéma 1 bis — L'architecture système d'un harness CLI de production, composite des SDK contemporains (Claude Agent SDK, OpenAI Agents SDK, Google ADK) et de l'architecture OpenDev. La couche agent vit dans une <span class="term" data-tooltip="Environnement isolé où un agent peut exécuter du code ou des outils sans accès direct à la production.">sandbox</span> isolée, séparée des surfaces d'entrée par une frontière explicite. La boucle <span class="term" data-tooltip="Think-Act-Observe-Repeat : la boucle de contrôle canonique d'un agent — le modèle pense, choisit un outil, observe le résultat, recommence.">TAOR</span> à quatre phases (compaction, think, critique, act) cohabite avec une colonne sub-agents qui matérialise le pattern GAN détaillé en §2. Outils et contexte sont externalisés ; la persistance est déléguée à des composants dédiés ; l'observabilité traverse les quatre zones.</figcaption></figure>
+<p>Trois lectures se dégagent de cette vue système. <strong>Le différenciant n'est pas dans les surfaces d'entrée</strong>, qui se sont banalisées : CLI, IDE, web — tout vendeur sérieux a les trois. Il n'est pas non plus dans la persistance, devenue une commodité (sessions, config, cache, outputs). Il se concentre dans la zone agent — routing modèle, modes, boucle TAOR à quatre phases, sub-agents — et dans la couche outils &amp; contexte (Tool Registry, Skills System, Context Engineering). C'est là que se logent les heures d'ingénierie qui transforment un wrapper en harness. <strong>L'isolation entre entrée et agent est une frontière de sécurité</strong>, pas un détail d'architecture : tout ce qui entre y est traité comme non-fiable, tout ce qui sort en est arbitré par un approval gate. <strong>Le bus d'observabilité doit être présent dès la première version</strong> — l'ajouter après coup oblige à instrumenter à la main des centaines de points d'appel.</p>
 <hr style="border:none;border-top:1px solid var(--rule);margin:3rem 0;">
 <h2 id="2-larchitecture-de-reference-le-pattern-gan-inspire">2. L'architecture de référence : le pattern GAN-inspiré</h2>
 <p>Pendant deux ans, l'architecture canonique d'un agent fut la boucle <span class="term" data-tooltip="Reasoning + Acting : pattern dans lequel un LLM alterne raisonnement explicite et appels d'outils dans une même boucle.">ReAct</span> mono-agent : un seul modèle qui pense, agit, observe, en continu. Ce pattern fonctionne sur des tâches courtes et bien structurées. Il s'effondre sur les tâches longues. Anthropic a documenté l'effondrement et sa solution dans un post d'ingénierie de mars 2026 qui restera référence. <a class="cite" data-cite="3" href="#source-3">3</a></p>
@@ -1807,6 +2067,133 @@
       "eyebrow": "Schéma 1 · Plan transversal",
       "title": "Gouvernance (plan horizontal)",
       "body": "<p>Politiques d'usage, RBAC, audit trail, hooks d'approbation. Couche qu'on ajoute en dernier et que les équipes de production découvrent indispensable en premier.</p><p>Les <strong>agent hooks</strong> d'Azure SRE Agent — stop hooks, PostToolUse hooks, global hooks — illustrent les points d'extension d'une boucle d'agent permettant d'injecter des contrôles avant/après chaque action.</p>"
+    }
+  },
+  "schema-01b": {
+    "cli-entry": {
+      "eyebrow": "Schéma 1 bis · Zone Entrée",
+      "title": "CLI",
+      "body": "<p>Le point d'entrée le plus déployé en 2026. Un <em>argument parser</em> ingère la commande, route vers le bon mode, gère les <strong>slash commands</strong> et les sessions. Surface où vit toute la logique d'amorçage : config hierarchy, permissions, hooks de démarrage.</p><p>Exemples canoniques : <code>claude</code> (Anthropic), <code>codex</code> (OpenAI), <code>gemini</code> (Google), <code>opendev</code> (open source). Tous convergent vers la même ergonomie — REPL avec slash commands, autocomplétion, replay/resume de sessions.</p>"
+    },
+    "ui-surface": {
+      "eyebrow": "Schéma 1 bis · Zone Entrée",
+      "title": "TUI / IDE",
+      "body": "<p>Les surfaces graphiques se sont alignées en 2026 sur deux types : <strong>TUI</strong> (terminal apps avec widgets — frameworks Textual, Bubble Tea) et <strong>plugins IDE</strong> (VS Code, JetBrains, Zed). Toutes partagent un <em>approval flow</em> bloquant : l'agent suspend son exécution tant que l'humain n'a pas validé une action sensible.</p><p>Différenciation faible : la surface change, le harness reste — c'est pour ça qu'un même SDK peut alimenter CLI, IDE et web sans réécriture.</p>"
+    },
+    "web-api": {
+      "eyebrow": "Schéma 1 bis · Zone Entrée",
+      "title": "Web / API",
+      "body": "<p>Surface destinée aux applications tierces qui consomment l'agent comme service : <strong>REST</strong> pour les requêtes ponctuelles, <strong>WebSocket</strong> pour le streaming, <strong>SDK applicatif</strong> embarqué dans un produit, batch / webhook pour l'orchestration asynchrone.</p><p>C'est par cette surface qu'arrivent les workflows long-running, les jobs nocturnes, les agents managés (cf. couche 3 du Schéma 3). FastAPI, Express et Hono sont les serveurs les plus fréquents en 2026.</p>"
+    },
+    "approval-layer": {
+      "eyebrow": "Schéma 1 bis · Zone Entrée",
+      "title": "Approval gate",
+      "body": "<p>Le filet de sécurité humain entre la zone d'entrée et la couche agent. Chaque action sensible (commande shell, écriture fichier, appel API externe) est interceptée, présentée à l'utilisateur, et exécutée seulement après validation explicite — ou bloquée par <strong>policy</strong>.</p><p>Trois implémentations courantes : <em>permission tier</em> (autorisations granulaires par outil), <em>RBAC</em> (rôles d'utilisateur), <em>plan mode</em> (l'agent propose, l'humain dispose). Sans cette couche, pas de production réglementée.</p>"
+    },
+    "model-routing": {
+      "eyebrow": "Schéma 1 bis · Zone Agent",
+      "title": "Routing modèle &amp; cache provider",
+      "body": "<p>La couche modèle est rarement homogène en 2026. Un harness mature route entre <strong>Sonnet 4.6 pour les workers</strong>, <strong>Opus 4.7 pour le lead</strong>, fallback sur GPT-5.4 ou Gemini 3.1 Pro, et vLLM open source pour les charges off-grid.</p><p>Le <strong>prompt cache provider</strong> (5 min TTL standard, 1 h en opt-in) est le levier économique principal : un harness mal câblé peut payer 10× le tarif sans s'en rendre compte. Le <em>fallback budget</em> coupe automatiquement le routing premium quand un seuil de coût est franchi.</p>"
+    },
+    "mode-normal": {
+      "eyebrow": "Schéma 1 bis · Zone Agent",
+      "title": "Mode Normal",
+      "body": "<p>Le mode par défaut. L'agent <em>execute</em> directement les outils — auto-edit, auto-bash (sous permissions), auto-search. Optimisé pour la vitesse et l'itération courte.</p><p>Adapté aux tâches bien définies, à faible risque, où la confiance dans le modèle est élevée. C'est le mode qui amortit la <em>complexité</em> du harness : moins l'utilisateur intervient, plus le harness doit auto-arbitrer.</p>"
+    },
+    "mode-plan": {
+      "eyebrow": "Schéma 1 bis · Zone Agent",
+      "title": "Mode Plan / Auto",
+      "body": "<p>L'agent <em>propose</em> une séquence d'actions complète avant exécution. L'humain valide, modifie, ou rejette. Mode adapté aux changements à fort blast-radius (refactor multi-fichier, migration, déploiement), aux workflows régulés, ou simplement à la prise de connaissance d'un projet.</p><p>Variante <em>Auto</em> en 2026 : le mode plan bascule automatiquement sur Normal pour les actions à faible risque, mais reste bloquant pour les actions destructives (delete, force-push, rm). Ce gradient évite que la friction tue la productivité.</p>"
+    },
+    "phase-0": {
+      "eyebrow": "Schéma 1 bis · Boucle TAOR",
+      "title": "Phase 0 — Compaction",
+      "body": "<p>Avant chaque cycle, le harness vérifie le remplissage de la fenêtre de contexte. Au-delà d'un seuil empirique (<strong>~92 %</strong>, observé chez Anthropic et Google), il déclenche une <em>compaction</em> : résumé incrémental des messages anciens, conservation des artefacts critiques (specs, dernières erreurs), suppression du bruit.</p><p>Sans cette phase, l'agent atteint la limite, panique, et livre des features non testées — la fameuse <em>anxiété de contexte</em> documentée sur Sonnet 4.5.</p>"
+    },
+    "phase-1": {
+      "eyebrow": "Schéma 1 bis · Boucle TAOR",
+      "title": "Phase 1 — Think",
+      "body": "<p>Phase de raisonnement explicite. Trois niveaux selon le type de tâche : <strong>off</strong> (pas de pensée explicite, action directe), <strong>deep</strong> (chain-of-thought avant action), <strong>self-critique</strong> (le modèle vérifie sa propre solution avant de l'exécuter).</p><p>L'arbitrage est une économie : <em>thinking</em> coûte des tokens, mais réduit le nombre d'aller-retours. Un bon harness adapte le niveau au contexte (deep pour le code, off pour les questions de surface).</p>"
+    },
+    "phase-2": {
+      "eyebrow": "Schéma 1 bis · Boucle TAOR",
+      "title": "Phase 2 — Critique",
+      "body": "<p>Phase d'évaluation par un <strong>LLM-as-judge</strong> séparé. Consume la sortie du generator (Phase 1) et émet une critique structurée — schéma typé, axes pondérés, blockers identifiés.</p><p>Sans cette phase, on retombe dans la <em>complaisance auto-évaluative</em> : un agent qui juge son propre travail le surévalue systématiquement. La phase 2 matérialise le pattern GAN détaillé en §2 — c'est elle qui distingue un harness mono-agent d'un harness multi-agent.</p>"
+    },
+    "phase-3": {
+      "eyebrow": "Schéma 1 bis · Boucle TAOR",
+      "title": "Phase 3 — Act",
+      "body": "<p>L'exécution proprement dite. Boucle interne <em>reason → act → observe</em> : le modèle motive l'appel d'outil, le harness l'exécute (avec interception sandbox), le résultat est observé et conditionne le tour suivant.</p><p>C'est la phase la plus risquée — c'est ici que les actions ont des effets de bord (fichiers écrits, commits, requêtes réseau). La couche outils/sandbox arbitre chaque appel ; l'approval gate intercepte les actions sensibles.</p>"
+    },
+    "subagents": {
+      "eyebrow": "Schéma 1 bis · Zone Agent",
+      "title": "Sub-agents (pattern GAN)",
+      "body": "<p>Les sous-agents tournent dans des <strong>contextes isolés</strong> — chacun a sa propre fenêtre, ses propres outils, et communique avec le lead par fichiers (file-based handoff).</p><p>Les rôles standards en 2026 : <strong>Planner</strong> (étend un brief en spec produit), <strong>Generator</strong> (implémente par sprints), <strong>Evaluator</strong> (teste, note, critique), <strong>Explorer</strong> (analyse code-base sans polluer le contexte du lead). Cette séparation est le cœur du pattern GAN détaillé au Schéma 2 — sans elle, la complaisance auto-évaluative empoisonne la sortie.</p>"
+    },
+    "tool-fileops": {
+      "eyebrow": "Schéma 1 bis · Tool Registry",
+      "title": "File Ops",
+      "body": "<p>Les opérations fichier sont les outils les plus appelés d'un harness de coding. Six primitives canoniques : <code>Read</code>, <code>Write</code>, <code>Edit</code> (et son cousin <code>MultiEdit</code>), <code>Glob</code> (pattern matching), <code>Grep</code> (recherche contenu, basé sur ripgrep).</p><p>Discipline 2026 : ces outils <strong>ne réinjectent jamais</strong> directement leur sortie dans le contexte. Tout passe par lecture sélective avec offset/limit, et les gros fichiers sont compactés ou diff-encodés.</p>"
+    },
+    "tool-process": {
+      "eyebrow": "Schéma 1 bis · Tool Registry",
+      "title": "Process / Bash",
+      "body": "<p>L'outil universel. Au lieu d'exposer une API par cas (un outil <em>git_status</em>, un outil <em>npm_install</em>, un outil <em>docker_build</em>…), un harness moderne expose un seul <strong>Bash / Process</strong> sandboxé. Le modèle compose les commandes lui-même.</p><p>Pattern <em>code execution comme outil universel</em> documenté par Anthropic et confirmé chez Microsoft Azure SRE Agent : économie d'outils, mais exigence forte sur le sandbox (pas de privilèges, pas d'accès réseau non whitelisté, kill timer).</p>"
+    },
+    "tool-web": {
+      "eyebrow": "Schéma 1 bis · Tool Registry",
+      "title": "Web (Fetch &amp; Search)",
+      "body": "<p>Deux primitives : <code>WebFetch</code> (charge une URL, retourne le contenu nettoyé) et <code>WebSearch</code> (recherche, retourne titres + extraits). Les deux sont <strong>throttlés</strong> et <strong>cachés</strong> agressivement — sinon un agent peut transformer un harness en aspirateur de bande passante.</p><p>En 2026, les agents qui font du <em>research</em> long passent par cette couche pour 30 à 60 % de leurs appels. La qualité du cache et du throttling devient un point de différenciation perceptible.</p>"
+    },
+    "tool-mcp": {
+      "eyebrow": "Schéma 1 bis · Tool Registry",
+      "title": "MCP servers",
+      "body": "<p><strong>Model Context Protocol</strong> — outils dynamiques découvrables au runtime. Trois transports : <code>stdio</code> (process local), <code>http</code> (serveur distant), <code>sse</code> (server-sent events pour streaming).</p><p>L'enjeu MCP en 2026 : standardiser les outils tiers (Slack, Linear, Notion, GitHub, Playwright, Supabase…) sans coupler le harness au catalogue. Géré par la Linux Foundation Agentic AI Foundation depuis décembre 2025, 97 M+ téléchargements SDK mensuels.</p>"
+    },
+    "skills": {
+      "eyebrow": "Schéma 1 bis · Outils &amp; Contexte",
+      "title": "Skills System",
+      "body": "<p>Les <em>skills</em> sont des bundles de procédures — un fichier de description, des références, parfois des scripts — chargés <strong>à la demande</strong> (lazy load) selon le contexte de la tâche. Trois portées : <em>builtin</em> (livrés avec le harness), <em>projet</em> (<code>.claude/skills</code>), <em>user</em> (<code>~/.claude/skills</code>).</p><p>Innovation 2026 : la <em>discovery</em> automatique. Le harness scanne les répertoires, indexe les frontmatters, et n'injecte le contenu d'un skill dans le contexte que quand le pattern de la tâche y correspond. Économie d'attention massive.</p>"
+    },
+    "system-reminders": {
+      "eyebrow": "Schéma 1 bis · Context Engineering",
+      "title": "System reminders &amp; hooks",
+      "body": "<p>Les <em>system reminders</em> sont des messages injectés au runtime aux moments clés : <em>error nudges</em> (le harness rappelle au modèle qu'un test a échoué), <em>injection points</em> (rappel d'une convention projet), <em>hooks</em> (extensions exécutées avant/après chaque outil).</p><p>Hooks canoniques : <code>UserPromptSubmit</code> (intercepter / enrichir le prompt), <code>PostToolUse</code> (valider une sortie d'outil), <code>Stop</code> (post-traitement à la fin du tour). Sans eux, pas de gouvernance opérationnelle — c'est par là que passent les contrôles compliance, les linters, les guards.</p>"
+    },
+    "prompt-composer": {
+      "eyebrow": "Schéma 1 bis · Context Engineering",
+      "title": "Prompt composer",
+      "body": "<p>Le composant qui assemble le prompt système et les sections variables au runtime : sections projet, mémoire, skills actifs, hooks, instructions utilisateur. Ordre, priorité, taille — tout y est géré.</p><p>Les fichiers <code>CLAUDE.md</code> (Anthropic), <code>GEMINI.md</code> (Google), <code>AGENTS.md</code> (norme cross-vendor en discussion 2026) sont les sources d'instructions persistantes que le composer charge en cascade : projet → user → environnement.</p>"
+    },
+    "memory-system": {
+      "eyebrow": "Schéma 1 bis · Context Engineering",
+      "title": "Memory system",
+      "body": "<p>Trois plans distincts (cf. couche 5 du Schéma 1) : <strong>épisodique</strong> (historique de session), <strong>sémantique</strong> (faits durables — utilisateur, projet, environnement), <strong>procédurale</strong> (patterns appris, recettes).</p><p>Implémentations : <code>MEMORY.md</code> + <em>topic files</em> en local, mémoire persistante de Claude Managed Agents (beta avril 2026), <code>SessionService</code> de Google ADK, Durable Objects Cloudflare. La distinction qui compte : ce qui survit à une session, et ce qui meurt avec elle.</p>"
+    },
+    "session-mgr": {
+      "eyebrow": "Schéma 1 bis · Persistance",
+      "title": "Session manager",
+      "body": "<p>Persiste l'état de chaque session : transcript complet, état des outils, sous-agents en cours. Index dans <code>sessions.json</code>, auto-save fréquent, capacité de <em>resume</em> après crash.</p><p>Innovation 2026 : <strong>session branching / fork</strong>. On peut diverger une session à un point précis pour tester deux approches en parallèle, puis fusionner ou jeter. Pattern emprunté à git, étendu aux conversations agentiques.</p>"
+    },
+    "config-mgr": {
+      "eyebrow": "Schéma 1 bis · Persistance",
+      "title": "Config manager",
+      "body": "<p>Charge la configuration en cascade : <strong>projet &gt; user &gt; environnement</strong>. Les valeurs locales overrident les valeurs globales, qui overrident les défauts du harness.</p><p>Fichiers canoniques 2026 : <code>.claude/settings.json</code> (projet), <code>~/.claude/settings.json</code> (user), variables <code>$ANTHROPIC_*</code> ou <code>$OPENAI_*</code> (env). C'est aussi par là que passent les <strong>permissions</strong> — quels outils sont autorisés, sous quelles conditions.</p>"
+    },
+    "provider-cache": {
+      "eyebrow": "Schéma 1 bis · Persistance",
+      "title": "Provider cache",
+      "body": "<p>Le <strong>prompt caching</strong> côté provider — pas un cache local des réponses (qui serait dangereux pour la fraîcheur), mais le mécanisme qui permet au modèle de réutiliser les segments de prompt déjà tokenizés.</p><p>TTL standard : <strong>5 min</strong>. Opt-in : <strong>1 h</strong> (Anthropic) avec premium pricing. Le harness place les <em>cache_control breakpoints</em> aux frontières stables (system prompt, mémoire, gros fichiers). Bien câblé, divise la facture par 5 à 10 sur les tâches itératives.</p>"
+    },
+    "output-cloud": {
+      "eyebrow": "Schéma 1 bis · Persistance",
+      "title": "Outputs / livrables",
+      "body": "<p>Le point de sortie vers l'environnement métier. <strong>Artefacts file-based</strong> en priorité (specs, rapports, code) — discipline du Schéma 2 généralisée. Sync optionnel vers cloud, vers git, vers un système de tickets.</p><p>Patterns standards : <em>PR auto-rédigée</em> (titre + body issus du transcript), <em>commit groupé</em> (un commit par phase TAOR), <em>doc generation</em>. C'est par cette couche que l'agent <em>livre</em> — sans elle, les sessions restent dans le sandbox et ne produisent rien d'observable.</p>"
+    },
+    "obs-bus": {
+      "eyebrow": "Schéma 1 bis · Transversal",
+      "title": "Bus d'observabilité",
+      "body": "<p>Le plan transversal qui traverse les quatre zones (cf. Schéma 6 pour le détail). <strong>OpenTelemetry GenAI Semantic Conventions</strong> (ratifié 2025) standardise les traces — <code>gen_ai.system</code>, <code>gen_ai.request.model</code>, <code>gen_ai.usage.prompt_tokens</code>.</p><p>Six piliers en aval : traces, qualité (LLM-as-Judge), token economics, drift detection, guardrails, audit trail. À implémenter <strong>dès la première version</strong> — l'ajouter après coup oblige à instrumenter à la main des centaines de points d'appel.</p>"
     }
   },
   "schema-02": {

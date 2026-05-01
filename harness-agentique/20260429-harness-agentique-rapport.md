@@ -46,6 +46,14 @@ L'**observabilité** est traitée en section 6 ; elle mérite son plan horizonta
 
 La **gouvernance** — politiques d'usage, RBAC, audit trail, hooks d'approbation — est la couche qu'on ajoute en dernier et que les équipes de production découvrent indispensable en premier. Les *agent hooks* d'Azure SRE Agent (stop hooks, PostToolUse hooks, global hooks) en sont l'illustration récente. [^9]
 
+**Du conceptuel au système.** Ces sept couches sont des fonctions, pas des fichiers. En production, elles s'incarnent dans des composants logiciels précis, organisés en quatre zones — entrée, agent (isolé), outils & contexte, persistance — traversées par un bus d'observabilité commun. Le Schéma 1 bis donne cette vue système.
+
+![Architecture système d'un harness de production — quatre zones (entrée, agent isolé, outils & contexte, persistance) avec bus d'observabilité transversal|1200](images/20260429-01b-architecture-systeme.svg)
+
+*Schéma 1 bis — L'architecture système d'un harness CLI de production, composite des SDK contemporains (Claude Agent SDK, OpenAI Agents SDK, Google ADK) et de l'architecture OpenDev. La couche agent vit dans une sandbox isolée, séparée des surfaces d'entrée par une frontière explicite. La boucle TAOR à quatre phases (compaction, think, critique, act) cohabite avec une colonne sub-agents qui matérialise le pattern GAN détaillé en §2. Outils et contexte sont externalisés ; la persistance est déléguée à des composants dédiés ; l'observabilité traverse les quatre zones.*
+
+Trois lectures se dégagent de cette vue système. **Le différenciant n'est pas dans les surfaces d'entrée**, qui se sont banalisées : CLI, IDE, web — tout vendeur sérieux a les trois. Il n'est pas non plus dans la persistance, devenue une commodité (sessions, config, cache, outputs). Il se concentre dans la zone agent — routing modèle, modes, boucle TAOR à quatre phases, sub-agents — et dans la couche outils & contexte (Tool Registry, Skills System, Context Engineering). C'est là que se logent les heures d'ingénierie qui transforment un wrapper en harness. **L'isolation entre entrée et agent est une frontière de sécurité**, pas un détail d'architecture : tout ce qui entre y est traité comme non-fiable, tout ce qui sort en est arbitré par un approval gate. **Le bus d'observabilité doit être présent dès la première version** — l'ajouter après coup oblige à instrumenter à la main des centaines de points d'appel.
+
 ---
 
 ## 2. L'architecture de référence : le pattern GAN-inspiré
