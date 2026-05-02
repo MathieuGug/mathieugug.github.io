@@ -38,3 +38,10 @@ Site personnel de Mathieu Guglielmino, hébergé sur GitHub Pages. Il publie des
 - Faire les changements → commit → **vérifier le diff du commit avant de pousser**. Le user a explicitement demandé cette étape pour rattraper d'éventuelles erreurs ou contenus qui viendraient d'autres contextes.
 - Ne pas push automatiquement — attendre validation explicite.
 - Préférer `git add <fichier>` ciblé plutôt que `git add .` (le dossier `.claude/` ne doit pas être commité).
+
+## Création de PR
+
+- `git` (commit, branch, push) : via Bash.
+- **Création de la PR : via le MCP GitHub** (`mcp__github__create_pull_request`). Le binaire `gh` n'est pas installé dans cet environnement — ne pas tenter de l'invoquer ni de le contourner.
+- Owner/repo pour le MCP : `mathieugug` / `mathieugug.github.io` (casse minuscule côté API, même si le remote git affiche `MathieuGug`).
+- Ne jamais merger automatiquement. Mathieu merge à la main.
