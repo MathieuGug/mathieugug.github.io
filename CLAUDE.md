@@ -29,10 +29,11 @@ Site personnel de Mathieu Guglielmino, hébergé sur GitHub Pages. Il publie des
 
 Tout artefact (hub + format[s]) **doit** être lisible sur petit écran (320–414 px). Avant de merger, vérifier ces 4 points :
 
-1. **`overflow-x: hidden` sur `html, body`** (ou `overflow-x: clip` sur la `.layout` racine pour les apps avec sidebars). Empêche le scroll horizontal parasite quand un élément dépasse — c'est une protection défensive, pas une excuse pour laisser passer un vrai dépassement.
+1. **`overflow-x: hidden` sur `html, body`** (ou `overflow-x: clip` sur la `.layout` racine, **doublé** d'un `overflow-x: hidden` sur `body` pour les apps avec sidebars — `clip` sur `.layout` ne suffit pas si un élément déborde du body). Protection défensive, pas une excuse pour laisser passer un vrai dépassement.
 2. **Topbar fixe** (`Mathieu Guglielmino` à gauche, `← Retour aux dossiers` à droite) : sous `@media (max-width: 560px)` réduire le padding (`12px 16px`), descendre la taille du nom serif à `14px` et celle du back mono à `9px` avec `letter-spacing: 0.16em`. Sous `@media (max-width: 380px)`, masquer le `<em>Guglielmino</em>` (`.topbar a:first-child em { display: none; }`) — sinon les deux liens se chevauchent sur iPhone SE.
-3. **Schémas SVG** : `width: 100%; height: auto; max-width: 100%` sur le `<svg>`, et toujours fournir le bouton de zoom plein écran (cf. section ci-dessus). Sur mobile, le schéma rendu à 320 px de large devient illisible — le zoom est l'échappatoire.
-4. **Sidebars Sommaire/Sources** : pattern `panel-close` obligatoire (cf. section *Apps interactives*).
+3. **Apps `header.site` + `main#report`** : sous `@media (max-width: 640px)`, ramener `header.site` à `padding: 14px 16px; gap: 10px`, le `h1` du header à `1.05rem` avec `min-width: 0; overflow-wrap: break-word` (sinon le h1 force la largeur du body en flex parent), `main#report` à `padding: 28px 18px 56px`, `h1.report-title` à `1.8rem`, le `.lead` à `1.02rem`, les `h2`/`h3` à `1.25rem`/`1.05rem`. Sans ça, le rapport long format reste calé sur la mise en page desktop et déborde en horizontal sur iPhone.
+4. **Schémas SVG** : `width: 100%; height: auto; max-width: 100%` sur le `<svg>`, et toujours fournir le bouton de zoom plein écran (cf. section ci-dessus). Sur mobile, le schéma rendu à 320 px de large devient illisible — le zoom est l'échappatoire.
+5. **Sidebars Sommaire/Sources** : pattern `panel-close` obligatoire (cf. section *Apps interactives*).
 
 ## Bouton retour sur chaque page
 
