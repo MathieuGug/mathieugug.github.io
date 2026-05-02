@@ -24,6 +24,16 @@ Site personnel de Mathieu Guglielmino, hébergé sur GitHub Pages. Il publie des
 - **Alignement** : centrer la flèche sur le **milieu horizontal** de la boîte cible, pas sur une position arbitraire à l'intérieur. Pour une boîte `x=80, width=320`, viser `x=240`.
 - **Zoom obligatoire** : tout schéma SVG inline doit être agrandissable en plein écran (overlay + pan + zoom molette/pinch + Reset/Échap, bouton `⛶` au survol). Pattern de référence : `observabilite-agents-ia/20260430-observabilite-agents-ia-app.html` (CSS `.zoom-btn` + `#zoom-overlay`, IIFE `setupZoom()`). Pour une nouvelle page, copier le bloc et adapter les variables de couleur + le sélecteur (`.figure`, `.entry figure`, …) à la structure hôte.
 
+## Apps interactives — sidebars Sommaire/Sources
+
+Toute app long format avec sidebars `#toc` et `#sources` (les six études + tout nouvel app) **doit** embarquer le pattern de fermeture mobile :
+
+- En CSS, dans `@media (max-width: 1024px)` : padding top de `64px` sur `#toc.open`/`#sources.open` (pour ne pas masquer le bouton), styles de `.panel-close` (`position: fixed; top:16px; right:16px; z-index:91`). Hors media query : `.panel-close { display: none; }`.
+- En HTML : un `<button class="panel-close" type="button" aria-label="Fermer le sommaire">Fermer ✕</button>` en première position dans `<nav id="toc">` ET dans `<aside id="sources">`.
+- En JS : (1) handler click sur `.panel-close` qui retire la classe `open` du parent ; (2) handler `keydown` global qui ferme tout panneau ouvert sur `Escape` (en s'effaçant si un `#zoom-overlay` ou un `#modal-root` est déjà ouvert, pour ne pas marcher sur leurs propres handlers Escape).
+
+Pattern de référence : `proces-musk-altman/20260427-proces-musk-altman-app.html` (rechercher `panel-close`). **Nouvelle app = vérifier ces 3 points avant de merger**, sinon le panneau couvre tout l'écran sur mobile sans moyen de revenir en arrière.
+
 ## Structure du repo
 
 - `index.html` racine — accueil (hero · Aujourd'hui · expertise · séries · parcours · footer).
