@@ -21,8 +21,27 @@ Site personnel de Mathieu Guglielmino, hébergé sur GitHub Pages. Il publie des
 ## Schémas SVG
 
 - **Flèches → cibles** : laisser **un blanc visible** entre la pointe de la flèche et le bord de la boîte cible (≈ 12–18 px en unités SVG). Ne jamais terminer une flèche pile sur le bord d'un rectangle — avec `marker-end`, l'œil lit ça comme une pénétration dans la boîte.
+- **Origine des flèches issues d'une forme** (cercle, ellipse, hub) : démarrer la ligne **sur le périmètre de la forme**, dans la direction de la cible, pas depuis le centre ni depuis le haut/bas par défaut. Sinon la flèche traverse la forme et se chevauche avec son texte. Pour un cercle `(cx, cy, r)` visant `(tx, ty)` : `start = (cx + r·dx/L, cy + r·dy/L)` avec `(dx, dy) = (tx-cx, ty-cy)` et `L = √(dx²+dy²)`. Ajouter ~4 px de respiration au-delà du périmètre si la forme a un halo ou un stroke épais. Cas de référence corrigé : flèches du schéma « Partly » de `proces-musk-altman/journal.html` — départs `(492, 387)`, `(600, 452)`, `(708, 387)` autour d'un cercle `(600, 330, r=118)`.
 - **Alignement** : centrer la flèche sur le **milieu horizontal** de la boîte cible, pas sur une position arbitraire à l'intérieur. Pour une boîte `x=80, width=320`, viser `x=240`.
 - **Zoom obligatoire** : tout schéma SVG inline doit être agrandissable en plein écran (overlay + pan + zoom molette/pinch + Reset/Échap, bouton `⛶` au survol). Pattern de référence : `observabilite-agents-ia/20260430-observabilite-agents-ia-app.html` (CSS `.zoom-btn` + `#zoom-overlay`, IIFE `setupZoom()`). Pour une nouvelle page, copier le bloc et adapter les variables de couleur + le sélecteur (`.figure`, `.entry figure`, …) à la structure hôte.
+
+## Mobile-friendliness
+
+Tout artefact (hub + format[s]) **doit** être lisible sur petit écran (320–414 px). Avant de merger, vérifier ces 4 points :
+
+1. **`overflow-x: hidden` sur `html, body`** (ou `overflow-x: clip` sur la `.layout` racine pour les apps avec sidebars). Empêche le scroll horizontal parasite quand un élément dépasse — c'est une protection défensive, pas une excuse pour laisser passer un vrai dépassement.
+2. **Topbar fixe** (`Mathieu Guglielmino` à gauche, `← Retour aux dossiers` à droite) : sous `@media (max-width: 560px)` réduire le padding (`12px 16px`), descendre la taille du nom serif à `14px` et celle du back mono à `9px` avec `letter-spacing: 0.16em`. Sous `@media (max-width: 380px)`, masquer le `<em>Guglielmino</em>` (`.topbar a:first-child em { display: none; }`) — sinon les deux liens se chevauchent sur iPhone SE.
+3. **Schémas SVG** : `width: 100%; height: auto; max-width: 100%` sur le `<svg>`, et toujours fournir le bouton de zoom plein écran (cf. section ci-dessus). Sur mobile, le schéma rendu à 320 px de large devient illisible — le zoom est l'échappatoire.
+4. **Sidebars Sommaire/Sources** : pattern `panel-close` obligatoire (cf. section *Apps interactives*).
+
+## Bouton retour sur chaque page
+
+Toute page publiée (hub, app, scrolly, livre, journal) embarque un lien `← Retour aux dossiers` pointant vers `../index.html#series`. Style : mono, `letter-spacing: 0.16–0.22em`, `text-transform: uppercase`, couleur dim (passe à `--accent`/`--carmine` au survol). Position selon le format :
+
+- **Hubs et journal** : dans la `.topbar` fixe, à droite (le nom de l'auteur reste à gauche).
+- **Apps `header.site`** : tout début du `<header class="site">`, juste avant `<span class="marker">`. Classe `.back`.
+- **Scrolly plein écran** : pastille `position: fixed` en haut à droite (ou à gauche pour les anciens layouts) avec `backdrop-filter: blur`.
+- **Livre** : pastille `.back-link` `position: fixed; top: 26px; left: 26px` symétrique du `.toc-toggle`.
 
 ## Apps interactives — sidebars Sommaire/Sources
 
