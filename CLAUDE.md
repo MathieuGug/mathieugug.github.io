@@ -54,6 +54,35 @@ Toute app long format avec sidebars `#toc` et `#sources` (les six études + tout
 
 Pattern de référence : `proces-musk-altman/20260427-proces-musk-altman-app.html` (rechercher `panel-close`). **Nouvelle app = vérifier ces 3 points avant de merger**, sinon le panneau couvre tout l'écran sur mobile sans moyen de revenir en arrière.
 
+## Apps interactives — annotations `.term[data-tooltip]`
+
+Pattern partagé par 6 apps (toutes sauf `agents-computer-use`) : un `<span class="term" data-tooltip="…">` qui affiche sa définition via `::after`. Le tooltip par défaut est positionné `bottom: calc(100% + 8px); left: 0; width: max-content; max-width: 320px;` — donc il déborde du viewport dès que le terme n'est pas calé en bord gauche, et c'est invisible sur desktop mais flagrant sur mobile (texte coupé hors écran).
+
+**Sur ≤ 640 px**, transformer le tooltip en sheet fixe en bas du viewport :
+
+```css
+@media (max-width: 640px) {
+  .term:hover::after,
+  .term:focus::after,
+  .term.pinned::after {
+    position: fixed;
+    bottom: 16px; left: 16px; right: 16px;
+    top: auto;
+    width: auto; max-width: none;
+    font-size: 0.85rem;
+  }
+  .term:hover::before,
+  .term:focus::before,
+  .term.pinned::before {
+    display: none;
+  }
+}
+```
+
+Bloc à coller juste après le `.term::before` desktop. La flèche du `::before` est masquée parce qu'elle pointerait dans le vide depuis le bas de l'écran. Le pin/click mobile (`.term.pinned`) reste géré par le JS existant.
+
+Alternative supérieure (utilisée par `agents-computer-use` uniquement) : un `#tooltip-floater` unique au niveau `<body>` positionné en JS avec clamp viewport — nécessaire dès qu'un tooltip vit dans un container avec `overflow: auto` (modale, sidebar scrollable), où un pseudo-élément ne peut pas s'échapper.
+
 ## Structure du repo
 
 - `index.html` racine — accueil (hero · Aujourd'hui · expertise · séries · parcours · footer).
