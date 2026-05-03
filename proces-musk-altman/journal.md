@@ -8,6 +8,41 @@ Tenu à partir du 1ᵉʳ mai 2026, dans le sillage du dossier de veille publié 
 
 ---
 
+## 2026-05-03 — « Advisory only. » Le détail procédural qui pèse plus que le « partly »
+
+**Exec sum**
+- **Pas d'audience aujourd'hui** (dimanche, prétoire fermé) ; reprise lundi 4 mai à 09h00 PT à Oakland avec la suite du témoignage de Jared Birchall, puis ouverture vraisemblable de Stuart Russell sous périmètre restreint ([CNBC, 2 mai 2026](https://www.cnbc.com/2026/05/02/musk-testimony-dominated-first-week-musk-v-altman-trial-in-oakland.html)).
+- Les Sunday papers convergent sur une lecture commune : **la première semaine s'est jouée à charge contre Musk lui-même**, plus que contre OpenAI ([Washington Post, 2 mai 2026](https://www.washingtonpost.com/technology/2026/05/02/musk-altman-openai-trial/) ; [Bloomberg, 2 mai 2026](https://www.bloomberg.com/news/articles/2026-05-02/musk-s-trial-against-openai-hits-some-rough-spots-in-first-week) ; [DNyuz, 2 mai 2026](https://dnyuz.com/2026/05/02/elon-musk-went-to-court-the-judge-wasnt-amused/)).
+- Rappel doctrinal majeur, presque ignoré dans la couverture du jour : **le jury n'est qu'« advisory »**. La juge Yvonne Gonzalez Rogers tranchera seule la responsabilité comme le quantum, parce que les deux griefs survivants — *breach of charitable trust*, *unjust enrichment* — relèvent de la juridiction d'équité, pas du droit ([cnunezlaw, 2026](https://www.cnunezlaw.com/law/musk-v-altman-a-plain-english-guide-to-the-federal-civil-case-over-openai-s-restructuring) ; [allaboutlawyer, 2026](https://allaboutlawyer.com/musk-vs-altman-openai-breach-charitable-trust-lawsuit/)).
+- En conséquence, **les dommages punitifs sont exclus** (ils n'existent pas en équité) et **la disgorgement éventuelle sera fixée par la juge**, pas par les neuf jurés tirés au sort le 27 avril.
+- Les AG de Californie et du Delaware ont signé **en octobre 2025 un accord avec OpenAI** approuvant la nouvelle structure sous conditions de gouvernance — ce qui fragilise déjà la légitimité d'un ex-donateur à invoquer la fiducie en lieu et place de l'autorité publique ([CNN, 30 avr. 2026](https://www.cnn.com/2026/04/30/tech/takeaways-elon-musk-openai-sam-altman-lawsuit)).
+
+**Angle du jour — « Advisory only ». Le détail procédural qui pèse plus que le « partly » d'hier**
+
+![L'architecture qui décide à la place du jury — schéma du jour](images/journal-2026-05-03-advisory.svg)
+
+Hier, j'écrivais que le « *partly* » de Musk allait reconfigurer la lecture du procès parce qu'il fragilisait la cohérence narrative devant le jury. C'est vrai. Mais c'est partiel. Dimanche, en reprenant les Sunday papers à froid — Washington Post (« *the case is all about him* »), Bloomberg (« *rough spots in first week* »), CNN (« *which billionaires deserve the keys to the god machine?* »), DNyuz (« *the judge wasn't amused* ») — un autre fait apparaît, plus structurel, presque caché à force d'être technique : **le jury qui écoute Musk depuis quatre jours ne décide pas le procès**. Il rend un avis. La juge Gonzalez Rogers tranchera seule.
+
+C'est écrit noir sur blanc dans les pre-trial orders : des 26 griefs déposés en 2024, deux survivent — *breach of charitable trust* et *unjust enrichment*. Tous deux sont des griefs en équité, pas en droit (*at law*). Or l'équité, c'est par construction du juge, pas du jury. Quand Musk a choisi, comme remède, la **disgorgement** des « *ill-gotten gains* » plutôt que des dommages-intérêts au sens classique, il s'est lui-même placé sous cette juridiction. Conséquence directe : les dommages punitifs sont **exclus** par construction (l'équité ne connaît pas la peine privée), et le quantum d'une disgorgement éventuelle est **fixé par la juge**, pas par les neuf jurés (cnunezlaw, 2026).
+
+Gonzalez Rogers a tout de même demandé un jury, dit *advisory*. Elle a indiqué aux conseils en *pre-trial conference* qu'elle suivrait probablement leur avis. Mais elle n'y est pas tenue. Et la lecture combinée des décisions de janvier (rejet partiel de *summary judgment* sur la doctrine du *special interest*) et d'avril (limitation drastique du périmètre admissible de Stuart Russell, refus de toute référence au *catastrophic event* en plaidoirie) trace une carte rhétorique cohérente : **la juge a déjà filtré ce qui peut entrer dans la délibération, et ce qu'elle prendra elle-même au sérieux**. Le « *This is not a trial on the safety risks of artificial intelligence* » lancé jeudi n'est pas un *bon mot* : c'est une instruction de cadrage.
+
+Trois conséquences, toutes désagréables pour la partie demanderesse.
+
+**Un**, les quatre jours passés à parler au jury ont été, juridiquement parlant, une *audience secondaire*. Les répétitions de « *you can't just steal a charity* » sont une trace publique forte mais une trace doctrinale faible, parce que la juge n'a pas besoin du sentiment moral du jury pour décider. La théâtralisation du procès — qu'elle a explicitement réprimandée plusieurs fois cette semaine — coûte plus cher à Musk qu'à OpenAI : Musk avait besoin d'un jury qu'il puisse galvaniser, parce que c'est sa seule prise sur l'opinion publique en l'absence de prise doctrinale forte. Wachtell Lipton n'avait, lui, qu'à éviter les fausses notes — et a placé son « *partly* » au passage.
+
+**Deux**, l'absence de punitifs vide une partie du chiffre symbolique de la procédure. Les 134 milliards évoqués par les avocats de Musk en janvier sont une borne haute calculée sur une base disgorgement + valorisation post-conversion ; ce ne sont pas des punitifs. Quel que soit le verdict consultatif, la juge choisira un quantum sous contrainte d'équité, c'est-à-dire **proportionné au préjudice évité ou à l'enrichissement constaté**, pas à l'effet dissuasif. Cela rend l'écart possible entre verdict du jury et décision finale potentiellement abyssal — et c'est un risque que la couverture grand public n'a pas digéré.
+
+**Trois**, le verrou de standing reste posé. *Typically, it's up to the attorneys general to bring such a claim to enforce the charitable purposes*, rappelait un universitaire cité par CNN cette semaine. Or l'AG de Californie et celui du Delaware — les deux autorités naturelles — ont signé en octobre 2025 un accord avec OpenAI approuvant la nouvelle structure sous conditions. Que la doctrine du *special interest* ait survécu à la motion de janvier ne signifie pas qu'elle sera retenue au fond : un juge en équité peut très bien estimer qu'un donateur historique avec sa propre société concurrente n'est pas le bon *trustee* du bien commun qu'il invoque. Le « *partly* » d'hier nourrit exactement cette lecture.
+
+Au total : la victoire de Musk au jury, si elle vient, sera nécessaire mais largement insuffisante. La ligne de fracture du procès n'est pas dans la salle d'audience telle que la presse la filme — elle est dans la chambre où Gonzalez Rogers rédigera ses *findings of fact and conclusions of law*. Toute la stratégie défense d'OpenAI consiste précisément à parler à cette chambre-là, par-dessus le jury.
+
+**À suivre**
+- Lundi 4 mai · 09h00 PT : Birchall continue, puis Russell devrait ouvrir sous périmètre restreint. Surveiller les *bench rulings* en cours d'audience : tout *finding* préliminaire que la juge formule pèsera plus que n'importe quel mouvement du jury.
+- Mardi-mercredi : Brockman attendu (notice de 48 h émise jeudi). Premier témoin défense côté OpenAI à parler de la conversion de l'intérieur — celui qui peut désamorcer la lecture *charitable trust* directement devant la juge.
+
+---
+
 ## 2026-05-02 — « Partly. » Le mot que xAI ne peut plus reprendre
 
 **Exec sum**
