@@ -85,7 +85,18 @@ Pattern de référence : `proces-musk-altman/20260427-proces-musk-altman-app.htm
 
 - Faire les changements → commit → **vérifier le diff du commit avant de pousser**. Le user a explicitement demandé cette étape pour rattraper d'éventuelles erreurs ou contenus qui viendraient d'autres contextes.
 - Ne pas push automatiquement — attendre validation explicite.
-- Préférer `git add <fichier>` ciblé plutôt que `git add .` (le dossier `.claude/` ne doit pas être commité).
+- Préférer `git add <fichier>` ciblé plutôt que `git add .` (le dossier `.claude/` est gitignoré et ne doit pas être commité).
+- **`main` = ce qui est publié sur GitHub Pages.** Tout commit sur `main` est immédiatement servi sur https://mathieugug.github.io. Jamais de WIP / brouillons / commits non relus directement sur `main` — toujours passer par une branche `claude/...` ou `journal/...` dédiée et ouvrir une PR pour validation.
+
+## Versionnement de la skill `illustrated-deep-research`
+
+Exception : `.claude/skills/illustrated-deep-research/` **est versionnée** (force-add, malgré le `.gitignore`) parce qu'elle est partagée via le repo. Les modifications de la skill (`SKILL.md`, `references/*.md`, `assets/*`) :
+
+- Doivent **toujours passer par une branche dédiée** (par exemple `claude/skill-<sujet>`), **jamais sur la branche d'un artefact en cours** (un dossier `.../*-app.html`, un journal, etc.). Ça évite que la skill soit livrée par mégarde lors du merge de l'artefact.
+- Doivent être commitées avec `git add -f .claude/skills/illustrated-deep-research/<file>` (le `-f` est nécessaire à cause du `.gitignore` parent).
+- Sont mergeables sur `main` indépendamment du contenu publié — la skill ne sert qu'aux Claudes qui clonent le repo, elle n'est ni indexée ni rendue par GitHub Pages.
+
+Si une modif skill arrive en même temps qu'un travail sur un artefact, créer **deux branches distinctes** et **deux PR distinctes** plutôt que de mélanger.
 
 ## Création de PR
 
