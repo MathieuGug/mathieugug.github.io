@@ -1,0 +1,2827 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#faf6ec">
+<title>Observabilité des agents IA — slideshow</title>
+<meta name="description" content="Observabilité des agents IA · slideshow narratif : rupture paradigmatique, six piliers, OpenTelemetry GenAI, bus de télémétrie, alertes et maturité — par Mathieu Guglielmino.">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #faf6ec;
+  --bg-2: #f3eedf;
+  --paper: #ffffff;
+  --line: rgba(30,30,44,0.08);
+  --line-strong: rgba(30,30,44,0.20);
+  --text: #1e1e2a;
+  --text-dim: #3b3f4d;
+  --text-mid: #6b6f7c;
+  --text-faint: #9a9ca5;
+  --accent: #b8582e;
+  --carmine: #b23b1b;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; font-weight: 300; line-height: 1.55; -webkit-font-smoothing: antialiased; height: 100vh; overflow: hidden; max-width: 100vw; }
+body { background:
+  radial-gradient(ellipse at 14% 8%, rgba(184,88,46,0.06) 0%, transparent 55%),
+  radial-gradient(ellipse at 86% 92%, rgba(75,148,102,0.04) 0%, transparent 55%),
+  var(--bg);
+}
+a { color: inherit; }
+
+/* Topbar — copie du pattern site */
+.topbar { position: fixed; top: 0; left: 0; right: 0; z-index: 50; padding: 12px 28px; height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 24px; background: rgba(250,246,236,0.78); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid transparent; transition: opacity 0.25s, border-color 0.3s; }
+.topbar > a { font-family: 'Fraunces', serif; font-weight: 500; font-size: 15.5px; letter-spacing: -0.01em; text-decoration: none; color: var(--text); flex-shrink: 0; }
+.topbar em { font-style: italic; color: var(--accent); }
+.topbar .back { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-mid); }
+.topbar .back:hover { color: var(--accent); }
+.scene-title-bar { flex: 1; min-width: 0; display: flex; align-items: baseline; justify-content: center; gap: 14px; font-family: 'Fraunces', serif; font-weight: 400; font-size: clamp(20px, 2.6vw, 32px); letter-spacing: -0.01em; color: var(--text); text-align: center; opacity: 1; transition: opacity 220ms ease; overflow: hidden; }
+.scene-title-bar.fade { opacity: 0; }
+.scene-title-bar .num { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; letter-spacing: 0.24em; color: var(--text-faint); flex-shrink: 0; }
+.scene-title-bar .title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.scene-title-bar:empty { display: none; }
+
+/* Surlignage stabilo — signature site */
+mark { background: linear-gradient(transparent 58%, rgba(178, 59, 27, 0.14) 58%); color: inherit; padding: 0 2px; }
+
+/* Stage : zone scène plein écran (libère l'espace à droite pour la sidebar timeline) */
+.stage { position: fixed; top: 64px; left: 0; right: 64px; bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px 24px 24px; transition: opacity 250ms ease, right 280ms cubic-bezier(0.22, 1, 0.36, 1); }
+body.modal-open .stage { right: 480px; }
+@media (max-width: 1024px) {
+  /* Sur mobile, le modal occupe le bas de l'écran, la stage ne rétrécit pas */
+  body.modal-open .stage { right: 0; }
+}
+.stage.fading-out { opacity: 0; }
+
+/* Mobile */
+@media (max-width: 768px) {
+  .topbar { height: 56px; padding: 10px 16px; gap: 12px; }
+  .scene-title-bar { font-size: clamp(13px, 3vw, 18px); }
+  .scene-title-bar .num { font-size: 9px; letter-spacing: 0.18em; }
+  .stage { top: 56px; }
+}
+@media (max-width: 560px) {
+  .topbar { padding: 10px 14px; gap: 8px; }
+  .topbar > a { font-size: 13px; }
+  .topbar .back { font-size: 9px; letter-spacing: 0.16em; }
+  .scene-title-bar .num { display: none; }
+  .stage { padding: 16px 16px 80px; }
+}
+@media (max-width: 480px) {
+  .scene-title-bar { display: none; }
+}
+@media (max-width: 380px) {
+  .topbar > a:first-child em { display: none; }
+}
+
+.scene-punchline { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; max-width: 1000px; padding: 0 24px; gap: 32px; }
+.scene-punchline .body { font-family: 'Fraunces', serif; font-style: italic; font-weight: 300; font-size: clamp(32px, 5.5vw, 64px); line-height: 1.18; letter-spacing: -0.015em; color: var(--text); }
+.scene-punchline .body mark { background: linear-gradient(transparent 58%, rgba(178, 59, 27, 0.18) 58%); padding: 0 4px; }
+.scene-punchline .attribution { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-faint); }
+
+@media (max-width: 560px) {
+  .scene-punchline .body { font-size: clamp(22px, 7vw, 32px); line-height: 1.25; }
+}
+
+.scene-outro { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; max-width: 700px; gap: 36px; padding: 0 24px; }
+.scene-outro .eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--accent); }
+.scene-outro h2 { font-family: 'Fraunces', serif; font-weight: 300; font-size: clamp(36px, 5vw, 56px); line-height: 1.1; letter-spacing: -0.02em; }
+.scene-outro h2 em { font-style: italic; color: var(--accent); }
+.scene-outro .body { font-family: 'Fraunces', serif; font-style: italic; font-size: clamp(17px, 2.2vw, 22px); line-height: 1.5; color: var(--text-dim); max-width: 560px; }
+.scene-outro .ctas { display: flex; flex-direction: column; gap: 14px; align-items: stretch; min-width: 320px; }
+.scene-outro .cta-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 16px 28px; background: var(--accent); color: white; text-decoration: none; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; border-radius: 4px; transition: background 0.2s; }
+.scene-outro .cta-primary:hover { background: var(--carmine); }
+.scene-outro .cta-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 24px; background: transparent; color: var(--text); text-decoration: none; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase; border: 1px solid var(--line-strong); border-radius: 4px; transition: border-color 0.2s, color 0.2s; }
+.scene-outro .cta-secondary:hover { border-color: var(--accent); color: var(--accent); }
+.scene-outro .restart { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-faint); cursor: pointer; background: none; border: none; padding: 8px; }
+.scene-outro .restart:hover { color: var(--accent); }
+.scene-outro .disclosure { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-faint); margin-top: 24px; }
+
+#schemas { display: none; }
+#schemas[hidden] { display: none !important; }
+.schema-host { display: flex; flex-direction: column; align-items: center; justify-content: center; max-width: min(1400px, 92vw); width: 100%; gap: 12px; }
+.schema-host .scene-title { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--text-mid); display: flex; align-items: baseline; gap: 12px; }
+.schema-host .scene-title .num { color: var(--text-faint); }
+.schema-host .scene-title .title { font-family: 'Fraunces', serif; font-weight: 400; font-size: clamp(20px, 2.8vw, 32px); letter-spacing: -0.01em; text-transform: none; color: var(--text); }
+.schema-host svg { width: 100%; max-width: 100%; height: auto; max-height: calc(100vh - 170px); display: block; }
+.schema-host .caption { font-family: 'Fraunces', serif; font-style: italic; font-weight: 300; font-size: clamp(16px, 1.8vw, 20px); line-height: 1.5; color: var(--text-dim); text-align: center; max-width: 720px; min-height: 2.4em; transition: opacity 180ms ease; }
+.schema-host .caption.fade-out { opacity: 0; }
+
+/* Vocabulaire visuel des révélations */
+.schema-host svg [data-step-state="dim"] { opacity: 0.18; transition: opacity 220ms ease, filter 220ms ease; }
+.schema-host svg [data-step-state="active"] { opacity: 1; transition: opacity 220ms ease, filter 220ms ease; }
+.schema-host svg [data-step-state="hidden"] { opacity: 0; pointer-events: none; transition: opacity 220ms ease; }
+
+/* Masquer l'en-tête interne du SVG (eyebrow + titre + lede) — le slideshow a son propre titre externe */
+.schema-host svg .svg-header { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .stage { transition: opacity 0ms ease, right 0ms ease !important; }
+  .schema-host svg [data-step-state] { transition: none !important; }
+  .schema-host .caption { transition: none !important; }
+  .scene-outro .cta-primary, .scene-outro .cta-secondary { transition: none !important; }
+  #modal-root { transition: transform 0ms ease !important; }
+  .toaster { transition: none !important; }
+}
+
+/* ── Zoom overlay ── */
+#zoom-overlay[hidden] { display: none !important; }
+#zoom-overlay {
+  position: fixed; inset: 0; z-index: 400;
+  display: flex; flex-direction: column;
+  background: rgba(26, 26, 26, 0.94);
+  backdrop-filter: blur(3px);
+}
+#zoom-header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; padding: 12px 20px;
+  color: #faf6ec;
+  font-family: 'Inter', system-ui, sans-serif; font-size: 0.85rem;
+  border-bottom: 1px solid rgba(250, 248, 243, 0.12);
+}
+#zoom-caption {
+  flex: 1; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  opacity: 0.85;
+}
+.zoom-controls { display: flex; gap: 4px; flex-shrink: 0; }
+.zoom-controls button {
+  background: transparent;
+  border: 1px solid rgba(250, 248, 243, 0.32);
+  color: #faf6ec; padding: 6px 12px;
+  min-width: 36px; cursor: pointer;
+  font: inherit; font-size: 0.85rem; border-radius: 3px;
+  transition: background 120ms, border-color 120ms;
+}
+.zoom-controls button:hover { background: rgba(250, 248, 243, 0.12); border-color: rgba(250, 248, 243, 0.6); }
+.zoom-controls button:focus-visible { outline: 2px solid #faf6ec; outline-offset: 2px; }
+.zoom-controls .zoom-close { font-size: 1.3rem; line-height: 1; padding: 2px 10px; }
+#zoom-stage { flex: 1; overflow: hidden; position: relative; cursor: grab; touch-action: none; }
+#zoom-stage.grabbing { cursor: grabbing; }
+#zoom-content { position: absolute; top: 0; left: 0; transform-origin: 0 0; will-change: transform; }
+#zoom-content > svg {
+  display: block; max-width: none; max-height: none;
+  background: var(--bg); box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+}
+#zoom-hint {
+  position: absolute; bottom: 16px; left: 50%;
+  transform: translateX(-50%);
+  color: rgba(250, 248, 243, 0.55);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.75rem; pointer-events: none;
+  transition: opacity 400ms;
+}
+#zoom-hint.fade { opacity: 0; }
+@media (max-width: 640px) {
+  .zoom-controls .zoom-reset { display: none; }
+  #zoom-caption { font-size: 0.78rem; }
+}
+
+/* Bouton zoom sur les schémas */
+.schema-wrapper { position: relative; }
+.zoom-btn {
+  position: absolute; top: 10px; left: 10px;
+  background: rgba(250,246,236,0.85); border: 1px solid rgba(30,30,44,0.18);
+  color: var(--text-dim); font-size: 1.15rem; line-height: 1;
+  width: 36px; height: 36px; border-radius: 4px;
+  cursor: pointer; opacity: 0;
+  transition: opacity 150ms, background 120ms, border-color 120ms, color 120ms;
+  z-index: 2;
+}
+.schema-wrapper:hover .zoom-btn, .schema-wrapper:focus-within .zoom-btn, .zoom-btn:focus-visible { opacity: 1; }
+.zoom-btn:hover { background: var(--bg-2); border-color: var(--text); color: var(--text); }
+@media (hover: none) { .zoom-btn { opacity: 0.85; } }
+
+/* ── Modal en sidebar toggable à droite (préserve la vue du SVG) ── */
+#modal-root[hidden] { display: none !important; }
+#modal-root {
+  position: fixed; right: 64px; top: 64px; bottom: 0;
+  width: 400px;
+  z-index: 200;
+  pointer-events: none;
+  transform: translateX(calc(100% + 64px));
+  transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+#modal-root:not([hidden]) {
+  transform: translateX(0);
+  pointer-events: auto;
+}
+.modal-backdrop { display: none; }
+.modal-card {
+  position: relative;
+  background: var(--paper);
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  padding: 36px 32px 32px;
+  border-left: 4px solid var(--carmine);
+  box-shadow: -16px 0 48px rgba(30,25,18,0.08);
+}
+@media (max-width: 1024px) {
+  /* Sur mobile : modal redevient centré plein écran */
+  #modal-root { right: 0; top: 0; bottom: 0; width: 100%; transform: translateY(100%); transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1); display: flex; align-items: flex-end; justify-content: center; }
+  #modal-root:not([hidden]) { transform: translateY(0); }
+  .modal-card { width: 100%; max-width: 100%; height: 90vh; max-height: 90vh; border-left: none; border-top: 4px solid var(--carmine); border-radius: 12px 12px 0 0; box-shadow: 0 -16px 48px rgba(30,25,18,0.2); }
+}
+.modal-close {
+  position: absolute; top: 12px; right: 12px;
+  background: none; border: none;
+  font-size: 1.6rem; line-height: 1; cursor: pointer;
+  color: var(--text-mid);
+  width: 32px; height: 32px; border-radius: 4px;
+}
+.modal-close:hover { background: var(--bg-2); color: var(--text); }
+.modal-card h3 {
+  font-family: 'Fraunces', serif; font-weight: 600;
+  font-size: 1.4rem; margin: 0 0 6px; letter-spacing: -0.01em;
+}
+.modal-card .modal-eyebrow {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.72rem;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--carmine); margin: 0 0 14px;
+}
+.modal-card .modal-body p { margin: 0 0 0.9rem; font-size: 0.95rem; }
+.modal-card .modal-body p:last-child { margin-bottom: 0; }
+.modal-card .modal-body figure.ref {
+  margin: 0.6rem 0 1.1rem;
+}
+.modal-card .modal-body figure.ref img {
+  display: block; width: 100%; height: auto;
+  border-radius: 3px;
+  border: 1px solid rgba(26,26,26,0.08);
+  box-shadow: 0 8px 22px rgba(0,0,0,0.12);
+  background: var(--bg-2);
+}
+.modal-card .modal-body figure.ref figcaption {
+  margin-top: 8px;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; line-height: 1.5;
+  letter-spacing: 0.02em; color: var(--text-mid);
+}
+.modal-card .modal-body figure.ref figcaption em { font-style: italic; color: var(--text); }
+.modal-card .modal-body figure.ref figcaption a { color: var(--accent); text-decoration: none; }
+.modal-card .modal-body figure.ref figcaption a:hover { text-decoration: underline; }
+
+/* Timeline en sidebar verticale à droite + boutons */
+.footer-bar { position: fixed; right: 18px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; gap: 24px; z-index: 40; pointer-events: none; }
+.timeline { display: flex; flex-direction: column; gap: 4px; align-items: center; pointer-events: auto; }
+.timeline .seg { width: 4px; height: 36px; background: var(--text-faint); opacity: 0.4; cursor: pointer; position: relative; transition: opacity 0.2s, background 0.2s; }
+.timeline .seg.visited { background: var(--accent); opacity: 0.5; }
+.timeline .seg.current { background: var(--accent); opacity: 1; }
+.timeline .seg .fill { position: absolute; left: 0; right: 0; top: 0; height: 0%; background: var(--accent); transition: height 220ms ease; }
+.timeline .seg:hover { opacity: 1; }
+.timeline .seg .label { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); white-space: nowrap; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-mid); background: var(--bg); padding: 4px 8px; border-radius: 3px; opacity: 0; pointer-events: none; transition: opacity 0.15s; box-shadow: 0 1px 3px rgba(30,30,44,0.08); }
+.timeline .seg:hover .label { opacity: 1; }
+.timeline .seg.punchline { width: 8px; height: 8px; border-radius: 50%; background: var(--text-faint); }
+.timeline .seg.punchline.visited { background: var(--accent); opacity: 0.7; }
+.timeline .seg.punchline.current { background: var(--accent); opacity: 1; transform: scale(1.3); }
+.timeline .seg.outro::after { content: '▸'; position: absolute; left: -7px; bottom: -2px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-faint); }
+.timeline .seg.outro.visited::after, .timeline .seg.outro.current::after { color: var(--accent); }
+.footer-actions { display: flex; flex-direction: column; gap: 10px; align-items: center; pointer-events: auto; writing-mode: vertical-rl; }
+.footer-actions .footer-btn { writing-mode: vertical-rl; transform: rotate(180deg); }
+.footer-btn { background: none; border: none; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-mid); cursor: pointer; padding: 6px 4px; transition: color 0.2s; }
+.footer-btn:hover { color: var(--accent); }
+
+@media (max-width: 1024px) {
+  /* Sur écrans étroits/mobile : revenir à une timeline horizontale en bas */
+  .stage { right: 0; bottom: 64px; padding: 16px 16px 16px; }
+  .schema-host svg { max-height: calc(100vh - 280px); }
+  .footer-bar { right: 0; left: 0; top: auto; bottom: 16px; transform: none; flex-direction: row; justify-content: center; gap: 20px; padding: 0 16px; }
+  .timeline { flex-direction: row; }
+  .timeline .seg { width: 28px; height: 4px; }
+  .timeline .seg .fill { left: 0; right: auto; top: 0; bottom: 0; height: 100%; width: 0%; transition: width 220ms ease; }
+  .timeline .seg .label { right: auto; bottom: 14px; left: 50%; top: auto; transform: translateX(-50%); display: none; }
+  .timeline .seg.outro::after { left: auto; right: -2px; top: -7px; bottom: auto; }
+  .footer-actions { flex-direction: row; writing-mode: horizontal-tb; }
+  .footer-actions .footer-btn { writing-mode: horizontal-tb; transform: none; }
+  .footer-btn { font-size: 8px; }
+  .zoom-btn { opacity: 0.85; }
+  .scene-outro .ctas { min-width: 0; width: 100%; }
+}
+
+/* Overlays sommaire / sources */
+.full-overlay { position: fixed; inset: 0; background: rgba(250,246,236,0.96); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 300; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 80px 32px 80px; overflow-y: auto; }
+.full-overlay[hidden] { display: none !important; }
+.overlay-close { position: fixed; top: 24px; right: 32px; background: none; border: 1px solid var(--line-strong); padding: 10px 16px; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text); cursor: pointer; border-radius: 3px; transition: border-color 0.2s, color 0.2s; z-index: 310; }
+.overlay-close:hover { border-color: var(--accent); color: var(--accent); }
+.toc-list { list-style: none; max-width: 720px; width: 100%; display: flex; flex-direction: column; gap: 16px; counter-reset: scene-num; }
+.toc-list li { font-family: 'Fraunces', serif; font-size: clamp(20px, 2.4vw, 28px); font-weight: 300; cursor: pointer; padding: 12px 0; border-bottom: 1px dashed var(--line); transition: color 0.2s; display: flex; align-items: baseline; gap: 16px; }
+.toc-list li:hover { color: var(--accent); }
+.toc-list li .num { font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.18em; color: var(--text-faint); min-width: 32px; }
+.toc-list li .meta { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-faint); margin-left: auto; }
+
+.sources-filter { max-width: 720px; width: 100%; padding: 12px 16px; font-family: 'Inter', sans-serif; font-size: 14px; border: 1px solid var(--line-strong); background: transparent; color: var(--text); margin-bottom: 24px; border-radius: 3px; }
+.sources-filter:focus { outline: none; border-color: var(--accent); }
+.sources-list { list-style: none; max-width: 720px; width: 100%; display: flex; flex-direction: column; gap: 16px; }
+.sources-list li { font-family: 'Inter', sans-serif; font-size: 14.5px; line-height: 1.55; padding: 8px 0; border-bottom: 1px dashed var(--line); display: flex; gap: 14px; transition: background 0.4s; }
+.sources-list li.flash { background: rgba(184, 88, 46, 0.18); }
+.sources-list li .num { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--accent); min-width: 28px; padding-top: 2px; }
+.sources-list li a { color: var(--accent); text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 3px; transition: text-decoration-color 0.2s; }
+.sources-list li a:hover { text-decoration-color: var(--accent); }
+
+.toaster { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 12px 20px; border-radius: 24px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; z-index: 60; opacity: 0; pointer-events: none; transition: opacity 0.4s ease; max-width: calc(100vw - 32px); text-align: center; }
+.toaster.show { opacity: 1; }
+.toaster[hidden] { display: none; }
+
+.idle-cue { position: fixed; bottom: 60px; right: 88px; font-family: 'JetBrains Mono', monospace; font-size: 18px; color: var(--accent); opacity: 0; pointer-events: none; transition: opacity 0.5s; z-index: 35; animation: idle-pulse 1.5s ease-in-out infinite; }
+.idle-cue.show { opacity: 0.5; }
+@keyframes idle-pulse { 0%, 100% { transform: translateY(0); opacity: 0.3; } 50% { transform: translateY(-4px); opacity: 0.7; } }
+@media (prefers-reduced-motion: reduce) { .idle-cue { animation: none; } }
+@media (max-width: 1024px) { .idle-cue { display: none; } }
+
+.topbar.idle { opacity: 0.25; }
+.topbar:hover { opacity: 1 !important; }
+</style>
+</head>
+<body>
+
+<header class="topbar" id="topbar">
+  <a href="../index.html">Mathieu <em>Guglielmino</em></a>
+  <div class="scene-title-bar" id="scene-title-bar"></div>
+  <a href="../index.html#series" class="back">← Retour aux dossiers</a>
+</header>
+
+<div id="schemas" hidden>
+<svg id="svg-01-rupture" data-schema-id="schema-01" role="img" aria-label="Rupture paradigmatique de l'observabilité agentique" xmlns="http://www.w3.org/2000/svg" viewBox="0 155 1200 645">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+    <marker id="arrow-01" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#5A5A5A"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="800" fill="transparent"/>
+
+  <g class="svg-header">
+  <text x="60" y="55" class="mono" font-size="11" font-weight="600"
+        letter-spacing="0.12em" fill="#B7332C">SCHÉMA 01</text>
+  <text x="60" y="92" class="display" font-size="26" font-weight="600"
+        letter-spacing="-0.01em" fill="#1A1A1A">Quatre paradigmes d'observabilité, vingt-cinq ans d'évolution</text>
+  <text x="60" y="118" class="display" font-size="16" font-style="italic"
+        fill="#5A5A5A">Du monitoring infrastructure au cognitive audit trail — une rupture qualitative</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
+  </g>
+
+  <!-- Time axis -->
+  <line x1="80" y1="660" x2="1120" y2="660" stroke="#1A1A1A" stroke-width="1.25"/>
+  <text x="100" y="685" class="mono" font-size="10" fill="#5A5A5A">2000</text>
+  <text x="380" y="685" class="mono" font-size="10" fill="#5A5A5A">2010</text>
+  <text x="660" y="685" class="mono" font-size="10" fill="#5A5A5A">2018</text>
+  <text x="940" y="685" class="mono" font-size="10" fill="#5A5A5A">2023</text>
+  <text x="1100" y="685" class="mono" font-size="10" fill="#5A5A5A">2026</text>
+
+  <!-- Tick marks -->
+  <line x1="100" y1="657" x2="100" y2="663" stroke="#1A1A1A" stroke-width="1.25"/>
+  <line x1="380" y1="657" x2="380" y2="663" stroke="#1A1A1A" stroke-width="1.25"/>
+  <line x1="660" y1="657" x2="660" y2="663" stroke="#1A1A1A" stroke-width="1.25"/>
+  <line x1="940" y1="657" x2="940" y2="663" stroke="#1A1A1A" stroke-width="1.25"/>
+
+  <!-- ERA 1: MONITORING (2000-2010) -->
+  <g class="interactive" data-card="era-monitoring" tabindex="0" role="button"
+     aria-label="Ère du monitoring classique">
+    <rect x="100" y="200" width="240" height="430" rx="3"
+          fill="#B8B5AE" fill-opacity="0.08" stroke="#5A5A5A" stroke-width="1.25"/>
+    <text x="120" y="232" class="mono" font-size="10" font-weight="600"
+          letter-spacing="0.08em" fill="#5A5A5A">ÈRE 01 · 2000–2010</text>
+    <text x="120" y="262" class="display" font-size="17" font-weight="600"
+          fill="#1A1A1A">Monitoring</text>
+    <text x="120" y="284" class="display" font-size="13" font-style="italic"
+          fill="#5A5A5A">classique</text>
+
+    <line x1="120" y1="305" x2="320" y2="305" stroke="#B8B5AE" stroke-width="0.5"/>
+
+    <text x="120" y="330" class="body" font-size="11" font-weight="500" fill="#5A5A5A">SYSTÈMES</text>
+    <text x="120" y="350" class="body" font-size="12" fill="#1A1A1A">Nagios, Zabbix</text>
+
+    <text x="120" y="380" class="body" font-size="11" font-weight="500" fill="#5A5A5A">SIGNAUX</text>
+    <text x="120" y="400" class="body" font-size="12" fill="#1A1A1A">SNMP, ping, uptime</text>
+    <text x="120" y="418" class="body" font-size="12" fill="#1A1A1A">CPU, RAM, disque</text>
+
+    <text x="120" y="450" class="body" font-size="11" font-weight="500" fill="#5A5A5A">DÉFAILLANCE</text>
+    <text x="120" y="470" class="body" font-size="12" fill="#1A1A1A">Binaire</text>
+    <text x="120" y="488" class="body" font-size="11" font-style="italic" fill="#5A5A5A">marche / panne</text>
+
+    <text x="120" y="520" class="body" font-size="11" font-weight="500" fill="#5A5A5A">DÉTECTION</text>
+    <text x="120" y="540" class="body" font-size="12" fill="#1A1A1A">Seuils statiques</text>
+
+    <text x="120" y="595" class="body" font-size="11" font-weight="500" fill="#5A5A5A">STANDARD</text>
+    <text x="120" y="615" class="body" font-size="12" fill="#1A1A1A">SNMP / syslog</text>
+  </g>
+
+  <!-- Marker on timeline -->
+  <circle cx="220" cy="660" r="5" fill="#B8B5AE"/>
+
+  <!-- ERA 2: APM (2010-2018) -->
+  <g class="interactive" data-card="era-apm" tabindex="0" role="button"
+     aria-label="Ère de l'APM applicatif">
+    <rect x="380" y="200" width="240" height="430" rx="3"
+          fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="400" y="232" class="mono" font-size="10" font-weight="600"
+          letter-spacing="0.08em" fill="#1F5560">ÈRE 02 · 2010–2018</text>
+    <text x="400" y="262" class="display" font-size="17" font-weight="600"
+          fill="#1A1A1A">APM</text>
+    <text x="400" y="284" class="display" font-size="13" font-style="italic"
+          fill="#5A5A5A">applicatif</text>
+
+    <line x1="400" y1="305" x2="600" y2="305" stroke="#1F5560" stroke-opacity="0.3" stroke-width="0.5"/>
+
+    <text x="400" y="330" class="body" font-size="11" font-weight="500" fill="#5A5A5A">SYSTÈMES</text>
+    <text x="400" y="350" class="body" font-size="12" fill="#1A1A1A">New Relic, AppDynamics</text>
+
+    <text x="400" y="380" class="body" font-size="11" font-weight="500" fill="#5A5A5A">SIGNAUX</text>
+    <text x="400" y="400" class="body" font-size="12" fill="#1A1A1A">Latence, throughput</text>
+    <text x="400" y="418" class="body" font-size="12" fill="#1A1A1A">Error rate, saturation</text>
+
+    <text x="400" y="450" class="body" font-size="11" font-weight="500" fill="#5A5A5A">DÉFAILLANCE</text>
+    <text x="400" y="470" class="body" font-size="12" fill="#1A1A1A">Code, transaction</text>
+    <text x="400" y="488" class="body" font-size="11" font-style="italic" fill="#5A5A5A">stack trace</text>
+
+    <text x="400" y="520" class="body" font-size="11" font-weight="500" fill="#5A5A5A">DÉTECTION</text>
+    <text x="400" y="540" class="body" font-size="12" fill="#1A1A1A">4 Golden Signals</text>
+
+    <text x="400" y="595" class="body" font-size="11" font-weight="500" fill="#5A5A5A">STANDARD</text>
+    <text x="400" y="615" class="body" font-size="12" fill="#1A1A1A">Agent propriétaire</text>
+  </g>
+
+  <circle cx="500" cy="660" r="5" fill="#1F5560"/>
+
+  <!-- ERA 3: CLOUD-NATIVE (2018-2023) -->
+  <g class="interactive" data-card="era-cloud-native" tabindex="0" role="button"
+     aria-label="Ère cloud-native MELT">
+    <rect x="660" y="200" width="240" height="430" rx="3"
+          fill="#B58A2C" fill-opacity="0.07" stroke="#B58A2C" stroke-width="1.25"/>
+    <text x="680" y="232" class="mono" font-size="10" font-weight="600"
+          letter-spacing="0.08em" fill="#B58A2C">ÈRE 03 · 2018–2023</text>
+    <text x="680" y="262" class="display" font-size="17" font-weight="600"
+          fill="#1A1A1A">Cloud-native</text>
+    <text x="680" y="284" class="display" font-size="13" font-style="italic"
+          fill="#5A5A5A">distribué (MELT)</text>
+
+    <line x1="680" y1="305" x2="880" y2="305" stroke="#B58A2C" stroke-opacity="0.3" stroke-width="0.5"/>
+
+    <text x="680" y="330" class="body" font-size="11" font-weight="500" fill="#5A5A5A">SYSTÈMES</text>
+    <text x="680" y="350" class="body" font-size="12" fill="#1A1A1A">Datadog, Dynatrace</text>
+    <text x="680" y="368" class="body" font-size="12" fill="#1A1A1A">Grafana, Splunk</text>
+
+    <text x="680" y="395" class="body" font-size="11" font-weight="500" fill="#5A5A5A">SIGNAUX</text>
+    <text x="680" y="415" class="body" font-size="12" fill="#1A1A1A">Logs · Metrics · Traces</text>
+    <text x="680" y="433" class="body" font-size="12" fill="#1A1A1A">+ Events (MELT)</text>
+
+    <text x="680" y="460" class="body" font-size="11" font-weight="500" fill="#5A5A5A">DÉFAILLANCE</text>
+    <text x="680" y="480" class="body" font-size="12" fill="#1A1A1A">Cascade microservices</text>
+    <text x="680" y="498" class="body" font-size="11" font-style="italic" fill="#5A5A5A">distributed tracing</text>
+
+    <text x="680" y="525" class="body" font-size="11" font-weight="500" fill="#5A5A5A">DÉTECTION</text>
+    <text x="680" y="545" class="body" font-size="12" fill="#1A1A1A">AIOps, anomalies</text>
+
+    <text x="680" y="595" class="body" font-size="11" font-weight="500" fill="#5A5A5A">STANDARD</text>
+    <text x="680" y="615" class="body" font-size="12" fill="#1A1A1A">OpenTelemetry</text>
+  </g>
+
+  <circle cx="780" cy="660" r="5" fill="#B58A2C"/>
+
+  <!-- ERA 4: AGENTIC (2023-2026) -->
+  <g class="interactive" data-card="era-agentic" tabindex="0" role="button"
+     aria-label="Ère cognitive et agentique">
+    <rect x="940" y="180" width="180" height="450" rx="3"
+          fill="#B7332C" fill-opacity="0.06" stroke="#B7332C" stroke-width="2"/>
+    <text x="960" y="212" class="mono" font-size="10" font-weight="600"
+          letter-spacing="0.08em" fill="#B7332C">ÈRE 04 · 2023–2026</text>
+    <text x="960" y="244" class="display" font-size="17" font-weight="600"
+          fill="#1A1A1A">Cognitive</text>
+    <text x="960" y="266" class="display" font-size="13" font-style="italic"
+          fill="#5A5A5A">agentique &amp; IA</text>
+
+    <line x1="960" y1="287" x2="1100" y2="287" stroke="#B7332C" stroke-opacity="0.3" stroke-width="0.5"/>
+
+    <text x="960" y="312" class="body" font-size="11" font-weight="500" fill="#5A5A5A">SYSTÈMES</text>
+    <text x="960" y="332" class="body" font-size="11" fill="#1A1A1A">Langfuse, Braintrust,</text>
+    <text x="960" y="350" class="body" font-size="11" fill="#1A1A1A">Arize, Galileo</text>
+
+    <text x="960" y="378" class="body" font-size="11" font-weight="500" fill="#5A5A5A">SIGNAUX</text>
+    <text x="960" y="398" class="body" font-size="11" fill="#1A1A1A">Traces cognitives</text>
+    <text x="960" y="416" class="body" font-size="11" fill="#1A1A1A">Tokens, qualité</text>
+    <text x="960" y="434" class="body" font-size="11" fill="#1A1A1A">Guardrails, drift</text>
+
+    <text x="960" y="462" class="body" font-size="11" font-weight="500" fill="#5A5A5A">DÉFAILLANCE</text>
+    <text x="960" y="482" class="body" font-size="11" fill="#1A1A1A">Hallucination,</text>
+    <text x="960" y="500" class="body" font-size="11" fill="#1A1A1A">drift sémantique</text>
+
+    <text x="960" y="528" class="body" font-size="11" font-weight="500" fill="#5A5A5A">DÉTECTION</text>
+    <text x="960" y="548" class="body" font-size="11" fill="#1A1A1A">LLM-as-judge,</text>
+    <text x="960" y="566" class="body" font-size="11" fill="#1A1A1A">eval continue</text>
+
+    <text x="960" y="595" class="body" font-size="11" font-weight="500" fill="#5A5A5A">STANDARD</text>
+    <text x="960" y="615" class="body" font-size="11" fill="#1A1A1A">OTel GenAI v1.37+</text>
+  </g>
+
+  <circle cx="1030" cy="660" r="6" fill="#B7332C"/>
+
+  <!-- Continuity arrow above -->
+  <path d="M 220 175 L 500 175 L 780 175 L 1030 165"
+        stroke="#5A5A5A" stroke-width="0.75" fill="none"
+        stroke-dasharray="3 3" marker-end="url(#arrow-01)"/>
+  <text x="600" y="170" class="body" font-size="10" font-style="italic"
+        fill="#5A5A5A" text-anchor="middle">empilement, jamais remplacement — chaque ère ajoute une couche cognitive supplémentaire</text>
+
+  <!-- ANNOTATION ON BIG SHIFT -->
+  <text x="540" y="730" class="body" font-size="11" font-style="italic" fill="#B7332C" text-anchor="middle">
+    La rupture clé : le passage du déterministe au probabiliste — une réponse correcte de l'API ne garantit plus une réponse correcte de l'agent.
+  </text>
+
+  <!-- FOOTER -->
+  <line x1="60" y1="755" x2="1140" y2="755" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="778" class="body" font-size="10" font-style="italic"
+        fill="#5A5A5A">Sources : OpenTelemetry, IBM Think 2026, Gartner MQ Observability 2025</text>
+</svg>
+
+<svg id="svg-02-piliers" data-schema-id="schema-02" role="img" aria-label="Six piliers de la télémétrie agentique" xmlns="http://www.w3.org/2000/svg" viewBox="0 155 900 745">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+    <marker id="arrow-02" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#5A5A5A"/>
+    </marker>
+  </defs>
+
+  <rect width="900" height="900" fill="transparent"/>
+
+  <g class="svg-header">
+  <text x="60" y="55" class="mono" font-size="11" font-weight="600"
+        letter-spacing="0.12em" fill="#B7332C">SCHÉMA 02</text>
+  <text x="60" y="92" class="display" font-size="24" font-weight="600"
+        letter-spacing="-0.01em" fill="#1A1A1A">Les six piliers de la télémétrie agentique</text>
+  <text x="60" y="116" class="display" font-size="14" font-style="italic"
+        fill="#5A5A5A">Ce qu'il faut instrumenter, mesurer et croiser pour piloter un agent en production</text>
+  <line x1="60" y1="138" x2="840" y2="138" stroke="#E5E1D8" stroke-width="0.5"/>
+  </g>
+
+  <!-- CENTER NODE: Agent IA -->
+  <circle cx="450" cy="475" r="78" fill="#FAF8F3" stroke="#1A1A1A" stroke-width="2"/>
+  <circle cx="450" cy="475" r="68" fill="none" stroke="#1A1A1A" stroke-width="0.5"/>
+  <text x="450" y="465" class="display" font-size="16" font-weight="600"
+        fill="#1A1A1A" text-anchor="middle">Agent IA</text>
+  <text x="450" y="488" class="body" font-size="11" font-style="italic"
+        fill="#5A5A5A" text-anchor="middle">en production</text>
+  <text x="450" y="506" class="mono" font-size="10" font-weight="500"
+        fill="#B7332C" text-anchor="middle">télémétrie</text>
+
+  <!-- Pillar 1 — Usage & Tokens (top) -->
+  <g class="interactive" data-card="pillar-usage" tabindex="0" role="button"
+     aria-label="Pilier 1 — Usage et tokens">
+    <rect x="345" y="195" width="210" height="125" rx="3"
+          fill="#FAF8F3" stroke="#B7332C" stroke-width="1.25"/>
+    <text x="365" y="222" class="mono" font-size="10" font-weight="600"
+          letter-spacing="0.06em" fill="#B7332C">PILIER 01</text>
+    <text x="365" y="245" class="display" font-size="14" font-weight="600"
+          fill="#1A1A1A">Usage &amp; Tokens</text>
+    <line x1="365" y1="258" x2="535" y2="258" stroke="#E5E1D8" stroke-width="0.5"/>
+    <text x="365" y="278" class="body" font-size="11" fill="#1A1A1A">Tokens entrée / sortie</text>
+    <text x="365" y="294" class="body" font-size="11" fill="#1A1A1A">Modèle, provider</text>
+    <text x="365" y="310" class="body" font-size="11" fill="#1A1A1A">Coût par trace</text>
+  </g>
+  <line x1="450" y1="320" x2="450" y2="397" stroke="#5A5A5A" stroke-width="0.75"/>
+  <circle cx="450" cy="397" r="3" fill="#1A1A1A"/>
+
+  <!-- Pillar 2 — Performance (top right) -->
+  <g class="interactive" data-card="pillar-performance" tabindex="0" role="button"
+     aria-label="Pilier 2 — Performance">
+    <rect x="615" y="285" width="210" height="125" rx="3"
+          fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="635" y="312" class="mono" font-size="10" font-weight="600"
+          letter-spacing="0.06em" fill="#1F5560">PILIER 02</text>
+    <text x="635" y="335" class="display" font-size="14" font-weight="600"
+          fill="#1A1A1A">Performance</text>
+    <line x1="635" y1="348" x2="805" y2="348" stroke="#E5E1D8" stroke-width="0.5"/>
+    <text x="635" y="368" class="body" font-size="11" fill="#1A1A1A">Latence end-to-end</text>
+    <text x="635" y="384" class="body" font-size="11" fill="#1A1A1A">Time-to-first-token</text>
+    <text x="635" y="400" class="body" font-size="11" fill="#1A1A1A">Throughput, GPU</text>
+  </g>
+  <line x1="615" y1="395" x2="525" y2="442" stroke="#5A5A5A" stroke-width="0.75"/>
+  <circle cx="525" cy="442" r="3" fill="#1A1A1A"/>
+
+  <!-- Pillar 3 — Comportement (bottom right) -->
+  <g class="interactive" data-card="pillar-comportement" tabindex="0" role="button"
+     aria-label="Pilier 3 — Comportement">
+    <rect x="615" y="540" width="210" height="125" rx="3"
+          fill="#FAF8F3" stroke="#B58A2C" stroke-width="1.25"/>
+    <text x="635" y="567" class="mono" font-size="10" font-weight="600"
+          letter-spacing="0.06em" fill="#B58A2C">PILIER 03</text>
+    <text x="635" y="590" class="display" font-size="14" font-weight="600"
+          fill="#1A1A1A">Comportement</text>
+    <line x1="635" y1="603" x2="805" y2="603" stroke="#E5E1D8" stroke-width="0.5"/>
+    <text x="635" y="623" class="body" font-size="11" fill="#1A1A1A">Sélection d'outils</text>
+    <text x="635" y="639" class="body" font-size="11" fill="#1A1A1A">Séquences d'actions</text>
+    <text x="635" y="655" class="body" font-size="11" fill="#1A1A1A">Patterns de routing</text>
+  </g>
+  <line x1="615" y1="555" x2="525" y2="510" stroke="#5A5A5A" stroke-width="0.75"/>
+  <circle cx="525" cy="510" r="3" fill="#1A1A1A"/>
+
+  <!-- Pillar 4 — Qualité (bottom) -->
+  <g class="interactive" data-card="pillar-qualite" tabindex="0" role="button"
+     aria-label="Pilier 4 — Qualité">
+    <rect x="345" y="630" width="210" height="125" rx="3"
+          fill="#FAF8F3" stroke="#B7332C" stroke-width="1.25"/>
+    <text x="365" y="657" class="mono" font-size="10" font-weight="600"
+          letter-spacing="0.06em" fill="#B7332C">PILIER 04</text>
+    <text x="365" y="680" class="display" font-size="14" font-weight="600"
+          fill="#1A1A1A">Qualité</text>
+    <line x1="365" y1="693" x2="535" y2="693" stroke="#E5E1D8" stroke-width="0.5"/>
+    <text x="365" y="713" class="body" font-size="11" fill="#1A1A1A">Score LLM-as-judge</text>
+    <text x="365" y="729" class="body" font-size="11" fill="#1A1A1A">Détection hallucinations</text>
+    <text x="365" y="745" class="body" font-size="11" fill="#1A1A1A">Pertinence, complétion</text>
+  </g>
+  <line x1="450" y1="630" x2="450" y2="553" stroke="#5A5A5A" stroke-width="0.75"/>
+  <circle cx="450" cy="553" r="3" fill="#1A1A1A"/>
+
+  <!-- Pillar 5 — Gouvernance (bottom left) -->
+  <g class="interactive" data-card="pillar-gouvernance" tabindex="0" role="button"
+     aria-label="Pilier 5 — Gouvernance">
+    <rect x="75" y="540" width="210" height="125" rx="3"
+          fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="95" y="567" class="mono" font-size="10" font-weight="600"
+          letter-spacing="0.06em" fill="#1F5560">PILIER 05</text>
+    <text x="95" y="590" class="display" font-size="14" font-weight="600"
+          fill="#1A1A1A">Gouvernance</text>
+    <line x1="95" y1="603" x2="265" y2="603" stroke="#E5E1D8" stroke-width="0.5"/>
+    <text x="95" y="623" class="body" font-size="11" fill="#1A1A1A">Guardrails activés</text>
+    <text x="95" y="639" class="body" font-size="11" fill="#1A1A1A">Politiques respectées</text>
+    <text x="95" y="655" class="body" font-size="11" fill="#1A1A1A">Audit trail cognitif</text>
+  </g>
+  <line x1="285" y1="555" x2="375" y2="510" stroke="#5A5A5A" stroke-width="0.75"/>
+  <circle cx="375" cy="510" r="3" fill="#1A1A1A"/>
+
+  <!-- Pillar 6 — Drift & Fiabilité (top left) -->
+  <g class="interactive" data-card="pillar-drift" tabindex="0" role="button"
+     aria-label="Pilier 6 — Drift et fiabilité">
+    <rect x="75" y="285" width="210" height="125" rx="3"
+          fill="#FAF8F3" stroke="#B58A2C" stroke-width="1.25"/>
+    <text x="95" y="312" class="mono" font-size="10" font-weight="600"
+          letter-spacing="0.06em" fill="#B58A2C">PILIER 06</text>
+    <text x="95" y="335" class="display" font-size="14" font-weight="600"
+          fill="#1A1A1A">Drift &amp; Fiabilité</text>
+    <line x1="95" y1="348" x2="265" y2="348" stroke="#E5E1D8" stroke-width="0.5"/>
+    <text x="95" y="368" class="body" font-size="11" fill="#1A1A1A">Dérive sémantique</text>
+    <text x="95" y="384" class="body" font-size="11" fill="#1A1A1A">Régression de scores</text>
+    <text x="95" y="400" class="body" font-size="11" fill="#1A1A1A">Variance évaluations</text>
+  </g>
+  <line x1="285" y1="395" x2="375" y2="442" stroke="#5A5A5A" stroke-width="0.75"/>
+  <circle cx="375" cy="442" r="3" fill="#1A1A1A"/>
+
+  <!-- LEGEND grouping at bottom -->
+  <line x1="60" y1="800" x2="840" y2="800" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <text x="60" y="828" class="body" font-size="11" font-weight="500" fill="#5A5A5A">FAMILLE OPÉRATIONNELLE</text>
+  <circle cx="252" cy="824" r="4" fill="#B7332C"/>
+  <text x="262" y="828" class="body" font-size="11" fill="#1A1A1A">coûts &amp; valeur métier</text>
+
+  <text x="60" y="848" class="body" font-size="11" font-weight="500" fill="#5A5A5A">FAMILLE TECHNIQUE</text>
+  <circle cx="252" cy="844" r="4" fill="#1F5560"/>
+  <text x="262" y="848" class="body" font-size="11" fill="#1A1A1A">runtime, infrastructure, gouvernance</text>
+
+  <text x="450" y="828" class="body" font-size="11" font-weight="500" fill="#5A5A5A">FAMILLE COGNITIVE</text>
+  <circle cx="630" cy="824" r="4" fill="#B58A2C"/>
+  <text x="640" y="828" class="body" font-size="11" fill="#1A1A1A">décisions, dérive, raisonnement</text>
+
+  <!-- FOOTER -->
+  <text x="60" y="878" class="body" font-size="10" font-style="italic"
+        fill="#5A5A5A">Sources : Voiceflow 2026, Kore.ai, Langfuse documentation</text>
+</svg>
+
+<svg id="svg-03-bus" data-schema-id="schema-03" role="img" aria-label="Architecture bus d'observabilité agentique" xmlns="http://www.w3.org/2000/svg" viewBox="0 155 1200 645">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+    <marker id="arrow-03" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#5A5A5A"/>
+    </marker>
+    <marker id="arrow-03-emph" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#B7332C"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="800" fill="transparent"/>
+
+  <g class="svg-header">
+  <text x="60" y="55" class="mono" font-size="11" font-weight="600"
+        letter-spacing="0.12em" fill="#B7332C">SCHÉMA 03</text>
+  <text x="60" y="92" class="display" font-size="26" font-weight="600"
+        letter-spacing="-0.01em" fill="#1A1A1A">Architecture de référence avec bus d'observabilité</text>
+  <text x="60" y="118" class="display" font-size="16" font-style="italic"
+        fill="#5A5A5A">Le bus d'observabilité agit comme une colonne vertébrale qui traverse toutes les couches</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
+  </g>
+
+  <!-- LAYER 1 — Utilisateur -->
+  <text x="60" y="180" class="body" font-size="10" font-weight="500"
+        letter-spacing="0.08em" fill="#5A5A5A">UTILISATEUR</text>
+  <line x1="60" y1="190" x2="160" y2="190" stroke="#B8B5AE" stroke-width="0.5"/>
+
+  <g class="interactive" data-card="user-input" tabindex="0" role="button"
+     aria-label="Interaction utilisateur">
+    <rect x="180" y="165" width="180" height="48" rx="3"
+          fill="#FAF8F3" stroke="#1A1A1A" stroke-width="1.25"/>
+    <text x="270" y="187" class="display" font-size="13" font-weight="600"
+          fill="#1A1A1A" text-anchor="middle">Requête utilisateur</text>
+    <text x="270" y="203" class="body" font-size="10" font-style="italic"
+          fill="#5A5A5A" text-anchor="middle">prompt + contexte conversationnel</text>
+  </g>
+
+  <!-- LAYER 2 — Orchestration -->
+  <text x="60" y="278" class="body" font-size="10" font-weight="500"
+        letter-spacing="0.08em" fill="#5A5A5A">ORCHESTRATION</text>
+  <line x1="60" y1="288" x2="180" y2="288" stroke="#B8B5AE" stroke-width="0.5"/>
+
+  <!-- Planner -->
+  <g class="interactive" data-card="planner-agent" tabindex="0" role="button"
+     aria-label="Planner agent">
+    <rect x="180" y="262" width="180" height="68" rx="3"
+          fill="#FAF8F3" stroke="#1A1A1A" stroke-width="1.25"/>
+    <text x="270" y="290" class="display" font-size="14" font-weight="600"
+          fill="#1A1A1A" text-anchor="middle">Planner</text>
+    <text x="270" y="310" class="body" font-size="11" font-style="italic"
+          fill="#5A5A5A" text-anchor="middle">décomposition en sous-objectifs</text>
+  </g>
+
+  <!-- Executor -->
+  <g class="interactive" data-card="executor-agent" tabindex="0" role="button"
+     aria-label="Executor agent">
+    <rect x="510" y="262" width="180" height="68" rx="3"
+          fill="#FAF8F3" stroke="#1A1A1A" stroke-width="1.25"/>
+    <text x="600" y="290" class="display" font-size="14" font-weight="600"
+          fill="#1A1A1A" text-anchor="middle">Executor</text>
+    <text x="600" y="310" class="body" font-size="11" font-style="italic"
+          fill="#5A5A5A" text-anchor="middle">appelle outils, modèles, RAG</text>
+  </g>
+
+  <!-- Critic -->
+  <g class="interactive" data-card="critic-agent" tabindex="0" role="button"
+     aria-label="Critic agent">
+    <rect x="840" y="262" width="180" height="68" rx="3"
+          fill="#FAF8F3" stroke="#1A1A1A" stroke-width="1.25"/>
+    <text x="930" y="290" class="display" font-size="14" font-weight="600"
+          fill="#1A1A1A" text-anchor="middle">Critic</text>
+    <text x="930" y="310" class="body" font-size="11" font-style="italic"
+          fill="#5A5A5A" text-anchor="middle">évalue, corrige, replanifie</text>
+  </g>
+
+  <!-- Flows between agents -->
+  <path d="M 360 296 L 510 296" stroke="#1A1A1A" stroke-width="2.5" fill="none" marker-end="url(#arrow-03-emph)"/>
+  <path d="M 690 296 L 840 296" stroke="#1A1A1A" stroke-width="2.5" fill="none" marker-end="url(#arrow-03-emph)"/>
+  <!-- Loop back from Critic to Planner -->
+  <path d="M 930 330 Q 930 360 600 360 Q 270 360 270 330"
+        stroke="#B7332C" stroke-width="1.5" fill="none" stroke-dasharray="4 3" marker-end="url(#arrow-03)"/>
+  <text x="600" y="377" class="body" font-size="10" font-style="italic"
+        fill="#B7332C" text-anchor="middle">boucle de correction (replanification)</text>
+
+  <!-- User → Planner -->
+  <path d="M 270 213 L 270 262" stroke="#5A5A5A" stroke-width="1.25" fill="none" marker-end="url(#arrow-03)"/>
+
+  <!-- LAYER 3 — Capabilities (Tools, LLM, RAG) -->
+  <text x="60" y="430" class="body" font-size="10" font-weight="500"
+        letter-spacing="0.08em" fill="#5A5A5A">CAPACITÉS</text>
+  <line x1="60" y1="440" x2="160" y2="440" stroke="#B8B5AE" stroke-width="0.5"/>
+
+  <g class="interactive" data-card="tool-sandbox" tabindex="0" role="button"
+     aria-label="Sandbox d'outils MCP">
+    <rect x="180" y="410" width="240" height="68" rx="3"
+          fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="300" y="438" class="display" font-size="13" font-weight="600"
+          fill="#1F5560" text-anchor="middle">Sandbox d'outils</text>
+    <text x="300" y="458" class="body" font-size="10" font-style="italic"
+          fill="#5A5A5A" text-anchor="middle">code · web · APIs · MCP servers</text>
+  </g>
+
+  <g class="interactive" data-card="llm-providers" tabindex="0" role="button"
+     aria-label="Providers LLM">
+    <rect x="480" y="410" width="240" height="68" rx="3"
+          fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="600" y="438" class="display" font-size="13" font-weight="600"
+          fill="#1F5560" text-anchor="middle">Providers LLM</text>
+    <text x="600" y="458" class="body" font-size="10" font-style="italic"
+          fill="#5A5A5A" text-anchor="middle">Anthropic · OpenAI · Bedrock · Vertex</text>
+  </g>
+
+  <g class="interactive" data-card="rag-vector" tabindex="0" role="button"
+     aria-label="RAG et vector store">
+    <rect x="780" y="410" width="240" height="68" rx="3"
+          fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="900" y="438" class="display" font-size="13" font-weight="600"
+          fill="#1F5560" text-anchor="middle">RAG &amp; Vector Store</text>
+    <text x="900" y="458" class="body" font-size="10" font-style="italic"
+          fill="#5A5A5A" text-anchor="middle">retrieval, grounding, embeddings</text>
+  </g>
+
+  <!-- Executor → capabilities -->
+  <path d="M 600 330 L 600 410" stroke="#5A5A5A" stroke-width="1.25" fill="none" stroke-dasharray="2 3"/>
+  <path d="M 600 410 L 300 410" stroke="#5A5A5A" stroke-width="1.25" fill="none" stroke-dasharray="2 3"/>
+  <path d="M 600 410 L 900 410" stroke="#5A5A5A" stroke-width="1.25" fill="none" stroke-dasharray="2 3"/>
+
+  <!-- LAYER 4 — Memory + Telemetry spine -->
+  <text x="60" y="555" class="body" font-size="10" font-weight="500"
+        letter-spacing="0.08em" fill="#5A5A5A">PLAN HORIZONTAL</text>
+  <line x1="60" y1="565" x2="200" y2="565" stroke="#B8B5AE" stroke-width="0.5"/>
+
+  <g class="interactive" data-card="memory-layer" tabindex="0" role="button"
+     aria-label="Couche de mémoire agent">
+    <rect x="180" y="540" width="280" height="64" rx="3"
+          fill="#FAF8F3" stroke="#B58A2C" stroke-width="1.25"/>
+    <text x="320" y="568" class="display" font-size="13" font-weight="600"
+          fill="#B58A2C" text-anchor="middle">Mémoire agent</text>
+    <text x="320" y="588" class="body" font-size="10" font-style="italic"
+          fill="#5A5A5A" text-anchor="middle">épisodique · sémantique · procédurale</text>
+  </g>
+
+  <!-- TELEMETRY BUS — the highlighted horizontal spine -->
+  <g class="interactive" data-card="telemetry-bus" tabindex="0" role="button"
+     aria-label="Bus de télémétrie OpenTelemetry">
+    <rect x="180" y="640" width="840" height="68" rx="3"
+          fill="#B7332C" fill-opacity="0.07" stroke="#B7332C" stroke-width="2"/>
+    <text x="600" y="668" class="display" font-size="14" font-weight="600"
+          fill="#B7332C" text-anchor="middle">Bus de télémétrie OpenTelemetry GenAI</text>
+    <text x="600" y="690" class="body" font-size="11" font-style="italic"
+          fill="#5A5A5A" text-anchor="middle">spans · metrics · events · evaluations · OTLP export → backends d'observabilité</text>
+  </g>
+
+  <!-- Vertical lines from EVERY component to the telemetry bus (the spine effect) -->
+  <line x1="270" y1="213" x2="270" y2="640" stroke="#B7332C" stroke-opacity="0.35" stroke-width="0.5" stroke-dasharray="1 4"/>
+  <line x1="270" y1="330" x2="270" y2="540" stroke="#B7332C" stroke-opacity="0.35" stroke-width="0.5" stroke-dasharray="1 4"/>
+  <line x1="600" y1="330" x2="600" y2="540" stroke="#B7332C" stroke-opacity="0.35" stroke-width="0.5" stroke-dasharray="1 4"/>
+  <line x1="930" y1="330" x2="930" y2="640" stroke="#B7332C" stroke-opacity="0.35" stroke-width="0.5" stroke-dasharray="1 4"/>
+  <line x1="300" y1="478" x2="300" y2="640" stroke="#B7332C" stroke-opacity="0.35" stroke-width="0.5" stroke-dasharray="1 4"/>
+  <line x1="600" y1="478" x2="600" y2="640" stroke="#B7332C" stroke-opacity="0.35" stroke-width="0.5" stroke-dasharray="1 4"/>
+  <line x1="900" y1="478" x2="900" y2="640" stroke="#B7332C" stroke-opacity="0.35" stroke-width="0.5" stroke-dasharray="1 4"/>
+  <line x1="320" y1="604" x2="320" y2="640" stroke="#B7332C" stroke-opacity="0.35" stroke-width="0.5" stroke-dasharray="1 4"/>
+
+  <!-- ANNOTATIONS -->
+  <!-- Marker 1 — User input -->
+  <circle cx="160" cy="189" r="11" fill="#B7332C"/>
+  <text x="160" y="194" class="mono" font-size="11" font-weight="600"
+        fill="#FAF8F3" text-anchor="middle">1</text>
+
+  <!-- Marker 2 — Loop back -->
+  <circle cx="600" cy="357" r="11" fill="#B7332C"/>
+  <text x="600" y="362" class="mono" font-size="11" font-weight="600"
+        fill="#FAF8F3" text-anchor="middle">2</text>
+
+  <!-- Marker 3 — Telemetry bus -->
+  <circle cx="160" cy="674" r="11" fill="#B7332C"/>
+  <text x="160" y="679" class="mono" font-size="11" font-weight="600"
+        fill="#FAF8F3" text-anchor="middle">3</text>
+
+  <!-- Annotation legend at right -->
+  <text x="1050" y="180" class="body" font-size="10" fill="#1A1A1A">
+    <tspan x="1050" dy="0" font-weight="600">1</tspan>
+    <tspan x="1050" dy="14">Entrée tracée :</tspan>
+    <tspan x="1050" dy="13">contexte conver-</tspan>
+    <tspan x="1050" dy="13">sationnel capturé</tspan>
+    <tspan x="1050" dy="13">dès le 1er span.</tspan>
+  </text>
+
+  <text x="1050" y="350" class="body" font-size="10" fill="#1A1A1A">
+    <tspan x="1050" dy="0" font-weight="600">2</tspan>
+    <tspan x="1050" dy="14">La boucle critic→</tspan>
+    <tspan x="1050" dy="13">planner produit un</tspan>
+    <tspan x="1050" dy="13">span imbriqué; gardée</tspan>
+    <tspan x="1050" dy="13">visible pour le replay.</tspan>
+  </text>
+
+  <text x="1050" y="660" class="body" font-size="10" fill="#1A1A1A">
+    <tspan x="1050" dy="0" font-weight="600">3</tspan>
+    <tspan x="1050" dy="14">Bus unique →</tspan>
+    <tspan x="1050" dy="13">N backends. Spans</tspan>
+    <tspan x="1050" dy="13">conformes OTel</tspan>
+    <tspan x="1050" dy="13">GenAI v1.37+.</tspan>
+  </text>
+
+  <!-- FOOTER -->
+  <line x1="60" y1="745" x2="1140" y2="745" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="770" class="body" font-size="10" font-style="italic"
+        fill="#5A5A5A">Sources : Anthropic « Building Effective Agents » 2024, OpenTelemetry GenAI Semantic Conventions</text>
+  <text x="60" y="785" class="body" font-size="10" font-style="italic"
+        fill="#B8B5AE">Pattern observé sur 14 implémentations multi-agents en production (2025–2026)</text>
+</svg>
+
+<svg id="svg-04-trace" data-schema-id="schema-04" role="img" aria-label="Anatomie d'une trace OpenTelemetry GenAI" xmlns="http://www.w3.org/2000/svg" viewBox="0 155 1200 645">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="800" fill="transparent"/>
+
+  <g class="svg-header">
+  <text x="60" y="55" class="mono" font-size="11" font-weight="600"
+        letter-spacing="0.12em" fill="#B7332C">SCHÉMA 04</text>
+  <text x="60" y="92" class="display" font-size="26" font-weight="600"
+        letter-spacing="-0.01em" fill="#1A1A1A">Anatomie d'une trace OpenTelemetry GenAI</text>
+  <text x="60" y="118" class="display" font-size="16" font-style="italic"
+        fill="#5A5A5A">Hiérarchie de spans pour un agent multi-step avec tool call et évaluation attachée</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
+  </g>
+
+  <!-- Time axis indicator -->
+  <text x="60" y="180" class="body" font-size="10" font-weight="500"
+        letter-spacing="0.08em" fill="#5A5A5A">PROFONDEUR</text>
+  <text x="980" y="180" class="body" font-size="10" font-weight="500"
+        letter-spacing="0.08em" fill="#5A5A5A" text-anchor="end">DURÉE (ms)</text>
+  <text x="1130" y="180" class="body" font-size="10" font-weight="500"
+        letter-spacing="0.08em" fill="#5A5A5A" text-anchor="end">ATTRIBUTS GenAI</text>
+
+  <line x1="60" y1="195" x2="1140" y2="195" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- ROOT SPAN: invoke_agent -->
+  <g class="interactive" data-card="invoke-agent" tabindex="0" role="button"
+     aria-label="Span racine invoke_agent">
+    <rect x="60" y="220" width="900" height="42" rx="3"
+          fill="#B7332C" fill-opacity="0.07" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="80" y="237" class="mono" font-size="11" font-weight="600" fill="#B7332C">invoke_agent TravelConcierge</text>
+    <text x="80" y="253" class="body" font-size="10" font-style="italic" fill="#5A5A5A">SpanKind: CLIENT — span racine de l'orchestration agent</text>
+    <text x="975" y="245" class="mono" font-size="11" fill="#1A1A1A" text-anchor="end">1240</text>
+  </g>
+  <text x="990" y="245" class="body" font-size="9" fill="#1A1A1A">gen_ai.operation.name=invoke_agent</text>
+
+  <!-- Indentation guide line for child spans -->
+  <line x1="80" y1="270" x2="80" y2="660" stroke="#B8B5AE" stroke-width="0.5" stroke-dasharray="1 3"/>
+
+  <!-- CHILD 1: chat (first LLM call) -->
+  <g class="interactive" data-card="chat-1" tabindex="0" role="button"
+     aria-label="Premier appel LLM chat">
+    <rect x="100" y="290" width="270" height="42" rx="3"
+          fill="#1F5560" fill-opacity="0.07" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="118" y="307" class="mono" font-size="10" font-weight="600" fill="#1F5560">chat claude-sonnet-4</text>
+    <text x="118" y="322" class="body" font-size="9" font-style="italic" fill="#5A5A5A">SpanKind: CLIENT · 1er tour : demande tool_call</text>
+    <text x="362" y="315" class="mono" font-size="10" fill="#1A1A1A" text-anchor="end">320</text>
+  </g>
+  <line x1="80" y1="311" x2="100" y2="311" stroke="#B8B5AE" stroke-width="0.5"/>
+  <text x="990" y="315" class="body" font-size="9" fill="#1A1A1A">request.model · usage.input_tokens · usage.output_tokens</text>
+
+  <!-- CHILD 2: execute_tool -->
+  <g class="interactive" data-card="execute-tool" tabindex="0" role="button"
+     aria-label="Span execute_tool">
+    <rect x="100" y="358" width="180" height="42" rx="3"
+          fill="#B58A2C" fill-opacity="0.09" stroke="#B58A2C" stroke-width="1.25"/>
+    <text x="118" y="375" class="mono" font-size="10" font-weight="600" fill="#B58A2C">execute_tool get_weather</text>
+    <text x="118" y="390" class="body" font-size="9" font-style="italic" fill="#5A5A5A">SpanKind: INTERNAL · function tool</text>
+    <text x="272" y="383" class="mono" font-size="10" fill="#1A1A1A" text-anchor="end">105</text>
+  </g>
+  <line x1="80" y1="379" x2="100" y2="379" stroke="#B8B5AE" stroke-width="0.5"/>
+  <text x="990" y="383" class="body" font-size="9" fill="#1A1A1A">tool.name · tool.call.id · tool.type=function</text>
+
+  <!-- Sub-child: external API call inside tool -->
+  <g class="interactive" data-card="external-api" tabindex="0" role="button"
+     aria-label="Sous-span appel API externe">
+    <rect x="140" y="418" width="120" height="36" rx="3"
+          fill="#FAF8F3" stroke="#B58A2C" stroke-width="0.75" stroke-dasharray="2 2"/>
+    <text x="155" y="434" class="mono" font-size="9" font-weight="500" fill="#B58A2C">HTTP weather API</text>
+    <text x="155" y="446" class="body" font-size="8" font-style="italic" fill="#5A5A5A">span imbriqué externe</text>
+    <text x="252" y="441" class="mono" font-size="9" fill="#1A1A1A" text-anchor="end">87</text>
+  </g>
+  <line x1="100" y1="436" x2="140" y2="436" stroke="#B8B5AE" stroke-width="0.5"/>
+
+  <!-- CHILD 3: chat (second LLM call - synthesis) -->
+  <g class="interactive" data-card="chat-2" tabindex="0" role="button"
+     aria-label="Deuxième appel LLM chat avec évaluation">
+    <rect x="100" y="476" width="290" height="42" rx="3"
+          fill="#1F5560" fill-opacity="0.07" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="118" y="493" class="mono" font-size="10" font-weight="600" fill="#1F5560">chat claude-sonnet-4</text>
+    <text x="118" y="508" class="body" font-size="9" font-style="italic" fill="#5A5A5A">SpanKind: CLIENT · synthèse finale</text>
+    <text x="382" y="501" class="mono" font-size="10" fill="#1A1A1A" text-anchor="end">340</text>
+  </g>
+  <line x1="80" y1="497" x2="100" y2="497" stroke="#B8B5AE" stroke-width="0.5"/>
+  <text x="990" y="501" class="body" font-size="9" fill="#1A1A1A">request.model · usage.input_tokens · response.model</text>
+
+  <!-- ATTACHED EVENT: gen_ai.evaluation.result -->
+  <g class="interactive" data-card="eval-event" tabindex="0" role="button"
+     aria-label="Événement d'évaluation attaché">
+    <rect x="160" y="535" width="220" height="38" rx="3"
+          fill="#FAF8F3" stroke="#B7332C" stroke-width="0.75" stroke-dasharray="3 2"/>
+    <text x="175" y="551" class="mono" font-size="9" font-weight="600" fill="#B7332C">⚡ gen_ai.evaluation.result</text>
+    <text x="175" y="565" class="body" font-size="9" font-style="italic" fill="#5A5A5A">Event sur le span chat #2 — score=0.87</text>
+  </g>
+  <path d="M 245 518 L 245 535" stroke="#B7332C" stroke-width="0.5" stroke-dasharray="2 2"/>
+
+  <!-- LEGEND of attribute color coding -->
+  <line x1="60" y1="610" x2="1140" y2="610" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <text x="60" y="635" class="body" font-size="11" font-weight="500" fill="#5A5A5A">LÉGENDE — TYPES DE SPAN OTel GenAI</text>
+
+  <rect x="60" y="650" width="14" height="14" rx="2" fill="#B7332C" fill-opacity="0.07" stroke="#B7332C" stroke-width="1"/>
+  <text x="80" y="661" class="body" font-size="11" fill="#1A1A1A">Agent</text>
+  <text x="80" y="674" class="body" font-size="9" font-style="italic" fill="#5A5A5A">invoke_agent</text>
+
+  <rect x="180" y="650" width="14" height="14" rx="2" fill="#1F5560" fill-opacity="0.07" stroke="#1F5560" stroke-width="1"/>
+  <text x="200" y="661" class="body" font-size="11" fill="#1A1A1A">Modèle</text>
+  <text x="200" y="674" class="body" font-size="9" font-style="italic" fill="#5A5A5A">chat, text_completion</text>
+
+  <rect x="320" y="650" width="14" height="14" rx="2" fill="#B58A2C" fill-opacity="0.09" stroke="#B58A2C" stroke-width="1"/>
+  <text x="340" y="661" class="body" font-size="11" fill="#1A1A1A">Outil</text>
+  <text x="340" y="674" class="body" font-size="9" font-style="italic" fill="#5A5A5A">execute_tool</text>
+
+  <rect x="440" y="650" width="14" height="14" rx="2" fill="#FAF8F3" stroke="#B7332C" stroke-width="0.75" stroke-dasharray="2 2"/>
+  <text x="460" y="661" class="body" font-size="11" fill="#1A1A1A">Événement</text>
+  <text x="460" y="674" class="body" font-size="9" font-style="italic" fill="#5A5A5A">gen_ai.evaluation.result, content capture</text>
+
+  <!-- Annotated callouts -->
+  <text x="640" y="650" class="body" font-size="10" font-style="italic" fill="#5A5A5A">
+    <tspan x="640" dy="0">Le span racine englobe toute la durée totale ; les enfants sont</tspan>
+    <tspan x="640" dy="14">imbriqués à profondeur croissante. Chaque span porte les attributs</tspan>
+    <tspan x="640" dy="14">standardisés `gen_ai.*` qui rendent la trace lisible par n'importe</tspan>
+    <tspan x="640" dy="14">quel backend conforme aux conventions sémantiques.</tspan>
+  </text>
+
+  <!-- FOOTER -->
+  <line x1="60" y1="745" x2="1140" y2="745" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="770" class="body" font-size="10" font-style="italic"
+        fill="#5A5A5A">Sources : OpenTelemetry GenAI Spec v1.37+, GenAI Agent Spans, GenAI Events ; représentation simplifiée d'une trace réelle</text>
+  <text x="60" y="785" class="body" font-size="10" font-style="italic"
+        fill="#B8B5AE">Méthodologie : trace synthétique illustrant les 4 types de spans GenAI canoniques</text>
+</svg>
+
+<svg id="svg-05-backends" data-schema-id="schema-05" role="img" aria-label="Une instrumentation pour plusieurs backends" xmlns="http://www.w3.org/2000/svg" viewBox="0 155 1200 645">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+    <marker id="arrow-05" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#5A5A5A"/>
+    </marker>
+    <marker id="arrow-05-emph" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#B7332C"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="800" fill="transparent"/>
+
+  <g class="svg-header">
+  <text x="60" y="55" class="mono" font-size="11" font-weight="600"
+        letter-spacing="0.12em" fill="#B7332C">SCHÉMA 05</text>
+  <text x="60" y="92" class="display" font-size="26" font-weight="600"
+        letter-spacing="-0.01em" fill="#1A1A1A">Un instrument, N backends — la promesse d'OpenTelemetry</text>
+  <text x="60" y="118" class="display" font-size="16" font-style="italic"
+        fill="#5A5A5A">Découpler l'instrumentation du backend : la stratégie anti-lock-in pour l'IA agentique</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
+  </g>
+
+  <!-- STAGE LABELS -->
+  <text x="170" y="180" class="body" font-size="10" font-weight="500"
+        letter-spacing="0.08em" fill="#5A5A5A" text-anchor="middle">INSTRUMENTER</text>
+  <text x="600" y="180" class="body" font-size="10" font-weight="500"
+        letter-spacing="0.08em" fill="#5A5A5A" text-anchor="middle">TRANSPORTER</text>
+  <text x="990" y="180" class="body" font-size="10" font-weight="500"
+        letter-spacing="0.08em" fill="#5A5A5A" text-anchor="middle">EXPLOITER</text>
+
+  <!-- LEFT: Single application -->
+  <g class="interactive" data-card="single-app" tabindex="0" role="button"
+     aria-label="Application unique instrumentée">
+    <rect x="80" y="240" width="200" height="290" rx="3"
+          fill="#FAF8F3" stroke="#B7332C" stroke-width="2"/>
+    <text x="180" y="270" class="display" font-size="15" font-weight="600"
+          fill="#1A1A1A" text-anchor="middle">Application</text>
+    <text x="180" y="290" class="display" font-size="15" font-weight="600"
+          fill="#1A1A1A" text-anchor="middle">agent IA</text>
+    <line x1="105" y1="310" x2="255" y2="310" stroke="#E5E1D8" stroke-width="0.5"/>
+
+    <text x="180" y="335" class="mono" font-size="10" font-weight="600"
+          fill="#5A5A5A" text-anchor="middle">CODE MÉTIER</text>
+    <text x="180" y="355" class="body" font-size="11" fill="#1A1A1A" text-anchor="middle">Python · TypeScript · Go</text>
+
+    <text x="180" y="385" class="mono" font-size="10" font-weight="600"
+          fill="#5A5A5A" text-anchor="middle">+ OTel SDK</text>
+    <text x="180" y="404" class="body" font-size="10" fill="#1A1A1A" text-anchor="middle">tracer, meter, logger</text>
+
+    <text x="180" y="432" class="mono" font-size="10" font-weight="600"
+          fill="#5A5A5A" text-anchor="middle">+ AUTO-INSTRUMENTOR</text>
+    <text x="180" y="451" class="body" font-size="10" fill="#1A1A1A" text-anchor="middle">OpenLLMetry · OpenLIT</text>
+    <text x="180" y="466" class="body" font-size="10" fill="#1A1A1A" text-anchor="middle">openai-agents-v2 · ADK</text>
+
+    <text x="180" y="495" class="mono" font-size="10" font-weight="600"
+          fill="#B7332C" text-anchor="middle">→ SPANS OTel GenAI</text>
+    <text x="180" y="513" class="body" font-size="10" font-style="italic" fill="#5A5A5A" text-anchor="middle">conformes v1.37+</text>
+  </g>
+
+  <!-- ARROW from app to collector -->
+  <path d="M 280 380 L 380 380" stroke="#B7332C" stroke-width="2" fill="none" marker-end="url(#arrow-05-emph)"/>
+  <text x="330" y="370" class="mono" font-size="9" fill="#B7332C" text-anchor="middle">OTLP</text>
+
+  <!-- MIDDLE: OTel Collector -->
+  <g class="interactive" data-card="otel-collector" tabindex="0" role="button"
+     aria-label="OTel Collector central">
+    <rect x="395" y="240" width="270" height="290" rx="3"
+          fill="#1F5560" fill-opacity="0.07" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="530" y="272" class="display" font-size="15" font-weight="600"
+          fill="#1F5560" text-anchor="middle">OTel Collector</text>
+    <text x="530" y="290" class="body" font-size="11" font-style="italic"
+          fill="#5A5A5A" text-anchor="middle">gateway centralisée</text>
+    <line x1="420" y1="308" x2="640" y2="308" stroke="#1F5560" stroke-opacity="0.3" stroke-width="0.5"/>
+
+    <!-- Processors as rows -->
+    <text x="420" y="335" class="mono" font-size="10" font-weight="600" fill="#5A5A5A">PROCESSORS</text>
+
+    <rect x="420" y="350" width="220" height="26" rx="2" fill="#FAF8F3" stroke="#1F5560" stroke-width="0.75"/>
+    <text x="530" y="367" class="body" font-size="10" fill="#1A1A1A" text-anchor="middle">Redaction PII</text>
+
+    <rect x="420" y="384" width="220" height="26" rx="2" fill="#FAF8F3" stroke="#1F5560" stroke-width="0.75"/>
+    <text x="530" y="401" class="body" font-size="10" fill="#1A1A1A" text-anchor="middle">Sampling intelligent (10%)</text>
+
+    <rect x="420" y="418" width="220" height="26" rx="2" fill="#FAF8F3" stroke="#1F5560" stroke-width="0.75"/>
+    <text x="530" y="435" class="body" font-size="10" fill="#1A1A1A" text-anchor="middle">Enrichissement (env, version)</text>
+
+    <rect x="420" y="452" width="220" height="26" rx="2" fill="#FAF8F3" stroke="#1F5560" stroke-width="0.75"/>
+    <text x="530" y="469" class="body" font-size="10" fill="#1A1A1A" text-anchor="middle">Routing multi-export</text>
+
+    <text x="530" y="510" class="body" font-size="10" font-style="italic" fill="#1F5560" text-anchor="middle">Le seul point où les PII</text>
+    <text x="530" y="524" class="body" font-size="10" font-style="italic" fill="#1F5560" text-anchor="middle">peuvent encore être filtrées</text>
+  </g>
+
+  <!-- ARROW from collector to backends -->
+  <line x1="665" y1="285" x2="800" y2="240" stroke="#5A5A5A" stroke-width="1" fill="none" marker-end="url(#arrow-05)"/>
+  <line x1="665" y1="335" x2="800" y2="290" stroke="#5A5A5A" stroke-width="1" fill="none" marker-end="url(#arrow-05)"/>
+  <line x1="665" y1="385" x2="800" y2="340" stroke="#5A5A5A" stroke-width="1" fill="none" marker-end="url(#arrow-05)"/>
+  <line x1="665" y1="385" x2="800" y2="390" stroke="#5A5A5A" stroke-width="1" fill="none" marker-end="url(#arrow-05)"/>
+  <line x1="665" y1="385" x2="800" y2="440" stroke="#5A5A5A" stroke-width="1" fill="none" marker-end="url(#arrow-05)"/>
+  <line x1="665" y1="435" x2="800" y2="490" stroke="#5A5A5A" stroke-width="1" fill="none" marker-end="url(#arrow-05)"/>
+  <line x1="665" y1="485" x2="800" y2="540" stroke="#5A5A5A" stroke-width="1" fill="none" marker-end="url(#arrow-05)"/>
+
+  <!-- RIGHT: Backends column -->
+  <g class="interactive" data-card="backend-incumbents" tabindex="0" role="button"
+     aria-label="Backends incumbents APM">
+    <rect x="810" y="225" width="320" height="100" rx="3"
+          fill="#FAF8F3" stroke="#1A1A1A" stroke-width="1.25"/>
+    <text x="830" y="252" class="mono" font-size="10" font-weight="600"
+          letter-spacing="0.06em" fill="#5A5A5A">INCUMBENTS APM</text>
+    <line x1="830" y1="262" x2="1110" y2="262" stroke="#E5E1D8" stroke-width="0.5"/>
+    <text x="830" y="285" class="body" font-size="11" fill="#1A1A1A">Datadog · Dynatrace · Splunk</text>
+    <text x="830" y="305" class="body" font-size="11" fill="#1A1A1A">Elastic · New Relic</text>
+  </g>
+
+  <g class="interactive" data-card="backend-ai-native" tabindex="0" role="button"
+     aria-label="Backends AI-native">
+    <rect x="810" y="345" width="320" height="100" rx="3"
+          fill="#FAF8F3" stroke="#B7332C" stroke-width="1.25"/>
+    <text x="830" y="372" class="mono" font-size="10" font-weight="600"
+          letter-spacing="0.06em" fill="#B7332C">AI-NATIVE</text>
+    <line x1="830" y1="382" x2="1110" y2="382" stroke="#E5E1D8" stroke-width="0.5"/>
+    <text x="830" y="405" class="body" font-size="11" fill="#1A1A1A">Langfuse · Braintrust · LangSmith</text>
+    <text x="830" y="425" class="body" font-size="11" fill="#1A1A1A">Arize Phoenix · Galileo · Maxim AI</text>
+  </g>
+
+  <g class="interactive" data-card="backend-open" tabindex="0" role="button"
+     aria-label="Backends open-source">
+    <rect x="810" y="465" width="320" height="100" rx="3"
+          fill="#FAF8F3" stroke="#B58A2C" stroke-width="1.25"/>
+    <text x="830" y="492" class="mono" font-size="10" font-weight="600"
+          letter-spacing="0.06em" fill="#B58A2C">OPEN-SOURCE / SELF-HOSTED</text>
+    <line x1="830" y1="502" x2="1110" y2="502" stroke="#E5E1D8" stroke-width="0.5"/>
+    <text x="830" y="525" class="body" font-size="11" fill="#1A1A1A">Grafana stack · Tempo · Loki · Mimir</text>
+    <text x="830" y="545" class="body" font-size="11" fill="#1A1A1A">Jaeger · ClickHouse · Langfuse OSS</text>
+  </g>
+
+  <!-- Strategic insight box -->
+  <g>
+    <rect x="80" y="595" width="1050" height="100" rx="3"
+          fill="#B7332C" fill-opacity="0.05" stroke="#B7332C" stroke-width="1" stroke-dasharray="3 2"/>
+    <text x="105" y="623" class="mono" font-size="10" font-weight="600"
+          letter-spacing="0.06em" fill="#B7332C">CONSÉQUENCE STRATÉGIQUE</text>
+    <text x="105" y="650" class="body" font-size="13" fill="#1A1A1A">
+      <tspan x="105" dy="0">Recommander OpenTelemetry comme standard d'instrumentation en mission consulting protège le client contre le lock-in vendor</tspan>
+      <tspan x="105" dy="20">tout en gardant la flexibilité de changer de backend sans re-instrumenter — argument de négociation puissant face aux SaaS dominants.</tspan>
+    </text>
+  </g>
+
+  <!-- FOOTER -->
+  <line x1="60" y1="730" x2="1140" y2="730" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="755" class="body" font-size="10" font-style="italic"
+        fill="#5A5A5A">Sources : OpenTelemetry GenAI Semantic Conventions, Datadog &amp; Langfuse OTel integration docs</text>
+  <text x="60" y="772" class="body" font-size="10" font-style="italic"
+        fill="#B8B5AE">Architecture observée chez 8 implémentations multi-backends actives en 2026</text>
+</svg>
+
+<svg id="svg-06-alertes" data-schema-id="schema-06" role="img" aria-label="Hiérarchie des alertes et boucles de correction" xmlns="http://www.w3.org/2000/svg" viewBox="0 155 1200 645">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+    <marker id="arrow-06" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#5A5A5A"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="800" fill="transparent"/>
+
+  <g class="svg-header">
+  <text x="60" y="55" class="mono" font-size="11" font-weight="600"
+        letter-spacing="0.12em" fill="#B7332C">SCHÉMA 06</text>
+  <text x="60" y="92" class="display" font-size="26" font-weight="600"
+        letter-spacing="-0.01em" fill="#1A1A1A">Hiérarchie d'alertes et boucles de correction</text>
+  <text x="60" y="118" class="display" font-size="16" font-style="italic"
+        fill="#5A5A5A">Cinq niveaux de réaction, du blocage automatique au refactor stratégique</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
+  </g>
+
+  <!-- COLUMN HEADERS -->
+  <text x="100" y="180" class="body" font-size="10" font-weight="500"
+        letter-spacing="0.08em" fill="#5A5A5A">NIVEAU</text>
+  <text x="225" y="180" class="body" font-size="10" font-weight="500"
+        letter-spacing="0.08em" fill="#5A5A5A">DÉCLENCHEUR</text>
+  <text x="540" y="180" class="body" font-size="10" font-weight="500"
+        letter-spacing="0.08em" fill="#5A5A5A">RÉACTION</text>
+  <text x="870" y="180" class="body" font-size="10" font-weight="500"
+        letter-spacing="0.08em" fill="#5A5A5A">RESPONSABLE</text>
+  <text x="1050" y="180" class="body" font-size="10" font-weight="500"
+        letter-spacing="0.08em" fill="#5A5A5A">SLA</text>
+
+  <line x1="60" y1="190" x2="1140" y2="190" stroke="#1A1A1A" stroke-width="0.5"/>
+
+  <!-- L0 — Automatic guardrail -->
+  <g class="interactive" data-card="level-0" tabindex="0" role="button"
+     aria-label="Niveau L0 — Guardrail automatique">
+    <rect x="60" y="205" width="1080" height="80" rx="3"
+          fill="#B7332C" fill-opacity="0.08" stroke="#B7332C" stroke-width="1.5"/>
+
+    <text x="80" y="230" class="mono" font-size="14" font-weight="600" fill="#B7332C">L0</text>
+    <text x="80" y="248" class="body" font-size="10" font-style="italic" fill="#5A5A5A">automatique</text>
+
+    <text x="220" y="232" class="display" font-size="13" font-weight="600" fill="#1A1A1A">Guardrail bloque output</text>
+    <text x="220" y="250" class="body" font-size="11" fill="#5A5A5A">PII, toxicité, jailbreak, injection détectés temps réel</text>
+    <text x="220" y="268" class="body" font-size="10" font-style="italic" fill="#B7332C">→ exemple : Sensitive Data Scanner Datadog, Guardrails AI</text>
+
+    <text x="540" y="232" class="display" font-size="13" font-weight="600" fill="#1A1A1A">Bloque · réécrit · masque</text>
+    <text x="540" y="250" class="body" font-size="11" fill="#5A5A5A">L'output ne quitte pas l'agent</text>
+    <text x="540" y="268" class="body" font-size="10" font-style="italic" fill="#B7332C">incident enregistré · audit trail OTel</text>
+
+    <text x="870" y="232" class="display" font-size="13" font-weight="600" fill="#1A1A1A">Système</text>
+    <text x="870" y="250" class="body" font-size="10" fill="#5A5A5A">aucune action humaine</text>
+
+    <text x="1050" y="240" class="mono" font-size="13" font-weight="600" fill="#B7332C">&lt; 100 ms</text>
+  </g>
+
+  <!-- L1 — Semi-auto rerouting -->
+  <g class="interactive" data-card="level-1" tabindex="0" role="button"
+     aria-label="Niveau L1 — Rerouting semi-auto">
+    <rect x="60" y="298" width="1080" height="80" rx="3"
+          fill="#B58A2C" fill-opacity="0.08" stroke="#B58A2C" stroke-width="1.25"/>
+
+    <text x="80" y="323" class="mono" font-size="14" font-weight="600" fill="#B58A2C">L1</text>
+    <text x="80" y="341" class="body" font-size="10" font-style="italic" fill="#5A5A5A">semi-auto</text>
+
+    <text x="220" y="325" class="display" font-size="13" font-weight="600" fill="#1A1A1A">Latence excessive · erreur modèle</text>
+    <text x="220" y="343" class="body" font-size="11" fill="#5A5A5A">P99 dépasse seuil, 5xx sur le provider primaire</text>
+    <text x="220" y="361" class="body" font-size="10" font-style="italic" fill="#B58A2C">→ exemple : timeout Anthropic → fallback Claude Haiku 4.5</text>
+
+    <text x="540" y="325" class="display" font-size="13" font-weight="600" fill="#1A1A1A">Rerouting modèle de fallback</text>
+    <text x="540" y="343" class="body" font-size="11" fill="#5A5A5A">Le routeur sélectionne un modèle de secours</text>
+    <text x="540" y="361" class="body" font-size="10" font-style="italic" fill="#B58A2C">notification on-call passive</text>
+
+    <text x="870" y="325" class="display" font-size="13" font-weight="600" fill="#1A1A1A">Routeur LLM</text>
+    <text x="870" y="343" class="body" font-size="10" fill="#5A5A5A">supervisé en post-mortem</text>
+
+    <text x="1050" y="333" class="mono" font-size="13" font-weight="600" fill="#B58A2C">&lt; 1 s</text>
+  </g>
+
+  <!-- L2 — Supervised alert -->
+  <g class="interactive" data-card="level-2" tabindex="0" role="button"
+     aria-label="Niveau L2 — Alerte supervisée">
+    <rect x="60" y="391" width="1080" height="80" rx="3"
+          fill="#1F5560" fill-opacity="0.08" stroke="#1F5560" stroke-width="1.25"/>
+
+    <text x="80" y="416" class="mono" font-size="14" font-weight="600" fill="#1F5560">L2</text>
+    <text x="80" y="434" class="body" font-size="10" font-style="italic" fill="#5A5A5A">supervisé</text>
+
+    <text x="220" y="418" class="display" font-size="13" font-weight="600" fill="#1A1A1A">Drift score qualité · pattern anormal</text>
+    <text x="220" y="436" class="body" font-size="11" fill="#5A5A5A">Score LLM-as-judge en baisse sur 24 h, hallucination locale</text>
+    <text x="220" y="454" class="body" font-size="10" font-style="italic" fill="#1F5560">→ exemple : faithfulness score &lt; 0.85 sur l'agent commercial</text>
+
+    <text x="540" y="418" class="display" font-size="13" font-weight="600" fill="#1A1A1A">Alerte + suggestion rollback prompt</text>
+    <text x="540" y="436" class="body" font-size="11" fill="#5A5A5A">Slack/PagerDuty + lien vers la trace fautive</text>
+    <text x="540" y="454" class="body" font-size="10" font-style="italic" fill="#1F5560">on-call investigue, A/B test possible</text>
+
+    <text x="870" y="418" class="display" font-size="13" font-weight="600" fill="#1A1A1A">SRE / on-call</text>
+    <text x="870" y="436" class="body" font-size="10" fill="#5A5A5A">décide rollback ou tolère</text>
+
+    <text x="1050" y="426" class="mono" font-size="13" font-weight="600" fill="#1F5560">&lt; 5 min</text>
+  </g>
+
+  <!-- L3 — Human investigation -->
+  <g class="interactive" data-card="level-3" tabindex="0" role="button"
+     aria-label="Niveau L3 — Investigation humaine">
+    <rect x="60" y="484" width="1080" height="80" rx="3"
+          fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1.25"/>
+
+    <text x="80" y="509" class="mono" font-size="14" font-weight="600" fill="#5A5A5A">L3</text>
+    <text x="80" y="527" class="body" font-size="10" font-style="italic" fill="#5A5A5A">humain</text>
+
+    <text x="220" y="511" class="display" font-size="13" font-weight="600" fill="#1A1A1A">Pattern d'erreur complexe</text>
+    <text x="220" y="529" class="body" font-size="11" fill="#5A5A5A">Coût qui explose, sélection d'outils erratique, boucles infinies</text>
+    <text x="220" y="547" class="body" font-size="10" font-style="italic" fill="#5A5A5A">→ exemple : agent qui appelle 14 fois la même API</text>
+
+    <text x="540" y="511" class="display" font-size="13" font-weight="600" fill="#1A1A1A">Replay de trace · A/B test prompt</text>
+    <text x="540" y="529" class="body" font-size="11" fill="#5A5A5A">Investigation manuelle, conversion trace → test case</text>
+    <text x="540" y="547" class="body" font-size="10" font-style="italic" fill="#5A5A5A">post-mortem, mise à jour datasets eval</text>
+
+    <text x="870" y="511" class="display" font-size="13" font-weight="600" fill="#1A1A1A">AI engineer</text>
+    <text x="870" y="529" class="body" font-size="10" fill="#5A5A5A">+ data scientist</text>
+
+    <text x="1050" y="519" class="mono" font-size="13" font-weight="600" fill="#5A5A5A">&lt; 1 h</text>
+  </g>
+
+  <!-- L4 — Strategic refactor -->
+  <g class="interactive" data-card="level-4" tabindex="0" role="button"
+     aria-label="Niveau L4 — Refactor stratégique">
+    <rect x="60" y="577" width="1080" height="80" rx="3"
+          fill="#B8B5AE" fill-opacity="0.15" stroke="#1A1A1A" stroke-width="1.25"/>
+
+    <text x="80" y="602" class="mono" font-size="14" font-weight="600" fill="#1A1A1A">L4</text>
+    <text x="80" y="620" class="body" font-size="10" font-style="italic" fill="#5A5A5A">stratégique</text>
+
+    <text x="220" y="604" class="display" font-size="13" font-weight="600" fill="#1A1A1A">Dégradation systémique</text>
+    <text x="220" y="622" class="body" font-size="11" fill="#5A5A5A">Drift permanent, modèle obsolète, architecture inadaptée</text>
+    <text x="220" y="640" class="body" font-size="10" font-style="italic" fill="#5A5A5A">→ exemple : passage Claude Sonnet 4 → Sonnet 4.6 + refonte RAG</text>
+
+    <text x="540" y="604" class="display" font-size="13" font-weight="600" fill="#1A1A1A">Refonte architecture · changement modèle</text>
+    <text x="540" y="622" class="body" font-size="11" fill="#5A5A5A">Décision produit, changement de fournisseur ou modèle</text>
+    <text x="540" y="640" class="body" font-size="10" font-style="italic" fill="#5A5A5A">migration encadrée, tests de régression</text>
+
+    <text x="870" y="604" class="display" font-size="13" font-weight="600" fill="#1A1A1A">Tech lead + sponsor</text>
+    <text x="870" y="622" class="body" font-size="10" fill="#5A5A5A">décision validée par CoE</text>
+
+    <text x="1050" y="612" class="mono" font-size="13" font-weight="600" fill="#1A1A1A">jours</text>
+  </g>
+
+  <!-- The escalation arrow on the left -->
+  <path d="M 30 220 L 30 640" stroke="#5A5A5A" stroke-width="1.25" fill="none" marker-end="url(#arrow-06)"/>
+  <text x="20" y="430" class="body" font-size="9" font-style="italic" fill="#5A5A5A" transform="rotate(-90, 20, 430)" text-anchor="middle">escalade temporelle &amp; cognitive</text>
+
+  <!-- ANNOTATION below -->
+  <text x="60" y="697" class="body" font-size="11" font-style="italic" fill="#B7332C">
+    Conversion trace → test case (innovation Braintrust) : tout incident L2/L3 résolu doit se transformer en cas de test permanent dans le dataset d'évaluation continue.
+  </text>
+
+  <!-- FOOTER -->
+  <line x1="60" y1="745" x2="1140" y2="745" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="770" class="body" font-size="10" font-style="italic"
+        fill="#5A5A5A">Sources : Braintrust « AI Observability Buyer's Guide 2026 », Voiceflow, Splunk AI Agent Monitoring</text>
+  <text x="60" y="785" class="body" font-size="10" font-style="italic"
+        fill="#B8B5AE">Méthodologie : taxonomie consolidée à partir de 6 référentiels d'alerting agentique observés en mission</text>
+</svg>
+
+<svg id="svg-07-marche" data-schema-id="schema-07" role="img" aria-label="Vendor landscape de l'observabilité agentique" xmlns="http://www.w3.org/2000/svg" viewBox="0 155 900 745">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+    <marker id="arrow-07" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#5A5A5A"/>
+    </marker>
+  </defs>
+
+  <rect width="900" height="900" fill="transparent"/>
+
+  <g class="svg-header">
+  <text x="60" y="55" class="mono" font-size="11" font-weight="600"
+        letter-spacing="0.12em" fill="#B7332C">SCHÉMA 07</text>
+  <text x="60" y="92" class="display" font-size="24" font-weight="600"
+        letter-spacing="-0.01em" fill="#1A1A1A">Quadrant : maturité plateforme × capacité IA-native</text>
+  <text x="60" y="116" class="display" font-size="14" font-style="italic"
+        fill="#5A5A5A">Le double marché 2026 — incumbents APM en convergence vs challengers eval-first</text>
+  <line x1="60" y1="138" x2="840" y2="138" stroke="#E5E1D8" stroke-width="0.5"/>
+  </g>
+
+  <!-- AXES -->
+  <!-- Y axis -->
+  <line x1="180" y1="200" x2="180" y2="760" stroke="#1A1A1A" stroke-width="1.25" marker-start="url(#arrow-07)"/>
+  <text x="170" y="200" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="end">+</text>
+  <text x="170" y="775" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="end">–</text>
+
+  <!-- X axis -->
+  <line x1="180" y1="760" x2="820" y2="760" stroke="#1A1A1A" stroke-width="1.25" marker-end="url(#arrow-07)"/>
+  <text x="180" y="785" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">–</text>
+  <text x="820" y="785" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">+</text>
+
+  <!-- Axis labels -->
+  <text x="500" y="810" class="display" font-size="14" font-style="italic" fill="#1A1A1A" text-anchor="middle">Capacité IA-native (eval, guardrails, traces cognitives)</text>
+  <text x="155" y="480" class="display" font-size="14" font-style="italic" fill="#1A1A1A" text-anchor="middle" transform="rotate(-90, 155, 480)">Maturité plateforme (full-stack, gouvernance, échelle)</text>
+
+  <!-- Quadrant subtle background fills -->
+  <rect x="180" y="200" width="320" height="280" fill="#1F5560" fill-opacity="0.025"/>
+  <rect x="500" y="200" width="320" height="280" fill="#B7332C" fill-opacity="0.04"/>
+  <rect x="180" y="480" width="320" height="280" fill="#FAF8F3"/>
+  <rect x="500" y="480" width="320" height="280" fill="#B58A2C" fill-opacity="0.03"/>
+
+  <!-- Mid-axis crosshair -->
+  <line x1="500" y1="200" x2="500" y2="760" stroke="#B8B5AE" stroke-width="0.5" stroke-dasharray="2 3"/>
+  <line x1="180" y1="480" x2="820" y2="480" stroke="#B8B5AE" stroke-width="0.5" stroke-dasharray="2 3"/>
+
+  <!-- Quadrant labels (corners) -->
+  <text x="195" y="225" class="mono" font-size="10" font-weight="600" letter-spacing="0.08em" fill="#1F5560">INCUMBENTS ADAPTÉS</text>
+  <text x="195" y="240" class="body" font-size="10" font-style="italic" fill="#5A5A5A">profondeur plateforme, IA en rattrapage</text>
+
+  <text x="815" y="225" class="mono" font-size="10" font-weight="600" letter-spacing="0.08em" fill="#B7332C" text-anchor="end">LEADERS IA</text>
+  <text x="815" y="240" class="body" font-size="10" font-style="italic" fill="#5A5A5A" text-anchor="end">convergence plateforme + IA</text>
+
+  <text x="195" y="755" class="mono" font-size="10" font-weight="600" letter-spacing="0.08em" fill="#5A5A5A">NICHE PLAYERS</text>
+  <text x="195" y="745" class="body" font-size="10" font-style="italic" fill="#5A5A5A">portée limitée, scope spécifique</text>
+
+  <text x="815" y="755" class="mono" font-size="10" font-weight="600" letter-spacing="0.08em" fill="#B58A2C" text-anchor="end">CHALLENGERS AI-NATIVE</text>
+  <text x="815" y="745" class="body" font-size="10" font-style="italic" fill="#5A5A5A" text-anchor="end">eval-first, écosystème jeune</text>
+
+  <!-- DOTS — vendor positioning -->
+  <!-- Top-left: Incumbents adaptés -->
+  <g class="interactive" data-card="dynatrace" tabindex="0" role="button" aria-label="Dynatrace">
+    <circle cx="445" cy="265" r="10" fill="#1F5560"/>
+    <text x="445" y="269" class="mono" font-size="9" font-weight="600" fill="#FAF8F3" text-anchor="middle">DT</text>
+  </g>
+  <text x="460" y="270" class="body" font-size="11" font-weight="500" fill="#1A1A1A">Dynatrace</text>
+
+  <g class="interactive" data-card="datadog" tabindex="0" role="button" aria-label="Datadog">
+    <circle cx="475" cy="320" r="10" fill="#1F5560"/>
+    <text x="475" y="324" class="mono" font-size="9" font-weight="600" fill="#FAF8F3" text-anchor="middle">DD</text>
+  </g>
+  <text x="490" y="325" class="body" font-size="11" font-weight="500" fill="#1A1A1A">Datadog</text>
+
+  <g class="interactive" data-card="splunk" tabindex="0" role="button" aria-label="Splunk">
+    <circle cx="395" cy="290" r="10" fill="#1F5560"/>
+    <text x="395" y="294" class="mono" font-size="9" font-weight="600" fill="#FAF8F3" text-anchor="middle">SP</text>
+  </g>
+  <text x="345" y="295" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="end">Splunk</text>
+
+  <g class="interactive" data-card="elastic" tabindex="0" role="button" aria-label="Elastic">
+    <circle cx="395" cy="380" r="10" fill="#1F5560"/>
+    <text x="395" y="384" class="mono" font-size="9" font-weight="600" fill="#FAF8F3" text-anchor="middle">EL</text>
+  </g>
+  <text x="345" y="385" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="end">Elastic</text>
+
+  <g class="interactive" data-card="grafana" tabindex="0" role="button" aria-label="Grafana Labs">
+    <circle cx="455" cy="425" r="10" fill="#1F5560"/>
+    <text x="455" y="429" class="mono" font-size="9" font-weight="600" fill="#FAF8F3" text-anchor="middle">GF</text>
+  </g>
+  <text x="470" y="430" class="body" font-size="11" font-weight="500" fill="#1A1A1A">Grafana Labs</text>
+
+  <g class="interactive" data-card="newrelic" tabindex="0" role="button" aria-label="New Relic">
+    <circle cx="345" cy="345" r="10" fill="#1F5560"/>
+    <text x="345" y="349" class="mono" font-size="9" font-weight="600" fill="#FAF8F3" text-anchor="middle">NR</text>
+  </g>
+  <text x="295" y="350" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="end">New Relic</text>
+
+  <!-- Top-right: Leaders IA (where convergence happens) -->
+  <g class="interactive" data-card="langfuse" tabindex="0" role="button" aria-label="Langfuse">
+    <circle cx="610" cy="335" r="10" fill="#B7332C"/>
+    <text x="610" y="339" class="mono" font-size="9" font-weight="600" fill="#FAF8F3" text-anchor="middle">LF</text>
+  </g>
+  <text x="625" y="340" class="body" font-size="11" font-weight="500" fill="#1A1A1A">Langfuse</text>
+
+  <g class="interactive" data-card="braintrust" tabindex="0" role="button" aria-label="Braintrust">
+    <circle cx="700" cy="290" r="10" fill="#B7332C"/>
+    <text x="700" y="294" class="mono" font-size="9" font-weight="600" fill="#FAF8F3" text-anchor="middle">BT</text>
+  </g>
+  <text x="715" y="295" class="body" font-size="11" font-weight="500" fill="#1A1A1A">Braintrust</text>
+
+  <g class="interactive" data-card="langsmith" tabindex="0" role="button" aria-label="LangSmith">
+    <circle cx="640" cy="395" r="10" fill="#B7332C"/>
+    <text x="640" y="399" class="mono" font-size="9" font-weight="600" fill="#FAF8F3" text-anchor="middle">LS</text>
+  </g>
+  <text x="655" y="400" class="body" font-size="11" font-weight="500" fill="#1A1A1A">LangSmith</text>
+
+  <!-- Bottom-right: AI-native challengers -->
+  <g class="interactive" data-card="arize" tabindex="0" role="button" aria-label="Arize AI">
+    <circle cx="700" cy="540" r="10" fill="#B58A2C"/>
+    <text x="700" y="544" class="mono" font-size="9" font-weight="600" fill="#FAF8F3" text-anchor="middle">AR</text>
+  </g>
+  <text x="715" y="545" class="body" font-size="11" font-weight="500" fill="#1A1A1A">Arize AI</text>
+
+  <g class="interactive" data-card="galileo" tabindex="0" role="button" aria-label="Galileo AI">
+    <circle cx="640" cy="595" r="10" fill="#B58A2C"/>
+    <text x="640" y="599" class="mono" font-size="9" font-weight="600" fill="#FAF8F3" text-anchor="middle">GA</text>
+  </g>
+  <text x="655" y="600" class="body" font-size="11" font-weight="500" fill="#1A1A1A">Galileo AI</text>
+
+  <g class="interactive" data-card="maxim" tabindex="0" role="button" aria-label="Maxim AI">
+    <circle cx="730" cy="650" r="10" fill="#B58A2C"/>
+    <text x="730" y="654" class="mono" font-size="9" font-weight="600" fill="#FAF8F3" text-anchor="middle">MX</text>
+  </g>
+  <text x="745" y="655" class="body" font-size="11" font-weight="500" fill="#1A1A1A">Maxim AI</text>
+
+  <!-- Bottom-left: Niche players -->
+  <g class="interactive" data-card="helicone" tabindex="0" role="button" aria-label="Helicone">
+    <circle cx="290" cy="610" r="9" fill="#5A5A5A"/>
+    <text x="290" y="614" class="mono" font-size="9" font-weight="600" fill="#FAF8F3" text-anchor="middle">HE</text>
+  </g>
+  <text x="305" y="615" class="body" font-size="11" font-weight="500" fill="#1A1A1A">Helicone</text>
+
+  <g class="interactive" data-card="whylabs" tabindex="0" role="button" aria-label="WhyLabs">
+    <circle cx="330" cy="555" r="9" fill="#5A5A5A"/>
+    <text x="330" y="559" class="mono" font-size="9" font-weight="600" fill="#FAF8F3" text-anchor="middle">WL</text>
+  </g>
+  <text x="345" y="560" class="body" font-size="11" font-weight="500" fill="#1A1A1A">WhyLabs</text>
+
+  <g class="interactive" data-card="phoenix" tabindex="0" role="button" aria-label="Phoenix open-source">
+    <circle cx="395" cy="660" r="9" fill="#5A5A5A"/>
+    <text x="395" y="664" class="mono" font-size="9" font-weight="600" fill="#FAF8F3" text-anchor="middle">PX</text>
+  </g>
+  <text x="410" y="665" class="body" font-size="11" font-weight="500" fill="#1A1A1A">Phoenix (Arize OSS)</text>
+
+  <!-- Movement arrows showing convergence -->
+  <path d="M 445 255 Q 530 240 600 280" stroke="#1F5560" stroke-width="1" fill="none"
+        stroke-dasharray="3 3" marker-end="url(#arrow-07)" opacity="0.5"/>
+  <text x="525" y="225" class="body" font-size="9" font-style="italic" fill="#1F5560" opacity="0.7" text-anchor="middle">incumbents → IA-native</text>
+
+  <path d="M 700 305 Q 600 350 510 410" stroke="#B7332C" stroke-width="1" fill="none"
+        stroke-dasharray="3 3" marker-end="url(#arrow-07)" opacity="0.5"/>
+  <text x="610" y="430" class="body" font-size="9" font-style="italic" fill="#B7332C" opacity="0.7">eval-first → full plateforme</text>
+
+  <!-- LEGEND -->
+  <line x1="60" y1="850" x2="840" y2="850" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <text x="60" y="875" class="body" font-size="9" font-style="italic" fill="#5A5A5A">
+    Sources : Gartner Magic Quadrant Observability 2025, Confident AI 2026, Monte Carlo, Maxim AI  </text>
+</svg>
+
+<svg id="svg-08-maturite" data-schema-id="schema-08" role="img" aria-label="Échelle de maturité de l'observabilité agentique" xmlns="http://www.w3.org/2000/svg" viewBox="0 155 1200 645">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+    <marker id="arrow-08" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#5A5A5A"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="800" fill="transparent"/>
+
+  <g class="svg-header">
+  <text x="60" y="55" class="mono" font-size="11" font-weight="600"
+        letter-spacing="0.12em" fill="#B7332C">SCHÉMA 08</text>
+  <text x="60" y="92" class="display" font-size="26" font-weight="600"
+        letter-spacing="-0.01em" fill="#1A1A1A">Échelle de maturité — du monitoring réactif à l'autonomie</text>
+  <text x="60" y="118" class="display" font-size="16" font-style="italic"
+        fill="#5A5A5A">Cinq niveaux pour situer l'organisation et planifier la trajectoire 2026–2028</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
+  </g>
+
+  <!-- The progression - escalier ascendant -->
+  <!-- Step heights/widths: each step is 200 wide, ascending heights -->
+  <!-- baseline at y=620 -->
+
+  <!-- L1 -->
+  <g class="interactive" data-card="maturity-l1" tabindex="0" role="button"
+     aria-label="Niveau 1 — Monitoring réactif">
+    <rect x="100" y="500" width="200" height="120" rx="3"
+          fill="#B8B5AE" fill-opacity="0.15" stroke="#5A5A5A" stroke-width="1.25"/>
+    <text x="120" y="528" class="mono" font-size="11" font-weight="600" fill="#5A5A5A">N1</text>
+    <text x="120" y="552" class="display" font-size="14" font-weight="600" fill="#1A1A1A">Monitoring</text>
+    <text x="120" y="572" class="display" font-size="14" font-weight="600" fill="#1A1A1A">réactif</text>
+
+    <line x1="120" y1="582" x2="280" y2="582" stroke="#5A5A5A" stroke-opacity="0.3" stroke-width="0.5"/>
+
+    <text x="120" y="600" class="body" font-size="10" font-style="italic" fill="#5A5A5A">logs manuels · debug ad-hoc</text>
+    <text x="120" y="613" class="body" font-size="10" font-style="italic" fill="#5A5A5A">pas de traces, alertes basiques</text>
+  </g>
+
+  <!-- L2 -->
+  <g class="interactive" data-card="maturity-l2" tabindex="0" role="button"
+     aria-label="Niveau 2 — Observabilité structurée">
+    <rect x="300" y="430" width="200" height="190" rx="3"
+          fill="#1F5560" fill-opacity="0.08" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="320" y="458" class="mono" font-size="11" font-weight="600" fill="#1F5560">N2</text>
+    <text x="320" y="482" class="display" font-size="14" font-weight="600" fill="#1A1A1A">Observabilité</text>
+    <text x="320" y="502" class="display" font-size="14" font-weight="600" fill="#1A1A1A">structurée</text>
+
+    <line x1="320" y1="512" x2="480" y2="512" stroke="#1F5560" stroke-opacity="0.3" stroke-width="0.5"/>
+
+    <text x="320" y="530" class="body" font-size="10" font-style="italic" fill="#5A5A5A">tracing distribué OTel</text>
+    <text x="320" y="543" class="body" font-size="10" font-style="italic" fill="#5A5A5A">dashboards latence/tokens</text>
+    <text x="320" y="556" class="body" font-size="10" font-style="italic" fill="#5A5A5A">alertes seuil multi-signal</text>
+
+    <line x1="320" y1="575" x2="480" y2="575" stroke="#E5E1D8" stroke-width="0.5"/>
+    <text x="320" y="592" class="mono" font-size="9" font-weight="500" fill="#5A5A5A">PRÉREQUIS</text>
+    <text x="320" y="608" class="body" font-size="10" fill="#1A1A1A">SDK + collector déployés</text>
+  </g>
+
+  <!-- L3 -->
+  <g class="interactive" data-card="maturity-l3" tabindex="0" role="button"
+     aria-label="Niveau 3 — Évaluation continue">
+    <rect x="500" y="350" width="200" height="270" rx="3"
+          fill="#B58A2C" fill-opacity="0.10" stroke="#B58A2C" stroke-width="1.25"/>
+    <text x="520" y="378" class="mono" font-size="11" font-weight="600" fill="#B58A2C">N3</text>
+    <text x="520" y="402" class="display" font-size="14" font-weight="600" fill="#1A1A1A">Évaluation</text>
+    <text x="520" y="422" class="display" font-size="14" font-weight="600" fill="#1A1A1A">continue</text>
+
+    <line x1="520" y1="432" x2="680" y2="432" stroke="#B58A2C" stroke-opacity="0.3" stroke-width="0.5"/>
+
+    <text x="520" y="450" class="body" font-size="10" font-style="italic" fill="#5A5A5A">LLM-as-judge online</text>
+    <text x="520" y="463" class="body" font-size="10" font-style="italic" fill="#5A5A5A">guardrails runtime</text>
+    <text x="520" y="476" class="body" font-size="10" font-style="italic" fill="#5A5A5A">feedback loops humains</text>
+    <text x="520" y="489" class="body" font-size="10" font-style="italic" fill="#5A5A5A">drift detection</text>
+
+    <line x1="520" y1="508" x2="680" y2="508" stroke="#E5E1D8" stroke-width="0.5"/>
+    <text x="520" y="525" class="mono" font-size="9" font-weight="500" fill="#5A5A5A">PRÉREQUIS</text>
+    <text x="520" y="541" class="body" font-size="10" fill="#1A1A1A">datasets de référence</text>
+    <text x="520" y="555" class="body" font-size="10" fill="#1A1A1A">scorers calibrés</text>
+
+    <text x="520" y="585" class="mono" font-size="9" font-weight="500" fill="#B7332C">PALIER COGNITIF</text>
+    <text x="520" y="601" class="body" font-size="10" font-style="italic" fill="#B7332C">la qualité devient une métrique opérationnelle</text>
+  </g>
+
+  <!-- L4 -->
+  <g class="interactive" data-card="maturity-l4" tabindex="0" role="button"
+     aria-label="Niveau 4 — Autonomie supervisée">
+    <rect x="700" y="270" width="200" height="350" rx="3"
+          fill="#B7332C" fill-opacity="0.07" stroke="#B7332C" stroke-width="1.25"/>
+    <text x="720" y="298" class="mono" font-size="11" font-weight="600" fill="#B7332C">N4</text>
+    <text x="720" y="322" class="display" font-size="14" font-weight="600" fill="#1A1A1A">Autonomie</text>
+    <text x="720" y="342" class="display" font-size="14" font-weight="600" fill="#1A1A1A">supervisée</text>
+
+    <line x1="720" y1="352" x2="880" y2="352" stroke="#B7332C" stroke-opacity="0.3" stroke-width="0.5"/>
+
+    <text x="720" y="370" class="body" font-size="10" font-style="italic" fill="#5A5A5A">auto-remédiation L0/L1</text>
+    <text x="720" y="383" class="body" font-size="10" font-style="italic" fill="#5A5A5A">rollback automatique</text>
+    <text x="720" y="396" class="body" font-size="10" font-style="italic" fill="#5A5A5A">scaling intelligent</text>
+    <text x="720" y="409" class="body" font-size="10" font-style="italic" fill="#5A5A5A">workflows agentiques</text>
+
+    <line x1="720" y1="428" x2="880" y2="428" stroke="#E5E1D8" stroke-width="0.5"/>
+    <text x="720" y="445" class="mono" font-size="9" font-weight="500" fill="#5A5A5A">PRÉREQUIS</text>
+    <text x="720" y="461" class="body" font-size="10" fill="#1A1A1A">runbook automatisé</text>
+    <text x="720" y="475" class="body" font-size="10" fill="#1A1A1A">human-in-the-loop défini</text>
+    <text x="720" y="489" class="body" font-size="10" fill="#1A1A1A">SLO mesurables</text>
+
+    <text x="720" y="518" class="mono" font-size="9" font-weight="500" fill="#B7332C">RÔLE TYPIQUE</text>
+    <text x="720" y="534" class="body" font-size="10" fill="#1A1A1A">SRE-IA + plateforme</text>
+    <text x="720" y="548" class="body" font-size="10" fill="#1A1A1A">d'observabilité unifiée</text>
+
+    <text x="720" y="585" class="body" font-size="10" font-style="italic" fill="#5A5A5A">cible 2026 pour la majorité</text>
+    <text x="720" y="600" class="body" font-size="10" font-style="italic" fill="#5A5A5A">des programmes IA enterprise</text>
+  </g>
+
+  <!-- L5 -->
+  <g class="interactive" data-card="maturity-l5" tabindex="0" role="button"
+     aria-label="Niveau 5 — Autonomie complète">
+    <rect x="900" y="200" width="200" height="420" rx="3"
+          fill="#B7332C" fill-opacity="0.12" stroke="#B7332C" stroke-width="2"/>
+    <text x="920" y="228" class="mono" font-size="11" font-weight="600" fill="#B7332C">N5</text>
+    <text x="920" y="252" class="display" font-size="14" font-weight="600" fill="#1A1A1A">Autonomie</text>
+    <text x="920" y="272" class="display" font-size="14" font-weight="600" fill="#1A1A1A">complète</text>
+
+    <line x1="920" y1="282" x2="1080" y2="282" stroke="#B7332C" stroke-opacity="0.3" stroke-width="0.5"/>
+
+    <text x="920" y="300" class="body" font-size="10" font-style="italic" fill="#5A5A5A">agents d'observabilité</text>
+    <text x="920" y="313" class="body" font-size="10" font-style="italic" fill="#5A5A5A">auto-optimisation prompts</text>
+    <text x="920" y="326" class="body" font-size="10" font-style="italic" fill="#5A5A5A">gouvernance AI-driven</text>
+    <text x="920" y="339" class="body" font-size="10" font-style="italic" fill="#5A5A5A">remédiation autonome L2/L3</text>
+
+    <line x1="920" y1="358" x2="1080" y2="358" stroke="#E5E1D8" stroke-width="0.5"/>
+    <text x="920" y="375" class="mono" font-size="9" font-weight="500" fill="#5A5A5A">PRÉREQUIS</text>
+    <text x="920" y="391" class="body" font-size="10" fill="#1A1A1A">cognitive audit trail</text>
+    <text x="920" y="405" class="body" font-size="10" fill="#1A1A1A">policies versionnées</text>
+    <text x="920" y="419" class="body" font-size="10" fill="#1A1A1A">multi-agent orchestrator</text>
+
+    <text x="920" y="448" class="mono" font-size="9" font-weight="500" fill="#B7332C">RÔLE TYPIQUE</text>
+    <text x="920" y="464" class="body" font-size="10" fill="#1A1A1A">AI Operations Engineer</text>
+    <text x="920" y="478" class="body" font-size="10" fill="#1A1A1A">+ AI Governance Officer</text>
+
+    <text x="920" y="510" class="mono" font-size="9" font-weight="500" fill="#1A1A1A">EXEMPLES VENDOR</text>
+    <text x="920" y="526" class="body" font-size="10" fill="#1A1A1A">Dynatrace Intelligence</text>
+    <text x="920" y="540" class="body" font-size="10" fill="#1A1A1A">Splunk Troubleshooting</text>
+    <text x="920" y="554" class="body" font-size="10" fill="#1A1A1A">Agent · Datadog Bits AI</text>
+
+    <text x="920" y="585" class="body" font-size="10" font-style="italic" fill="#B7332C">horizon 2027–2028</text>
+    <text x="920" y="600" class="body" font-size="10" font-style="italic" fill="#B7332C">sur scope limité</text>
+  </g>
+
+  <!-- baseline -->
+  <line x1="80" y1="620" x2="1120" y2="620" stroke="#1A1A1A" stroke-width="1"/>
+
+  <!-- Trajectory arrow -->
+  <path d="M 80 660 L 1100 660" stroke="#5A5A5A" stroke-width="1" fill="none"
+        stroke-dasharray="4 3" marker-end="url(#arrow-08)"/>
+  <text x="80" y="680" class="body" font-size="11" font-weight="500" fill="#1A1A1A">État typique 2024</text>
+  <text x="500" y="680" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">→ état typique 2026 (cible enterprise)</text>
+  <text x="1100" y="680" class="body" font-size="11" font-weight="500" fill="#B7332C" text-anchor="end">horizon 2027–28</text>
+
+  <!-- ANNOTATION -->
+  <text x="60" y="720" class="body" font-size="11" font-style="italic" fill="#5A5A5A">
+    <tspan x="60" dy="0">Le passage de N2 à N3 est le saut le plus dur : il exige de définir « qu'est-ce qu'une réponse correcte ? » de façon mesurable.</tspan>
+    <tspan x="60" dy="16">Sans datasets de référence et scorers calibrés, le pilier qualité reste une intuition humaine — et l'agent ne peut pas être gouverné à l'échelle.</tspan>
+  </text>
+
+  <!-- FOOTER -->
+  <line x1="60" y1="755" x2="1140" y2="755" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="780" class="body" font-size="10" font-style="italic"
+        fill="#5A5A5A">Sources : IBM Think 2026, Dynatrace Six Predictions 2026, n-iX ; modèle adapté de SRE maturity → observability AI</text>
+</svg>
+</div>
+
+<main class="stage" id="stage">
+  <!-- scènes injectées par JS -->
+</main>
+
+<footer class="footer-bar" id="footer-bar">
+  <div class="timeline" id="timeline" data-no-advance></div>
+  <div class="footer-actions" data-no-advance>
+    <button class="footer-btn" id="btn-sources" type="button">Sources</button>
+    <button class="footer-btn" id="btn-toc" type="button" aria-label="Sommaire">≡</button>
+  </div>
+</footer>
+
+<!-- Sommaire overlay -->
+<div id="toc-overlay" class="full-overlay" hidden role="dialog" aria-modal="true" aria-label="Sommaire des scènes">
+  <button class="overlay-close" type="button" aria-label="Fermer le sommaire">Fermer ✕</button>
+  <ol class="toc-list" id="toc-list"></ol>
+</div>
+
+<!-- Sources overlay -->
+<div id="sources-overlay" class="full-overlay" hidden role="dialog" aria-modal="true" aria-label="Sources">
+  <button class="overlay-close" type="button" aria-label="Fermer les sources">Fermer ✕</button>
+  <input type="search" class="sources-filter" id="sources-filter" placeholder="Filtrer les 22 sources…" data-no-advance>
+  <ol class="sources-list" id="sources-list"></ol>
+</div>
+
+<!-- Zoom overlay -->
+<div id="zoom-overlay" hidden role="dialog" aria-modal="true" aria-label="Schéma agrandi">
+  <div id="zoom-header">
+    <span id="zoom-caption"></span>
+    <div class="zoom-controls">
+      <button class="zoom-out" type="button" aria-label="Dézoomer">−</button>
+      <button class="zoom-reset" type="button" aria-label="Réinitialiser">Reset</button>
+      <button class="zoom-in" type="button" aria-label="Zoomer">+</button>
+      <button class="zoom-close" type="button" aria-label="Fermer">×</button>
+    </div>
+  </div>
+  <div id="zoom-stage" tabindex="-1">
+    <div id="zoom-content"></div>
+    <div id="zoom-hint">molette / pinch pour zoomer · clic-glisser pour déplacer · Esc pour fermer</div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div id="modal-root" hidden role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-card">
+    <button class="modal-close" data-close type="button" aria-label="Fermer">×</button>
+    <p class="modal-eyebrow" id="modal-eyebrow"></p>
+    <h3 id="modal-title"></h3>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<div class="idle-cue" id="idle-cue" aria-hidden="true">→</div>
+
+<div class="toaster" id="toaster" hidden data-no-advance>
+  <span>Tape pour avancer · Swipe ←→ pour changer de scène · Pince pour zoomer</span>
+</div>
+
+<script>
+'use strict';
+
+const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const FADE_MS = REDUCED_MOTION ? 0 : 250;
+
+const SCENES = [
+  { id: 'intro', type: 'punchline', title: 'Le problème', body: 'Un agent IA ne <mark>crashe</mark> pas toujours. Souvent, il <mark>dérive</mark> : même requête, trajectoire différente, erreur graduelle, causalité indirecte.', attribution: 'Mathieu Guglielmino, mai 2026' },
+  {
+    id: 'rupture',
+    type: 'schema',
+    title: 'Du monitoring au cognitive audit trail',
+    schemaId: 'svg-01-rupture',
+    steps: [
+      { caption: 'L’observabilité n’a pas disparu : elle s’est empilée par couches.', highlight: ['[data-card="era-monitoring"]','[data-card="era-apm"]','[data-card="era-cloud-native"]','[data-card="era-agentic"]'], dim: [], hidden: [] },
+      { caption: '2000-2010 : voir si l’infrastructure est up. Utile, mais aveugle au vécu utilisateur.', highlight: ['[data-card="era-monitoring"]'], dim: ['[data-card="era-apm"]','[data-card="era-cloud-native"]','[data-card="era-agentic"]'], hidden: [], modalAuto: 'era-monitoring' },
+      { caption: '2010-2023 : APM puis cloud-native donnent les transactions, traces distribuées et standards OTel.', highlight: ['[data-card="era-apm"]','[data-card="era-cloud-native"]'], dim: ['[data-card="era-monitoring"]','[data-card="era-agentic"]'], hidden: [] },
+      { caption: 'Depuis 2023 : la couche cognitive ajoute trajectoires, outils, évaluations et audit trail.', highlight: ['[data-card="era-agentic"]'], dim: ['[data-card="era-monitoring"]','[data-card="era-apm"]','[data-card="era-cloud-native"]'], hidden: [], modalAuto: 'era-agentic' }
+    ]
+  },
+  {
+    id: 'piliers',
+    type: 'schema',
+    title: 'Six piliers, pas un dashboard',
+    schemaId: 'svg-02-piliers',
+    steps: [
+      { caption: 'La télémétrie agentique couvre coûts, latence, comportement, qualité, gouvernance et drift.', highlight: ['[data-card="pillar-usage"]','[data-card="pillar-performance"]','[data-card="pillar-comportement"]','[data-card="pillar-qualite"]','[data-card="pillar-gouvernance"]','[data-card="pillar-drift"]'], dim: [], hidden: [] },
+      { caption: 'Le cœur change : comprendre les décisions, les outils choisis et les boucles de raisonnement.', highlight: ['[data-card="pillar-comportement"]'], dim: ['[data-card="pillar-usage"]','[data-card="pillar-performance"]','[data-card="pillar-qualite"]','[data-card="pillar-gouvernance"]','[data-card="pillar-drift"]'], hidden: [], modalAuto: 'pillar-comportement' },
+      { caption: 'La qualité devient mesurable en continu : scorers, LLM-as-judge, datasets de référence.', highlight: ['[data-card="pillar-qualite"]','[data-card="pillar-drift"]'], dim: ['[data-card="pillar-usage"]','[data-card="pillar-performance"]','[data-card="pillar-comportement"]','[data-card="pillar-gouvernance"]'], hidden: [] }
+    ]
+  },
+  { id: 'respi-1', type: 'punchline', title: 'La thèse', body: 'L’observabilité agentique ne demande pas seulement plus de logs. Elle demande une <mark>preuve de trajectoire</mark>.' },
+  {
+    id: 'bus',
+    type: 'schema',
+    title: 'Le bus de télémétrie comme colonne vertébrale',
+    schemaId: 'svg-03-bus',
+    steps: [
+      { caption: 'Planner, executor, critic, outils, providers, RAG et mémoire émettent vers un bus commun.', highlight: ['[data-card="planner-agent"]','[data-card="executor-agent"]','[data-card="critic-agent"]','[data-card="tool-sandbox"]','[data-card="llm-providers"]','[data-card="rag-vector"]','[data-card="memory-layer"]','[data-card="telemetry-bus"]'], dim: ['[data-card="user-input"]'], hidden: [] },
+      { caption: 'La boucle critic → planner doit être visible : c’est là que l’agent se corrige ou se perd.', highlight: ['[data-card="critic-agent"]','[data-card="planner-agent"]'], dim: ['[data-card="executor-agent"]','[data-card="tool-sandbox"]','[data-card="llm-providers"]','[data-card="rag-vector"]','[data-card="memory-layer"]','[data-card="telemetry-bus"]','[data-card="user-input"]'], hidden: [], modalAuto: 'critic-agent' },
+      { caption: 'Le bus OTel rend le backend révisable : on instrumente une fois, on exporte vers plusieurs destinations.', highlight: ['[data-card="telemetry-bus"]'], dim: ['[data-card="user-input"]','[data-card="planner-agent"]','[data-card="executor-agent"]','[data-card="critic-agent"]','[data-card="tool-sandbox"]','[data-card="llm-providers"]','[data-card="rag-vector"]','[data-card="memory-layer"]'], hidden: [], modalAuto: 'telemetry-bus' }
+    ]
+  },
+  {
+    id: 'trace',
+    type: 'schema',
+    title: 'Anatomie d’une trace OTel GenAI',
+    schemaId: 'svg-04-trace',
+    steps: [
+      { caption: 'Une invocation d’agent devient une hiérarchie de spans : racine, chat, outil, API, synthèse.', highlight: ['[data-card="invoke-agent"]','[data-card="chat-1"]','[data-card="execute-tool"]','[data-card="external-api"]','[data-card="chat-2"]'], dim: ['[data-card="eval-event"]'], hidden: [] },
+      { caption: 'Le span outil relie l’intention agentique à l’appel réseau effectif.', highlight: ['[data-card="execute-tool"]','[data-card="external-api"]'], dim: ['[data-card="invoke-agent"]','[data-card="chat-1"]','[data-card="chat-2"]','[data-card="eval-event"]'], hidden: [], modalAuto: 'execute-tool' },
+      { caption: 'L’événement d’évaluation colle le score qualité à l’opération évaluée.', highlight: ['[data-card="eval-event"]','[data-card="chat-2"]'], dim: ['[data-card="invoke-agent"]','[data-card="chat-1"]','[data-card="execute-tool"]','[data-card="external-api"]'], hidden: [], modalAuto: 'eval-event' }
+    ]
+  },
+  {
+    id: 'backends',
+    type: 'schema',
+    title: 'Un instrument, N backends',
+    schemaId: 'svg-05-backends',
+    steps: [
+      { caption: 'Le découplage se joue au Collector : redaction, sampling, enrichissement, routing.', highlight: ['[data-card="single-app"]','[data-card="otel-collector"]'], dim: ['[data-card="backend-incumbents"]','[data-card="backend-ai-native"]','[data-card="backend-open"]'], hidden: [], modalAuto: 'otel-collector' },
+      { caption: 'Les incumbents apportent le full-stack ; les AI-native apportent les évaluations ; l’open-source apporte le contrôle coût.', highlight: ['[data-card="backend-incumbents"]','[data-card="backend-ai-native"]','[data-card="backend-open"]'], dim: ['[data-card="single-app"]','[data-card="otel-collector"]'], hidden: [] }
+    ]
+  },
+  {
+    id: 'alertes',
+    type: 'schema',
+    title: 'La réaction doit être hiérarchisée',
+    schemaId: 'svg-06-alertes',
+    steps: [
+      { caption: 'Toutes les alertes ne demandent pas un humain. Certaines doivent être bloquées ou routées automatiquement.', highlight: ['[data-card="level-0"]','[data-card="level-1"]'], dim: ['[data-card="level-2"]','[data-card="level-3"]','[data-card="level-4"]'], hidden: [], modalAuto: 'level-0' },
+      { caption: 'Le drift qualité soutenu bascule vers la supervision : dashboard, astreinte, root cause analysis.', highlight: ['[data-card="level-2"]','[data-card="level-3"]'], dim: ['[data-card="level-0"]','[data-card="level-1"]','[data-card="level-4"]'], hidden: [] },
+      { caption: 'Les patterns systémiques deviennent un sujet d’architecture, pas un incident à fermer.', highlight: ['[data-card="level-4"]'], dim: ['[data-card="level-0"]','[data-card="level-1"]','[data-card="level-2"]','[data-card="level-3"]'], hidden: [], modalAuto: 'level-4' }
+    ]
+  },
+  {
+    id: 'marche',
+    type: 'schema',
+    title: 'Le marché se polarise',
+    schemaId: 'svg-07-marche',
+    steps: [
+      { caption: 'Deux axes structurent le choix : profondeur full-stack et maturité AI-native.', highlight: ['[data-card="dynatrace"]','[data-card="datadog"]','[data-card="splunk"]','[data-card="elastic"]','[data-card="grafana"]','[data-card="newrelic"]','[data-card="langfuse"]','[data-card="braintrust"]','[data-card="langsmith"]','[data-card="arize"]','[data-card="galileo"]','[data-card="maxim"]','[data-card="helicone"]','[data-card="whylabs"]','[data-card="phoenix"]'], dim: [], hidden: [] },
+      { caption: 'Les incumbents montent vers l’AI-native : Datadog, Dynatrace, Splunk, Grafana, Elastic.', highlight: ['[data-card="dynatrace"]','[data-card="datadog"]','[data-card="splunk"]','[data-card="elastic"]','[data-card="grafana"]','[data-card="newrelic"]'], dim: ['[data-card="langfuse"]','[data-card="braintrust"]','[data-card="langsmith"]','[data-card="arize"]','[data-card="galileo"]','[data-card="maxim"]','[data-card="helicone"]','[data-card="whylabs"]','[data-card="phoenix"]'], hidden: [], modalAuto: 'datadog' },
+      { caption: 'Les AI-native partent de l’évaluation et remontent vers la plateforme : Langfuse, Braintrust, Arize, Galileo.', highlight: ['[data-card="langfuse"]','[data-card="braintrust"]','[data-card="arize"]','[data-card="galileo"]','[data-card="maxim"]','[data-card="phoenix"]'], dim: ['[data-card="dynatrace"]','[data-card="datadog"]','[data-card="splunk"]','[data-card="elastic"]','[data-card="grafana"]','[data-card="newrelic"]','[data-card="langsmith"]','[data-card="helicone"]','[data-card="whylabs"]'], hidden: [], modalAuto: 'langfuse' }
+    ]
+  },
+  {
+    id: 'maturite',
+    type: 'schema',
+    title: 'Le palier cognitif',
+    schemaId: 'svg-08-maturite',
+    steps: [
+      { caption: 'N1-N2 : on structure l’observation technique. Nécessaire, mais pas suffisant.', highlight: ['[data-card="maturity-l1"]','[data-card="maturity-l2"]'], dim: ['[data-card="maturity-l3"]','[data-card="maturity-l4"]','[data-card="maturity-l5"]'], hidden: [] },
+      { caption: 'N3 est le saut difficile : définir une réponse correcte de façon mesurable.', highlight: ['[data-card="maturity-l3"]'], dim: ['[data-card="maturity-l1"]','[data-card="maturity-l2"]','[data-card="maturity-l4"]','[data-card="maturity-l5"]'], hidden: [], modalAuto: 'maturity-l3' },
+      { caption: 'N4-N5 : auto-remédiation et agents d’observabilité. Horizon réaliste seulement sur scopes limités.', highlight: ['[data-card="maturity-l4"]','[data-card="maturity-l5"]'], dim: ['[data-card="maturity-l1"]','[data-card="maturity-l2"]','[data-card="maturity-l3"]'], hidden: [] }
+    ]
+  },
+  { id: 'conclusion', type: 'punchline', title: 'La règle', body: 'En production, un agent sans observabilité est une <mark>boîte noire probabiliste</mark>. L’audit trail n’est plus un luxe : c’est le support du debug, de la gouvernance et de la preuve.' },
+  { id: 'outro', type: 'outro', title: 'Pour aller plus loin', body: 'Le rapport long détaille les huit schémas, les sources, le paysage vendor et la feuille de route de maturité.', cta: { href: '20260430-observabilite-agents-ia-app.html', label: 'Ouvrir le rapport illustré →' }, secondary: { href: '20260430-observabilite-agents-ia-rapport.md', label: 'Télécharger le rapport ↓' } }
+];
+
+/* ───────── SCHEMAS — Modal content for interactive SVG regions ───────── */
+const SCHEMAS = {
+  "schema-01": {
+    "era-monitoring": {
+      "title": "Ère monitoring (2000–2010)",
+      "body": "<p>Surveillance d'infrastructure via SNMP, Nagios, Zabbix. Modèle <em>up/down</em> sur des hôtes physiques. La requête applicative reste invisible : on voit le serveur, pas ce que l'utilisateur perçoit.</p><p><strong>Limite</strong> — un service peut être <em>up</em> côté infra et complètement cassé côté business.</p>",
+      "eyebrow": "Schéma 1 — Évolution paradigmatique"
+    },
+    "era-apm": {
+      "title": "Ère APM (2010–2018)",
+      "body": "<p>New Relic, AppDynamics, Dynatrace première génération. Instrumentation par agent, transactions traçables au sein d'un monolithe ou d'un cluster Java/.NET, stack traces sur erreurs.</p><p><strong>Limite</strong> — pensé pour un nombre fini de tiers ; explose avec les microservices.</p>",
+      "eyebrow": "Schéma 1 — Évolution paradigmatique"
+    },
+    "era-cloud-native": {
+      "title": "Ère cloud-native (2018–2023)",
+      "body": "<p>OpenTelemetry, MELT (metrics, events, logs, traces), tracing distribué cross-services, stack LGTM open-source. La <strong>portabilité de l'instrumentation</strong> devient un principe architectural.</p><p>C'est la fondation sur laquelle s'empile aujourd'hui l'observabilité agentique.</p>",
+      "eyebrow": "Schéma 1 — Évolution paradigmatique"
+    },
+    "era-agentic": {
+      "title": "Ère agentique cognitive (2023–)",
+      "body": "<p>Conventions <code>gen_ai.*</code> v1.37+, traces cognitives (chaîne de raisonnement), <em>LLM-as-judge</em> en ligne, audit trail réglementaire. La fiabilité devient une métrique <em>statistique</em> et non binaire.</p><p>Cette ère ne remplace aucune des précédentes — elle s'empile au-dessus.</p>",
+      "eyebrow": "Schéma 1 — Évolution paradigmatique"
+    }
+  },
+  "schema-02": {
+    "pillar-usage": {
+      "title": "Usage & tokens",
+      "body": "<p>Tokens en entrée et sortie par appel modèle, croisés au provider et au modèle. Pilier le plus opérationnel : il révèle d'où viennent les coûts et comment l'usage évolue après modification du prompt ou du routing.</p><p>Attributs OTel : <code>gen_ai.usage.input_tokens</code>, <code>gen_ai.usage.output_tokens</code>.</p>",
+      "eyebrow": "Schéma 2 — Les six piliers"
+    },
+    "pillar-performance": {
+      "title": "Performance",
+      "body": "<p>Latence end-to-end, time-to-first-token, throughput par agent, performance GPU pour les déploiements on-premise. Les métriques infrastructure classiques restent pertinentes — mais ne suffisent plus à elles seules.</p>",
+      "eyebrow": "Schéma 2 — Les six piliers"
+    },
+    "pillar-comportement": {
+      "title": "Comportement",
+      "body": "<p>Cœur de l'observabilité agentique : quelles décisions l'agent prend-il ? Quels outils sélectionne-t-il ? Comment navigue-t-il entre ses étapes de raisonnement ?</p><p>C'est ici que les traces distribuées prennent toute leur dimension, avec des spans hiérarchiques imbriqués.</p>",
+      "eyebrow": "Schéma 2 — Les six piliers"
+    },
+    "pillar-qualite": {
+      "title": "Qualité",
+      "body": "<p>Déplace la question de « l'agent a-t-il répondu ? » vers « la réponse était-elle correcte, complète et alignée avec les politiques ? ». Mesurée à l'échelle via <em>LLM-as-judge</em>, heuristiques et scorers custom.</p><p>Galileo annonce 93–97 % de précision sur ses Luna-2 evaluators ; Braintrust intègre 25+ scorers built-in.</p>",
+      "eyebrow": "Schéma 2 — Les six piliers"
+    },
+    "pillar-gouvernance": {
+      "title": "Gouvernance",
+      "body": "<p>Documente ce qui a été activé : guardrails déclenchés, actions modifiées ou bloquées, sources de données interrogées.</p><p>Essentiel pour l'audit, l'explication des blocages et la traçabilité réglementaire (finance, santé, secteur public).</p>",
+      "eyebrow": "Schéma 2 — Les six piliers"
+    },
+    "pillar-drift": {
+      "title": "Drift & fiabilité",
+      "body": "<p>Capture l'évolution temporelle des scores d'évaluation pour détecter la dérive comportementale.</p><p>Quand un nouveau prompt, modèle ou outil dégrade la fiabilité, le changement apparaît comme un <em>shift</em> dans les scores et les patterns d'erreur — pas comme une erreur runtime.</p>",
+      "eyebrow": "Schéma 2 — Les six piliers"
+    }
+  },
+  "schema-03": {
+    "user-input": {
+      "title": "Couche entrée",
+      "body": "<p>Point d'entrée canonique d'une requête utilisateur. Premier endroit où poser une instrumentation : le <code>traceId</code> est attribué ici et propagé à toute la chaîne.</p>",
+      "eyebrow": "Schéma 3 — Architecture de référence"
+    },
+    "planner-agent": {
+      "title": "Planner agent",
+      "body": "<p>Décompose la requête en sous-objectifs, choisit un plan d'exécution. Émet un span racine <code>invoke_agent</code> (<code>SpanKind: CLIENT</code> ou <code>INTERNAL</code>).</p><p>Observable : profondeur de planification, nombre de sous-tâches, temps de planification.</p>",
+      "eyebrow": "Schéma 3 — Architecture de référence"
+    },
+    "executor-agent": {
+      "title": "Executor agent",
+      "body": "<p>Exécute le plan : appels modèles, appels outils, branches conditionnelles. Producteur principal des spans <code>chat</code> et <code>execute_tool</code>.</p><p>Observable : taux de succès par étape, retries, fallbacks.</p>",
+      "eyebrow": "Schéma 3 — Architecture de référence"
+    },
+    "critic-agent": {
+      "title": "Critic agent",
+      "body": "<p>Évalue les sorties intermédiaires et déclenche une replanification si nécessaire. Le repère <strong>2</strong> du schéma marque cette boucle critic→planner — visible dans les traces sous forme de span imbriqué.</p><p>Observable : taux de replan, raisons du replan, scores critic.</p>",
+      "eyebrow": "Schéma 3 — Architecture de référence"
+    },
+    "tool-sandbox": {
+      "title": "Sandbox d'outils",
+      "body": "<p>Environnement isolé qui exécute les actions de l'executor : appels API, requêtes vector store via MCP, exécution de code.</p><p><strong>Double valeur</strong> — sécurité (un agent compromis ne peut pas atteindre la prod directement) et observabilité (chaque appel produit un span <code>execute_tool</code>).</p>",
+      "eyebrow": "Schéma 3 — Architecture de référence"
+    },
+    "llm-providers": {
+      "title": "Providers LLM",
+      "body": "<p>OpenAI, Anthropic, Google, Mistral, modèles open-source self-hosted. Source des spans <code>chat</code> avec <code>gen_ai.request.model</code> et <code>gen_ai.response.model</code> — qui peuvent différer en cas d'aliasing/routing côté provider (piège fréquent).</p>",
+      "eyebrow": "Schéma 3 — Architecture de référence"
+    },
+    "rag-vector": {
+      "title": "RAG / vector store",
+      "body": "<p>Couche de retrieval (Pinecone, Weaviate, Milvus, pgvector). Émet des spans <code>execute_tool</code> avec <code>gen_ai.tool.type=datastore</code>.</p><p>Observable : pertinence des chunks récupérés, latence retrieval, drift des embeddings.</p>",
+      "eyebrow": "Schéma 3 — Architecture de référence"
+    },
+    "memory-layer": {
+      "title": "Couche mémoire",
+      "body": "<p>Mémoire épisodique (conversations passées), sémantique (faits stables), procédurale (workflows appris).</p><p>Position structurelle <strong>parallèle</strong> au bus de télémétrie : les deux sont transverses, persistants, accessibles par tous les agents.</p>",
+      "eyebrow": "Schéma 3 — Architecture de référence"
+    },
+    "telemetry-bus": {
+      "title": "Bus de télémétrie OTel",
+      "body": "<p>Colonne vertébrale horizontale qui collecte les signaux (spans, metrics, logs) de tous les composants. Conventions <code>gen_ai.*</code> v1.37+. Export OTLP vers N backends via Collector.</p><p>C'est ce bus qui rend le choix du backend <em>révisable</em>.</p>",
+      "eyebrow": "Schéma 3 — Architecture de référence"
+    }
+  },
+  "schema-04": {
+    "invoke-agent": {
+      "title": "Span racine — invoke_agent",
+      "body": "<p>Un span par invocation d'agent. <code>SpanKind: CLIENT</code> pour un agent distant, <code>INTERNAL</code> pour un agent in-process.</p><p>Attributs : <code>gen_ai.agent.name</code>, <code>gen_ai.agent.id</code>, <code>gen_ai.conversation.id</code>.</p>",
+      "eyebrow": "Schéma 4 — Anatomie d'une trace"
+    },
+    "chat-1": {
+      "title": "Premier appel modèle (chat)",
+      "body": "<p>Phase de planification : l'agent demande au modèle de structurer la réponse et de décider s'il faut appeler un outil.</p><p>Attributs notables : <code>gen_ai.request.model</code>, <code>gen_ai.response.model</code> (peuvent différer en cas d'aliasing), <code>gen_ai.usage.input_tokens</code>, <code>gen_ai.usage.output_tokens</code>.</p>",
+      "eyebrow": "Schéma 4 — Anatomie d'une trace"
+    },
+    "execute-tool": {
+      "title": "execute_tool — invocation d'outil",
+      "body": "<p>Span produit par chaque appel d'outil : <code>gen_ai.tool.name</code>, <code>gen_ai.tool.call.id</code>, <code>gen_ai.tool.type</code> ∈ {<code>function</code>, <code>extension</code>, <code>datastore</code>}.</p>",
+      "eyebrow": "Schéma 4 — Anatomie d'une trace"
+    },
+    "external-api": {
+      "title": "Appel API externe",
+      "body": "<p>Span enfant de <code>execute_tool</code> capturant l'appel réseau effectif (HTTP, gRPC). Permet d'attribuer la latence réelle entre logique d'outil et dépendance externe.</p>",
+      "eyebrow": "Schéma 4 — Anatomie d'une trace"
+    },
+    "chat-2": {
+      "title": "Deuxième appel modèle (synthèse)",
+      "body": "<p>Le modèle reçoit le résultat de l'outil et génère la réponse finale. Souvent le span le plus long en termes de tokens de sortie.</p><p>Cible classique d'une évaluation qualité — d'où l'événement <code>gen_ai.evaluation.result</code> attaché ici.</p>",
+      "eyebrow": "Schéma 4 — Anatomie d'une trace"
+    },
+    "eval-event": {
+      "title": "Événement gen_ai.evaluation.result",
+      "body": "<p>Innovation majeure de la spec v1.37+ : attacher le score d'évaluation directement au span de l'opération évaluée plutôt que de le stocker dans un système séparé.</p><p>Effet pratique — un dashboard peut filtrer « <em>traces avec score < 0.7</em> » sans jointure entre deux stores.</p>",
+      "eyebrow": "Schéma 4 — Anatomie d'une trace"
+    }
+  },
+  "schema-05": {
+    "single-app": {
+      "title": "Application instrumentée — une fois",
+      "body": "<p>SDK OTel + auto-instrumentor (OpenLLMetry, OpenLIT, ou instrumentation native du framework). L'effort d'instrumentation est payé <strong>une seule fois</strong>.</p><p>Coût marginal au démarrage, asymptotique si on attend.</p>",
+      "eyebrow": "Schéma 5 — Découplage instrumentation/backend"
+    },
+    "otel-collector": {
+      "title": "OpenTelemetry Collector",
+      "body": "<p>Gateway centralisée qui reçoit les spans en OTLP et applique des <strong>processors</strong> avant export :</p><ul><li><strong>Redaction PII</strong> — anonymise prompts et réponses (filtre regex, ML-based, allowlist).</li><li><strong>Sampling</strong> — head, tail, ratio, intelligent.</li><li><strong>Enrichissement</strong> — tenant, environnement, version modèle.</li><li><strong>Routing</strong> — vers N backends en parallèle.</li></ul>",
+      "eyebrow": "Schéma 5 — Découplage instrumentation/backend"
+    },
+    "backend-incumbents": {
+      "title": "Backends incumbents APM",
+      "body": "<p>Dynatrace, Datadog, Splunk, New Relic, Elastic. Forces : full-stack, gouvernance enterprise, échelle. Faiblesses relatives : eval qualité, lock-in, coût explosif sur workloads IA (×2 à ×3).</p>",
+      "eyebrow": "Schéma 5 — Découplage instrumentation/backend"
+    },
+    "backend-ai-native": {
+      "title": "Backends AI-native",
+      "body": "<p>Langfuse, Braintrust, Arize/Phoenix, Galileo, Maxim. Forces : eval-first, scorers built-in, prompt management, traces → test cases. Faiblesses relatives : profondeur plateforme, infra monitoring, gouvernance enterprise.</p>",
+      "eyebrow": "Schéma 5 — Découplage instrumentation/backend"
+    },
+    "backend-open": {
+      "title": "Backends open-source",
+      "body": "<p>Stack LGTM (Loki, Grafana, Tempo, Mimir), Jaeger, OpenObserve, Langfuse self-hosted (MIT).</p><p>Coût 10 à 50 fois inférieur aux solutions propriétaires sur les workloads IA. Adapté aux organisations OTel-first et coût-conscientes.</p>",
+      "eyebrow": "Schéma 5 — Découplage instrumentation/backend"
+    }
+  },
+  "schema-06": {
+    "level-0": {
+      "title": "L0 — Guardrail automatique",
+      "body": "<p><strong>Déclencheur</strong> : violation de politique détectée en temps réel (PII, contenu interdit, prompt injection).</p><p><strong>Réponse</strong> : blocage ou rewriting automatique avant émission de la réponse.</p><p><strong>SLA</strong> : &lt; 100 ms. Aucune intervention humaine, aucune notification (sauf agrégation statistique).</p>",
+      "eyebrow": "Schéma 6 — Hiérarchie d'alertes"
+    },
+    "level-1": {
+      "title": "L1 — Re-routing automatique",
+      "body": "<p><strong>Déclencheur</strong> : dégradation provider (latence > seuil, taux d'erreur), surcoût détecté.</p><p><strong>Réponse</strong> : bascule vers modèle de fallback (autre provider, modèle moins cher, version antérieure).</p><p><strong>SLA</strong> : &lt; 1 seconde. Décision automatique, log pour audit.</p>",
+      "eyebrow": "Schéma 6 — Hiérarchie d'alertes"
+    },
+    "level-2": {
+      "title": "L2 — Alerte supervisée",
+      "body": "<p><strong>Déclencheur</strong> : drift de score qualité soutenu, anomalie comportementale corrélée multi-signal.</p><p><strong>Réponse</strong> : page d'astreinte, SRE/MLE qualifie et arbitre (rollback, hotfix, accept).</p><p><strong>SLA</strong> : &lt; 5 minutes. Décision humaine informée par dashboard.</p>",
+      "eyebrow": "Schéma 6 — Hiérarchie d'alertes"
+    },
+    "level-3": {
+      "title": "L3 — Investigation humaine",
+      "body": "<p><strong>Déclencheur</strong> : incident qualifié, régression confirmée, plainte utilisateur.</p><p><strong>Réponse</strong> : ouverture ticket, root cause analysis sur les traces, conversion trace→test case (Braintrust pattern).</p><p><strong>SLA</strong> : &lt; 1 heure pour diagnostic, &lt; 1 jour pour fix.</p>",
+      "eyebrow": "Schéma 6 — Hiérarchie d'alertes"
+    },
+    "level-4": {
+      "title": "L4 — Refactor stratégique",
+      "body": "<p><strong>Déclencheur</strong> : pattern systémique sur plusieurs incidents, dette technique sur un agent, dérive stratégique de qualité.</p><p><strong>Réponse</strong> : revue d'architecture, réécriture de prompts, changement de modèle, refonte datasets.</p><p><strong>SLA</strong> : plusieurs jours à plusieurs semaines. Décision produit/architecture.</p>",
+      "eyebrow": "Schéma 6 — Hiérarchie d'alertes"
+    }
+  },
+  "schema-07": {
+    "dynatrace": {
+      "title": "Dynatrace",
+      "body": "<p>Leader Gartner, #1 Ability to Execute pour la 15<sup>e</sup> année. Davis AI hypermodale (causale + prédictive + générative), Grail (data lakehouse sans indexation), Smartscape (graphe de dépendances temps réel).</p><p>Depuis février 2026 : Dynatrace Intelligence positionné comme « OS agentique » avec Intelligence Agents (SRE / Dev / Sec) et MCP Server.</p>",
+      "eyebrow": "Schéma 7 — Vendor landscape"
+    },
+    "datadog": {
+      "title": "Datadog",
+      "body": "<p>Leader Gartner (5<sup>e</sup> année). LLM Observability en GA, Bits AI assistant, support natif OTel GenAI v1.37+ depuis décembre 2025, Experiments pour A/B testing de prompts, Sensitive Data Scanner inclus.</p><p><strong>Vigilance</strong> — facturation cumulative (per-host APM + per-GB logs + per-span) qui multiplie la facture par 2 à 3 sur les workloads IA.</p>",
+      "eyebrow": "Schéma 7 — Vendor landscape"
+    },
+    "splunk": {
+      "title": "Splunk / Cisco",
+      "body": "<p>Convergence sécurité-observabilité. AI Agent Monitoring GA Q1 2026, Cisco AI PODs (NVIDIA NIMs, Milvus, LiteLLM), Troubleshooting Agent, Splunk MCP Server.</p><p><strong>Friction</strong> — complexité post-acquisition Cisco, coexistence Splunk/AppDynamics.</p>",
+      "eyebrow": "Schéma 7 — Vendor landscape"
+    },
+    "elastic": {
+      "title": "Elastic",
+      "body": "<p>Leader Gartner (2<sup>e</sup> année). Elastic AI Assistant, intégration native OTel, ESQL pour analytics. Force : analyse log-centric à grande échelle.</p>",
+      "eyebrow": "Schéma 7 — Vendor landscape"
+    },
+    "grafana": {
+      "title": "Grafana Labs",
+      "body": "<p>Leader Gartner, #1 Completeness of Vision. Stack LGTM (Loki, Grafana, Tempo, Mimir). Réception native des traces GenAI via Tempo, coût 10 à 50× inférieur aux propriétaires.</p><p><strong>Faiblesse</strong> — pas de capacité d'évaluation IA native ; doit être complété par un AI-native.</p>",
+      "eyebrow": "Schéma 7 — Vendor landscape"
+    },
+    "newrelic": {
+      "title": "New Relic",
+      "body": "<p>Pricing transparent (par utilisateur + par GB ingéré), pivot mid-market post-prise de privatisation. AI Monitoring intégré.</p><p>Compromis raisonnable pour des organisations cherchant lisibilité contractuelle plus que profondeur Smartscape.</p>",
+      "eyebrow": "Schéma 7 — Vendor landscape"
+    },
+    "langfuse": {
+      "title": "Langfuse",
+      "body": "<p>Leader open-source de référence. Licence MIT, OTel natif, self-hosted ou cloud. Prompt management, traces, evaluations, datasets, scoring.</p><p>Choix par défaut pour démarrer — gratuit, communauté active, intégrations framework natives (LangChain, LlamaIndex, etc.).</p>",
+      "eyebrow": "Schéma 7 — Vendor landscape"
+    },
+    "braintrust": {
+      "title": "Braintrust",
+      "body": "<p>Plateforme intégrée eval-first. Conversion traces → test cases en un clic, Loop AI pour scorers custom, 25+ scorers built-in, dataset versioning.</p><p>Utilisé par Notion, Stripe, Zapier. Positionné sur le cycle de vie complet de l'évaluation.</p>",
+      "eyebrow": "Schéma 7 — Vendor landscape"
+    },
+    "langsmith": {
+      "title": "LangSmith",
+      "body": "<p>De LangChain. Tracing, eval, hub de prompts intégrés à l'écosystème LangChain. Adoption forte chez les équipes déjà sur LangChain.</p>",
+      "eyebrow": "Schéma 7 — Vendor landscape"
+    },
+    "arize": {
+      "title": "Arize AI",
+      "body": "<p>Rigueur statistique académique, embedding drift detection, pont entre ML traditionnel et LLM observability. <strong>Phoenix</strong> est sa version open-source.</p><p>Choix naturel pour les organisations déjà matures en MLOps.</p>",
+      "eyebrow": "Schéma 7 — Vendor landscape"
+    },
+    "galileo": {
+      "title": "Galileo AI",
+      "body": "<p>Luna-2 evaluators avec précision propriétaire 93–97 %, guardrails production, hallucination detection.</p><p>Différenciateur — qualité d'évaluation revendiquée supérieure aux scorers LLM-as-judge génériques.</p>",
+      "eyebrow": "Schéma 7 — Vendor landscape"
+    },
+    "maxim": {
+      "title": "Maxim AI",
+      "body": "<p>Full lifecycle : simulation + évaluation + observabilité unifiées. Pré-prod et prod sur la même plateforme, datasets synthétiques générés.</p>",
+      "eyebrow": "Schéma 7 — Vendor landscape"
+    },
+    "helicone": {
+      "title": "Helicone",
+      "body": "<p>Proxy-based observability. Log et caching transparents en se mettant entre l'app et le provider LLM. Setup minimal, open-source.</p>",
+      "eyebrow": "Schéma 7 — Vendor landscape"
+    },
+    "whylabs": {
+      "title": "WhyLabs",
+      "body": "<p>Origines ML monitoring (data drift). Étend désormais aux LLMs avec LangKit. Approche statistique forte.</p>",
+      "eyebrow": "Schéma 7 — Vendor landscape"
+    },
+    "phoenix": {
+      "title": "Arize Phoenix",
+      "body": "<p>Version open-source d'Arize. OTel natif, traces locales, eval embarquée. Bon ticket d'entrée pour démarrer côté AI-native sans cloud.</p>",
+      "eyebrow": "Schéma 7 — Vendor landscape"
+    }
+  },
+  "schema-08": {
+    "maturity-l1": {
+      "title": "N1 — Monitoring réactif",
+      "body": "<p>Logs manuels, debug ad-hoc, pas de traces. État de la majorité des projets pré-production en 2024–2025.</p><p><strong>Symptôme</strong> — incidents diagnostiqués par lecture de logs, time-to-resolution mesuré en heures ou jours.</p>",
+      "eyebrow": "Schéma 8 — Maturité organisationnelle"
+    },
+    "maturity-l2": {
+      "title": "N2 — Observabilité structurée",
+      "body": "<p>Tracing distribué OTel, dashboards latence/tokens, alertes seuil multi-signal.</p><p><strong>Prérequis</strong> — SDK + Collector déployés, conventions <code>gen_ai.*</code> activées, équipe formée.</p>",
+      "eyebrow": "Schéma 8 — Maturité organisationnelle"
+    },
+    "maturity-l3": {
+      "title": "N3 — Évaluation continue",
+      "body": "<p><strong>Le palier cognitif.</strong> LLM-as-judge online, guardrails runtime, feedback loops humains, drift detection.</p><p><strong>Saut le plus difficile</strong> — il exige de définir « qu'est-ce qu'une réponse correcte ? » de façon mesurable. Datasets de référence, scorers calibrés.</p>",
+      "eyebrow": "Schéma 8 — Maturité organisationnelle"
+    },
+    "maturity-l4": {
+      "title": "N4 — Autonomie supervisée",
+      "body": "<p>Auto-remédiation L0/L1, rollback automatique, scaling intelligent, workflows agentiques.</p><p><strong>Cible 2026</strong> pour la majorité des programmes IA enterprise. Prérequis : runbooks automatisés, SLO mesurables, human-in-the-loop défini.</p>",
+      "eyebrow": "Schéma 8 — Maturité organisationnelle"
+    },
+    "maturity-l5": {
+      "title": "N5 — Autonomie complète",
+      "body": "<p>Agents d'observabilité, auto-optimisation des prompts, gouvernance AI-driven, remédiation autonome L2/L3.</p><p><strong>Horizon 2027–2028</strong> sur scope limité. Exemples vendor : Dynatrace Intelligence, Splunk Troubleshooting Agent, Datadog Bits AI.</p>",
+      "eyebrow": "Schéma 8 — Maturité organisationnelle"
+    }
+  }
+};
+
+/* ───────── Sources ───────── */
+const SOURCES = [
+  { num: 1, author: 'OpenTelemetry.', title: 'AI Agent Observability Standards', year: '2025', publisher: 'OpenTelemetry Blog', url: 'https://opentelemetry.io/blog/2025/ai-agent-observability/' },
+  { num: 2, author: 'InsightFinder.', title: 'AI Observability vs Traditional Monitoring', year: '2025', publisher: null, url: 'https://insightfinder.com/blog/ai-observability-vs-traditional-monitoring/' },
+  { num: 3, author: 'IBM Think.', title: 'Observability Trends 2026', year: '2026', publisher: 'IBM Institute for Business Value', url: 'https://www.ibm.com/think/insights/observability-trends' },
+  { num: 4, author: 'Dynatrace.', title: 'Six Observability Predictions for 2026', year: '2025', publisher: null, url: 'https://www.dynatrace.com/news/blog/six-observability-predictions-for-2026/' },
+  { num: 5, author: 'Kore.ai.', title: 'AI Observability: Monitoring & Governing AI Agents', year: '2026', publisher: null, url: 'https://www.kore.ai/blog/what-is-ai-observability' },
+  { num: 6, author: 'Voiceflow.', title: 'What Is AI Agent Observability? A 2026 Guide', year: '2026', publisher: null, url: 'https://www.voiceflow.com/blog/what-is-ai-agent-observability' },
+  { num: 7, author: 'Anthropic.', title: 'Building Effective Agents', year: '2024', publisher: 'Research / whitepaper', url: 'https://www.anthropic.com/research/building-effective-agents' },
+  { num: 8, author: 'Groundcover.', title: 'AI Agent Observability Guide: Telemetry, Traces, Metrics', year: '2026', publisher: null, url: 'https://www.groundcover.com/learn/observability/ai-agent-observability' },
+  { num: 9, author: 'N-iX.', title: 'AI Agent Observability: Practical Framework', year: '2025', publisher: null, url: 'https://www.n-ix.com/ai-agent-observability/' },
+  { num: 10, author: 'Langfuse.', title: 'AI Agent Observability, Tracing & Evaluation', year: '2026', publisher: null, url: 'https://langfuse.com/blog/2024-07-ai-agent-observability-with-langfuse' },
+  { num: 11, author: 'OpenTelemetry.', title: 'GenAI Semantic Conventions', year: '2026', publisher: 'Specification v1.37', url: 'https://opentelemetry.io/docs/specs/semconv/gen-ai/' },
+  { num: 12, author: 'OpenTelemetry.', title: 'GenAI Agent Spans, Model Spans, Tool Spans, Events', year: '2026', publisher: 'Specification', url: 'https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-agent-spans/' },
+  { num: 13, author: 'Datadog.', title: 'LLM Observability + OTel GenAI Semantic Convention support', year: '2025', publisher: null, url: 'https://www.datadoghq.com/blog/llm-otel-semantic-convention/' },
+  { num: 14, author: 'Braintrust.', title: 'AI Observability Tools: Buyer’s Guide 2026', year: '2026', publisher: null, url: 'https://www.braintrust.dev/articles/best-ai-observability-tools-2026' },
+  { num: 15, author: 'GetMaxim.', title: 'Top 5 AI Agent Observability Platforms 2026', year: '2025', publisher: null, url: 'https://www.getmaxim.ai/articles/top-5-ai-agent-observability-platforms-in-2026/' },
+  { num: 16, author: 'Traceloop.', title: 'OpenLLMetry', year: '2026', publisher: 'GitHub', url: 'https://github.com/traceloop/openllmetry' },
+  { num: 17, author: 'OpenLIT.', title: 'OpenLIT SDK', year: '2026', publisher: 'GitHub', url: 'https://github.com/openlit/openlit' },
+  { num: 18, author: 'Gartner.', title: 'Magic Quadrant for Observability Platforms 2025', year: '2025', publisher: null, url: 'https://www.gartner.com/en/documents/6688834' },
+  { num: 19, author: 'OneUptime.', title: 'AI Workloads Observability: Cost Crisis', year: '2026', publisher: null, url: 'https://oneuptime.com/blog/ai-workloads-observability-cost-crisis' },
+  { num: 20, author: 'Dynatrace.', title: 'Dynatrace Intelligence — Agentic OS announcement at Perform 2026', year: '2026', publisher: null, url: 'https://www.dynatrace.com/news/blog/dynatrace-intelligence-platform/' },
+  { num: 21, author: 'Splunk.', title: 'Q1 2026 Observability Update — AI Agent Monitoring', year: '2026', publisher: null, url: 'https://www.splunk.com/en_us/blog/observability/splunk-observability-ai-agent-monitoring-innovations.html' },
+  { num: 22, author: 'Grafana Labs.', title: 'Leader Gartner Magic Quadrant Observability 2025 — #1 Completeness of Vision', year: '2025', publisher: null, url: 'https://grafana.com/about/press/2025/07/' }
+];
+
+/* ───────── Modal dispatcher ───────── */
+const modalRoot    = document.getElementById('modal-root');
+const modalEyebrow = document.getElementById('modal-eyebrow');
+const modalTitle   = document.getElementById('modal-title');
+const modalBody    = document.getElementById('modal-body');
+let lastFocused = null;
+
+function openModal(eyebrow, title, body) {
+  lastFocused = document.activeElement;
+  modalEyebrow.textContent = eyebrow || '';
+  modalTitle.textContent = title || '';
+  modalBody.innerHTML = body || '';
+  // Patch des références [N] en liens vers les sources
+  const bodyEl = document.getElementById('modal-body');
+  if (bodyEl) {
+    bodyEl.innerHTML = bodyEl.innerHTML.replace(/\[(\d+)\]/g, (m, n) => `<a href="#" class="source-ref" data-source-num="${n}">[${n}]</a>`);
+    bodyEl.querySelectorAll('.source-ref').forEach(a => {
+      a.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        const num = parseInt(a.dataset.sourceNum, 10);
+        closeModal();
+        flashSource(num);
+      });
+    });
+  }
+  modalRoot.hidden = false;
+  document.body.classList.add('modal-open');
+  document.body.style.overflow = '';
+  modalRoot.querySelector('.modal-close')?.focus();
+}
+
+let __modalAutoActive = false;
+
+function closeModal() {
+  const root = document.getElementById('modal-root');
+  if (!root) return;
+  root.hidden = true;
+  document.body.classList.remove('modal-open');
+  __modalAutoActive = false;
+  lastFocused?.focus?.();
+}
+
+document.getElementById('modal-root').addEventListener('click', (e) => {
+  if (e.target.closest('.modal-content')) return;
+  if (e.target.matches('[data-close]')) { closeModal(); }
+});
+
+let state = { sceneIndex: 0, stepIndex: 0 };
+
+const stage = document.getElementById('stage');
+
+function applyStepStyles(scene, step) {
+  const svg = stage.querySelector('svg');
+  if (!svg) return;
+  const all = svg.querySelectorAll('[id]');
+  all.forEach(el => el.removeAttribute('data-step-state'));
+  (step.dim || []).forEach(sel => svg.querySelectorAll(sel).forEach(el => el.setAttribute('data-step-state', 'dim')));
+  (step.hidden || []).forEach(sel => svg.querySelectorAll(sel).forEach(el => el.setAttribute('data-step-state', 'hidden')));
+  (step.highlight || []).forEach(sel => svg.querySelectorAll(sel).forEach(el => el.setAttribute('data-step-state', 'active')));
+}
+
+function renderTimeline() {
+  const tl = document.getElementById('timeline');
+  if (!tl) return;
+  tl.innerHTML = SCENES.map((scene, i) => {
+    const visited = i < state.sceneIndex;
+    const current = i === state.sceneIndex;
+    const cls = ['seg'];
+    if (scene.type === 'punchline') cls.push('punchline');
+    if (scene.type === 'outro') cls.push('outro');
+    if (visited) cls.push('visited');
+    if (current) cls.push('current');
+    let fillPct = 0;
+    if (current && scene.steps && scene.steps.length > 1) {
+      fillPct = Math.round((state.stepIndex / (scene.steps.length - 1)) * 100);
+    } else if (visited) {
+      fillPct = 100;
+    }
+    const label = `${(i+1).toString().padStart(2,'0')} · ${scene.title || (scene.type === 'punchline' ? 'Respiration' : 'Outro')}`;
+    return `<div class="seg ${cls.join(' ')}" data-index="${i}"><div class="fill" style="height: ${fillPct}%; width: ${fillPct}%;"></div><div class="label">${label}</div></div>`;
+  }).join('');
+}
+
+function updateSceneTitleBar(scene) {
+  const bar = document.getElementById('scene-title-bar');
+  if (!bar) return;
+  const num = (state.sceneIndex + 1).toString().padStart(2, '0');
+  const title = scene.title || '';
+  if (!title) { bar.innerHTML = ''; return; }
+  bar.innerHTML = `<span class="num">${num}</span><span class="title">${title}</span>`;
+}
+
+function render() {
+  const scene = SCENES[state.sceneIndex];
+  if (!scene) return;
+
+  updateSceneTitleBar(scene);
+
+  if (scene.type === 'punchline') {
+    stage.innerHTML = `
+      <section class="scene-punchline" role="group" aria-roledescription="scène">
+        <div class="body">${scene.body}</div>
+        ${scene.attribution ? `<div class="attribution">${scene.attribution}</div>` : ''}
+      </section>
+    `;
+    renderTimeline();
+    return;
+  }
+
+  if (scene.type === 'outro') {
+    stage.innerHTML = `
+      <section class="scene-outro" role="group" aria-roledescription="scène">
+        <div class="eyebrow">Vous avez parcouru</div>
+        <h2>Observabilité <em>des agents IA</em> — l'essentiel</h2>
+        <div class="body">${scene.body}</div>
+        <div class="ctas" data-no-advance>
+          <a class="cta-primary" href="${scene.cta.href}">${scene.cta.label}</a>
+          <a class="cta-secondary" href="${scene.secondary.href}" download>${scene.secondary.label}</a>
+        </div>
+        <button class="restart" data-no-advance type="button" onclick="gotoScene(0)">↺ Recommencer</button>
+        <div class="disclosure">Format co-écrit avec l'aide d'une IA</div>
+      </section>
+    `;
+    renderTimeline();
+    return;
+  }
+
+  if (scene.type === 'schema') {
+    const svgEl = document.getElementById(scene.schemaId);
+    const svgClone = svgEl ? svgEl.outerHTML : `<div style="color: red; font-family: monospace;">SVG ${scene.schemaId} introuvable</div>`;
+    const step = scene.steps[state.stepIndex] || { caption: '(pas d\'étape définie)' };
+    stage.innerHTML = `
+      <section class="schema-host" role="group" aria-roledescription="scène">
+        <div class="schema-wrapper figure" style="position: relative; width: 100%; max-width: 100%;">
+          ${svgClone}
+          <button class="zoom-btn" type="button" aria-label="Zoom plein écran" data-no-advance>⛶</button>
+        </div>
+        <div class="caption" aria-live="polite">${step.caption}</div>
+      </section>
+    `;
+    applyStepStyles(scene, step);
+
+    if (step.modalAuto) {
+      const match = scene.schemaId ? scene.schemaId.match(/svg-(\d+)-/) : null;
+      const schKey = match ? 'schema-' + match[1].padStart(2, '0') : null;
+      const card = schKey ? (SCHEMAS?.[schKey]?.[step.modalAuto] || null) : null;
+      if (card) {
+        setTimeout(() => {
+          openModal(card.eyebrow || '', card.title || '', card.body || '');
+          __modalAutoActive = true;
+        }, 220);
+      }
+    }
+    renderTimeline();
+    return;
+  }
+}
+
+let __transitioning = false;
+
+async function gotoScene(index) {
+  if (index < 0 || index >= SCENES.length || __transitioning) return;
+  __transitioning = true;
+  stage.classList.add('fading-out');
+  await new Promise(r => setTimeout(r, FADE_MS));
+  state.sceneIndex = index;
+  state.stepIndex = 0;
+  render();
+  stage.classList.remove('fading-out');
+  await new Promise(r => setTimeout(r, FADE_MS));
+  __transitioning = false;
+}
+
+function advance() {
+  if (__transitioning) return;
+  const scene = SCENES[state.sceneIndex];
+  const lastStep = (scene.steps && scene.steps.length > 0) ? scene.steps.length - 1 : 0;
+  if (state.stepIndex < lastStep) {
+    state.stepIndex++;
+    render();
+  } else if (state.sceneIndex < SCENES.length - 1) {
+    gotoScene(state.sceneIndex + 1);
+  }
+}
+
+function retreat() {
+  if (__transitioning) return;
+  if (state.stepIndex > 0) {
+    state.stepIndex--;
+    render();
+  } else if (state.sceneIndex > 0) {
+    const prevScene = SCENES[state.sceneIndex - 1];
+    const prevLastStep = (prevScene.steps && prevScene.steps.length > 0) ? prevScene.steps.length - 1 : 0;
+    __transitioning = true;
+    stage.classList.add('fading-out');
+    setTimeout(() => {
+      state.sceneIndex--;
+      state.stepIndex = prevLastStep;
+      render();
+      stage.classList.remove('fading-out');
+      setTimeout(() => { __transitioning = false; }, FADE_MS);
+    }, FADE_MS);
+  }
+}
+
+render();
+
+function isAnyOverlayOpen() {
+  return !document.getElementById('modal-root').hidden
+      || !document.getElementById('toc-overlay').hidden
+      || !document.getElementById('sources-overlay').hidden
+      || !document.getElementById('zoom-overlay').hidden;
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+    e.preventDefault();
+    const modalOpen = !document.getElementById('modal-root').hidden;
+    if (modalOpen && __modalAutoActive) {
+      closeModal();
+      advance();
+    } else if (modalOpen) {
+      closeModal();
+    } else {
+      advance();
+    }
+  } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+    e.preventDefault();
+    // Si TOC, sources ou zoom sont ouverts, on laisse leurs propres handlers gérer
+    if (!document.getElementById('toc-overlay').hidden) return;
+    if (!document.getElementById('sources-overlay').hidden) return;
+    if (!document.getElementById('zoom-overlay').hidden) return;
+    const modalOpen = !document.getElementById('modal-root').hidden;
+    if (modalOpen && __modalAutoActive) {
+      closeModal();
+      retreat();
+    } else if (modalOpen) {
+      closeModal();
+    } else {
+      retreat();
+    }
+  } else if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (isAnyOverlayOpen()) return;
+    gotoScene(state.sceneIndex + 1);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (isAnyOverlayOpen()) return;
+    gotoScene(state.sceneIndex - 1);
+  } else if (e.key === 's' || e.key === 'S') {
+    if (e.target.tagName === 'INPUT') return;
+    e.preventDefault();
+    toggleToc();
+  } else if (e.key === 'r' || e.key === 'R') {
+    if (e.target.tagName === 'INPUT') return;
+    e.preventDefault();
+    toggleSources();
+  } else if (e.key === 'Escape') {
+    if (!document.getElementById('modal-root').hidden) {
+      closeModal();
+      e.preventDefault();
+      return;
+    }
+    if (!document.getElementById('sources-overlay').hidden) {
+      toggleSources(false);
+      e.preventDefault();
+      return;
+    }
+    if (!document.getElementById('toc-overlay').hidden) {
+      toggleToc(false);
+      e.preventDefault();
+      return;
+    }
+    // zoom-overlay Escape géré par setupZoom() interne
+  }
+});
+
+document.getElementById('timeline').addEventListener('click', (e) => {
+  const seg = e.target.closest('.seg');
+  if (!seg) return;
+  e.stopPropagation();
+  gotoScene(parseInt(seg.dataset.index, 10));
+});
+
+/* ───────── Sommaire overlay ───────── */
+function renderToc() {
+  const list = document.getElementById('toc-list');
+  list.innerHTML = SCENES.map((scene, i) => {
+    const stepsCount = scene.steps ? scene.steps.length : 1;
+    const stepsLabel = stepsCount === 1 ? '1 étape' : `${stepsCount} étapes`;
+    const titleOrLabel = scene.title || (scene.type === 'punchline' ? '✴ Respiration' : 'Outro — pour aller plus loin');
+    return `<li data-index="${i}"><span class="num">${(i+1).toString().padStart(2,'0')}</span><span>${titleOrLabel}</span><span class="meta">${stepsLabel}</span></li>`;
+  }).join('');
+}
+
+function toggleToc(forceState) {
+  const o = document.getElementById('toc-overlay');
+  const newHidden = forceState !== undefined ? !forceState : !o.hidden;
+  o.hidden = newHidden;
+  if (!newHidden) renderToc();
+}
+
+document.getElementById('btn-toc').addEventListener('click', (e) => { e.stopPropagation(); toggleToc(true); });
+document.getElementById('toc-overlay').addEventListener('click', (e) => {
+  if (e.target.closest('.overlay-close')) { toggleToc(false); return; }
+  const li = e.target.closest('li[data-index]');
+  if (li) { gotoScene(parseInt(li.dataset.index, 10)); toggleToc(false); }
+});
+
+/* ───────── Sources overlay ───────── */
+function renderSources(filter) {
+  const list = document.getElementById('sources-list');
+  const f = (filter || '').toLowerCase();
+  const items = SOURCES
+    .filter(s => !f || (s.author + ' ' + s.title + ' ' + s.year).toLowerCase().includes(f))
+    .map(s => `
+      <li data-num="${s.num}">
+        <span class="num">[${s.num}]</span>
+        <span><strong>${s.author}</strong> — ${s.title}, ${s.year}.${s.publisher ? ' <em>' + s.publisher + '</em>.' : ''}${s.url ? ` <a href="${s.url}" target="_blank" rel="noopener">Lien ↗</a>` : ''}</span>
+      </li>
+    `);
+  list.innerHTML = items.join('');
+}
+
+function toggleSources(forceState) {
+  const o = document.getElementById('sources-overlay');
+  const newHidden = forceState !== undefined ? !forceState : !o.hidden;
+  o.hidden = newHidden;
+  if (!newHidden) {
+    renderSources('');
+    document.getElementById('sources-filter').value = '';
+    setTimeout(() => document.getElementById('sources-filter').focus(), 80);
+  }
+}
+
+function flashSource(num) {
+  toggleSources(true);
+  setTimeout(() => {
+    const li = document.querySelector(`#sources-list li[data-num="${num}"]`);
+    if (!li) return;
+    li.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    li.classList.add('flash');
+    setTimeout(() => li.classList.remove('flash'), 1500);
+  }, 100);
+}
+
+document.getElementById('btn-sources').addEventListener('click', (e) => { e.stopPropagation(); toggleSources(true); });
+document.getElementById('sources-overlay').addEventListener('click', (e) => {
+  if (e.target.closest('.overlay-close')) { toggleSources(false); }
+});
+document.getElementById('sources-filter').addEventListener('input', (e) => renderSources(e.target.value));
+
+stage.addEventListener('click', (e) => {
+  if (isAnyOverlayOpen()) return;
+  if (e.target.closest('[data-no-advance]')) return;
+  if (e.shiftKey) {
+    retreat();
+  } else {
+    advance();
+  }
+});
+
+// Capture phase — intercepte les clics sur régions interactives data-card AVANT le listener bubble
+stage.addEventListener('click', (e) => {
+  const target = e.target.closest('[data-card]');
+  if (!target) return;
+  e.stopPropagation();
+  const cardId = target.dataset.card;
+  // Cherche la card dans le schéma courant
+  const scene = SCENES[state.sceneIndex];
+  const schemaId = scene && scene.schemaId ? scene.schemaId : null;
+  // schemaId est de la forme 'svg-01-spectre', les clés SCHEMAS sont 'schema-01', 'schema-02'…
+  // Mapping : svg-01-* → schema-01, svg-02-* → schema-02, etc.
+  let card = null;
+  if (schemaId) {
+    const match = schemaId.match(/svg-(\d+)-/);
+    if (match) {
+      const schKey = 'schema-' + match[1].padStart(2, '0');
+      card = SCHEMAS?.[schKey]?.[cardId] || null;
+    }
+  }
+  if (card) {
+    openModal(card.eyebrow || '', card.title || '', card.body || '');
+  }
+}, true);
+
+console.log('[slideshow]', SCENES.length, 'scènes déclarées');
+
+/* ───────── Swipe horizontal sur la stage ───────── */
+let touchStart = null;
+stage.addEventListener('touchstart', (e) => {
+  if (e.touches.length !== 1) return;
+  touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() };
+}, { passive: true });
+
+stage.addEventListener('touchend', (e) => {
+  if (!touchStart) return;
+  const t = e.changedTouches[0];
+  const dx = t.clientX - touchStart.x;
+  const dy = t.clientY - touchStart.y;
+  const dt = Date.now() - touchStart.t;
+  touchStart = null;
+  if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+  if (dt > 600) return;
+  if (dx > 0) gotoScene(state.sceneIndex - 1);
+  else gotoScene(state.sceneIndex + 1);
+});
+
+/* ───────── Pulse d'inactivité ───────── */
+let __idleTimer = null;
+function resetIdle() {
+  const cue = document.getElementById('idle-cue');
+  if (cue) cue.classList.remove('show');
+  document.getElementById('topbar').classList.remove('idle');
+  clearTimeout(__idleTimer);
+  __idleTimer = setTimeout(() => {
+    if (cue) cue.classList.add('show');
+    document.getElementById('topbar').classList.add('idle');
+  }, 4000);
+}
+['keydown', 'click', 'touchstart', 'mousemove'].forEach(evt => window.addEventListener(evt, resetIdle, { passive: true }));
+resetIdle();
+
+/* ───────── Toaster d'onboarding mobile ───────── */
+function isTouchDevice() {
+  return ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+}
+
+function maybeShowOnboardingToaster() {
+  if (!isTouchDevice()) return;
+  if (localStorage.getItem('slideshow-onboarded')) return;
+  const t = document.getElementById('toaster');
+  if (!t) return;
+  t.hidden = false;
+  setTimeout(() => t.classList.add('show'), 50);
+  const dismiss = () => {
+    t.classList.remove('show');
+    setTimeout(() => { t.hidden = true; }, 400);
+    try { localStorage.setItem('slideshow-onboarded', '1'); } catch(_) {}
+    window.removeEventListener('touchstart', dismiss);
+  };
+  window.addEventListener('touchstart', dismiss, { once: true, passive: true });
+  setTimeout(dismiss, 6000);
+}
+
+maybeShowOnboardingToaster();
+
+/* ───────── Fullscreen zoom for schemas ───────── */
+const __zoom = (function setupZoom() {
+  const overlay  = document.getElementById('zoom-overlay');
+  const zStage   = document.getElementById('zoom-stage');
+  const content  = document.getElementById('zoom-content');
+  const captionE = document.getElementById('zoom-caption');
+  const hint     = document.getElementById('zoom-hint');
+  if (!overlay || !zStage || !content) return {};
+
+  let scale = 1, tx = 0, ty = 0;
+  let svgW = 0, svgH = 0;
+  let fitScale = 1;
+  let lastZoomTrigger = null;
+
+  function applyTransform() { content.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`; }
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+  function fitToStage() {
+    if (!svgW || !svgH) return;
+    const r = zStage.getBoundingClientRect();
+    const margin = 32;
+    fitScale = Math.min((r.width - margin * 2) / svgW, (r.height - margin * 2) / svgH);
+    scale = fitScale;
+    tx = (r.width - svgW * scale) / 2;
+    ty = (r.height - svgH * scale) / 2;
+    applyTransform();
+  }
+  function zoomAt(mx, my, factor) {
+    const newScale = clamp(scale * factor, fitScale * 0.5, fitScale * 16);
+    tx = mx - newScale * (mx - tx) / scale;
+    ty = my - newScale * (my - ty) / scale;
+    scale = newScale;
+    applyTransform();
+  }
+  function openZoom(svgEl, captionText) {
+    const clone = svgEl.cloneNode(true);
+    const vb = clone.viewBox?.baseVal;
+    svgW = (vb && vb.width)  || svgEl.getBoundingClientRect().width  || 1200;
+    svgH = (vb && vb.height) || svgEl.getBoundingClientRect().height || 780;
+    clone.setAttribute('width', svgW); clone.setAttribute('height', svgH);
+    clone.style.width = svgW + 'px'; clone.style.height = svgH + 'px';
+    content.innerHTML = '';
+    content.appendChild(clone);
+    captionE.textContent = captionText || '';
+    lastZoomTrigger = document.activeElement;
+    overlay.hidden = false;
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(() => {
+      fitToStage();
+      zStage.focus({ preventScroll: true });
+      if (hint) {
+        hint.classList.remove('fade');
+        clearTimeout(hint._t);
+        hint._t = setTimeout(() => hint.classList.add('fade'), 2600);
+      }
+    });
+  }
+  function closeZoom() {
+    overlay.hidden = true;
+    content.innerHTML = '';
+    document.body.style.overflow = '';
+    lastZoomTrigger?.focus?.();
+  }
+
+  overlay.querySelector('.zoom-close')?.addEventListener('click', closeZoom);
+  document.addEventListener('keydown', (e) => {
+    if (overlay.hidden) return;
+    if (e.key === 'Escape') { e.preventDefault(); closeZoom(); }
+    else if (e.key === '+' || e.key === '=') { e.preventDefault(); const r = zStage.getBoundingClientRect(); zoomAt(r.width/2, r.height/2, 1.25); }
+    else if (e.key === '-' || e.key === '_') { e.preventDefault(); const r = zStage.getBoundingClientRect(); zoomAt(r.width/2, r.height/2, 1/1.25); }
+    else if (e.key === '0') { e.preventDefault(); fitToStage(); }
+  });
+
+  overlay.querySelector('.zoom-in')?.addEventListener('click', () => { const r = zStage.getBoundingClientRect(); zoomAt(r.width/2, r.height/2, 1.25); });
+  overlay.querySelector('.zoom-out')?.addEventListener('click', () => { const r = zStage.getBoundingClientRect(); zoomAt(r.width/2, r.height/2, 1/1.25); });
+  overlay.querySelector('.zoom-reset')?.addEventListener('click', fitToStage);
+
+  zStage.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const r = zStage.getBoundingClientRect();
+    const mx = e.clientX - r.left;
+    const my = e.clientY - r.top;
+    const factor = e.deltaY < 0 ? 1.15 : 1/1.15;
+    zoomAt(mx, my, factor);
+  }, { passive: false });
+
+  let dragging = false, sx = 0, sy = 0, stx = 0, sty = 0;
+  zStage.addEventListener('pointerdown', (e) => {
+    dragging = true;
+    zStage.classList.add('grabbing');
+    zStage.setPointerCapture?.(e.pointerId);
+    sx = e.clientX; sy = e.clientY; stx = tx; sty = ty;
+  });
+  zStage.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    tx = stx + (e.clientX - sx);
+    ty = sty + (e.clientY - sy);
+    applyTransform();
+  });
+  function endDrag(e) {
+    if (!dragging) return;
+    dragging = false;
+    zStage.classList.remove('grabbing');
+    zStage.releasePointerCapture?.(e.pointerId);
+  }
+  zStage.addEventListener('pointerup', endDrag);
+  zStage.addEventListener('pointercancel', endDrag);
+  zStage.addEventListener('pointerleave', endDrag);
+
+  let pinchStartDist = 0, pinchStartScale = 1, pinchMid = { x: 0, y: 0 };
+  zStage.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+      dragging = false;
+      const t1 = e.touches[0], t2 = e.touches[1];
+      const dx = t1.clientX - t2.clientX, dy = t1.clientY - t2.clientY;
+      pinchStartDist = Math.hypot(dx, dy);
+      pinchStartScale = scale;
+      const r = zStage.getBoundingClientRect();
+      pinchMid = { x: (t1.clientX + t2.clientX) / 2 - r.left, y: (t1.clientY + t2.clientY) / 2 - r.top };
+    }
+  }, { passive: true });
+  zStage.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 2 && pinchStartDist > 0) {
+      e.preventDefault();
+      const t1 = e.touches[0], t2 = e.touches[1];
+      const d = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+      const factor = (d / pinchStartDist) * (pinchStartScale / scale);
+      zoomAt(pinchMid.x, pinchMid.y, factor);
+    }
+  }, { passive: false });
+  zStage.addEventListener('touchend', (e) => { if (e.touches.length < 2) pinchStartDist = 0; });
+
+  window.addEventListener('resize', () => { if (!overlay.hidden) fitToStage(); });
+
+  return { openZoom };
+})();
+
+// Câble le bouton zoom après chaque render() sur une scène schema
+// (les éléments sont injectés dynamiquement, pas présents au chargement)
+stage.addEventListener('click', (e) => {
+  const btn = e.target.closest('.zoom-btn');
+  if (!btn) return;
+  e.stopPropagation();
+  const wrapper = btn.closest('.schema-wrapper');
+  const svg = wrapper ? wrapper.querySelector('svg') : null;
+  if (svg && __zoom.openZoom) {
+    const caption = stage.querySelector('.caption')?.textContent?.trim() || '';
+    __zoom.openZoom(svg, caption);
+  }
+}, true);
+</script>
+
+</body>
+</html>
