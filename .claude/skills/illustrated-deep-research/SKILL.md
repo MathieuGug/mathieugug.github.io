@@ -16,7 +16,8 @@ A single ZIP file containing:
 ```
 YYYYmmdd-{topic-slug}/
 ├── YYYYmmdd-{topic-slug}-rapport.md       # the main report (Obsidian-compatible)
-├── YYYYmmdd-{topic-slug}-app.html         # standalone interactive companion
+├── YYYYmmdd-{topic-slug}-app.html         # standalone interactive companion (long-form)
+├── YYYYmmdd-{topic-slug}-slideshow.html   # OPTIONAL 10-min scenic slideshow companion
 ├── images/
 │   ├── YYYYmmdd-01-{schema-slug}.svg
 │   ├── YYYYmmdd-02-{schema-slug}.svg
@@ -24,7 +25,9 @@ YYYYmmdd-{topic-slug}/
 └── README.md                              # how to open the app, structure overview
 ```
 
-The HTML file MUST be openable directly from disk by double-clicking — no server, no build step, no external dependencies beyond Google Fonts (loaded via CDN). The Markdown is Obsidian-compatible (image syntax `![alt|width](images/...svg)`).
+The HTML files MUST be openable directly from disk by double-clicking — no server, no build step, no external dependencies beyond Google Fonts (loaded via CDN). The Markdown is Obsidian-compatible (image syntax `![alt|width](images/...svg)`).
+
+The **slideshow companion** is optional. Build it only when the user explicitly asks for it, or when the topic has enough schematic richness (≥5 SVGs) that a 10-min scenic alternative to the long-form app makes editorial sense. The slideshow reuses the same SVGs and modal cards as the long-form app — no new schemas, no new sources. See `references/slideshow.md` for the pattern.
 
 The companion app ships with three baseline interactive features and two power-user features:
 - **Baseline**: clickable schema regions opening modals; tooltips on technical terms; clickable citations highlighting the matching source in the right sidebar.
@@ -38,7 +41,8 @@ The companion app ships with three baseline interactive features and two power-u
 4. **Design the schemas** — identify 5–10 conceptual visuals that genuinely add information beyond the prose. List them with one-line briefs and confirm if uncertain.
 5. **Generate each SVG** in editorial style following `references/svg-editorial-style.md`. For each schema, also draft the modal content for every interactive region.
 6. **Build the HTML companion app** following `references/companion-app.md` and `assets/app-template.html`. Inline all SVGs, all modal content, all tooltip definitions, all sources.
-7. **Package** the ZIP, move to `/mnt/user-data/outputs/`, and present with `present_files`.
+7. **(Optional) Build the slideshow companion** — if requested or warranted, build a 10-12 scene narrative slideshow following `references/slideshow.md`. The slideshow reuses the same SVGs (with three light adaptations: transparent `<rect>` background, header wrapped in `<g class="svg-header">`, cropped `viewBox`) and the same `SCHEMAS` / `SOURCES` content as the long-form app — no new authoring.
+8. **Package** the ZIP, move to `/mnt/user-data/outputs/`, and present with `present_files`.
 
 For the detailed step-by-step (research strategy, source quality bar, drafting standards), read `references/workflow.md`.
 
@@ -82,6 +86,7 @@ The companion app template (`assets/app-template.html`) is a scaffold. Two failu
 | Step-by-step execution (research, drafting, packaging) | `references/workflow.md` |
 | How to design SVGs in editorial style (palette, type, layout, annotation grammar) | `references/svg-editorial-style.md` |
 | HTML app architecture (layout, modal system, tooltips, sources sidebar, JS) — and the **mobile-friendliness + panel-close + `<pre>`/`<code>` overflow** patterns required by the host site's `CLAUDE.md` | `references/companion-app.md` |
+| Building the **optional 10-min slideshow companion** (3rd format in the ZIP) | `references/slideshow.md` |
 | Working HTML scaffold to start from | `assets/app-template.html` |
 
 ## Output location
@@ -127,5 +132,19 @@ Before zipping, verify:
 - [ ] **`← Retour aux dossiers` back link** in `<header class="site">` (first child, before `.marker`), pointing to `../index.html#series`.
 - [ ] **Schema modal dispatcher** still works after the mobile changes — clicking any `.interactive[data-card]` region opens its modal with title + body (and optional eyebrow); tapping outside or pressing Esc closes the modal first, then the panel underneath.
 - [ ] **State-aware figure breakout on desktop** — under `@media (min-width: 1025px)`, `.figure` adapts to the sources panel state: **expanded** = fills the main grid cell only (`width: min(calc(100vw - 560px), 880px)`); **`.layout.sources-collapsed`** = extends to viewport-right (`width: calc(100vw - max(0px, (100vw - 1440px) / 2) - 240px)`). Mirrored negative `margin-left/right` align the figure's edges with the visible boundaries. Smooth 280 ms transition. `.figure-caption` re-anchored to 760 px centered max-width. Mobile keeps the figure inside its single column. See `references/companion-app.md` § 5 for the math.
+
+### If the optional slideshow companion is included
+
+- [ ] Slideshow is a self-contained file `YYYYmmdd-{topic-slug}-slideshow.html`, opens cleanly from `file://`
+- [ ] All SVGs copied into `<div id="schemas" hidden>`, each with: `<rect>` background changed to `fill="transparent"`, internal header (eyebrow + title + lede) wrapped in `<g class="svg-header">`, and `viewBox` cropped (default `0 155 W H'`, drop to `0 105` for SVGs with rotated column labels)
+- [ ] Topbar 64px desktop / 56px mobile, with `<div class="scene-title-bar">` updated by `updateSceneTitleBar(scene)` on every render
+- [ ] Modal as right sidebar (`position: fixed; right: 64px; top: 64px; bottom: 0; width: 400px`), slides in via `transform: translateX`, stage shrinks via `body.modal-open` (`right: 480px`)
+- [ ] Timeline as **vertical right sidebar** desktop, flips to **horizontal bottom** under `@media (max-width: 1024px)` — touch ergonomics
+- [ ] Mobile: modal becomes bottom-sheet (`width: 100%; height: 90vh; transform: translateY(100%)`), tap=advance, swipe horizontal = scene ±1, onboarding toaster at first touch
+- [ ] Hotkeys functional: `S` (TOC), `R` (sources), Escape cascades modal > zoom > sources > TOC, ←/→ for step/scene
+- [ ] References `[N]` in modal bodies are rewritten by `openModal()` into clickable links that close the modal, open sources overlay, scroll to `li[data-num="N"]`, flash highlight 1.5s
+- [ ] `prefers-reduced-motion: reduce` honored: stage transition, modal transform, idle pulse animation all reduced to 0ms
+- [ ] **Pattern reference**: when in doubt, read the V1 proto at `narrative-experiences/20260505-narrative-experiences-slideshow.html` — it's the source of truth for every CSS rule and JS handler
+- [ ] **Hub card**: a third `.format` card "Le récit illustré" added to the dossier's `index.html` between the app card and the report card, plus the hub's `.meta` block updated to "Trois formats"
 
 If any check fails, fix it before delivering — don't ship and apologize.
