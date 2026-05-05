@@ -281,6 +281,8 @@ body.modal-open .stage { right: 480px; }
   .footer-actions { flex-direction: row; writing-mode: horizontal-tb; }
   .footer-actions .footer-btn { writing-mode: horizontal-tb; transform: none; }
   .footer-btn { font-size: 8px; }
+  .zoom-btn { opacity: 0.85; }
+  .scene-outro .ctas { min-width: 0; width: 100%; }
 }
 
 /* Overlays sommaire / sources */
@@ -302,6 +304,10 @@ body.modal-open .stage { right: 480px; }
 .sources-list li .num { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--accent); min-width: 28px; padding-top: 2px; }
 .sources-list li a { color: var(--accent); text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 3px; transition: text-decoration-color 0.2s; }
 .sources-list li a:hover { text-decoration-color: var(--accent); }
+
+.toaster { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 12px 20px; border-radius: 24px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; z-index: 60; opacity: 0; pointer-events: none; transition: opacity 0.4s ease; max-width: calc(100vw - 32px); text-align: center; }
+.toaster.show { opacity: 1; }
+.toaster[hidden] { display: none; }
 </style>
 </head>
 <body>
@@ -1938,6 +1944,50 @@ stage.addEventListener('click', (e) => {
 
 console.log('[slideshow]', SCENES.length, 'scènes déclarées');
 
+/* ───────── Swipe horizontal sur la stage ───────── */
+let touchStart = null;
+stage.addEventListener('touchstart', (e) => {
+  if (e.touches.length !== 1) return;
+  touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() };
+}, { passive: true });
+
+stage.addEventListener('touchend', (e) => {
+  if (!touchStart) return;
+  const t = e.changedTouches[0];
+  const dx = t.clientX - touchStart.x;
+  const dy = t.clientY - touchStart.y;
+  const dt = Date.now() - touchStart.t;
+  touchStart = null;
+  if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+  if (dt > 600) return;
+  if (dx > 0) gotoScene(state.sceneIndex - 1);
+  else gotoScene(state.sceneIndex + 1);
+});
+
+/* ───────── Toaster d'onboarding mobile ───────── */
+function isTouchDevice() {
+  return ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+}
+
+function maybeShowOnboardingToaster() {
+  if (!isTouchDevice()) return;
+  if (localStorage.getItem('slideshow-onboarded')) return;
+  const t = document.getElementById('toaster');
+  if (!t) return;
+  t.hidden = false;
+  setTimeout(() => t.classList.add('show'), 50);
+  const dismiss = () => {
+    t.classList.remove('show');
+    setTimeout(() => { t.hidden = true; }, 400);
+    try { localStorage.setItem('slideshow-onboarded', '1'); } catch(_) {}
+    window.removeEventListener('touchstart', dismiss);
+  };
+  window.addEventListener('touchstart', dismiss, { once: true, passive: true });
+  setTimeout(dismiss, 6000);
+}
+
+maybeShowOnboardingToaster();
+
 /* ───────── Fullscreen zoom for schemas ───────── */
 const __zoom = (function setupZoom() {
   const overlay  = document.getElementById('zoom-overlay');
@@ -2089,5 +2139,9 @@ stage.addEventListener('click', (e) => {
   }
 }, true);
 </script>
+
+<div class="toaster" id="toaster" hidden data-no-advance>
+  <span>Tape pour avancer · Swipe ←→ pour changer de scène · Pince pour zoomer</span>
+</div>
 </body>
 </html>
