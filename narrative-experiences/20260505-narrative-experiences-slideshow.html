@@ -105,10 +105,12 @@ body.modal-open .stage { right: 480px; }
 .schema-host svg .svg-header { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
-  .stage { transition: none !important; }
+  .stage { transition: opacity 0ms ease, right 0ms ease !important; }
   .schema-host svg [data-step-state] { transition: none !important; }
   .schema-host .caption { transition: none !important; }
   .scene-outro .cta-primary, .scene-outro .cta-secondary { transition: none !important; }
+  #modal-root { transition: transform 0ms ease !important; }
+  .toaster { transition: none !important; }
 }
 
 /* ── Zoom overlay ── */
@@ -308,6 +310,15 @@ body.modal-open .stage { right: 480px; }
 .toaster { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 12px 20px; border-radius: 24px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; z-index: 60; opacity: 0; pointer-events: none; transition: opacity 0.4s ease; max-width: calc(100vw - 32px); text-align: center; }
 .toaster.show { opacity: 1; }
 .toaster[hidden] { display: none; }
+
+.idle-cue { position: fixed; bottom: 60px; right: 88px; font-family: 'JetBrains Mono', monospace; font-size: 18px; color: var(--accent); opacity: 0; pointer-events: none; transition: opacity 0.5s; z-index: 35; animation: idle-pulse 1.5s ease-in-out infinite; }
+.idle-cue.show { opacity: 0.5; }
+@keyframes idle-pulse { 0%, 100% { transform: translateY(0); opacity: 0.3; } 50% { transform: translateY(-4px); opacity: 0.7; } }
+@media (prefers-reduced-motion: reduce) { .idle-cue { animation: none; } }
+@media (max-width: 1024px) { .idle-cue { display: none; } }
+
+.topbar.idle { opacity: 0.25; }
+.topbar:hover { opacity: 1 !important; }
 </style>
 </head>
 <body>
@@ -1663,10 +1674,10 @@ function render() {
 
   if (scene.type === 'punchline') {
     stage.innerHTML = `
-      <div class="scene-punchline">
+      <section class="scene-punchline" role="group" aria-roledescription="scène">
         <div class="body">${scene.body}</div>
         ${scene.attribution ? `<div class="attribution">${scene.attribution}</div>` : ''}
-      </div>
+      </section>
     `;
     renderTimeline();
     return;
@@ -1674,7 +1685,7 @@ function render() {
 
   if (scene.type === 'outro') {
     stage.innerHTML = `
-      <div class="scene-outro">
+      <section class="scene-outro" role="group" aria-roledescription="scène">
         <div class="eyebrow">Vous avez parcouru</div>
         <h2>Expériences <em>narratives</em> — l'essentiel</h2>
         <div class="body">${scene.body}</div>
@@ -1684,7 +1695,7 @@ function render() {
         </div>
         <button class="restart" data-no-advance type="button" onclick="gotoScene(0)">↺ Recommencer</button>
         <div class="disclosure">Format co-écrit avec l'aide d'une IA</div>
-      </div>
+      </section>
     `;
     renderTimeline();
     return;
@@ -1695,7 +1706,7 @@ function render() {
     const svgClone = svgEl ? svgEl.outerHTML : `<div style="color: red; font-family: monospace;">SVG ${scene.schemaId} introuvable</div>`;
     const step = scene.steps[state.stepIndex] || { caption: '(pas d\'étape définie)' };
     stage.innerHTML = `
-      <div class="schema-host">
+      <section class="schema-host" role="group" aria-roledescription="scène">
         <div class="scene-title">
           <span class="num">${(state.sceneIndex+1).toString().padStart(2,'0')}</span>
           <span class="title">${scene.title}</span>
@@ -1704,8 +1715,8 @@ function render() {
           ${svgClone}
           <button class="zoom-btn" type="button" aria-label="Zoom plein écran" data-no-advance>⛶</button>
         </div>
-        <div class="caption">${step.caption}</div>
-      </div>
+        <div class="caption" aria-live="polite">${step.caption}</div>
+      </section>
     `;
     applyStepStyles(scene, step);
 
@@ -1964,6 +1975,21 @@ stage.addEventListener('touchend', (e) => {
   else gotoScene(state.sceneIndex + 1);
 });
 
+/* ───────── Pulse d'inactivité ───────── */
+let __idleTimer = null;
+function resetIdle() {
+  const cue = document.getElementById('idle-cue');
+  if (cue) cue.classList.remove('show');
+  document.getElementById('topbar').classList.remove('idle');
+  clearTimeout(__idleTimer);
+  __idleTimer = setTimeout(() => {
+    if (cue) cue.classList.add('show');
+    document.getElementById('topbar').classList.add('idle');
+  }, 4000);
+}
+['keydown', 'click', 'touchstart', 'mousemove'].forEach(evt => window.addEventListener(evt, resetIdle, { passive: true }));
+resetIdle();
+
 /* ───────── Toaster d'onboarding mobile ───────── */
 function isTouchDevice() {
   return ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
@@ -2139,6 +2165,8 @@ stage.addEventListener('click', (e) => {
   }
 }, true);
 </script>
+
+<div class="idle-cue" id="idle-cue" aria-hidden="true">→</div>
 
 <div class="toaster" id="toaster" hidden data-no-advance>
   <span>Tape pour avancer · Swipe ←→ pour changer de scène · Pince pour zoomer</span>
