@@ -89,6 +89,53 @@ const SCENES = [
 
 let state = { sceneIndex: 0, stepIndex: 0 };
 
+const stage = document.getElementById('stage');
+
+function render() {
+  const scene = SCENES[state.sceneIndex];
+  if (!scene) return;
+  stage.innerHTML = `
+    <div class="scene-debug" style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-faint); margin-bottom: 16px;">
+      ${(state.sceneIndex+1).toString().padStart(2,'0')} / ${SCENES.length} · ${scene.type} · ${scene.id} · step ${state.stepIndex}
+    </div>
+    <h2 style="font-family: 'Fraunces', serif; font-weight: 300; font-size: clamp(28px, 4vw, 48px); line-height: 1.1; text-align: center; max-width: 80vw;">
+      ${scene.title || scene.body || ''}
+    </h2>
+  `;
+}
+
+function advance() {
+  const scene = SCENES[state.sceneIndex];
+  const lastStep = (scene.steps && scene.steps.length > 0) ? scene.steps.length - 1 : 0;
+  if (state.stepIndex < lastStep) {
+    state.stepIndex++;
+  } else if (state.sceneIndex < SCENES.length - 1) {
+    state.sceneIndex++;
+    state.stepIndex = 0;
+  }
+  render();
+}
+
+function retreat() {
+  if (state.stepIndex > 0) {
+    state.stepIndex--;
+  } else if (state.sceneIndex > 0) {
+    state.sceneIndex--;
+    const prevScene = SCENES[state.sceneIndex];
+    state.stepIndex = (prevScene.steps && prevScene.steps.length > 0) ? prevScene.steps.length - 1 : 0;
+  }
+  render();
+}
+
+function gotoScene(index) {
+  if (index < 0 || index >= SCENES.length) return;
+  state.sceneIndex = index;
+  state.stepIndex = 0;
+  render();
+}
+
+render();
+
 console.log('[slideshow]', SCENES.length, 'scènes déclarées');
 </script>
 </body>
