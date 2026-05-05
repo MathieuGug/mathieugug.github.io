@@ -1,0 +1,2180 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Expériences narratives — étude</title>
+  <meta name="description" content="Expériences narratives : data storytelling, visualisation narrative, IA générative dans la chaîne. Fondations canoniques (Bertin, Shneiderman, Munzner, Cairo, Meirelles), tournant humaniste (Lupi, Posavec, Fragapane), pipelines techniques et cadre praticien — par Mathieu Guglielmino.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --paper:    #FAF8F3;
+      --paper-2:  #F2EFE7;
+      --ink:      #1A1A1A;
+      --graphite: #5A5A5A;
+      --mist:     #B8B5AE;
+      --rule:     #E5E1D8;
+      --carmine:  #B7332C;
+      --teal:     #1F5560;
+      --mustard:  #B58A2C;
+      --serif: 'Spectral', 'Playfair Display', Georgia, serif;
+      --sans:  'Inter', system-ui, sans-serif;
+      --mono:  'JetBrains Mono', 'IBM Plex Mono', monospace;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; max-width: 100vw; }
+    body {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* Pleine largeur viewport — sidebars ancrées aux bords, contenu centré à 760 px
+       dans le main-cell, schémas qui s'étendent à toute la largeur disponible. */
+    .layout {
+      display: grid;
+      grid-template-columns: 240px minmax(0, 1fr) 320px;
+      gap: 0;
+      transition: grid-template-columns 280ms ease;
+      overflow-x: clip;
+    }
+    @media (min-width: 1025px) {
+      .layout.sources-collapsed { grid-template-columns: 240px minmax(0, 1fr) 0; }
+      .layout.sources-collapsed #sources { transform: translateX(100%); opacity: 0; pointer-events: none; }
+      .layout.sources-collapsed #sources-collapse-btn { visibility: hidden; }
+    }
+    @media (max-width: 1024px) {
+      .layout { grid-template-columns: 1fr; }
+      #toc, #sources { display: none; }
+      #toc.open, #sources.open { display: block; position: fixed; inset: 0; z-index: 90; background: var(--paper); overflow-y: auto; padding: 64px 24px 24px; }
+      #toc.open .panel-close, #sources.open .panel-close {
+        display: inline-flex; align-items: center; gap: 6px;
+        position: fixed; top: 16px; right: 16px; z-index: 91;
+        background: var(--paper); border: 1px solid var(--rule);
+        border-radius: 4px; padding: 8px 14px;
+        font-family: var(--mono); font-size: 0.85rem;
+        cursor: pointer; color: var(--ink);
+      }
+      #toc.open .panel-close:hover, #sources.open .panel-close:hover { background: var(--paper-2); }
+      #toc.open .panel-close:focus-visible, #sources.open .panel-close:focus-visible { outline: 2px solid var(--carmine); outline-offset: 2px; }
+    }
+    .panel-close { display: none; }
+
+    header.site {
+      grid-column: 1 / -1;
+      padding: 24px 32px;
+      border-bottom: 1px solid var(--rule);
+      display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap;
+    }
+    header.site .marker {
+      font-family: var(--mono); font-size: 0.78rem;
+      color: var(--carmine); letter-spacing: 0.08em; text-transform: uppercase;
+    }
+    header.site h1 {
+      font-family: var(--serif); font-weight: 600; font-size: 1.4rem;
+      margin: 0; letter-spacing: -0.01em;
+    }
+    header.site .meta { margin-left: auto; font-size: 0.85rem; color: var(--graphite); }
+    header.site .meta a { color: var(--carmine); text-decoration: none; }
+    header.site .meta a:hover { text-decoration: underline; }
+    header.site .back {
+      font-family: var(--mono); font-size: 0.72rem;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--graphite); text-decoration: none; white-space: nowrap;
+    }
+    header.site .back:hover { color: var(--carmine); }
+    .menu-toggle {
+      display: none; background: none; border: 1px solid var(--rule);
+      padding: 6px 12px; border-radius: 4px; cursor: pointer;
+      font-family: var(--mono); font-size: 0.8rem;
+    }
+    @media (max-width: 1024px) { .menu-toggle { display: inline-block; } }
+
+    #toc {
+      padding: 32px 24px;
+      border-right: 1px solid var(--rule);
+      position: sticky; top: 0; align-self: start;
+      height: 100vh; overflow-y: auto;
+    }
+    #toc h2 {
+      font-family: var(--mono); font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--graphite); margin: 0 0 16px;
+    }
+    #toc ol { list-style: none; padding: 0; margin: 0; counter-reset: toc-counter; }
+    #toc li {
+      counter-increment: toc-counter;
+      margin: 0 0 12px; font-size: 0.92rem; line-height: 1.4;
+    }
+    #toc li::before {
+      content: counter(toc-counter, decimal-leading-zero) ".";
+      font-family: var(--mono); font-size: 0.78rem; color: var(--mist); margin-right: 8px;
+    }
+    #toc a { color: var(--ink); text-decoration: none; border-bottom: 1px solid transparent; }
+    #toc a:hover, #toc a.active { color: var(--carmine); border-bottom-color: currentColor; }
+
+    main#report {
+      padding: 56px 48px 96px;
+      min-width: 0; max-width: 760px; margin: 0 auto;
+    }
+    main#report > .lead {
+      font-family: var(--serif); font-style: italic;
+      font-size: 1.2rem; color: var(--graphite);
+      line-height: 1.5; margin: 0 0 48px;
+      padding-bottom: 24px; border-bottom: 1px solid var(--rule);
+    }
+    main h1.report-title {
+      font-family: var(--serif); font-weight: 600;
+      font-size: 2.6rem; line-height: 1.1; letter-spacing: -0.025em;
+      margin: 0 0 16px;
+    }
+    main h2 {
+      font-family: var(--serif); font-weight: 600;
+      font-size: 1.55rem; letter-spacing: -0.01em;
+      margin: 3.5rem 0 1rem;
+      padding-bottom: 0.4rem; border-bottom: 1px solid var(--rule);
+    }
+    main h3 { font-family: var(--serif); font-weight: 600; font-size: 1.18rem; margin: 2rem 0 0.6rem; }
+    main p { margin: 0 0 1.1rem; }
+    main ul, main ol { margin: 0 0 1.1rem; padding-left: 1.4rem; }
+    main li { margin-bottom: 0.4rem; }
+    main blockquote {
+      margin: 1.5rem 0; padding: 12px 20px;
+      border-left: 3px solid var(--carmine);
+      background: var(--paper-2);
+      font-style: italic; color: var(--graphite);
+    }
+    main code {
+      font-family: var(--mono); font-size: 0.88em;
+      background: var(--paper-2);
+      padding: 2px 5px; border-radius: 3px;
+      overflow-wrap: anywhere;
+    }
+    main pre {
+      margin: 1.5rem 0; padding: 14px 16px;
+      background: var(--paper-2); border-radius: 4px;
+      overflow-x: auto; max-width: 100%;
+      font-size: 0.85em; line-height: 1.5;
+      -webkit-overflow-scrolling: touch;
+    }
+    main pre code {
+      background: transparent; padding: 0; border-radius: 0;
+      font-size: 1em; overflow-wrap: normal;
+    }
+    main mark { background: linear-gradient(transparent 58%, rgba(178, 59, 27, 0.14) 58%); color: inherit; padding: 0 2px; }
+    main table { width: 100%; border-collapse: collapse; margin: 1.4rem 0; font-size: 0.92rem; }
+    main th, main td { padding: 8px 12px; border-bottom: 1px solid var(--rule); text-align: left; vertical-align: top; }
+    main th { font-family: var(--mono); font-size: 0.78rem; letter-spacing: 0.04em; color: var(--graphite); border-bottom: 1.5px solid var(--ink); }
+
+    .figure {
+      margin: 3rem 0; padding: 24px 0;
+      border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+      position: relative;
+    }
+    .figure svg { width: 100%; height: auto; display: block; margin: 0 auto; }
+    /* State-aware figure breakout on desktop — figure adapts to sources panel state:
+       - Default (sources expanded): fills main-cell only (between TOC and sources)
+       - .layout.sources-collapsed: extends from TOC-right to viewport-right
+       Neither state overlaps a visible sidebar. Smooth 280ms transition.
+       Full math + derivation: skill illustrated-deep-research, companion-app.md § 5. */
+    @media (min-width: 1025px) {
+      .figure {
+        margin-left: calc(-1 * max(0px, (100vw - 1320px) / 2 + 48px));
+        margin-right: calc(-1 * max(0px, (100vw - 1320px) / 2 + 48px));
+        transition: margin-left 280ms ease, margin-right 280ms ease;
+        padding-left: clamp(16px, 3vw, 48px);
+        padding-right: clamp(16px, 3vw, 48px);
+        border-radius: 0;
+      }
+      .layout.sources-collapsed .figure {
+        margin-left: calc(-1 * max(0px, (100vw - 904px) / 2));
+        margin-right: calc(-1 * max(0px, (100vw - 904px) / 2));
+      }
+      .figure-caption {
+        max-width: 760px; margin-left: auto; margin-right: auto;
+        padding: 0 48px;
+      }
+    }
+    .figure-caption {
+      font-size: 0.88rem; color: var(--graphite);
+      font-style: italic; margin-top: 12px; padding: 0 8px;
+    }
+    .figure svg .interactive { cursor: pointer; transition: filter 140ms; }
+    .figure svg .interactive:hover, .figure svg .interactive:focus-visible { outline: none; }
+    .figure svg .interactive:hover rect,
+    .figure svg .interactive:focus-visible rect,
+    .figure svg .interactive:hover path:not([fill="none"]),
+    .figure svg .interactive:focus-visible path:not([fill="none"]),
+    .figure svg .interactive:hover circle,
+    .figure svg .interactive:focus-visible circle {
+      stroke: var(--carmine); stroke-width: 2.5;
+    }
+    .figure svg .interactive:focus-visible { filter: drop-shadow(0 0 0 var(--carmine)); }
+
+    .zoom-btn {
+      position: absolute; top: 32px; right: 8px;
+      width: 36px; height: 36px;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--paper); border: 1px solid var(--rule);
+      border-radius: 4px; cursor: pointer;
+      font-size: 18px; line-height: 1; color: var(--graphite);
+      opacity: 0;
+      transition: opacity 140ms, background 140ms, color 140ms, border-color 140ms;
+      z-index: 2;
+    }
+    .figure:hover .zoom-btn, .figure:focus-within .zoom-btn, .zoom-btn:focus-visible { opacity: 1; }
+    .zoom-btn:hover { background: var(--paper-2); border-color: var(--ink); color: var(--ink); }
+    @media (hover: none) { .zoom-btn { opacity: 0.85; } }
+
+    #zoom-overlay[hidden] { display: none !important; }
+    #zoom-overlay {
+      position: fixed; inset: 0; z-index: 80;
+      display: flex; flex-direction: column;
+      background: rgba(26, 26, 26, 0.94);
+      backdrop-filter: blur(3px);
+    }
+    #zoom-header {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px; padding: 12px 20px;
+      color: var(--paper);
+      font-family: 'Inter', system-ui, sans-serif; font-size: 0.85rem;
+      border-bottom: 1px solid rgba(250, 248, 243, 0.12);
+    }
+    #zoom-caption {
+      flex: 1; min-width: 0;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      opacity: 0.85;
+    }
+    .zoom-controls { display: flex; gap: 4px; flex-shrink: 0; }
+    .zoom-controls button {
+      background: transparent;
+      border: 1px solid rgba(250, 248, 243, 0.32);
+      color: var(--paper); padding: 6px 12px;
+      min-width: 36px; cursor: pointer;
+      font: inherit; font-size: 0.85rem; border-radius: 3px;
+      transition: background 120ms, border-color 120ms;
+    }
+    .zoom-controls button:hover { background: rgba(250, 248, 243, 0.12); border-color: rgba(250, 248, 243, 0.6); }
+    .zoom-controls button:focus-visible { outline: 2px solid var(--paper); outline-offset: 2px; }
+    .zoom-controls .zoom-close { font-size: 1.3rem; line-height: 1; padding: 2px 10px; }
+    #zoom-stage { flex: 1; overflow: hidden; position: relative; cursor: grab; touch-action: none; }
+    #zoom-stage.grabbing { cursor: grabbing; }
+    #zoom-content { position: absolute; top: 0; left: 0; transform-origin: 0 0; will-change: transform; }
+    #zoom-content > svg {
+      display: block; max-width: none; max-height: none;
+      background: var(--paper); box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+    }
+    #zoom-hint {
+      position: absolute; bottom: 16px; left: 50%;
+      transform: translateX(-50%);
+      color: rgba(250, 248, 243, 0.55);
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 0.75rem; pointer-events: none;
+      transition: opacity 400ms;
+    }
+    #zoom-hint.fade { opacity: 0; }
+    @media (max-width: 640px) {
+      .zoom-controls .zoom-reset { display: none; }
+      #zoom-caption { font-size: 0.78rem; }
+    }
+
+    .term { border-bottom: 1px dotted var(--graphite); cursor: help; position: relative; }
+    .term:hover::after, .term:focus::after, .term.pinned::after {
+      content: attr(data-tooltip);
+      position: absolute; bottom: calc(100% + 8px); left: 0;
+      background: var(--ink); color: var(--paper);
+      padding: 10px 14px; border-radius: 4px;
+      font-family: var(--sans); font-style: normal;
+      font-size: 0.82rem; line-height: 1.45;
+      white-space: normal; width: max-content; max-width: 320px;
+      z-index: 50; pointer-events: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    }
+    .term:hover::before, .term:focus::before, .term.pinned::before {
+      content: ''; position: absolute;
+      bottom: calc(100% + 2px); left: 12px;
+      width: 0; height: 0;
+      border-left: 5px solid transparent; border-right: 5px solid transparent;
+      border-top: 6px solid var(--ink); z-index: 51;
+    }
+    @media (max-width: 640px) {
+      .term:hover::after, .term:focus::after, .term.pinned::after {
+        position: fixed; bottom: 16px; left: 16px; right: 16px; top: auto;
+        width: auto; max-width: none; font-size: 0.85rem;
+      }
+      .term:hover::before, .term:focus::before, .term.pinned::before { display: none; }
+    }
+
+    .cite {
+      font-family: var(--mono); font-size: 0.72em;
+      color: var(--carmine); text-decoration: none;
+      vertical-align: super; padding: 0 1px;
+    }
+    .cite::before { content: '['; }
+    .cite::after  { content: ']'; }
+    .cite:hover { text-decoration: underline; }
+
+    #sources {
+      padding: 32px 24px;
+      border-left: 1px solid var(--rule);
+      background: var(--paper-2);
+      position: sticky; top: 0; align-self: start;
+      height: 100vh; overflow-y: auto;
+      transition: transform 280ms ease, opacity 200ms ease;
+    }
+    #sources .sources-inner { display: block; }
+
+    .sidebar-edge-toggle {
+      width: 22px; height: 60px;
+      background: var(--paper); border: 1px solid var(--rule);
+      color: var(--graphite); cursor: pointer;
+      font-family: var(--mono); font-size: 14px; line-height: 1;
+      padding: 0;
+      transition: background 140ms, color 140ms, border-color 140ms;
+    }
+    .sidebar-edge-toggle:hover { background: var(--paper-2); color: var(--ink); border-color: var(--graphite); }
+    .sidebar-edge-toggle:focus-visible { outline: 2px solid var(--carmine); outline-offset: 2px; }
+    /* Pinned to viewport (NOT inside the panel's overflow scroll) so the
+       button stays in place when the inner sources list is long. */
+    #sources-collapse-btn {
+      position: fixed; top: 50%; right: 320px;
+      transform: translate(50%, -50%);
+      border-radius: 4px; z-index: 70;
+    }
+    #sources-expand-btn {
+      position: fixed; top: 50%; right: 0;
+      transform: translateY(-50%);
+      border-radius: 4px 0 0 4px;
+      border-right: none; z-index: 70;
+    }
+    #sources-expand-btn[hidden] { display: none !important; }
+    @media (max-width: 1024px) {
+      .sidebar-edge-toggle { display: none !important; }
+      .menu-toggle { display: inline-block !important; }
+      header.site { padding: 14px 16px; gap: 10px; flex-wrap: wrap; }
+      header.site h1 { font-size: 1.05rem; min-width: 0; overflow-wrap: break-word; word-break: break-word; }
+      header.site .meta { font-size: 0.75rem; }
+      header.site .back { font-size: 0.7rem; letter-spacing: 0.08em; }
+      main#report { padding: 28px 18px 56px; max-width: 100%; min-width: 0; }
+      main h1.report-title { font-size: 1.8rem; overflow-wrap: break-word; word-break: break-word; }
+      main#report > .lead { font-size: 1.02rem; margin-bottom: 32px; padding-bottom: 18px; }
+      main h2 { font-size: 1.25rem; margin: 2.4rem 0 0.8rem; overflow-wrap: break-word; word-break: break-word; }
+      main h3 { font-size: 1.05rem; overflow-wrap: break-word; }
+      main p, main ul, main ol { overflow-wrap: break-word; word-break: break-word; }
+      .figure { margin: 2rem 0; padding: 16px 0; max-width: 100%; overflow: hidden; }
+      .figure svg { width: 100%; max-width: 100%; height: auto; }
+      main table {
+        display: block; max-width: 100%;
+        overflow-x: auto; -webkit-overflow-scrolling: touch;
+      }
+      main th, main td { white-space: normal; }
+    }
+    #sources h2 {
+      font-family: var(--mono); font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--graphite); margin: 0 0 16px;
+    }
+    #sources ol { list-style: none; padding: 0; margin: 0; }
+    #sources li {
+      font-size: 0.82rem; line-height: 1.5;
+      margin: 0 0 16px; padding: 12px 14px;
+      border-radius: 4px; border: 1px solid transparent;
+      transition: border-color 220ms, background 220ms;
+    }
+    #sources li .cite-num {
+      display: inline-block; font-family: var(--mono);
+      font-size: 0.8rem; font-weight: 600;
+      color: var(--carmine); margin-right: 6px;
+    }
+    #sources li a { display: inline-block; margin-top: 4px; color: var(--teal); text-decoration: none; font-size: 0.78rem; }
+    #sources li a:hover { text-decoration: underline; }
+    #sources li .accessed { display: block; margin-top: 4px; color: var(--mist); font-style: italic; font-size: 0.74rem; }
+    #sources li.highlight { background: var(--paper); border-color: var(--carmine); }
+
+    #modal-root[hidden] { display: none !important; }
+    #modal-root {
+      position: fixed; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100;
+    }
+    .modal-backdrop {
+      position: absolute; inset: 0;
+      background: rgba(26,26,26,0.55);
+      backdrop-filter: blur(2px);
+    }
+    .modal-card {
+      position: relative; background: var(--paper);
+      max-width: 560px; width: calc(100% - 48px);
+      max-height: calc(100vh - 96px); overflow-y: auto;
+      padding: 36px 36px 32px;
+      border-radius: 6px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.25);
+      border-top: 4px solid var(--carmine);
+    }
+    .modal-close {
+      position: absolute; top: 12px; right: 12px;
+      background: none; border: none;
+      font-size: 1.6rem; line-height: 1; cursor: pointer;
+      color: var(--graphite);
+      width: 32px; height: 32px; border-radius: 4px;
+    }
+    .modal-close:hover { background: var(--paper-2); color: var(--ink); }
+    .modal-card h3 {
+      font-family: var(--serif); font-weight: 600;
+      font-size: 1.4rem; margin: 0 0 6px; letter-spacing: -0.01em;
+    }
+    .modal-card .modal-eyebrow {
+      font-family: var(--mono); font-size: 0.72rem;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--carmine); margin: 0 0 14px;
+    }
+    .modal-card .modal-body p { margin: 0 0 0.9rem; font-size: 0.95rem; }
+    .modal-card .modal-body p:last-child { margin-bottom: 0; }
+
+    .footer-disclosure {
+      font-size: 0.78rem; color: var(--mist);
+      font-style: italic; text-align: center;
+      margin: 64px 0 24px; padding-top: 24px;
+      border-top: 1px solid var(--rule);
+    }
+
+    @media print {
+      .layout { grid-template-columns: 1fr; }
+      #toc, #sources, #modal-root, #zoom-overlay, .menu-toggle, .zoom-btn, .sidebar-edge-toggle { display: none; }
+      main#report { max-width: none; padding: 0; }
+      .figure { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+
+    <header class="site">
+      <a class="back" href="../index.html#series">← Retour aux dossiers</a>
+      <span class="marker">Étude illustrée</span>
+      <h1>Expériences narratives</h1>
+      <span class="meta">
+        Mathieu Guglielmino · 5 mai 2026 ·
+        <a href="20260505-narrative-experiences-rapport.md" download>Télécharger le rapport (.md) ↓</a>
+      </span>
+      <button class="menu-toggle" id="toggle-toc">Sommaire</button>
+      <button class="menu-toggle" id="toggle-sources">Sources</button>
+    </header>
+
+    <nav id="toc" aria-label="Sommaire">
+      <button class="panel-close" type="button" aria-label="Fermer le sommaire">Fermer ✕</button>
+      <h2>Sommaire</h2>
+      <ol>
+        <li><a href="#lede">Lede — ce qu'il faut retenir</a></li>
+        <li><a href="#definir">Définir l'expérience narrative</a></li>
+        <li><a href="#fondations">Fondations canoniques : Bertin → Cairo</a></li>
+        <li><a href="#genres">Sept genres, une grammaire vivante</a></li>
+        <li><a href="#humanisme">Le tournant humaniste</a></li>
+        <li><a href="#architectures">Architectures techniques</a></li>
+        <li><a href="#ia-chaine">L'IA dans la chaîne narrative</a></li>
+        <li><a href="#patterns">Patterns d'usage : matrice contexte × format</a></li>
+        <li><a href="#praticien">Feuille de route praticien</a></li>
+      </ol>
+    </nav>
+
+    <main id="report">
+<h1 class="report-title">Expériences narratives</h1>
+      <p class="lead">Une expérience narrative n'est ni un graphique commenté, ni un tableau de bord déguisé : c'est une troisième voie qui impose une structure auctoriale aux données tout en préservant l'agence cognitive du lecteur. En 2026, l'IA générative ne tue pas ce métier — elle en redistribue la valeur.</p>
+
+      <h2 id="lede">Lede — ce qu'il faut retenir en trois minutes</h2>
+      <p>Depuis quinze ans, la communauté de la visualisation a forgé un vocabulaire stable pour parler de ce qu'on appelle, faute de mieux, <em>narrative visualization</em>, <em>data storytelling</em>, ou — formulation que je préfère et que j'adopte ici — <strong>expériences narratives</strong>. Ces objets ne sont pas des graphiques avec un titre éditorial : ce sont des dispositifs où <strong>l'auteur impose une structure</strong> (séquence, hiérarchie, points d'arrêt, registre émotionnel) à un matériau quantitatif, <strong>tout en laissant au lecteur des poignées d'exploration</strong> calibrées (zoom, filtre, branchement, scrollytelling).</p>
+      <p>Le canon académique tient en quatre références : Edward Segel et Jeffrey Heer ont défini le <strong>spectre auteur ↔ lecteur</strong> et identifié <strong>sept genres</strong> (2010)<a class="cite" data-cite="1" href="#source-1">1</a> ; <span class="term" data-tooltip="Tamara Munzner — professeure à UBC Vancouver, autrice de Visualization Analysis &amp; Design (2014). Son cadre What/Why/How sépare les questions de données, de tâches analytiques et de choix d'encodage.">Tamara Munzner</span> a posé le cadre <strong>What/Why/How</strong> qui sépare les questions de données, de tâches et d'encodages (2014)<a class="cite" data-cite="2" href="#source-2">2</a> ; Robert Kosara et Jock Mackinlay ont fait du <em>storytelling</em> la « prochaine étape » de la recherche en visualisation (2013)<a class="cite" data-cite="3" href="#source-3">3</a> ; et Nathalie Henry Riche, Christophe Hurter, Nicholas Diakopoulos et Sheelagh Carpendale ont compilé en 2018 le manuel de référence, <em>Data-Driven Storytelling</em>, intégrant scrollytelling, patterns narratifs, évaluation et éthique<a class="cite" data-cite="4" href="#source-4">4</a>.</p>
+      <p>À ce socle s'ajoutent les <strong>fondations</strong> : la <span class="term" data-tooltip="Sémiologie graphique (Bertin, 1967) : système qui formalise les huit variables visuelles disponibles pour encoder de la donnée — deux planaires (X, Y) et six rétiniennes (taille, valeur, grain, couleur, orientation, forme).">sémiologie graphique</span> de Jacques Bertin (huit variables visuelles, 1967)<a class="cite" data-cite="5" href="#source-5">5</a>, le <span class="term" data-tooltip="Visual Information-Seeking Mantra (Shneiderman, 1996) : Overview first, zoom and filter, then details on demand. Cadre canonique de la visualisation interactive — l'ordre cognitif optimal pour explorer un dataset.">mantra</span> de Ben Shneiderman (« <em>overview first, zoom and filter, then details on demand</em> », 1996)<a class="cite" data-cite="6" href="#source-6">6</a>, la typologie de structures d'Isabel Meirelles (<em>Design for Information</em>, 2013, six structures)<a class="cite" data-cite="7" href="#source-7">7</a>, et la philosophie d'Alberto Cairo (« <em>honesty, clarity, and depth come first</em> »)<a class="cite" data-cite="8" href="#source-8">8</a>.</p>
+      <p>Et puis il y a le <strong>tournant humaniste</strong>, plus récent, qui refuse la promesse moderniste de neutralité : Giorgia Lupi avec son <em>Manifesto for Data Humanism</em> (2017)<a class="cite" data-cite="9" href="#source-9">9</a>, le projet <em>Dear Data</em> avec Stefanie Posavec (2014–2016, acquis par le MoMA en 2017)<a class="cite" data-cite="10" href="#source-10">10</a>, et le travail de Federica Fragapane — formes organiques, lignes-vies, refus de la propreté algorithmique (<em>The Stories Behind a Line</em>, 2017 ; trois pièces acquises par le MoMA en 2023)<a class="cite" data-cite="11" href="#source-11">11</a>. Cette école dit une chose simple : <strong>les données ne sont pas neutres, leur visualisation non plus, et la prétention à l'objectivité visuelle est une posture</strong>.</p>
+      <p>Le pivot 2025–2026 introduit un cinquième acteur : <strong>l'IA générative dans la chaîne de production narrative</strong>. Gartner avait prédit en 2021 que <strong>75 % des récits-données seraient générés automatiquement à l'horizon 2025</strong><a class="cite" data-cite="12" href="#source-12">12</a>. La prédiction s'est révélée à la fois prématurée (les outils grand public n'y sont pas) et trop timide (les pipelines internes l'ont déjà dépassée pour les artefacts à faible enjeu). Le workshop IEEE VIS Gen4DS (2024) a institutionnalisé la question<a class="cite" data-cite="13" href="#source-13">13</a> et une revue récente identifie quatre régimes de collaboration humain-IA : <strong>IA-assistée</strong>, <strong>IA-collaboratrice</strong>, <strong>humain-réviseur</strong>, <strong>fully-automatic</strong><a class="cite" data-cite="14" href="#source-14">14</a>. Aucun ne supprime l'auteur : ils déplacent son acte de valeur ajoutée — du tracé des courbes vers le <strong>scénario, le rythme et le jugement éditorial</strong>.</p>
+      <p>Ce dossier sert quatre objectifs : (1) clarifier ce qu'est une expérience narrative et ce qu'elle n'est pas ; (2) reconstituer la chaîne intellectuelle qui va de Bertin aux scrollytellers contemporains ; (3) cartographier les sept genres de Segel-Heer en 2026, en particulier après la généralisation du scrollytelling ; (4) poser un cadre praticien — architectures techniques, points d'insertion de l'IA, garde-fous, arbre de décision contexte → pattern. Il s'inscrit dans le prolongement de mes dossiers précédents — notamment l'<a href="../anatomie/" style="color:var(--teal);text-decoration:underline">anatomie d'un système agentique</a>, l'<a href="../evaluation-agentique/" style="color:var(--teal);text-decoration:underline">évaluation agentique</a>, et l'<a href="../ia-et-travail/" style="color:var(--teal);text-decoration:underline">IA et le travail</a> — qui partagent une obsession commune : <mark>donner une forme lisible à des objets que la presse traite par récits binaires</mark>.</p>
+
+      <h2 id="definir">1. Définir : l'expérience narrative comme troisième régime</h2>
+
+      <figure class="figure" id="fig-01">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" data-schema-id="schema-01" role="img" aria-label="Spectre auteur ↔ lecteur de Segel-Heer (2010), avec les sept genres positionnés">
+  <style>
+    .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+    .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+    .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    .ink   { fill: #1A1A1A; }
+    .graphite { fill: #5A5A5A; }
+    .mist  { fill: #B8B5AE; }
+    .carmine { fill: #B7332C; }
+    .teal  { fill: #1F5560; }
+  </style>
+  <defs>
+    <marker id="arrow1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#1A1A1A"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- Header -->
+  <text x="60" y="56" class="mono ink" font-size="11" font-weight="600" letter-spacing="0.18em">SCHÉMA 01</text>
+  <text x="60" y="100" class="display ink" font-size="26" font-weight="600" letter-spacing="-0.01em">Le spectre auteur ↔ lecteur</text>
+  <text x="60" y="128" class="display graphite" font-size="16" font-style="italic">Sept genres narratifs (Segel &amp; Heer, 2010), positionnés selon le degré de contrôle auctorial</text>
+
+  <!-- Axis line -->
+  <line x1="120" y1="430" x2="1080" y2="430" stroke="#1A1A1A" stroke-width="2.5" marker-end="url(#arrow1)" marker-start="url(#arrow1)"/>
+
+  <!-- Pole labels -->
+  <text x="120" y="470" class="mono carmine" font-size="11" font-weight="600" letter-spacing="0.18em">AUTHOR-DRIVEN</text>
+  <text x="120" y="490" class="body graphite" font-size="11">Chemin linéaire strict · message imposé · zéro interactivité</text>
+
+  <text x="1080" y="470" class="mono teal" font-size="11" font-weight="600" letter-spacing="0.18em" text-anchor="end">READER-DRIVEN</text>
+  <text x="1080" y="490" class="body graphite" font-size="11" text-anchor="end">Exploration libre · pas de chemin imposé · maximale interactivité</text>
+
+  <!-- Tick marks -->
+  <g stroke="#5A5A5A" stroke-width="0.75">
+    <line x1="120" y1="425" x2="120" y2="445"/>
+    <line x1="360" y1="425" x2="360" y2="445"/>
+    <line x1="600" y1="425" x2="600" y2="445"/>
+    <line x1="840" y1="425" x2="840" y2="445"/>
+    <line x1="1080" y1="425" x2="1080" y2="445"/>
+  </g>
+
+  <!-- Genres - upper row -->
+  <g class="interactive" data-card="comic-strip" tabindex="0" role="button" aria-label="Comic strip">
+    <line x1="180" y1="430" x2="180" y2="290" stroke="#5A5A5A" stroke-width="0.75"/>
+    <circle cx="180" cy="290" r="34" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="180" y="284" class="body ink" font-size="11" font-weight="500" text-anchor="middle">Comic</text>
+    <text x="180" y="298" class="body ink" font-size="11" font-weight="500" text-anchor="middle">strip</text>
+    <text x="180" y="244" class="mono graphite" font-size="10" text-anchor="middle">Tonal · linéaire</text>
+  </g>
+
+  <g class="interactive" data-card="film-video" tabindex="0" role="button" aria-label="Film / video / animation">
+    <line x1="280" y1="430" x2="280" y2="220" stroke="#5A5A5A" stroke-width="0.75"/>
+    <circle cx="280" cy="220" r="34" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="280" y="214" class="body ink" font-size="11" font-weight="500" text-anchor="middle">Film /</text>
+    <text x="280" y="228" class="body ink" font-size="11" font-weight="500" text-anchor="middle">video</text>
+    <text x="280" y="174" class="mono graphite" font-size="10" text-anchor="middle">Tempo total</text>
+  </g>
+
+  <g class="interactive" data-card="annotated" tabindex="0" role="button" aria-label="Annotated chart">
+    <line x1="420" y1="430" x2="420" y2="290" stroke="#5A5A5A" stroke-width="0.75"/>
+    <circle cx="420" cy="290" r="34" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="420" y="284" class="body ink" font-size="11" font-weight="500" text-anchor="middle">Annotated</text>
+    <text x="420" y="298" class="body ink" font-size="11" font-weight="500" text-anchor="middle">chart</text>
+    <text x="420" y="244" class="mono graphite" font-size="10" text-anchor="middle">Une pointe · sobre</text>
+  </g>
+
+  <g class="interactive" data-card="magazine" tabindex="0" role="button" aria-label="Magazine style">
+    <line x1="540" y1="430" x2="540" y2="220" stroke="#5A5A5A" stroke-width="0.75"/>
+    <circle cx="540" cy="220" r="36" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="540" y="216" class="body ink" font-size="11" font-weight="500" text-anchor="middle">Magazine</text>
+    <text x="540" y="230" class="body ink" font-size="11" font-weight="500" text-anchor="middle">style</text>
+    <text x="540" y="170" class="mono graphite" font-size="10" text-anchor="middle">Référence durable</text>
+  </g>
+
+  <g class="interactive" data-card="scrolly" tabindex="0" role="button" aria-label="Scrollytelling">
+    <line x1="660" y1="430" x2="660" y2="600" stroke="#5A5A5A" stroke-width="0.75"/>
+    <circle cx="660" cy="600" r="40" fill="#FAF8F3" stroke="#B7332C" stroke-width="2.5"/>
+    <text x="660" y="596" class="body ink" font-size="11" font-weight="600" text-anchor="middle">Scrolly-</text>
+    <text x="660" y="610" class="body ink" font-size="11" font-weight="600" text-anchor="middle">telling</text>
+    <text x="660" y="660" class="mono carmine" font-size="10" font-weight="600" text-anchor="middle">post-2010 · dominant 2026</text>
+  </g>
+
+  <g class="interactive" data-card="slideshow" tabindex="0" role="button" aria-label="Slide show">
+    <line x1="780" y1="430" x2="780" y2="600" stroke="#5A5A5A" stroke-width="0.75"/>
+    <circle cx="780" cy="600" r="34" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="780" y="596" class="body ink" font-size="11" font-weight="500" text-anchor="middle">Slide</text>
+    <text x="780" y="610" class="body ink" font-size="11" font-weight="500" text-anchor="middle">show</text>
+    <text x="780" y="654" class="mono graphite" font-size="10" text-anchor="middle">Étapes interactives</text>
+  </g>
+
+  <g class="interactive" data-card="flow-chart" tabindex="0" role="button" aria-label="Flow chart">
+    <line x1="900" y1="430" x2="900" y2="290" stroke="#5A5A5A" stroke-width="0.75"/>
+    <circle cx="900" cy="290" r="34" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="900" y="284" class="body ink" font-size="11" font-weight="500" text-anchor="middle">Flow</text>
+    <text x="900" y="298" class="body ink" font-size="11" font-weight="500" text-anchor="middle">chart</text>
+    <text x="900" y="244" class="mono graphite" font-size="10" text-anchor="middle">Branchements</text>
+  </g>
+
+  <g class="interactive" data-card="poster" tabindex="0" role="button" aria-label="Partitioned poster">
+    <line x1="1010" y1="430" x2="1010" y2="600" stroke="#5A5A5A" stroke-width="0.75"/>
+    <circle cx="1010" cy="600" r="38" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="1010" y="596" class="body ink" font-size="11" font-weight="500" text-anchor="middle">Partitioned</text>
+    <text x="1010" y="610" class="body ink" font-size="11" font-weight="500" text-anchor="middle">poster</text>
+    <text x="1010" y="660" class="mono graphite" font-size="10" text-anchor="middle">Composition libre</text>
+  </g>
+
+  <!-- Caption legend -->
+  <g transform="translate(60, 700)">
+    <circle cx="0" cy="0" r="6" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="14" y="4" class="body graphite" font-size="11">Genres à dominante author-driven</text>
+    <circle cx="320" cy="0" r="6" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="334" y="4" class="body graphite" font-size="11">Genres avec poignées d'exploration</text>
+    <circle cx="660" cy="0" r="7" fill="#FAF8F3" stroke="#B7332C" stroke-width="2.5"/>
+    <text x="676" y="4" class="body ink" font-size="11" font-weight="500">Pattern dominant 2026</text>
+  </g>
+
+  <!-- Footer -->
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="762" class="body graphite" font-size="10" font-style="italic">Source : Segel &amp; Heer, « Narrative Visualization », IEEE TVCG, 2010 ; le scrollytelling ajouté à partir des conventions stabilisées 2012–2024.</text>
+</svg>
+
+        <figcaption class="figure-caption">Schéma 1 — Le spectre auteur ↔ lecteur de Segel-Heer (2010), avec les sept genres positionnés selon leur degré moyen de contrôle auctorial. Le scrollytelling, absent du papier original, s'insère entre slideshow et film.</figcaption>
+      </figure>
+
+      <p>Il existe trois régimes principaux pour communiquer avec des données.</p>
+      <p>Le <strong>régime exploratoire</strong> est celui de l'analyste face à son tableau de bord : la donnée est exposée crue, l'utilisateur navigue à sa guise, l'auteur (s'il existe) se contente de poser des outils. C'est l'aire de Tableau, Power BI, Looker, des notebooks Jupyter exposés. La métrique de qualité est <em>la couverture</em> — combien de questions l'utilisateur peut-il poser ? — et l'expérience optimale est <mark>celle où l'utilisateur découvre quelque chose que l'auteur n'avait pas anticipé</mark>.</p>
+      <p>Le <strong>régime infographique classique</strong> — la planche d'infographie statique du <em>National Geographic</em> ou d'une plaquette de cabinet — est à l'opposé : un seul écran, un seul plan de lecture, aucune interactivité. L'auteur fixe tout, le lecteur reçoit. Métrique de qualité : <em>la mémorisation</em> — qu'est-ce que le lecteur retient cinq minutes après ?</p>
+      <p>L'<strong>expérience narrative</strong> est la troisième voie. Elle préserve la structure auctoriale (l'auteur sait où il va, dans quel ordre, et avec quelle pointe) <strong>et</strong> confère au lecteur des poignées calibrées : un schéma fait remonter ses détails au survol, une étape exige un clic pour avancer, un graphique laisse explorer librement <em>à un endroit précis</em> du parcours. Cette dialectique n'est pas un compromis — c'est la spécification du genre.</p>
+
+      <h3>Le spectre Segel-Heer</h3>
+      <p>Edward Segel et Jeffrey Heer, dans leur article fondateur de 2010 (déjà 2 600 citations en mai 2026), théorisent ce point central : il existe un <strong>spectre continu entre <span class="term" data-tooltip="Author-driven : l'auteur impose un chemin linéaire strict, le message éditorial domine, l'interactivité est nulle. Pôle Segel-Heer 2010.">author-driven</span> et <span class="term" data-tooltip="Reader-driven : pas de chemin imposé, exploration libre, interactivité maximale. Pôle opposé du spectre Segel-Heer.">reader-driven</span></strong>, et chaque artefact se positionne sur ce spectre<a class="cite" data-cite="1" href="#source-1">1</a>. Le pôle author-driven impose un chemin linéaire strict, repose sur le message éditorial, n'offre aucune interactivité (pensez à un long-format texte avec figures fixes). Le pôle reader-driven offre une interactivité totale et aucun chemin imposé (un dashboard analytique). Entre les deux : tous les hybrides intéressants.</p>
+      <p>Trois patterns de balance sont récurrents :</p>
+      <ol>
+        <li><strong><span class="term" data-tooltip="Martini glass : pattern hybride où l'introduction est strictement auctoriale (pied du verre), puis l'expérience s'ouvre vers une exploration libre (évasement). Le lecteur est cadré au départ, libéré ensuite.">Martini glass</span></strong> — début author-driven (introduction guidée, question posée, donnée présentée), puis ouverture en cône vers une exploration libre. Le lecteur entre par le pied du verre, sort par l'évasement.</li>
+        <li><strong>Interactive slideshow</strong> — slideshow classique, mais chaque slide encapsule une mini-exploration (filtres, sélection d'une dimension). Le contrôle du tempo reste à l'auteur, l'approfondissement est délégué au lecteur.</li>
+        <li><strong>Drill-down story</strong> — l'auteur expose la vue agrégée, le lecteur peut « plonger » dans une cellule pour en voir le détail (souvent un bouton « explorer » qui ouvre un dataviz exploratoire ad hoc).</li>
+      </ol>
+      <p>Chacun de ces patterns implique un contrat de lecture différent — et le lecteur, formé par quinze ans de scrollytelling et de produits SaaS, lit ces conventions sans les nommer. <mark>Briser la convention sans signal explicite produit du désorientement, pas de la surprise</mark>.</p>
+
+      <h3>Sept genres</h3>
+      <p>Toujours dans le même article, Segel et Heer identifient sept genres récurrents à partir d'un corpus de 58 exemples : <strong>magazine style</strong>, <strong>annotated chart</strong>, <strong>partitioned poster</strong>, <strong>flow chart</strong>, <strong>comic strip</strong>, <strong>slide show</strong>, <strong>film/video/animation</strong><a class="cite" data-cite="1" href="#source-1">1</a>. Le <span class="term" data-tooltip="Scrollytelling : technique qui révèle ou modifie un graphique au fil du scroll de l'utilisateur. Ne modifie pas le comportement de scroll, le surveille. Popularisé par Snow Fall (NYT, 2012) et la bibliothèque scrollama.">scrollytelling</span>, qui dominera la décennie suivante, n'apparaît pas — pour cause, il n'existait pas encore comme genre stabilisé. On peut aujourd'hui le placer entre slideshow et film : séquence imposée par le scroll, transitions animées, points d'ancrage textuels (<em>sticky steps</em>).</p>
+      <p>Ces genres ne sont pas des catégories analytiques étanches : un long-format narratif du <em>New York Times</em> peut traverser plusieurs genres en succession (annotated chart pour ouvrir, scrollytelling au milieu, comic strip pour boucler). L'apport de Segel-Heer est moins une taxonomie que <strong>l'établissement d'un vocabulaire</strong> — pour discuter de ces objets sans confondre ce que l'auteur veut faire et ce que le format permet.</p>
+
+      <h3>Démarcations</h3>
+      <p>Trois démarcations utiles, pour fermer la définition :</p>
+      <ul>
+        <li><strong>Une expérience narrative n'est pas un dashboard avec un titre.</strong> Si la séquence de lecture n'est pas inscrite dans le dispositif, ce n'est pas du <em>storytelling</em>, c'est de l'exploration avec une étiquette.</li>
+        <li><strong>Une expérience narrative n'est pas un PowerPoint commenté.</strong> Le slideshow est un genre légitime <em>quand il intègre des étapes interactives</em> (sélection, filtre, comparaison). Sinon c'est un slideshow.</li>
+        <li><strong>Une expérience narrative n'est pas une animation décorative.</strong> Si l'animation ne porte pas une charge cognitive (révéler une comparaison, comprimer une dimension temporelle, ancrer une transition), elle pollue.</li>
+      </ul>
+
+      <h2 id="fondations">2. Les fondations canoniques : Bertin → Shneiderman → Munzner → Cairo</h2>
+
+      <figure class="figure" id="fig-02">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" data-schema-id="schema-02" role="img" aria-label="Stack des fondations canoniques de la visualisation narrative">
+  <style>
+    .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+    .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+    .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    .ink   { fill: #1A1A1A; }
+    .graphite { fill: #5A5A5A; }
+    .carmine { fill: #B7332C; }
+    .teal  { fill: #1F5560; }
+    .mustard { fill: #B58A2C; }
+  </style>
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- Header -->
+  <text x="60" y="56" class="mono ink" font-size="11" font-weight="600" letter-spacing="0.18em">SCHÉMA 02</text>
+  <text x="60" y="100" class="display ink" font-size="26" font-weight="600" letter-spacing="-0.01em">Les fondations canoniques empilées</text>
+  <text x="60" y="128" class="display graphite" font-size="16" font-style="italic">Cinq couches théoriques, de la perception au jugement éthique. À diagnostiquer dans cet ordre.</text>
+
+  <!-- Stacked layers -->
+  <g transform="translate(80, 180)">
+    <!-- Layer 5 — Cairo (top) -->
+    <g class="interactive" data-card="cairo" tabindex="0" role="button" aria-label="Cairo : éthique du graphique">
+      <rect x="0" y="0" width="900" height="80" rx="3" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.25"/>
+      <text x="24" y="32" class="mono carmine" font-size="11" font-weight="600" letter-spacing="0.12em">COUCHE 5 · CAIRO 2012/2016</text>
+      <text x="24" y="58" class="display ink" font-size="18" font-weight="500">Éthique du graphique fonctionnel</text>
+      <text x="500" y="32" class="body graphite" font-size="11" font-style="italic">« Honesty, clarity, and depth come first. »</text>
+      <text x="500" y="55" class="body ink" font-size="12">Truthful → Functional → Beautiful → Insightful → Enlightening</text>
+    </g>
+
+    <!-- Layer 4 — Meirelles -->
+    <g class="interactive" data-card="meirelles" tabindex="0" role="button" aria-label="Meirelles : structures de l'information">
+      <rect x="0" y="100" width="900" height="80" rx="3" fill="#FAF8F3" stroke="#B58A2C" stroke-width="1.25"/>
+      <text x="24" y="132" class="mono mustard" font-size="11" font-weight="600" letter-spacing="0.12em">COUCHE 4 · MEIRELLES 2013</text>
+      <text x="24" y="158" class="display ink" font-size="18" font-weight="500">Six structures de l'information</text>
+      <text x="500" y="132" class="body graphite" font-size="11" font-style="italic">« Quelle structure dominante porte mon récit ? »</text>
+      <text x="500" y="155" class="body ink" font-size="12">Hiérarchique · relationnelle · temporelle · spatiale · spatio-temporelle · textuelle</text>
+    </g>
+
+    <!-- Layer 3 — Munzner -->
+    <g class="interactive" data-card="munzner" tabindex="0" role="button" aria-label="Munzner : What/Why/How">
+      <rect x="0" y="200" width="900" height="80" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
+      <text x="24" y="232" class="mono teal" font-size="11" font-weight="600" letter-spacing="0.12em">COUCHE 3 · MUNZNER 2014</text>
+      <text x="24" y="258" class="display ink" font-size="18" font-weight="500">Démarche analytique : What / Why / How</text>
+      <text x="500" y="232" class="body graphite" font-size="11" font-style="italic">« L'erreur est de commencer par How. »</text>
+      <text x="500" y="255" class="body ink" font-size="12">What : type de données · Why : tâche analytique · How : encodage et interaction</text>
+    </g>
+
+    <!-- Layer 2 — Shneiderman -->
+    <g class="interactive" data-card="shneiderman" tabindex="0" role="button" aria-label="Shneiderman : Visual Information Seeking Mantra">
+      <rect x="0" y="300" width="900" height="80" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
+      <text x="24" y="332" class="mono teal" font-size="11" font-weight="600" letter-spacing="0.12em">COUCHE 2 · SHNEIDERMAN 1996</text>
+      <text x="24" y="358" class="display ink" font-size="18" font-weight="500">Boucle d'interaction (mantra)</text>
+      <text x="500" y="332" class="body graphite" font-size="11" font-style="italic">« Overview first, zoom and filter, then details on demand. »</text>
+      <text x="500" y="355" class="body ink" font-size="12">7 tâches : overview · zoom · filter · details · relate · history · extract</text>
+    </g>
+
+    <!-- Layer 1 — Bertin (base) -->
+    <g class="interactive" data-card="bertin" tabindex="0" role="button" aria-label="Bertin : sémiologie graphique">
+      <rect x="0" y="400" width="900" height="80" rx="3" fill="#FAF8F3" stroke="#1A1A1A" stroke-width="1.25"/>
+      <text x="24" y="432" class="mono ink" font-size="11" font-weight="600" letter-spacing="0.12em">COUCHE 1 · BERTIN 1967</text>
+      <text x="24" y="458" class="display ink" font-size="18" font-weight="500">Encodage perceptuel — sémiologie graphique</text>
+      <text x="500" y="432" class="body graphite" font-size="11" font-style="italic">« Adéquation entre nature de la donnée et variable visuelle. »</text>
+      <text x="500" y="455" class="body ink" font-size="12">2 variables planaires + 6 rétiniennes : taille, valeur, grain, couleur, orientation, forme</text>
+    </g>
+
+    <!-- Vertical "ground up" arrow -->
+    <text x="950" y="22" class="mono carmine" font-size="11" font-weight="600" letter-spacing="0.12em" text-anchor="start">↑ ÉTHIQUE</text>
+    <text x="950" y="450" class="mono ink" font-size="11" font-weight="600" letter-spacing="0.12em" text-anchor="start">PERCEPTION ↓</text>
+    <line x1="970" y1="40" x2="970" y2="430" stroke="#5A5A5A" stroke-width="0.75" stroke-dasharray="3 3"/>
+  </g>
+
+  <!-- Footer -->
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="762" class="body graphite" font-size="10" font-style="italic">Sources : Bertin, Sémiologie graphique (1967) ; Shneiderman, IEEE Visual Languages (1996) ; Meirelles, Design for Information (2013) ; Munzner, Visualization Analysis &amp; Design (2014) ; Cairo, The Truthful Art (2016).</text>
+</svg>
+
+        <figcaption class="figure-caption">Schéma 2 — Les cinq couches théoriques sur lesquelles s'appuie toute expérience narrative sérieuse : encodage perceptuel (Bertin), boucle d'interaction (Shneiderman), structures de l'information (Meirelles), démarche analytique (Munzner), éthique du graphique (Cairo).</figcaption>
+      </figure>
+
+      <p>L'expérience narrative ne sort pas du néant : elle s'appuie sur quarante ans de théorie de la visualisation, dont les apports principaux peuvent être empilés en couches, de la plus basse (perception) à la plus haute (éthique). Il est utile pour un praticien de connaître les noms et les décennies — non par fétichisme, mais parce que ces référents permettent de <strong>diagnostiquer une expérience qui ne marche pas</strong> sans s'en remettre à l'intuition.</p>
+
+      <h3>Couche 1 — Bertin (1967) : la sémiologie graphique</h3>
+      <p>Jacques Bertin, cartographe français, publie en 1967 <em>Sémiologie graphique</em><a class="cite" data-cite="5" href="#source-5">5</a>. Il identifie <strong>huit variables visuelles</strong> : deux variables planaires (position en X, position en Y), et six <strong>variables rétiniennes</strong> — taille, valeur (clair/sombre), grain (texture), couleur (teinte), orientation, forme. Pour chaque variable, Bertin précise quels types de relations elle peut encoder : <em>associative</em> (montre des regroupements), <em>sélective</em> (permet d'isoler une catégorie), <em>ordonnée</em> (permet de classer), ou <em>quantitative</em> (permet de mesurer un rapport).</p>
+      <p>L'apport est radical : la qualité d'un graphique ne tient pas au goût mais à <strong>l'adéquation entre la nature de la donnée et la variable visuelle choisie</strong>. Encoder un nombre par une teinte (rouge/bleu) au lieu d'une longueur (barre) introduit un <em>handicap perceptuel</em> — le lecteur lit moins bien. Cette grille de lecture tient encore en 2026, et tout praticien sérieux la rejoue mentalement avant chaque encodage.</p>
+
+      <h3>Couche 2 — Shneiderman (1996) : le mantra et la taxonomie par tâche</h3>
+      <p>Trente ans plus tard, Ben Shneiderman, à l'université du Maryland, publie <em>The Eyes Have It: A Task by Data Type Taxonomy for Information Visualizations</em><a class="cite" data-cite="6" href="#source-6">6</a>. Il y propose ce que la communauté retiendra sous le nom de <strong>Visual Information-Seeking Mantra</strong> :</p>
+      <blockquote style="margin: 1.5em 0; padding: 0.4em 1.2em; border-left: 3px solid var(--carmine); font-family: var(--serif); font-style: italic; color: var(--ink);">« Overview first, zoom and filter, then details-on-demand. »</blockquote>
+      <p>Cette phrase, devenue loi non écrite de la visualisation interactive, structure aussi bien Tableau qu'un long-format du <em>Financial Times</em>. Elle dit que le bon ordre cognitif est : <em>vue d'ensemble</em> (situer), <em>zoom et filtre</em> (cibler), <em>détail</em> (consommer). Une expérience narrative qui inverse cet ordre — qui plonge le lecteur dans le détail avant d'avoir établi la vue d'ensemble — produit de la confusion, parfois utile dramatiquement (un long-format <em>True Detective-style</em>), souvent juste mauvaise.</p>
+      <p>Shneiderman propose aussi une <strong>taxonomie par tâche</strong> : sept tâches élémentaires que tout dispositif visuel peut supporter (overview, zoom, filter, details-on-demand, relate, history, extract). Cette taxonomie, encore largement utilisée pour évaluer un outil interactif, fournit une checklist tangible : qu'est-ce que mon expérience narrative permet de faire à chacune de ces étapes ?</p>
+
+      <h3>Couche 3 — Munzner (2014) : What/Why/How</h3>
+      <p>Tamara Munzner, professeure à UBC Vancouver, publie en 2014 <em>Visualization Analysis and Design</em><a class="cite" data-cite="2" href="#source-2">2</a>, devenu manuel de référence. Son apport central est un cadre tripartite — <strong>What/Why/How</strong> — qui sépare trois questions trop souvent confondues :</p>
+      <ul>
+        <li><strong>What</strong> : <em>quel est le type de donnée ?</em> Tableau, réseau, arbre, géographique, temporelle ? Une, deux, plusieurs dimensions ? Données brutes ou dérivées ?</li>
+        <li><strong>Why</strong> : <em>quelle est la tâche analytique ?</em> Comparer, ordonner, identifier une corrélation, détecter une anomalie, raconter une trajectoire ? Découvrir vs présenter ?</li>
+        <li><strong>How</strong> : <em>quels sont les choix d'encodage et d'interaction qui répondent au What et au Why ?</em></li>
+      </ul>
+      <p>L'erreur la plus commune, écrit Munzner, est de <strong>commencer par How</strong> — choisir un type de graphique avant d'avoir clarifié ce qu'on doit encoder et pourquoi. Le cadre est <strong>itératif</strong> : pour une expérience complexe, on traverse plusieurs cycles What/Why/How (un par section, par schéma). Pour une expérience narrative, le <strong>Why varie au fil de la séquence</strong> — on ne pose pas la même question cognitive au lecteur dans le hook initial, dans le corps du raisonnement, et dans la conclusion. <mark>Le cadre Munzner permet de diagnostiquer un schéma raté en remontant la chaîne : si le How est confus, c'est presque toujours qu'un Why intermédiaire a été sauté.</mark></p>
+
+      <h3>Couche 4 — Cairo (2012, 2016) : l'éthique du graphique fonctionnel</h3>
+      <p>Alberto Cairo, <em>Knight Chair in Visual Journalism</em> à l'université de Miami, ajoute une couche normative dans <em>The Functional Art</em> (2012) puis <em>The Truthful Art</em> (2016)<a class="cite" data-cite="8" href="#source-8">8</a>. Sa thèse : la qualité d'une visualisation se hiérarchise en cinq niveaux successifs, et il faut les valider dans l'ordre.</p>
+      <ol>
+        <li><strong>Truthful</strong> — la visualisation représente fidèlement la donnée (pas d'axe trompeur, pas de cherry-picking).</li>
+        <li><strong>Functional</strong> — elle permet effectivement la tâche pour laquelle elle est conçue.</li>
+        <li><strong>Beautiful</strong> — elle est plaisante, lisible, éditorialement soignée.</li>
+        <li><strong>Insightful</strong> — elle révèle quelque chose que le lecteur ignorait.</li>
+        <li><strong>Enlightening</strong> — elle change la manière dont le lecteur pense au sujet.</li>
+      </ol>
+      <p>L'ordre n'est pas négociable : <em>honesty, clarity, and depth come first</em><a class="cite" data-cite="8" href="#source-8">8</a>. Une expérience narrative <em>enlightening</em> mais pas <em>truthful</em> est une manipulation. Belle et fonctionnelle mais pas vraie : aussi. Cette hiérarchie sert de garde-fou contre la dérive éditoriale typique du data journalisme — courber la donnée pour servir le récit.</p>
+
+      <h3>Couche 5 (souvent oubliée) — Meirelles (2013) : les six structures</h3>
+      <p>Isabel Meirelles, à Northeastern, publie <em>Design for Information</em> en 2013<a class="cite" data-cite="7" href="#source-7">7</a>. Sa contribution discrète mais utile : une <strong>typologie en six structures</strong> que la donnée prend nécessairement quand on la visualise — <em>hierarchical</em> (arbres), <em>relational</em> (réseaux), <em>temporal</em> (timelines, flux), <em>spatial</em> (cartes), <em>spatio-temporal</em> (cartes animées, trajectoires), et <em>textual</em> (encodage du texte). Pour une expérience narrative, ce cadre force la question : <mark>quelle structure dominante porte mon récit ?</mark> Une expérience qui mélange trois structures sans les hiérarchiser perd le lecteur ; une expérience qui fait dialoguer deux structures (par exemple temporel × spatial) bien orchestrées peut produire des moments mémorables (les cartes animées de migration des oiseaux, par exemple).</p>
+
+      <h2 id="genres">3. Sept genres, une grammaire vivante</h2>
+
+      <figure class="figure" id="fig-03">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" data-schema-id="schema-03" role="img" aria-label="Matrice genres × dimensions de design narratif">
+  <style>
+    .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+    .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+    .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    .ink   { fill: #1A1A1A; }
+    .graphite { fill: #5A5A5A; }
+    .carmine { fill: #B7332C; }
+    .teal  { fill: #1F5560; }
+  </style>
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- Header -->
+  <text x="60" y="56" class="mono ink" font-size="11" font-weight="600" letter-spacing="0.18em">SCHÉMA 03</text>
+  <text x="60" y="100" class="display ink" font-size="26" font-weight="600" letter-spacing="-0.01em">Genres × dimensions de design</text>
+  <text x="60" y="128" class="display graphite" font-size="16" font-style="italic">Lecture en intensité : disque plein = forte présence ; quart = présence ponctuelle.</text>
+
+  <!-- Matrix coordinates -->
+  <!-- 4 columns (dimensions) starting at x=420, gap 165 -->
+  <!-- 8 rows (genres) starting at y=210, gap 60 -->
+
+  <!-- Column headers -->
+  <g class="body" font-size="11" font-weight="500">
+    <text x="430" y="170" class="ink" transform="rotate(-25 430 170)">Structure narrative</text>
+    <text x="600" y="170" class="ink" transform="rotate(-25 600 170)">Interactivité</text>
+    <text x="765" y="170" class="ink" transform="rotate(-25 765 170)">Registre émotionnel</text>
+    <text x="930" y="170" class="ink" transform="rotate(-25 930 170)">Charge de production</text>
+  </g>
+
+  <!-- Subheaders -->
+  <g class="mono graphite" font-size="9" letter-spacing="0.1em">
+    <text x="450" y="195" text-anchor="middle">LIN. → OUVERTE</text>
+    <text x="615" y="195" text-anchor="middle">FAIBLE → FORTE</text>
+    <text x="780" y="195" text-anchor="middle">SOBRE → CHALEUR</text>
+    <text x="945" y="195" text-anchor="middle">LÉGÈRE → LOURDE</text>
+  </g>
+
+  <!-- Row labels and circles -->
+  <g class="body ink" font-size="13" font-weight="500">
+    <!-- Magazine style -->
+    <g class="interactive" data-card="magazine-row" tabindex="0" role="button" aria-label="Magazine style — détails par dimension">
+      <text x="60" y="234">Magazine style</text>
+      <circle cx="450" cy="230" r="14" fill="#1F5560" fill-opacity="0.35"/>
+      <circle cx="615" cy="230" r="10" fill="#1F5560" fill-opacity="0.30"/>
+      <circle cx="780" cy="230" r="10" fill="#1F5560" fill-opacity="0.30"/>
+      <circle cx="945" cy="230" r="14" fill="#1F5560" fill-opacity="0.55"/>
+    </g>
+    <!-- Annotated chart -->
+    <g class="interactive" data-card="annotated-row" tabindex="0" role="button" aria-label="Annotated chart — détails par dimension">
+      <text x="60" y="294">Annotated chart</text>
+      <circle cx="450" cy="290" r="8" fill="#B7332C" fill-opacity="0.35"/>
+      <circle cx="615" cy="290" r="8" fill="#1F5560" fill-opacity="0.30"/>
+      <circle cx="780" cy="290" r="8" fill="#1F5560" fill-opacity="0.20"/>
+      <circle cx="945" cy="290" r="8" fill="#1F5560" fill-opacity="0.25"/>
+    </g>
+    <!-- Partitioned poster -->
+    <g class="interactive" data-card="poster-row" tabindex="0" role="button" aria-label="Partitioned poster — détails par dimension">
+      <text x="60" y="354">Partitioned poster</text>
+      <circle cx="450" cy="350" r="14" fill="#1F5560" fill-opacity="0.55"/>
+      <circle cx="615" cy="350" r="10" fill="#1F5560" fill-opacity="0.30"/>
+      <circle cx="780" cy="350" r="12" fill="#1F5560" fill-opacity="0.40"/>
+      <circle cx="945" cy="350" r="12" fill="#1F5560" fill-opacity="0.40"/>
+    </g>
+    <!-- Flow chart -->
+    <g class="interactive" data-card="flow-row" tabindex="0" role="button" aria-label="Flow chart — détails par dimension">
+      <text x="60" y="414">Flow chart</text>
+      <circle cx="450" cy="410" r="14" fill="#1F5560" fill-opacity="0.50"/>
+      <circle cx="615" cy="410" r="14" fill="#B7332C" fill-opacity="0.45"/>
+      <circle cx="780" cy="410" r="10" fill="#1F5560" fill-opacity="0.30"/>
+      <circle cx="945" cy="410" r="14" fill="#1F5560" fill-opacity="0.50"/>
+    </g>
+    <!-- Comic strip -->
+    <g class="interactive" data-card="comic-row" tabindex="0" role="button" aria-label="Comic strip — détails par dimension">
+      <text x="60" y="474">Comic strip</text>
+      <circle cx="450" cy="470" r="8" fill="#B7332C" fill-opacity="0.30"/>
+      <circle cx="615" cy="470" r="8" fill="#B7332C" fill-opacity="0.20"/>
+      <circle cx="780" cy="470" r="16" fill="#B7332C" fill-opacity="0.55"/>
+      <circle cx="945" cy="470" r="12" fill="#1F5560" fill-opacity="0.40"/>
+    </g>
+    <!-- Slideshow -->
+    <g class="interactive" data-card="slide-row" tabindex="0" role="button" aria-label="Slide show — détails par dimension">
+      <text x="60" y="534">Slide show</text>
+      <circle cx="450" cy="530" r="10" fill="#1F5560" fill-opacity="0.35"/>
+      <circle cx="615" cy="530" r="14" fill="#1F5560" fill-opacity="0.55"/>
+      <circle cx="780" cy="530" r="10" fill="#1F5560" fill-opacity="0.30"/>
+      <circle cx="945" cy="530" r="14" fill="#1F5560" fill-opacity="0.50"/>
+    </g>
+    <!-- Scrollytelling -->
+    <g class="interactive" data-card="scrolly-row" tabindex="0" role="button" aria-label="Scrollytelling — détails par dimension">
+      <text x="60" y="594" font-weight="600" fill="#B7332C">Scrollytelling</text>
+      <text x="220" y="594" class="mono carmine" font-size="9" font-weight="600" letter-spacing="0.1em">post-2010</text>
+      <circle cx="450" cy="590" r="10" fill="#B7332C" fill-opacity="0.40"/>
+      <circle cx="615" cy="590" r="14" fill="#B7332C" fill-opacity="0.55"/>
+      <circle cx="780" cy="590" r="14" fill="#B7332C" fill-opacity="0.45"/>
+      <circle cx="945" cy="590" r="16" fill="#B7332C" fill-opacity="0.65"/>
+    </g>
+    <!-- Film -->
+    <g class="interactive" data-card="film-row" tabindex="0" role="button" aria-label="Film / video — détails par dimension">
+      <text x="60" y="654">Film / video</text>
+      <circle cx="450" cy="650" r="8" fill="#B7332C" fill-opacity="0.30"/>
+      <circle cx="615" cy="650" r="6" fill="#B7332C" fill-opacity="0.20"/>
+      <circle cx="780" cy="650" r="14" fill="#B7332C" fill-opacity="0.55"/>
+      <circle cx="945" cy="650" r="16" fill="#1F5560" fill-opacity="0.65"/>
+    </g>
+  </g>
+
+  <!-- Vertical separators between columns -->
+  <g stroke="#E5E1D8" stroke-width="0.5">
+    <line x1="370" y1="210" x2="370" y2="680"/>
+    <line x1="535" y1="210" x2="535" y2="680"/>
+    <line x1="700" y1="210" x2="700" y2="680"/>
+    <line x1="865" y1="210" x2="865" y2="680"/>
+    <line x1="1025" y1="210" x2="1025" y2="680"/>
+  </g>
+
+  <!-- Legend -->
+  <g transform="translate(60, 712)">
+    <circle cx="0" cy="0" r="6" fill="#B7332C" fill-opacity="0.55"/>
+    <text x="14" y="4" class="body graphite" font-size="11">Pôle author-driven (chemin imposé)</text>
+    <circle cx="280" cy="0" r="6" fill="#1F5560" fill-opacity="0.55"/>
+    <text x="294" y="4" class="body graphite" font-size="11">Pôle reader-driven (poignée d'exploration)</text>
+    <text x="600" y="4" class="body graphite" font-size="11" font-style="italic">Cliquer une ligne pour voir la règle d'or du genre.</text>
+  </g>
+
+  <!-- Footer -->
+  <line x1="60" y1="755" x2="1140" y2="755" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="775" class="body graphite" font-size="10" font-style="italic">Source : adaptation Segel &amp; Heer 2010, Riche et al. 2018, lectures empiriques 2024–2026.</text>
+</svg>
+
+        <figcaption class="figure-caption">Schéma 3 — Les sept genres de Segel-Heer (plus le scrollytelling, ajouté post-2010), évalués selon quatre dimensions de design : structure narrative, niveau d'interactivité, registre émotionnel, charge de production.</figcaption>
+      </figure>
+
+      <p>Le tableau Segel-Heer reste valide en 2026, mais quinze ans d'usage ont stabilisé des conventions qu'il est utile d'expliciter. Quatre dimensions permettent de comparer ces genres et de choisir celui qui sert le sujet.</p>
+
+      <h3>Dimension 1 — Structure narrative</h3>
+      <p>Linéaire stricte (un seul chemin), branchante (le lecteur choisit une voie), parallèle (plusieurs récits simultanés sur un même objet), ouverte (exploration libre dans un cadre éditorialisé). Le <strong>comic strip</strong> et la <strong>video</strong> sont par construction linéaires ; le <strong>partitioned poster</strong> est parallèle (le lecteur compose son ordre) ; l'<strong>annotated chart</strong> est typiquement linéaire mais court ; le <strong>slideshow</strong> est linéaire avec interactivité locale.</p>
+      <p>Le <strong>scrollytelling</strong> mérite un traitement à part. Apparu vers 2012 avec « Snow Fall » du <em>New York Times</em>, il s'est codifié autour de quelques patterns techniques (scroll-driven steps, sticky graphic, animation fluide entre étapes) que la bibliothèque <span class="term" data-tooltip="scrollama : bibliothèque JavaScript de Russell Goldenberg (The Pudding) qui s'appuie sur l'API native IntersectionObserver pour piloter les transitions au scroll. Standard de fait depuis 2017."><em>scrollama</em></span> de Russell Goldenberg (The Pudding) a popularisée pour la plateforme web<a class="cite" data-cite="15" href="#source-15">15</a>. Le scrollytelling est <em>quasi-linéaire</em> : le scroll impose l'ordre, mais le lecteur contrôle le tempo et peut revenir en arrière. C'est probablement la forme la plus mature de compromis auteur-lecteur sur le web.</p>
+
+      <h3>Dimension 2 — Niveau d'interactivité</h3>
+      <p>De zéro (vidéo, comic strip imprimé) à maximal (slideshow où chaque étape est un mini-dashboard). Une heuristique : <strong>plus l'interactivité est forte, plus l'auteur doit cadrer ce que le lecteur peut faire</strong> — sinon il dérive. C'est la spécificité du <em>messaging</em> dans Segel-Heer : par <em>messaging</em> ils désignent les indices textuels et graphiques qui rappellent au lecteur où il est, ce qu'il vient de voir, ce qu'il peut faire ensuite. Une expérience interactive sans messaging est un dashboard. Avec messaging, c'est un récit.</p>
+
+      <h3>Dimension 3 — Registre émotionnel</h3>
+      <p>Une dimension peu théorisée mais déterminante en pratique. Une <strong>annotated chart</strong> journalistique vise typiquement la sobriété — le récit ne doit pas surcharger la donnée. Un <strong>comic strip</strong> (par exemple <em><span class="term" data-tooltip="Parable of the Polygons (Vi Hart &amp; Nicky Case, 2014) : explorable explanation interactive sur la ségrégation, basée sur le modèle de Schelling. Archétype du genre comic strip-explorable.">Parable of the Polygons</span></em> de Vi Hart et Nicky Case<a class="cite" data-cite="16" href="#source-16">16</a>) joue de la chaleur, de l'humour, du ton conversationnel. Un <strong>scrollytelling</strong> peut être austère (FT, Reuters) ou émotionnel (les visualisations de migrants de Federica Fragapane ou des visualisations <em>Stories Behind a Line</em><a class="cite" data-cite="11" href="#source-11">11</a>). <mark>Le registre n'est pas un cosmétique : il signale au lecteur le type d'engagement qu'on attend de lui — analytique, civique, empathique.</mark></p>
+
+      <h3>Dimension 4 — Charge de production</h3>
+      <p>Du <em>cheap</em> (annotated chart en dix minutes via Datawrapper) au <em>coûteux</em> (un long-format scrollytelling du <em>NYT</em> mobilise un journaliste, deux développeurs, un designer et plusieurs semaines). Cette dimension est souvent sous-estimée par les commanditaires : un projet ambitieux nécessite un <em>casting</em> qui n'existe pas toujours en interne. Les <strong>outils IA-générative</strong> rebattent partiellement les cartes en abaissant le coût marginal de certaines étapes (génération de schémas, code de scrollytelling, rédaction des steps) — point que je traite dans la section 6.</p>
+
+      <h3>La règle d'or</h3>
+      <p>Pour chaque genre, une règle d'or, condensée d'expérience et de littérature :</p>
+      <table>
+        <thead><tr><th>Genre</th><th>Règle d'or</th></tr></thead>
+        <tbody>
+          <tr><td>Magazine style</td><td>Le texte porte la moitié de la charge ; les visuels doivent travailler en complément, pas en redondance.</td></tr>
+          <tr><td>Annotated chart</td><td>Une seule pointe par graphique ; si vous en avez deux, faites deux graphiques.</td></tr>
+          <tr><td>Partitioned poster</td><td>Hiérarchie forte (un point d'entrée évident, des satellites) ; sinon le lecteur est perdu.</td></tr>
+          <tr><td>Flow chart</td><td>Si la branche n'a pas une vraie conséquence sur la suite, c'est un slideshow qui se cherche.</td></tr>
+          <tr><td>Comic strip</td><td>Le ton est le facteur décisif ; un comic strip froid est un slideshow raté.</td></tr>
+          <tr><td>Slide show</td><td>Chaque slide doit faire avancer le récit <em>et</em> offrir une poignée d'exploration.</td></tr>
+          <tr><td>Scrollytelling</td><td>La mécanique du scroll est sacrée — pas de pop-ups, pas de modaux, pas d'appel à l'action qui interrompt le flux.</td></tr>
+          <tr><td>Film/video</td><td>Maîtrise du tempo ; chaque seconde ajoute ou rate.</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="humanisme">4. Le tournant humaniste : Lupi, Posavec, Fragapane</h2>
+
+      <figure class="figure" id="fig-04">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 900" data-schema-id="schema-04" role="img" aria-label="Manifeste Data Humanism de Giorgia Lupi — moderniste vs humaniste">
+  <style>
+    .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+    .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+    .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    .ink   { fill: #1A1A1A; }
+    .graphite { fill: #5A5A5A; }
+    .carmine { fill: #B7332C; }
+    .teal  { fill: #1F5560; }
+  </style>
+  <rect width="900" height="900" fill="#FAF8F3"/>
+
+  <!-- Header -->
+  <text x="60" y="56" class="mono ink" font-size="11" font-weight="600" letter-spacing="0.18em">SCHÉMA 04</text>
+  <text x="60" y="100" class="display ink" font-size="24" font-weight="600" letter-spacing="-0.01em">Le tournant humaniste</text>
+  <text x="60" y="128" class="display graphite" font-size="15" font-style="italic">Deux postures, condensées d'après le Manifesto for Data Humanism (Lupi, 2017).</text>
+
+  <!-- Two columns -->
+  <g transform="translate(60, 180)">
+    <!-- Moderniste column -->
+    <g class="interactive" data-card="moderniste" tabindex="0" role="button" aria-label="Posture moderniste">
+      <rect x="0" y="0" width="380" height="640" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
+      <text x="20" y="36" class="mono teal" font-size="11" font-weight="600" letter-spacing="0.14em">POSTURE MODERNISTE</text>
+      <text x="20" y="74" class="display ink" font-size="20" font-weight="500">La donnée comme miroir</text>
+      <text x="20" y="100" class="body graphite" font-size="11" font-style="italic">Tradition Bertin → Tukey → Tufte → Munzner</text>
+
+      <line x1="20" y1="130" x2="360" y2="130" stroke="#E5E1D8" stroke-width="0.5"/>
+
+      <g class="body ink" font-size="12">
+        <text x="20" y="170">→ La donnée est un fait brut.</text>
+        <text x="20" y="200">→ La visualisation est un médium transparent.</text>
+        <text x="20" y="230">→ Le designer s'efface — il est neutre.</text>
+        <text x="20" y="260">→ Le bon graphique = l'absence de déformation.</text>
+        <text x="20" y="290">→ « Data ink ratio » : maximiser les pixels-données.</text>
+        <text x="20" y="320">→ Sobriété analytique : grille, sans-serif, neutralité.</text>
+        <text x="20" y="350">→ L'incertitude est masquée pour ne pas gêner.</text>
+      </g>
+
+      <text x="20" y="408" class="mono teal" font-size="10" letter-spacing="0.12em" font-weight="600">MÉTRIQUE DE QUALITÉ</text>
+      <text x="20" y="436" class="body ink" font-size="13" font-weight="500" font-style="italic">Précision et fidélité.</text>
+
+      <text x="20" y="490" class="mono teal" font-size="10" letter-spacing="0.12em" font-weight="600">USAGE NATUREL</text>
+      <text x="20" y="514" class="body ink" font-size="12">Analyse, monitoring, dashboard,</text>
+      <text x="20" y="532" class="body ink" font-size="12">recherche scientifique.</text>
+
+      <text x="20" y="586" class="mono teal" font-size="10" letter-spacing="0.12em" font-weight="600">ARCHÉTYPE</text>
+      <text x="20" y="612" class="body ink" font-size="12" font-style="italic">Le tableau de bord financier,</text>
+      <text x="20" y="628" class="body ink" font-size="12" font-style="italic">le dashboard épidémiologique.</text>
+    </g>
+
+    <!-- Arrow between columns -->
+    <text x="400" y="320" class="display carmine" font-size="32" font-weight="500" text-anchor="middle">↔</text>
+
+    <!-- Humaniste column -->
+    <g class="interactive" data-card="humaniste" tabindex="0" role="button" aria-label="Posture humaniste">
+      <rect x="420" y="0" width="380" height="640" rx="3" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.5"/>
+      <text x="440" y="36" class="mono carmine" font-size="11" font-weight="600" letter-spacing="0.14em">POSTURE HUMANISTE</text>
+      <text x="440" y="74" class="display ink" font-size="20" font-weight="500">La donnée comme acte</text>
+      <text x="440" y="100" class="body graphite" font-size="11" font-style="italic">Lupi, Posavec, Fragapane, Bremer, Wu, Chalabi</text>
+
+      <line x1="440" y1="130" x2="780" y2="130" stroke="#E5E1D8" stroke-width="0.5"/>
+
+      <g class="body ink" font-size="12">
+        <text x="440" y="170">→ La donnée est d'origine humaine, située.</text>
+        <text x="440" y="200">→ La visualisation est un acte d'interprétation.</text>
+        <text x="440" y="230">→ Le designer assume son énoncé.</text>
+        <text x="440" y="260">→ Les imperfections font partie du réel.</text>
+        <text x="440" y="290">→ Le contexte prime sur la corrélation.</text>
+        <text x="440" y="320">→ Formes organiques, palettes chaudes, manuel.</text>
+        <text x="440" y="350">→ L'incertitude est rendue visible, revendiquée.</text>
+      </g>
+
+      <text x="440" y="408" class="mono carmine" font-size="10" letter-spacing="0.12em" font-weight="600">MÉTRIQUE DE QUALITÉ</text>
+      <text x="440" y="436" class="body ink" font-size="13" font-weight="500" font-style="italic">Justesse de la mise en scène.</text>
+
+      <text x="440" y="490" class="mono carmine" font-size="10" letter-spacing="0.12em" font-weight="600">USAGE NATUREL</text>
+      <text x="440" y="514" class="body ink" font-size="12">Récit civique, sensibilisation,</text>
+      <text x="440" y="532" class="body ink" font-size="12">connaissance de soi, art.</text>
+
+      <text x="440" y="586" class="mono carmine" font-size="10" letter-spacing="0.12em" font-weight="600">ARCHÉTYPE</text>
+      <text x="440" y="612" class="body ink" font-size="12" font-style="italic">Dear Data, The Stories Behind</text>
+      <text x="440" y="628" class="body ink" font-size="12" font-style="italic">a Line, les pièces MoMA.</text>
+    </g>
+  </g>
+
+  <!-- Bottom band — convergence -->
+  <g transform="translate(60, 850)">
+    <text x="0" y="0" class="body graphite" font-size="11" font-style="italic">Source : Lupi, « Data Humanism: The Revolution Will Be Visualized » (2017) ; Lupi &amp; Posavec, Dear Data (2016) ; Fragapane, Stories Behind a Line (2017) ; entretiens 2025.</text>
+  </g>
+</svg>
+
+        <figcaption class="figure-caption">Schéma 4 — Les principes du Data Humanism de Giorgia Lupi, condensés. À gauche, la posture moderniste (dataviz comme miroir neutre du réel) ; à droite, la posture humaniste (dataviz comme acte d'auteur revendiqué).</figcaption>
+      </figure>
+
+      <p>Le récit linéaire de la visualisation — Bertin → Tukey → Tufte → Munzner — a longtemps tenu la promesse d'une <strong>science visuelle</strong>. Le bon graphique serait celui qui dit le vrai sans déformer, le designer un médiateur transparent. Cette promesse a tenu jusqu'à la fin des années 2010, où une école — surtout féminine, surtout européenne, surtout italienne — a commencé à dire l'inverse : <mark>la donnée n'est pas un fait brut, sa visualisation n'est pas un miroir, et la prétention à la neutralité est elle-même une posture</mark>. C'est ce que Giorgia Lupi a appelé le <strong>Data Humanism</strong>.</p>
+
+      <h3>Lupi — Manifesto for Data Humanism (2017)</h3>
+      <p>Giorgia Lupi, designer italienne, co-fondatrice d'Accurat puis partenaire de Pentagram à New York, publie en 2017 son <em>Manifesto for Data Humanism</em><a class="cite" data-cite="9" href="#source-9">9</a>. Treize principes, qui peuvent se condenser en cinq idées :</p>
+      <ol>
+        <li><strong>Les données sont d'origine humaine.</strong> Toute donnée est produite par un instrument (capteur, formulaire, algorithme) et un protocole (qui pose la question, comment, à qui ?). L'invisibilisation de cette origine est une fiction d'objectivité.</li>
+        <li><strong>Les imperfections font partie du réel.</strong> Un dataset avec ses trous, ses biais, ses incertitudes est plus vrai qu'un dataset « lissé ». Le designer humaniste <strong>montre l'incertitude</strong> plutôt que de la masquer.</li>
+        <li><strong>Le contexte est plus important que la corrélation.</strong> Un nombre seul est muet ; un nombre dans son histoire (qui l'a produit, dans quelles conditions, pour quel usage) parle.</li>
+        <li><strong>La visualisation est un acte d'interprétation.</strong> L'illusion de neutralité doit céder la place à un <em>énoncé</em> assumé : l'auteur revendique son point de vue.</li>
+        <li><strong>Les données peuvent rendre les humains plus humains, pas moins.</strong> Le but n'est pas l'efficacité analytique mais la connaissance de soi, des autres, des collectivités.</li>
+      </ol>
+      <p>Cette posture a une histoire — elle s'inscrit dans la lignée de Donna Haraway (sciences situées) et de la philosophie féministe des sciences — et une portée pratique : <mark>elle légitime les choix éditoriaux explicites du designer narratif, alors que la tradition Tufte tendait à les disqualifier comme « non-data ink »</mark>.</p>
+
+      <h3>Dear Data — Lupi &amp; Posavec (2014–2016)</h3>
+      <p>Le projet <em>Dear Data</em><a class="cite" data-cite="10" href="#source-10">10</a>, co-conduit par Lupi et Stefanie Posavec sur 52 semaines, est l'incarnation du manifeste avant la lettre. Chaque semaine, les deux designers choisissent un thème (les sons entendus, les fois où elles ont été reconnaissantes, les sourires échangés, les fois où elles ont menti…) et collectent des données sur elles-mêmes pendant sept jours. Puis, sur une <strong>carte postale dessinée à la main</strong>, chacune visualise sa semaine et l'envoie à l'autre par la poste — Lupi à New York, Posavec à Londres. Au bout d'un an, 104 cartes échangées, ensuite acquises par le MoMA en 2017 pour sa collection permanente.</p>
+      <p>L'apport conceptuel de <em>Dear Data</em> tient en trois points :</p>
+      <ol>
+        <li><strong>Petites données, grand sens.</strong> Les datasets sont minuscules (parfois quelques dizaines de points), mais l'attention qui leur est portée — codification visuelle, légende manuscrite, choix d'un angle — produit des artefacts plus parlants que des dashboards à un million de lignes.</li>
+        <li><strong>L'analogique comme contrainte fertile.</strong> Le dessin à la main interdit la précision pixel-perfect ; il force le designer à choisir, à éditer, à laisser des imperfections qui <em>signalent</em> l'humain.</li>
+        <li><strong>L'auto-documentation comme méthode.</strong> Plutôt qu'un projet « sur le monde », <em>Dear Data</em> est un projet « sur soi-même comme source ». Le designer-narrateur est dans le récit. Cette posture est méthodologiquement proche du journalisme à la première personne.</li>
+      </ol>
+
+      <h3>Fragapane — formes organiques et lignes-vies</h3>
+      <p>Federica Fragapane, designer milanaise, prolonge cette école en l'orientant vers le <strong>politique</strong>. Sa série <em>The Stories Behind a Line</em> (2017)<a class="cite" data-cite="11" href="#source-11">11</a> visualise les trajectoires de six demandeurs d'asile arrivés en Italie, à partir d'entretiens menés au CAS Migrantes de Vercelli. Pour chaque personne, une <strong>ligne</strong> déroulée à l'horizontale encode le voyage — kilomètres parcourus, heures de transport, jours d'attente — avec des marqueurs visuels pour le moyen de transport et des branches pour les épisodes (détention, hospitalisation, séparation familiale).</p>
+      <p>Le choix esthétique est délibéré : <strong>formes organiques, courbes douces, palette à la fois vibrante et chaude</strong>. Fragapane explique : <em>« I often choose this organic approach when I work with data that has a living presence »</em><a class="cite" data-cite="17" href="#source-17">17</a>. La sortie est aux antipodes du graphique de management : les données ne sont pas pliées dans une grille, elles <strong>épousent</strong> la matière humaine qu'elles encodent. Trois pièces de Fragapane sont entrées dans la collection permanente du MoMA en 2023.</p>
+      <p>Cette école — Lupi, Posavec, Fragapane, mais aussi Nadieh Bremer, Shirley Wu, Mona Chalabi — n'a pas tué le canon Tufte/Munzner. Elle a rouvert un espace : <mark>celui où l'auteur-narrateur ne s'efface pas derrière la donnée mais en assume la mise en scène</mark>. Pour le praticien, cela veut dire que la palette stylistique est plus large qu'il y a dix ans — et que le choix entre sobriété analytique et chaleur narrative n'est plus une question de goût, c'est une question d'<strong>adéquation au sujet</strong>.</p>
+
+      <h3>Trois leçons portables</h3>
+      <p>Pour intégrer cette école sans la singer, trois leçons utiles :</p>
+      <ul>
+        <li><strong>Énoncer le point de vue.</strong> Une expérience narrative humaniste assume son auteur. Une légende qui dit « source : OCDE 2024 » est insuffisante ; <em>« cartographié par X à partir de l'OCDE 2024, avec le parti pris de mettre en évidence Y »</em> est plus honnête.</li>
+        <li><strong>Montrer l'incertitude.</strong> Bandes d'incertitude, échelles logarithmiques explicites, mention des données manquantes — tous ces gestes ralentissent la lecture mais protègent contre la sur-interprétation.</li>
+        <li><strong>Calibrer le registre au sujet.</strong> Les organes de contrôle d'une dictature ne se visualisent pas avec la même palette que la décarbonation d'un secteur industriel. Ce truisme reste enfreint quotidiennement.</li>
+      </ul>
+
+      <h2 id="architectures">5. Architectures techniques : du scrollytelling au pipeline agentique</h2>
+
+      <figure class="figure" id="fig-05">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" data-schema-id="schema-05" role="img" aria-label="Pipelines techniques : scrollytelling classique vs pipeline agentique IA-driven">
+  <style>
+    .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+    .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+    .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    .ink   { fill: #1A1A1A; }
+    .graphite { fill: #5A5A5A; }
+    .carmine { fill: #B7332C; }
+    .teal  { fill: #1F5560; }
+  </style>
+  <defs>
+    <marker id="arrow5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#5A5A5A"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- Header -->
+  <text x="60" y="56" class="mono ink" font-size="11" font-weight="600" letter-spacing="0.18em">SCHÉMA 05</text>
+  <text x="60" y="100" class="display ink" font-size="26" font-weight="600" letter-spacing="-0.01em">Deux architectures, une convergence</text>
+  <text x="60" y="128" class="display graphite" font-size="16" font-style="italic">Le pipeline scrollytelling « classique » et le pipeline agentique IA-driven coexistent — la pratique 2026 les hybride.</text>
+
+  <!-- Top — scrollytelling classique -->
+  <text x="60" y="186" class="mono teal" font-size="11" font-weight="600" letter-spacing="0.16em">A · PIPELINE SCROLLYTELLING CLASSIQUE — humain au centre, outils dédiés</text>
+
+  <g transform="translate(60, 210)">
+    <g class="interactive" data-card="classic-data" tabindex="0" role="button" aria-label="Étape : données brutes">
+      <rect x="0" y="0" width="160" height="80" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
+      <text x="14" y="24" class="mono teal" font-size="9" font-weight="600" letter-spacing="0.1em">DONNÉES</text>
+      <text x="14" y="46" class="body ink" font-size="12" font-weight="500">CSV / API / scraping</text>
+      <text x="14" y="64" class="body graphite" font-size="11">Python, dbt, Pandas</text>
+    </g>
+    <line x1="172" y1="40" x2="218" y2="40" stroke="#5A5A5A" stroke-width="0.75" marker-end="url(#arrow5)"/>
+
+    <g class="interactive" data-card="classic-explore" tabindex="0" role="button" aria-label="Étape : exploration analytique">
+      <rect x="225" y="0" width="160" height="80" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
+      <text x="239" y="24" class="mono teal" font-size="9" font-weight="600" letter-spacing="0.1em">EXPLORATION</text>
+      <text x="239" y="46" class="body ink" font-size="12" font-weight="500">Notebooks, Observable</text>
+      <text x="239" y="64" class="body graphite" font-size="11">Tâche d'analyste</text>
+    </g>
+    <line x1="397" y1="40" x2="443" y2="40" stroke="#5A5A5A" stroke-width="0.75" marker-end="url(#arrow5)"/>
+
+    <g class="interactive" data-card="classic-script" tabindex="0" role="button" aria-label="Étape : scénarisation">
+      <rect x="450" y="0" width="160" height="80" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
+      <text x="464" y="24" class="mono teal" font-size="9" font-weight="600" letter-spacing="0.1em">SCÉNARIO</text>
+      <text x="464" y="46" class="body ink" font-size="12" font-weight="500">Storyboard, sections</text>
+      <text x="464" y="64" class="body graphite" font-size="11">Auteur · designer</text>
+    </g>
+    <line x1="622" y1="40" x2="668" y2="40" stroke="#5A5A5A" stroke-width="0.75" marker-end="url(#arrow5)"/>
+
+    <g class="interactive" data-card="classic-build" tabindex="0" role="button" aria-label="Étape : intégration scrollama + D3">
+      <rect x="675" y="0" width="180" height="80" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
+      <text x="689" y="24" class="mono teal" font-size="9" font-weight="600" letter-spacing="0.1em">BUILD</text>
+      <text x="689" y="46" class="body ink" font-size="12" font-weight="500">scrollama + D3 + Svelte</text>
+      <text x="689" y="64" class="body graphite" font-size="11">SVG, transitions, sticky</text>
+    </g>
+    <line x1="867" y1="40" x2="913" y2="40" stroke="#5A5A5A" stroke-width="0.75" marker-end="url(#arrow5)"/>
+
+    <g class="interactive" data-card="classic-publish" tabindex="0" role="button" aria-label="Étape : publication">
+      <rect x="920" y="0" width="160" height="80" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
+      <text x="934" y="24" class="mono teal" font-size="9" font-weight="600" letter-spacing="0.1em">PUBLICATION</text>
+      <text x="934" y="46" class="body ink" font-size="12" font-weight="500">Statique, CDN, mobile</text>
+      <text x="934" y="64" class="body graphite" font-size="11">QA accessibilité</text>
+    </g>
+  </g>
+
+  <!-- Mid — separator -->
+  <line x1="60" y1="370" x2="1140" y2="370" stroke="#E5E1D8" stroke-width="0.5" stroke-dasharray="3 3"/>
+
+  <!-- Bottom — pipeline agentique -->
+  <text x="60" y="408" class="mono carmine" font-size="11" font-weight="600" letter-spacing="0.16em">B · PIPELINE AGENTIQUE IA-DRIVEN — orchestration LLM, génération assistée à chaque étape</text>
+
+  <g transform="translate(60, 432)">
+    <!-- Orchestrator at center top -->
+    <g class="interactive" data-card="agent-orchestrator" tabindex="0" role="button" aria-label="Orchestrateur LLM">
+      <rect x="420" y="0" width="240" height="60" rx="3" fill="#FAF8F3" stroke="#B7332C" stroke-width="2"/>
+      <text x="540" y="22" class="mono carmine" font-size="9" font-weight="600" letter-spacing="0.14em" text-anchor="middle">ORCHESTRATEUR LLM</text>
+      <text x="540" y="44" class="body ink" font-size="12" font-weight="500" text-anchor="middle">Plan · délégation · contrôle</text>
+    </g>
+
+    <!-- 4 specialised agents below -->
+    <g class="interactive" data-card="agent-data" tabindex="0" role="button" aria-label="Agent données">
+      <rect x="20" y="130" width="200" height="80" rx="3" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.25"/>
+      <text x="34" y="154" class="mono carmine" font-size="9" font-weight="600" letter-spacing="0.1em">AGENT 1 — DONNÉES</text>
+      <text x="34" y="176" class="body ink" font-size="12" font-weight="500">Analyse &amp; insights</text>
+      <text x="34" y="194" class="body graphite" font-size="11">Anomalies, tournants, trends</text>
+    </g>
+
+    <g class="interactive" data-card="agent-script" tabindex="0" role="button" aria-label="Agent scénario">
+      <rect x="240" y="130" width="200" height="80" rx="3" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.25"/>
+      <text x="254" y="154" class="mono carmine" font-size="9" font-weight="600" letter-spacing="0.1em">AGENT 2 — SCÉNARIO</text>
+      <text x="254" y="176" class="body ink" font-size="12" font-weight="500">Séquence des insights</text>
+      <text x="254" y="194" class="body graphite" font-size="11">Hook, corps, pointe</text>
+    </g>
+
+    <g class="interactive" data-card="agent-viz" tabindex="0" role="button" aria-label="Agent visualisation">
+      <rect x="640" y="130" width="200" height="80" rx="3" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.25"/>
+      <text x="654" y="154" class="mono carmine" font-size="9" font-weight="600" letter-spacing="0.1em">AGENT 3 — VISU</text>
+      <text x="654" y="176" class="body ink" font-size="12" font-weight="500">Génération graphiques</text>
+      <text x="654" y="194" class="body graphite" font-size="11">SVG · Vega-Lite · code D3</text>
+    </g>
+
+    <g class="interactive" data-card="agent-narration" tabindex="0" role="button" aria-label="Agent narration">
+      <rect x="860" y="130" width="200" height="80" rx="3" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.25"/>
+      <text x="874" y="154" class="mono carmine" font-size="9" font-weight="600" letter-spacing="0.1em">AGENT 4 — TEXTE</text>
+      <text x="874" y="176" class="body ink" font-size="12" font-weight="500">Steps, captions, voix</text>
+      <text x="874" y="194" class="body graphite" font-size="11">Synchronisation prose-visuel</text>
+    </g>
+
+    <!-- Connectors from orchestrator to agents -->
+    <g stroke="#B7332C" stroke-width="0.75">
+      <line x1="540" y1="60" x2="120" y2="130" marker-end="url(#arrow5)"/>
+      <line x1="540" y1="60" x2="340" y2="130" marker-end="url(#arrow5)"/>
+      <line x1="540" y1="60" x2="740" y2="130" marker-end="url(#arrow5)"/>
+      <line x1="540" y1="60" x2="960" y2="130" marker-end="url(#arrow5)"/>
+    </g>
+
+    <!-- Human reviewer below -->
+    <g class="interactive" data-card="human-reviewer" tabindex="0" role="button" aria-label="Réviseur humain">
+      <rect x="380" y="240" width="320" height="56" rx="3" fill="#FAF8F3" stroke="#1A1A1A" stroke-width="1.5"/>
+      <text x="540" y="264" class="mono ink" font-size="9" font-weight="600" letter-spacing="0.14em" text-anchor="middle">RÉVISEUR HUMAIN — ACTE D'AUTEUR FINAL</text>
+      <text x="540" y="286" class="body ink" font-size="12" font-style="italic" text-anchor="middle">Thèse · rythme · registre · responsabilité</text>
+    </g>
+
+    <g stroke="#5A5A5A" stroke-width="0.75" stroke-dasharray="2 3">
+      <line x1="540" y1="210" x2="540" y2="240" marker-end="url(#arrow5)"/>
+    </g>
+  </g>
+
+  <!-- Footer -->
+  <line x1="60" y1="755" x2="1140" y2="755" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="775" class="body graphite" font-size="10" font-style="italic">Pipeline B inspiré de Shen et al., « From Data to Story », Gen4DS Workshop, IEEE VIS 2024.</text>
+</svg>
+
+        <figcaption class="figure-caption">Schéma 5 — Deux architectures pour produire une expérience narrative en 2026 : le pipeline scrollytelling « classique » (humain au centre, outils manuels) vs le pipeline agentique (orchestration LLM, génération assistée à chaque étape).</figcaption>
+      </figure>
+
+      <p>Le passage à la production exige de descendre dans la stack technique. Une expérience narrative web — celle qu'on déploie en 2026 — repose sur un assemblage de briques relativement standardisé.</p>
+
+      <h3>Le pipeline scrollytelling « classique »</h3>
+      <p>Le pattern dominant depuis 2015 combine :</p>
+      <ul>
+        <li><strong>HTML/CSS sémantique</strong> comme squelette — chaque étape narrative est un <code>&lt;section&gt;</code> ou <code>&lt;div class="step"&gt;</code> avec un texte ;</li>
+        <li><strong>Une bibliothèque de scrollytelling</strong> — <em>scrollama</em> (Russell Goldenberg, The Pudding) est devenue de facto le standard, parce qu'elle s'appuie sur l'<span class="term" data-tooltip="IntersectionObserver : API navigateur qui notifie quand un élément entre/sort de la zone visible. Utilisée par scrollama au lieu d'écouter chaque événement scroll, ce qui élimine la latence visible.">API native <code>IntersectionObserver</code></span> plutôt que sur les événements de scroll, ce qui élimine la latence visible<a class="cite" data-cite="15" href="#source-15">15</a> ;</li>
+        <li><strong>Un graphique dynamique</strong> rendu en SVG (généralement piloté par <span class="term" data-tooltip="D3.js : bibliothèque JavaScript de Mike Bostock pour manipuler des documents basés sur des données. Standard de fait pour la visualisation web depuis 2011, particulièrement pour les graphiques sur mesure."><em>D3.js</em></span> de Mike Bostock) ou en Canvas pour les volumes ;</li>
+        <li><strong>Un système d'états</strong> — chaque étape correspond à un state du graphique (filtre, échelle, sélection) ; les transitions entre états se font par animations courtes (200–800 ms).</li>
+      </ul>
+      <p>Ce pattern produit le scrollytelling élégant qu'on voit au <em>NYT</em>, au <em>FT</em>, à <em>Reuters Graphics</em>, sur <em>The Pudding</em>. Il a deux propriétés cruciales : (1) il fonctionne sur tous les navigateurs modernes sans dépendance lourde, et (2) il est <em>imprimable mentalement</em> — un développeur expérimenté peut estimer le coût d'un projet en regardant les maquettes. Coût typique pour un long-format soigné : 3 à 8 semaines pour une équipe de 3–4 personnes (journaliste, designer, développeur, parfois data scientist).</p>
+
+      <h3>Le pipeline agentique IA-driven</h3>
+      <p>Une seconde architecture émerge depuis 2024 : <strong>un pipeline orchestré par un ou plusieurs LLM</strong>, où chaque étape de la production traditionnelle est augmentée — ou parfois remplacée — par un agent. Le papier <em>From Data to Story</em> présenté à Gen4DS 2024 par Shen, Li, Wang et Qu en propose une instance complète<a class="cite" data-cite="18" href="#source-18">18</a> : un système multi-agents qui prend en entrée un dataset et produit en sortie une vidéo animée narrée. Quatre agents spécialisés se coordonnent — un agent d'analyse (extrait les insights saillants), un agent de scénario (séquence les insights en récit), un agent de visualisation (génère les graphiques), un agent de narration (écrit la voix off et synchronise).</p>
+      <p>Cette architecture est encore largement expérimentale, mais ses points d'application immédiats en 2026 sont :</p>
+      <ul>
+        <li><strong>Briefing → premier draft.</strong> Un brief de 200 mots produit un premier squelette d'expérience narrative en quelques minutes ;</li>
+        <li><strong>Génération de schémas.</strong> À partir d'un dataset et d'une intention (« montrer la divergence entre A et B »), un LLM produit un SVG raisonnable que le designer reprend ;</li>
+        <li><strong>Rédaction des steps.</strong> Pour un scrollytelling, écrire les 12 ou 15 paragraphes-steps est un travail typiquement assisté par LLM, avec relecture humaine ;</li>
+        <li><strong>QA technique.</strong> Vérifier qu'un schéma fonctionne sur mobile, que les contrastes sont accessibles, que les annotations ne se chevauchent pas — tâches que les agents code (type Claude Code, Cursor) prennent en charge avec un taux de succès raisonnable.</li>
+      </ul>
+
+      <h3>Les deux pipelines coexistent — et fusionnent</h3>
+      <p>La réalité opérationnelle en 2026 n'est ni « pipeline classique » ni « pipeline agentique » : c'est un <strong>pipeline classique avec injection IA à des points précis</strong>. Le designer reste maître du scénario et des choix esthétiques structurants ; l'IA prend en charge la production de masse (génération de variantes, rédaction de captions, code utilitaire). Ce hybride est ce que la littérature appelle l'<strong>augmentation</strong> par opposition à l'<strong>automatisation</strong> — distinction empruntée au débat plus large sur l'IA et le travail.</p>
+      <p>Sur les outils spécifiques, trois familles à connaître :</p>
+      <ul>
+        <li><strong>Outils end-to-end</strong> : Flourish, Datawrapper, Infogram pour des visualisations rapides et standardisées ; Tableau Pulse et Power BI Copilot pour le data storytelling automatique en contexte BI.</li>
+        <li><strong>Outils dev-friendly</strong> : Observable Plot et Observable Notebooks de Mike Bostock, qui combinent code D3 et exécution réactive ; le couple <em>scrollama + d3</em> déjà mentionné ; Svelte (utilisé par <em>The Pudding</em> et le NYT pour son équilibre simplicité/performance).</li>
+        <li><strong>Outils LLM-native</strong> : les copilotes intégrés à VSCode/Cursor pour la production de code SVG/D3 ; les outils émergents type <span class="term" data-tooltip="Vega-Lite : grammaire de visualisation déclarative open-source (UW Interactive Data Lab). Permet de spécifier un graphique en JSON, ce qui en fait une cible naturelle pour la génération par LLM.">Vega-Lite</span> + LLM (<em>Lida</em> de Microsoft, par exemple) qui prennent du langage naturel et produisent des spécifications de visualisation.</li>
+      </ul>
+      <p><mark>Le bon réflexe en 2026 n'est pas de choisir un pipeline, c'est de cartographier la chaîne de valeur du projet et d'identifier où l'IA fait gagner de la qualité, où elle fait gagner du temps, et où elle introduit du risque (cf. section 7).</mark></p>
+
+      <h2 id="ia-chaine">6. L'IA générative dans la chaîne narrative : où elle aide, où elle nuit</h2>
+
+      <figure class="figure" id="fig-06">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" data-schema-id="schema-06" role="img" aria-label="Chaîne de production augmentée par IA — apport et risque par étape">
+  <style>
+    .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+    .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+    .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    .ink   { fill: #1A1A1A; }
+    .graphite { fill: #5A5A5A; }
+    .carmine { fill: #B7332C; }
+    .teal  { fill: #1F5560; }
+    .mustard { fill: #B58A2C; }
+  </style>
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- Header -->
+  <text x="60" y="56" class="mono ink" font-size="11" font-weight="600" letter-spacing="0.18em">SCHÉMA 06</text>
+  <text x="60" y="100" class="display ink" font-size="26" font-weight="600" letter-spacing="-0.01em">L'IA dans la chaîne narrative</text>
+  <text x="60" y="128" class="display graphite" font-size="16" font-style="italic">Sept étapes, deux régimes : ce que l'IA accélère (vert-teal) et ce qu'elle ne remplace pas (carmine).</text>
+
+  <!-- Top legend -->
+  <g transform="translate(60, 168)">
+    <rect x="0" y="0" width="14" height="14" fill="#1F5560" fill-opacity="0.50"/>
+    <text x="22" y="11" class="body ink" font-size="11">Apport IA dominant</text>
+    <rect x="200" y="0" width="14" height="14" fill="#B58A2C" fill-opacity="0.50"/>
+    <text x="222" y="11" class="body ink" font-size="11">Augmentation IA modérée</text>
+    <rect x="430" y="0" width="14" height="14" fill="#B7332C" fill-opacity="0.55"/>
+    <text x="452" y="11" class="body ink" font-size="11">Acte humain non substituable</text>
+    <text x="700" y="11" class="body graphite" font-size="11" font-style="italic">Hauteur de barre = intensité ; texte = risque dominant à l'étape.</text>
+  </g>
+
+  <!-- Steps as vertical bars / timeline -->
+  <g transform="translate(80, 220)">
+    <!-- Baseline -->
+    <line x1="0" y1="380" x2="1080" y2="380" stroke="#1A1A1A" stroke-width="1.25"/>
+
+    <!-- 7 steps, each ~150 wide -->
+    <!-- Step 1 — Cadrage (humain dominant) -->
+    <g class="interactive" data-card="step-cadrage" tabindex="0" role="button" aria-label="Étape 1 — Cadrage">
+      <rect x="20" y="60" width="120" height="320" fill="#B7332C" fill-opacity="0.50"/>
+      <text x="80" y="408" class="mono ink" font-size="10" font-weight="600" text-anchor="middle" letter-spacing="0.08em">01</text>
+      <text x="80" y="428" class="body ink" font-size="12" font-weight="500" text-anchor="middle">Cadrage</text>
+      <text x="80" y="446" class="body graphite" font-size="10" text-anchor="middle">&amp; thèse</text>
+      <text x="80" y="40" class="body graphite" font-size="10" text-anchor="middle" font-style="italic">Risque : récit moyen</text>
+    </g>
+
+    <!-- Step 2 — Données (IA dominante) -->
+    <g class="interactive" data-card="step-donnees" tabindex="0" role="button" aria-label="Étape 2 — Données">
+      <rect x="160" y="200" width="120" height="180" fill="#1F5560" fill-opacity="0.50"/>
+      <text x="220" y="408" class="mono ink" font-size="10" font-weight="600" text-anchor="middle" letter-spacing="0.08em">02</text>
+      <text x="220" y="428" class="body ink" font-size="12" font-weight="500" text-anchor="middle">Données</text>
+      <text x="220" y="446" class="body graphite" font-size="10" text-anchor="middle">collecte / clean</text>
+      <text x="220" y="180" class="body graphite" font-size="10" text-anchor="middle" font-style="italic">Risque : hallucination silencieuse</text>
+    </g>
+
+    <!-- Step 3 — Exploration (IA dominante avec curation humaine) -->
+    <g class="interactive" data-card="step-exploration" tabindex="0" role="button" aria-label="Étape 3 — Exploration">
+      <rect x="300" y="170" width="120" height="210" fill="#1F5560" fill-opacity="0.50"/>
+      <text x="360" y="408" class="mono ink" font-size="10" font-weight="600" text-anchor="middle" letter-spacing="0.08em">03</text>
+      <text x="360" y="428" class="body ink" font-size="12" font-weight="500" text-anchor="middle">Exploration</text>
+      <text x="360" y="446" class="body graphite" font-size="10" text-anchor="middle">analytique</text>
+      <text x="360" y="150" class="body graphite" font-size="10" text-anchor="middle" font-style="italic">Risque : confondre signal et bruit</text>
+    </g>
+
+    <!-- Step 4 — Scénario (humain dominant) -->
+    <g class="interactive" data-card="step-scenario" tabindex="0" role="button" aria-label="Étape 4 — Scénario">
+      <rect x="440" y="60" width="120" height="320" fill="#B7332C" fill-opacity="0.55"/>
+      <text x="500" y="408" class="mono ink" font-size="10" font-weight="600" text-anchor="middle" letter-spacing="0.08em">04</text>
+      <text x="500" y="428" class="body ink" font-size="12" font-weight="600" text-anchor="middle">Scénario</text>
+      <text x="500" y="446" class="body graphite" font-size="10" text-anchor="middle">acte d'auteur</text>
+      <text x="500" y="40" class="body graphite" font-size="10" text-anchor="middle" font-style="italic">Risque : sur-structuration LLM</text>
+    </g>
+
+    <!-- Step 5 — Production (mixte fort) -->
+    <g class="interactive" data-card="step-production" tabindex="0" role="button" aria-label="Étape 5 — Production">
+      <rect x="580" y="140" width="120" height="240" fill="#B58A2C" fill-opacity="0.55"/>
+      <text x="640" y="408" class="mono ink" font-size="10" font-weight="600" text-anchor="middle" letter-spacing="0.08em">05</text>
+      <text x="640" y="428" class="body ink" font-size="12" font-weight="500" text-anchor="middle">Production</text>
+      <text x="640" y="446" class="body graphite" font-size="10" text-anchor="middle">artefacts</text>
+      <text x="640" y="120" class="body graphite" font-size="10" text-anchor="middle" font-style="italic">Risque : clichés visuels</text>
+    </g>
+
+    <!-- Step 6 — Intégration (IA dominante) -->
+    <g class="interactive" data-card="step-integration" tabindex="0" role="button" aria-label="Étape 6 — Intégration">
+      <rect x="720" y="180" width="120" height="200" fill="#1F5560" fill-opacity="0.50"/>
+      <text x="780" y="408" class="mono ink" font-size="10" font-weight="600" text-anchor="middle" letter-spacing="0.08em">06</text>
+      <text x="780" y="428" class="body ink" font-size="12" font-weight="500" text-anchor="middle">Intégration</text>
+      <text x="780" y="446" class="body graphite" font-size="10" text-anchor="middle">interactive</text>
+      <text x="780" y="160" class="body graphite" font-size="10" text-anchor="middle" font-style="italic">Risque : mobile cassé</text>
+    </g>
+
+    <!-- Step 7 — QA + publication (mixte) -->
+    <g class="interactive" data-card="step-qa" tabindex="0" role="button" aria-label="Étape 7 — QA et publication">
+      <rect x="860" y="140" width="120" height="240" fill="#B58A2C" fill-opacity="0.50"/>
+      <text x="920" y="408" class="mono ink" font-size="10" font-weight="600" text-anchor="middle" letter-spacing="0.08em">07</text>
+      <text x="920" y="428" class="body ink" font-size="12" font-weight="500" text-anchor="middle">QA &amp; publi.</text>
+      <text x="920" y="446" class="body graphite" font-size="10" text-anchor="middle">jugement final</text>
+      <text x="920" y="120" class="body graphite" font-size="10" text-anchor="middle" font-style="italic">Risque : effacement du POV</text>
+    </g>
+  </g>
+
+  <!-- Insight strip -->
+  <g transform="translate(60, 720)">
+    <line x1="0" y1="0" x2="1080" y2="0" stroke="#E5E1D8" stroke-width="0.5"/>
+    <text x="0" y="22" class="body ink" font-size="12" font-weight="500">Régularité 2024–2026 :</text>
+    <text x="148" y="22" class="body ink" font-size="12">l'IA augmente la productivité d'un facteur 2 à 5 sur les étapes industrielles ; elle ne crée pas la pointe éditoriale.</text>
+  </g>
+
+  <!-- Footer -->
+  <text x="60" y="775" class="body graphite" font-size="10" font-style="italic">Source : observation pipelines NYT, FT, Reuters Graphics, The Pudding, Le Monde 2024–2026 ; arXiv 2503.02631 (Reflection on Data Storytelling Tools, 2025).</text>
+</svg>
+
+        <figcaption class="figure-caption">Schéma 6 — La chaîne de production d'une expérience narrative, en sept étapes, avec l'apport et le risque dominants de l'IA générative à chaque étape.</figcaption>
+      </figure>
+
+      <p>Plutôt que débattre dans l'abstrait du « rôle de l'IA dans le data storytelling », il est plus utile de <strong>décomposer la chaîne</strong> et de localiser les points d'insertion. Une expérience narrative se produit en sept étapes typiques.</p>
+
+      <h3>Étape 1 — Cadrage du sujet et thèse</h3>
+      <p>L'auteur identifie le sujet, la pointe éditoriale, le public visé, et <strong>ce qu'il veut faire dire à la donnée</strong>. Cette étape est la plus stratégique et la moins automatisable. Un LLM peut être utile en sparring partner — formuler des objections, proposer des angles non anticipés, vérifier qu'on n'oublie pas un cas — mais le <strong>jugement éditorial reste humain</strong>. Un cadrage déterminé par un LLM seul tend à produire des récits <em>moyens</em>, c'est-à-dire conformes à la moyenne du discours public sur le sujet.</p>
+
+      <h3>Étape 2 — Collecte et nettoyage des données</h3>
+      <p>Étape ingrate, technique, fortement automatisable. Les LLM (Claude, GPT, Gemini en mode code) sont efficaces pour : écrire le scraping, parser des PDF tabulaires, géocoder, joiner des sources hétérogènes. <strong>Le risque dominant ici est l'<span class="term" data-tooltip="Hallucination silencieuse : un LLM produit une donnée plausible mais fabriquée — colonne inventée, moyenne fausse, source citée mais inexistante. Risque maximal en data storytelling parce qu'invisible à l'œil.">hallucination silencieuse</span></strong> — un LLM qui invente une colonne ou fabrique une moyenne. Garde-fou : <mark>tout calcul produit par un LLM doit être reproduit par une trace explicite (code exécuté, formule documentée), jamais accepté comme oracle</mark>.</p>
+
+      <h3>Étape 3 — Exploration analytique</h3>
+      <p>L'auteur cherche dans la donnée les éléments saillants — anomalies, corrélations, tournants, contre-exemples. C'est ici que l'IA générative apporte le plus de valeur en 2026 : un agent capable de naviguer dans un dataset, de tester des hypothèses, de produire 30 visualisations exploratoires en quelques minutes, accélère cette phase d'un facteur 5 à 10. Le travail humain résiduel est de <strong>trier ce qui est intéressant de ce qui est banal</strong> — distinction que l'IA ne fait pas bien, parce qu'elle dépend du contexte éditorial et du public.</p>
+
+      <h3>Étape 4 — Scénarisation</h3>
+      <p>Choisir l'ordre, le tempo, les ponts entre étapes, les moments où on relâche le lecteur, les moments où on serre. <strong>Cette étape est l'acte d'auteur par excellence.</strong> Un LLM peut proposer un plan, mais le plan qu'il propose est presque toujours <em>sur-structuré</em> (TLDR, intro, plan annoncé, conclusion télégraphiée) — tic propre à son entraînement. Un bon scénariste humain casse cette structure pour servir le sujet. C'est ici que la valeur ajoutée du métier se concentre, et c'est ici que les outils IA-natifs sont les moins matures.</p>
+
+      <h3>Étape 5 — Production des artefacts (texte, schémas, code)</h3>
+      <p>Production de masse. L'IA est ici dominante depuis 2024 : rédaction des captions, premières versions des schémas, code de scrollytelling, layout responsive. La supervision humaine reste essentielle pour : (1) vérifier la <strong>fidélité de l'encodage</strong> (un LLM choisit souvent des encodages sous-optimaux par défaut), (2) corriger les <strong>clichés visuels</strong> (palette par défaut, polices génériques), et (3) imposer la <strong>cohérence inter-artefacts</strong> (un set de schémas doit lire comme une série, ce qu'un LLM ne fait pas spontanément). <mark>Le bon usage de l'IA à cette étape est de poser une base 70 %, que le designer porte à 100 %.</mark></p>
+
+      <h3>Étape 6 — Intégration interactive</h3>
+      <p>Wiring du scrollytelling, modaux, tooltips, accessibilité, mobile. Étape technique, fortement automatisable. Les outils Claude Code, Cursor, GitHub Copilot atteignent une qualité opérationnelle en mai 2026 — un développeur senior peut produire en 2 jours ce qui demandait 5 jours en 2023.</p>
+
+      <h3>Étape 7 — QA et publication</h3>
+      <p>Tests sur navigateurs, vérification d'accessibilité, relecture finale. L'IA peut accélérer (lint accessibilité, screenshots multi-navigateurs) mais le <strong>jugement final</strong> sur la cohérence éditoriale, la justesse du ton, la fidélité au brief, reste humain.</p>
+
+      <h3>Cartographie des risques</h3>
+      <p>Quatre risques propres à l'IA dans la chaîne narrative, qu'aucun garde-fou ne supprime totalement :</p>
+      <ol>
+        <li><strong>Hallucinations factuelles silencieuses.</strong> Le LLM produit une donnée plausible mais fausse. Atténuation : vérification croisée systématique de tous les chiffres avec leur source primaire ; refuser tout chiffre dont le LLM ne fournit pas une trace de calcul reproductible.</li>
+        <li><strong>Conformisme stylistique.</strong> L'IA produit ce que la moyenne de son corpus produirait — palettes consensuelles, tournures attendues, encadrements convenus. Atténuation : intervention éditoriale forte à l'étape 4 (scénario) et à l'étape 5 (cohérence visuelle).</li>
+        <li><strong>Effacement du point de vue.</strong> L'IA est entraînée à éviter les positions tranchées — par défaut, elle adoucit. Pour un récit qui doit avoir une thèse, cet adoucissement est une <strong>dilution</strong>. Atténuation : poser explicitement la thèse en amont, la défendre contre les édulcorations du modèle.</li>
+        <li><strong>Détresponsabilisation.</strong> Plus la chaîne est automatisée, plus la responsabilité éditoriale est diffuse. Quand un graphique trompe le lecteur, qui l'a produit ? Atténuation : <mark>traçabilité explicite — qui a validé quoi, à quelle étape, sur la base de quel jugement humain</mark>. Cette traçabilité est aujourd'hui une <em>bonne pratique</em> ; elle deviendra probablement une obligation réglementaire dans le sillage de l'AI Act européen pour les contenus à enjeu public.</li>
+      </ol>
+
+      <h3>La règle du « augmenté, pas remplacé »</h3>
+      <p>Une régularité empirique stable sur 2024–2026, partagée par les équipes data viz du <em>NYT</em>, du <em>FT</em>, de Reuters Graphics, de The Pudding, de <em>Le Monde</em> : <strong>les artefacts les plus marquants restent ceux où un humain a pris la responsabilité finale d'un point de vue</strong>. L'IA augmente la productivité par un facteur 2 à 5 sur les étapes industrielles ; elle ne crée pas la pointe éditoriale qui transforme un graphique correct en pièce mémorable.</p>
+
+      <h2 id="patterns">7. Patterns d'usage : choisir le bon genre pour le bon contexte</h2>
+
+      <figure class="figure" id="fig-07">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" data-schema-id="schema-07" role="img" aria-label="Matrice contexte × pattern narratif recommandé">
+  <style>
+    .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+    .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+    .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    .ink   { fill: #1A1A1A; }
+    .graphite { fill: #5A5A5A; }
+    .carmine { fill: #B7332C; }
+    .teal  { fill: #1F5560; }
+  </style>
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- Header -->
+  <text x="60" y="56" class="mono ink" font-size="11" font-weight="600" letter-spacing="0.18em">SCHÉMA 07</text>
+  <text x="60" y="100" class="display ink" font-size="26" font-weight="600" letter-spacing="-0.01em">Choisir le pattern : matrice contexte × format</text>
+  <text x="60" y="128" class="display graphite" font-size="16" font-style="italic">Cinq cas-types, le pattern dominant et le pattern à éviter pour chacun.</text>
+
+  <!-- 5 cards in a 5-column grid -->
+  <g transform="translate(60, 180)">
+    <!-- Cas A — Briefing court -->
+    <g class="interactive" data-card="cas-A" tabindex="0" role="button" aria-label="Cas A — Briefing court">
+      <rect x="0" y="0" width="200" height="500" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
+      <text x="14" y="30" class="mono teal" font-size="11" font-weight="600" letter-spacing="0.14em">CAS A</text>
+      <text x="14" y="58" class="display ink" font-size="16" font-weight="500">Briefing court</text>
+      <text x="14" y="78" class="body graphite" font-size="11" font-style="italic">Comité, décision rapide</text>
+
+      <line x1="14" y1="100" x2="186" y2="100" stroke="#E5E1D8" stroke-width="0.5"/>
+
+      <text x="14" y="130" class="mono graphite" font-size="9" letter-spacing="0.12em">PUBLIC</text>
+      <text x="14" y="148" class="body ink" font-size="12">Expert, décide</text>
+      <text x="14" y="172" class="mono graphite" font-size="9" letter-spacing="0.12em">TEMPO</text>
+      <text x="14" y="190" class="body ink" font-size="12">5–15 minutes</text>
+      <text x="14" y="214" class="mono graphite" font-size="9" letter-spacing="0.12em">CHARGE</text>
+      <text x="14" y="232" class="body ink" font-size="12">1–3 jours</text>
+
+      <line x1="14" y1="270" x2="186" y2="270" stroke="#E5E1D8" stroke-width="0.5"/>
+
+      <text x="14" y="296" class="mono carmine" font-size="9" font-weight="600" letter-spacing="0.12em">PATTERN</text>
+      <text x="14" y="316" class="body ink" font-size="13" font-weight="500">Annotated chart</text>
+      <text x="14" y="332" class="body ink" font-size="13" font-weight="500">en série</text>
+      <text x="14" y="356" class="body graphite" font-size="11">Pointe explicite</text>
+      <text x="14" y="372" class="body graphite" font-size="11">3–5 graphiques</text>
+
+      <line x1="14" y1="410" x2="186" y2="410" stroke="#E5E1D8" stroke-width="0.5"/>
+
+      <text x="14" y="436" class="mono graphite" font-size="9" font-weight="600" letter-spacing="0.12em">À ÉVITER</text>
+      <text x="14" y="456" class="body graphite" font-size="11">Slideshow interactif,</text>
+      <text x="14" y="472" class="body graphite" font-size="11">vidéo</text>
+    </g>
+
+    <!-- Cas B — Long-format public -->
+    <g class="interactive" data-card="cas-B" tabindex="0" role="button" aria-label="Cas B — Long-format public">
+      <rect x="220" y="0" width="200" height="500" rx="3" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.5"/>
+      <text x="234" y="30" class="mono carmine" font-size="11" font-weight="600" letter-spacing="0.14em">CAS B</text>
+      <text x="234" y="58" class="display ink" font-size="16" font-weight="500">Long-format</text>
+      <text x="234" y="78" class="body graphite" font-size="11" font-style="italic">Civique, pédagogique</text>
+
+      <line x1="234" y1="100" x2="406" y2="100" stroke="#E5E1D8" stroke-width="0.5"/>
+
+      <text x="234" y="130" class="mono graphite" font-size="9" letter-spacing="0.12em">PUBLIC</text>
+      <text x="234" y="148" class="body ink" font-size="12">Grand public motivé</text>
+      <text x="234" y="172" class="mono graphite" font-size="9" letter-spacing="0.12em">TEMPO</text>
+      <text x="234" y="190" class="body ink" font-size="12">15–40 minutes</text>
+      <text x="234" y="214" class="mono graphite" font-size="9" letter-spacing="0.12em">CHARGE</text>
+      <text x="234" y="232" class="body ink" font-size="12">Plusieurs semaines</text>
+
+      <line x1="234" y1="270" x2="406" y2="270" stroke="#E5E1D8" stroke-width="0.5"/>
+
+      <text x="234" y="296" class="mono carmine" font-size="9" font-weight="600" letter-spacing="0.12em">PATTERN</text>
+      <text x="234" y="316" class="body ink" font-size="13" font-weight="600">Scrollytelling</text>
+      <text x="234" y="332" class="body ink" font-size="13" font-weight="500">+ sticky graphic</text>
+      <text x="234" y="356" class="body graphite" font-size="11">Variantes : explorable</text>
+      <text x="234" y="372" class="body graphite" font-size="11">explanation, comic strip</text>
+
+      <line x1="234" y1="410" x2="406" y2="410" stroke="#E5E1D8" stroke-width="0.5"/>
+
+      <text x="234" y="436" class="mono graphite" font-size="9" font-weight="600" letter-spacing="0.12em">À ÉVITER</text>
+      <text x="234" y="456" class="body graphite" font-size="11">Dashboard,</text>
+      <text x="234" y="472" class="body graphite" font-size="11">PowerPoint commenté</text>
+    </g>
+
+    <!-- Cas C — Document structurant -->
+    <g class="interactive" data-card="cas-C" tabindex="0" role="button" aria-label="Cas C — Document structurant">
+      <rect x="440" y="0" width="200" height="500" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
+      <text x="454" y="30" class="mono teal" font-size="11" font-weight="600" letter-spacing="0.14em">CAS C</text>
+      <text x="454" y="58" class="display ink" font-size="16" font-weight="500">Référence</text>
+      <text x="454" y="78" class="body graphite" font-size="11" font-style="italic">Cadre durable</text>
+
+      <line x1="454" y1="100" x2="626" y2="100" stroke="#E5E1D8" stroke-width="0.5"/>
+
+      <text x="454" y="130" class="mono graphite" font-size="9" letter-spacing="0.12em">PUBLIC</text>
+      <text x="454" y="148" class="body ink" font-size="12">Mixte, revient</text>
+      <text x="454" y="172" class="mono graphite" font-size="9" letter-spacing="0.12em">TEMPO</text>
+      <text x="454" y="190" class="body ink" font-size="12">Non-linéaire</text>
+      <text x="454" y="214" class="mono graphite" font-size="9" letter-spacing="0.12em">CHARGE</text>
+      <text x="454" y="232" class="body ink" font-size="12">Élevée</text>
+
+      <line x1="454" y1="270" x2="626" y2="270" stroke="#E5E1D8" stroke-width="0.5"/>
+
+      <text x="454" y="296" class="mono carmine" font-size="9" font-weight="600" letter-spacing="0.12em">PATTERN</text>
+      <text x="454" y="316" class="body ink" font-size="13" font-weight="500">Magazine style</text>
+      <text x="454" y="332" class="body ink" font-size="13" font-weight="500">+ TOC persistante</text>
+      <text x="454" y="356" class="body graphite" font-size="11">Schémas autonomes,</text>
+      <text x="454" y="372" class="body graphite" font-size="11">lus indépendamment</text>
+
+      <line x1="454" y1="410" x2="626" y2="410" stroke="#E5E1D8" stroke-width="0.5"/>
+
+      <text x="454" y="436" class="mono graphite" font-size="9" font-weight="600" letter-spacing="0.12em">À ÉVITER</text>
+      <text x="454" y="456" class="body graphite" font-size="11">Scrollytelling</text>
+      <text x="454" y="472" class="body graphite" font-size="11">(chemin imposé)</text>
+    </g>
+
+    <!-- Cas D — Émotionnel / politique -->
+    <g class="interactive" data-card="cas-D" tabindex="0" role="button" aria-label="Cas D — Dispositif émotionnel">
+      <rect x="660" y="0" width="200" height="500" rx="3" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.25"/>
+      <text x="674" y="30" class="mono carmine" font-size="11" font-weight="600" letter-spacing="0.14em">CAS D</text>
+      <text x="674" y="58" class="display ink" font-size="16" font-weight="500">Émotionnel</text>
+      <text x="674" y="78" class="body graphite" font-size="11" font-style="italic">Sujet humain ou politique</text>
+
+      <line x1="674" y1="100" x2="846" y2="100" stroke="#E5E1D8" stroke-width="0.5"/>
+
+      <text x="674" y="130" class="mono graphite" font-size="9" letter-spacing="0.12em">PUBLIC</text>
+      <text x="674" y="148" class="body ink" font-size="12">Grand public</text>
+      <text x="674" y="172" class="mono graphite" font-size="9" letter-spacing="0.12em">TEMPO</text>
+      <text x="674" y="190" class="body ink" font-size="12">3–8 minutes</text>
+      <text x="674" y="214" class="mono graphite" font-size="9" letter-spacing="0.12em">CHARGE</text>
+      <text x="674" y="232" class="body ink" font-size="12">Variable</text>
+
+      <line x1="674" y1="270" x2="846" y2="270" stroke="#E5E1D8" stroke-width="0.5"/>
+
+      <text x="674" y="296" class="mono carmine" font-size="9" font-weight="600" letter-spacing="0.12em">PATTERN</text>
+      <text x="674" y="316" class="body ink" font-size="13" font-weight="500">Lupi / Fragapane</text>
+      <text x="674" y="332" class="body ink" font-size="13" font-weight="500">— formes organiques</text>
+      <text x="674" y="356" class="body graphite" font-size="11">Petits datasets,</text>
+      <text x="674" y="372" class="body graphite" font-size="11">cas individuels</text>
+
+      <line x1="674" y1="410" x2="846" y2="410" stroke="#E5E1D8" stroke-width="0.5"/>
+
+      <text x="674" y="436" class="mono graphite" font-size="9" font-weight="600" letter-spacing="0.12em">À ÉVITER</text>
+      <text x="674" y="456" class="body graphite" font-size="11">Palette dashboard,</text>
+      <text x="674" y="472" class="body graphite" font-size="11">grille analytique</text>
+    </g>
+
+    <!-- Cas E — Outil interne -->
+    <g class="interactive" data-card="cas-E" tabindex="0" role="button" aria-label="Cas E — Outil interne récurrent">
+      <rect x="880" y="0" width="200" height="500" rx="3" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1.25" stroke-dasharray="3 3"/>
+      <text x="894" y="30" class="mono graphite" font-size="11" font-weight="600" letter-spacing="0.14em">CAS E</text>
+      <text x="894" y="58" class="display ink" font-size="16" font-weight="500">Outil interne</text>
+      <text x="894" y="78" class="body graphite" font-size="11" font-style="italic">Récurrent, expert</text>
+
+      <line x1="894" y1="100" x2="1066" y2="100" stroke="#E5E1D8" stroke-width="0.5"/>
+
+      <text x="894" y="130" class="mono graphite" font-size="9" letter-spacing="0.12em">PUBLIC</text>
+      <text x="894" y="148" class="body ink" font-size="12">Équipe data, métier</text>
+      <text x="894" y="172" class="mono graphite" font-size="9" letter-spacing="0.12em">TEMPO</text>
+      <text x="894" y="190" class="body ink" font-size="12">Court, répété</text>
+      <text x="894" y="214" class="mono graphite" font-size="9" letter-spacing="0.12em">CHARGE</text>
+      <text x="894" y="232" class="body ink" font-size="12">Maintenance</text>
+
+      <line x1="894" y1="270" x2="1066" y2="270" stroke="#E5E1D8" stroke-width="0.5"/>
+
+      <text x="894" y="296" class="mono graphite" font-size="9" font-weight="600" letter-spacing="0.12em">CE N'EST PAS</text>
+      <text x="894" y="316" class="body ink" font-size="13" font-weight="500">une expérience</text>
+      <text x="894" y="332" class="body ink" font-size="13" font-weight="500">narrative.</text>
+      <text x="894" y="356" class="body graphite" font-size="11">→ Dashboard exploratoire</text>
+      <text x="894" y="372" class="body graphite" font-size="11">classique.</text>
+
+      <line x1="894" y1="410" x2="1066" y2="410" stroke="#E5E1D8" stroke-width="0.5"/>
+
+      <text x="894" y="436" class="mono graphite" font-size="9" font-weight="600" letter-spacing="0.12em">PIÈGE</text>
+      <text x="894" y="456" class="body graphite" font-size="11">Sur-narrer un usage</text>
+      <text x="894" y="472" class="body graphite" font-size="11">qui demande efficacité</text>
+    </g>
+  </g>
+
+  <!-- Footer -->
+  <line x1="60" y1="755" x2="1140" y2="755" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="775" class="body graphite" font-size="10" font-style="italic">Source : grille empirique de l'auteur, validée sur une dizaine d'artefacts produits depuis 2024.</text>
+</svg>
+
+        <figcaption class="figure-caption">Schéma 7 — Arbre de décision pratique : à partir du contexte (public, enjeu, tempo, charge de production tolérée), quel pattern narratif est dominant et quels patterns sont à éviter.</figcaption>
+      </figure>
+
+      <p>Une expérience narrative bien choisie épouse son contexte. La matrice de décision suivante n'a pas la prétention d'être exhaustive — elle reflète une grille empirique que j'ai construite sur une dizaine d'artefacts produits depuis 2024.</p>
+
+      <h3>Cas A — Briefing court, public expert, enjeu stratégique</h3>
+      <p>Public : un comité de direction, un client qui décide. Enjeu : trancher. Tempo : 5 à 15 minutes de lecture. Charge de production tolérée : 1 à 3 jours.</p>
+      <p><strong>Pattern dominant</strong> : <em>annotated chart</em> en série, parfois mis en forme en <em>partitioned poster</em> d'une page. Une thèse explicite en <em>lede</em>, trois à cinq graphiques annotés qui la servent, une conclusion actionnable. Pas de scrollytelling — c'est de la sur-ingénierie pour ce contexte.</p>
+      <p><strong>Pattern à éviter</strong> : le slideshow interactif, qui demande une attention continue qu'un comité n'a pas. La vidéo, qui prive le lecteur de l'option « relire un passage ».</p>
+
+      <h3>Cas B — Long-format public, enjeu civique ou pédagogique</h3>
+      <p>Public : un lecteur grand public motivé, qui découvre un sujet. Enjeu : faire comprendre un mécanisme complexe. Tempo : 15 à 40 minutes. Charge tolérée : plusieurs semaines.</p>
+      <p><strong>Pattern dominant</strong> : <em>scrollytelling</em> avec <em>sticky graphic</em> central. Le scroll impose le rythme, le graphique central reste à l'écran et évolue avec les étapes. Voir « Snow Fall » du <em>NYT</em> (2012) pour la matrice originelle, ou la couverture de Reuters sur les sanctions pétrolières iraniennes (2024) pour une version mature<a class="cite" data-cite="19" href="#source-19">19</a>.</p>
+      <p><strong>Variantes</strong> : <span class="term" data-tooltip="Explorable explanation : terme forgé par Bret Victor (2011) pour désigner une forme de média où une simulation interactive d'un concept est accompagnée de prose qui guide l'apprentissage. Les œuvres de Nicky Case en sont les archétypes.">explorable explanation</span> (<em>Parable of the Polygons</em>, <em>Evolution of Trust</em> de Nicky Case)<a class="cite" data-cite="16" href="#source-16">16</a> quand le sujet contient un mécanisme qu'on peut simuler ; comic strip pour les sujets émotionnellement engageants.</p>
+
+      <h3>Cas C — Document structurant, public mixte, référence durable</h3>
+      <p>Public : praticiens, étudiants, lecteurs qui reviendront. Enjeu : poser un cadre, établir un vocabulaire. Tempo : non-linéaire, lecteur revient par sections. Charge tolérée : élevée.</p>
+      <p><strong>Pattern dominant</strong> : <em>magazine style</em> avec table des matières persistante et schémas récurrents. C'est le format de ce dossier — et celui de la plupart des contenus longs durables (rapports McKinsey/BCG, livres blancs Anthropic). La clé : <mark>des schémas qui peuvent être lus indépendamment du texte</mark>, parce que le lecteur reviendra parfois sans relire la prose.</p>
+      <p><strong>Anti-pattern</strong> : un scrollytelling pour ce contexte impose un chemin que le lecteur de référence ne veut pas. Il veut piocher.</p>
+
+      <h3>Cas D — Dispositif émotionnel, sujet humain ou politique</h3>
+      <p>Public : grand public, enjeu de sensibilisation. Tempo : court (3 à 8 minutes). Charge tolérée : variable.</p>
+      <p><strong>Pattern dominant</strong> : héritage Lupi/Fragapane — formes organiques, palette chaude, encodage qui <em>épouse</em> la matière humaine plutôt qu'il ne la rationalise. <em>The Stories Behind a Line</em><a class="cite" data-cite="11" href="#source-11">11</a> est l'archétype. Moins de chiffres, plus de récit individuel ; les datasets peuvent être minuscules (parfois quelques dizaines de cas) pourvu que chaque cas soit travaillé en profondeur.</p>
+      <p><strong>Anti-pattern</strong> : la palette analytique grise/bleue d'un dashboard, qui désémantise le sujet et neutralise l'émotion.</p>
+
+      <h3>Cas E — Outil interne récurrent, lecteur expert répété</h3>
+      <p>Public : équipe data, équipe métier qui consulte hebdomadairement. Enjeu : monitoring, alerte, exploration. Tempo : usages courts mais répétés.</p>
+      <p><strong>Pattern dominant</strong> : ce <strong>n'est pas une expérience narrative</strong> — c'est un dashboard, et c'est très bien comme ça. Le risque ici est l'inverse : surinvestir un format narratif pour un usage récurrent qui demande de l'efficacité analytique. <mark>Se demander honnêtement : ai-je besoin d'un récit, ou d'un outil ?</mark></p>
+
+      <h3>Trois questions de pré-cadrage</h3>
+      <p>Pour ne pas se tromper de pattern, trois questions à poser avant le brief :</p>
+      <ol>
+        <li><strong>Le lecteur va-t-il lire ça une fois, ou plusieurs ?</strong> Lecture unique → narratif imposé OK. Lecture répétée → laisser de la flexibilité.</li>
+        <li><strong>Le lecteur sait-il déjà ce qu'il cherche ?</strong> Oui → exploration. Non → scénario.</li>
+        <li><strong>Le sujet a-t-il un <em>moment décisif</em> ?</strong> Si oui, le récit doit le mettre en relief — annotated chart, scrollytelling avec une révélation, comic strip avec un punch. Si non, un format sans tension dramatique (magazine style, partitioned poster) sert mieux.</li>
+      </ol>
+
+      <h2 id="praticien">8. Feuille de route praticien</h2>
+
+      <p>Pour un praticien (data analyst, designer, journaliste, manager qui commande) qui veut produire des expériences narratives en 2026, six gestes utiles, ordonnés du moins au plus engageant.</p>
+
+      <h3>Geste 1 — Verbaliser la thèse avant le format</h3>
+      <p>Avant tout choix d'outil ou de genre, écrire <strong>une seule phrase</strong> qui dit ce qu'on veut faire comprendre, à qui, et pourquoi cela compte. Cette phrase est le test de cohérence du projet : à chaque arbitrage de production, revenir y et demander <em>est-ce que ce choix la sert, ou est-ce qu'il la dilue ?</em></p>
+
+      <h3>Geste 2 — Cartographier les fondations applicables</h3>
+      <p>Pour le projet courant, faire un passage What/Why/How de Munzner. Quelle est la structure dominante (Meirelles) ? Quel mantra s'applique (Shneiderman) ? Quels encodages perceptuels (Bertin) ? Cet exercice prend 30 minutes et évite des jours de bricolage.</p>
+
+      <h3>Geste 3 — Choisir le pattern, pas le genre</h3>
+      <p>Plutôt que partir du genre (« je vais faire un scrollytelling »), partir du <strong>pattern de balance auteur-lecteur</strong> voulu (cf. matrice section 7). Le genre est une conséquence, pas une décision.</p>
+
+      <h3>Geste 4 — Décider du registre</h3>
+      <p>Sobriété analytique (héritage Tufte/Munzner) ou chaleur narrative (héritage Lupi/Fragapane) ? Ce choix conditionne palette, typographie, ton du texte, et ne se rattrape pas en post-production. Il doit être posé au cadrage.</p>
+
+      <h3>Geste 5 — Localiser l'IA dans la chaîne</h3>
+      <p>Pour chacune des sept étapes (cf. section 6), décider : <em>humain seul</em>, <em>IA-assisté</em>, <em>IA-dominant avec revue humaine</em>. Documenter ces choix — non pour la conformité, mais parce que les expliciter permet de les <strong>revoir</strong> quand le projet dérive.</p>
+
+      <h3>Geste 6 — Construire un garde-fou éditorial</h3>
+      <p>Avant publication, faire passer trois tests :</p>
+      <ol>
+        <li><strong>Test de Cairo.</strong> L'artefact est-il truthful, functional, beautiful, insightful, enlightening — <em>dans cet ordre</em> ? Si une étape précédente cède, refaire.</li>
+        <li><strong>Test du lecteur naïf.</strong> Donner l'artefact à quelqu'un qui ignore le sujet. Reformule-t-il la thèse comme on l'avait écrite (geste 1) ? Sinon, ce qui dérape n'est pas la lecture, c'est le récit.</li>
+        <li><strong>Test du contre-exemple.</strong> Existe-t-il un dataset, un cas, une donnée qui contredirait la thèse ? Si oui, est-il évoqué ? Sinon, le récit est complaisant.</li>
+      </ol>
+
+      <h3>Le métier en 2026</h3>
+      <p>L'IA générative ne tue pas le métier d'auteur d'expériences narratives — elle redistribue sa valeur ajoutée. Le tracé manuel des courbes, la rédaction des steps de scrollytelling, le code de l'animation : tout ça est en train de devenir industrialisable. Ce qui ne l'est pas, et qui ne le sera pas avant longtemps, c'est : <strong>le choix de la thèse, le rythme du récit, la justesse du registre, la responsabilité de la pointe éditoriale</strong>. <mark>Le designer narratif de 2026 est moins un faiseur qu'un décideur — celui qui dit « voilà ce qu'on raconte, voilà comment on serre, voilà ce qu'on coupe »</mark>. Cette transition n'est pas confortable pour les praticiens dont la valeur reposait sur l'exécution. Elle ouvre, en revanche, un espace pour ceux dont la valeur repose sur le jugement.</p>
+      <p>C'est, au fond, ce que disaient déjà Bertin, Shneiderman, Munzner, Cairo, Lupi, Fragapane — chacun à leur manière, chacun à leur époque. La donnée n'est pas le récit. Le récit n'est pas la vérité. L'auteur reste responsable. <mark>La technologie change ce qu'il faut savoir faire ; elle ne change pas ce qu'il faut savoir choisir.</mark></p>
+    </main>
+
+    <aside id="sources" aria-label="Sources">
+      <button class="panel-close" type="button" aria-label="Fermer les sources">Fermer ✕</button>
+      <button id="sources-collapse-btn" class="sidebar-edge-toggle" type="button" aria-label="Réduire le panneau Sources" title="Réduire le panneau Sources" aria-expanded="true">›</button>
+      <div class="sources-inner">
+        <h2>Sources</h2>
+        <ol id="sources-list">
+<li id="source-1">
+            <span class="cite-num">1</span>Segel, Edward et Jeffrey Heer.
+            <em>Narrative Visualization: Telling Stories with Data</em>.
+            IEEE Transactions on Visualization and Computer Graphics, vol. 16, n° 6, 2010.
+            <a href="http://vis.stanford.edu/files/2010-Narrative-InfoVis.pdf" target="_blank" rel="noopener">vis.stanford.edu ↗</a>
+            <span class="accessed">consulté le 5 mai 2026</span>
+          </li>
+          <li id="source-2">
+            <span class="cite-num">2</span>Munzner, Tamara.
+            <em>Visualization Analysis and Design</em>.
+            CRC Press, AK Peters Visualization Series, 2014.
+            <a href="https://www.cs.ubc.ca/~tmm/vadbook/" target="_blank" rel="noopener">cs.ubc.ca/~tmm/vadbook ↗</a>
+            <span class="accessed">consulté le 5 mai 2026</span>
+          </li>
+          <li id="source-3">
+            <span class="cite-num">3</span>Kosara, Robert et Jock Mackinlay.
+            <em>Storytelling: The Next Step for Visualization</em>.
+            IEEE Computer, vol. 46, n° 5, mai 2013.
+            <a href="https://kosara.net/papers/2013/Kosara-Computer-2013.pdf" target="_blank" rel="noopener">kosara.net ↗</a>
+            <span class="accessed">consulté le 5 mai 2026</span>
+          </li>
+          <li id="source-4">
+            <span class="cite-num">4</span>Riche, Nathalie Henry, Christophe Hurter, Nicholas Diakopoulos et Sheelagh Carpendale (éd.).
+            <em>Data-Driven Storytelling</em>.
+            CRC Press, AK Peters Visualization Series, 2018.
+            <a href="https://www.routledge.com/Data-Driven-Storytelling/Riche-Hurter-Diakopoulos-Carpendale/p/book/9781138197107" target="_blank" rel="noopener">routledge.com ↗</a>
+            <span class="accessed">consulté le 5 mai 2026</span>
+          </li>
+          <li id="source-5">
+            <span class="cite-num">5</span>Bertin, Jacques.
+            <em>Sémiologie graphique : les diagrammes, les réseaux, les cartes</em>.
+            Gauthier-Villars/Mouton, Paris, 1967 (rééd. EHESS, 2013). Synthèse pédagogique des huit variables visuelles :
+            <a href="https://en.wikipedia.org/wiki/Visual_variable" target="_blank" rel="noopener">wikipedia.org/Visual_variable ↗</a>
+            <span class="accessed">consulté le 5 mai 2026</span>
+          </li>
+          <li id="source-6">
+            <span class="cite-num">6</span>Shneiderman, Ben.
+            <em>The Eyes Have It: A Task by Data Type Taxonomy for Information Visualizations</em>.
+            Proceedings of the IEEE Symposium on Visual Languages, 1996.
+            <a href="https://www.cs.umd.edu/~ben/papers/Shneiderman1996eyes.pdf" target="_blank" rel="noopener">cs.umd.edu ↗</a>
+            <span class="accessed">consulté le 5 mai 2026</span>
+          </li>
+          <li id="source-7">
+            <span class="cite-num">7</span>Meirelles, Isabel.
+            <em>Design for Information: An Introduction to the Histories, Theories, and Best Practices Behind Effective Information Visualizations</em>.
+            Rockport Publishers, 2013.
+            <a href="https://isabelmeirelles.com/book-design-for-information/" target="_blank" rel="noopener">isabelmeirelles.com ↗</a>
+            <span class="accessed">consulté le 5 mai 2026</span>
+          </li>
+          <li id="source-8">
+            <span class="cite-num">8</span>Cairo, Alberto.
+            <em>The Truthful Art: Data, Charts, and Maps for Communication</em>.
+            New Riders, 2016. Voir aussi <em>The Functional Art</em> (2012).
+            <a href="https://www.amazon.com/Truthful-Art-Data-Charts-Communication/dp/0321934075" target="_blank" rel="noopener">amazon.com ↗</a>
+            <span class="accessed">consulté le 5 mai 2026</span>
+          </li>
+          <li id="source-9">
+            <span class="cite-num">9</span>Lupi, Giorgia.
+            <em>Data Humanism: The Revolution Will Be Visualized</em>.
+            Manifeste, 2017, publié sur PrintMag puis sur le site personnel de Lupi.
+            <a href="http://giorgialupi.com/data-humanism-my-manifesto-for-a-new-data-wold/" target="_blank" rel="noopener">giorgialupi.com ↗</a>
+            <span class="accessed">consulté le 5 mai 2026</span>
+          </li>
+          <li id="source-10">
+            <span class="cite-num">10</span>Lupi, Giorgia et Stefanie Posavec.
+            <em>Dear Data</em>.
+            Princeton Architectural Press, 2016. Acquis par le MoMA en 2017.
+            <a href="http://www.dear-data.com/" target="_blank" rel="noopener">dear-data.com ↗</a>
+            <span class="accessed">consulté le 5 mai 2026</span>
+          </li>
+          <li id="source-11">
+            <span class="cite-num">11</span>Fragapane, Federica.
+            <em>The Stories Behind a Line: A Visual Narrative of Six Asylum Seekers' Routes</em>.
+            2017. Récit méthodologique sur Medium (« The Stories Behind a Line »).
+            <a href="https://www.storiesbehindaline.com/" target="_blank" rel="noopener">storiesbehindaline.com ↗</a>
+            <span class="accessed">consulté le 5 mai 2026</span>
+          </li>
+          <li id="source-12">
+            <span class="cite-num">12</span>Gartner.
+            <em>By 2025, Data Stories Will Be the Most Widespread Way of Consuming Analytics</em>, prédiction citée notamment dans MIT Sloan Management Review et confirmée comme contexte par la littérature 2024–2025.
+            <a href="https://sloanreview.mit.edu/article/the-enduring-power-of-data-storytelling-in-the-generative-ai-era/" target="_blank" rel="noopener">sloanreview.mit.edu ↗</a>
+            <span class="accessed">consulté le 5 mai 2026</span>
+          </li>
+          <li id="source-13">
+            <span class="cite-num">13</span>Li, Haotian et al.
+            <em>Gen4DS: Workshop on Data Storytelling in an Era of Generative AI</em>.
+            IEEE VIS 2024 Workshop, octobre 2024. Article de cadrage : arXiv 2404.01622.
+            <a href="https://gen4ds.github.io/gen4ds/" target="_blank" rel="noopener">gen4ds.github.io ↗</a>
+            <span class="accessed">consulté le 5 mai 2026</span>
+          </li>
+          <li id="source-14">
+            <span class="cite-num">14</span><em>Reflection on Data Storytelling Tools in the Generative AI Era from the Human-AI Collaboration Perspective</em>.
+            Survey, 2025, arXiv 2503.02631.
+            <a href="https://arxiv.org/html/2503.02631v1" target="_blank" rel="noopener">arxiv.org/2503.02631 ↗</a>
+            <span class="accessed">consulté le 5 mai 2026</span>
+          </li>
+          <li id="source-15">
+            <span class="cite-num">15</span>Goldenberg, Russell.
+            <em>An Introduction to Scrollama.js</em>.
+            The Pudding, 2017 (mis à jour). Bibliothèque sur GitHub : russellsamora/scrollama.
+            <a href="https://pudding.cool/process/introducing-scrollama/" target="_blank" rel="noopener">pudding.cool ↗</a>
+            <span class="accessed">consulté le 5 mai 2026</span>
+          </li>
+          <li id="source-16">
+            <span class="cite-num">16</span>Hart, Vi et Nicky Case.
+            <em>Parable of the Polygons: A playable post on the shape of society</em>. 2014. Voir aussi <em>Evolution of Trust</em> (Case, 2017). Concept <em>explorable explanation</em> : Bret Victor (2011).
+            <a href="https://ncase.me/polygons/" target="_blank" rel="noopener">ncase.me/polygons ↗</a>
+            <span class="accessed">consulté le 5 mai 2026</span>
+          </li>
+          <li id="source-17">
+            <span class="cite-num">17</span>Fragapane, Federica.
+            <em>Data is Not Neutral</em>, entretien Designboom, juin 2025.
+            <a href="https://www.designboom.com/design/data-federica-fragapane-soft-forms-hard-facts-inequalities-shapes-triennale-milano-interview-06-08-2025/" target="_blank" rel="noopener">designboom.com ↗</a>
+            <span class="accessed">consulté le 5 mai 2026</span>
+          </li>
+          <li id="source-18">
+            <span class="cite-num">18</span>Shen, Leixian, Haotian Li, Yun Wang et Huamin Qu.
+            <em>From Data to Story: Towards Automatic Animated Data Video Creation with LLM-based Multi-Agent Systems</em>.
+            IEEE VIS Gen4DS Workshop, 2024.
+            <a href="https://gen4ds.github.io/gen4ds/" target="_blank" rel="noopener">gen4ds.github.io ↗</a>
+            <span class="accessed">consulté le 5 mai 2026</span>
+          </li>
+          <li id="source-19">
+            <span class="cite-num">19</span>Reuters Graphics.
+            <em>How Iran Built a Multibillion-Dollar Global Oil Trade Despite Sanctions</em>.
+            Reuters Special Report, 2024. Cité parmi les meilleures pièces de 2024 par GIJN.
+            <a href="https://www.reuters.com/investigates/" target="_blank" rel="noopener">reuters.com/investigates ↗</a>
+            <span class="accessed">consulté le 5 mai 2026</span>
+          </li>
+        </ol>
+      </div>
+    </aside>
+
+  </div><!-- /.layout -->
+
+  <button id="sources-expand-btn" class="sidebar-edge-toggle" type="button" aria-label="Afficher le panneau Sources" title="Afficher le panneau Sources" aria-expanded="false" hidden>‹</button>
+
+  <!-- Zoom overlay -->
+  <div id="zoom-overlay" hidden role="dialog" aria-modal="true" aria-label="Schéma agrandi">
+    <div id="zoom-header">
+      <span id="zoom-caption"></span>
+      <div class="zoom-controls">
+        <button class="zoom-out" type="button" aria-label="Dézoomer">−</button>
+        <button class="zoom-reset" type="button" aria-label="Réinitialiser">Reset</button>
+        <button class="zoom-in" type="button" aria-label="Zoomer">+</button>
+        <button class="zoom-close" type="button" aria-label="Fermer">×</button>
+      </div>
+    </div>
+    <div id="zoom-stage" tabindex="-1">
+      <div id="zoom-content"></div>
+      <div id="zoom-hint">molette / pinch pour zoomer · clic-glisser pour déplacer · Esc pour fermer</div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div id="modal-root" hidden role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card">
+      <button class="modal-close" data-close type="button" aria-label="Fermer">×</button>
+      <p class="modal-eyebrow" id="modal-eyebrow"></p>
+      <h3 id="modal-title"></h3>
+      <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <script>
+    /* ───────── SCHEMAS — Modal content for interactive SVG regions ───────── */
+    const SCHEMAS = {
+      "schema-01": {
+        "comic-strip": { eyebrow: "Schéma 1 — Genre", title: "Comic strip", body: "<p>Séquence de panneaux illustrés, ton conversationnel ou narratif, charge émotionnelle assumée. Linéaire stricte par construction.</p><p><strong>Règle d'or :</strong> le ton est le facteur décisif. Un comic strip froid est un slideshow raté. Archétypes : <em>Parable of the Polygons</em> (Vi Hart &amp; Nicky Case), les bandes de Mona Chalabi pour <em>The Guardian</em>.</p>" },
+        "film-video": { eyebrow: "Schéma 1 — Genre", title: "Film / video / animation", body: "<p>Le format le plus auteur-driven. Le tempo est imposé seconde par seconde, le lecteur perd l'option « relire un passage » sauf à scrubber.</p><p><strong>Règle d'or :</strong> maîtrise du tempo — chaque seconde ajoute ou rate. Cas naturel : sujet à forte charge narrative qui bénéficie d'une voix off et d'un montage. Anti-cas : briefing court, où le lecteur veut piocher.</p>" },
+        "annotated": { eyebrow: "Schéma 1 — Genre", title: "Annotated chart", body: "<p>Un graphique unique, surchargé d'annotations textuelles et de marqueurs qui pointent les éléments saillants. Forme dominante du data journalisme moderne.</p><p><strong>Règle d'or :</strong> une seule pointe par graphique. Si vous en avez deux, faites deux graphiques. Le format est court, dense, sobre — il sert un argument précis, pas une exposition générale.</p>" },
+        "magazine": { eyebrow: "Schéma 1 — Genre", title: "Magazine style", body: "<p>Long-format texte et images intercalées, à la <em>The Atlantic</em> ou <em>Le Monde Magazine</em>. Le texte porte le récit, les visuels appuient des moments clés.</p><p><strong>Règle d'or :</strong> le texte porte la moitié de la charge ; les visuels doivent travailler en complément, pas en redondance. Format de référence pour les contenus durables — ce dossier en est un exemple.</p>" },
+        "scrolly": { eyebrow: "Schéma 1 — Genre dominant 2026", title: "Scrollytelling", body: "<p>Le format hybride mature du web : le scroll impose l'ordre, mais le lecteur contrôle le tempo et peut revenir en arrière. Apparu en 2012 avec « Snow Fall » du <em>NYT</em>, codifié par la bibliothèque scrollama.</p><p><strong>Règle d'or :</strong> la mécanique du scroll est sacrée — pas de pop-ups, pas de modaux qui bloquent, pas d'appel à l'action qui interrompt le flux. Pattern dominant pour les long-formats publics 2025–2026.</p>" },
+        "slideshow": { eyebrow: "Schéma 1 — Genre", title: "Slide show", body: "<p>Séquence de slides, contrôle linéaire par bouton « suivant ». Variante moderne : chaque slide encapsule une mini-exploration interactive.</p><p><strong>Règle d'or :</strong> chaque slide doit faire avancer le récit <em>et</em> offrir une poignée d'exploration. Sinon c'est un PowerPoint déguisé. Format utile pour la pédagogie et les <em>data tours</em> guidés.</p>" },
+        "flow-chart": { eyebrow: "Schéma 1 — Genre", title: "Flow chart", body: "<p>Récit à branchements — le lecteur choisit une voie, qui le mène à un sous-récit. Le genre le plus reader-driven parmi les sept de Segel-Heer (avec le partitioned poster).</p><p><strong>Règle d'or :</strong> si la branche n'a pas une vraie conséquence sur la suite, c'est un slideshow qui se cherche. Cas naturel : explorations « what if », simulations, calculateurs personnels.</p>" },
+        "poster": { eyebrow: "Schéma 1 — Genre", title: "Partitioned poster", body: "<p>Une seule planche, plusieurs zones disposées librement, le lecteur compose son ordre de lecture. Forme de l'infographie classique du <em>National Geographic</em> ou de <em>Le Monde diplomatique</em>.</p><p><strong>Règle d'or :</strong> hiérarchie forte — un point d'entrée évident, des satellites. Sinon le lecteur est perdu dans une grille égalitaire et abandonne.</p>" }
+      },
+      "schema-02": {
+        "cairo": { eyebrow: "Schéma 2 — Couche 5", title: "Cairo (2012, 2016) — éthique du graphique", body: "<p>Alberto Cairo, <em>Knight Chair in Visual Journalism</em> à l'université de Miami, hiérarchise la qualité d'une visualisation en cinq niveaux : <strong>truthful → functional → beautiful → insightful → enlightening</strong>. L'ordre n'est pas négociable.</p><p>Sa thèse opérationnelle : « <em>honesty, clarity, and depth come first</em> ». Sert de garde-fou contre la dérive éditoriale typique du data journalisme — courber la donnée pour servir le récit.</p>" },
+        "meirelles": { eyebrow: "Schéma 2 — Couche 4", title: "Meirelles (2013) — six structures", body: "<p>Isabel Meirelles, à Northeastern, propose une typologie en six structures que la donnée prend nécessairement quand on la visualise : <em>hierarchical</em> (arbres), <em>relational</em> (réseaux), <em>temporal</em> (timelines, flux), <em>spatial</em> (cartes), <em>spatio-temporal</em>, et <em>textual</em>.</p><p>Pour une expérience narrative, ce cadre force la question : quelle structure dominante porte mon récit ? Une expérience qui mélange trois structures sans les hiérarchiser perd le lecteur.</p>" },
+        "munzner": { eyebrow: "Schéma 2 — Couche 3", title: "Munzner (2014) — What/Why/How", body: "<p>Tamara Munzner pose un cadre tripartite qui sépare trois questions trop souvent confondues : <strong>What</strong> (type de donnée), <strong>Why</strong> (tâche analytique), <strong>How</strong> (encodage et interaction).</p><p>L'erreur la plus commune, écrit-elle, est de commencer par How — choisir un type de graphique avant d'avoir clarifié ce qu'on doit encoder et pourquoi. Le cadre est itératif : pour une expérience complexe, on traverse plusieurs cycles, un par section.</p>" },
+        "shneiderman": { eyebrow: "Schéma 2 — Couche 2", title: "Shneiderman (1996) — le mantra", body: "<p>« <em>Overview first, zoom and filter, then details-on-demand.</em> » Cette phrase de Ben Shneiderman, devenue loi non écrite de la visualisation interactive, structure aussi bien Tableau qu'un long-format du <em>Financial Times</em>.</p><p>Shneiderman propose aussi une taxonomie par tâche : sept tâches élémentaires que tout dispositif visuel peut supporter — overview, zoom, filter, details, relate, history, extract.</p>" },
+        "bertin": { eyebrow: "Schéma 2 — Couche 1", title: "Bertin (1967) — sémiologie graphique", body: "<p>Jacques Bertin, cartographe français, identifie en 1967 huit variables visuelles : deux planaires (X, Y) et six rétiniennes — taille, valeur, grain, couleur, orientation, forme.</p><p>L'apport est radical : la qualité d'un graphique ne tient pas au goût mais à <strong>l'adéquation entre la nature de la donnée et la variable visuelle choisie</strong>. Encoder un nombre par une teinte au lieu d'une longueur introduit un handicap perceptuel.</p>" }
+      },
+      "schema-03": {
+        "magazine-row": { eyebrow: "Schéma 3 — Magazine style", title: "Magazine style — règle d'or", body: "<p>Linéaire ouverte (le lecteur revient par sections), interactivité faible, registre sobre, charge de production élevée.</p><p><strong>Règle d'or :</strong> le texte porte la moitié de la charge ; les visuels doivent travailler en complément, pas en redondance. Format des contenus durables — rapports, dossiers, livres blancs.</p>" },
+        "annotated-row": { eyebrow: "Schéma 3 — Annotated chart", title: "Annotated chart — règle d'or", body: "<p>Linéaire courte, interactivité faible, registre sobre, charge légère.</p><p><strong>Règle d'or :</strong> une seule pointe par graphique. Si vous en avez deux, faites deux graphiques. Le format est court, dense, sobre — il sert un argument précis.</p>" },
+        "poster-row": { eyebrow: "Schéma 3 — Partitioned poster", title: "Partitioned poster — règle d'or", body: "<p>Structure parallèle (le lecteur compose son ordre), interactivité faible, registre intermédiaire, charge moyenne.</p><p><strong>Règle d'or :</strong> hiérarchie forte — un point d'entrée évident, des satellites. Sans hiérarchie, le lecteur est perdu dans une grille égalitaire.</p>" },
+        "flow-row": { eyebrow: "Schéma 3 — Flow chart", title: "Flow chart — règle d'or", body: "<p>Structure branchante, interactivité élevée, registre variable, charge moyenne à élevée.</p><p><strong>Règle d'or :</strong> si la branche n'a pas une vraie conséquence sur la suite, c'est un slideshow qui se cherche. Cas naturel : « what if », simulations, calculateurs.</p>" },
+        "comic-row": { eyebrow: "Schéma 3 — Comic strip", title: "Comic strip — règle d'or", body: "<p>Linéaire courte, interactivité faible, registre chaud-tonal, charge moyenne (illustrations).</p><p><strong>Règle d'or :</strong> le ton est le facteur décisif. Un comic strip froid est un slideshow raté. Archétypes : <em>Parable of the Polygons</em>, les bandes de Mona Chalabi.</p>" },
+        "slide-row": { eyebrow: "Schéma 3 — Slide show", title: "Slide show — règle d'or", body: "<p>Linéaire avec interactivité locale par slide, charge moyenne à élevée.</p><p><strong>Règle d'or :</strong> chaque slide doit faire avancer le récit <em>et</em> offrir une poignée d'exploration. Sinon c'est un PowerPoint déguisé.</p>" },
+        "scrolly-row": { eyebrow: "Schéma 3 — Scrollytelling", title: "Scrollytelling — pattern dominant 2026", body: "<p>Quasi-linéaire (le scroll impose l'ordre, le lecteur contrôle le tempo), interactivité élevée, registre variable, charge élevée.</p><p><strong>Règle d'or :</strong> la mécanique du scroll est sacrée — pas de pop-ups, pas de modaux qui bloquent, pas d'appel à l'action qui interrompt le flux. Format de référence pour les long-formats publics 2025–2026.</p>" },
+        "film-row": { eyebrow: "Schéma 3 — Film / video", title: "Film / video — règle d'or", body: "<p>Linéaire stricte, interactivité quasi-nulle (scrub), registre chaleureux, charge très élevée.</p><p><strong>Règle d'or :</strong> maîtrise du tempo — chaque seconde ajoute ou rate. Format coûteux à produire, naturel pour les sujets qui bénéficient d'une voix off et d'un montage.</p>" }
+      },
+      "schema-04": {
+        "moderniste": { eyebrow: "Schéma 4 — Posture moderniste", title: "La donnée comme miroir", body: "<p>Tradition Bertin → Tukey → Tufte → Munzner. La donnée est un fait brut, la visualisation un médium transparent, le designer s'efface — il est neutre.</p><p>Métrique de qualité : précision et fidélité. Usage naturel : analyse, monitoring, dashboard, recherche scientifique. Archétype : le tableau de bord financier, le dashboard épidémiologique.</p><p>Cette posture reste dominante dans le monde analytique et institutionnel, où la prétention à l'objectivité a une fonction (engager la responsabilité de l'institution sur ce qu'elle publie).</p>" },
+        "humaniste": { eyebrow: "Schéma 4 — Posture humaniste", title: "La donnée comme acte", body: "<p>École Lupi, Posavec, Fragapane, Bremer, Wu, Chalabi. La donnée est d'origine humaine et située, la visualisation est un acte d'interprétation, le designer assume son énoncé.</p><p>Métrique de qualité : justesse de la mise en scène. Usage naturel : récit civique, sensibilisation, connaissance de soi, art. Archétype : <em>Dear Data</em>, <em>The Stories Behind a Line</em>, les pièces MoMA 2017–2023.</p><p>Posture issue de la philosophie féministe des sciences (Donna Haraway, sciences situées), avec une portée pratique : légitimer les choix éditoriaux explicites du designer narratif.</p>" }
+      },
+      "schema-05": {
+        "classic-data": { eyebrow: "Schéma 5 — Pipeline classique", title: "Étape 1 — Données", body: "<p>Collecte (CSV, API, scraping), nettoyage, enrichissement. Outils dominants : Python + Pandas, dbt, parfois R.</p><p>Étape technique mais pas anodine : c'est ici que se joue la qualité de tout le reste. Une donnée mal nettoyée produit un récit faussé que ni le scénario ni les visuels ne rattrapent.</p>" },
+        "classic-explore": { eyebrow: "Schéma 5 — Pipeline classique", title: "Étape 2 — Exploration", body: "<p>Notebooks Jupyter ou Observable, graphiques rapides, recherche d'angles. C'est l'aire de l'analyste-designer.</p><p>Le but n'est pas d'illustrer une thèse pré-établie mais de la faire émerger — moments saillants, anomalies, tournants. Cette étape est itérative et imprévisible.</p>" },
+        "classic-script": { eyebrow: "Schéma 5 — Pipeline classique", title: "Étape 3 — Scénario", body: "<p>Storyboard, sections, transitions, hooks. Travail d'auteur-designer en duo, parfois trio avec un journaliste.</p><p>Le scénario fixe l'ordre, le tempo, la pointe. C'est là que se prend la décision « scrollytelling vs slideshow vs annotated chart ». Cette décision conditionne tout le reste.</p>" },
+        "classic-build": { eyebrow: "Schéma 5 — Pipeline classique", title: "Étape 4 — Build", body: "<p>Implémentation : HTML/CSS sémantique, scrollama (ou alternatives), D3.js ou Observable Plot pour les graphiques, Svelte pour la composition (chez le NYT et The Pudding).</p><p>Coût typique pour un long-format soigné : 3 à 8 semaines pour une équipe de 3–4 personnes (journaliste, designer, développeur, parfois data scientist).</p>" },
+        "classic-publish": { eyebrow: "Schéma 5 — Pipeline classique", title: "Étape 5 — Publication", body: "<p>Build statique, déploiement CDN, QA accessibilité (WCAG), tests mobile, screenshots multi-navigateurs.</p><p>Étape souvent sous-estimée : un scrollytelling cassé sur iOS Safari ou avec un lecteur d'écran ferme l'expérience à un public significatif.</p>" },
+        "agent-orchestrator": { eyebrow: "Schéma 5 — Pipeline agentique", title: "Orchestrateur LLM", body: "<p>Un LLM (typiquement Claude, GPT ou Gemini en mode agentique) reçoit le brief utilisateur, décompose la tâche, délègue aux agents spécialisés, collecte leurs sorties, vérifie la cohérence, itère.</p><p>Pattern issu du papier <em>From Data to Story</em> (Shen et al., Gen4DS 2024). Encore expérimental en 2026, mais des instances opérationnelles existent en interne chez plusieurs équipes.</p>" },
+        "agent-data": { eyebrow: "Schéma 5 — Pipeline agentique", title: "Agent 1 — Données &amp; insights", body: "<p>Reçoit un dataset, navigue, teste des hypothèses, produit une liste d'insights ranking par saillance.</p><p>Capacité opérationnelle en 2026 : à partir d'un dataset propre, l'agent identifie en quelques minutes les anomalies, corrélations, tournants. Le travail humain résiduel : trier ce qui est intéressant de ce qui est banal.</p>" },
+        "agent-script": { eyebrow: "Schéma 5 — Pipeline agentique", title: "Agent 2 — Scénario", body: "<p>Reçoit la liste d'insights, propose une séquence narrative (hook, corps, pointe). Étape la moins mature : les LLM produisent typiquement des plans sur-structurés (TLDR, intro, plan annoncé, conclusion télégraphiée) qui demandent une casse humaine pour servir le sujet.</p><p>C'est ici que la valeur ajoutée du métier humain se concentre.</p>" },
+        "agent-viz": { eyebrow: "Schéma 5 — Pipeline agentique", title: "Agent 3 — Visualisation", body: "<p>Génère les graphiques. Cible naturelle : les grammaires déclaratives (Vega-Lite, Observable Plot), parce que la spécification est un JSON que le LLM produit fiable.</p><p>Outils émergents : Lida (Microsoft), GPT Vision pour le mock-up, Claude pour le code SVG sur mesure. Qualité opérationnelle en 2026 : 70–80 % du chemin, à raffiner par le designer.</p>" },
+        "agent-narration": { eyebrow: "Schéma 5 — Pipeline agentique", title: "Agent 4 — Texte &amp; narration", body: "<p>Rédige les steps de scrollytelling, les captions, les annotations. Pour une vidéo, la voix off + le script de synchronisation.</p><p>Compétence où les LLM sont les plus matures (entraînés explicitement à la rédaction). Le risque dominant : le conformisme stylistique — palettes lexicales consensuelles, tournures attendues.</p>" },
+        "human-reviewer": { eyebrow: "Schéma 5 — Pipeline agentique", title: "Le réviseur humain final", body: "<p>Acte d'auteur final. Vérifie la thèse, le rythme, le registre, prend la responsabilité éditoriale.</p><p>Cet étage est <strong>non négociable</strong> en 2026 pour tout artefact à enjeu public. C'est ce qui distingue un livrable d'une production automatique. Sans réviseur humain : pas d'auteur, pas de responsabilité, pas de point de vue.</p>" }
+      },
+      "schema-06": {
+        "step-cadrage": { eyebrow: "Schéma 6 — Étape 1", title: "Cadrage du sujet et thèse", body: "<p>Acte humain dominant. L'auteur identifie le sujet, la pointe éditoriale, le public visé.</p><p><strong>Apport IA :</strong> sparring partner — formuler des objections, proposer des angles non anticipés.<br><strong>Risque :</strong> un cadrage déterminé par un LLM seul produit des récits <em>moyens</em>, conformes à la moyenne du discours public.</p>" },
+        "step-donnees": { eyebrow: "Schéma 6 — Étape 2", title: "Collecte et nettoyage", body: "<p>IA dominante. Scraping, parsing PDF, géocodage, jointures.</p><p><strong>Apport IA :</strong> facteur 5–10 sur le temps de production de pipelines de données.<br><strong>Risque :</strong> hallucination silencieuse — un LLM qui invente une colonne ou fabrique une moyenne.<br><strong>Garde-fou :</strong> tout calcul produit par un LLM doit être reproduit par une trace explicite.</p>" },
+        "step-exploration": { eyebrow: "Schéma 6 — Étape 3", title: "Exploration analytique", body: "<p>IA dominante avec curation humaine. C'est l'étape où l'IA apporte le plus de valeur en 2026.</p><p><strong>Apport IA :</strong> 30 visualisations exploratoires en quelques minutes, hypothèses systématiques.<br><strong>Risque :</strong> confondre signal et bruit — l'IA ne distingue pas bien intéressant et banal, faute de contexte éditorial.</p>" },
+        "step-scenario": { eyebrow: "Schéma 6 — Étape 4", title: "Scénarisation — acte d'auteur", body: "<p>Acte humain non substituable. Choix de l'ordre, du tempo, de la pointe.</p><p><strong>Risque :</strong> sur-structuration LLM (TLDR, intro, plan annoncé, conclusion télégraphiée).<br>Un bon scénariste humain casse cette structure pour servir le sujet. C'est ici que la valeur ajoutée du métier se concentre.</p>" },
+        "step-production": { eyebrow: "Schéma 6 — Étape 5", title: "Production des artefacts", body: "<p>Augmentation IA forte. Rédaction des captions, premières versions des schémas, code de scrollytelling.</p><p><strong>Risque :</strong> clichés visuels — palettes par défaut, polices génériques, encodages sous-optimaux.<br><strong>Bon usage :</strong> l'IA pose une base 70 %, le designer porte à 100 %. Vérifier la fidélité de l'encodage et la cohérence inter-artefacts.</p>" },
+        "step-integration": { eyebrow: "Schéma 6 — Étape 6", title: "Intégration interactive", body: "<p>IA dominante. Wiring du scrollytelling, modaux, tooltips, accessibilité, mobile.</p><p><strong>Apport IA :</strong> Claude Code, Cursor, GitHub Copilot atteignent en 2026 une qualité opérationnelle qui divise par 2,5 le temps de build.<br><strong>Risque :</strong> mobile cassé — l'IA produit du code valide mais peu robuste sur petits écrans sans demande explicite.</p>" },
+        "step-qa": { eyebrow: "Schéma 6 — Étape 7", title: "QA et publication", body: "<p>Mixte. Lints accessibilité, screenshots, vérifications automatisables.</p><p><strong>Risque :</strong> effacement du POV — la relecture LLM par défaut adoucit les positions tranchées.<br><strong>Garde-fou :</strong> jugement final humain sur la cohérence éditoriale, la justesse du ton, la fidélité au brief.</p>" }
+      },
+      "schema-07": {
+        "cas-A": { eyebrow: "Schéma 7 — Cas A", title: "Briefing court, public expert", body: "<p>Public : comité de direction, client qui décide. Tempo 5–15 minutes. Charge tolérée 1–3 jours.</p><p><strong>Pattern dominant :</strong> <em>annotated chart</em> en série, mis en forme en partitioned poster d'une page. Thèse explicite, 3–5 graphiques annotés, conclusion actionnable.</p><p><strong>À éviter :</strong> slideshow interactif (demande une attention continue qu'un comité n'a pas), vidéo (prive le lecteur de l'option « relire un passage »).</p>" },
+        "cas-B": { eyebrow: "Schéma 7 — Cas B", title: "Long-format public, civique", body: "<p>Public : grand public motivé. Tempo 15–40 minutes. Charge plusieurs semaines.</p><p><strong>Pattern dominant :</strong> <em>scrollytelling</em> avec sticky graphic central. Voir « Snow Fall » NYT (2012), Reuters sur les sanctions iraniennes (2024).</p><p><strong>Variantes :</strong> explorable explanation (Nicky Case) si le sujet contient un mécanisme simulable ; comic strip pour les sujets émotionnellement engageants.</p>" },
+        "cas-C": { eyebrow: "Schéma 7 — Cas C", title: "Document de référence durable", body: "<p>Public : praticiens, étudiants, lecteurs qui reviendront. Tempo non-linéaire. Charge élevée.</p><p><strong>Pattern dominant :</strong> <em>magazine style</em> avec TOC persistante. C'est le format de ce dossier — et celui des rapports McKinsey/BCG, des livres blancs Anthropic.</p><p><strong>Anti-pattern :</strong> scrollytelling — il impose un chemin que le lecteur de référence ne veut pas. Il veut piocher.</p>" },
+        "cas-D": { eyebrow: "Schéma 7 — Cas D", title: "Dispositif émotionnel", body: "<p>Sujet humain ou politique, public grand public, enjeu de sensibilisation. Tempo 3–8 minutes.</p><p><strong>Pattern dominant :</strong> héritage Lupi/Fragapane — formes organiques, palette chaude, encodage qui épouse la matière humaine. Datasets minuscules pourvu que chaque cas soit travaillé en profondeur.</p><p><strong>Anti-pattern :</strong> palette analytique grise/bleue de dashboard, qui désémantise le sujet et neutralise l'émotion.</p>" },
+        "cas-E": { eyebrow: "Schéma 7 — Cas E", title: "Outil interne récurrent", body: "<p>Public : équipe data, métier qui consulte hebdomadairement. Tempo court mais répété. Charge maintenance.</p><p><strong>Ce n'est pas une expérience narrative</strong> — c'est un dashboard, et c'est très bien comme ça.</p><p><strong>Piège :</strong> sur-narrer un usage qui demande de l'efficacité analytique. Se demander honnêtement : ai-je besoin d'un récit, ou d'un outil ?</p>" }
+      }
+    };
+
+    /* ───────── Modal dispatcher ───────── */
+    const modalRoot    = document.getElementById('modal-root');
+    const modalEyebrow = document.getElementById('modal-eyebrow');
+    const modalTitle   = document.getElementById('modal-title');
+    const modalBody    = document.getElementById('modal-body');
+    let lastFocused = null;
+
+    function openModal(eyebrow, title, body) {
+      lastFocused = document.activeElement;
+      modalEyebrow.textContent = eyebrow || '';
+      modalTitle.textContent = title || '';
+      modalBody.innerHTML = body || '';
+      modalRoot.hidden = false;
+      document.body.style.overflow = 'hidden';
+      modalRoot.querySelector('.modal-close')?.focus();
+    }
+    function closeModal() {
+      modalRoot.hidden = true;
+      document.body.style.overflow = '';
+      lastFocused?.focus();
+    }
+
+    document.addEventListener('click', (e) => {
+      const region = e.target.closest('.interactive[data-card]');
+      if (region) {
+        const svg = region.closest('svg[data-schema-id]');
+        const schemaId = svg?.dataset.schemaId;
+        const cardId = region.dataset.card;
+        const card = SCHEMAS?.[schemaId]?.[cardId];
+        if (card) { openModal(card.eyebrow || '', card.title || '', card.body || ''); return; }
+      }
+      if (e.target.matches('[data-close]')) { closeModal(); return; }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !modalRoot.hidden) { closeModal(); return; }
+      if ((e.key === 'Enter' || e.key === ' ') && document.activeElement?.matches('.interactive[data-card]')) {
+        e.preventDefault();
+        document.activeElement.click();
+      }
+    });
+
+    /* ───────── Citations → highlight in sidebar ───────── */
+    document.addEventListener('click', (e) => {
+      const cite = e.target.closest('.cite[data-cite]');
+      if (!cite) return;
+      e.preventDefault();
+      const n = cite.dataset.cite;
+      const li = document.getElementById('source-' + n);
+      if (!li) return;
+      const sources = document.getElementById('sources');
+      if (window.innerWidth <= 1024) sources.classList.add('open');
+      const layout = document.querySelector('.layout');
+      const wasCollapsed = layout?.classList.contains('sources-collapsed');
+      if (wasCollapsed) document.getElementById('sources-expand-btn')?.click();
+      const doScroll = () => {
+        li.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        li.classList.add('highlight');
+        clearTimeout(li._hl);
+        li._hl = setTimeout(() => li.classList.remove('highlight'), 2400);
+      };
+      if (wasCollapsed) setTimeout(doScroll, 320); else doScroll();
+    });
+
+    /* ───────── Tooltips: pin on click for mobile usability ───────── */
+    document.querySelectorAll('.term').forEach(t => {
+      if (!t.hasAttribute('tabindex')) t.setAttribute('tabindex', '0');
+      t.addEventListener('click', (e) => {
+        e.stopPropagation();
+        document.querySelectorAll('.term.pinned').forEach(p => { if (p !== t) p.classList.remove('pinned'); });
+        t.classList.toggle('pinned');
+      });
+    });
+    document.addEventListener('click', () => {
+      document.querySelectorAll('.term.pinned').forEach(p => p.classList.remove('pinned'));
+    });
+
+    /* ───────── TOC active section + smooth scroll ───────── */
+    const tocLinks = document.querySelectorAll('#toc a[href^="#"]');
+    tocLinks.forEach(a => {
+      a.addEventListener('click', (e) => {
+        const id = a.getAttribute('href').slice(1);
+        const target = document.getElementById(id);
+        if (target) {
+          e.preventDefault();
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          document.getElementById('toc').classList.remove('open');
+        }
+      });
+    });
+    if ('IntersectionObserver' in window) {
+      const sections = Array.from(document.querySelectorAll('main h2[id], main h1[id]'));
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            tocLinks.forEach(a => a.classList.remove('active'));
+            const link = document.querySelector('#toc a[href="#' + entry.target.id + '"]');
+            link?.classList.add('active');
+          }
+        });
+      }, { rootMargin: '-30% 0px -60% 0px' });
+      sections.forEach(s => observer.observe(s));
+    }
+
+    /* ───────── Mobile panels ───────── */
+    document.getElementById('toggle-toc')?.addEventListener('click', () => {
+      document.getElementById('sources').classList.remove('open');
+      document.getElementById('toc').classList.toggle('open');
+    });
+    document.getElementById('toggle-sources')?.addEventListener('click', () => {
+      document.getElementById('toc').classList.remove('open');
+      document.getElementById('sources').classList.toggle('open');
+    });
+    document.querySelectorAll('.panel-close').forEach(btn => {
+      btn.addEventListener('click', () => {
+        btn.closest('#toc, #sources')?.classList.remove('open');
+      });
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      const zoom = document.getElementById('zoom-overlay');
+      const modal = document.getElementById('modal-root');
+      if (zoom && !zoom.hidden) return;
+      if (modal && !modal.hidden) return;
+      const open = document.querySelector('#toc.open, #sources.open');
+      if (open) { e.preventDefault(); open.classList.remove('open'); }
+    });
+
+    /* ───────── Sources sidebar — desktop collapse/expand ───────── */
+    (function setupSourcesToggle() {
+      const layout      = document.querySelector('.layout');
+      const collapseBtn = document.getElementById('sources-collapse-btn');
+      const expandBtn   = document.getElementById('sources-expand-btn');
+      if (!layout || !collapseBtn || !expandBtn) return;
+      function setCollapsed(collapsed) {
+        layout.classList.toggle('sources-collapsed', collapsed);
+        expandBtn.hidden = !collapsed;
+        collapseBtn.setAttribute('aria-expanded', String(!collapsed));
+        expandBtn.setAttribute('aria-expanded', String(!collapsed));
+        try { localStorage.setItem('iat-sources-collapsed', collapsed ? '1' : '0'); } catch (_) {}
+      }
+      collapseBtn.addEventListener('click', () => setCollapsed(true));
+      expandBtn.addEventListener('click', () => {
+        setCollapsed(false);
+        requestAnimationFrame(() => collapseBtn.focus({ preventScroll: true }));
+      });
+      try { if (localStorage.getItem('iat-sources-collapsed') === '1') setCollapsed(true); } catch (_) {}
+    })();
+
+    /* ───────── Fullscreen zoom for schemas ───────── */
+    (function setupZoom() {
+      const overlay  = document.getElementById('zoom-overlay');
+      const stage    = document.getElementById('zoom-stage');
+      const content  = document.getElementById('zoom-content');
+      const captionE = document.getElementById('zoom-caption');
+      const hint     = document.getElementById('zoom-hint');
+      if (!overlay || !stage || !content) return;
+
+      let scale = 1, tx = 0, ty = 0;
+      let svgW = 0, svgH = 0;
+      let fitScale = 1;
+      let lastZoomTrigger = null;
+
+      function applyTransform() { content.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`; }
+      function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+      function fitToStage() {
+        if (!svgW || !svgH) return;
+        const r = stage.getBoundingClientRect();
+        const margin = 32;
+        fitScale = Math.min((r.width - margin * 2) / svgW, (r.height - margin * 2) / svgH);
+        scale = fitScale;
+        tx = (r.width - svgW * scale) / 2;
+        ty = (r.height - svgH * scale) / 2;
+        applyTransform();
+      }
+      function zoomAt(mx, my, factor) {
+        const newScale = clamp(scale * factor, fitScale * 0.5, fitScale * 16);
+        tx = mx - newScale * (mx - tx) / scale;
+        ty = my - newScale * (my - ty) / scale;
+        scale = newScale;
+        applyTransform();
+      }
+      function openZoom(svgEl, captionText) {
+        const clone = svgEl.cloneNode(true);
+        const vb = clone.viewBox?.baseVal;
+        svgW = (vb && vb.width)  || svgEl.getBoundingClientRect().width  || 1200;
+        svgH = (vb && vb.height) || svgEl.getBoundingClientRect().height || 780;
+        clone.setAttribute('width', svgW); clone.setAttribute('height', svgH);
+        clone.style.width = svgW + 'px'; clone.style.height = svgH + 'px';
+        content.innerHTML = '';
+        content.appendChild(clone);
+        captionE.textContent = captionText || '';
+        lastZoomTrigger = document.activeElement;
+        overlay.hidden = false;
+        document.body.style.overflow = 'hidden';
+        requestAnimationFrame(() => {
+          fitToStage();
+          stage.focus({ preventScroll: true });
+          if (hint) {
+            hint.classList.remove('fade');
+            clearTimeout(hint._t);
+            hint._t = setTimeout(() => hint.classList.add('fade'), 2600);
+          }
+        });
+      }
+      function closeZoom() {
+        overlay.hidden = true;
+        content.innerHTML = '';
+        document.body.style.overflow = '';
+        lastZoomTrigger?.focus?.();
+      }
+
+      document.querySelectorAll('.figure').forEach((fig) => {
+        const svg = fig.querySelector('svg');
+        if (!svg) return;
+        const cap = fig.querySelector('.figure-caption, figcaption');
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'zoom-btn';
+        btn.innerHTML = '⛶';
+        btn.setAttribute('aria-label', 'Agrandir le schéma en plein écran');
+        btn.title = 'Agrandir';
+        btn.addEventListener('click', (e) => { e.stopPropagation(); openZoom(svg, cap?.textContent?.trim() || ''); });
+        fig.appendChild(btn);
+      });
+
+      overlay.querySelector('.zoom-close')?.addEventListener('click', closeZoom);
+      document.addEventListener('keydown', (e) => {
+        if (overlay.hidden) return;
+        if (e.key === 'Escape') { e.preventDefault(); closeZoom(); }
+        else if (e.key === '+' || e.key === '=') { e.preventDefault(); const r = stage.getBoundingClientRect(); zoomAt(r.width/2, r.height/2, 1.25); }
+        else if (e.key === '-' || e.key === '_') { e.preventDefault(); const r = stage.getBoundingClientRect(); zoomAt(r.width/2, r.height/2, 1/1.25); }
+        else if (e.key === '0') { e.preventDefault(); fitToStage(); }
+      });
+
+      overlay.querySelector('.zoom-in')?.addEventListener('click', () => { const r = stage.getBoundingClientRect(); zoomAt(r.width/2, r.height/2, 1.25); });
+      overlay.querySelector('.zoom-out')?.addEventListener('click', () => { const r = stage.getBoundingClientRect(); zoomAt(r.width/2, r.height/2, 1/1.25); });
+      overlay.querySelector('.zoom-reset')?.addEventListener('click', fitToStage);
+
+      stage.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const r = stage.getBoundingClientRect();
+        const mx = e.clientX - r.left;
+        const my = e.clientY - r.top;
+        const factor = e.deltaY < 0 ? 1.15 : 1/1.15;
+        zoomAt(mx, my, factor);
+      }, { passive: false });
+
+      let dragging = false, sx = 0, sy = 0, stx = 0, sty = 0;
+      stage.addEventListener('pointerdown', (e) => {
+        if (e.target.closest('.interactive[data-card]')) return;
+        dragging = true;
+        stage.classList.add('grabbing');
+        stage.setPointerCapture?.(e.pointerId);
+        sx = e.clientX; sy = e.clientY; stx = tx; sty = ty;
+      });
+      stage.addEventListener('pointermove', (e) => {
+        if (!dragging) return;
+        tx = stx + (e.clientX - sx);
+        ty = sty + (e.clientY - sy);
+        applyTransform();
+      });
+      function endDrag(e) {
+        if (!dragging) return;
+        dragging = false;
+        stage.classList.remove('grabbing');
+        stage.releasePointerCapture?.(e.pointerId);
+      }
+      stage.addEventListener('pointerup', endDrag);
+      stage.addEventListener('pointercancel', endDrag);
+      stage.addEventListener('pointerleave', endDrag);
+
+      let pinchStartDist = 0, pinchStartScale = 1, pinchMid = { x: 0, y: 0 };
+      stage.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 2) {
+          dragging = false;
+          const t1 = e.touches[0], t2 = e.touches[1];
+          const dx = t1.clientX - t2.clientX, dy = t1.clientY - t2.clientY;
+          pinchStartDist = Math.hypot(dx, dy);
+          pinchStartScale = scale;
+          const r = stage.getBoundingClientRect();
+          pinchMid = { x: (t1.clientX + t2.clientX) / 2 - r.left, y: (t1.clientY + t2.clientY) / 2 - r.top };
+        }
+      }, { passive: true });
+      stage.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 2 && pinchStartDist > 0) {
+          e.preventDefault();
+          const t1 = e.touches[0], t2 = e.touches[1];
+          const d = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+          const factor = (d / pinchStartDist) * (pinchStartScale / scale);
+          zoomAt(pinchMid.x, pinchMid.y, factor);
+        }
+      }, { passive: false });
+      stage.addEventListener('touchend', (e) => { if (e.touches.length < 2) pinchStartDist = 0; });
+
+      window.addEventListener('resize', () => { if (!overlay.hidden) fitToStage(); });
+    })();
+  </script>
+</body>
+</html>
