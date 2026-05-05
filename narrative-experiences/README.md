@@ -17,6 +17,7 @@
   5. Pipelines techniques (scrollytelling classique vs agentique IA-driven)
   6. Chaîne de production augmentée par IA (sept étapes, apport et risque)
   7. Matrice contexte × pattern (cinq cas-types)
+- `images/refs/` — captures de référence embarquées dans cinq modaux à visée pédagogique (Parable of the Polygons CC0, Snow Fall NYT 2012, Dear Data, portfolio Federica Fragapane, The Pudding).
 
 ## Comment lire
 
