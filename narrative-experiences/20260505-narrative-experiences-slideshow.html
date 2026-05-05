@@ -245,6 +245,9 @@ mark { background: linear-gradient(transparent 58%, rgba(178, 59, 27, 0.14) 58%)
 <script>
 'use strict';
 
+const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const FADE_MS = REDUCED_MOTION ? 0 : 250;
+
 const SCENES = [
   { id: 'intro', type: 'punchline', body: 'Une expérience narrative <mark>impose une structure auctoriale</mark> aux données tout en <mark>préservant l\'agence cognitive</mark> du lecteur.', attribution: 'Mathieu Guglielmino, mai 2026' },
   {
@@ -360,34 +363,51 @@ function render() {
   }
 }
 
+let __transitioning = false;
+
+async function gotoScene(index) {
+  if (index < 0 || index >= SCENES.length || __transitioning) return;
+  __transitioning = true;
+  stage.classList.add('fading-out');
+  await new Promise(r => setTimeout(r, FADE_MS));
+  state.sceneIndex = index;
+  state.stepIndex = 0;
+  render();
+  stage.classList.remove('fading-out');
+  await new Promise(r => setTimeout(r, FADE_MS));
+  __transitioning = false;
+}
+
 function advance() {
+  if (__transitioning) return;
   const scene = SCENES[state.sceneIndex];
   const lastStep = (scene.steps && scene.steps.length > 0) ? scene.steps.length - 1 : 0;
   if (state.stepIndex < lastStep) {
     state.stepIndex++;
+    render();
   } else if (state.sceneIndex < SCENES.length - 1) {
-    state.sceneIndex++;
-    state.stepIndex = 0;
+    gotoScene(state.sceneIndex + 1);
   }
-  render();
 }
 
 function retreat() {
+  if (__transitioning) return;
   if (state.stepIndex > 0) {
     state.stepIndex--;
+    render();
   } else if (state.sceneIndex > 0) {
-    state.sceneIndex--;
-    const prevScene = SCENES[state.sceneIndex];
-    state.stepIndex = (prevScene.steps && prevScene.steps.length > 0) ? prevScene.steps.length - 1 : 0;
+    const prevScene = SCENES[state.sceneIndex - 1];
+    const prevLastStep = (prevScene.steps && prevScene.steps.length > 0) ? prevScene.steps.length - 1 : 0;
+    __transitioning = true;
+    stage.classList.add('fading-out');
+    setTimeout(() => {
+      state.sceneIndex--;
+      state.stepIndex = prevLastStep;
+      render();
+      stage.classList.remove('fading-out');
+      setTimeout(() => { __transitioning = false; }, FADE_MS);
+    }, FADE_MS);
   }
-  render();
-}
-
-function gotoScene(index) {
-  if (index < 0 || index >= SCENES.length) return;
-  state.sceneIndex = index;
-  state.stepIndex = 0;
-  render();
 }
 
 render();
