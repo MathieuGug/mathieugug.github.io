@@ -102,6 +102,133 @@ mark { background: linear-gradient(transparent 58%, rgba(178, 59, 27, 0.14) 58%)
   .schema-host .caption { transition: none !important; }
   .scene-outro .cta-primary, .scene-outro .cta-secondary { transition: none !important; }
 }
+
+/* ── Zoom overlay ── */
+#zoom-overlay[hidden] { display: none !important; }
+#zoom-overlay {
+  position: fixed; inset: 0; z-index: 400;
+  display: flex; flex-direction: column;
+  background: rgba(26, 26, 26, 0.94);
+  backdrop-filter: blur(3px);
+}
+#zoom-header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; padding: 12px 20px;
+  color: #faf6ec;
+  font-family: 'Inter', system-ui, sans-serif; font-size: 0.85rem;
+  border-bottom: 1px solid rgba(250, 248, 243, 0.12);
+}
+#zoom-caption {
+  flex: 1; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  opacity: 0.85;
+}
+.zoom-controls { display: flex; gap: 4px; flex-shrink: 0; }
+.zoom-controls button {
+  background: transparent;
+  border: 1px solid rgba(250, 248, 243, 0.32);
+  color: #faf6ec; padding: 6px 12px;
+  min-width: 36px; cursor: pointer;
+  font: inherit; font-size: 0.85rem; border-radius: 3px;
+  transition: background 120ms, border-color 120ms;
+}
+.zoom-controls button:hover { background: rgba(250, 248, 243, 0.12); border-color: rgba(250, 248, 243, 0.6); }
+.zoom-controls button:focus-visible { outline: 2px solid #faf6ec; outline-offset: 2px; }
+.zoom-controls .zoom-close { font-size: 1.3rem; line-height: 1; padding: 2px 10px; }
+#zoom-stage { flex: 1; overflow: hidden; position: relative; cursor: grab; touch-action: none; }
+#zoom-stage.grabbing { cursor: grabbing; }
+#zoom-content { position: absolute; top: 0; left: 0; transform-origin: 0 0; will-change: transform; }
+#zoom-content > svg {
+  display: block; max-width: none; max-height: none;
+  background: var(--bg); box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+}
+#zoom-hint {
+  position: absolute; bottom: 16px; left: 50%;
+  transform: translateX(-50%);
+  color: rgba(250, 248, 243, 0.55);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.75rem; pointer-events: none;
+  transition: opacity 400ms;
+}
+#zoom-hint.fade { opacity: 0; }
+@media (max-width: 640px) {
+  .zoom-controls .zoom-reset { display: none; }
+  #zoom-caption { font-size: 0.78rem; }
+}
+
+/* Bouton zoom sur les schémas */
+.schema-wrapper { position: relative; }
+.zoom-btn {
+  position: absolute; top: 10px; left: 10px;
+  background: rgba(250,246,236,0.85); border: 1px solid rgba(30,30,44,0.18);
+  color: var(--text-dim); font-size: 1.15rem; line-height: 1;
+  width: 36px; height: 36px; border-radius: 4px;
+  cursor: pointer; opacity: 0;
+  transition: opacity 150ms, background 120ms, border-color 120ms, color 120ms;
+  z-index: 2;
+}
+.schema-wrapper:hover .zoom-btn, .schema-wrapper:focus-within .zoom-btn, .zoom-btn:focus-visible { opacity: 1; }
+.zoom-btn:hover { background: var(--bg-2); border-color: var(--text); color: var(--text); }
+@media (hover: none) { .zoom-btn { opacity: 0.85; } }
+
+/* ── Modal ── */
+#modal-root[hidden] { display: none !important; }
+#modal-root {
+  position: fixed; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  z-index: 200;
+}
+.modal-backdrop {
+  position: absolute; inset: 0;
+  background: rgba(26,26,26,0.55);
+  backdrop-filter: blur(2px);
+}
+.modal-card {
+  position: relative; background: var(--paper);
+  max-width: 560px; width: calc(100% - 48px);
+  max-height: calc(100vh - 96px); overflow-y: auto;
+  padding: 36px 36px 32px;
+  border-radius: 6px;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.25);
+  border-top: 4px solid var(--carmine);
+}
+.modal-close {
+  position: absolute; top: 12px; right: 12px;
+  background: none; border: none;
+  font-size: 1.6rem; line-height: 1; cursor: pointer;
+  color: var(--text-mid);
+  width: 32px; height: 32px; border-radius: 4px;
+}
+.modal-close:hover { background: var(--bg-2); color: var(--text); }
+.modal-card h3 {
+  font-family: 'Fraunces', serif; font-weight: 600;
+  font-size: 1.4rem; margin: 0 0 6px; letter-spacing: -0.01em;
+}
+.modal-card .modal-eyebrow {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.72rem;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--carmine); margin: 0 0 14px;
+}
+.modal-card .modal-body p { margin: 0 0 0.9rem; font-size: 0.95rem; }
+.modal-card .modal-body p:last-child { margin-bottom: 0; }
+.modal-card .modal-body figure.ref {
+  margin: 0.6rem 0 1.1rem;
+}
+.modal-card .modal-body figure.ref img {
+  display: block; width: 100%; height: auto;
+  border-radius: 3px;
+  border: 1px solid rgba(26,26,26,0.08);
+  box-shadow: 0 8px 22px rgba(0,0,0,0.12);
+  background: var(--bg-2);
+}
+.modal-card .modal-body figure.ref figcaption {
+  margin-top: 8px;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; line-height: 1.5;
+  letter-spacing: 0.02em; color: var(--text-mid);
+}
+.modal-card .modal-body figure.ref figcaption em { font-style: italic; color: var(--text); }
+.modal-card .modal-body figure.ref figcaption a { color: var(--accent); text-decoration: none; }
+.modal-card .modal-body figure.ref figcaption a:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
@@ -242,6 +369,34 @@ mark { background: linear-gradient(transparent 58%, rgba(178, 59, 27, 0.14) 58%)
   <!-- scènes injectées par JS -->
 </main>
 
+<!-- Zoom overlay -->
+<div id="zoom-overlay" hidden role="dialog" aria-modal="true" aria-label="Schéma agrandi">
+  <div id="zoom-header">
+    <span id="zoom-caption"></span>
+    <div class="zoom-controls">
+      <button class="zoom-out" type="button" aria-label="Dézoomer">−</button>
+      <button class="zoom-reset" type="button" aria-label="Réinitialiser">Reset</button>
+      <button class="zoom-in" type="button" aria-label="Zoomer">+</button>
+      <button class="zoom-close" type="button" aria-label="Fermer">×</button>
+    </div>
+  </div>
+  <div id="zoom-stage" tabindex="-1">
+    <div id="zoom-content"></div>
+    <div id="zoom-hint">molette / pinch pour zoomer · clic-glisser pour déplacer · Esc pour fermer</div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div id="modal-root" hidden role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-card">
+    <button class="modal-close" data-close type="button" aria-label="Fermer">×</button>
+    <p class="modal-eyebrow" id="modal-eyebrow"></p>
+    <h3 id="modal-title"></h3>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
 <script>
 'use strict';
 
@@ -272,7 +427,8 @@ const SCENES = [
         caption: 'À gauche, l\'auteur dirige strictement : comic strip, film, annotated chart.',
         highlight: ['#genre-comic-strip', '#genre-film-video', '#genre-annotated'],
         dim: ['#genre-magazine', '#genre-scrolly', '#genre-slideshow', '#genre-flow-chart', '#genre-poster', '#axis-line', '#axis-labels', '#tick-marks'],
-        hidden: []
+        hidden: [],
+        modalAuto: 'comic-strip'
       },
       {
         caption: 'Au centre, l\'autorité se relâche progressivement — magazine style, scrollytelling.',
@@ -298,6 +454,52 @@ const SCENES = [
   { id: 'respi-2',     type: 'punchline', body: '<mark>Sept étapes</mark> dans la chaîne. <mark>Trois</mark> où l\'IA aide. <mark>Deux</mark> où elle nuit.' },
   { id: 'outro',       type: 'outro', title: 'Pour aller plus loin', body: 'L\'étude longue détaille les sept étapes du cadre praticien et propose un arbre de décision.', cta: { href: '20260505-narrative-experiences-app.html', label: 'Ouvrir l\'étude illustrée →' }, secondary: { href: '20260505-narrative-experiences-rapport.md', label: 'Télécharger le rapport ↓' } }
 ];
+
+/* ───────── SCHEMAS — Modal content for interactive SVG regions ───────── */
+const SCHEMAS = {
+  "schema-01": {
+    "comic-strip": { eyebrow: "Schéma 1 — Genre", title: "Comic strip", body: "<p>Séquence de panneaux illustrés, ton conversationnel ou narratif, charge émotionnelle assumée. Linéaire stricte par construction.</p><p><strong>Règle d'or :</strong> le ton est le facteur décisif. Un comic strip froid est un slideshow raté. Archétypes : <em>Parable of the Polygons</em> (Vi Hart &amp; Nicky Case), les bandes de Mona Chalabi pour <em>The Guardian</em>.</p><figure class='ref'><img src='images/refs/parable-polygons.jpg' alt='Capture de Parable of the Polygons par Vi Hart et Nicky Case — interface drag-and-drop avec polygones bleus et jaunes' loading='lazy'><figcaption>Capture · <em>Parable of the Polygons</em> · Vi Hart &amp; Nicky Case (2014) · CC0 · ncase.me/polygons. Hybride comic-strip + explorable explanation : le lecteur déplace les polygones et observe la dynamique de Schelling émerger sous ses doigts.</figcaption></figure>" },
+    "film-video": { eyebrow: "Schéma 1 — Genre", title: "Film / video / animation", body: "<p>Le format le plus auteur-driven. Le tempo est imposé seconde par seconde, le lecteur perd l'option « relire un passage » sauf à scrubber.</p><p><strong>Règle d'or :</strong> maîtrise du tempo — chaque seconde ajoute ou rate. Cas naturel : sujet à forte charge narrative qui bénéficie d'une voix off et d'un montage. Anti-cas : briefing court, où le lecteur veut piocher.</p>" },
+    "annotated": { eyebrow: "Schéma 1 — Genre", title: "Annotated chart", body: "<p>Un graphique unique, surchargé d'annotations textuelles et de marqueurs qui pointent les éléments saillants. Forme dominante du data journalisme moderne.</p><p><strong>Règle d'or :</strong> une seule pointe par graphique. Si vous en avez deux, faites deux graphiques. Le format est court, dense, sobre — il sert un argument précis, pas une exposition générale.</p>" },
+    "magazine": { eyebrow: "Schéma 1 — Genre", title: "Magazine style", body: "<p>Long-format texte et images intercalées, à la <em>The Atlantic</em> ou <em>Le Monde Magazine</em>. Le texte porte le récit, les visuels appuient des moments clés.</p><p><strong>Règle d'or :</strong> le texte porte la moitié de la charge ; les visuels doivent travailler en complément, pas en redondance. Format de référence pour les contenus durables — ce dossier en est un exemple.</p>" },
+    "scrolly": { eyebrow: "Schéma 1 — Genre dominant 2026", title: "Scrollytelling", body: "<p>Le format hybride mature du web : le scroll impose l'ordre, mais le lecteur contrôle le tempo et peut revenir en arrière. Apparu en 2012 avec « Snow Fall » du <em>NYT</em>, codifié par la bibliothèque scrollama.</p><p><strong>Règle d'or :</strong> la mécanique du scroll est sacrée — pas de pop-ups, pas de modaux qui bloquent, pas d'appel à l'action qui interrompt le flux. Pattern dominant pour les long-formats publics 2025–2026.</p><figure class='ref'><img src='images/refs/snow-fall.jpg' alt='Capture de l ouverture de Snow Fall du NYT — photo de neige avec titre serif Snow Fall en surimpression' loading='lazy'><figcaption>Capture · <em>Snow Fall: The Avalanche at Tunnel Creek</em> · The New York Times, John Branch (2012) · usage pédagogique. La page d'ouverture canonique : photographie pleine viewport, titre serif et byline mince — la matrice de tous les scrollytelling depuis 2012.</figcaption></figure>" },
+    "slideshow": { eyebrow: "Schéma 1 — Genre", title: "Slide show", body: "<p>Séquence de slides, contrôle linéaire par bouton « suivant ». Variante moderne : chaque slide encapsule une mini-exploration interactive.</p><p><strong>Règle d'or :</strong> chaque slide doit faire avancer le récit <em>et</em> offrir une poignée d'exploration. Sinon c'est un PowerPoint déguisé. Format utile pour la pédagogie et les <em>data tours</em> guidés.</p>" },
+    "flow-chart": { eyebrow: "Schéma 1 — Genre", title: "Flow chart", body: "<p>Récit à branchements — le lecteur choisit une voie, qui le mène à un sous-récit. Le genre le plus reader-driven parmi les sept de Segel-Heer (avec le partitioned poster).</p><p><strong>Règle d'or :</strong> si la branche n'a pas une vraie conséquence sur la suite, c'est un slideshow qui se cherche. Cas naturel : explorations « what if », simulations, calculateurs personnels.</p>" },
+    "poster": { eyebrow: "Schéma 1 — Genre", title: "Partitioned poster", body: "<p>Une seule planche, plusieurs zones disposées librement, le lecteur compose son ordre de lecture. Forme de l'infographie classique du <em>National Geographic</em> ou de <em>Le Monde diplomatique</em>.</p><p><strong>Règle d'or :</strong> hiérarchie forte — un point d'entrée évident, des satellites. Sinon le lecteur est perdu dans une grille égalitaire et abandonne.</p>" }
+  }
+};
+
+/* ───────── Modal dispatcher ───────── */
+const modalRoot    = document.getElementById('modal-root');
+const modalEyebrow = document.getElementById('modal-eyebrow');
+const modalTitle   = document.getElementById('modal-title');
+const modalBody    = document.getElementById('modal-body');
+let lastFocused = null;
+
+function openModal(eyebrow, title, body) {
+  lastFocused = document.activeElement;
+  modalEyebrow.textContent = eyebrow || '';
+  modalTitle.textContent = title || '';
+  modalBody.innerHTML = body || '';
+  modalRoot.hidden = false;
+  document.body.style.overflow = '';
+  modalRoot.querySelector('.modal-close')?.focus();
+}
+
+let __modalAutoActive = false;
+
+function closeModal() {
+  const root = document.getElementById('modal-root');
+  if (!root) return;
+  root.hidden = true;
+  __modalAutoActive = false;
+  lastFocused?.focus?.();
+}
+
+document.getElementById('modal-root').addEventListener('click', (e) => {
+  if (e.target.closest('.modal-content')) return;
+  if (e.target.matches('[data-close]')) { closeModal(); }
+});
 
 let state = { sceneIndex: 0, stepIndex: 0 };
 
@@ -354,11 +556,26 @@ function render() {
           <span class="num">${(state.sceneIndex+1).toString().padStart(2,'0')}</span>
           <span class="title">${scene.title}</span>
         </div>
-        ${svgClone}
+        <div class="schema-wrapper figure" style="position: relative; width: 100%; max-width: 1100px;">
+          ${svgClone}
+          <button class="zoom-btn" type="button" aria-label="Zoom plein écran" data-no-advance>⛶</button>
+        </div>
         <div class="caption">${step.caption}</div>
       </div>
     `;
     applyStepStyles(scene, step);
+
+    if (step.modalAuto) {
+      const match = scene.schemaId ? scene.schemaId.match(/svg-(\d+)-/) : null;
+      const schKey = match ? 'schema-' + match[1].padStart(2, '0') : null;
+      const card = schKey ? (SCHEMAS?.[schKey]?.[step.modalAuto] || null) : null;
+      if (card) {
+        setTimeout(() => {
+          openModal(card.eyebrow || '', card.title || '', card.body || '');
+          __modalAutoActive = true;
+        }, 220);
+      }
+    }
     return;
   }
 }
@@ -413,24 +630,41 @@ function retreat() {
 render();
 
 function isAnyOverlayOpen() {
-  // À étoffer aux tasks suivantes (modal, zoom, sommaire, sources)
-  return false;
+  return !document.getElementById('modal-root').hidden
+      || !document.getElementById('zoom-overlay').hidden;
 }
 
 document.addEventListener('keydown', (e) => {
-  // À étoffer plus tard avec gestion modal/overlay
   if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
     e.preventDefault();
-    advance();
+    const modalOpen = !document.getElementById('modal-root').hidden;
+    if (modalOpen && __modalAutoActive) {
+      closeModal();
+      advance();
+    } else if (modalOpen) {
+      closeModal();
+    } else {
+      advance();
+    }
   } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
     e.preventDefault();
+    if (isAnyOverlayOpen()) return;
     retreat();
   } else if (e.key === 'ArrowDown') {
     e.preventDefault();
+    if (isAnyOverlayOpen()) return;
     gotoScene(state.sceneIndex + 1);
   } else if (e.key === 'ArrowUp') {
     e.preventDefault();
+    if (isAnyOverlayOpen()) return;
     gotoScene(state.sceneIndex - 1);
+  } else if (e.key === 'Escape') {
+    if (!document.getElementById('modal-root').hidden) {
+      closeModal();
+      e.preventDefault();
+      return;
+    }
+    // zoom-overlay Escape géré par setupZoom() interne
   }
 });
 
@@ -444,7 +678,182 @@ stage.addEventListener('click', (e) => {
   }
 });
 
+// Capture phase — intercepte les clics sur régions interactives data-card AVANT le listener bubble
+stage.addEventListener('click', (e) => {
+  const target = e.target.closest('[data-card]');
+  if (!target) return;
+  e.stopPropagation();
+  const cardId = target.dataset.card;
+  // Cherche la card dans le schéma courant
+  const scene = SCENES[state.sceneIndex];
+  const schemaId = scene && scene.schemaId ? scene.schemaId : null;
+  // schemaId est de la forme 'svg-01-spectre', les clés SCHEMAS sont 'schema-01', 'schema-02'…
+  // Mapping : svg-01-* → schema-01, svg-02-* → schema-02, etc.
+  let card = null;
+  if (schemaId) {
+    const match = schemaId.match(/svg-(\d+)-/);
+    if (match) {
+      const schKey = 'schema-' + match[1].padStart(2, '0');
+      card = SCHEMAS?.[schKey]?.[cardId] || null;
+    }
+  }
+  if (card) {
+    openModal(card.eyebrow || '', card.title || '', card.body || '');
+  }
+}, true);
+
 console.log('[slideshow]', SCENES.length, 'scènes déclarées');
+
+/* ───────── Fullscreen zoom for schemas ───────── */
+const __zoom = (function setupZoom() {
+  const overlay  = document.getElementById('zoom-overlay');
+  const zStage   = document.getElementById('zoom-stage');
+  const content  = document.getElementById('zoom-content');
+  const captionE = document.getElementById('zoom-caption');
+  const hint     = document.getElementById('zoom-hint');
+  if (!overlay || !zStage || !content) return {};
+
+  let scale = 1, tx = 0, ty = 0;
+  let svgW = 0, svgH = 0;
+  let fitScale = 1;
+  let lastZoomTrigger = null;
+
+  function applyTransform() { content.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`; }
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+  function fitToStage() {
+    if (!svgW || !svgH) return;
+    const r = zStage.getBoundingClientRect();
+    const margin = 32;
+    fitScale = Math.min((r.width - margin * 2) / svgW, (r.height - margin * 2) / svgH);
+    scale = fitScale;
+    tx = (r.width - svgW * scale) / 2;
+    ty = (r.height - svgH * scale) / 2;
+    applyTransform();
+  }
+  function zoomAt(mx, my, factor) {
+    const newScale = clamp(scale * factor, fitScale * 0.5, fitScale * 16);
+    tx = mx - newScale * (mx - tx) / scale;
+    ty = my - newScale * (my - ty) / scale;
+    scale = newScale;
+    applyTransform();
+  }
+  function openZoom(svgEl, captionText) {
+    const clone = svgEl.cloneNode(true);
+    const vb = clone.viewBox?.baseVal;
+    svgW = (vb && vb.width)  || svgEl.getBoundingClientRect().width  || 1200;
+    svgH = (vb && vb.height) || svgEl.getBoundingClientRect().height || 780;
+    clone.setAttribute('width', svgW); clone.setAttribute('height', svgH);
+    clone.style.width = svgW + 'px'; clone.style.height = svgH + 'px';
+    content.innerHTML = '';
+    content.appendChild(clone);
+    captionE.textContent = captionText || '';
+    lastZoomTrigger = document.activeElement;
+    overlay.hidden = false;
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(() => {
+      fitToStage();
+      zStage.focus({ preventScroll: true });
+      if (hint) {
+        hint.classList.remove('fade');
+        clearTimeout(hint._t);
+        hint._t = setTimeout(() => hint.classList.add('fade'), 2600);
+      }
+    });
+  }
+  function closeZoom() {
+    overlay.hidden = true;
+    content.innerHTML = '';
+    document.body.style.overflow = '';
+    lastZoomTrigger?.focus?.();
+  }
+
+  overlay.querySelector('.zoom-close')?.addEventListener('click', closeZoom);
+  document.addEventListener('keydown', (e) => {
+    if (overlay.hidden) return;
+    if (e.key === 'Escape') { e.preventDefault(); closeZoom(); }
+    else if (e.key === '+' || e.key === '=') { e.preventDefault(); const r = zStage.getBoundingClientRect(); zoomAt(r.width/2, r.height/2, 1.25); }
+    else if (e.key === '-' || e.key === '_') { e.preventDefault(); const r = zStage.getBoundingClientRect(); zoomAt(r.width/2, r.height/2, 1/1.25); }
+    else if (e.key === '0') { e.preventDefault(); fitToStage(); }
+  });
+
+  overlay.querySelector('.zoom-in')?.addEventListener('click', () => { const r = zStage.getBoundingClientRect(); zoomAt(r.width/2, r.height/2, 1.25); });
+  overlay.querySelector('.zoom-out')?.addEventListener('click', () => { const r = zStage.getBoundingClientRect(); zoomAt(r.width/2, r.height/2, 1/1.25); });
+  overlay.querySelector('.zoom-reset')?.addEventListener('click', fitToStage);
+
+  zStage.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const r = zStage.getBoundingClientRect();
+    const mx = e.clientX - r.left;
+    const my = e.clientY - r.top;
+    const factor = e.deltaY < 0 ? 1.15 : 1/1.15;
+    zoomAt(mx, my, factor);
+  }, { passive: false });
+
+  let dragging = false, sx = 0, sy = 0, stx = 0, sty = 0;
+  zStage.addEventListener('pointerdown', (e) => {
+    dragging = true;
+    zStage.classList.add('grabbing');
+    zStage.setPointerCapture?.(e.pointerId);
+    sx = e.clientX; sy = e.clientY; stx = tx; sty = ty;
+  });
+  zStage.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    tx = stx + (e.clientX - sx);
+    ty = sty + (e.clientY - sy);
+    applyTransform();
+  });
+  function endDrag(e) {
+    if (!dragging) return;
+    dragging = false;
+    zStage.classList.remove('grabbing');
+    zStage.releasePointerCapture?.(e.pointerId);
+  }
+  zStage.addEventListener('pointerup', endDrag);
+  zStage.addEventListener('pointercancel', endDrag);
+  zStage.addEventListener('pointerleave', endDrag);
+
+  let pinchStartDist = 0, pinchStartScale = 1, pinchMid = { x: 0, y: 0 };
+  zStage.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+      dragging = false;
+      const t1 = e.touches[0], t2 = e.touches[1];
+      const dx = t1.clientX - t2.clientX, dy = t1.clientY - t2.clientY;
+      pinchStartDist = Math.hypot(dx, dy);
+      pinchStartScale = scale;
+      const r = zStage.getBoundingClientRect();
+      pinchMid = { x: (t1.clientX + t2.clientX) / 2 - r.left, y: (t1.clientY + t2.clientY) / 2 - r.top };
+    }
+  }, { passive: true });
+  zStage.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 2 && pinchStartDist > 0) {
+      e.preventDefault();
+      const t1 = e.touches[0], t2 = e.touches[1];
+      const d = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+      const factor = (d / pinchStartDist) * (pinchStartScale / scale);
+      zoomAt(pinchMid.x, pinchMid.y, factor);
+    }
+  }, { passive: false });
+  zStage.addEventListener('touchend', (e) => { if (e.touches.length < 2) pinchStartDist = 0; });
+
+  window.addEventListener('resize', () => { if (!overlay.hidden) fitToStage(); });
+
+  return { openZoom };
+})();
+
+// Câble le bouton zoom après chaque render() sur une scène schema
+// (les éléments sont injectés dynamiquement, pas présents au chargement)
+stage.addEventListener('click', (e) => {
+  const btn = e.target.closest('.zoom-btn');
+  if (!btn) return;
+  e.stopPropagation();
+  const wrapper = btn.closest('.schema-wrapper');
+  const svg = wrapper ? wrapper.querySelector('svg') : null;
+  if (svg && __zoom.openZoom) {
+    const caption = stage.querySelector('.caption')?.textContent?.trim() || '';
+    __zoom.openZoom(svg, caption);
+  }
+}, true);
 </script>
 </body>
 </html>
