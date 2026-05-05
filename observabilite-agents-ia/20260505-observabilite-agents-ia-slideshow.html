@@ -288,7 +288,7 @@ body.modal-open .stage { right: 480px; }
 @media (max-width: 1024px) {
   /* Sur écrans étroits/mobile : revenir à une timeline horizontale en bas */
   .stage { right: 0; bottom: 64px; padding: 16px 16px 16px; }
-  .schema-host svg { max-height: calc(100vh - 280px); }
+  .schema-host svg { max-height: calc(100vh - 220px); }
   .footer-bar { right: 0; left: 0; top: auto; bottom: 16px; transform: none; flex-direction: row; justify-content: center; gap: 20px; padding: 0 16px; }
   .timeline { flex-direction: row; }
   .timeline .seg { width: 28px; height: 4px; }
@@ -301,6 +301,35 @@ body.modal-open .stage { right: 480px; }
   .zoom-btn { opacity: 0.85; }
   .scene-outro .ctas { min-width: 0; width: 100%; }
 }
+
+/* Mobile en paysage (téléphone tourné) : chrome compressée pour maximiser la hauteur du SVG */
+@media (max-height: 500px) {
+  .topbar { height: 48px; padding: 8px 18px; }
+  .topbar > a { font-size: 13px; }
+  .scene-title-bar { font-size: clamp(12px, 2.4vw, 16px); }
+  .scene-title-bar .num { font-size: 8px; letter-spacing: 0.18em; }
+  .stage { top: 48px; bottom: 52px; padding: 6px 14px 6px; }
+  .schema-host { gap: 6px; }
+  .schema-host svg { max-height: calc(100vh - 130px); }
+  .schema-host .caption { font-size: 13px; line-height: 1.4; min-height: 1.6em; max-width: 88vw; }
+  .footer-bar { bottom: 8px; gap: 14px; padding: 0 12px; }
+  .timeline .seg { width: 22px; height: 3px; }
+  .footer-btn { font-size: 8px; }
+  .scene-punchline .body { font-size: clamp(20px, 4.5vw, 30px); line-height: 1.2; }
+  .scene-punchline { gap: 18px; }
+  .scene-outro h2 { font-size: clamp(26px, 5vw, 38px); }
+  .scene-outro { gap: 18px; }
+}
+
+/* Hint de rotation : portrait mobile sur scène schema → suggère le paysage */
+.rotation-hint { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); display: none; align-items: center; gap: 10px; background: var(--text); color: var(--bg); padding: 9px 10px 9px 14px; border-radius: 24px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; z-index: 55; max-width: calc(100vw - 32px); box-shadow: 0 4px 14px rgba(30,25,18,0.18); opacity: 0; transition: opacity 0.35s ease; }
+.rotation-hint.show { display: inline-flex; opacity: 1; }
+.rotation-hint .icon { width: 16px; height: 16px; flex-shrink: 0; animation: rotation-spin 2.4s ease-in-out infinite; }
+.rotation-hint .text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rotation-hint .dismiss { background: none; border: none; color: inherit; cursor: pointer; font-size: 16px; line-height: 1; padding: 2px 6px; opacity: 0.65; }
+.rotation-hint .dismiss:hover { opacity: 1; }
+@keyframes rotation-spin { 0%, 100% { transform: rotate(0deg); } 40% { transform: rotate(-90deg); } 60% { transform: rotate(-90deg); } }
+@media (prefers-reduced-motion: reduce) { .rotation-hint .icon { animation: none; } }
 
 /* Overlays sommaire / sources */
 .full-overlay { position: fixed; inset: 0; background: rgba(250,246,236,0.96); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 300; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 80px 32px 80px; overflow-y: auto; }
@@ -1802,6 +1831,15 @@ body.modal-open .stage { right: 480px; }
   <span>Tape pour avancer · Swipe ←→ pour changer de scène · Pince pour zoomer</span>
 </div>
 
+<div class="rotation-hint" id="rotation-hint" role="status" aria-live="polite" data-no-advance>
+  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+    <path d="M12 18h.01"/>
+  </svg>
+  <span class="text">Tournez le téléphone</span>
+  <button class="dismiss" type="button" aria-label="Masquer">×</button>
+</div>
+
 <script>
 'use strict';
 
@@ -2253,6 +2291,7 @@ function openModal(eyebrow, title, body) {
   document.body.classList.add('modal-open');
   document.body.style.overflow = '';
   modalRoot.querySelector('.modal-close')?.focus();
+  if (typeof updateRotationHint === 'function') updateRotationHint();
 }
 
 let __modalAutoActive = false;
@@ -2264,6 +2303,7 @@ function closeModal() {
   document.body.classList.remove('modal-open');
   __modalAutoActive = false;
   lastFocused?.focus?.();
+  if (typeof updateRotationHint === 'function') updateRotationHint();
 }
 
 document.getElementById('modal-root').addEventListener('click', (e) => {
@@ -2524,6 +2564,7 @@ function toggleToc(forceState) {
   const newHidden = forceState !== undefined ? !forceState : !o.hidden;
   o.hidden = newHidden;
   if (!newHidden) renderToc();
+  if (typeof updateRotationHint === 'function') updateRotationHint();
 }
 
 document.getElementById('btn-toc').addEventListener('click', (e) => { e.stopPropagation(); toggleToc(true); });
@@ -2557,6 +2598,7 @@ function toggleSources(forceState) {
     document.getElementById('sources-filter').value = '';
     setTimeout(() => document.getElementById('sources-filter').focus(), 80);
   }
+  if (typeof updateRotationHint === 'function') updateRotationHint();
 }
 
 function flashSource(num) {
@@ -2670,6 +2712,51 @@ function maybeShowOnboardingToaster() {
 }
 
 maybeShowOnboardingToaster();
+
+/* ───────── Rotation hint mobile portrait sur scènes schema ───────── */
+const portraitMQ = window.matchMedia('(orientation: portrait)');
+const narrowMQ = window.matchMedia('(max-width: 900px)');
+let __rotationHintDismissed = false;
+
+function updateRotationHint() {
+  const hint = document.getElementById('rotation-hint');
+  if (!hint) return;
+  const scene = SCENES[state.sceneIndex];
+  const shouldShow = isTouchDevice()
+    && portraitMQ.matches
+    && narrowMQ.matches
+    && scene && scene.type === 'schema'
+    && !__rotationHintDismissed
+    && document.getElementById('modal-root').hidden
+    && document.getElementById('toc-overlay').hidden
+    && document.getElementById('sources-overlay').hidden
+    && document.getElementById('zoom-overlay').hidden;
+  hint.classList.toggle('show', shouldShow);
+}
+
+(function setupRotationHint() {
+  const hint = document.getElementById('rotation-hint');
+  if (!hint) return;
+  hint.querySelector('.dismiss')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    __rotationHintDismissed = true;
+    updateRotationHint();
+  });
+  // Auto-update sur changement d'orientation, ouverture/fermeture de modal/overlay, render
+  const onChange = () => updateRotationHint();
+  if (portraitMQ.addEventListener) portraitMQ.addEventListener('change', onChange);
+  else if (portraitMQ.addListener) portraitMQ.addListener(onChange);
+  window.addEventListener('orientationchange', onChange);
+  // Premier appel au chargement
+  setTimeout(updateRotationHint, 0);
+})();
+
+// Hooke updateRotationHint() à la fin de chaque render
+const __rawRender = render;
+render = function() {
+  __rawRender();
+  updateRotationHint();
+};
 
 /* ───────── Fullscreen zoom for schemas ───────── */
 const __zoom = (function setupZoom() {
