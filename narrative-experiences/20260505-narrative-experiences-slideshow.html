@@ -1,0 +1,2248 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#faf6ec">
+<title>Expériences narratives — slideshow</title>
+<meta name="description" content="Slideshow narratif sur les expériences narratives : 11 scènes plein écran, animations progressives, modaux à la demande. Synthèse en 10 minutes de l'étude longue de Mathieu Guglielmino.">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #faf6ec;
+  --bg-2: #f3eedf;
+  --paper: #ffffff;
+  --line: rgba(30,30,44,0.08);
+  --line-strong: rgba(30,30,44,0.20);
+  --text: #1e1e2a;
+  --text-dim: #3b3f4d;
+  --text-mid: #6b6f7c;
+  --text-faint: #9a9ca5;
+  --accent: #b8582e;
+  --carmine: #b23b1b;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; font-weight: 300; line-height: 1.55; -webkit-font-smoothing: antialiased; height: 100vh; overflow: hidden; max-width: 100vw; }
+body { background:
+  radial-gradient(ellipse at 14% 8%, rgba(184,88,46,0.06) 0%, transparent 55%),
+  radial-gradient(ellipse at 86% 92%, rgba(75,148,102,0.04) 0%, transparent 55%),
+  var(--bg);
+}
+a { color: inherit; }
+
+/* Topbar — copie du pattern site */
+.topbar { position: fixed; top: 0; left: 0; right: 0; z-index: 50; padding: 12px 28px; height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 24px; background: rgba(250,246,236,0.78); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid transparent; transition: opacity 0.25s, border-color 0.3s; }
+.topbar > a { font-family: 'Fraunces', serif; font-weight: 500; font-size: 15.5px; letter-spacing: -0.01em; text-decoration: none; color: var(--text); flex-shrink: 0; }
+.topbar em { font-style: italic; color: var(--accent); }
+.topbar .back { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-mid); }
+.topbar .back:hover { color: var(--accent); }
+.scene-title-bar { flex: 1; min-width: 0; display: flex; align-items: baseline; justify-content: center; gap: 14px; font-family: 'Fraunces', serif; font-weight: 400; font-size: clamp(20px, 2.6vw, 32px); letter-spacing: -0.01em; color: var(--text); text-align: center; opacity: 1; transition: opacity 220ms ease; overflow: hidden; }
+.scene-title-bar.fade { opacity: 0; }
+.scene-title-bar .num { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; letter-spacing: 0.24em; color: var(--text-faint); flex-shrink: 0; }
+.scene-title-bar .title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.scene-title-bar:empty { display: none; }
+
+/* Surlignage stabilo — signature site */
+mark { background: linear-gradient(transparent 58%, rgba(178, 59, 27, 0.14) 58%); color: inherit; padding: 0 2px; }
+
+/* Stage : zone scène plein écran (libère l'espace à droite pour la sidebar timeline) */
+.stage { position: fixed; top: 64px; left: 0; right: 64px; bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px 24px 24px; transition: opacity 250ms ease, right 280ms cubic-bezier(0.22, 1, 0.36, 1); }
+body.modal-open .stage { right: 480px; }
+@media (max-width: 1024px) {
+  /* Sur mobile, le modal occupe le bas de l'écran, la stage ne rétrécit pas */
+  body.modal-open .stage { right: 0; }
+}
+.stage.fading-out { opacity: 0; }
+
+/* Mobile */
+@media (max-width: 768px) {
+  .topbar { height: 56px; padding: 10px 16px; gap: 12px; }
+  .scene-title-bar { font-size: clamp(13px, 3vw, 18px); }
+  .scene-title-bar .num { font-size: 9px; letter-spacing: 0.18em; }
+  .stage { top: 56px; }
+}
+@media (max-width: 560px) {
+  .topbar { padding: 10px 14px; gap: 8px; }
+  .topbar > a { font-size: 13px; }
+  .topbar .back { font-size: 9px; letter-spacing: 0.16em; }
+  .scene-title-bar .num { display: none; }
+  .stage { padding: 16px 16px 80px; }
+}
+@media (max-width: 480px) {
+  .scene-title-bar { display: none; }
+}
+@media (max-width: 380px) {
+  .topbar > a:first-child em { display: none; }
+}
+
+.scene-punchline { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; max-width: 1000px; padding: 0 24px; gap: 32px; }
+.scene-punchline .body { font-family: 'Fraunces', serif; font-style: italic; font-weight: 300; font-size: clamp(32px, 5.5vw, 64px); line-height: 1.18; letter-spacing: -0.015em; color: var(--text); }
+.scene-punchline .body mark { background: linear-gradient(transparent 58%, rgba(178, 59, 27, 0.18) 58%); padding: 0 4px; }
+.scene-punchline .attribution { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-faint); }
+
+@media (max-width: 560px) {
+  .scene-punchline .body { font-size: clamp(22px, 7vw, 32px); line-height: 1.25; }
+}
+
+.scene-outro { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; max-width: 700px; gap: 36px; padding: 0 24px; }
+.scene-outro .eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--accent); }
+.scene-outro h2 { font-family: 'Fraunces', serif; font-weight: 300; font-size: clamp(36px, 5vw, 56px); line-height: 1.1; letter-spacing: -0.02em; }
+.scene-outro h2 em { font-style: italic; color: var(--accent); }
+.scene-outro .body { font-family: 'Fraunces', serif; font-style: italic; font-size: clamp(17px, 2.2vw, 22px); line-height: 1.5; color: var(--text-dim); max-width: 560px; }
+.scene-outro .ctas { display: flex; flex-direction: column; gap: 14px; align-items: stretch; min-width: 320px; }
+.scene-outro .cta-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 16px 28px; background: var(--accent); color: white; text-decoration: none; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; border-radius: 4px; transition: background 0.2s; }
+.scene-outro .cta-primary:hover { background: var(--carmine); }
+.scene-outro .cta-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 24px; background: transparent; color: var(--text); text-decoration: none; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase; border: 1px solid var(--line-strong); border-radius: 4px; transition: border-color 0.2s, color 0.2s; }
+.scene-outro .cta-secondary:hover { border-color: var(--accent); color: var(--accent); }
+.scene-outro .restart { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-faint); cursor: pointer; background: none; border: none; padding: 8px; }
+.scene-outro .restart:hover { color: var(--accent); }
+.scene-outro .disclosure { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-faint); margin-top: 24px; }
+
+#schemas { display: none; }
+#schemas[hidden] { display: none !important; }
+.schema-host { display: flex; flex-direction: column; align-items: center; justify-content: center; max-width: min(1400px, 92vw); width: 100%; gap: 12px; }
+.schema-host .scene-title { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--text-mid); display: flex; align-items: baseline; gap: 12px; }
+.schema-host .scene-title .num { color: var(--text-faint); }
+.schema-host .scene-title .title { font-family: 'Fraunces', serif; font-weight: 400; font-size: clamp(20px, 2.8vw, 32px); letter-spacing: -0.01em; text-transform: none; color: var(--text); }
+.schema-host svg { width: 100%; max-width: 100%; height: auto; max-height: calc(100vh - 170px); display: block; }
+.schema-host .caption { font-family: 'Fraunces', serif; font-style: italic; font-weight: 300; font-size: clamp(16px, 1.8vw, 20px); line-height: 1.5; color: var(--text-dim); text-align: center; max-width: 720px; min-height: 2.4em; transition: opacity 180ms ease; }
+.schema-host .caption.fade-out { opacity: 0; }
+
+/* Vocabulaire visuel des révélations */
+.schema-host svg [data-step-state="dim"] { opacity: 0.18; transition: opacity 220ms ease, filter 220ms ease; }
+.schema-host svg [data-step-state="active"] { opacity: 1; transition: opacity 220ms ease, filter 220ms ease; }
+.schema-host svg [data-step-state="hidden"] { opacity: 0; pointer-events: none; transition: opacity 220ms ease; }
+
+/* Masquer l'en-tête interne du SVG (eyebrow + titre + lede) — le slideshow a son propre titre externe */
+.schema-host svg .svg-header { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .stage { transition: opacity 0ms ease, right 0ms ease !important; }
+  .schema-host svg [data-step-state] { transition: none !important; }
+  .schema-host .caption { transition: none !important; }
+  .scene-outro .cta-primary, .scene-outro .cta-secondary { transition: none !important; }
+  #modal-root { transition: transform 0ms ease !important; }
+  .toaster { transition: none !important; }
+}
+
+/* ── Zoom overlay ── */
+#zoom-overlay[hidden] { display: none !important; }
+#zoom-overlay {
+  position: fixed; inset: 0; z-index: 400;
+  display: flex; flex-direction: column;
+  background: rgba(26, 26, 26, 0.94);
+  backdrop-filter: blur(3px);
+}
+#zoom-header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; padding: 12px 20px;
+  color: #faf6ec;
+  font-family: 'Inter', system-ui, sans-serif; font-size: 0.85rem;
+  border-bottom: 1px solid rgba(250, 248, 243, 0.12);
+}
+#zoom-caption {
+  flex: 1; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  opacity: 0.85;
+}
+.zoom-controls { display: flex; gap: 4px; flex-shrink: 0; }
+.zoom-controls button {
+  background: transparent;
+  border: 1px solid rgba(250, 248, 243, 0.32);
+  color: #faf6ec; padding: 6px 12px;
+  min-width: 36px; cursor: pointer;
+  font: inherit; font-size: 0.85rem; border-radius: 3px;
+  transition: background 120ms, border-color 120ms;
+}
+.zoom-controls button:hover { background: rgba(250, 248, 243, 0.12); border-color: rgba(250, 248, 243, 0.6); }
+.zoom-controls button:focus-visible { outline: 2px solid #faf6ec; outline-offset: 2px; }
+.zoom-controls .zoom-close { font-size: 1.3rem; line-height: 1; padding: 2px 10px; }
+#zoom-stage { flex: 1; overflow: hidden; position: relative; cursor: grab; touch-action: none; }
+#zoom-stage.grabbing { cursor: grabbing; }
+#zoom-content { position: absolute; top: 0; left: 0; transform-origin: 0 0; will-change: transform; }
+#zoom-content > svg {
+  display: block; max-width: none; max-height: none;
+  background: var(--bg); box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+}
+#zoom-hint {
+  position: absolute; bottom: 16px; left: 50%;
+  transform: translateX(-50%);
+  color: rgba(250, 248, 243, 0.55);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.75rem; pointer-events: none;
+  transition: opacity 400ms;
+}
+#zoom-hint.fade { opacity: 0; }
+@media (max-width: 640px) {
+  .zoom-controls .zoom-reset { display: none; }
+  #zoom-caption { font-size: 0.78rem; }
+}
+
+/* Bouton zoom sur les schémas */
+.schema-wrapper { position: relative; }
+.zoom-btn {
+  position: absolute; top: 10px; left: 10px;
+  background: rgba(250,246,236,0.85); border: 1px solid rgba(30,30,44,0.18);
+  color: var(--text-dim); font-size: 1.15rem; line-height: 1;
+  width: 36px; height: 36px; border-radius: 4px;
+  cursor: pointer; opacity: 0;
+  transition: opacity 150ms, background 120ms, border-color 120ms, color 120ms;
+  z-index: 2;
+}
+.schema-wrapper:hover .zoom-btn, .schema-wrapper:focus-within .zoom-btn, .zoom-btn:focus-visible { opacity: 1; }
+.zoom-btn:hover { background: var(--bg-2); border-color: var(--text); color: var(--text); }
+@media (hover: none) { .zoom-btn { opacity: 0.85; } }
+
+/* ── Modal en sidebar toggable à droite (préserve la vue du SVG) ── */
+#modal-root[hidden] { display: none !important; }
+#modal-root {
+  position: fixed; right: 64px; top: 64px; bottom: 0;
+  width: 400px;
+  z-index: 200;
+  pointer-events: none;
+  transform: translateX(calc(100% + 64px));
+  transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+#modal-root:not([hidden]) {
+  transform: translateX(0);
+  pointer-events: auto;
+}
+.modal-backdrop { display: none; }
+.modal-card {
+  position: relative;
+  background: var(--paper);
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  padding: 36px 32px 32px;
+  border-left: 4px solid var(--carmine);
+  box-shadow: -16px 0 48px rgba(30,25,18,0.08);
+}
+@media (max-width: 1024px) {
+  /* Sur mobile : modal redevient centré plein écran */
+  #modal-root { right: 0; top: 0; bottom: 0; width: 100%; transform: translateY(100%); transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1); display: flex; align-items: flex-end; justify-content: center; }
+  #modal-root:not([hidden]) { transform: translateY(0); }
+  .modal-card { width: 100%; max-width: 100%; height: 90vh; max-height: 90vh; border-left: none; border-top: 4px solid var(--carmine); border-radius: 12px 12px 0 0; box-shadow: 0 -16px 48px rgba(30,25,18,0.2); }
+}
+.modal-close {
+  position: absolute; top: 12px; right: 12px;
+  background: none; border: none;
+  font-size: 1.6rem; line-height: 1; cursor: pointer;
+  color: var(--text-mid);
+  width: 32px; height: 32px; border-radius: 4px;
+}
+.modal-close:hover { background: var(--bg-2); color: var(--text); }
+.modal-card h3 {
+  font-family: 'Fraunces', serif; font-weight: 600;
+  font-size: 1.4rem; margin: 0 0 6px; letter-spacing: -0.01em;
+}
+.modal-card .modal-eyebrow {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.72rem;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--carmine); margin: 0 0 14px;
+}
+.modal-card .modal-body p { margin: 0 0 0.9rem; font-size: 0.95rem; }
+.modal-card .modal-body p:last-child { margin-bottom: 0; }
+.modal-card .modal-body figure.ref {
+  margin: 0.6rem 0 1.1rem;
+}
+.modal-card .modal-body figure.ref img {
+  display: block; width: 100%; height: auto;
+  border-radius: 3px;
+  border: 1px solid rgba(26,26,26,0.08);
+  box-shadow: 0 8px 22px rgba(0,0,0,0.12);
+  background: var(--bg-2);
+}
+.modal-card .modal-body figure.ref figcaption {
+  margin-top: 8px;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; line-height: 1.5;
+  letter-spacing: 0.02em; color: var(--text-mid);
+}
+.modal-card .modal-body figure.ref figcaption em { font-style: italic; color: var(--text); }
+.modal-card .modal-body figure.ref figcaption a { color: var(--accent); text-decoration: none; }
+.modal-card .modal-body figure.ref figcaption a:hover { text-decoration: underline; }
+
+/* Timeline en sidebar verticale à droite + boutons */
+.footer-bar { position: fixed; right: 18px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; gap: 24px; z-index: 40; pointer-events: none; }
+.timeline { display: flex; flex-direction: column; gap: 4px; align-items: center; pointer-events: auto; }
+.timeline .seg { width: 4px; height: 36px; background: var(--text-faint); opacity: 0.4; cursor: pointer; position: relative; transition: opacity 0.2s, background 0.2s; }
+.timeline .seg.visited { background: var(--accent); opacity: 0.5; }
+.timeline .seg.current { background: var(--accent); opacity: 1; }
+.timeline .seg .fill { position: absolute; left: 0; right: 0; top: 0; height: 0%; background: var(--accent); transition: height 220ms ease; }
+.timeline .seg:hover { opacity: 1; }
+.timeline .seg .label { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); white-space: nowrap; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-mid); background: var(--bg); padding: 4px 8px; border-radius: 3px; opacity: 0; pointer-events: none; transition: opacity 0.15s; box-shadow: 0 1px 3px rgba(30,30,44,0.08); }
+.timeline .seg:hover .label { opacity: 1; }
+.timeline .seg.punchline { width: 8px; height: 8px; border-radius: 50%; background: var(--text-faint); }
+.timeline .seg.punchline.visited { background: var(--accent); opacity: 0.7; }
+.timeline .seg.punchline.current { background: var(--accent); opacity: 1; transform: scale(1.3); }
+.timeline .seg.outro::after { content: '▸'; position: absolute; left: -7px; bottom: -2px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-faint); }
+.timeline .seg.outro.visited::after, .timeline .seg.outro.current::after { color: var(--accent); }
+.footer-actions { display: flex; flex-direction: column; gap: 10px; align-items: center; pointer-events: auto; writing-mode: vertical-rl; }
+.footer-actions .footer-btn { writing-mode: vertical-rl; transform: rotate(180deg); }
+.footer-btn { background: none; border: none; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-mid); cursor: pointer; padding: 6px 4px; transition: color 0.2s; }
+.footer-btn:hover { color: var(--accent); }
+
+@media (max-width: 1024px) {
+  /* Sur écrans étroits/mobile : revenir à une timeline horizontale en bas */
+  .stage { right: 0; bottom: 64px; padding: 16px 16px 16px; }
+  .schema-host svg { max-height: calc(100vh - 280px); }
+  .footer-bar { right: 0; left: 0; top: auto; bottom: 16px; transform: none; flex-direction: row; justify-content: center; gap: 20px; padding: 0 16px; }
+  .timeline { flex-direction: row; }
+  .timeline .seg { width: 28px; height: 4px; }
+  .timeline .seg .fill { left: 0; right: auto; top: 0; bottom: 0; height: 100%; width: 0%; transition: width 220ms ease; }
+  .timeline .seg .label { right: auto; bottom: 14px; left: 50%; top: auto; transform: translateX(-50%); display: none; }
+  .timeline .seg.outro::after { left: auto; right: -2px; top: -7px; bottom: auto; }
+  .footer-actions { flex-direction: row; writing-mode: horizontal-tb; }
+  .footer-actions .footer-btn { writing-mode: horizontal-tb; transform: none; }
+  .footer-btn { font-size: 8px; }
+  .zoom-btn { opacity: 0.85; }
+  .scene-outro .ctas { min-width: 0; width: 100%; }
+}
+
+/* Overlays sommaire / sources */
+.full-overlay { position: fixed; inset: 0; background: rgba(250,246,236,0.96); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 300; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 80px 32px 80px; overflow-y: auto; }
+.full-overlay[hidden] { display: none !important; }
+.overlay-close { position: fixed; top: 24px; right: 32px; background: none; border: 1px solid var(--line-strong); padding: 10px 16px; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text); cursor: pointer; border-radius: 3px; transition: border-color 0.2s, color 0.2s; z-index: 310; }
+.overlay-close:hover { border-color: var(--accent); color: var(--accent); }
+.toc-list { list-style: none; max-width: 720px; width: 100%; display: flex; flex-direction: column; gap: 16px; counter-reset: scene-num; }
+.toc-list li { font-family: 'Fraunces', serif; font-size: clamp(20px, 2.4vw, 28px); font-weight: 300; cursor: pointer; padding: 12px 0; border-bottom: 1px dashed var(--line); transition: color 0.2s; display: flex; align-items: baseline; gap: 16px; }
+.toc-list li:hover { color: var(--accent); }
+.toc-list li .num { font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.18em; color: var(--text-faint); min-width: 32px; }
+.toc-list li .meta { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-faint); margin-left: auto; }
+
+.sources-filter { max-width: 720px; width: 100%; padding: 12px 16px; font-family: 'Inter', sans-serif; font-size: 14px; border: 1px solid var(--line-strong); background: transparent; color: var(--text); margin-bottom: 24px; border-radius: 3px; }
+.sources-filter:focus { outline: none; border-color: var(--accent); }
+.sources-list { list-style: none; max-width: 720px; width: 100%; display: flex; flex-direction: column; gap: 16px; }
+.sources-list li { font-family: 'Inter', sans-serif; font-size: 14.5px; line-height: 1.55; padding: 8px 0; border-bottom: 1px dashed var(--line); display: flex; gap: 14px; transition: background 0.4s; }
+.sources-list li.flash { background: rgba(184, 88, 46, 0.18); }
+.sources-list li .num { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--accent); min-width: 28px; padding-top: 2px; }
+.sources-list li a { color: var(--accent); text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 3px; transition: text-decoration-color 0.2s; }
+.sources-list li a:hover { text-decoration-color: var(--accent); }
+
+.toaster { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 12px 20px; border-radius: 24px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; z-index: 60; opacity: 0; pointer-events: none; transition: opacity 0.4s ease; max-width: calc(100vw - 32px); text-align: center; }
+.toaster.show { opacity: 1; }
+.toaster[hidden] { display: none; }
+
+.idle-cue { position: fixed; bottom: 60px; right: 88px; font-family: 'JetBrains Mono', monospace; font-size: 18px; color: var(--accent); opacity: 0; pointer-events: none; transition: opacity 0.5s; z-index: 35; animation: idle-pulse 1.5s ease-in-out infinite; }
+.idle-cue.show { opacity: 0.5; }
+@keyframes idle-pulse { 0%, 100% { transform: translateY(0); opacity: 0.3; } 50% { transform: translateY(-4px); opacity: 0.7; } }
+@media (prefers-reduced-motion: reduce) { .idle-cue { animation: none; } }
+@media (max-width: 1024px) { .idle-cue { display: none; } }
+
+.topbar.idle { opacity: 0.25; }
+.topbar:hover { opacity: 1 !important; }
+</style>
+</head>
+<body>
+
+<header class="topbar" id="topbar">
+  <a href="../index.html">Mathieu <em>Guglielmino</em></a>
+  <div class="scene-title-bar" id="scene-title-bar"></div>
+  <a href="../index.html#series" class="back">← Retour aux dossiers</a>
+</header>
+
+<div id="schemas" hidden>
+  <!-- SVG inline copiés depuis l'app illustrée — visibles via render() en JS -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 155 1200 635" id="svg-01-spectre" data-schema-id="schema-01" role="img" aria-label="Spectre auteur ↔ lecteur de Segel-Heer (2010), avec les sept genres positionnés">
+  <style>
+    .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+    .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+    .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    .ink   { fill: #1A1A1A; }
+    .graphite { fill: #5A5A5A; }
+    .mist  { fill: #B8B5AE; }
+    .carmine { fill: #B7332C; }
+    .teal  { fill: #1F5560; }
+  </style>
+  <defs>
+    <marker id="arrow1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#1A1A1A"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="800" fill="transparent"/>
+
+  <!-- Header (masqué dans le slideshow via .svg-header) -->
+  <g class="svg-header">
+  <text x="60" y="56" class="mono ink" font-size="11" font-weight="600" letter-spacing="0.18em">SCHÉMA 01</text>
+  <text x="60" y="100" class="display ink" font-size="26" font-weight="600" letter-spacing="-0.01em">Le spectre auteur ↔ lecteur</text>
+  <text x="60" y="128" class="display graphite" font-size="16" font-style="italic">Sept genres narratifs (Segel &amp; Heer, 2010), positionnés selon le degré de contrôle auctorial</text>
+  </g>
+
+  <!-- Axis line -->
+  <line id="axis-line" x1="120" y1="430" x2="1080" y2="430" stroke="#1A1A1A" stroke-width="2.5" marker-end="url(#arrow1)" marker-start="url(#arrow1)"/>
+
+  <!-- Pole labels -->
+  <g id="axis-labels">
+  <text x="120" y="470" class="mono carmine" font-size="11" font-weight="600" letter-spacing="0.18em">AUTHOR-DRIVEN</text>
+  <text x="120" y="490" class="body graphite" font-size="11">Chemin linéaire strict · message imposé · zéro interactivité</text>
+
+  <text x="1080" y="470" class="mono teal" font-size="11" font-weight="600" letter-spacing="0.18em" text-anchor="end">READER-DRIVEN</text>
+  <text x="1080" y="490" class="body graphite" font-size="11" text-anchor="end">Exploration libre · pas de chemin imposé · maximale interactivité</text>
+  </g>
+
+  <!-- Tick marks -->
+  <g id="tick-marks" stroke="#5A5A5A" stroke-width="0.75">
+    <line x1="120" y1="425" x2="120" y2="445"/>
+    <line x1="360" y1="425" x2="360" y2="445"/>
+    <line x1="600" y1="425" x2="600" y2="445"/>
+    <line x1="840" y1="425" x2="840" y2="445"/>
+    <line x1="1080" y1="425" x2="1080" y2="445"/>
+  </g>
+
+  <!-- Genres - upper row -->
+  <g class="interactive" id="genre-comic-strip" data-card="comic-strip" tabindex="0" role="button" aria-label="Comic strip">
+    <line x1="180" y1="430" x2="180" y2="290" stroke="#5A5A5A" stroke-width="0.75"/>
+    <circle cx="180" cy="290" r="34" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="180" y="284" class="body ink" font-size="11" font-weight="500" text-anchor="middle">Comic</text>
+    <text x="180" y="298" class="body ink" font-size="11" font-weight="500" text-anchor="middle">strip</text>
+    <text x="180" y="244" class="mono graphite" font-size="10" text-anchor="middle">Tonal · linéaire</text>
+  </g>
+
+  <g class="interactive" id="genre-film-video" data-card="film-video" tabindex="0" role="button" aria-label="Film / video / animation">
+    <line x1="280" y1="430" x2="280" y2="220" stroke="#5A5A5A" stroke-width="0.75"/>
+    <circle cx="280" cy="220" r="34" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="280" y="214" class="body ink" font-size="11" font-weight="500" text-anchor="middle">Film /</text>
+    <text x="280" y="228" class="body ink" font-size="11" font-weight="500" text-anchor="middle">video</text>
+    <text x="280" y="174" class="mono graphite" font-size="10" text-anchor="middle">Tempo total</text>
+  </g>
+
+  <g class="interactive" id="genre-annotated" data-card="annotated" tabindex="0" role="button" aria-label="Annotated chart">
+    <line x1="420" y1="430" x2="420" y2="290" stroke="#5A5A5A" stroke-width="0.75"/>
+    <circle cx="420" cy="290" r="34" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="420" y="284" class="body ink" font-size="11" font-weight="500" text-anchor="middle">Annotated</text>
+    <text x="420" y="298" class="body ink" font-size="11" font-weight="500" text-anchor="middle">chart</text>
+    <text x="420" y="244" class="mono graphite" font-size="10" text-anchor="middle">Une pointe · sobre</text>
+  </g>
+
+  <g class="interactive" id="genre-magazine" data-card="magazine" tabindex="0" role="button" aria-label="Magazine style">
+    <line x1="540" y1="430" x2="540" y2="220" stroke="#5A5A5A" stroke-width="0.75"/>
+    <circle cx="540" cy="220" r="36" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="540" y="216" class="body ink" font-size="11" font-weight="500" text-anchor="middle">Magazine</text>
+    <text x="540" y="230" class="body ink" font-size="11" font-weight="500" text-anchor="middle">style</text>
+    <text x="540" y="170" class="mono graphite" font-size="10" text-anchor="middle">Référence durable</text>
+  </g>
+
+  <g class="interactive" id="genre-scrolly" data-card="scrolly" tabindex="0" role="button" aria-label="Scrollytelling">
+    <line x1="660" y1="430" x2="660" y2="600" stroke="#5A5A5A" stroke-width="0.75"/>
+    <circle cx="660" cy="600" r="40" fill="#FAF8F3" stroke="#B7332C" stroke-width="2.5"/>
+    <text x="660" y="596" class="body ink" font-size="11" font-weight="600" text-anchor="middle">Scrolly-</text>
+    <text x="660" y="610" class="body ink" font-size="11" font-weight="600" text-anchor="middle">telling</text>
+    <text x="660" y="660" class="mono carmine" font-size="10" font-weight="600" text-anchor="middle">post-2010 · dominant 2026</text>
+  </g>
+
+  <g class="interactive" id="genre-slideshow" data-card="slideshow" tabindex="0" role="button" aria-label="Slide show">
+    <line x1="780" y1="430" x2="780" y2="600" stroke="#5A5A5A" stroke-width="0.75"/>
+    <circle cx="780" cy="600" r="34" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="780" y="596" class="body ink" font-size="11" font-weight="500" text-anchor="middle">Slide</text>
+    <text x="780" y="610" class="body ink" font-size="11" font-weight="500" text-anchor="middle">show</text>
+    <text x="780" y="654" class="mono graphite" font-size="10" text-anchor="middle">Étapes interactives</text>
+  </g>
+
+  <g class="interactive" id="genre-flow-chart" data-card="flow-chart" tabindex="0" role="button" aria-label="Flow chart">
+    <line x1="900" y1="430" x2="900" y2="290" stroke="#5A5A5A" stroke-width="0.75"/>
+    <circle cx="900" cy="290" r="34" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="900" y="284" class="body ink" font-size="11" font-weight="500" text-anchor="middle">Flow</text>
+    <text x="900" y="298" class="body ink" font-size="11" font-weight="500" text-anchor="middle">chart</text>
+    <text x="900" y="244" class="mono graphite" font-size="10" text-anchor="middle">Branchements</text>
+  </g>
+
+  <g class="interactive" id="genre-poster" data-card="poster" tabindex="0" role="button" aria-label="Partitioned poster">
+    <line x1="1010" y1="430" x2="1010" y2="600" stroke="#5A5A5A" stroke-width="0.75"/>
+    <circle cx="1010" cy="600" r="38" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="1010" y="596" class="body ink" font-size="11" font-weight="500" text-anchor="middle">Partitioned</text>
+    <text x="1010" y="610" class="body ink" font-size="11" font-weight="500" text-anchor="middle">poster</text>
+    <text x="1010" y="660" class="mono graphite" font-size="10" text-anchor="middle">Composition libre</text>
+  </g>
+
+  <!-- Caption legend -->
+  <g id="legend" transform="translate(60, 700)">
+    <circle cx="0" cy="0" r="6" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="14" y="4" class="body graphite" font-size="11">Genres à dominante author-driven</text>
+    <circle cx="320" cy="0" r="6" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="334" y="4" class="body graphite" font-size="11">Genres avec poignées d'exploration</text>
+    <circle cx="660" cy="0" r="7" fill="#FAF8F3" stroke="#B7332C" stroke-width="2.5"/>
+    <text x="676" y="4" class="body ink" font-size="11" font-weight="500">Pattern dominant 2026</text>
+  </g>
+
+  <!-- Footer -->
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="762" class="body graphite" font-size="10" font-style="italic">Source : Segel &amp; Heer, « Narrative Visualization », IEEE TVCG, 2010 ; le scrollytelling ajouté à partir des conventions stabilisées 2012–2024.</text>
+</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 155 1200 635" id="svg-02-fondations" data-schema-id="schema-02" role="img" aria-label="Stack des fondations canoniques de la visualisation narrative">
+  <style>
+    .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+    .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+    .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    .ink   { fill: #1A1A1A; }
+    .graphite { fill: #5A5A5A; }
+    .carmine { fill: #B7332C; }
+    .teal  { fill: #1F5560; }
+    .mustard { fill: #B58A2C; }
+  </style>
+  <rect width="1200" height="800" fill="transparent"/>
+
+  <g class="svg-header">
+  <text x="60" y="56" class="mono ink" font-size="11" font-weight="600" letter-spacing="0.18em">SCHÉMA 02</text>
+  <text x="60" y="100" class="display ink" font-size="26" font-weight="600" letter-spacing="-0.01em">Les fondations canoniques empilées</text>
+  <text x="60" y="128" class="display graphite" font-size="16" font-style="italic">Cinq couches théoriques, de la perception au jugement éthique. À diagnostiquer dans cet ordre.</text>
+  </g>
+
+  <!-- Stacked layers -->
+  <g transform="translate(80, 180)">
+    <!-- Layer 5 — Cairo (top) -->
+    <g id="stack-cairo" class="interactive" data-card="cairo" tabindex="0" role="button" aria-label="Cairo : éthique du graphique">
+      <rect x="0" y="0" width="900" height="80" rx="3" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.25"/>
+      <text x="24" y="32" class="mono carmine" font-size="11" font-weight="600" letter-spacing="0.12em">COUCHE 5 · CAIRO 2012/2016</text>
+      <text x="24" y="58" class="display ink" font-size="18" font-weight="500">Éthique du graphique fonctionnel</text>
+      <text x="500" y="32" class="body graphite" font-size="11" font-style="italic">« Honesty, clarity, and depth come first. »</text>
+      <text x="500" y="51" class="body ink" font-size="12">Truthful → Functional → Beautiful →<tspan x="500" dy="15">Insightful → Enlightening</tspan></text>
+    </g>
+
+    <!-- Layer 4 — Meirelles -->
+    <g id="stack-meirelles" class="interactive" data-card="meirelles" tabindex="0" role="button" aria-label="Meirelles : structures de l'information">
+      <rect x="0" y="100" width="900" height="80" rx="3" fill="#FAF8F3" stroke="#B58A2C" stroke-width="1.25"/>
+      <text x="24" y="132" class="mono mustard" font-size="11" font-weight="600" letter-spacing="0.12em">COUCHE 4 · MEIRELLES 2013</text>
+      <text x="24" y="158" class="display ink" font-size="18" font-weight="500">Six structures de l'information</text>
+      <text x="500" y="132" class="body graphite" font-size="11" font-style="italic">« Quelle structure dominante porte mon récit ? »</text>
+      <text x="500" y="151" class="body ink" font-size="12">Hiérarchique · relationnelle · temporelle<tspan x="500" dy="15">spatiale · spatio-temporelle · textuelle</tspan></text>
+    </g>
+
+    <!-- Layer 3 — Munzner -->
+    <g id="stack-munzner" class="interactive" data-card="munzner" tabindex="0" role="button" aria-label="Munzner : What/Why/How">
+      <rect x="0" y="200" width="900" height="80" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
+      <text x="24" y="232" class="mono teal" font-size="11" font-weight="600" letter-spacing="0.12em">COUCHE 3 · MUNZNER 2014</text>
+      <text x="24" y="258" class="display ink" font-size="18" font-weight="500">Démarche analytique : What / Why / How</text>
+      <text x="500" y="232" class="body graphite" font-size="11" font-style="italic">« L'erreur est de commencer par How. »</text>
+      <text x="500" y="251" class="body ink" font-size="12">What : type de données · Why : tâche analytique<tspan x="500" dy="15">How : encodage et interaction</tspan></text>
+    </g>
+
+    <!-- Layer 2 — Shneiderman -->
+    <g id="stack-shneiderman" class="interactive" data-card="shneiderman" tabindex="0" role="button" aria-label="Shneiderman : Visual Information Seeking Mantra">
+      <rect x="0" y="300" width="900" height="80" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
+      <text x="24" y="332" class="mono teal" font-size="11" font-weight="600" letter-spacing="0.12em">COUCHE 2 · SHNEIDERMAN 1996</text>
+      <text x="24" y="358" class="display ink" font-size="18" font-weight="500">Boucle d'interaction (mantra)</text>
+      <text x="500" y="332" class="body graphite" font-size="11" font-style="italic">« Overview first, zoom and filter, then details on demand. »</text>
+      <text x="500" y="351" class="body ink" font-size="12">7 tâches : overview · zoom · filter<tspan x="500" dy="15">details · relate · history · extract</tspan></text>
+    </g>
+
+    <!-- Layer 1 — Bertin (base) -->
+    <g id="stack-bertin" class="interactive" data-card="bertin" tabindex="0" role="button" aria-label="Bertin : sémiologie graphique">
+      <rect x="0" y="400" width="900" height="80" rx="3" fill="#FAF8F3" stroke="#1A1A1A" stroke-width="1.25"/>
+      <text x="24" y="432" class="mono ink" font-size="11" font-weight="600" letter-spacing="0.12em">COUCHE 1 · BERTIN 1967</text>
+      <text x="24" y="458" class="display ink" font-size="18" font-weight="500">Encodage perceptuel — sémiologie graphique</text>
+      <text x="500" y="432" class="body graphite" font-size="11" font-style="italic">« Adéquation entre nature de la donnée et variable visuelle. »</text>
+      <text x="500" y="451" class="body ink" font-size="12">2 variables planaires + 6 rétiniennes :<tspan x="500" dy="15">taille, valeur, grain, couleur, orientation, forme</tspan></text>
+    </g>
+
+    <!-- Vertical "ground up" arrow -->
+    <text x="950" y="22" class="mono carmine" font-size="11" font-weight="600" letter-spacing="0.12em" text-anchor="start">↑ ÉTHIQUE</text>
+    <text x="950" y="450" class="mono ink" font-size="11" font-weight="600" letter-spacing="0.12em" text-anchor="start">PERCEPTION ↓</text>
+    <line x1="970" y1="40" x2="970" y2="430" stroke="#5A5A5A" stroke-width="0.75" stroke-dasharray="3 3"/>
+  </g>
+
+  <!-- Footer -->
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="762" class="body graphite" font-size="10" font-style="italic">Sources : Bertin, Sémiologie graphique (1967) ; Shneiderman, IEEE Visual Languages (1996) ; Meirelles, Design for Information (2013) ; Munzner, Visualization Analysis &amp; Design (2014) ; Cairo, The Truthful Art (2016).</text>
+</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 105 1200 685" id="svg-03-genres" data-schema-id="schema-03" role="img" aria-label="Matrice genres × dimensions de design narratif">
+  <style>
+    .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+    .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+    .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    .ink   { fill: #1A1A1A; }
+    .graphite { fill: #5A5A5A; }
+    .carmine { fill: #B7332C; }
+    .teal  { fill: #1F5560; }
+  </style>
+  <rect width="1200" height="800" fill="transparent"/>
+
+  <g class="svg-header">
+  <text x="60" y="56" class="mono ink" font-size="11" font-weight="600" letter-spacing="0.18em">SCHÉMA 03</text>
+  <text x="60" y="100" class="display ink" font-size="26" font-weight="600" letter-spacing="-0.01em">Genres × dimensions de design</text>
+  <text x="60" y="128" class="display graphite" font-size="16" font-style="italic">Lecture en intensité : disque plein = forte présence ; quart = présence ponctuelle.</text>
+  </g>
+
+  <!-- Matrix coordinates -->
+  <!-- 4 columns (dimensions) starting at x=420, gap 165 -->
+  <!-- 8 rows (genres) starting at y=210, gap 60 -->
+
+  <!-- Column headers -->
+  <g id="col-headers" class="body" font-size="11" font-weight="500">
+    <text x="450" y="150" text-anchor="middle" class="ink" transform="rotate(-25 450 150)">Structure narrative</text>
+    <text x="615" y="150" text-anchor="middle" class="ink" transform="rotate(-25 615 150)">Interactivité</text>
+    <text x="780" y="150" text-anchor="middle" class="ink" transform="rotate(-25 780 150)">Registre émotionnel</text>
+    <text x="945" y="150" text-anchor="middle" class="ink" transform="rotate(-25 945 150)">Charge de production</text>
+  </g>
+
+  <!-- Subheaders -->
+  <g id="col-subheaders" class="mono graphite" font-size="9" letter-spacing="0.1em">
+    <text x="450" y="195" text-anchor="middle">LIN. → OUVERTE</text>
+    <text x="615" y="195" text-anchor="middle">FAIBLE → FORTE</text>
+    <text x="780" y="195" text-anchor="middle">SOBRE → CHALEUR</text>
+    <text x="945" y="195" text-anchor="middle">LÉGÈRE → LOURDE</text>
+  </g>
+
+  <!-- Row labels and circles -->
+  <g class="body ink" font-size="13" font-weight="500">
+    <!-- Magazine style -->
+    <g id="row-magazine" class="interactive" data-card="magazine-row" tabindex="0" role="button" aria-label="Magazine style — détails par dimension">
+      <text x="60" y="234">Magazine style</text>
+      <circle cx="450" cy="230" r="14" fill="#1F5560" fill-opacity="0.35"/>
+      <circle cx="615" cy="230" r="10" fill="#1F5560" fill-opacity="0.30"/>
+      <circle cx="780" cy="230" r="10" fill="#1F5560" fill-opacity="0.30"/>
+      <circle cx="945" cy="230" r="14" fill="#1F5560" fill-opacity="0.55"/>
+    </g>
+    <!-- Annotated chart -->
+    <g id="row-annotated" class="interactive" data-card="annotated-row" tabindex="0" role="button" aria-label="Annotated chart — détails par dimension">
+      <text x="60" y="294">Annotated chart</text>
+      <circle cx="450" cy="290" r="8" fill="#B7332C" fill-opacity="0.35"/>
+      <circle cx="615" cy="290" r="8" fill="#1F5560" fill-opacity="0.30"/>
+      <circle cx="780" cy="290" r="8" fill="#1F5560" fill-opacity="0.20"/>
+      <circle cx="945" cy="290" r="8" fill="#1F5560" fill-opacity="0.25"/>
+    </g>
+    <!-- Partitioned poster -->
+    <g id="row-poster" class="interactive" data-card="poster-row" tabindex="0" role="button" aria-label="Partitioned poster — détails par dimension">
+      <text x="60" y="354">Partitioned poster</text>
+      <circle cx="450" cy="350" r="14" fill="#1F5560" fill-opacity="0.55"/>
+      <circle cx="615" cy="350" r="10" fill="#1F5560" fill-opacity="0.30"/>
+      <circle cx="780" cy="350" r="12" fill="#1F5560" fill-opacity="0.40"/>
+      <circle cx="945" cy="350" r="12" fill="#1F5560" fill-opacity="0.40"/>
+    </g>
+    <!-- Flow chart -->
+    <g id="row-flow" class="interactive" data-card="flow-row" tabindex="0" role="button" aria-label="Flow chart — détails par dimension">
+      <text x="60" y="414">Flow chart</text>
+      <circle cx="450" cy="410" r="14" fill="#1F5560" fill-opacity="0.50"/>
+      <circle cx="615" cy="410" r="14" fill="#B7332C" fill-opacity="0.45"/>
+      <circle cx="780" cy="410" r="10" fill="#1F5560" fill-opacity="0.30"/>
+      <circle cx="945" cy="410" r="14" fill="#1F5560" fill-opacity="0.50"/>
+    </g>
+    <!-- Comic strip -->
+    <g id="row-comic" class="interactive" data-card="comic-row" tabindex="0" role="button" aria-label="Comic strip — détails par dimension">
+      <text x="60" y="474">Comic strip</text>
+      <circle cx="450" cy="470" r="8" fill="#B7332C" fill-opacity="0.30"/>
+      <circle cx="615" cy="470" r="8" fill="#B7332C" fill-opacity="0.20"/>
+      <circle cx="780" cy="470" r="16" fill="#B7332C" fill-opacity="0.55"/>
+      <circle cx="945" cy="470" r="12" fill="#1F5560" fill-opacity="0.40"/>
+    </g>
+    <!-- Slideshow -->
+    <g id="row-slideshow" class="interactive" data-card="slide-row" tabindex="0" role="button" aria-label="Slide show — détails par dimension">
+      <text x="60" y="534">Slide show</text>
+      <circle cx="450" cy="530" r="10" fill="#1F5560" fill-opacity="0.35"/>
+      <circle cx="615" cy="530" r="14" fill="#1F5560" fill-opacity="0.55"/>
+      <circle cx="780" cy="530" r="10" fill="#1F5560" fill-opacity="0.30"/>
+      <circle cx="945" cy="530" r="14" fill="#1F5560" fill-opacity="0.50"/>
+    </g>
+    <!-- Scrollytelling -->
+    <g id="row-scrolly" class="interactive" data-card="scrolly-row" tabindex="0" role="button" aria-label="Scrollytelling — détails par dimension">
+      <text x="60" y="594" font-weight="600" fill="#B7332C">Scrollytelling</text>
+      <text x="220" y="594" class="mono carmine" font-size="9" font-weight="600" letter-spacing="0.1em">post-2010</text>
+      <circle cx="450" cy="590" r="10" fill="#B7332C" fill-opacity="0.40"/>
+      <circle cx="615" cy="590" r="14" fill="#B7332C" fill-opacity="0.55"/>
+      <circle cx="780" cy="590" r="14" fill="#B7332C" fill-opacity="0.45"/>
+      <circle cx="945" cy="590" r="16" fill="#B7332C" fill-opacity="0.65"/>
+    </g>
+    <!-- Film -->
+    <g id="row-film" class="interactive" data-card="film-row" tabindex="0" role="button" aria-label="Film / video — détails par dimension">
+      <text x="60" y="654">Film / video</text>
+      <circle cx="450" cy="650" r="8" fill="#B7332C" fill-opacity="0.30"/>
+      <circle cx="615" cy="650" r="6" fill="#B7332C" fill-opacity="0.20"/>
+      <circle cx="780" cy="650" r="14" fill="#B7332C" fill-opacity="0.55"/>
+      <circle cx="945" cy="650" r="16" fill="#1F5560" fill-opacity="0.65"/>
+    </g>
+  </g>
+
+  <!-- Vertical separators between columns -->
+  <g id="col-separators" stroke="#E5E1D8" stroke-width="0.5">
+    <line x1="370" y1="210" x2="370" y2="680"/>
+    <line x1="535" y1="210" x2="535" y2="680"/>
+    <line x1="700" y1="210" x2="700" y2="680"/>
+    <line x1="865" y1="210" x2="865" y2="680"/>
+    <line x1="1025" y1="210" x2="1025" y2="680"/>
+  </g>
+
+  <!-- Legend -->
+  <g id="matrix-legend" transform="translate(60, 712)">
+    <circle cx="0" cy="0" r="6" fill="#B7332C" fill-opacity="0.55"/>
+    <text x="14" y="4" class="body graphite" font-size="11">Pôle author-driven (chemin imposé)</text>
+    <circle cx="280" cy="0" r="6" fill="#1F5560" fill-opacity="0.55"/>
+    <text x="294" y="4" class="body graphite" font-size="11">Pôle reader-driven (poignée d'exploration)</text>
+    <text x="600" y="4" class="body graphite" font-size="11" font-style="italic">Cliquer une ligne pour voir la règle d'or du genre.</text>
+  </g>
+
+  <!-- Footer -->
+  <line x1="60" y1="755" x2="1140" y2="755" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="775" class="body graphite" font-size="10" font-style="italic">Source : adaptation Segel &amp; Heer 2010, Riche et al. 2018, lectures empiriques 2024–2026.</text>
+</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 155 900 735" id="svg-04-humanism" data-schema-id="schema-04" role="img" aria-label="Manifeste Data Humanism de Giorgia Lupi — moderniste vs humaniste">
+  <style>
+    .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+    .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+    .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    .ink   { fill: #1A1A1A; }
+    .graphite { fill: #5A5A5A; }
+    .carmine { fill: #B7332C; }
+    .teal  { fill: #1F5560; }
+  </style>
+  <rect width="900" height="900" fill="transparent"/>
+
+  <g class="svg-header">
+  <text x="60" y="56" class="mono ink" font-size="11" font-weight="600" letter-spacing="0.18em">SCHÉMA 04</text>
+  <text x="60" y="100" class="display ink" font-size="24" font-weight="600" letter-spacing="-0.01em">Le tournant humaniste</text>
+  <text x="60" y="128" class="display graphite" font-size="15" font-style="italic">Deux postures, condensées d'après le Manifesto for Data Humanism (Lupi, 2017).</text>
+  </g>
+
+  <!-- Two columns -->
+  <g transform="translate(60, 180)">
+    <!-- Moderniste column -->
+    <g id="col-moderniste" class="interactive" data-card="moderniste" tabindex="0" role="button" aria-label="Posture moderniste">
+      <rect x="0" y="0" width="380" height="640" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
+      <text x="20" y="36" class="mono teal" font-size="11" font-weight="600" letter-spacing="0.14em">POSTURE MODERNISTE</text>
+      <text x="20" y="74" class="display ink" font-size="20" font-weight="500">La donnée comme miroir</text>
+      <text x="20" y="100" class="body graphite" font-size="11" font-style="italic">Tradition Bertin → Tukey → Tufte → Munzner</text>
+
+      <line x1="20" y1="130" x2="360" y2="130" stroke="#E5E1D8" stroke-width="0.5"/>
+
+      <g class="body ink" font-size="12">
+        <text x="20" y="170">→ La donnée est un fait brut.</text>
+        <text x="20" y="200">→ La visualisation est un médium transparent.</text>
+        <text x="20" y="230">→ Le designer s'efface — il est neutre.</text>
+        <text x="20" y="260">→ Le bon graphique = l'absence de déformation.</text>
+        <text x="20" y="290">→ « Data ink ratio » : maximiser les pixels-données.</text>
+        <text x="20" y="320">→ Sobriété analytique : grille, sans-serif, neutralité.</text>
+        <text x="20" y="350">→ L'incertitude est masquée pour ne pas gêner.</text>
+      </g>
+
+      <text x="20" y="408" class="mono teal" font-size="10" letter-spacing="0.12em" font-weight="600">MÉTRIQUE DE QUALITÉ</text>
+      <text x="20" y="436" class="body ink" font-size="13" font-weight="500" font-style="italic">Précision et fidélité.</text>
+
+      <text x="20" y="490" class="mono teal" font-size="10" letter-spacing="0.12em" font-weight="600">USAGE NATUREL</text>
+      <text x="20" y="514" class="body ink" font-size="12">Analyse, monitoring, dashboard,</text>
+      <text x="20" y="532" class="body ink" font-size="12">recherche scientifique.</text>
+
+      <text x="20" y="586" class="mono teal" font-size="10" letter-spacing="0.12em" font-weight="600">ARCHÉTYPE</text>
+      <text x="20" y="612" class="body ink" font-size="12" font-style="italic">Le tableau de bord financier,</text>
+      <text x="20" y="628" class="body ink" font-size="12" font-style="italic">le dashboard épidémiologique.</text>
+    </g>
+
+    <!-- Arrow between columns -->
+    <text id="tension-arrow" x="400" y="320" class="display carmine" font-size="32" font-weight="500" text-anchor="middle">↔</text>
+
+    <!-- Humaniste column -->
+    <g id="col-humaniste" class="interactive" data-card="humaniste" tabindex="0" role="button" aria-label="Posture humaniste">
+      <rect x="420" y="0" width="380" height="640" rx="3" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.5"/>
+      <text x="440" y="36" class="mono carmine" font-size="11" font-weight="600" letter-spacing="0.14em">POSTURE HUMANISTE</text>
+      <text x="440" y="74" class="display ink" font-size="20" font-weight="500">La donnée comme acte</text>
+      <text x="440" y="100" class="body graphite" font-size="11" font-style="italic">Lupi, Posavec, Fragapane, Bremer, Wu, Chalabi</text>
+
+      <line x1="440" y1="130" x2="780" y2="130" stroke="#E5E1D8" stroke-width="0.5"/>
+
+      <g class="body ink" font-size="12">
+        <text x="440" y="170">→ La donnée est d'origine humaine, située.</text>
+        <text x="440" y="200">→ La visualisation est un acte d'interprétation.</text>
+        <text x="440" y="230">→ Le designer assume son énoncé.</text>
+        <text x="440" y="260">→ Les imperfections font partie du réel.</text>
+        <text x="440" y="290">→ Le contexte prime sur la corrélation.</text>
+        <text x="440" y="320">→ Formes organiques, palettes chaudes, manuel.</text>
+        <text x="440" y="350">→ L'incertitude est rendue visible, revendiquée.</text>
+      </g>
+
+      <text x="440" y="408" class="mono carmine" font-size="10" letter-spacing="0.12em" font-weight="600">MÉTRIQUE DE QUALITÉ</text>
+      <text x="440" y="436" class="body ink" font-size="13" font-weight="500" font-style="italic">Justesse de la mise en scène.</text>
+
+      <text x="440" y="490" class="mono carmine" font-size="10" letter-spacing="0.12em" font-weight="600">USAGE NATUREL</text>
+      <text x="440" y="514" class="body ink" font-size="12">Récit civique, sensibilisation,</text>
+      <text x="440" y="532" class="body ink" font-size="12">connaissance de soi, art.</text>
+
+      <text x="440" y="586" class="mono carmine" font-size="10" letter-spacing="0.12em" font-weight="600">ARCHÉTYPE</text>
+      <text x="440" y="612" class="body ink" font-size="12" font-style="italic">Dear Data, The Stories Behind</text>
+      <text x="440" y="628" class="body ink" font-size="12" font-style="italic">a Line, les pièces MoMA.</text>
+    </g>
+  </g>
+
+  <!-- Bottom band — convergence -->
+  <g transform="translate(60, 850)">
+    <text x="0" y="0" class="body graphite" font-size="11" font-style="italic">Source : Lupi, « Data Humanism: The Revolution Will Be Visualized » (2017) ; Lupi &amp; Posavec, Dear Data (2016) ; Fragapane, Stories Behind a Line (2017) ; entretiens 2025.</text>
+  </g>
+</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 155 1200 635" id="svg-05-pipelines" data-schema-id="schema-05" role="img" aria-label="Pipelines techniques : scrollytelling classique vs pipeline agentique IA-driven">
+  <style>
+    .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+    .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+    .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    .ink   { fill: #1A1A1A; }
+    .graphite { fill: #5A5A5A; }
+    .carmine { fill: #B7332C; }
+    .teal  { fill: #1F5560; }
+  </style>
+  <defs>
+    <marker id="arrow5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#5A5A5A"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="800" fill="transparent"/>
+
+  <g class="svg-header">
+  <text x="60" y="56" class="mono ink" font-size="11" font-weight="600" letter-spacing="0.18em">SCHÉMA 05</text>
+  <text x="60" y="100" class="display ink" font-size="26" font-weight="600" letter-spacing="-0.01em">Deux architectures, une convergence</text>
+  <text x="60" y="128" class="display graphite" font-size="16" font-style="italic">Le pipeline scrollytelling « classique » et le pipeline agentique IA-driven coexistent — la pratique 2026 les hybride.</text>
+  </g>
+
+  <!-- Top — scrollytelling classique -->
+  <text id="label-classic" x="60" y="186" class="mono teal" font-size="11" font-weight="600" letter-spacing="0.16em">A · PIPELINE SCROLLYTELLING CLASSIQUE — humain au centre, outils dédiés</text>
+
+  <g id="pipe-classic" transform="translate(60, 210)">
+    <g class="interactive" data-card="classic-data" tabindex="0" role="button" aria-label="Étape : données brutes">
+      <rect x="0" y="0" width="160" height="80" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
+      <text x="14" y="24" class="mono teal" font-size="9" font-weight="600" letter-spacing="0.1em">DONNÉES</text>
+      <text x="14" y="46" class="body ink" font-size="12" font-weight="500">CSV / API / scraping</text>
+      <text x="14" y="64" class="body graphite" font-size="11">Python, dbt, Pandas</text>
+    </g>
+    <line x1="172" y1="40" x2="218" y2="40" stroke="#5A5A5A" stroke-width="0.75" marker-end="url(#arrow5)"/>
+
+    <g class="interactive" data-card="classic-explore" tabindex="0" role="button" aria-label="Étape : exploration analytique">
+      <rect x="225" y="0" width="160" height="80" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
+      <text x="239" y="24" class="mono teal" font-size="9" font-weight="600" letter-spacing="0.1em">EXPLORATION</text>
+      <text x="239" y="46" class="body ink" font-size="12" font-weight="500">Notebooks, Observable</text>
+      <text x="239" y="64" class="body graphite" font-size="11">Tâche d'analyste</text>
+    </g>
+    <line x1="397" y1="40" x2="443" y2="40" stroke="#5A5A5A" stroke-width="0.75" marker-end="url(#arrow5)"/>
+
+    <g class="interactive" data-card="classic-script" tabindex="0" role="button" aria-label="Étape : scénarisation">
+      <rect x="450" y="0" width="160" height="80" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
+      <text x="464" y="24" class="mono teal" font-size="9" font-weight="600" letter-spacing="0.1em">SCÉNARIO</text>
+      <text x="464" y="46" class="body ink" font-size="12" font-weight="500">Storyboard, sections</text>
+      <text x="464" y="64" class="body graphite" font-size="11">Auteur · designer</text>
+    </g>
+    <line x1="622" y1="40" x2="668" y2="40" stroke="#5A5A5A" stroke-width="0.75" marker-end="url(#arrow5)"/>
+
+    <g class="interactive" data-card="classic-build" tabindex="0" role="button" aria-label="Étape : intégration scrollama + D3">
+      <rect x="675" y="0" width="180" height="80" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
+      <text x="689" y="24" class="mono teal" font-size="9" font-weight="600" letter-spacing="0.1em">BUILD</text>
+      <text x="689" y="46" class="body ink" font-size="12" font-weight="500">scrollama + D3 + Svelte</text>
+      <text x="689" y="64" class="body graphite" font-size="11">SVG, transitions, sticky</text>
+    </g>
+    <line x1="867" y1="40" x2="913" y2="40" stroke="#5A5A5A" stroke-width="0.75" marker-end="url(#arrow5)"/>
+
+    <g class="interactive" data-card="classic-publish" tabindex="0" role="button" aria-label="Étape : publication">
+      <rect x="920" y="0" width="160" height="80" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
+      <text x="934" y="24" class="mono teal" font-size="9" font-weight="600" letter-spacing="0.1em">PUBLICATION</text>
+      <text x="934" y="46" class="body ink" font-size="12" font-weight="500">Statique, CDN, mobile</text>
+      <text x="934" y="64" class="body graphite" font-size="11">QA accessibilité</text>
+    </g>
+  </g>
+
+  <!-- Mid — separator -->
+  <line id="pipe-separator" x1="60" y1="370" x2="1140" y2="370" stroke="#E5E1D8" stroke-width="0.5" stroke-dasharray="3 3"/>
+
+  <!-- Bottom — pipeline agentique -->
+  <text id="label-agentic" x="60" y="408" class="mono carmine" font-size="11" font-weight="600" letter-spacing="0.16em">B · PIPELINE AGENTIQUE IA-DRIVEN — orchestration LLM, génération assistée à chaque étape</text>
+
+  <g id="pipe-agentic" transform="translate(60, 432)">
+    <!-- Orchestrator at center top -->
+    <g id="agent-orchestrator" class="interactive" data-card="agent-orchestrator" tabindex="0" role="button" aria-label="Orchestrateur LLM">
+      <rect x="420" y="0" width="240" height="60" rx="3" fill="#FAF8F3" stroke="#B7332C" stroke-width="2"/>
+      <text x="540" y="22" class="mono carmine" font-size="9" font-weight="600" letter-spacing="0.14em" text-anchor="middle">ORCHESTRATEUR LLM</text>
+      <text x="540" y="44" class="body ink" font-size="12" font-weight="500" text-anchor="middle">Plan · délégation · contrôle</text>
+    </g>
+
+    <!-- 4 specialised agents below -->
+    <g id="agent-data" class="interactive" data-card="agent-data" tabindex="0" role="button" aria-label="Agent données">
+      <rect x="20" y="130" width="200" height="80" rx="3" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.25"/>
+      <text x="34" y="154" class="mono carmine" font-size="9" font-weight="600" letter-spacing="0.1em">AGENT 1 — DONNÉES</text>
+      <text x="34" y="176" class="body ink" font-size="12" font-weight="500">Analyse &amp; insights</text>
+      <text x="34" y="194" class="body graphite" font-size="11">Anomalies, tournants, trends</text>
+    </g>
+
+    <g id="agent-script" class="interactive" data-card="agent-script" tabindex="0" role="button" aria-label="Agent scénario">
+      <rect x="240" y="130" width="200" height="80" rx="3" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.25"/>
+      <text x="254" y="154" class="mono carmine" font-size="9" font-weight="600" letter-spacing="0.1em">AGENT 2 — SCÉNARIO</text>
+      <text x="254" y="176" class="body ink" font-size="12" font-weight="500">Séquence des insights</text>
+      <text x="254" y="194" class="body graphite" font-size="11">Hook, corps, pointe</text>
+    </g>
+
+    <g id="agent-viz" class="interactive" data-card="agent-viz" tabindex="0" role="button" aria-label="Agent visualisation">
+      <rect x="640" y="130" width="200" height="80" rx="3" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.25"/>
+      <text x="654" y="154" class="mono carmine" font-size="9" font-weight="600" letter-spacing="0.1em">AGENT 3 — VISU</text>
+      <text x="654" y="176" class="body ink" font-size="12" font-weight="500">Génération graphiques</text>
+      <text x="654" y="194" class="body graphite" font-size="11">SVG · Vega-Lite · code D3</text>
+    </g>
+
+    <g id="agent-narration" class="interactive" data-card="agent-narration" tabindex="0" role="button" aria-label="Agent narration">
+      <rect x="860" y="130" width="200" height="80" rx="3" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.25"/>
+      <text x="874" y="154" class="mono carmine" font-size="9" font-weight="600" letter-spacing="0.1em">AGENT 4 — TEXTE</text>
+      <text x="874" y="176" class="body ink" font-size="12" font-weight="500">Steps, captions, voix</text>
+      <text x="874" y="194" class="body graphite" font-size="11">Synchronisation prose-visuel</text>
+    </g>
+
+    <!-- Connectors from orchestrator to agents -->
+    <g id="agent-connectors" stroke="#B7332C" stroke-width="0.75">
+      <line x1="540" y1="60" x2="120" y2="130" marker-end="url(#arrow5)"/>
+      <line x1="540" y1="60" x2="340" y2="130" marker-end="url(#arrow5)"/>
+      <line x1="540" y1="60" x2="740" y2="130" marker-end="url(#arrow5)"/>
+      <line x1="540" y1="60" x2="960" y2="130" marker-end="url(#arrow5)"/>
+    </g>
+
+    <!-- Human reviewer below -->
+    <g id="human-reviewer" class="interactive" data-card="human-reviewer" tabindex="0" role="button" aria-label="Réviseur humain">
+      <rect x="380" y="240" width="320" height="56" rx="3" fill="#FAF8F3" stroke="#1A1A1A" stroke-width="1.5"/>
+      <text x="540" y="264" class="mono ink" font-size="9" font-weight="600" letter-spacing="0.14em" text-anchor="middle">RÉVISEUR HUMAIN — ACTE D'AUTEUR FINAL</text>
+      <text x="540" y="286" class="body ink" font-size="12" font-style="italic" text-anchor="middle">Thèse · rythme · registre · responsabilité</text>
+    </g>
+
+    <g id="reviewer-connector" stroke="#5A5A5A" stroke-width="0.75" stroke-dasharray="2 3">
+      <line x1="540" y1="210" x2="540" y2="240" marker-end="url(#arrow5)"/>
+    </g>
+  </g>
+
+  <!-- Footer -->
+  <line x1="60" y1="755" x2="1140" y2="755" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="775" class="body graphite" font-size="10" font-style="italic">Pipeline B inspiré de Shen et al., « From Data to Story », Gen4DS Workshop, IEEE VIS 2024.</text>
+</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 155 1200 635" id="svg-06-chaine" data-schema-id="schema-06" role="img" aria-label="Chaîne narrative augmentée par IA — part IA et part humaine par étape">
+  <style>
+    .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+    .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+    .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    .ink   { fill: #1A1A1A; }
+    .graphite { fill: #5A5A5A; }
+    .carmine { fill: #B7332C; }
+    .teal  { fill: #1F5560; }
+  </style>
+  <rect width="1200" height="800" fill="transparent"/>
+
+  <g class="svg-header">
+  <text x="60" y="56" class="mono ink" font-size="11" font-weight="600" letter-spacing="0.18em">SCHÉMA 06</text>
+  <text x="60" y="100" class="display ink" font-size="26" font-weight="600" letter-spacing="-0.01em">L'IA dans la chaîne narrative</text>
+  <text x="60" y="128" class="display graphite" font-size="16" font-style="italic">Sept étapes, deux zones : ce que l'IA peut prendre (au-dessus) et ce qu'elle ne remplace pas — là où vit le risque.</text>
+  </g>
+
+  <!-- Legend -->
+  <g id="chain-legend" transform="translate(60, 168)">
+    <rect x="0" y="0" width="14" height="14" fill="#1F5560" fill-opacity="0.55"/>
+    <text x="22" y="11" class="body ink" font-size="11">Part menée par l'IA</text>
+    <rect x="220" y="0" width="14" height="14" fill="#B7332C" fill-opacity="0.55"/>
+    <text x="242" y="11" class="body ink" font-size="11">Part irréductiblement humaine</text>
+    <text x="1100" y="11" class="body graphite" font-size="11" font-style="italic" text-anchor="end">Texte = risque dominant si l'IA déborde sur la zone humaine.</text>
+  </g>
+
+  <!-- Chart area -->
+  <g>
+    <!-- Faint top/bottom guides -->
+    <line id="chain-guide-top" x1="70" y1="220" x2="1090" y2="220" stroke="#5A5A5A" stroke-width="0.4" stroke-dasharray="2 4" opacity="0.32"/>
+    <line id="chain-guide-bottom" x1="70" y1="600" x2="1090" y2="600" stroke="#5A5A5A" stroke-width="0.4" stroke-dasharray="2 4" opacity="0.32"/>
+    <!-- Midline (zero axis) -->
+    <line id="chain-axis" x1="70" y1="425" x2="1090" y2="425" stroke="#1A1A1A" stroke-width="1.25"/>
+
+    <!-- Step 1 — Cadrage -->
+    <g id="chain-step-1" class="interactive" data-card="step-cadrage" tabindex="0" role="button" aria-label="Étape 1 — Cadrage">
+      <rect x="70" y="385" width="120" height="40" fill="#1F5560" fill-opacity="0.55"/>
+      <rect x="70" y="425" width="120" height="160" fill="#B7332C" fill-opacity="0.55"/>
+      <text x="130" y="608" class="body graphite" font-size="9" text-anchor="middle" font-style="italic" letter-spacing="0.04em">RISQUE</text>
+      <text x="130" y="624" class="body graphite" font-size="11" text-anchor="middle" font-style="italic">récit moyen</text>
+      <text x="130" y="685" class="mono ink" font-size="10" font-weight="600" text-anchor="middle" letter-spacing="0.08em">01</text>
+      <text x="130" y="705" class="body ink" font-size="12" font-weight="500" text-anchor="middle">Cadrage</text>
+      <text x="130" y="723" class="body graphite" font-size="10" text-anchor="middle">&amp; thèse</text>
+    </g>
+
+    <!-- Step 2 — Données -->
+    <g id="chain-step-2" class="interactive" data-card="step-donnees" tabindex="0" role="button" aria-label="Étape 2 — Données">
+      <rect x="220" y="255" width="120" height="170" fill="#1F5560" fill-opacity="0.55"/>
+      <rect x="220" y="425" width="120" height="40" fill="#B7332C" fill-opacity="0.55"/>
+      <text x="280" y="608" class="body graphite" font-size="9" text-anchor="middle" font-style="italic" letter-spacing="0.04em">RISQUE</text>
+      <text x="280" y="624" class="body graphite" font-size="11" text-anchor="middle" font-style="italic">hallucination silencieuse</text>
+      <text x="280" y="685" class="mono ink" font-size="10" font-weight="600" text-anchor="middle" letter-spacing="0.08em">02</text>
+      <text x="280" y="705" class="body ink" font-size="12" font-weight="500" text-anchor="middle">Données</text>
+      <text x="280" y="723" class="body graphite" font-size="10" text-anchor="middle">collecte / clean</text>
+    </g>
+
+    <!-- Step 3 — Exploration -->
+    <g id="chain-step-3" class="interactive" data-card="step-exploration" tabindex="0" role="button" aria-label="Étape 3 — Exploration">
+      <rect x="370" y="280" width="120" height="145" fill="#1F5560" fill-opacity="0.55"/>
+      <rect x="370" y="425" width="120" height="60" fill="#B7332C" fill-opacity="0.55"/>
+      <text x="430" y="608" class="body graphite" font-size="9" text-anchor="middle" font-style="italic" letter-spacing="0.04em">RISQUE</text>
+      <text x="430" y="624" class="body graphite" font-size="11" text-anchor="middle" font-style="italic">confondre signal et bruit</text>
+      <text x="430" y="685" class="mono ink" font-size="10" font-weight="600" text-anchor="middle" letter-spacing="0.08em">03</text>
+      <text x="430" y="705" class="body ink" font-size="12" font-weight="500" text-anchor="middle">Exploration</text>
+      <text x="430" y="723" class="body graphite" font-size="10" text-anchor="middle">analytique</text>
+    </g>
+
+    <!-- Step 4 — Scénario -->
+    <g id="chain-step-4" class="interactive" data-card="step-scenario" tabindex="0" role="button" aria-label="Étape 4 — Scénario">
+      <rect x="520" y="395" width="120" height="30" fill="#1F5560" fill-opacity="0.55"/>
+      <rect x="520" y="425" width="120" height="170" fill="#B7332C" fill-opacity="0.65"/>
+      <text x="580" y="608" class="body graphite" font-size="9" text-anchor="middle" font-style="italic" letter-spacing="0.04em">RISQUE</text>
+      <text x="580" y="624" class="body graphite" font-size="11" text-anchor="middle" font-style="italic">sur-structuration LLM</text>
+      <text x="580" y="685" class="mono ink" font-size="10" font-weight="600" text-anchor="middle" letter-spacing="0.08em">04</text>
+      <text x="580" y="705" class="body ink" font-size="12" font-weight="600" text-anchor="middle">Scénario</text>
+      <text x="580" y="723" class="body graphite" font-size="10" text-anchor="middle">acte d'auteur</text>
+    </g>
+
+    <!-- Step 5 — Production -->
+    <g id="chain-step-5" class="interactive" data-card="step-production" tabindex="0" role="button" aria-label="Étape 5 — Production">
+      <rect x="670" y="315" width="120" height="110" fill="#1F5560" fill-opacity="0.55"/>
+      <rect x="670" y="425" width="120" height="85" fill="#B7332C" fill-opacity="0.55"/>
+      <text x="730" y="608" class="body graphite" font-size="9" text-anchor="middle" font-style="italic" letter-spacing="0.04em">RISQUE</text>
+      <text x="730" y="624" class="body graphite" font-size="11" text-anchor="middle" font-style="italic">clichés visuels</text>
+      <text x="730" y="685" class="mono ink" font-size="10" font-weight="600" text-anchor="middle" letter-spacing="0.08em">05</text>
+      <text x="730" y="705" class="body ink" font-size="12" font-weight="500" text-anchor="middle">Production</text>
+      <text x="730" y="723" class="body graphite" font-size="10" text-anchor="middle">artefacts</text>
+    </g>
+
+    <!-- Step 6 — Intégration -->
+    <g id="chain-step-6" class="interactive" data-card="step-integration" tabindex="0" role="button" aria-label="Étape 6 — Intégration">
+      <rect x="820" y="295" width="120" height="130" fill="#1F5560" fill-opacity="0.55"/>
+      <rect x="820" y="425" width="120" height="65" fill="#B7332C" fill-opacity="0.55"/>
+      <text x="880" y="608" class="body graphite" font-size="9" text-anchor="middle" font-style="italic" letter-spacing="0.04em">RISQUE</text>
+      <text x="880" y="624" class="body graphite" font-size="11" text-anchor="middle" font-style="italic">mobile cassé</text>
+      <text x="880" y="685" class="mono ink" font-size="10" font-weight="600" text-anchor="middle" letter-spacing="0.08em">06</text>
+      <text x="880" y="705" class="body ink" font-size="12" font-weight="500" text-anchor="middle">Intégration</text>
+      <text x="880" y="723" class="body graphite" font-size="10" text-anchor="middle">interactive</text>
+    </g>
+
+    <!-- Step 7 — QA & publication -->
+    <g id="chain-step-7" class="interactive" data-card="step-qa" tabindex="0" role="button" aria-label="Étape 7 — QA et publication">
+      <rect x="970" y="370" width="120" height="55" fill="#1F5560" fill-opacity="0.55"/>
+      <rect x="970" y="425" width="120" height="140" fill="#B7332C" fill-opacity="0.55"/>
+      <text x="1030" y="608" class="body graphite" font-size="9" text-anchor="middle" font-style="italic" letter-spacing="0.04em">RISQUE</text>
+      <text x="1030" y="624" class="body graphite" font-size="11" text-anchor="middle" font-style="italic">effacement du POV</text>
+      <text x="1030" y="685" class="mono ink" font-size="10" font-weight="600" text-anchor="middle" letter-spacing="0.08em">07</text>
+      <text x="1030" y="705" class="body ink" font-size="12" font-weight="500" text-anchor="middle">QA &amp; publi.</text>
+      <text x="1030" y="723" class="body graphite" font-size="10" text-anchor="middle">jugement final</text>
+    </g>
+  </g>
+
+  <!-- Insight strip -->
+  <g id="chain-insight" transform="translate(60, 758)">
+    <line x1="0" y1="-8" x2="1080" y2="-8" stroke="#E5E1D8" stroke-width="0.5"/>
+    <text x="0" y="6" class="body ink" font-size="12" font-weight="500">Régularité 2024–2026 :</text>
+    <text x="148" y="6" class="body ink" font-size="12">l'IA augmente la productivité d'un facteur 2 à 5 sur les étapes industrielles ; elle ne crée pas la pointe éditoriale.</text>
+  </g>
+
+  <!-- Footer -->
+  <text x="60" y="788" class="body graphite" font-size="10" font-style="italic">Source : observation pipelines NYT, FT, Reuters Graphics, The Pudding, Le Monde 2024–2026 ; arXiv 2503.02631 (Reflection on Data Storytelling Tools, 2025).</text>
+</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 155 1200 635" id="svg-07-matrice" data-schema-id="schema-07" role="img" aria-label="Matrice contexte × pattern narratif recommandé">
+  <style>
+    .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+    .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+    .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    .ink   { fill: #1A1A1A; }
+    .graphite { fill: #5A5A5A; }
+    .carmine { fill: #B7332C; }
+    .teal  { fill: #1F5560; }
+  </style>
+  <rect width="1200" height="800" fill="transparent"/>
+
+  <g class="svg-header">
+  <text x="60" y="56" class="mono ink" font-size="11" font-weight="600" letter-spacing="0.18em">SCHÉMA 07</text>
+  <text x="60" y="100" class="display ink" font-size="26" font-weight="600" letter-spacing="-0.01em">Choisir le pattern : matrice contexte × format</text>
+  <text x="60" y="128" class="display graphite" font-size="16" font-style="italic">Cinq cas-types, le pattern dominant et le pattern à éviter pour chacun.</text>
+  </g>
+
+  <!-- 5 cards in a 5-column grid -->
+  <g transform="translate(60, 180)">
+    <!-- Cas A — Briefing court -->
+    <g id="case-A" class="interactive" data-card="cas-A" tabindex="0" role="button" aria-label="Cas A — Briefing court">
+      <rect x="0" y="0" width="200" height="500" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
+      <text x="14" y="30" class="mono teal" font-size="11" font-weight="600" letter-spacing="0.14em">CAS A</text>
+      <text x="14" y="58" class="display ink" font-size="16" font-weight="500">Briefing court</text>
+      <text x="14" y="78" class="body graphite" font-size="11" font-style="italic">Comité, décision rapide</text>
+
+      <line x1="14" y1="100" x2="186" y2="100" stroke="#E5E1D8" stroke-width="0.5"/>
+
+      <text x="14" y="130" class="mono graphite" font-size="9" letter-spacing="0.12em">PUBLIC</text>
+      <text x="14" y="148" class="body ink" font-size="12">Expert, décide</text>
+      <text x="14" y="172" class="mono graphite" font-size="9" letter-spacing="0.12em">TEMPO</text>
+      <text x="14" y="190" class="body ink" font-size="12">5–15 minutes</text>
+      <text x="14" y="214" class="mono graphite" font-size="9" letter-spacing="0.12em">CHARGE</text>
+      <text x="14" y="232" class="body ink" font-size="12">1–3 jours</text>
+
+      <line x1="14" y1="270" x2="186" y2="270" stroke="#E5E1D8" stroke-width="0.5"/>
+
+      <text x="14" y="296" class="mono carmine" font-size="9" font-weight="600" letter-spacing="0.12em">PATTERN</text>
+      <text x="14" y="316" class="body ink" font-size="13" font-weight="500">Annotated chart</text>
+      <text x="14" y="332" class="body ink" font-size="13" font-weight="500">en série</text>
+      <text x="14" y="356" class="body graphite" font-size="11">Pointe explicite</text>
+      <text x="14" y="372" class="body graphite" font-size="11">3–5 graphiques</text>
+
+      <line x1="14" y1="410" x2="186" y2="410" stroke="#E5E1D8" stroke-width="0.5"/>
+
+      <text x="14" y="436" class="mono graphite" font-size="9" font-weight="600" letter-spacing="0.12em">À ÉVITER</text>
+      <text x="14" y="456" class="body graphite" font-size="11">Slideshow interactif,</text>
+      <text x="14" y="472" class="body graphite" font-size="11">vidéo</text>
+    </g>
+
+    <!-- Cas B — Long-format public -->
+    <g id="case-B" class="interactive" data-card="cas-B" tabindex="0" role="button" aria-label="Cas B — Long-format public">
+      <rect x="220" y="0" width="200" height="500" rx="3" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.5"/>
+      <text x="234" y="30" class="mono carmine" font-size="11" font-weight="600" letter-spacing="0.14em">CAS B</text>
+      <text x="234" y="58" class="display ink" font-size="16" font-weight="500">Long-format</text>
+      <text x="234" y="78" class="body graphite" font-size="11" font-style="italic">Civique, pédagogique</text>
+
+      <line x1="234" y1="100" x2="406" y2="100" stroke="#E5E1D8" stroke-width="0.5"/>
+
+      <text x="234" y="130" class="mono graphite" font-size="9" letter-spacing="0.12em">PUBLIC</text>
+      <text x="234" y="148" class="body ink" font-size="12">Grand public motivé</text>
+      <text x="234" y="172" class="mono graphite" font-size="9" letter-spacing="0.12em">TEMPO</text>
+      <text x="234" y="190" class="body ink" font-size="12">15–40 minutes</text>
+      <text x="234" y="214" class="mono graphite" font-size="9" letter-spacing="0.12em">CHARGE</text>
+      <text x="234" y="232" class="body ink" font-size="12">Plusieurs semaines</text>
+
+      <line x1="234" y1="270" x2="406" y2="270" stroke="#E5E1D8" stroke-width="0.5"/>
+
+      <text x="234" y="296" class="mono carmine" font-size="9" font-weight="600" letter-spacing="0.12em">PATTERN</text>
+      <text x="234" y="316" class="body ink" font-size="13" font-weight="600">Scrollytelling</text>
+      <text x="234" y="332" class="body ink" font-size="13" font-weight="500">+ sticky graphic</text>
+      <text x="234" y="356" class="body graphite" font-size="11">Variantes : explorable</text>
+      <text x="234" y="372" class="body graphite" font-size="11">explanation, comic strip</text>
+
+      <line x1="234" y1="410" x2="406" y2="410" stroke="#E5E1D8" stroke-width="0.5"/>
+
+      <text x="234" y="436" class="mono graphite" font-size="9" font-weight="600" letter-spacing="0.12em">À ÉVITER</text>
+      <text x="234" y="456" class="body graphite" font-size="11">Dashboard,</text>
+      <text x="234" y="472" class="body graphite" font-size="11">PowerPoint commenté</text>
+    </g>
+
+    <!-- Cas C — Document structurant -->
+    <g id="case-C" class="interactive" data-card="cas-C" tabindex="0" role="button" aria-label="Cas C — Document structurant">
+      <rect x="440" y="0" width="200" height="500" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
+      <text x="454" y="30" class="mono teal" font-size="11" font-weight="600" letter-spacing="0.14em">CAS C</text>
+      <text x="454" y="58" class="display ink" font-size="16" font-weight="500">Référence</text>
+      <text x="454" y="78" class="body graphite" font-size="11" font-style="italic">Cadre durable</text>
+
+      <line x1="454" y1="100" x2="626" y2="100" stroke="#E5E1D8" stroke-width="0.5"/>
+
+      <text x="454" y="130" class="mono graphite" font-size="9" letter-spacing="0.12em">PUBLIC</text>
+      <text x="454" y="148" class="body ink" font-size="12">Mixte, revient</text>
+      <text x="454" y="172" class="mono graphite" font-size="9" letter-spacing="0.12em">TEMPO</text>
+      <text x="454" y="190" class="body ink" font-size="12">Non-linéaire</text>
+      <text x="454" y="214" class="mono graphite" font-size="9" letter-spacing="0.12em">CHARGE</text>
+      <text x="454" y="232" class="body ink" font-size="12">Élevée</text>
+
+      <line x1="454" y1="270" x2="626" y2="270" stroke="#E5E1D8" stroke-width="0.5"/>
+
+      <text x="454" y="296" class="mono carmine" font-size="9" font-weight="600" letter-spacing="0.12em">PATTERN</text>
+      <text x="454" y="316" class="body ink" font-size="13" font-weight="500">Magazine style</text>
+      <text x="454" y="332" class="body ink" font-size="13" font-weight="500">+ TOC persistante</text>
+      <text x="454" y="356" class="body graphite" font-size="11">Schémas autonomes,</text>
+      <text x="454" y="372" class="body graphite" font-size="11">lus indépendamment</text>
+
+      <line x1="454" y1="410" x2="626" y2="410" stroke="#E5E1D8" stroke-width="0.5"/>
+
+      <text x="454" y="436" class="mono graphite" font-size="9" font-weight="600" letter-spacing="0.12em">À ÉVITER</text>
+      <text x="454" y="456" class="body graphite" font-size="11">Scrollytelling</text>
+      <text x="454" y="472" class="body graphite" font-size="11">(chemin imposé)</text>
+    </g>
+
+    <!-- Cas D — Émotionnel / politique -->
+    <g id="case-D" class="interactive" data-card="cas-D" tabindex="0" role="button" aria-label="Cas D — Dispositif émotionnel">
+      <rect x="660" y="0" width="200" height="500" rx="3" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.25"/>
+      <text x="674" y="30" class="mono carmine" font-size="11" font-weight="600" letter-spacing="0.14em">CAS D</text>
+      <text x="674" y="58" class="display ink" font-size="16" font-weight="500">Émotionnel</text>
+      <text x="674" y="78" class="body graphite" font-size="11" font-style="italic">Sujet humain ou politique</text>
+
+      <line x1="674" y1="100" x2="846" y2="100" stroke="#E5E1D8" stroke-width="0.5"/>
+
+      <text x="674" y="130" class="mono graphite" font-size="9" letter-spacing="0.12em">PUBLIC</text>
+      <text x="674" y="148" class="body ink" font-size="12">Grand public</text>
+      <text x="674" y="172" class="mono graphite" font-size="9" letter-spacing="0.12em">TEMPO</text>
+      <text x="674" y="190" class="body ink" font-size="12">3–8 minutes</text>
+      <text x="674" y="214" class="mono graphite" font-size="9" letter-spacing="0.12em">CHARGE</text>
+      <text x="674" y="232" class="body ink" font-size="12">Variable</text>
+
+      <line x1="674" y1="270" x2="846" y2="270" stroke="#E5E1D8" stroke-width="0.5"/>
+
+      <text x="674" y="296" class="mono carmine" font-size="9" font-weight="600" letter-spacing="0.12em">PATTERN</text>
+      <text x="674" y="316" class="body ink" font-size="13" font-weight="500">Lupi / Fragapane</text>
+      <text x="674" y="332" class="body ink" font-size="13" font-weight="500">— formes organiques</text>
+      <text x="674" y="356" class="body graphite" font-size="11">Petits datasets,</text>
+      <text x="674" y="372" class="body graphite" font-size="11">cas individuels</text>
+
+      <line x1="674" y1="410" x2="846" y2="410" stroke="#E5E1D8" stroke-width="0.5"/>
+
+      <text x="674" y="436" class="mono graphite" font-size="9" font-weight="600" letter-spacing="0.12em">À ÉVITER</text>
+      <text x="674" y="456" class="body graphite" font-size="11">Palette dashboard,</text>
+      <text x="674" y="472" class="body graphite" font-size="11">grille analytique</text>
+    </g>
+
+    <!-- Cas E — Outil interne -->
+    <g id="case-E" class="interactive" data-card="cas-E" tabindex="0" role="button" aria-label="Cas E — Outil interne récurrent">
+      <rect x="880" y="0" width="200" height="500" rx="3" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1.25" stroke-dasharray="3 3"/>
+      <text x="894" y="30" class="mono graphite" font-size="11" font-weight="600" letter-spacing="0.14em">CAS E</text>
+      <text x="894" y="58" class="display ink" font-size="16" font-weight="500">Outil interne</text>
+      <text x="894" y="78" class="body graphite" font-size="11" font-style="italic">Récurrent, expert</text>
+
+      <line x1="894" y1="100" x2="1066" y2="100" stroke="#E5E1D8" stroke-width="0.5"/>
+
+      <text x="894" y="130" class="mono graphite" font-size="9" letter-spacing="0.12em">PUBLIC</text>
+      <text x="894" y="148" class="body ink" font-size="12">Équipe data, métier</text>
+      <text x="894" y="172" class="mono graphite" font-size="9" letter-spacing="0.12em">TEMPO</text>
+      <text x="894" y="190" class="body ink" font-size="12">Court, répété</text>
+      <text x="894" y="214" class="mono graphite" font-size="9" letter-spacing="0.12em">CHARGE</text>
+      <text x="894" y="232" class="body ink" font-size="12">Maintenance</text>
+
+      <line x1="894" y1="270" x2="1066" y2="270" stroke="#E5E1D8" stroke-width="0.5"/>
+
+      <text x="894" y="296" class="mono graphite" font-size="9" font-weight="600" letter-spacing="0.12em">CE N'EST PAS</text>
+      <text x="894" y="316" class="body ink" font-size="13" font-weight="500">une expérience</text>
+      <text x="894" y="332" class="body ink" font-size="13" font-weight="500">narrative.</text>
+      <text x="894" y="356" class="body graphite" font-size="11">→ Dashboard exploratoire</text>
+      <text x="894" y="372" class="body graphite" font-size="11">classique.</text>
+
+      <line x1="894" y1="410" x2="1066" y2="410" stroke="#E5E1D8" stroke-width="0.5"/>
+
+      <text x="894" y="436" class="mono graphite" font-size="9" font-weight="600" letter-spacing="0.12em">PIÈGE</text>
+      <text x="894" y="456" class="body graphite" font-size="11">Sur-narrer un usage</text>
+      <text x="894" y="472" class="body graphite" font-size="11">qui demande efficacité</text>
+    </g>
+  </g>
+
+  <!-- Footer -->
+  <line x1="60" y1="755" x2="1140" y2="755" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="775" class="body graphite" font-size="10" font-style="italic">Source : grille empirique de l'auteur, validée sur une dizaine d'artefacts produits depuis 2024.</text>
+</svg>
+</div>
+
+<main class="stage" id="stage">
+  <!-- scènes injectées par JS -->
+</main>
+
+<footer class="footer-bar" id="footer-bar">
+  <div class="timeline" id="timeline" data-no-advance></div>
+  <div class="footer-actions" data-no-advance>
+    <button class="footer-btn" id="btn-sources" type="button">Sources</button>
+    <button class="footer-btn" id="btn-toc" type="button" aria-label="Sommaire">≡</button>
+  </div>
+</footer>
+
+<!-- Sommaire overlay -->
+<div id="toc-overlay" class="full-overlay" hidden role="dialog" aria-modal="true" aria-label="Sommaire des scènes">
+  <button class="overlay-close" type="button" aria-label="Fermer le sommaire">Fermer ✕</button>
+  <ol class="toc-list" id="toc-list"></ol>
+</div>
+
+<!-- Sources overlay -->
+<div id="sources-overlay" class="full-overlay" hidden role="dialog" aria-modal="true" aria-label="Sources">
+  <button class="overlay-close" type="button" aria-label="Fermer les sources">Fermer ✕</button>
+  <input type="search" class="sources-filter" id="sources-filter" placeholder="Filtrer les 20 sources…" data-no-advance>
+  <ol class="sources-list" id="sources-list"></ol>
+</div>
+
+<!-- Zoom overlay -->
+<div id="zoom-overlay" hidden role="dialog" aria-modal="true" aria-label="Schéma agrandi">
+  <div id="zoom-header">
+    <span id="zoom-caption"></span>
+    <div class="zoom-controls">
+      <button class="zoom-out" type="button" aria-label="Dézoomer">−</button>
+      <button class="zoom-reset" type="button" aria-label="Réinitialiser">Reset</button>
+      <button class="zoom-in" type="button" aria-label="Zoomer">+</button>
+      <button class="zoom-close" type="button" aria-label="Fermer">×</button>
+    </div>
+  </div>
+  <div id="zoom-stage" tabindex="-1">
+    <div id="zoom-content"></div>
+    <div id="zoom-hint">molette / pinch pour zoomer · clic-glisser pour déplacer · Esc pour fermer</div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div id="modal-root" hidden role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-card">
+    <button class="modal-close" data-close type="button" aria-label="Fermer">×</button>
+    <p class="modal-eyebrow" id="modal-eyebrow"></p>
+    <h3 id="modal-title"></h3>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const FADE_MS = REDUCED_MOTION ? 0 : 250;
+
+const SCENES = [
+  { id: 'intro', type: 'punchline', title: 'Une troisième voie', body: 'Une expérience narrative <mark>impose une structure auctoriale</mark> aux données tout en <mark>préservant l\'agence cognitive</mark> du lecteur.', attribution: 'Mathieu Guglielmino, mai 2026' },
+  {
+    id: 'spectre',
+    type: 'schema',
+    title: 'Le spectre auteur ↔ lecteur',
+    schemaId: 'svg-01-spectre',
+    steps: [
+      {
+        caption: 'Sept genres narratifs identifiés par Segel et Heer en 2010.',
+        highlight: ['#genre-comic-strip', '#genre-film-video', '#genre-annotated', '#genre-magazine', '#genre-scrolly', '#genre-slideshow', '#genre-flow-chart', '#genre-poster'],
+        dim: ['#axis-line', '#axis-labels', '#tick-marks'],
+        hidden: []
+      },
+      {
+        caption: 'Un axe les ordonne : qui mène — l\'auteur ou le lecteur ?',
+        highlight: ['#genre-comic-strip', '#genre-film-video', '#genre-annotated', '#genre-magazine', '#genre-scrolly', '#genre-slideshow', '#genre-flow-chart', '#genre-poster', '#axis-line', '#axis-labels', '#tick-marks'],
+        dim: [],
+        hidden: []
+      },
+      {
+        caption: 'À gauche, l\'auteur dirige strictement : comic strip, film, annotated chart.',
+        highlight: ['#genre-comic-strip', '#genre-film-video', '#genre-annotated'],
+        dim: ['#genre-magazine', '#genre-scrolly', '#genre-slideshow', '#genre-flow-chart', '#genre-poster', '#axis-line', '#axis-labels', '#tick-marks'],
+        hidden: [],
+        modalAuto: 'comic-strip'
+      },
+      {
+        caption: 'Au centre, l\'autorité se relâche progressivement — magazine style, scrollytelling.',
+        highlight: ['#genre-magazine', '#genre-scrolly'],
+        dim: ['#genre-comic-strip', '#genre-film-video', '#genre-annotated', '#genre-slideshow', '#genre-flow-chart', '#genre-poster', '#axis-line', '#axis-labels', '#tick-marks'],
+        hidden: []
+      },
+      {
+        caption: 'À droite, le lecteur explore librement — slideshow, flow chart, partitioned poster.',
+        highlight: ['#genre-slideshow', '#genre-flow-chart', '#genre-poster'],
+        dim: ['#genre-comic-strip', '#genre-film-video', '#genre-annotated', '#genre-magazine', '#genre-scrolly', '#axis-line', '#axis-labels', '#tick-marks'],
+        hidden: []
+      }
+    ]
+  },
+  {
+    id: 'fondations',
+    type: 'schema',
+    title: 'Les fondations canoniques',
+    schemaId: 'svg-02-fondations',
+    steps: [
+      {
+        caption: 'Cinq couches théoriques stratifient quarante ans de réflexion sur la visualisation narrative.',
+        highlight: ['#stack-bertin', '#stack-shneiderman', '#stack-munzner', '#stack-meirelles', '#stack-cairo'],
+        dim: [],
+        hidden: []
+      },
+      {
+        caption: 'Bertin, 1967 — la sémiologie graphique : adéquation entre la donnée et la variable visuelle. La base perceptuelle.',
+        highlight: ['#stack-bertin'],
+        dim: ['#stack-shneiderman', '#stack-munzner', '#stack-meirelles', '#stack-cairo'],
+        hidden: []
+      },
+      {
+        caption: 'Shneiderman, 1996 — le mantra : « overview first, zoom and filter, then details on demand ». L\'ordre cognitif juste.',
+        highlight: ['#stack-shneiderman'],
+        dim: ['#stack-bertin', '#stack-munzner', '#stack-meirelles', '#stack-cairo'],
+        hidden: []
+      },
+      {
+        caption: 'Munzner, 2014 — What / Why / How : ne commencer par How (l\'encodage) qu\'après avoir répondu à What et Why.',
+        highlight: ['#stack-munzner'],
+        dim: ['#stack-bertin', '#stack-shneiderman', '#stack-meirelles', '#stack-cairo'],
+        hidden: []
+      },
+      {
+        caption: 'Meirelles, 2013 — six structures de l\'information : hiérarchique, relationnelle, temporelle, spatiale, spatio-temporelle, textuelle.',
+        highlight: ['#stack-meirelles'],
+        dim: ['#stack-bertin', '#stack-shneiderman', '#stack-munzner', '#stack-cairo'],
+        hidden: []
+      },
+      {
+        caption: 'Cairo, 2016 — l\'éthique du graphique : truthful → functional → beautiful → insightful → enlightening. Le critère le plus haut.',
+        highlight: ['#stack-cairo'],
+        dim: ['#stack-bertin', '#stack-shneiderman', '#stack-munzner', '#stack-meirelles'],
+        hidden: []
+      },
+      {
+        caption: 'Pour diagnostiquer une expérience qui ne marche pas, remonter la pile dans l\'ordre — de la perception à l\'éthique.',
+        highlight: ['#stack-bertin', '#stack-shneiderman', '#stack-munzner', '#stack-meirelles', '#stack-cairo'],
+        dim: [],
+        hidden: []
+      }
+    ]
+  },
+  {
+    id: 'genres',
+    type: 'schema',
+    title: 'Genres × dimensions de design',
+    schemaId: 'svg-03-genres',
+    steps: [
+      {
+        caption: 'Huit genres narratifs évalués selon quatre dimensions : structure, interactivité, registre émotionnel, charge de production.',
+        highlight: ['#row-magazine', '#row-annotated', '#row-poster', '#row-flow', '#row-comic', '#row-slideshow', '#row-scrolly', '#row-film', '#col-headers', '#col-subheaders', '#col-separators'],
+        dim: [],
+        hidden: []
+      },
+      {
+        caption: 'Les genres author-driven (rouge) imposent un chemin : comic strip, film, annotated chart — structure linéaire stricte.',
+        highlight: ['#row-comic', '#row-film', '#row-annotated'],
+        dim: ['#row-magazine', '#row-poster', '#row-flow', '#row-slideshow', '#row-scrolly', '#col-headers', '#col-subheaders', '#col-separators', '#matrix-legend'],
+        hidden: []
+      },
+      {
+        caption: 'Le scrollytelling cumule les quatre dimensions au maximum — post-2010, c\'est le genre dominant du web narratif.',
+        highlight: ['#row-scrolly'],
+        dim: ['#row-magazine', '#row-annotated', '#row-poster', '#row-flow', '#row-comic', '#row-slideshow', '#row-film', '#col-headers', '#col-subheaders', '#col-separators', '#matrix-legend'],
+        hidden: []
+      },
+      {
+        caption: 'Les genres reader-driven (bleu) offrent des poignées d\'exploration : magazine style, partitioned poster, flow chart, slideshow.',
+        highlight: ['#row-magazine', '#row-poster', '#row-flow', '#row-slideshow'],
+        dim: ['#row-annotated', '#row-comic', '#row-film', '#row-scrolly', '#col-headers', '#col-subheaders', '#col-separators', '#matrix-legend'],
+        hidden: []
+      },
+      {
+        caption: 'Chaque genre a une signature unique dans la matrice — aucun ne cumule tout. Le choix dépend du public, du sujet, de la charge tolérée.',
+        highlight: ['#row-magazine', '#row-annotated', '#row-poster', '#row-flow', '#row-comic', '#row-slideshow', '#row-scrolly', '#row-film', '#col-headers', '#col-subheaders', '#col-separators', '#matrix-legend'],
+        dim: [],
+        hidden: []
+      }
+    ]
+  },
+  { id: 'respi-1',     type: 'punchline', title: 'L\'acte éditorial',         body: 'Le data storytelling moderniste prétend à <mark>l\'objectivité de la donnée</mark>. Le tournant humaniste rappelle que <mark>chaque visualisation est un acte éditorial</mark>.' },
+  {
+    id: 'humanism',
+    type: 'schema',
+    title: 'Le manifeste Data Humanism',
+    schemaId: 'svg-04-humanism',
+    steps: [
+      {
+        caption: 'Giorgia Lupi, 2017 : deux postures face à la donnée — moderniste et humaniste. Ni supériorité, ni compromis : deux registres distincts.',
+        highlight: ['#col-moderniste', '#col-humaniste', '#tension-arrow'],
+        dim: [],
+        hidden: []
+      },
+      {
+        caption: 'La posture moderniste : la donnée comme miroir neutre. Le designer s\'efface. La qualité se mesure en précision et fidélité.',
+        highlight: ['#col-moderniste'],
+        dim: ['#col-humaniste', '#tension-arrow'],
+        hidden: []
+      },
+      {
+        caption: 'La posture humaniste : la donnée comme acte d\'interprétation situé. Le designer assume son énoncé. L\'incertitude est revendiquée.',
+        highlight: ['#col-humaniste'],
+        dim: ['#col-moderniste', '#tension-arrow'],
+        hidden: []
+      },
+      {
+        caption: 'La tension ↔ est productive : elle légitime les choix éditoriaux du designer narratif que la tradition Tufte disqualifiait comme « non-data ink ».',
+        highlight: ['#col-moderniste', '#col-humaniste', '#tension-arrow'],
+        dim: [],
+        hidden: []
+      }
+    ]
+  },
+  {
+    id: 'pipelines',
+    type: 'schema',
+    title: 'Pipelines techniques',
+    schemaId: 'svg-05-pipelines',
+    steps: [
+      {
+        caption: 'Deux architectures coexistent en 2026 pour produire une expérience narrative : le pipeline classique et le pipeline agentique.',
+        highlight: ['#pipe-classic', '#pipe-agentic', '#label-classic', '#label-agentic', '#pipe-separator'],
+        dim: [],
+        hidden: []
+      },
+      {
+        caption: 'Pipeline A — classique : cinq étapes humaines en séquence. Données → exploration → scénario → build (scrollama + D3) → publication.',
+        highlight: ['#pipe-classic', '#label-classic'],
+        dim: ['#pipe-agentic', '#label-agentic', '#pipe-separator'],
+        hidden: []
+      },
+      {
+        caption: 'Pipeline B — agentique : un orchestrateur LLM délègue à quatre agents spécialisés (données, scénario, visualisation, texte).',
+        highlight: ['#agent-orchestrator', '#agent-data', '#agent-script', '#agent-viz', '#agent-narration', '#agent-connectors', '#label-agentic'],
+        dim: ['#pipe-classic', '#label-classic', '#pipe-separator', '#human-reviewer', '#reviewer-connector'],
+        hidden: []
+      },
+      {
+        caption: 'Dans les deux cas, un réviseur humain valide la thèse, le rythme et le registre — l\'acte d\'auteur final est irréductible.',
+        highlight: ['#human-reviewer', '#reviewer-connector'],
+        dim: ['#pipe-classic', '#label-classic', '#pipe-separator', '#agent-orchestrator', '#agent-data', '#agent-script', '#agent-viz', '#agent-narration', '#agent-connectors', '#label-agentic'],
+        hidden: []
+      },
+      {
+        caption: 'La pratique 2026 hybride les deux : l\'IA accélère les étapes industrielles, l\'humain garde la main sur la pointe éditoriale.',
+        highlight: ['#pipe-classic', '#pipe-agentic', '#label-classic', '#label-agentic', '#human-reviewer', '#pipe-separator'],
+        dim: [],
+        hidden: []
+      }
+    ]
+  },
+  {
+    id: 'chaine',
+    type: 'schema',
+    title: 'La chaîne augmentée par IA',
+    schemaId: 'svg-06-chaine',
+    steps: [
+      {
+        caption: 'Sept étapes dans la chaîne narrative. Au-dessus de l\'axe : la part IA. En dessous : la part irréductiblement humaine.',
+        highlight: ['#chain-step-1', '#chain-step-2', '#chain-step-3', '#chain-step-4', '#chain-step-5', '#chain-step-6', '#chain-step-7', '#chain-axis', '#chain-legend'],
+        dim: [],
+        hidden: []
+      },
+      {
+        caption: 'Étapes 2 et 3 (données, exploration) : l\'IA domine. Risque : les hallucinations silencieuses — vérifier chaque chiffre à la source primaire.',
+        highlight: ['#chain-step-2', '#chain-step-3'],
+        dim: ['#chain-step-1', '#chain-step-4', '#chain-step-5', '#chain-step-6', '#chain-step-7', '#chain-legend', '#chain-insight'],
+        hidden: []
+      },
+      {
+        caption: 'Étapes 1 et 4 (cadrage, scénario) : zone humaine maximale. L\'IA sur-structure — c\'est l\'acte d\'auteur que le LLM ne peut pas créer.',
+        highlight: ['#chain-step-1', '#chain-step-4'],
+        dim: ['#chain-step-2', '#chain-step-3', '#chain-step-5', '#chain-step-6', '#chain-step-7', '#chain-legend', '#chain-insight'],
+        hidden: []
+      },
+      {
+        caption: 'Étapes 5 et 6 (production, intégration) : équilibre IA-humain. Risque : clichés visuels et mobile cassé — l\'IA accélère mais l\'œil humain valide.',
+        highlight: ['#chain-step-5', '#chain-step-6'],
+        dim: ['#chain-step-1', '#chain-step-2', '#chain-step-3', '#chain-step-4', '#chain-step-7', '#chain-legend', '#chain-insight'],
+        hidden: []
+      },
+      {
+        caption: 'Étape 7 (QA et publication) : jugement final humain. L\'IA peut linter ; l\'effacement du point de vue est le risque terminal.',
+        highlight: ['#chain-step-7'],
+        dim: ['#chain-step-1', '#chain-step-2', '#chain-step-3', '#chain-step-4', '#chain-step-5', '#chain-step-6', '#chain-legend', '#chain-insight'],
+        hidden: []
+      },
+      {
+        caption: 'Régularité 2024–2026 : l\'IA multiplie la productivité par 2 à 5 sur les étapes industrielles. Elle ne crée pas la pointe éditoriale.',
+        highlight: ['#chain-step-1', '#chain-step-2', '#chain-step-3', '#chain-step-4', '#chain-step-5', '#chain-step-6', '#chain-step-7', '#chain-axis', '#chain-insight'],
+        dim: [],
+        hidden: []
+      }
+    ]
+  },
+  {
+    id: 'matrice',
+    type: 'schema',
+    title: 'Matrice contexte × pattern',
+    schemaId: 'svg-07-matrice',
+    steps: [
+      {
+        caption: 'Cinq contextes types. Pour chacun : le public, le tempo, la charge, le pattern dominant — et ce qu\'il faut éviter.',
+        highlight: ['#case-A', '#case-B', '#case-C', '#case-D', '#case-E'],
+        dim: [],
+        hidden: []
+      },
+      {
+        caption: 'Cas A — Briefing court (comité, décision rapide) : annotated chart en série, 3–5 graphiques avec pointe explicite. Pas de slideshow interactif.',
+        highlight: ['#case-A'],
+        dim: ['#case-B', '#case-C', '#case-D', '#case-E'],
+        hidden: []
+      },
+      {
+        caption: 'Cas B — Long-format civique ou pédagogique : scrollytelling avec sticky graphic. Le format dominant du web narratif 2026.',
+        highlight: ['#case-B'],
+        dim: ['#case-A', '#case-C', '#case-D', '#case-E'],
+        hidden: []
+      },
+      {
+        caption: 'Cas C — Document de référence durable : magazine style avec TOC persistante. Schémas autonomes que le lecteur revient consulter.',
+        highlight: ['#case-C'],
+        dim: ['#case-A', '#case-B', '#case-D', '#case-E'],
+        hidden: []
+      },
+      {
+        caption: 'Cas D — Sujet émotionnel ou politique : formes organiques à la Lupi / Fragapane. Pas de grille analytique ni de palette dashboard.',
+        highlight: ['#case-D'],
+        dim: ['#case-A', '#case-B', '#case-C', '#case-E'],
+        hidden: []
+      },
+      {
+        caption: 'Cas E — Outil interne récurrent : ce n\'est pas une expérience narrative. Un dashboard exploratoire classique suffit — sur-narrer nuit.',
+        highlight: ['#case-E'],
+        dim: ['#case-A', '#case-B', '#case-C', '#case-D'],
+        hidden: []
+      },
+      {
+        caption: 'Lire la matrice comme un arbre de décision : public + enjeu + tempo + charge → un pattern s\'impose, un autre est à exclure.',
+        highlight: ['#case-A', '#case-B', '#case-C', '#case-D', '#case-E'],
+        dim: [],
+        hidden: []
+      }
+    ]
+  },
+  { id: 'respi-2',     type: 'punchline', title: 'Le bilan IA',                body: '<mark>Sept étapes</mark> dans la chaîne. <mark>Trois</mark> où l\'IA aide. <mark>Deux</mark> où elle nuit.' },
+  { id: 'outro',       type: 'outro', title: 'Pour aller plus loin', body: 'L\'étude longue détaille les sept étapes du cadre praticien et propose un arbre de décision.', cta: { href: '20260505-narrative-experiences-app.html', label: 'Ouvrir l\'étude illustrée →' }, secondary: { href: '20260505-narrative-experiences-rapport.md', label: 'Télécharger le rapport ↓' } }
+];
+
+/* ───────── SCHEMAS — Modal content for interactive SVG regions ───────── */
+const SCHEMAS = {
+  "schema-01": {
+    "comic-strip": { eyebrow: "Schéma 1 — Genre", title: "Comic strip", body: "<p>Séquence de panneaux illustrés, ton conversationnel ou narratif, charge émotionnelle assumée. Linéaire stricte par construction.</p><p><strong>Règle d'or :</strong> le ton est le facteur décisif. Un comic strip froid est un slideshow raté. Archétypes : <em>Parable of the Polygons</em> (Vi Hart &amp; Nicky Case), les bandes de Mona Chalabi pour <em>The Guardian</em>.</p><figure class='ref'><img src='images/refs/parable-polygons.jpg' alt='Capture de Parable of the Polygons par Vi Hart et Nicky Case — interface drag-and-drop avec polygones bleus et jaunes' loading='lazy'><figcaption>Capture · <em>Parable of the Polygons</em> · Vi Hart &amp; Nicky Case (2014) · CC0 · ncase.me/polygons. Hybride comic-strip + explorable explanation : le lecteur déplace les polygones et observe la dynamique de Schelling émerger sous ses doigts.</figcaption></figure>" },
+    "film-video": { eyebrow: "Schéma 1 — Genre", title: "Film / video / animation", body: "<p>Le format le plus auteur-driven. Le tempo est imposé seconde par seconde, le lecteur perd l'option « relire un passage » sauf à scrubber.</p><p><strong>Règle d'or :</strong> maîtrise du tempo — chaque seconde ajoute ou rate. Cas naturel : sujet à forte charge narrative qui bénéficie d'une voix off et d'un montage. Anti-cas : briefing court, où le lecteur veut piocher.</p>" },
+    "annotated": { eyebrow: "Schéma 1 — Genre", title: "Annotated chart", body: "<p>Un graphique unique, surchargé d'annotations textuelles et de marqueurs qui pointent les éléments saillants. Forme dominante du data journalisme moderne.</p><p><strong>Règle d'or :</strong> une seule pointe par graphique. Si vous en avez deux, faites deux graphiques. Le format est court, dense, sobre — il sert un argument précis, pas une exposition générale.</p>" },
+    "magazine": { eyebrow: "Schéma 1 — Genre", title: "Magazine style", body: "<p>Long-format texte et images intercalées, à la <em>The Atlantic</em> ou <em>Le Monde Magazine</em>. Le texte porte le récit, les visuels appuient des moments clés.</p><p><strong>Règle d'or :</strong> le texte porte la moitié de la charge ; les visuels doivent travailler en complément, pas en redondance. Format de référence pour les contenus durables — ce dossier en est un exemple.</p>" },
+    "scrolly": { eyebrow: "Schéma 1 — Genre dominant 2026", title: "Scrollytelling", body: "<p>Le format hybride mature du web : le scroll impose l'ordre, mais le lecteur contrôle le tempo et peut revenir en arrière. Apparu en 2012 avec « Snow Fall » du <em>NYT</em>, codifié par la bibliothèque scrollama.</p><p><strong>Règle d'or :</strong> la mécanique du scroll est sacrée — pas de pop-ups, pas de modaux qui bloquent, pas d'appel à l'action qui interrompt le flux. Pattern dominant pour les long-formats publics 2025–2026.</p><figure class='ref'><img src='images/refs/snow-fall.jpg' alt='Capture de l ouverture de Snow Fall du NYT — photo de neige avec titre serif Snow Fall en surimpression' loading='lazy'><figcaption>Capture · <em>Snow Fall: The Avalanche at Tunnel Creek</em> · The New York Times, John Branch (2012) · usage pédagogique. La page d'ouverture canonique : photographie pleine viewport, titre serif et byline mince — la matrice de tous les scrollytelling depuis 2012.</figcaption></figure>" },
+    "slideshow": { eyebrow: "Schéma 1 — Genre", title: "Slide show", body: "<p>Séquence de slides, contrôle linéaire par bouton « suivant ». Variante moderne : chaque slide encapsule une mini-exploration interactive.</p><p><strong>Règle d'or :</strong> chaque slide doit faire avancer le récit <em>et</em> offrir une poignée d'exploration. Sinon c'est un PowerPoint déguisé. Format utile pour la pédagogie et les <em>data tours</em> guidés.</p>" },
+    "flow-chart": { eyebrow: "Schéma 1 — Genre", title: "Flow chart", body: "<p>Récit à branchements — le lecteur choisit une voie, qui le mène à un sous-récit. Le genre le plus reader-driven parmi les sept de Segel-Heer (avec le partitioned poster).</p><p><strong>Règle d'or :</strong> si la branche n'a pas une vraie conséquence sur la suite, c'est un slideshow qui se cherche. Cas naturel : explorations « what if », simulations, calculateurs personnels.</p>" },
+    "poster": { eyebrow: "Schéma 1 — Genre", title: "Partitioned poster", body: "<p>Une seule planche, plusieurs zones disposées librement, le lecteur compose son ordre de lecture. Forme de l'infographie classique du <em>National Geographic</em> ou de <em>Le Monde diplomatique</em>.</p><p><strong>Règle d'or :</strong> hiérarchie forte — un point d'entrée évident, des satellites. Sinon le lecteur est perdu dans une grille égalitaire et abandonne.</p>" }
+  },
+  "schema-02": {
+    "cairo": { eyebrow: "Schéma 2 — Couche 5", title: "Cairo (2012, 2016) — éthique du graphique", body: "<p>Alberto Cairo, <em>Knight Chair in Visual Journalism</em> à l'université de Miami, hiérarchise la qualité d'une visualisation en cinq niveaux : <strong>truthful → functional → beautiful → insightful → enlightening</strong>. L'ordre n'est pas négociable.</p><p>Sa thèse opérationnelle : « <em>honesty, clarity, and depth come first</em> ». Sert de garde-fou contre la dérive éditoriale typique du data journalisme — courber la donnée pour servir le récit.</p>" },
+    "meirelles": { eyebrow: "Schéma 2 — Couche 4", title: "Meirelles (2013) — six structures", body: "<p>Isabel Meirelles, à Northeastern, propose une typologie en six structures que la donnée prend nécessairement quand on la visualise : <em>hierarchical</em> (arbres), <em>relational</em> (réseaux), <em>temporal</em> (timelines, flux), <em>spatial</em> (cartes), <em>spatio-temporal</em>, et <em>textual</em>.</p><p>Pour une expérience narrative, ce cadre force la question : quelle structure dominante porte mon récit ? Une expérience qui mélange trois structures sans les hiérarchiser perd le lecteur.</p>" },
+    "munzner": { eyebrow: "Schéma 2 — Couche 3", title: "Munzner (2014) — What/Why/How", body: "<p>Tamara Munzner pose un cadre tripartite qui sépare trois questions trop souvent confondues : <strong>What</strong> (type de donnée), <strong>Why</strong> (tâche analytique), <strong>How</strong> (encodage et interaction).</p><p>L'erreur la plus commune, écrit-elle, est de commencer par How — choisir un type de graphique avant d'avoir clarifié ce qu'on doit encoder et pourquoi. Le cadre est itératif : pour une expérience complexe, on traverse plusieurs cycles, un par section.</p>" },
+    "shneiderman": { eyebrow: "Schéma 2 — Couche 2", title: "Shneiderman (1996) — le mantra", body: "<p>« <em>Overview first, zoom and filter, then details-on-demand.</em> » Cette phrase de Ben Shneiderman, devenue loi non écrite de la visualisation interactive, structure aussi bien Tableau qu'un long-format du <em>Financial Times</em>.</p><p>Shneiderman propose aussi une taxonomie par tâche : sept tâches élémentaires que tout dispositif visuel peut supporter — overview, zoom, filter, details, relate, history, extract.</p>" },
+    "bertin": { eyebrow: "Schéma 2 — Couche 1", title: "Bertin (1967) — sémiologie graphique", body: "<p>Jacques Bertin, cartographe français, identifie en 1967 huit variables visuelles : deux planaires (X, Y) et six rétiniennes — taille, valeur, grain, couleur, orientation, forme.</p><p>L'apport est radical : la qualité d'un graphique ne tient pas au goût mais à <strong>l'adéquation entre la nature de la donnée et la variable visuelle choisie</strong>. Encoder un nombre par une teinte au lieu d'une longueur introduit un handicap perceptuel.</p>" }
+  },
+  "schema-03": {
+    "magazine-row": { eyebrow: "Schéma 3 — Magazine style", title: "Magazine style — règle d'or", body: "<p>Linéaire ouverte (le lecteur revient par sections), interactivité faible, registre sobre, charge de production élevée.</p><p><strong>Règle d'or :</strong> le texte porte la moitié de la charge ; les visuels doivent travailler en complément, pas en redondance. Format des contenus durables — rapports, dossiers, livres blancs.</p>" },
+    "annotated-row": { eyebrow: "Schéma 3 — Annotated chart", title: "Annotated chart — règle d'or", body: "<p>Linéaire courte, interactivité faible, registre sobre, charge légère.</p><p><strong>Règle d'or :</strong> une seule pointe par graphique. Si vous en avez deux, faites deux graphiques. Le format est court, dense, sobre — il sert un argument précis.</p>" },
+    "poster-row": { eyebrow: "Schéma 3 — Partitioned poster", title: "Partitioned poster — règle d'or", body: "<p>Structure parallèle (le lecteur compose son ordre), interactivité faible, registre intermédiaire, charge moyenne.</p><p><strong>Règle d'or :</strong> hiérarchie forte — un point d'entrée évident, des satellites. Sans hiérarchie, le lecteur est perdu dans une grille égalitaire.</p>" },
+    "flow-row": { eyebrow: "Schéma 3 — Flow chart", title: "Flow chart — règle d'or", body: "<p>Structure branchante, interactivité élevée, registre variable, charge moyenne à élevée.</p><p><strong>Règle d'or :</strong> si la branche n'a pas une vraie conséquence sur la suite, c'est un slideshow qui se cherche. Cas naturel : « what if », simulations, calculateurs.</p>" },
+    "comic-row": { eyebrow: "Schéma 3 — Comic strip", title: "Comic strip — règle d'or", body: "<p>Linéaire courte, interactivité faible, registre chaud-tonal, charge moyenne (illustrations).</p><p><strong>Règle d'or :</strong> le ton est le facteur décisif. Un comic strip froid est un slideshow raté. Archétypes : <em>Parable of the Polygons</em>, les bandes de Mona Chalabi.</p>" },
+    "slide-row": { eyebrow: "Schéma 3 — Slide show", title: "Slide show — règle d'or", body: "<p>Linéaire avec interactivité locale par slide, charge moyenne à élevée.</p><p><strong>Règle d'or :</strong> chaque slide doit faire avancer le récit <em>et</em> offrir une poignée d'exploration. Sinon c'est un PowerPoint déguisé.</p>" },
+    "scrolly-row": { eyebrow: "Schéma 3 — Scrollytelling", title: "Scrollytelling — pattern dominant 2026", body: "<p>Quasi-linéaire (le scroll impose l'ordre, le lecteur contrôle le tempo), interactivité élevée, registre variable, charge élevée.</p><p><strong>Règle d'or :</strong> la mécanique du scroll est sacrée — pas de pop-ups, pas de modaux qui bloquent, pas d'appel à l'action qui interrompt le flux. Format de référence pour les long-formats publics 2025–2026.</p>" },
+    "film-row": { eyebrow: "Schéma 3 — Film / video", title: "Film / video — règle d'or", body: "<p>Linéaire stricte, interactivité quasi-nulle (scrub), registre chaleureux, charge très élevée.</p><p><strong>Règle d'or :</strong> maîtrise du tempo — chaque seconde ajoute ou rate. Format coûteux à produire, naturel pour les sujets qui bénéficient d'une voix off et d'un montage.</p>" }
+  },
+  "schema-04": {
+    "moderniste": { eyebrow: "Schéma 4 — Posture moderniste", title: "La donnée comme miroir", body: "<p>Tradition Bertin → Tukey → Tufte → Munzner. La donnée est un fait brut, la visualisation un médium transparent, le designer s'efface — il est neutre.</p><p>Métrique de qualité : précision et fidélité. Usage naturel : analyse, monitoring, dashboard, recherche scientifique. Archétype : le tableau de bord financier, le dashboard épidémiologique.</p><p>Cette posture reste dominante dans le monde analytique et institutionnel, où la prétention à l'objectivité a une fonction (engager la responsabilité de l'institution sur ce qu'elle publie).</p>" },
+    "humaniste": { eyebrow: "Schéma 4 — Posture humaniste", title: "La donnée comme acte", body: "<p>École Lupi, Posavec, Fragapane, Bremer, Wu, Chalabi. La donnée est d'origine humaine et située, la visualisation est un acte d'interprétation, le designer assume son énoncé.</p><p>Métrique de qualité : justesse de la mise en scène. Usage naturel : récit civique, sensibilisation, connaissance de soi, art. Archétype : <em>Dear Data</em>, <em>The Stories Behind a Line</em>, les pièces MoMA 2017–2023.</p><p>Posture issue de la philosophie féministe des sciences (Donna Haraway, sciences situées), avec une portée pratique : légitimer les choix éditoriaux explicites du designer narratif.</p>" }
+  },
+  "schema-05": {
+    "classic-data": { eyebrow: "Schéma 5 — Pipeline classique", title: "Étape 1 — Données", body: "<p>Collecte (CSV, API, scraping), nettoyage, enrichissement. Outils dominants : Python + Pandas, dbt, parfois R.</p><p>Étape technique mais pas anodine : c'est ici que se joue la qualité de tout le reste. Une donnée mal nettoyée produit un récit faussé que ni le scénario ni les visuels ne rattrapent.</p>" },
+    "classic-explore": { eyebrow: "Schéma 5 — Pipeline classique", title: "Étape 2 — Exploration", body: "<p>Notebooks Jupyter ou Observable, graphiques rapides, recherche d'angles. C'est l'aire de l'analyste-designer.</p><p>Le but n'est pas d'illustrer une thèse pré-établie mais de la faire émerger — moments saillants, anomalies, tournants. Cette étape est itérative et imprévisible.</p>" },
+    "classic-script": { eyebrow: "Schéma 5 — Pipeline classique", title: "Étape 3 — Scénario", body: "<p>Storyboard, sections, transitions, hooks. Travail d'auteur-designer en duo, parfois trio avec un journaliste.</p><p>Le scénario fixe l'ordre, le tempo, la pointe. C'est là que se prend la décision « scrollytelling vs slideshow vs annotated chart ». Cette décision conditionne tout le reste.</p>" },
+    "classic-build": { eyebrow: "Schéma 5 — Pipeline classique", title: "Étape 4 — Build", body: "<p>Implémentation : HTML/CSS sémantique, scrollama (ou alternatives), D3.js ou Observable Plot pour les graphiques, Svelte pour la composition (chez le NYT et The Pudding).</p><p>Coût typique pour un long-format soigné : 3 à 8 semaines pour une équipe de 3–4 personnes (journaliste, designer, développeur, parfois data scientist).</p>" },
+    "classic-publish": { eyebrow: "Schéma 5 — Pipeline classique", title: "Étape 5 — Publication", body: "<p>Build statique, déploiement CDN, QA accessibilité (WCAG), tests mobile, screenshots multi-navigateurs.</p><p>Étape souvent sous-estimée : un scrollytelling cassé sur iOS Safari ou avec un lecteur d'écran ferme l'expérience à un public significatif.</p>" },
+    "agent-orchestrator": { eyebrow: "Schéma 5 — Pipeline agentique", title: "Orchestrateur LLM", body: "<p>Un LLM (typiquement Claude, GPT ou Gemini en mode agentique) reçoit le brief utilisateur, décompose la tâche, délègue aux agents spécialisés, collecte leurs sorties, vérifie la cohérence, itère.</p><p>Pattern issu du papier <em>From Data to Story</em> (Shen et al., Gen4DS 2024). Encore expérimental en 2026, mais des instances opérationnelles existent en interne chez plusieurs équipes.</p>" },
+    "agent-data": { eyebrow: "Schéma 5 — Pipeline agentique", title: "Agent 1 — Données &amp; insights", body: "<p>Reçoit un dataset, navigue, teste des hypothèses, produit une liste d'insights ranking par saillance.</p><p>Capacité opérationnelle en 2026 : à partir d'un dataset propre, l'agent identifie en quelques minutes les anomalies, corrélations, tournants. Le travail humain résiduel : trier ce qui est intéressant de ce qui est banal.</p>" },
+    "agent-script": { eyebrow: "Schéma 5 — Pipeline agentique", title: "Agent 2 — Scénario", body: "<p>Reçoit la liste d'insights, propose une séquence narrative (hook, corps, pointe). Étape la moins mature : les LLM produisent typiquement des plans sur-structurés (TLDR, intro, plan annoncé, conclusion télégraphiée) qui demandent une casse humaine pour servir le sujet.</p><p>C'est ici que la valeur ajoutée du métier humain se concentre.</p>" },
+    "agent-viz": { eyebrow: "Schéma 5 — Pipeline agentique", title: "Agent 3 — Visualisation", body: "<p>Génère les graphiques. Cible naturelle : les grammaires déclaratives (Vega-Lite, Observable Plot), parce que la spécification est un JSON que le LLM produit fiable.</p><p>Outils émergents : Lida (Microsoft), GPT Vision pour le mock-up, Claude pour le code SVG sur mesure. Qualité opérationnelle en 2026 : 70–80 % du chemin, à raffiner par le designer.</p>" },
+    "agent-narration": { eyebrow: "Schéma 5 — Pipeline agentique", title: "Agent 4 — Texte &amp; narration", body: "<p>Rédige les steps de scrollytelling, les captions, les annotations. Pour une vidéo, la voix off + le script de synchronisation.</p><p>Compétence où les LLM sont les plus matures (entraînés explicitement à la rédaction). Le risque dominant : le conformisme stylistique — palettes lexicales consensuelles, tournures attendues.</p>" },
+    "human-reviewer": { eyebrow: "Schéma 5 — Pipeline agentique", title: "Le réviseur humain final", body: "<p>Acte d'auteur final. Vérifie la thèse, le rythme, le registre, prend la responsabilité éditoriale.</p><p>Cet étage est <strong>non négociable</strong> en 2026 pour tout artefact à enjeu public. C'est ce qui distingue un livrable d'une production automatique. Sans réviseur humain : pas d'auteur, pas de responsabilité, pas de point de vue.</p>" }
+  },
+  "schema-06": {
+    "step-cadrage": { eyebrow: "Schéma 6 — Étape 1", title: "Cadrage du sujet et thèse", body: "<p>Acte humain dominant. L'auteur identifie le sujet, la pointe éditoriale, le public visé.</p><p><strong>Apport IA :</strong> sparring partner — formuler des objections, proposer des angles non anticipés.<br><strong>Risque :</strong> un cadrage déterminé par un LLM seul produit des récits <em>moyens</em>, conformes à la moyenne du discours public.</p>" },
+    "step-donnees": { eyebrow: "Schéma 6 — Étape 2", title: "Collecte et nettoyage", body: "<p>IA dominante. Scraping, parsing PDF, géocodage, jointures.</p><p><strong>Apport IA :</strong> facteur 5–10 sur le temps de production de pipelines de données.<br><strong>Risque :</strong> hallucination silencieuse — un LLM qui invente une colonne ou fabrique une moyenne.<br><strong>Garde-fou :</strong> tout calcul produit par un LLM doit être reproduit par une trace explicite.</p>" },
+    "step-exploration": { eyebrow: "Schéma 6 — Étape 3", title: "Exploration analytique", body: "<p>IA dominante avec curation humaine. C'est l'étape où l'IA apporte le plus de valeur en 2026.</p><p><strong>Apport IA :</strong> 30 visualisations exploratoires en quelques minutes, hypothèses systématiques.<br><strong>Risque :</strong> confondre signal et bruit — l'IA ne distingue pas bien intéressant et banal, faute de contexte éditorial.</p>" },
+    "step-scenario": { eyebrow: "Schéma 6 — Étape 4", title: "Scénarisation — acte d'auteur", body: "<p>Acte humain non substituable. Choix de l'ordre, du tempo, de la pointe.</p><p><strong>Risque :</strong> sur-structuration LLM (TLDR, intro, plan annoncé, conclusion télégraphiée).<br>Un bon scénariste humain casse cette structure pour servir le sujet. C'est ici que la valeur ajoutée du métier se concentre.</p>" },
+    "step-production": { eyebrow: "Schéma 6 — Étape 5", title: "Production des artefacts", body: "<p>Augmentation IA forte. Rédaction des captions, premières versions des schémas, code de scrollytelling.</p><p><strong>Risque :</strong> clichés visuels — palettes par défaut, polices génériques, encodages sous-optimaux.<br><strong>Bon usage :</strong> l'IA pose une base 70 %, le designer porte à 100 %. Vérifier la fidélité de l'encodage et la cohérence inter-artefacts.</p>" },
+    "step-integration": { eyebrow: "Schéma 6 — Étape 6", title: "Intégration interactive", body: "<p>IA dominante. Wiring du scrollytelling, modaux, tooltips, accessibilité, mobile.</p><p><strong>Apport IA :</strong> Claude Code, Cursor, GitHub Copilot atteignent en 2026 une qualité opérationnelle qui divise par 2,5 le temps de build.<br><strong>Risque :</strong> mobile cassé — l'IA produit du code valide mais peu robuste sur petits écrans sans demande explicite.</p>" },
+    "step-qa": { eyebrow: "Schéma 6 — Étape 7", title: "QA et publication", body: "<p>Mixte. Lints accessibilité, screenshots, vérifications automatisables.</p><p><strong>Risque :</strong> effacement du POV — la relecture LLM par défaut adoucit les positions tranchées.<br><strong>Garde-fou :</strong> jugement final humain sur la cohérence éditoriale, la justesse du ton, la fidélité au brief.</p>" }
+  },
+  "schema-07": {
+    "cas-A": { eyebrow: "Schéma 7 — Cas A", title: "Briefing court, public expert", body: "<p>Public : comité de direction, client qui décide. Tempo 5–15 minutes. Charge tolérée 1–3 jours.</p><p><strong>Pattern dominant :</strong> <em>annotated chart</em> en série, mis en forme en partitioned poster d'une page. Thèse explicite, 3–5 graphiques annotés, conclusion actionnable.</p><p><strong>À éviter :</strong> slideshow interactif (demande une attention continue qu'un comité n'a pas), vidéo (prive le lecteur de l'option « relire un passage »).</p>" },
+    "cas-B": { eyebrow: "Schéma 7 — Cas B", title: "Long-format public, civique", body: "<p>Public : grand public motivé. Tempo 15–40 minutes. Charge plusieurs semaines.</p><p><strong>Pattern dominant :</strong> <em>scrollytelling</em> avec sticky graphic central. Voir « Snow Fall » NYT (2012), Reuters sur les sanctions iraniennes (2024).</p><p><strong>Variantes :</strong> explorable explanation (Nicky Case) si le sujet contient un mécanisme simulable ; comic strip pour les sujets émotionnellement engageants.</p>" },
+    "cas-C": { eyebrow: "Schéma 7 — Cas C", title: "Document de référence durable", body: "<p>Public : praticiens, étudiants, lecteurs qui reviendront. Tempo non-linéaire. Charge élevée.</p><p><strong>Pattern dominant :</strong> <em>magazine style</em> avec TOC persistante. C'est le format de ce dossier — et celui des rapports McKinsey/BCG, des livres blancs Anthropic.</p><p><strong>Anti-pattern :</strong> scrollytelling — il impose un chemin que le lecteur de référence ne veut pas. Il veut piocher.</p>" },
+    "cas-D": { eyebrow: "Schéma 7 — Cas D", title: "Dispositif émotionnel", body: "<p>Sujet humain ou politique, public grand public, enjeu de sensibilisation. Tempo 3–8 minutes.</p><p><strong>Pattern dominant :</strong> héritage Lupi/Fragapane — formes organiques, palette chaude, encodage qui épouse la matière humaine. Datasets minuscules pourvu que chaque cas soit travaillé en profondeur.</p><p><strong>Anti-pattern :</strong> palette analytique grise/bleue de dashboard, qui désémantise le sujet et neutralise l'émotion.</p>" },
+    "cas-E": { eyebrow: "Schéma 7 — Cas E", title: "Outil interne récurrent", body: "<p>Public : équipe data, métier qui consulte hebdomadairement. Tempo court mais répété. Charge maintenance.</p><p><strong>Ce n'est pas une expérience narrative</strong> — c'est un dashboard, et c'est très bien comme ça.</p><p><strong>Piège :</strong> sur-narrer un usage qui demande de l'efficacité analytique. Se demander honnêtement : ai-je besoin d'un récit, ou d'un outil ?</p>" }
+  }
+};
+
+/* ───────── Sources ───────── */
+const SOURCES = [
+  { num: 1, author: 'Segel, Edward et Jeffrey Heer.', title: 'Narrative Visualization: Telling Stories with Data', year: '2010', publisher: 'IEEE Transactions on Visualization and Computer Graphics, vol. 16, n° 6', url: 'http://vis.stanford.edu/files/2010-Narrative-InfoVis.pdf' },
+  { num: 2, author: 'Munzner, Tamara.', title: 'Visualization Analysis and Design', year: '2014', publisher: 'CRC Press, AK Peters Visualization Series', url: 'https://www.cs.ubc.ca/~tmm/vadbook/' },
+  { num: 3, author: 'Kosara, Robert et Jock Mackinlay.', title: 'Storytelling: The Next Step for Visualization', year: '2013', publisher: 'IEEE Computer, vol. 46, n° 5', url: 'https://kosara.net/papers/2013/Kosara-Computer-2013.pdf' },
+  { num: 4, author: 'Riche, Nathalie Henry, Christophe Hurter, Nicholas Diakopoulos et Sheelagh Carpendale (éd.).', title: 'Data-Driven Storytelling', year: '2018', publisher: 'CRC Press, AK Peters Visualization Series', url: 'https://www.routledge.com/Data-Driven-Storytelling/Riche-Hurter-Diakopoulos-Carpendale/p/book/9781138197107' },
+  { num: 5, author: 'Bertin, Jacques.', title: 'Sémiologie graphique : les diagrammes, les réseaux, les cartes', year: '1967', publisher: 'Gauthier-Villars/Mouton, Paris (rééd. EHESS, 2013)', url: 'https://en.wikipedia.org/wiki/Visual_variable' },
+  { num: 6, author: 'Shneiderman, Ben.', title: 'The Eyes Have It: A Task by Data Type Taxonomy for Information Visualizations', year: '1996', publisher: 'Proceedings of the IEEE Symposium on Visual Languages', url: 'https://www.cs.umd.edu/~ben/papers/Shneiderman1996eyes.pdf' },
+  { num: 7, author: 'Meirelles, Isabel.', title: 'Design for Information: An Introduction to the Histories, Theories, and Best Practices Behind Effective Information Visualizations', year: '2013', publisher: 'Rockport Publishers', url: 'https://isabelmeirelles.com/book-design-for-information/' },
+  { num: 8, author: 'Cairo, Alberto.', title: 'The Truthful Art: Data, Charts, and Maps for Communication', year: '2016', publisher: 'New Riders', url: 'https://www.amazon.com/Truthful-Art-Data-Charts-Communication/dp/0321934075' },
+  { num: 9, author: 'Lupi, Giorgia.', title: 'Data Humanism: The Revolution Will Be Visualized', year: '2017', publisher: 'Manifesto, PrintMag', url: 'http://giorgialupi.com/data-humanism-my-manifesto-for-a-new-data-wold/' },
+  { num: 10, author: 'Lupi, Giorgia et Stefanie Posavec.', title: 'Dear Data', year: '2016', publisher: 'Princeton Architectural Press', url: 'http://www.dear-data.com/' },
+  { num: 11, author: 'Fragapane, Federica.', title: "The Stories Behind a Line: A Visual Narrative of Six Asylum Seekers' Routes", year: '2017', publisher: null, url: 'https://www.storiesbehindaline.com/' },
+  { num: 12, author: 'Gartner.', title: 'By 2025, Data Stories Will Be the Most Widespread Way of Consuming Analytics', year: '2025', publisher: 'Repris par MIT Sloan Management Review', url: 'https://sloanreview.mit.edu/article/the-enduring-power-of-data-storytelling-in-the-generative-ai-era/' },
+  { num: 13, author: 'Li, Haotian et al.', title: 'Gen4DS: Workshop on Data Storytelling in an Era of Generative AI', year: '2024', publisher: 'IEEE VIS 2024 Workshop', url: 'https://gen4ds.github.io/gen4ds/' },
+  { num: 14, author: 'Survey collectif.', title: 'Reflection on Data Storytelling Tools in the Generative AI Era from the Human-AI Collaboration Perspective', year: '2025', publisher: 'arXiv 2503.02631', url: 'https://arxiv.org/html/2503.02631v1' },
+  { num: 15, author: 'Goldenberg, Russell.', title: 'An Introduction to Scrollama.js', year: '2017', publisher: 'The Pudding', url: 'https://pudding.cool/process/introducing-scrollama/' },
+  { num: 16, author: 'Hart, Vi et Nicky Case.', title: 'Parable of the Polygons: A playable post on the shape of society', year: '2014', publisher: null, url: 'https://ncase.me/polygons/' },
+  { num: 17, author: 'Fragapane, Federica.', title: 'Data is Not Neutral', year: '2025', publisher: 'Designboom, juin 2025', url: 'https://www.designboom.com/design/data-federica-fragapane-soft-forms-hard-facts-inequalities-shapes-triennale-milano-interview-06-08-2025/' },
+  { num: 18, author: 'Shen, Leixian, Haotian Li, Yun Wang et Huamin Qu.', title: 'From Data to Story: Towards Automatic Animated Data Video Creation with LLM-based Multi-Agent Systems', year: '2024', publisher: 'IEEE VIS Gen4DS Workshop', url: 'https://gen4ds.github.io/gen4ds/' },
+  { num: 19, author: 'Reuters Graphics.', title: 'How Iran Built a Multibillion-Dollar Global Oil Trade Despite Sanctions', year: '2024', publisher: 'Reuters Special Report', url: 'https://www.reuters.com/investigates/' },
+  { num: 20, author: 'Kosara, Robert.', title: 'Storytelling Affordances', year: '2013', publisher: 'eagereyes.org', url: 'https://eagereyes.org/publications/Kosara-Computer-2013' }
+];
+
+/* ───────── Modal dispatcher ───────── */
+const modalRoot    = document.getElementById('modal-root');
+const modalEyebrow = document.getElementById('modal-eyebrow');
+const modalTitle   = document.getElementById('modal-title');
+const modalBody    = document.getElementById('modal-body');
+let lastFocused = null;
+
+function openModal(eyebrow, title, body) {
+  lastFocused = document.activeElement;
+  modalEyebrow.textContent = eyebrow || '';
+  modalTitle.textContent = title || '';
+  modalBody.innerHTML = body || '';
+  // Patch des références [N] en liens vers les sources
+  const bodyEl = document.getElementById('modal-body');
+  if (bodyEl) {
+    bodyEl.innerHTML = bodyEl.innerHTML.replace(/\[(\d+)\]/g, (m, n) => `<a href="#" class="source-ref" data-source-num="${n}">[${n}]</a>`);
+    bodyEl.querySelectorAll('.source-ref').forEach(a => {
+      a.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        const num = parseInt(a.dataset.sourceNum, 10);
+        closeModal();
+        flashSource(num);
+      });
+    });
+  }
+  modalRoot.hidden = false;
+  document.body.classList.add('modal-open');
+  document.body.style.overflow = '';
+  modalRoot.querySelector('.modal-close')?.focus();
+}
+
+let __modalAutoActive = false;
+
+function closeModal() {
+  const root = document.getElementById('modal-root');
+  if (!root) return;
+  root.hidden = true;
+  document.body.classList.remove('modal-open');
+  __modalAutoActive = false;
+  lastFocused?.focus?.();
+}
+
+document.getElementById('modal-root').addEventListener('click', (e) => {
+  if (e.target.closest('.modal-content')) return;
+  if (e.target.matches('[data-close]')) { closeModal(); }
+});
+
+let state = { sceneIndex: 0, stepIndex: 0 };
+
+const stage = document.getElementById('stage');
+
+function applyStepStyles(scene, step) {
+  const svg = stage.querySelector('svg');
+  if (!svg) return;
+  const all = svg.querySelectorAll('[id]');
+  all.forEach(el => el.removeAttribute('data-step-state'));
+  (step.dim || []).forEach(sel => svg.querySelectorAll(sel).forEach(el => el.setAttribute('data-step-state', 'dim')));
+  (step.hidden || []).forEach(sel => svg.querySelectorAll(sel).forEach(el => el.setAttribute('data-step-state', 'hidden')));
+  (step.highlight || []).forEach(sel => svg.querySelectorAll(sel).forEach(el => el.setAttribute('data-step-state', 'active')));
+}
+
+function renderTimeline() {
+  const tl = document.getElementById('timeline');
+  if (!tl) return;
+  tl.innerHTML = SCENES.map((scene, i) => {
+    const visited = i < state.sceneIndex;
+    const current = i === state.sceneIndex;
+    const cls = ['seg'];
+    if (scene.type === 'punchline') cls.push('punchline');
+    if (scene.type === 'outro') cls.push('outro');
+    if (visited) cls.push('visited');
+    if (current) cls.push('current');
+    let fillPct = 0;
+    if (current && scene.steps && scene.steps.length > 1) {
+      fillPct = Math.round((state.stepIndex / (scene.steps.length - 1)) * 100);
+    } else if (visited) {
+      fillPct = 100;
+    }
+    const label = `${(i+1).toString().padStart(2,'0')} · ${scene.title || (scene.type === 'punchline' ? 'Respiration' : 'Outro')}`;
+    return `<div class="seg ${cls.join(' ')}" data-index="${i}"><div class="fill" style="height: ${fillPct}%; width: ${fillPct}%;"></div><div class="label">${label}</div></div>`;
+  }).join('');
+}
+
+function updateSceneTitleBar(scene) {
+  const bar = document.getElementById('scene-title-bar');
+  if (!bar) return;
+  const num = (state.sceneIndex + 1).toString().padStart(2, '0');
+  const title = scene.title || '';
+  if (!title) { bar.innerHTML = ''; return; }
+  bar.innerHTML = `<span class="num">${num}</span><span class="title">${title}</span>`;
+}
+
+function render() {
+  const scene = SCENES[state.sceneIndex];
+  if (!scene) return;
+
+  updateSceneTitleBar(scene);
+
+  if (scene.type === 'punchline') {
+    stage.innerHTML = `
+      <section class="scene-punchline" role="group" aria-roledescription="scène">
+        <div class="body">${scene.body}</div>
+        ${scene.attribution ? `<div class="attribution">${scene.attribution}</div>` : ''}
+      </section>
+    `;
+    renderTimeline();
+    return;
+  }
+
+  if (scene.type === 'outro') {
+    stage.innerHTML = `
+      <section class="scene-outro" role="group" aria-roledescription="scène">
+        <div class="eyebrow">Vous avez parcouru</div>
+        <h2>Expériences <em>narratives</em> — l'essentiel</h2>
+        <div class="body">${scene.body}</div>
+        <div class="ctas" data-no-advance>
+          <a class="cta-primary" href="${scene.cta.href}">${scene.cta.label}</a>
+          <a class="cta-secondary" href="${scene.secondary.href}" download>${scene.secondary.label}</a>
+        </div>
+        <button class="restart" data-no-advance type="button" onclick="gotoScene(0)">↺ Recommencer</button>
+        <div class="disclosure">Format co-écrit avec l'aide d'une IA</div>
+      </section>
+    `;
+    renderTimeline();
+    return;
+  }
+
+  if (scene.type === 'schema') {
+    const svgEl = document.getElementById(scene.schemaId);
+    const svgClone = svgEl ? svgEl.outerHTML : `<div style="color: red; font-family: monospace;">SVG ${scene.schemaId} introuvable</div>`;
+    const step = scene.steps[state.stepIndex] || { caption: '(pas d\'étape définie)' };
+    stage.innerHTML = `
+      <section class="schema-host" role="group" aria-roledescription="scène">
+        <div class="schema-wrapper figure" style="position: relative; width: 100%; max-width: 100%;">
+          ${svgClone}
+          <button class="zoom-btn" type="button" aria-label="Zoom plein écran" data-no-advance>⛶</button>
+        </div>
+        <div class="caption" aria-live="polite">${step.caption}</div>
+      </section>
+    `;
+    applyStepStyles(scene, step);
+
+    if (step.modalAuto) {
+      const match = scene.schemaId ? scene.schemaId.match(/svg-(\d+)-/) : null;
+      const schKey = match ? 'schema-' + match[1].padStart(2, '0') : null;
+      const card = schKey ? (SCHEMAS?.[schKey]?.[step.modalAuto] || null) : null;
+      if (card) {
+        setTimeout(() => {
+          openModal(card.eyebrow || '', card.title || '', card.body || '');
+          __modalAutoActive = true;
+        }, 220);
+      }
+    }
+    renderTimeline();
+    return;
+  }
+}
+
+let __transitioning = false;
+
+async function gotoScene(index) {
+  if (index < 0 || index >= SCENES.length || __transitioning) return;
+  __transitioning = true;
+  stage.classList.add('fading-out');
+  await new Promise(r => setTimeout(r, FADE_MS));
+  state.sceneIndex = index;
+  state.stepIndex = 0;
+  render();
+  stage.classList.remove('fading-out');
+  await new Promise(r => setTimeout(r, FADE_MS));
+  __transitioning = false;
+}
+
+function advance() {
+  if (__transitioning) return;
+  const scene = SCENES[state.sceneIndex];
+  const lastStep = (scene.steps && scene.steps.length > 0) ? scene.steps.length - 1 : 0;
+  if (state.stepIndex < lastStep) {
+    state.stepIndex++;
+    render();
+  } else if (state.sceneIndex < SCENES.length - 1) {
+    gotoScene(state.sceneIndex + 1);
+  }
+}
+
+function retreat() {
+  if (__transitioning) return;
+  if (state.stepIndex > 0) {
+    state.stepIndex--;
+    render();
+  } else if (state.sceneIndex > 0) {
+    const prevScene = SCENES[state.sceneIndex - 1];
+    const prevLastStep = (prevScene.steps && prevScene.steps.length > 0) ? prevScene.steps.length - 1 : 0;
+    __transitioning = true;
+    stage.classList.add('fading-out');
+    setTimeout(() => {
+      state.sceneIndex--;
+      state.stepIndex = prevLastStep;
+      render();
+      stage.classList.remove('fading-out');
+      setTimeout(() => { __transitioning = false; }, FADE_MS);
+    }, FADE_MS);
+  }
+}
+
+render();
+
+function isAnyOverlayOpen() {
+  return !document.getElementById('modal-root').hidden
+      || !document.getElementById('toc-overlay').hidden
+      || !document.getElementById('sources-overlay').hidden
+      || !document.getElementById('zoom-overlay').hidden;
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+    e.preventDefault();
+    const modalOpen = !document.getElementById('modal-root').hidden;
+    if (modalOpen && __modalAutoActive) {
+      closeModal();
+      advance();
+    } else if (modalOpen) {
+      closeModal();
+    } else {
+      advance();
+    }
+  } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+    e.preventDefault();
+    if (isAnyOverlayOpen()) return;
+    retreat();
+  } else if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (isAnyOverlayOpen()) return;
+    gotoScene(state.sceneIndex + 1);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (isAnyOverlayOpen()) return;
+    gotoScene(state.sceneIndex - 1);
+  } else if (e.key === 's' || e.key === 'S') {
+    if (e.target.tagName === 'INPUT') return;
+    e.preventDefault();
+    toggleToc();
+  } else if (e.key === 'r' || e.key === 'R') {
+    if (e.target.tagName === 'INPUT') return;
+    e.preventDefault();
+    toggleSources();
+  } else if (e.key === 'Escape') {
+    if (!document.getElementById('modal-root').hidden) {
+      closeModal();
+      e.preventDefault();
+      return;
+    }
+    if (!document.getElementById('sources-overlay').hidden) {
+      toggleSources(false);
+      e.preventDefault();
+      return;
+    }
+    if (!document.getElementById('toc-overlay').hidden) {
+      toggleToc(false);
+      e.preventDefault();
+      return;
+    }
+    // zoom-overlay Escape géré par setupZoom() interne
+  }
+});
+
+document.getElementById('timeline').addEventListener('click', (e) => {
+  const seg = e.target.closest('.seg');
+  if (!seg) return;
+  e.stopPropagation();
+  gotoScene(parseInt(seg.dataset.index, 10));
+});
+
+/* ───────── Sommaire overlay ───────── */
+function renderToc() {
+  const list = document.getElementById('toc-list');
+  list.innerHTML = SCENES.map((scene, i) => {
+    const stepsCount = scene.steps ? scene.steps.length : 1;
+    const stepsLabel = stepsCount === 1 ? '1 étape' : `${stepsCount} étapes`;
+    const titleOrLabel = scene.title || (scene.type === 'punchline' ? '✴ Respiration' : 'Outro — pour aller plus loin');
+    return `<li data-index="${i}"><span class="num">${(i+1).toString().padStart(2,'0')}</span><span>${titleOrLabel}</span><span class="meta">${stepsLabel}</span></li>`;
+  }).join('');
+}
+
+function toggleToc(forceState) {
+  const o = document.getElementById('toc-overlay');
+  const newHidden = forceState !== undefined ? !forceState : !o.hidden;
+  o.hidden = newHidden;
+  if (!newHidden) renderToc();
+}
+
+document.getElementById('btn-toc').addEventListener('click', (e) => { e.stopPropagation(); toggleToc(true); });
+document.getElementById('toc-overlay').addEventListener('click', (e) => {
+  if (e.target.closest('.overlay-close')) { toggleToc(false); return; }
+  const li = e.target.closest('li[data-index]');
+  if (li) { gotoScene(parseInt(li.dataset.index, 10)); toggleToc(false); }
+});
+
+/* ───────── Sources overlay ───────── */
+function renderSources(filter) {
+  const list = document.getElementById('sources-list');
+  const f = (filter || '').toLowerCase();
+  const items = SOURCES
+    .filter(s => !f || (s.author + ' ' + s.title + ' ' + s.year).toLowerCase().includes(f))
+    .map(s => `
+      <li data-num="${s.num}">
+        <span class="num">[${s.num}]</span>
+        <span><strong>${s.author}</strong> — ${s.title}, ${s.year}.${s.publisher ? ' <em>' + s.publisher + '</em>.' : ''}${s.url ? ` <a href="${s.url}" target="_blank" rel="noopener">Lien ↗</a>` : ''}</span>
+      </li>
+    `);
+  list.innerHTML = items.join('');
+}
+
+function toggleSources(forceState) {
+  const o = document.getElementById('sources-overlay');
+  const newHidden = forceState !== undefined ? !forceState : !o.hidden;
+  o.hidden = newHidden;
+  if (!newHidden) {
+    renderSources('');
+    document.getElementById('sources-filter').value = '';
+    setTimeout(() => document.getElementById('sources-filter').focus(), 80);
+  }
+}
+
+function flashSource(num) {
+  toggleSources(true);
+  setTimeout(() => {
+    const li = document.querySelector(`#sources-list li[data-num="${num}"]`);
+    if (!li) return;
+    li.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    li.classList.add('flash');
+    setTimeout(() => li.classList.remove('flash'), 1500);
+  }, 100);
+}
+
+document.getElementById('btn-sources').addEventListener('click', (e) => { e.stopPropagation(); toggleSources(true); });
+document.getElementById('sources-overlay').addEventListener('click', (e) => {
+  if (e.target.closest('.overlay-close')) { toggleSources(false); }
+});
+document.getElementById('sources-filter').addEventListener('input', (e) => renderSources(e.target.value));
+
+stage.addEventListener('click', (e) => {
+  if (isAnyOverlayOpen()) return;
+  if (e.target.closest('[data-no-advance]')) return;
+  if (e.shiftKey) {
+    retreat();
+  } else {
+    advance();
+  }
+});
+
+// Capture phase — intercepte les clics sur régions interactives data-card AVANT le listener bubble
+stage.addEventListener('click', (e) => {
+  const target = e.target.closest('[data-card]');
+  if (!target) return;
+  e.stopPropagation();
+  const cardId = target.dataset.card;
+  // Cherche la card dans le schéma courant
+  const scene = SCENES[state.sceneIndex];
+  const schemaId = scene && scene.schemaId ? scene.schemaId : null;
+  // schemaId est de la forme 'svg-01-spectre', les clés SCHEMAS sont 'schema-01', 'schema-02'…
+  // Mapping : svg-01-* → schema-01, svg-02-* → schema-02, etc.
+  let card = null;
+  if (schemaId) {
+    const match = schemaId.match(/svg-(\d+)-/);
+    if (match) {
+      const schKey = 'schema-' + match[1].padStart(2, '0');
+      card = SCHEMAS?.[schKey]?.[cardId] || null;
+    }
+  }
+  if (card) {
+    openModal(card.eyebrow || '', card.title || '', card.body || '');
+  }
+}, true);
+
+console.log('[slideshow]', SCENES.length, 'scènes déclarées');
+
+/* ───────── Swipe horizontal sur la stage ───────── */
+let touchStart = null;
+stage.addEventListener('touchstart', (e) => {
+  if (e.touches.length !== 1) return;
+  touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() };
+}, { passive: true });
+
+stage.addEventListener('touchend', (e) => {
+  if (!touchStart) return;
+  const t = e.changedTouches[0];
+  const dx = t.clientX - touchStart.x;
+  const dy = t.clientY - touchStart.y;
+  const dt = Date.now() - touchStart.t;
+  touchStart = null;
+  if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+  if (dt > 600) return;
+  if (dx > 0) gotoScene(state.sceneIndex - 1);
+  else gotoScene(state.sceneIndex + 1);
+});
+
+/* ───────── Pulse d'inactivité ───────── */
+let __idleTimer = null;
+function resetIdle() {
+  const cue = document.getElementById('idle-cue');
+  if (cue) cue.classList.remove('show');
+  document.getElementById('topbar').classList.remove('idle');
+  clearTimeout(__idleTimer);
+  __idleTimer = setTimeout(() => {
+    if (cue) cue.classList.add('show');
+    document.getElementById('topbar').classList.add('idle');
+  }, 4000);
+}
+['keydown', 'click', 'touchstart', 'mousemove'].forEach(evt => window.addEventListener(evt, resetIdle, { passive: true }));
+resetIdle();
+
+/* ───────── Toaster d'onboarding mobile ───────── */
+function isTouchDevice() {
+  return ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+}
+
+function maybeShowOnboardingToaster() {
+  if (!isTouchDevice()) return;
+  if (localStorage.getItem('slideshow-onboarded')) return;
+  const t = document.getElementById('toaster');
+  if (!t) return;
+  t.hidden = false;
+  setTimeout(() => t.classList.add('show'), 50);
+  const dismiss = () => {
+    t.classList.remove('show');
+    setTimeout(() => { t.hidden = true; }, 400);
+    try { localStorage.setItem('slideshow-onboarded', '1'); } catch(_) {}
+    window.removeEventListener('touchstart', dismiss);
+  };
+  window.addEventListener('touchstart', dismiss, { once: true, passive: true });
+  setTimeout(dismiss, 6000);
+}
+
+maybeShowOnboardingToaster();
+
+/* ───────── Fullscreen zoom for schemas ───────── */
+const __zoom = (function setupZoom() {
+  const overlay  = document.getElementById('zoom-overlay');
+  const zStage   = document.getElementById('zoom-stage');
+  const content  = document.getElementById('zoom-content');
+  const captionE = document.getElementById('zoom-caption');
+  const hint     = document.getElementById('zoom-hint');
+  if (!overlay || !zStage || !content) return {};
+
+  let scale = 1, tx = 0, ty = 0;
+  let svgW = 0, svgH = 0;
+  let fitScale = 1;
+  let lastZoomTrigger = null;
+
+  function applyTransform() { content.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`; }
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+  function fitToStage() {
+    if (!svgW || !svgH) return;
+    const r = zStage.getBoundingClientRect();
+    const margin = 32;
+    fitScale = Math.min((r.width - margin * 2) / svgW, (r.height - margin * 2) / svgH);
+    scale = fitScale;
+    tx = (r.width - svgW * scale) / 2;
+    ty = (r.height - svgH * scale) / 2;
+    applyTransform();
+  }
+  function zoomAt(mx, my, factor) {
+    const newScale = clamp(scale * factor, fitScale * 0.5, fitScale * 16);
+    tx = mx - newScale * (mx - tx) / scale;
+    ty = my - newScale * (my - ty) / scale;
+    scale = newScale;
+    applyTransform();
+  }
+  function openZoom(svgEl, captionText) {
+    const clone = svgEl.cloneNode(true);
+    const vb = clone.viewBox?.baseVal;
+    svgW = (vb && vb.width)  || svgEl.getBoundingClientRect().width  || 1200;
+    svgH = (vb && vb.height) || svgEl.getBoundingClientRect().height || 780;
+    clone.setAttribute('width', svgW); clone.setAttribute('height', svgH);
+    clone.style.width = svgW + 'px'; clone.style.height = svgH + 'px';
+    content.innerHTML = '';
+    content.appendChild(clone);
+    captionE.textContent = captionText || '';
+    lastZoomTrigger = document.activeElement;
+    overlay.hidden = false;
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(() => {
+      fitToStage();
+      zStage.focus({ preventScroll: true });
+      if (hint) {
+        hint.classList.remove('fade');
+        clearTimeout(hint._t);
+        hint._t = setTimeout(() => hint.classList.add('fade'), 2600);
+      }
+    });
+  }
+  function closeZoom() {
+    overlay.hidden = true;
+    content.innerHTML = '';
+    document.body.style.overflow = '';
+    lastZoomTrigger?.focus?.();
+  }
+
+  overlay.querySelector('.zoom-close')?.addEventListener('click', closeZoom);
+  document.addEventListener('keydown', (e) => {
+    if (overlay.hidden) return;
+    if (e.key === 'Escape') { e.preventDefault(); closeZoom(); }
+    else if (e.key === '+' || e.key === '=') { e.preventDefault(); const r = zStage.getBoundingClientRect(); zoomAt(r.width/2, r.height/2, 1.25); }
+    else if (e.key === '-' || e.key === '_') { e.preventDefault(); const r = zStage.getBoundingClientRect(); zoomAt(r.width/2, r.height/2, 1/1.25); }
+    else if (e.key === '0') { e.preventDefault(); fitToStage(); }
+  });
+
+  overlay.querySelector('.zoom-in')?.addEventListener('click', () => { const r = zStage.getBoundingClientRect(); zoomAt(r.width/2, r.height/2, 1.25); });
+  overlay.querySelector('.zoom-out')?.addEventListener('click', () => { const r = zStage.getBoundingClientRect(); zoomAt(r.width/2, r.height/2, 1/1.25); });
+  overlay.querySelector('.zoom-reset')?.addEventListener('click', fitToStage);
+
+  zStage.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const r = zStage.getBoundingClientRect();
+    const mx = e.clientX - r.left;
+    const my = e.clientY - r.top;
+    const factor = e.deltaY < 0 ? 1.15 : 1/1.15;
+    zoomAt(mx, my, factor);
+  }, { passive: false });
+
+  let dragging = false, sx = 0, sy = 0, stx = 0, sty = 0;
+  zStage.addEventListener('pointerdown', (e) => {
+    dragging = true;
+    zStage.classList.add('grabbing');
+    zStage.setPointerCapture?.(e.pointerId);
+    sx = e.clientX; sy = e.clientY; stx = tx; sty = ty;
+  });
+  zStage.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    tx = stx + (e.clientX - sx);
+    ty = sty + (e.clientY - sy);
+    applyTransform();
+  });
+  function endDrag(e) {
+    if (!dragging) return;
+    dragging = false;
+    zStage.classList.remove('grabbing');
+    zStage.releasePointerCapture?.(e.pointerId);
+  }
+  zStage.addEventListener('pointerup', endDrag);
+  zStage.addEventListener('pointercancel', endDrag);
+  zStage.addEventListener('pointerleave', endDrag);
+
+  let pinchStartDist = 0, pinchStartScale = 1, pinchMid = { x: 0, y: 0 };
+  zStage.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+      dragging = false;
+      const t1 = e.touches[0], t2 = e.touches[1];
+      const dx = t1.clientX - t2.clientX, dy = t1.clientY - t2.clientY;
+      pinchStartDist = Math.hypot(dx, dy);
+      pinchStartScale = scale;
+      const r = zStage.getBoundingClientRect();
+      pinchMid = { x: (t1.clientX + t2.clientX) / 2 - r.left, y: (t1.clientY + t2.clientY) / 2 - r.top };
+    }
+  }, { passive: true });
+  zStage.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 2 && pinchStartDist > 0) {
+      e.preventDefault();
+      const t1 = e.touches[0], t2 = e.touches[1];
+      const d = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+      const factor = (d / pinchStartDist) * (pinchStartScale / scale);
+      zoomAt(pinchMid.x, pinchMid.y, factor);
+    }
+  }, { passive: false });
+  zStage.addEventListener('touchend', (e) => { if (e.touches.length < 2) pinchStartDist = 0; });
+
+  window.addEventListener('resize', () => { if (!overlay.hidden) fitToStage(); });
+
+  return { openZoom };
+})();
+
+// Câble le bouton zoom après chaque render() sur une scène schema
+// (les éléments sont injectés dynamiquement, pas présents au chargement)
+stage.addEventListener('click', (e) => {
+  const btn = e.target.closest('.zoom-btn');
+  if (!btn) return;
+  e.stopPropagation();
+  const wrapper = btn.closest('.schema-wrapper');
+  const svg = wrapper ? wrapper.querySelector('svg') : null;
+  if (svg && __zoom.openZoom) {
+    const caption = stage.querySelector('.caption')?.textContent?.trim() || '';
+    __zoom.openZoom(svg, caption);
+  }
+}, true);
+</script>
+
+<div class="idle-cue" id="idle-cue" aria-hidden="true">→</div>
+
+<div class="toaster" id="toaster" hidden data-no-advance>
+  <span>Tape pour avancer · Swipe ←→ pour changer de scène · Pince pour zoomer</span>
+</div>
+</body>
+</html>
