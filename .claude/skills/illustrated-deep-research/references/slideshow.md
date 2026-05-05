@@ -4,6 +4,53 @@ A scenic full-screen slideshow that condenses the long-form study into 10-12 min
 
 Reference proto: `narrative-experiences/20260505-narrative-experiences-slideshow.html` on `mathieugug.github.io`. ~2200 lines, single self-contained HTML. The proto is the source of truth — when in doubt about a CSS rule or a JS handler, read it there.
 
+---
+
+## ⚠️ Quick start — actions you WILL forget if you don't do them on purpose
+
+These are the non-obvious adjustments that took multiple iterations to discover during the V1 proto. **Do them all up front when copying SVGs or building the layout — the user should not have to ask for any of these.**
+
+### A. SVG adaptations (per SVG, before any inline-pasting into `#schemas`)
+
+For every SVG you copy from the long-form app's `<figure id="fig-NN">`:
+
+1. **Background `<rect>` → `fill="transparent"`.** The SVGs ship with `<rect width="..." height="..." fill="#FAF8F3"/>` as their first child (after `<defs>`). This paints an inset cream rectangle inside the page paper, creating a visible "card-within-a-card" frame. Switch to `fill="transparent"` so the SVG fuses with the page background. *(Forgetting this = the user sees a floating off-white panel inside the cream paper and asks "why does the schema look less nice than in the app?")*
+
+2. **Wrap the internal SVG header in `<g class="svg-header">`.** Each SVG ships with 3-4 `<text>` elements at the very top: an eyebrow (`SCHÉMA NN`), a serif title, a graphite italic lede. In the slideshow these would duplicate the topbar's `.scene-title-bar`. Wrap the entire header `<text>` block in `<g class="svg-header">…</g>` so the slideshow's CSS rule `.schema-host svg .svg-header { display: none; }` hides it. *(Forgetting this = duplicate title at the top of every schema scene, the user asks "the title appears twice".)*
+
+3. **Crop the `viewBox` to remove the now-empty header zone.** After hiding the header (~150 SVG units of vertical space), the viewBox still reserves that empty zone, wasting ~25-30% of vertical space. Crop:
+   - **Default for landscape SVGs (1200×800):** `viewBox="0 155 1200 635"`
+   - **Default for square SVGs (900×900):** `viewBox="0 155 900 745"`
+   - **For SVGs with rotated column labels protruding above y=155** (e.g. matrix schemas with -25° labels): use `viewBox="0 105 1200 685"` or even `0 90 1200 700`. **Test each SVG visually after the crop** — anything clipped at the top means drop the y value by 20-30 more units for that specific SVG.
+
+   **Always test each SVG individually after the crop in a browser.** The default y=155 works for ~80% of cases; the remaining 20% need per-SVG tuning. *(Forgetting this = SVG looks small with a big empty space above. User asks "augmente la hauteur du schéma".)*
+
+### B. Layout decisions that override the original spec
+
+The first spec proposed centered modals, a bottom timeline, and a title inside the stage. **All three were wrong.** Here's what actually works (and why):
+
+4. **Title goes in the topbar, NOT in the stage.** Move the scene's title (`NN · {scene title}`) into a `<div class="scene-title-bar">` centered in the topbar. The topbar grows from 48px to **64px desktop / 56px mobile** to accommodate it. Update via `updateSceneTitleBar(scene)` called at the top of every `render()`. *(Forgetting this = the title eats 60-80px of vertical space in the stage that the SVG needs.)*
+
+5. **Modal as right sidebar, NOT centered.** `#modal-root { position: fixed; right: 64px; top: 64px; bottom: 0; width: 400px; transform: translateX(calc(100% + 64px)); }`, slides in via transform. The stage shrinks via `body.modal-open .stage { right: 480px; }` with a 280ms transition. **No backdrop overlay** — the SVG stays visible, just compressed to the left. This preserves the reader's mental model of the schema. On mobile (<1024px), modal becomes a bottom-sheet (`width: 100%; height: 90vh; transform: translateY(100%)`). *(Forgetting this = a centered modal that covers the SVG. User asks "les modaux peuvent s'afficher en sidebar pour préserver le modèle mental".)*
+
+6. **Timeline as vertical right sidebar (desktop), horizontal bottom (mobile).** `.footer-bar { position: fixed; right: 18px; top: 50%; transform: translateY(-50%); flex-direction: column; }`. Under `@media (max-width: 1024px)`, flips to horizontal at `bottom: 16px`. The `.fill` div on each segment uses `style="height: X%; width: X%"` inline so desktop reads the height (vertical fill) and mobile reads the width (horizontal fill) — same JS, two CSS contexts. *(Forgetting this = timeline at the bottom steals viewport height the SVG needs. User asks "déplace la timeline sur la sidebar".)*
+
+### C. Modal infrastructure differs from the long-form app
+
+7. **`SCHEMAS` is a 2-level object, NOT a flat `MODAL_CARDS`.** The long-form app stores cards as `SCHEMAS[schemaId][cardId]` (e.g. `SCHEMAS["schema-01"]["comic-strip"]`). Copy the **entire** `SCHEMAS` object from the app — all 7 sub-schemas, not just the one you've imported first. The clickable regions in the SVGs use `data-card="..."` (NOT `data-modal=`), and the schema id is read from `data-schema-id` on the `<svg>` root. *(Forgetting this = clicking regions on schemas 02-07 does nothing because their cards aren't loaded. User asks "teste quelques modaux y'en a aucun autre qui s'ouvre".)*
+
+8. **`setupZoom()` from the long-form app needs refactoring.** The original IIFE installs static `.zoom-btn` listeners at page-load and queries `.figure svg` once. The slideshow's DOM is dynamic (SVGs are injected per `render()`). Refactor to: IIFE returns `{ openZoom }`, slideshow attaches a `stage.click` listener in **capture phase** (3rd arg `true`) catching `.zoom-btn` clicks and calling `__zoom.openZoom(svg)`. *(Forgetting this = zoom button does nothing on schema scenes.)*
+
+### D. Punchline scenes need real titles
+
+9. **Every punchline scene gets an editorial `title:`.** The timeline tooltip and the TOC overlay use `scene.title` as fallback "Respiration" if missing — but "Respiration" everywhere is meaningless. Author short editorial titles like *"Une troisième voie"*, *"L'acte éditorial"*, *"Le bilan IA"*. *(Forgetting this = the timeline has 3 tooltips reading "Respiration · Respiration · Respiration", uninformative.)*
+
+### E. Hub card
+
+10. **Add a 3ʳᵈ `.format` card to the dossier's `index.html`.** Between the long-form app card and the report.md card. Tag: `Format · Slideshow narratif`. Title: `Le <em>récit illustré</em>`. Sub: ~3 sentences referencing the dossier's own framing. CTA: `Lecture · 10-12 min` / `Ouvrir →`. Update the hub's `.meta` block to mention "**3** formats". *(Forgetting this = the slideshow is shipped but the hub still says "deux formats" and the user can't navigate to it.)*
+
+---
+
 ## 1. Purpose & niche
 
 | Format | Reading time | Reader posture | Density |
