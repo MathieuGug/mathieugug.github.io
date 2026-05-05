@@ -83,6 +83,60 @@ The companion app template (`assets/app-template.html`) is a scaffold. Two failu
 | How to design SVGs in editorial style (palette, type, layout, annotation grammar) | `references/svg-editorial-style.md` |
 | HTML app architecture (layout, modal system, tooltips, sources sidebar, JS) — and the **mobile-friendliness + panel-close + `<pre>`/`<code>` overflow** patterns required by the host site's `CLAUDE.md` | `references/companion-app.md` |
 | Working HTML scaffold to start from | `assets/app-template.html` |
+| Helper to assemble the app from fragments (avoids 1500-line Edit chains) | `assets/build-app.py` |
+
+## Avoid token-heavy app rewrites — use `assets/build-app.py`
+
+Rebuilding the companion app by repeatedly editing a 1500–2000 line HTML
+through `Edit()` calls is the single biggest token sink in this skill. Every
+report swaps the same three blocks: the `<main id="report">` body, the
+`<ol id="sources-list">` entries, and the `const SCHEMAS = {…};` JS object.
+The CSS/JS framework around them — modal dispatcher, tooltip floater, zoom
+overlay, sticky sidebar collapse, panel-close, mobile rules — is identical
+from one report to the next.
+
+`assets/build-app.py` does the swap in one pass. Recommended workflow:
+
+1. **Pick a host scaffold.** Either `assets/app-template.html` (clean template
+   with `{{MARKER}}` placeholders) or, more often, the most recent shipped app
+   from the host site (e.g.
+   `ia-et-travail/20260504-ia-et-travail-app.html`) — its framework is already
+   battle-tested against the host site's `CLAUDE.md` mobile/sticky/panel
+   rules. If reusing a shipped app, do a few targeted `Edit()` calls first on
+   the header (`<title>`, `<meta description>`, `header.site h1`, byline, the
+   `.md` download link) and the TOC `<ol>`. Those small edits are cheap.
+2. **Author three fragment files** in the working directory:
+   - `main-fragment.html` — the report body, with `<!--INLINE-SVG:01-->`,
+     `<!--INLINE-SVG:02-->` … markers wherever a `<figure class="figure">`
+     should embed an SVG. Use the same `<figure class="figure" id="fig-NN">`
+     wrapper around each marker so the zoom IIFE picks them up.
+   - `sources-fragment.html` — the `<li id="source-N">…</li>` entries (static
+     HTML, short host labels per the companion-app reference).
+   - `schemas-fragment.js` — the bare object literal
+     `{ "schema-01": {…}, "schema-02": {…}, … }` (no `const SCHEMAS = `
+     prefix, no trailing semicolon — the script wraps it).
+3. **Run the helper:**
+   ```
+   python3 .claude/skills/illustrated-deep-research/assets/build-app.py \
+     --host    path/to/host-scaffold.html \
+     --main    main-fragment.html \
+     --sources sources-fragment.html \
+     --schemas schemas-fragment.js \
+     --images  path/to/images-dir \
+     --out     path/to/final-app.html
+   ```
+   The script inlines each SVG (with `data-schema-id="schema-NN"` injected on
+   the root `<svg>` tag, stripping any `<?xml ... ?>` prologue), then swaps
+   the three blocks in the host file. It errors loudly on missing markers or
+   malformed fragments — fail-fast is the point.
+4. **Verify.**
+   `grep -nE '\{\{|\[SCHEMA-|\{tooltip:|<!--\s*INLINE-SVG' final-app.html`
+   must return nothing. Open the file in a browser to sanity-check.
+
+Tooltips remain inline as `data-tooltip="…"` attributes on `<span class="term">`
+elements inside the main fragment — there is no separate `TOOLTIPS` JS dict to
+swap. Tooltips inside modal `body` strings work the same way (the floater is
+body-level, escapes the modal's overflow context).
 
 ## Output location
 
