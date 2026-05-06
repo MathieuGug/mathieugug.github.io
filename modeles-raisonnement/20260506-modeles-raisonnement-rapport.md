@@ -90,7 +90,9 @@ METR (Model Evaluation & Threat Research) nuance en août 2025 : la CoT peut res
 
 Le RL est cher. Entraîner R1 a coûté à DeepSeek environ $5,6 M de compute officiellement — beaucoup moins en pratique selon les estimations indépendantes, mais toujours plusieurs millions de dollars[^2]. Cela ne tient pas pour la majorité des entreprises. Le mécanisme qui démocratise les raisonneurs s'appelle la distillation.
 
-[SCHEMA-06]
+![Diffusion ladder, du raisonneur frontière à l'agent en production|1200](images/20260506-06-diffusion-ladder.svg)
+
+*Schéma 6 — L'échelle de diffusion. Quatre paliers, du frontier au coding agent en production.*
 
 DeepSeek publie en même temps que R1 une famille de modèles distillés : DeepSeek-R1-Distill-Qwen-32B, 14B, 7B, et même 1,5B, entraînés en supervised fine-tuning sur les chaînes de pensée générées par R1[^2]. Le modèle 32B atteint 72 % sur AIME 2024 — comparable à o1-mini. Le 7B atteint 55 %. Pour la première fois, un raisonneur tient sur un GPU consumer. Cette propriété déclenche en 2025 une explosion d'usages aval : les raisonneurs deviennent les moteurs des *coding agents* (Cursor, Claude Code, Devin), des *research agents*, des frameworks d'agents multi-étapes.
 
