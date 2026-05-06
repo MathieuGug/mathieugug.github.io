@@ -27,7 +27,9 @@ Au printemps 2025, Anthropic publie Claude 3.7 puis Claude 4.x avec *extended th
 
 Comment apprend-on à un modèle à raisonner sans lui montrer comment ? La réponse tient en trois lettres : RLVR — *Reinforcement Learning with Verifiable Rewards*[^9].
 
-[SCHEMA-02]
+![La boucle RLVR : policy, rollouts, vérifieur, GRPO update, aha moment|1200](images/20260506-02-boucle-rlvr.svg)
+
+*Schéma 2 — La boucle RLVR. Cinq étapes, aucune n'implique d'humain qui annote des chaînes de pensée.*
 
 Le principe est simple. On part d'un modèle pré-entraîné. On lui donne un problème dont la réponse est *vérifiable mécaniquement* : un test unitaire pour du code, un calcul exact pour des mathématiques, un jugement booléen pour un puzzle logique. Le modèle génère plusieurs trajectoires (rollouts) avec leur chaîne de pensée. Un vérifieur — pas un humain, juste un script — donne 1 si la réponse est correcte, 0 sinon. L'algorithme de RL, typiquement <span class="term" data-tooltip="Group Relative Policy Optimization : variante de PPO développée par DeepSeek, qui calcule l'avantage relatif au sein d'un groupe de rollouts plutôt qu'avec un critique séparé">GRPO</span> chez DeepSeek ou <span class="term" data-tooltip="Proximal Policy Optimization : algorithme de policy gradient à clip, standard du RL deep learning depuis 2017">PPO</span> ailleurs, ajuste les poids pour rendre plus probables les chaînes qui mènent à des réponses correctes[^2].
 
