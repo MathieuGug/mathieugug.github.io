@@ -603,6 +603,8 @@ For each SVG in `images/`:
 
 Les apps deep-research peuvent embarquer des micro-quiz « vérifier sa compréhension » placés à des charnières conceptuelles. Le pattern (CSS + IIFE `setupQuizzes()`) est embarqué par défaut dans `assets/app-template.html` et ne fait rien tant qu'aucune carte `.quiz-card` n'est ajoutée au DOM. **C'est une option d'authoring, pas un défaut.**
 
+> **Authoring path = JSON sidecar.** L'écriture inline des cartes documentée ci-dessous reste valide comme spécification du DOM, mais en pratique tout nouveau quiz doit passer par `assets/insert-quizzes.py` + un `quizzes.json` à côté de l'app. C'est ~4× plus économe en tokens et idempotent (réexécuter le script après une édition JSON ne pollue pas le diff). Voir `references/quiz-authoring.md` pour le schéma JSON, l'invocation, et le contrat d'insertion.
+
 ### Quand en mettre, et combien
 
 - **3 à 4 quiz maximum par article**, jamais systématique. Placés où le lecteur peut sortir avec une **fausse intuition** s'il a survolé.
