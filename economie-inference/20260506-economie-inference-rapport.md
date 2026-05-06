@@ -113,7 +113,9 @@ Le marché de l'inférence en 2026 reste dominé par NVIDIA, mais avec une diver
 
 Source : InferenceMAX / SemiAnalysis, fiches produits constructeurs[^9].
 
-[SCHEMA-06]
+![Mix matériel inference 2026 : Hopper, Blackwell, MI300X, Trainium, Groq|1200](images/20260506-06-mix-materiel.svg)
+
+*Schéma 6 — Comparatif H100 / H200 / B200 / MI300X / Trainium 2 / Groq LPU sur quatre dimensions. NVIDIA Blackwell impose un saut x15 sur le coût-par-Mtok ; les alternatives s'imposent sur des niches précises (decode memory-bound, latence ultra-basse, intégration verticale).*
 
 Le saut Hopper → Blackwell est vertical. NVIDIA revendique **15× sur le coût-par-million-tokens** et **10× sur le throughput par mégawatt** pour les charges MoE[^8]. Le moteur principal est le support natif FP4 (Tensor Core de cinquième génération), qui double la densité de calcul à pourcentage d'erreur acceptable. Le NVLink 5 (1,8 To/s par GPU) divise par deux la latence des all-to-all MoE. Sur GPT-OSS-120B en TensorRT-LLM, un B200 produit ==60 000 tokens/seconde par GPU à 1 000 tokens/seconde par utilisateur==[^8].
 
