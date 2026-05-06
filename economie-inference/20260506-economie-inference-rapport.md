@@ -15,7 +15,9 @@ L'inférence est devenue une industrie à part entière. ==L'avantage compétiti
 
 En novembre 2021, OpenAI ouvre l'API GPT-3 au public à 60 $ par million de tokens. Trois ans plus tard, en novembre 2024, le même score MMLU se paie 0,06 $ chez Together AI sur Llama 3.2 3B — soit ==un facteur 1 000==[^1]. Andreessen Horowitz a baptisé le phénomène *LLMflation* et calculé un taux de 10× par an sur les trois dernières années[^1]. À titre de repère, la déflation des transistors sous Moore historique tourne autour de 2× tous les 18-24 mois ; la baisse du prix de la bande passante pendant la bulle dotcom plafonnait à ~5× par an.
 
-[SCHEMA-01]
+![Courbe LLMflation : prix par million de tokens, 2021-2026|1200](images/20260506-01-llmflation-curve.svg)
+
+*Schéma 1 — De GPT-3 à 60 $/Mtok (nov. 2021) à GPT-OSS-120B sur Blackwell à 0,02 $/Mtok (oct. 2025), trois ordres de grandeur de baisse en quatre ans, sur trois régimes successifs : dense + batching statique, PagedAttention/FlashAttention, MoE + désagrégation + Blackwell.*
 
 La trajectoire n'est pas linéaire. Trois régimes se distinguent :
 
