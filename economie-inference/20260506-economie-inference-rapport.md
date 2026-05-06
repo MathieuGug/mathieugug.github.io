@@ -34,7 +34,9 @@ Pour comprendre où vont les optimisations, il faut d'abord savoir où va le tem
 - **Le prefill** (ingestion du prompt) — *compute-bound*. Le modèle traite tous les tokens d'entrée en parallèle. Les unités tensor du GPU tournent à plein régime, la mémoire HBM travaille en deuxième rideau. Sur un H100, un prefill peut atteindre 80 % d'utilisation FLOPS si le batch est correctement formé.
 - **Le decode** (génération token-par-token) — *memory-bound*. À chaque pas, le modèle lit l'intégralité de ses poids depuis la HBM pour produire un seul nouveau token. Sur un Llama 70B en FP16, ça fait 140 Go à charger par token : la HBM3 du H100 (3,35 To/s) plafonne le débit à ~24 tokens/seconde par requête. Les FLOPs tensor sont sous-utilisés.
 
-[SCHEMA-02]
+![Anatomie d'un appel d'inférence : prefill, decode et KV cache|1200](images/20260506-02-anatomie-appel.svg)
+
+*Schéma 2 — Le prefill traite tous les tokens du prompt en parallèle (compute-bound) ; le decode produit un token à la fois en lisant l'intégralité des poids depuis la HBM (memory-bound). Le KV cache, écrit pendant le prefill et lu à chaque token de decode, croît linéairement avec le contexte et dimensionne la VRAM nécessaire.*
 
 Entre les deux, le **KV cache** : pour éviter de recalculer l'attention sur tous les tokens précédents à chaque pas de decode, le modèle stocke en HBM les clés et valeurs déjà calculées. Sa taille croît linéairement avec le contexte et se compte en gigaoctets. Sur Llama 70B avec un contexte de 32 K tokens, le KV cache pèse ~5 Go par utilisateur ; pour servir 100 utilisateurs en parallèle, il faut 500 Go de HBM — ==plus que toutes les variantes commerciales du H100 (80 Go) et du B200 (192 Go) prises individuellement==. C'est cette contrainte qui dicte l'architecture du serveur.
 
