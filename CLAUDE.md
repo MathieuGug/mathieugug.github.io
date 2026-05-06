@@ -17,7 +17,7 @@ Site personnel de Mathieu Guglielmino, hébergé sur GitHub Pages. Il publie des
 - Illustrations : SVG inline pour l'accessibilité et l'interactivité.
 - **Favicon** : `/favicon.svg` à la racine (monogramme MG italique sur fond accent). Toute nouvelle page HTML publiée doit inclure `<link rel="icon" type="image/svg+xml" href="/favicon.svg">` dans son `<head>`.
 - Pas de tracker, pas d'analytics, pas de tiers en dehors de Google Fonts.
-- **Surlignage stabilo (`<mark>`)** : signature visuelle du site, à utiliser pour les phrases-clés que je veux faire ressortir dans le corps narratif. En markdown : syntaxe Obsidian `==texte==` qui rend `<mark>texte</mark>`. Style : un dégradé qui ne tache que la moitié basse du texte, façon stylo feutre — `background: linear-gradient(transparent 58%, rgba(178, 59, 27, 0.14) 58%); color: inherit; padding: 0 2px;`. La règle CSS doit cibler `main mark` (apps `header.site` + `main#report`) ou `.entry .body mark` (journal/scrolly). Le pattern d'origine vient de `gouvernance/20260421-pitch-gouvernance-agentic.html:189`. Embarqué dans les huit apps deep-research, dans `proces-musk-altman/journal.html`, et dans le template de la skill `illustrated-deep-research/assets/app-template.html`. Toute nouvelle app HTML longue (rapport, journal) doit l'embarquer.
+- **Surlignage stabilo (`<mark>`)** : signature visuelle du site, à utiliser pour les phrases-clés que je veux faire ressortir dans le corps narratif. En markdown : syntaxe Obsidian `==texte==` qui rend `<mark>texte</mark>`. Style : un dégradé qui ne tache que la moitié basse du texte, façon stylo feutre — `background: linear-gradient(transparent 58%, rgba(178, 59, 27, 0.14) 58%); color: inherit; padding: 0 2px;`. La règle CSS doit cibler `main mark` (apps `header.site` + `main#report`) ou `.entry .body mark` (journal/scrolly). Le pattern d'origine vient de `gouvernance/20260421-pitch-gouvernance-agentic.html:189`. Embarqué dans les huit apps deep-research, dans `proces-musk-altman/journal.html`, et dans les deux templates de la skill `illustrated-deep-research/assets/` (`app-template.html` et `slideshow-template.html`). Toute nouvelle app HTML longue (rapport, journal) doit l'embarquer.
 
 ## Schémas SVG
 
@@ -47,10 +47,11 @@ Tout artefact (hub + format[s]) **doit** être lisible sur petit écran (320–4
 
 ## Bouton retour sur chaque page
 
-Toute page publiée (hub, app, scrolly, livre, journal) embarque un lien `← Retour aux dossiers` pointant vers `../index.html#series`. Style : mono, `letter-spacing: 0.16–0.22em`, `text-transform: uppercase`, couleur dim (passe à `--accent`/`--carmine` au survol). Position selon le format :
+Toute page publiée (hub, app, slideshow, scrolly, livre, journal) embarque un lien `← Retour aux dossiers` pointant vers `../index.html#series`. Style : mono, `letter-spacing: 0.16–0.22em`, `text-transform: uppercase`, couleur dim (passe à `--accent`/`--carmine` au survol). Position selon le format :
 
 - **Hubs et journal** : dans la `.topbar` fixe, à droite (le nom de l'auteur reste à gauche).
 - **Apps `header.site`** : tout début du `<header class="site">`, juste avant `<span class="marker">`. Classe `.back`.
+- **Slideshow scénique** (3e format optionnel produit par la skill `illustrated-deep-research`) : dans la `.topbar` fixe scénique (64 px desktop / 56 px mobile), à droite. Classe `.back`. Le template `assets/slideshow-template.html` l'embarque déjà.
 - **Scrolly plein écran** : pastille `position: fixed` en haut à droite (ou à gauche pour les anciens layouts) avec `backdrop-filter: blur`.
 - **Livre** : pastille `.back-link` `position: fixed; top: 26px; left: 26px` symétrique du `.toc-toggle`.
 
