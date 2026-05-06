@@ -13,7 +13,9 @@
 
 Pendant la période 2022-2024, le scaling consistait à augmenter paramètres et données de pretraining. La chain-of-thought était une astuce de prompt (« Let's think step-by-step ») qui améliorait les performances sans changer le modèle. Le 12 septembre 2024, OpenAI publie *Learning to reason with LLMs* et bascule l'industrie : la chaîne de pensée n'est plus un artefact de prompt, c'est l'objet même de l'optimisation[^1]. Le modèle est entraîné par renforcement à produire des trajectoires de raisonnement qui maximisent la résolution de problèmes vérifiables — mathématiques, code, sciences.
 
-[SCHEMA-01]
+![Timeline du pivot raisonnement, septembre 2024 à mai 2026, quatre laboratoires|1200](images/20260506-01-timeline-pivot.svg)
+
+*Schéma 1 — Le pivot raisonnement, vingt mois en quatre tracks. Chaque pastille marque la sortie d'un modèle ou d'un seuil benchmark.*
 
 L'effet sur les benchmarks est immédiat et déstabilisant. Sur AIME 2024 (American Invitational Mathematics Examination, problèmes de niveau olympiades), o1 atteint 74 % en single-sample, contre ~13 % pour GPT-4o[^1]. Sur ARC-AGI-1 — le benchmark conçu par François Chollet pour mesurer l'adaptation à des tâches inédites — o3 (sortie décembre 2024) atteint 75,7 % en mode efficace et 87,5 % en mode haute compute, soit le premier passage crédible au-dessus du seuil humain[^7]. Chollet lui-même parle de « rupture en matière d'adaptabilité ».
 
