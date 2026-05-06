@@ -1,0 +1,2059 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>L'économie unitaire de l'inférence</title>
+  <meta name="description" content="L'économie unitaire de l'inférence LLM en 2026 : LLMflation, pile d'optimisation logicielle, désagrégation prefill/decode, MoE, mix matériel et reasoning models. Rapport illustré par Mathieu Guglielmino.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --paper:    #FAF8F3;
+      --paper-2:  #F2EFE7;
+      --ink:      #1A1A1A;
+      --graphite: #5A5A5A;
+      --mist:     #B8B5AE;
+      --rule:     #E5E1D8;
+      --carmine:  #B7332C;
+      --teal:     #1F5560;
+      --mustard:  #B58A2C;
+      --serif: 'Spectral', 'Playfair Display', Georgia, serif;
+      --sans:  'Inter', system-ui, sans-serif;
+      --mono:  'JetBrains Mono', 'IBM Plex Mono', monospace;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; max-width: 100vw; }
+    body {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 240px minmax(0, 1fr) 320px;
+      gap: 0;
+      transition: grid-template-columns 280ms ease;
+      overflow-x: clip;
+    }
+    @media (min-width: 1025px) {
+      .layout.sources-collapsed { grid-template-columns: 240px minmax(0, 1fr) 0; }
+      .layout.sources-collapsed #sources { transform: translateX(100%); opacity: 0; pointer-events: none; }
+      .layout.sources-collapsed #sources-collapse-btn { visibility: hidden; }
+    }
+    @media (max-width: 1024px) {
+      .layout { grid-template-columns: minmax(0, 1fr); }
+      #toc, #sources { display: none; }
+      #toc.open, #sources.open { display: block; position: fixed; inset: 0; z-index: 90; background: var(--paper); overflow-y: auto; padding: 64px 24px 24px; }
+      #toc.open .panel-close, #sources.open .panel-close {
+        display: inline-flex; align-items: center; gap: 6px;
+        position: fixed; top: 16px; right: 16px; z-index: 91;
+        background: var(--paper); border: 1px solid var(--rule);
+        border-radius: 4px; padding: 8px 14px;
+        font-family: var(--mono); font-size: 0.85rem;
+        cursor: pointer; color: var(--ink);
+      }
+      #toc.open .panel-close:hover, #sources.open .panel-close:hover { background: var(--paper-2); }
+      .sidebar-edge-toggle { display: none !important; }
+      .menu-toggle { display: inline-block !important; }
+      header.site { padding: 14px 16px; gap: 10px; flex-wrap: wrap; }
+      header.site h1 { font-size: 1.05rem; min-width: 0; overflow-wrap: break-word; word-break: break-word; }
+      header.site .meta { font-size: 0.75rem; }
+      header.site .back { font-size: 0.7rem; letter-spacing: 0.08em; }
+      main#report { padding: 28px 18px 56px; max-width: 100%; min-width: 0; }
+      main h1.report-title { font-size: 1.8rem; overflow-wrap: break-word; word-break: break-word; }
+      main#report > .lead { font-size: 1.02rem; margin-bottom: 32px; padding-bottom: 18px; }
+      main h2 { font-size: 1.25rem; margin: 2.4rem 0 0.8rem; overflow-wrap: break-word; word-break: break-word; }
+      main h3 { font-size: 1.05rem; overflow-wrap: break-word; }
+      main p, main ul, main ol { overflow-wrap: break-word; word-break: break-word; }
+      .figure { margin: 2rem 0; padding: 16px 0; max-width: 100%; overflow: hidden; }
+      .figure svg { width: 100%; max-width: 100%; height: auto; }
+      main#report > section { min-width: 0; max-width: 100%; overflow-wrap: break-word; word-break: break-word; }
+      main table { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      main th, main td { white-space: normal; }
+    }
+    .panel-close { display: none; }
+
+    header.site {
+      grid-column: 1 / -1;
+      padding: 24px 32px;
+      border-bottom: 1px solid var(--rule);
+      display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap;
+    }
+    header.site .marker { font-family: var(--mono); font-size: 0.78rem; color: var(--carmine); letter-spacing: 0.08em; text-transform: uppercase; }
+    header.site h1 { font-family: var(--serif); font-weight: 600; font-size: 1.4rem; margin: 0; letter-spacing: -0.01em; }
+    header.site .meta { margin-left: auto; font-size: 0.85rem; color: var(--graphite); }
+    header.site .meta a { color: var(--carmine); text-decoration: none; }
+    header.site .meta a:hover { text-decoration: underline; }
+    header.site .back { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--graphite); text-decoration: none; white-space: nowrap; }
+    header.site .back:hover { color: var(--carmine); }
+    .menu-toggle { display: none; background: none; border: 1px solid var(--rule); padding: 6px 12px; border-radius: 4px; cursor: pointer; font-family: var(--mono); font-size: 0.8rem; }
+    @media (max-width: 1024px) { .menu-toggle { display: inline-block; } }
+
+    #toc { padding: 32px 24px; border-right: 1px solid var(--rule); position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto; }
+    #toc h2 { font-family: var(--mono); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--graphite); margin: 0 0 16px; }
+    #toc ol { list-style: none; padding: 0; margin: 0; counter-reset: toc-counter; }
+    #toc li { counter-increment: toc-counter; margin: 0 0 12px; font-size: 0.92rem; line-height: 1.4; }
+    #toc li::before { content: counter(toc-counter, decimal-leading-zero) "."; font-family: var(--mono); font-size: 0.78rem; color: var(--mist); margin-right: 8px; }
+    #toc a { color: var(--ink); text-decoration: none; border-bottom: 1px solid transparent; }
+    #toc a:hover, #toc a.active { color: var(--carmine); border-bottom-color: currentColor; }
+
+    main#report { padding: 56px 48px 96px; min-width: 0; max-width: 760px; margin: 0 auto; }
+    main#report > .lead { font-family: var(--serif); font-style: italic; font-size: 1.2rem; color: var(--graphite); line-height: 1.5; margin: 0 0 48px; padding-bottom: 24px; border-bottom: 1px solid var(--rule); }
+    main h1.report-title { font-family: var(--serif); font-weight: 600; font-size: 2.6rem; line-height: 1.1; letter-spacing: -0.025em; margin: 0 0 16px; }
+    main h2 { font-family: var(--serif); font-weight: 600; font-size: 1.55rem; letter-spacing: -0.01em; margin: 3.5rem 0 1rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--rule); }
+    main h3 { font-family: var(--serif); font-weight: 600; font-size: 1.18rem; margin: 2rem 0 0.6rem; }
+    main p { margin: 0 0 1.1rem; }
+    main ul, main ol { margin: 0 0 1.1rem; padding-left: 1.4rem; }
+    main li { margin-bottom: 0.4rem; }
+    main blockquote { margin: 1.5rem 0; padding: 12px 20px; border-left: 3px solid var(--carmine); background: var(--paper-2); font-style: italic; color: var(--graphite); }
+    main code { font-family: var(--mono); font-size: 0.88em; background: var(--paper-2); padding: 2px 5px; border-radius: 3px; overflow-wrap: anywhere; }
+    main pre { margin: 1.5rem 0; padding: 14px 16px; background: var(--paper-2); border-radius: 4px; overflow-x: auto; max-width: 100%; font-size: 0.85em; line-height: 1.5; -webkit-overflow-scrolling: touch; }
+    main pre code { background: transparent; padding: 0; border-radius: 0; font-size: 1em; overflow-wrap: normal; }
+    main mark { background: linear-gradient(transparent 58%, rgba(178, 59, 27, 0.14) 58%); color: inherit; padding: 0 2px; }
+    main table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.92rem; }
+    main th, main td { padding: 8px 12px; border-bottom: 1px solid var(--rule); text-align: left; vertical-align: top; }
+    main th { font-family: var(--mono); font-size: 0.78rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--graphite); }
+
+    .figure { margin: 3rem 0; padding: 24px 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); position: relative; }
+    .figure svg { width: 100%; height: auto; display: block; margin: 0 auto; }
+    .figure-caption { font-size: 0.88rem; color: var(--graphite); font-style: italic; margin-top: 12px; padding: 0 8px; }
+
+    @media (min-width: 1025px) {
+      .figure {
+        margin-left: calc(-1 * max(0px, (100vw - 1320px) / 2 + 48px));
+        margin-right: calc(-1 * max(0px, (100vw - 1320px) / 2 + 48px));
+        transition: margin-left 280ms ease, margin-right 280ms ease;
+        padding-left: clamp(16px, 3vw, 48px);
+        padding-right: clamp(16px, 3vw, 48px);
+        border-radius: 0;
+      }
+      .layout.sources-collapsed .figure {
+        margin-left: calc(-1 * max(0px, (100vw - 904px) / 2));
+        margin-right: calc(-1 * max(0px, (100vw - 904px) / 2));
+      }
+      .figure-caption { max-width: 760px; margin-left: auto; margin-right: auto; padding: 0 48px; }
+    }
+
+    .zoom-btn { position: absolute; top: 32px; right: 8px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: var(--paper); border: 1px solid var(--rule); border-radius: 4px; cursor: pointer; font-size: 18px; line-height: 1; color: var(--graphite); opacity: 0; transition: opacity 140ms, background 140ms, color 140ms, border-color 140ms; z-index: 2; }
+    .figure:hover .zoom-btn, .figure:focus-within .zoom-btn, .zoom-btn:focus-visible { opacity: 1; }
+    .zoom-btn:hover { background: var(--paper-2); border-color: var(--ink); color: var(--ink); }
+    @media (hover: none) { .zoom-btn { opacity: 0.85; } }
+
+    #zoom-overlay[hidden] { display: none !important; }
+    #zoom-overlay { position: fixed; inset: 0; z-index: 80; display: flex; flex-direction: column; background: rgba(26, 26, 26, 0.94); backdrop-filter: blur(3px); }
+    #zoom-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 20px; color: var(--paper); font-family: var(--sans); font-size: 0.85rem; border-bottom: 1px solid rgba(250, 248, 243, 0.12); }
+    #zoom-caption { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: 0.85; }
+    .zoom-controls { display: flex; gap: 4px; flex-shrink: 0; }
+    .zoom-controls button { background: transparent; border: 1px solid rgba(250, 248, 243, 0.32); color: var(--paper); padding: 6px 12px; min-width: 36px; cursor: pointer; font: inherit; font-size: 0.85rem; border-radius: 3px; transition: background 120ms, border-color 120ms; }
+    .zoom-controls button:hover { background: rgba(250, 248, 243, 0.12); border-color: rgba(250, 248, 243, 0.6); }
+    .zoom-controls .zoom-close { font-size: 1.3rem; line-height: 1; padding: 2px 10px; }
+    #zoom-stage { flex: 1; overflow: hidden; position: relative; cursor: grab; touch-action: none; }
+    #zoom-stage.grabbing { cursor: grabbing; }
+    #zoom-content { position: absolute; top: 0; left: 0; transform-origin: 0 0; will-change: transform; }
+    #zoom-content > svg { display: block; max-width: none; max-height: none; background: var(--paper); box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5); }
+    #zoom-hint { position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); color: rgba(250, 248, 243, 0.55); font-family: var(--sans); font-size: 0.75rem; pointer-events: none; transition: opacity 400ms; }
+    #zoom-hint.fade { opacity: 0; }
+    @media (max-width: 640px) { .zoom-controls .zoom-reset { display: none; } #zoom-caption { font-size: 0.78rem; } }
+
+    .sidebar-edge-toggle { width: 22px; height: 60px; background: var(--paper); border: 1px solid var(--rule); color: var(--graphite); cursor: pointer; font-family: var(--mono); font-size: 14px; line-height: 1; padding: 0; transition: background 140ms, color 140ms, border-color 140ms; }
+    .sidebar-edge-toggle:hover { background: var(--paper-2); color: var(--ink); border-color: var(--graphite); }
+    #sources-collapse-btn { position: fixed; top: 50%; right: 320px; transform: translate(50%, -50%); border-radius: 4px; z-index: 70; }
+    #sources-expand-btn { position: fixed; top: 50%; right: 0; transform: translateY(-50%); border-radius: 4px 0 0 4px; border-right: none; z-index: 70; }
+    #sources-expand-btn[hidden] { display: none !important; }
+    @media (max-width: 1024px) { .sidebar-edge-toggle { display: none !important; } }
+
+    .figure svg .interactive { cursor: pointer; transition: filter 140ms; }
+    .figure svg .interactive:hover rect, .figure svg .interactive:focus-visible rect,
+    .figure svg .interactive:hover circle, .figure svg .interactive:focus-visible circle,
+    .figure svg .interactive:hover ellipse, .figure svg .interactive:focus-visible ellipse,
+    .figure svg .interactive:hover path:not([fill="none"]), .figure svg .interactive:focus-visible path:not([fill="none"]) {
+      stroke: var(--carmine); stroke-width: 2.5;
+    }
+
+    .term { border-bottom: 1px dotted var(--graphite); cursor: help; }
+    .term:focus-visible { outline: 2px solid var(--carmine); outline-offset: 2px; border-radius: 2px; }
+
+    #tooltip-floater[hidden] { display: none !important; }
+    #tooltip-floater {
+      position: fixed; z-index: 110;
+      background: var(--ink); color: var(--paper);
+      font-family: var(--sans); font-style: normal; font-weight: 400;
+      font-size: 0.82rem; line-height: 1.45;
+      padding: 10px 14px; border-radius: 4px;
+      max-width: min(320px, calc(100vw - 24px));
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+      pointer-events: none; white-space: normal; word-wrap: break-word;
+    }
+    #tooltip-floater::after {
+      content: ''; position: absolute; width: 0; height: 0;
+      border-left: 5px solid transparent; border-right: 5px solid transparent;
+      left: var(--arrow-x, 50%); transform: translateX(-50%);
+    }
+    #tooltip-floater[data-side="top"]::after { top: 100%; border-top: 6px solid var(--ink); }
+    #tooltip-floater[data-side="bottom"]::after { bottom: 100%; border-bottom: 6px solid var(--ink); }
+
+    .cite { font-family: var(--mono); font-size: 0.72em; color: var(--carmine); text-decoration: none; vertical-align: super; padding: 0 1px; }
+    .cite::before { content: '['; }
+    .cite::after  { content: ']'; }
+    .cite:hover { text-decoration: underline; }
+
+    #sources {
+      padding: 32px 24px;
+      border-left: 1px solid var(--rule);
+      background: var(--paper-2);
+      position: sticky; top: 0; align-self: start;
+      height: 100vh; overflow-y: auto;
+      transition: transform 280ms ease, opacity 200ms ease;
+    }
+    #sources h2 { font-family: var(--mono); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--graphite); margin: 0 0 16px; }
+    #sources ol { list-style: none; padding: 0; margin: 0; }
+    #sources li { font-size: 0.82rem; line-height: 1.5; margin: 0 0 16px; padding: 12px 14px; border-radius: 4px; border: 1px solid transparent; transition: border-color 220ms, background 220ms; }
+    #sources li .cite-num { display: inline-block; font-family: var(--mono); font-size: 0.8rem; font-weight: 600; color: var(--carmine); margin-right: 6px; }
+    #sources li a { display: block; margin-top: 4px; color: var(--teal); text-decoration: none; font-size: 0.78rem; overflow-wrap: anywhere; word-break: break-word; }
+    #sources li a:hover { text-decoration: underline; }
+    #sources li .accessed { display: block; margin-top: 4px; color: var(--mist); font-style: italic; font-size: 0.74rem; }
+    #sources li.highlight { background: var(--paper); border-color: var(--carmine); }
+
+    #modal-root[hidden] { display: none !important; }
+    #modal-root { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 100; }
+    .modal-backdrop { position: absolute; inset: 0; background: rgba(26,26,26,0.55); backdrop-filter: blur(2px); }
+    .modal-card { position: relative; background: var(--paper); max-width: 560px; width: calc(100% - 48px); max-height: calc(100vh - 96px); overflow-y: auto; padding: 36px 36px 32px; border-radius: 6px; box-shadow: 0 24px 64px rgba(0,0,0,0.25); border-top: 4px solid var(--carmine); }
+    .modal-close { position: absolute; top: 12px; right: 12px; background: none; border: none; font-size: 1.6rem; line-height: 1; cursor: pointer; color: var(--graphite); width: 32px; height: 32px; border-radius: 4px; }
+    .modal-close:hover { background: var(--paper-2); color: var(--ink); }
+    .modal-card h3 { font-family: var(--serif); font-weight: 600; font-size: 1.4rem; margin: 0 0 6px; letter-spacing: -0.01em; }
+    .modal-card .modal-eyebrow { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--carmine); margin: 0 0 14px; }
+    .modal-card .modal-body p { margin: 0 0 0.9rem; font-size: 0.95rem; }
+    .modal-card .modal-body p:last-child { margin-bottom: 0; }
+
+    .colophon { margin-top: 80px; padding-top: 24px; border-top: 1px dashed var(--mist); font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--mist); display: flex; gap: 24px; flex-wrap: wrap; }
+
+    @media print {
+      .layout { grid-template-columns: 1fr; }
+      #toc, #sources, #modal-root, .menu-toggle, #zoom-overlay, .zoom-btn, .sidebar-edge-toggle, #tooltip-floater { display: none !important; }
+      main#report { max-width: none; padding: 0; }
+      .figure { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+
+    <header class="site">
+      <a class="back" href="../index.html#series">← Retour aux dossiers</a>
+      <span class="marker">Étude · 13</span>
+      <h1>L'économie unitaire de l'inférence</h1>
+      <span class="meta">
+        6 mai 2026 · Mathieu Guglielmino ·
+        <a href="20260506-economie-inference-rapport.md" download>Télécharger le rapport (.md) ↓</a>
+      </span>
+      <button class="menu-toggle" id="toggle-toc">Sommaire</button>
+      <button class="menu-toggle" id="toggle-sources">Sources</button>
+    </header>
+
+    <nav id="toc" aria-label="Sommaire">
+      <button class="panel-close" type="button" aria-label="Fermer le sommaire">Fermer ✕</button>
+      <h2>Sommaire</h2>
+      <ol>
+        <li><a href="#s1">Synthèse exécutive</a></li>
+        <li><a href="#s2">La chute d'un facteur 1 000</a></li>
+        <li><a href="#s3">Anatomie d'un appel</a></li>
+        <li><a href="#s4">La pile d'optimisation logicielle</a></li>
+        <li><a href="#s5">Désagréger prefill et decode</a></li>
+        <li><a href="#s6">MoE — la nouvelle économie</a></li>
+        <li><a href="#s7">Le mix matériel</a></li>
+        <li><a href="#s8">Marge fragile et reasoning models</a></li>
+        <li><a href="#s9">Outlook 12-24 mois</a></li>
+      </ol>
+    </nav>
+
+    <main id="report">
+      <h1 class="report-title">L'économie unitaire de l'inférence</h1>
+      <p class="lead">En 2026, le prix d'un million de tokens a chuté d'un facteur 1 000 en trois ans — pas grâce à des modèles plus petits, mais grâce à une pile logicielle qui multiplie le débit par GPU d'un ordre de grandeur sur le même silicium. La marge brute des fournisseurs reste pourtant fragile.</p>
+
+      <section id="s1">
+        <h2>Synthèse exécutive</h2>
+        <ul>
+          <li><strong>La courbe LLMflation est réelle et brutale.</strong> Un modèle de qualité GPT-3 coûtait 60 $ par million de tokens en novembre 2021 ; le même score se paie aujourd'hui 0,06 $ chez Together AI sur Llama 3.2 3B<a class="cite" data-cite="1" href="#source-1">1</a>. <mark>Trois ordres de grandeur en trois ans, soit un facteur 10 par an — plus rapide que le Moore historique et que la déflation bandwidth dotcom.</mark></li>
+          <li><strong>Les gains viennent d'abord de la pile logicielle, pas du silicium.</strong> Sur le même B300, une version naïve produit ~1 000 tokens/seconde par GPU ; une version pleinement optimisée monte à 14 000<a class="cite" data-cite="9" href="#source-9">9</a>. Le hardware fait son travail, mais l'écart de 14× se gagne entre <span class="term" data-tooltip="PagedAttention (vLLM, SOSP 2023) : applique au KV cache le principe de la mémoire virtuelle paginée des OS. Élimine la fragmentation, double-quadruple le batch utilisable.">PagedAttention</span>, FlashAttention-3, batching continu, FP8/FP4, désagrégation prefill/decode et <span class="term" data-tooltip="Speculative decoding : un petit modèle « draft » génère plusieurs tokens candidats que le modèle cible vérifie en un seul forward pass. EAGLE-3 atteint 3-6,5× de speedup.">speculative decoding</span>.</li>
+          <li><strong>La marge brute des fournisseurs d'inférence reste fragile.</strong> Sacra estime celle de Together AI à ~45 % et celle de Fireworks à ~50 % avec une cible de 60 %<a class="cite" data-cite="10" href="#source-10">10</a> — loin des 70-80 % d'un SaaS classique. La cause : le coût des GPU est dans le COGS, pas dans le R&amp;D, et la concurrence pousse les prix vers le bas.</li>
+          <li><strong>Les reasoning models rouvrent la facture.</strong> o1 et o3 multiplient le coût par requête par un facteur 10 à 74 sur des benchmarks comme AIME<a class="cite" data-cite="12" href="#source-12">12</a>. Au moment où la déflation semblait acquise, le <span class="term" data-tooltip="Test-time compute : compute dépensé au moment de l'inférence (vs. à l'entraînement). Les reasoning models comme o1/o3 produisent une longue chaîne de pensée cachée avant la réponse finale, multipliant le nombre de tokens output par 5-50×.">test-time compute</span> relance la course aux coûts — et déplace la bataille du « modèle moins cher » vers le « raisonnement moins cher ».</li>
+        </ul>
+        <p>L'inférence est devenue une industrie à part entière. <mark>L'avantage compétitif s'y joue désormais dans le harness de service, pas dans le poids du modèle.</mark> Ce rapport démonte les sept couches qui composent ce harness, les architectures de désagrégation qui s'imposent en production, et la dynamique de marge qui sépare ceux qui survivront à la déflation de ceux qui n'y survivront pas.</p>
+      </section>
+
+
+      <section id="s2">
+        <h2>1. La chute d'un facteur 1 000</h2>
+        <p>En novembre 2021, OpenAI ouvre l'API GPT-3 au public à 60 $ par million de tokens. Trois ans plus tard, en novembre 2024, le même score MMLU se paie 0,06 $ chez Together AI sur Llama 3.2 3B — soit <mark>un facteur 1 000</mark><a class="cite" data-cite="1" href="#source-1">1</a>. Andreessen Horowitz a baptisé le phénomène <em>LLMflation</em> et calculé un taux de 10× par an sur les trois dernières années<a class="cite" data-cite="1" href="#source-1">1</a>. À titre de repère, la déflation des transistors sous Moore historique tourne autour de 2× tous les 18-24 mois ; la baisse du prix de la bande passante pendant la bulle dotcom plafonnait à ~5× par an.</p>
+
+        <figure class="figure" id="fig-01">
+          <svg data-schema-id="schema-01" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-labelledby="t01">
+<title id="t01">Courbe LLMflation — prix par million de tokens, 2021-2026</title>
+<defs>
+<style>
+  .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+  .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+  .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+  .interactive { cursor: pointer; }
+</style>
+<marker id="arrow01" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+  <path d="M0,0 L10,5 L0,10 z" fill="#5A5A5A"/>
+</marker>
+</defs>
+<rect width="1200" height="800" fill="#FAF8F3"/>
+
+<!-- Header strip -->
+<text x="60" y="62" class="mono" font-size="11" font-weight="600" letter-spacing="0.18em" fill="#B7332C">SCHÉMA 01 — LLMFLATION</text>
+<text x="60" y="100" class="display" font-size="26" font-weight="600" fill="#1A1A1A" letter-spacing="-0.01em">Le prix d'un million de tokens, divisé par mille en trois ans.</text>
+<text x="60" y="126" class="display" font-size="16" font-style="italic" fill="#5A5A5A">Coût d'un modèle de qualité GPT-3 (MMLU ≥ 60), USD par million de tokens · échelle log.</text>
+<line x1="60" y1="146" x2="1140" y2="146" stroke="#E5E1D8" stroke-width="1"/>
+
+<!-- Plot area: x=180..1100, y=200..640 -->
+<!-- Y axis (log: 100, 10, 1, 0.1, 0.01) -->
+<line x1="180" y1="200" x2="180" y2="640" stroke="#1A1A1A" stroke-width="1.25"/>
+<line x1="180" y1="640" x2="1100" y2="640" stroke="#1A1A1A" stroke-width="1.25"/>
+
+<!-- log gridlines: y=200 → $100; y=310 → $10; y=420 → $1; y=530 → $0.1; y=640 → $0.01 -->
+<g stroke="#E5E1D8" stroke-width="0.5">
+  <line x1="180" y1="310" x2="1100" y2="310"/>
+  <line x1="180" y1="420" x2="1100" y2="420"/>
+  <line x1="180" y1="530" x2="1100" y2="530"/>
+</g>
+<g class="mono" font-size="11" fill="#5A5A5A" text-anchor="end">
+  <text x="170" y="204">100 $</text>
+  <text x="170" y="314">10 $</text>
+  <text x="170" y="424">1 $</text>
+  <text x="170" y="534">0,10 $</text>
+  <text x="170" y="644">0,01 $</text>
+</g>
+
+<!-- X axis years: 2021 → x=200 ; 2022 → x=380 ; 2023 → x=560 ; 2024 → x=740 ; 2025 → x=920 ; 2026 → x=1080 -->
+<g class="mono" font-size="11" fill="#5A5A5A" text-anchor="middle">
+  <text x="200" y="660">2021</text>
+  <text x="380" y="660">2022</text>
+  <text x="560" y="660">2023</text>
+  <text x="740" y="660">2024</text>
+  <text x="920" y="660">2025</text>
+  <text x="1080" y="660">2026</text>
+</g>
+<g stroke="#B8B5AE" stroke-width="0.5">
+  <line x1="380" y1="635" x2="380" y2="645"/>
+  <line x1="560" y1="635" x2="560" y2="645"/>
+  <line x1="740" y1="635" x2="740" y2="645"/>
+  <line x1="920" y1="635" x2="920" y2="645"/>
+  <line x1="1080" y1="635" x2="1080" y2="645"/>
+</g>
+
+<!-- Era bands (subtle background) -->
+<rect x="180" y="200" width="240" height="440" fill="#1F5560" fill-opacity="0.04"/>
+<rect x="420" y="200" width="320" height="440" fill="#B58A2C" fill-opacity="0.04"/>
+<rect x="740" y="200" width="360" height="440" fill="#B7332C" fill-opacity="0.05"/>
+<text x="300" y="222" class="body" font-size="11" font-style="italic" fill="#1F5560" text-anchor="middle">Dense + batching statique</text>
+<text x="580" y="222" class="body" font-size="11" font-style="italic" fill="#B58A2C" text-anchor="middle">PagedAttention + FlashAttention</text>
+<text x="920" y="222" class="body" font-size="11" font-style="italic" fill="#B7332C" text-anchor="middle">MoE + désagrégation + Blackwell</text>
+
+<!-- Curve: log-linear declining trend through points -->
+<!-- GPT-3 nov 2021: 60$/Mtok → log10(60)=1.78, y = 200 + (2-1.78)/4*440 = 200+24=224 ; x=200 -->
+<!-- gpt-3.5 nov 2022: 2$/Mtok → log10=0.30, y=200+(2-0.30)/4*440=200+187=387 ; x=380 -->
+<!-- mistral 7B oct 2023: 0.5 → log10=-0.30, y=200+(2+0.30)/4*440=200+253=453 ; x=575 -->
+<!-- llama3 8B oct 2024: 0.10 → log10=-1.0, y=200+(2+1)/4*440=200+330=530 ; x=750 -->
+<!-- llama 3.2 3B nov 2024: 0.06 → log10=-1.22, y=200+(2+1.22)/4*440=200+354=554 ; x=770 -->
+<!-- gpt-oss-120B B200 oct 2025: 0.02 → log10=-1.70, y=200+(2+1.70)/4*440=200+407=607 ; x=940 -->
+
+<g class="interactive" data-card="curve-trend" tabindex="0" role="button" aria-label="Tendance de fond — cliquez pour les détails">
+  <path d="M 200,224 C 290,300 320,360 380,387 C 460,420 520,442 575,453 C 650,490 720,520 770,554 C 850,580 900,597 940,607 C 1000,615 1050,622 1080,628"
+        fill="none" stroke="#B7332C" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Wide hit box -->
+  <path d="M 200,234 C 290,310 320,370 380,397 C 460,430 520,452 575,463 C 650,500 720,530 770,564 C 850,590 900,607 940,617 C 1000,625 1050,632 1080,638
+           L 1080,618 C 1050,612 1000,605 940,597 C 900,587 850,570 770,544 C 720,510 650,480 575,443 C 520,432 460,410 380,377 C 320,350 290,290 200,214 Z"
+        fill="#B7332C" fill-opacity="0" />
+</g>
+
+<!-- Points -->
+<g>
+  <!-- GPT-3 nov 2021 60$ -->
+  <g class="interactive" data-card="gpt3-launch" tabindex="0" role="button" aria-label="GPT-3 — novembre 2021">
+    <circle cx="200" cy="224" r="7" fill="#B7332C" stroke="#FAF8F3" stroke-width="2"/>
+  </g>
+  <text x="218" y="218" class="body" font-size="12" fill="#1A1A1A">GPT-3 davinci · 60 $</text>
+  <text x="218" y="234" class="body" font-size="10" font-style="italic" fill="#5A5A5A">nov. 2021 · OpenAI API</text>
+
+  <!-- gpt-3.5 turbo 2$ -->
+  <g class="interactive" data-card="gpt35-turbo" tabindex="0" role="button" aria-label="GPT-3.5 turbo — mars 2023">
+    <circle cx="380" cy="387" r="6" fill="#1F5560" stroke="#FAF8F3" stroke-width="2"/>
+  </g>
+  <text x="396" y="383" class="body" font-size="12" fill="#1A1A1A">gpt-3.5-turbo · 2,00 $</text>
+  <text x="396" y="399" class="body" font-size="10" font-style="italic" fill="#5A5A5A">mars 2023</text>
+
+  <!-- Mistral 7B 0.50 -->
+  <g class="interactive" data-card="mistral-7b" tabindex="0" role="button" aria-label="Mistral 7B — octobre 2023">
+    <circle cx="575" cy="453" r="6" fill="#1F5560" stroke="#FAF8F3" stroke-width="2"/>
+  </g>
+  <text x="591" y="449" class="body" font-size="12" fill="#1A1A1A">Mistral 7B · 0,50 $</text>
+  <text x="591" y="465" class="body" font-size="10" font-style="italic" fill="#5A5A5A">oct. 2023 · open-weight</text>
+
+  <!-- Llama 3 8B 0.10 -->
+  <g class="interactive" data-card="llama3-8b" tabindex="0" role="button" aria-label="Llama 3 8B — avril 2024">
+    <circle cx="750" cy="530" r="6" fill="#B58A2C" stroke="#FAF8F3" stroke-width="2"/>
+  </g>
+  <text x="568" y="526" class="body" font-size="12" fill="#1A1A1A" text-anchor="end">Llama 3 8B · 0,10 $</text>
+  <text x="568" y="542" class="body" font-size="10" font-style="italic" fill="#5A5A5A" text-anchor="end">avril 2024</text>
+  <line x1="572" y1="528" x2="744" y2="530" stroke="#5A5A5A" stroke-width="0.75"/>
+
+  <!-- Llama 3.2 3B 0.06 (a16z reference point) -->
+  <g class="interactive" data-card="llama32-3b" tabindex="0" role="button" aria-label="Llama 3.2 3B — novembre 2024">
+    <circle cx="800" cy="557" r="7" fill="#B7332C" stroke="#FAF8F3" stroke-width="2"/>
+  </g>
+  <text x="816" y="553" class="body" font-size="12" font-weight="500" fill="#1A1A1A">Llama 3.2 3B · 0,06 $</text>
+  <text x="816" y="569" class="body" font-size="10" font-style="italic" fill="#5A5A5A">nov. 2024 · Together AI</text>
+
+  <!-- GPT-OSS-120B B200 0.02 -->
+  <g class="interactive" data-card="gpt-oss-120b" tabindex="0" role="button" aria-label="GPT-OSS-120B sur B200 — octobre 2025">
+    <circle cx="970" cy="610" r="7" fill="#B7332C" stroke="#FAF8F3" stroke-width="2"/>
+  </g>
+  <text x="986" y="606" class="body" font-size="12" font-weight="500" fill="#1A1A1A">GPT-OSS-120B · 0,02 $</text>
+  <text x="986" y="622" class="body" font-size="10" font-style="italic" fill="#5A5A5A">oct. 2025 · Blackwell + TRT-LLM</text>
+</g>
+
+<!-- Annotation: 1000x in 3 years -->
+<g class="interactive" data-card="annotation-decline" tabindex="0" role="button" aria-label="Facteur 1000 en 3 ans">
+  <line x1="200" y1="246" x2="200" y2="557" stroke="#5A5A5A" stroke-width="0.75" stroke-dasharray="3 3"/>
+  <line x1="200" y1="557" x2="800" y2="557" stroke="#5A5A5A" stroke-width="0.75" stroke-dasharray="3 3"/>
+  <rect x="380" y="500" width="180" height="40" rx="3" fill="#FAF8F3" stroke="#1A1A1A" stroke-width="1"/>
+  <text x="470" y="518" class="body" font-size="12" font-weight="500" fill="#1A1A1A" text-anchor="middle">×1 000 en 3 ans</text>
+  <text x="470" y="532" class="body" font-size="10" font-style="italic" fill="#5A5A5A" text-anchor="middle">≈ 10× par an (a16z)</text>
+</g>
+
+<!-- Comparison reference lines -->
+<g class="body" font-size="10" font-style="italic" fill="#5A5A5A">
+  <text x="1100" y="318" text-anchor="end">Moore historique : ×2 / 18-24 mois</text>
+  <text x="1100" y="428" text-anchor="end">Bandwidth dotcom : ×5 / an (peak)</text>
+</g>
+
+<!-- Footer strip -->
+<line x1="60" y1="700" x2="1140" y2="700" stroke="#E5E1D8" stroke-width="1"/>
+<text x="60" y="724" class="body" font-size="10" font-style="italic" fill="#5A5A5A" letter-spacing="0.02em">Source : a16z LLMflation (nov. 2024) ; tarifs publics OpenAI / Together AI ; SemiAnalysis InferenceMAX (oct. 2025).</text>
+<text x="60" y="744" class="body" font-size="10" font-style="italic" fill="#5A5A5A" letter-spacing="0.02em">Note : prix par Mtok pour un modèle atteignant un score MMLU ≥ 60. Valeurs en USD courants, pas inflation-ajustées.</text>
+</svg>
+          <figcaption class="figure-caption">Schéma 1 — De GPT-3 à 60 $/Mtok (nov. 2021) à GPT-OSS-120B sur Blackwell à 0,02 $/Mtok (oct. 2025), trois ordres de grandeur de baisse en quatre ans, sur trois régimes successifs : dense + batching statique, PagedAttention/FlashAttention, MoE + désagrégation + Blackwell.</figcaption>
+        </figure>
+
+        <p>La trajectoire n'est pas linéaire. Trois régimes se distinguent :</p>
+        <ul>
+          <li><strong>2021 — début 2023 : l'ère des modèles encoder-decoder denses.</strong> Le coût est dominé par les FLOPs de génération autorégressive sur des architectures comme GPT-3 (175 B paramètres denses) et Codex. L'utilisation des GPU plafonne autour de 30-40 % parce que le <span class="term" data-tooltip="KV cache : en autoregressif, on évite de recalculer l'attention sur les tokens passés en stockant en HBM les clés (K) et valeurs (V) déjà calculées. Croît linéairement avec la longueur de contexte et le nombre d'utilisateurs simultanés.">KV cache</span> est mal géré et que le batching est statique.</li>
+          <li><strong>2023 — milieu 2024 : la révolution servicing.</strong> PagedAttention (vLLM, SOSP 2023) résout la fragmentation mémoire du KV cache et permet le batching continu<a class="cite" data-cite="2" href="#source-2">2</a>. FlashAttention-3 (juillet 2024) fait passer l'utilisation du H100 de 35 % à 75 %<a class="cite" data-cite="3" href="#source-3">3</a>. Mistral 7B, Mixtral 8×7B et Llama 2/3 popularisent les modèles open-weight performants. Le prix du token chute d'un facteur 30.</li>
+          <li><strong>2024 — 2026 : MoE + désagrégation + Blackwell.</strong> DeepSeek V3 (671 B totaux / 37 B actifs) et Llama 4 imposent les architectures <span class="term" data-tooltip="Mixture of Experts : architecture où un routeur active seulement quelques « experts » (sous-réseaux) par token. Découple paramètres totaux (VRAM) et paramètres actifs (FLOPs).">MoE</span> en production<a class="cite" data-cite="4" href="#source-4">4</a>. Splitwise et Mooncake industrialisent la séparation prefill/decode<a class="cite" data-cite="5" href="#source-5">5</a><a class="cite" data-cite="6" href="#source-6">6</a>. Le passage de Hopper à Blackwell apporte un 15× sur le coût-par-million-tokens grâce au support FP4 natif<a class="cite" data-cite="8" href="#source-8">8</a>. Les benchmarks InferenceMAX (octobre 2025) mesurent <mark>0,02 $ par million de tokens à 55 TPS/utilisateur sur GPT-OSS-120B avec un système Blackwell pleinement optimisé</mark><a class="cite" data-cite="8" href="#source-8">8</a><a class="cite" data-cite="9" href="#source-9">9</a>.</li>
+        </ul>
+        <p>L'analogie historique la plus fidèle n'est ni Moore ni la dotcom — c'est la baisse du prix du kilowattheure pendant l'industrialisation du XX<sup>e</sup> siècle. Une combinaison de meilleurs combustibles (silicium plus dense), de meilleures turbines (FlashAttention, PagedAttention) et d'une intégration verticale du grid (la désagrégation prefill/decode) qui n'aurait pas eu d'équivalent sur un système isolé.</p>
+      </section>
+
+
+      <section id="s3">
+        <h2>2. Anatomie du coût d'une seconde-GPU</h2>
+        <p>Pour comprendre où vont les optimisations, il faut d'abord savoir où va le temps. Un appel d'inférence se découpe en deux phases aux profils opposés :</p>
+        <ul>
+          <li><strong>Le prefill</strong> (ingestion du prompt) — <em>compute-bound</em>. Le modèle traite tous les tokens d'entrée en parallèle. Les unités tensor du GPU tournent à plein régime, la mémoire <span class="term" data-tooltip="HBM (High Bandwidth Memory) : mémoire ultra-rapide collée au GPU (HBM2/3/3e). Sa bande passante (3-8 To/s sur les GPU récents) est le goulet d'étranglement principal du decode token-par-token.">HBM</span> travaille en deuxième rideau. Sur un H100, un prefill peut atteindre 80 % d'utilisation FLOPS si le batch est correctement formé.</li>
+          <li><strong>Le decode</strong> (génération token-par-token) — <em>memory-bound</em>. À chaque pas, le modèle lit l'intégralité de ses poids depuis la HBM pour produire un seul nouveau token. Sur un Llama 70B en FP16, ça fait 140 Go à charger par token : la HBM3 du H100 (3,35 To/s) plafonne le débit à ~24 tokens/seconde par requête. Les FLOPs tensor sont sous-utilisés.</li>
+        </ul>
+
+        <figure class="figure" id="fig-02">
+          <svg data-schema-id="schema-02" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-labelledby="t02">
+<title id="t02">Anatomie d'un appel d'inférence — prefill, decode et KV cache</title>
+<defs>
+<style>
+  .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+  .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+  .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+  .interactive { cursor: pointer; }
+</style>
+<marker id="arrow02" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+  <path d="M0,0 L10,5 L0,10 z" fill="#5A5A5A"/>
+</marker>
+</defs>
+<rect width="1200" height="800" fill="#FAF8F3"/>
+
+<!-- Header -->
+<text x="60" y="62" class="mono" font-size="11" font-weight="600" letter-spacing="0.18em" fill="#B7332C">SCHÉMA 02 — ANATOMIE D'UN APPEL</text>
+<text x="60" y="100" class="display" font-size="26" font-weight="600" fill="#1A1A1A" letter-spacing="-0.01em">Deux phases, deux profils opposés.</text>
+<text x="60" y="126" class="display" font-size="16" font-style="italic" fill="#5A5A5A">Prefill compute-bound, decode memory-bound : les forcer à cohabiter sur le même GPU est un compromis.</text>
+<line x1="60" y1="146" x2="1140" y2="146" stroke="#E5E1D8" stroke-width="1"/>
+
+<!-- Time axis -->
+<text x="60" y="180" class="mono" font-size="10" font-weight="600" letter-spacing="0.18em" fill="#5A5A5A">TEMPS →</text>
+<line x1="60" y1="200" x2="1140" y2="200" stroke="#1A1A1A" stroke-width="1.25" marker-end="url(#arrow02)"/>
+
+<!-- Prefill phase -->
+<g class="interactive" data-card="prefill-phase" tabindex="0" role="button" aria-label="Phase de prefill — cliquez pour les détails">
+  <rect x="80" y="220" width="280" height="180" rx="3" fill="#1F5560" fill-opacity="0.10" stroke="#1F5560" stroke-width="1.25"/>
+  <text x="220" y="248" class="mono" font-size="10" font-weight="600" letter-spacing="0.18em" fill="#1F5560" text-anchor="middle">PREFILL</text>
+  <text x="220" y="278" class="display" font-size="18" font-weight="600" fill="#1A1A1A" text-anchor="middle">Ingestion du prompt</text>
+  <text x="220" y="302" class="body" font-size="11" font-style="italic" fill="#5A5A5A" text-anchor="middle">Tous les tokens en parallèle</text>
+  <line x1="100" y1="320" x2="340" y2="320" stroke="#1F5560" stroke-width="0.5" stroke-dasharray="2 3"/>
+  <text x="220" y="342" class="body" font-size="12" font-weight="500" fill="#1F5560" text-anchor="middle">Compute-bound</text>
+  <text x="220" y="362" class="body" font-size="11" fill="#1A1A1A" text-anchor="middle">FLOPS Tensor : ~80 % util.</text>
+  <text x="220" y="380" class="body" font-size="11" fill="#1A1A1A" text-anchor="middle">HBM : sous-exploitée</text>
+</g>
+
+<!-- Decode phase -->
+<g class="interactive" data-card="decode-phase" tabindex="0" role="button" aria-label="Phase de decode — cliquez pour les détails">
+  <rect x="540" y="220" width="560" height="180" rx="3" fill="#B7332C" fill-opacity="0.10" stroke="#B7332C" stroke-width="1.25"/>
+  <text x="820" y="248" class="mono" font-size="10" font-weight="600" letter-spacing="0.18em" fill="#B7332C" text-anchor="middle">DECODE</text>
+  <text x="820" y="278" class="display" font-size="18" font-weight="600" fill="#1A1A1A" text-anchor="middle">Génération token-par-token</text>
+  <text x="820" y="302" class="body" font-size="11" font-style="italic" fill="#5A5A5A" text-anchor="middle">Un forward pass par token de sortie</text>
+  <line x1="560" y1="320" x2="1080" y2="320" stroke="#B7332C" stroke-width="0.5" stroke-dasharray="2 3"/>
+  <text x="820" y="342" class="body" font-size="12" font-weight="500" fill="#B7332C" text-anchor="middle">Memory-bound</text>
+  <text x="820" y="362" class="body" font-size="11" fill="#1A1A1A" text-anchor="middle">HBM bandwidth : facteur limitant</text>
+  <text x="820" y="380" class="body" font-size="11" fill="#1A1A1A" text-anchor="middle">FLOPS Tensor : sous-exploités</text>
+</g>
+
+<!-- Token sticks under decode (visual rhythm) -->
+<g stroke="#B7332C" stroke-width="2.5">
+  <line x1="560" y1="408" x2="560" y2="430"/>
+  <line x1="600" y1="408" x2="600" y2="430"/>
+  <line x1="640" y1="408" x2="640" y2="430"/>
+  <line x1="680" y1="408" x2="680" y2="430"/>
+  <line x1="720" y1="408" x2="720" y2="430"/>
+  <line x1="760" y1="408" x2="760" y2="430"/>
+  <line x1="800" y1="408" x2="800" y2="430"/>
+  <line x1="840" y1="408" x2="840" y2="430"/>
+  <line x1="880" y1="408" x2="880" y2="430"/>
+  <line x1="920" y1="408" x2="920" y2="430"/>
+  <line x1="960" y1="408" x2="960" y2="430"/>
+  <line x1="1000" y1="408" x2="1000" y2="430"/>
+  <line x1="1040" y1="408" x2="1040" y2="430"/>
+  <line x1="1080" y1="408" x2="1080" y2="430"/>
+</g>
+<text x="820" y="450" class="body" font-size="10" font-style="italic" fill="#5A5A5A" text-anchor="middle">~24 tok/s par requête sur Llama 70B FP16 / H100</text>
+
+<!-- KV cache layer -->
+<g class="interactive" data-card="kv-cache" tabindex="0" role="button" aria-label="KV cache — cliquez pour les détails">
+  <rect x="80" y="500" width="1020" height="100" rx="3" fill="#B58A2C" fill-opacity="0.10" stroke="#B58A2C" stroke-width="1.25"/>
+  <text x="100" y="528" class="mono" font-size="10" font-weight="600" letter-spacing="0.18em" fill="#B58A2C">KV CACHE EN HBM</text>
+  <text x="100" y="554" class="display" font-size="16" font-weight="600" fill="#1A1A1A">Croît linéairement avec le contexte.</text>
+  <text x="100" y="576" class="body" font-size="12" fill="#1A1A1A">Llama 70B · contexte 32K · 1 utilisateur ≈ <tspan font-weight="500">5 Go</tspan> · 100 utilisateurs ≈ <tspan font-weight="500">500 Go</tspan></text>
+  <text x="100" y="592" class="body" font-size="11" font-style="italic" fill="#5A5A5A">→ plus que la HBM d'un H100 (80 Go) ou d'un B200 (192 Go) seul.</text>
+</g>
+
+<!-- Connectors prefill→KV→decode -->
+<line x1="220" y1="400" x2="220" y2="496" stroke="#5A5A5A" stroke-width="0.75" marker-end="url(#arrow02)"/>
+<line x1="820" y1="496" x2="820" y2="404" stroke="#5A5A5A" stroke-width="0.75" marker-end="url(#arrow02)"/>
+<text x="240" y="448" class="body" font-size="10" font-style="italic" fill="#5A5A5A">écrit</text>
+<text x="800" y="448" class="body" font-size="10" font-style="italic" fill="#5A5A5A" text-anchor="end">lit à chaque token</text>
+
+<!-- Annotations: numbered markers explaining what creates cost -->
+<!-- 1: PagedAttention -->
+<g class="interactive" data-card="paged-attn" tabindex="0" role="button" aria-label="Avant/après PagedAttention">
+  <circle cx="100" cy="650" r="9" fill="#B7332C"/>
+  <text x="100" y="654" class="mono" font-size="11" font-weight="600" fill="#FAF8F3" text-anchor="middle">1</text>
+  <text x="120" y="654" class="body" font-size="11" fill="#1A1A1A">Avant PagedAttention : 40-50 % HBM utile (fragmentation).</text>
+  <text x="120" y="670" class="body" font-size="11" fill="#1A1A1A">Après : &gt;96 %, le batch double ou quadruple <tspan font-style="italic" fill="#5A5A5A">(vLLM, SOSP 2023)</tspan>.</text>
+</g>
+
+<!-- 2: continuous batching -->
+<g class="interactive" data-card="continuous-batching" tabindex="0" role="button" aria-label="Continuous batching">
+  <circle cx="640" cy="650" r="9" fill="#B7332C"/>
+  <text x="640" y="654" class="mono" font-size="11" font-weight="600" fill="#FAF8F3" text-anchor="middle">2</text>
+  <text x="660" y="654" class="body" font-size="11" fill="#1A1A1A">Batching statique : utilisation GPU 40 %.</text>
+  <text x="660" y="670" class="body" font-size="11" fill="#1A1A1A">Continu : 90 %+. Coût/token divisé par 2.</text>
+</g>
+
+<!-- Footer -->
+<line x1="60" y1="710" x2="1140" y2="710" stroke="#E5E1D8" stroke-width="1"/>
+<text x="60" y="734" class="body" font-size="10" font-style="italic" fill="#5A5A5A" letter-spacing="0.02em">Source : Kwon et al., PagedAttention (SOSP 2023) ; profilage Llama 70B FP16 sur NVIDIA H100 PCIe 80 Go (HBM3 3,35 To/s).</text>
+<text x="60" y="754" class="body" font-size="10" font-style="italic" fill="#5A5A5A" letter-spacing="0.02em">Note : les estimations de débit decode supposent un batch size 1 et FlashAttention-3. Augmente avec le batch et la quantization FP8/FP4.</text>
+</svg>
+          <figcaption class="figure-caption">Schéma 2 — Le prefill traite tous les tokens du prompt en parallèle (compute-bound) ; le decode produit un token à la fois en lisant l'intégralité des poids depuis la HBM (memory-bound). Le KV cache, écrit pendant le prefill et lu à chaque token de decode, croît linéairement avec le contexte et dimensionne la VRAM nécessaire.</figcaption>
+        </figure>
+
+        <p>Entre les deux, le <strong>KV cache</strong> : pour éviter de recalculer l'attention sur tous les tokens précédents à chaque pas de decode, le modèle stocke en HBM les clés et valeurs déjà calculées. Sa taille croît linéairement avec le contexte et se compte en gigaoctets. Sur Llama 70B avec un contexte de 32 K tokens, le KV cache pèse ~5 Go par utilisateur ; pour servir 100 utilisateurs en parallèle, il faut 500 Go de HBM — <mark>plus que toutes les variantes commerciales du H100 (80 Go) et du B200 (192 Go) prises individuellement</mark>. C'est cette contrainte qui dicte l'architecture du serveur.</p>
+        <p>Avant PagedAttention (2023), le KV cache était alloué en blocs contigus de taille maximale<a class="cite" data-cite="2" href="#source-2">2</a>. Si un utilisateur demandait 32 K tokens mais en consommait 4 K, les 28 K restants étaient gaspillés. Le taux d'utilisation effectif de la HBM tombait à 40-50 %. PagedAttention applique le principe de la mémoire virtuelle paginée des OS : les blocs de 16-256 tokens sont alloués à la demande, indexés par un translation table. Le gaspillage tombe à &lt;4 %, et le batch utilisable double, voire quadruple<a class="cite" data-cite="2" href="#source-2">2</a>.</p>
+        <p>Le <strong>batching</strong> complète l'optimisation. Le batching <em>statique</em> attend qu'une fenêtre de N requêtes soit pleine avant de lancer un forward pass — chaque requête dans le batch progresse au rythme de la plus lente. Le <span class="term" data-tooltip="Batching continu : ajoute de nouvelles requêtes à un batch en cours dès qu'une fente se libère (decode terminé). Utilisation GPU 40 % → 90 %, coût/token divisé par 2.">batching continu</span> ajoute des requêtes au batch dès qu'une fente se libère (decode terminé). L'utilisation GPU passe de 40 % à 90+ %, et le coût par token chute de 50 % en production<a class="cite" data-cite="2" href="#source-2">2</a>. C'est devenu la valeur par défaut de vLLM, TensorRT-LLM et SGLang.</p>
+      </section>
+
+
+      <section id="s4">
+        <h2>3. La pile d'optimisation logicielle</h2>
+        <p>Les gains de l'inférence ne viennent pas d'une seule innovation. Ils viennent de l'<strong>empilement</strong> de sept couches logicielles, chacune apportant 1,3× à 4× sur la précédente. Sur un B300, une version naïve produit environ 1 000 tokens/seconde par GPU ; une version pleinement optimisée atteint 14 000 — <strong>un facteur 14 sur le même silicium</strong><a class="cite" data-cite="9" href="#source-9">9</a>.</p>
+
+        <figure class="figure" id="fig-03">
+          <svg data-schema-id="schema-03" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-labelledby="t03">
+<title id="t03">Pile d'optimisation logicielle — gains cumulés sur le même silicium</title>
+<defs>
+<style>
+  .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+  .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+  .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+  .interactive { cursor: pointer; }
+</style>
+</defs>
+<rect width="1200" height="800" fill="#FAF8F3"/>
+
+<!-- Header -->
+<text x="60" y="62" class="mono" font-size="11" font-weight="600" letter-spacing="0.18em" fill="#B7332C">SCHÉMA 03 — PILE D'OPTIMISATION</text>
+<text x="60" y="100" class="display" font-size="26" font-weight="600" fill="#1A1A1A" letter-spacing="-0.01em">Sept couches empilées, ×14 sur le même silicium.</text>
+<text x="60" y="126" class="display" font-size="16" font-style="italic" fill="#5A5A5A">Throughput d'une instance B300 entre version naïve et version pleinement optimisée — chaque couche multiplie la précédente.</text>
+<line x1="60" y1="146" x2="1140" y2="146" stroke="#E5E1D8" stroke-width="1"/>
+
+<!-- Stack: layers from bottom (naïve) to top (optimized) -->
+<!-- Plot area for the stack: x=80..720, y=190..630, 7 layers of 60px height + 5px spacing -->
+<!-- Width grows with cumulative throughput -->
+
+<!-- Naïve baseline -->
+<g class="interactive" data-card="layer-baseline" tabindex="0" role="button" aria-label="Baseline naïve">
+  <rect x="80" y="600" width="80" height="40" rx="3" fill="#B8B5AE" fill-opacity="0.30" stroke="#5A5A5A" stroke-width="1.25"/>
+  <text x="120" y="624" class="body" font-size="12" fill="#1A1A1A" text-anchor="middle">Baseline naïve</text>
+  <text x="172" y="618" class="mono" font-size="11" fill="#5A5A5A">~1 000 tok/s/GPU</text>
+  <text x="172" y="632" class="body" font-size="10" font-style="italic" fill="#5A5A5A">PyTorch eager · sans optimisation</text>
+</g>
+
+<!-- Layer 1: Kernel fusion + Tensor cores -->
+<g class="interactive" data-card="layer-kernel-fusion" tabindex="0" role="button" aria-label="Kernel fusion et Tensor Cores">
+  <rect x="80" y="540" width="120" height="40" rx="3" fill="#1F5560" fill-opacity="0.18" stroke="#1F5560" stroke-width="1.25"/>
+  <text x="140" y="564" class="body" font-size="12" fill="#1A1A1A" text-anchor="middle">Kernel fusion · Tensor Cores</text>
+  <text x="212" y="558" class="mono" font-size="11" fill="#5A5A5A">×1,5 · 1 500 tok/s</text>
+  <text x="212" y="572" class="body" font-size="10" font-style="italic" fill="#5A5A5A">FlashAttention-1 · matmul fusionnée</text>
+</g>
+
+<!-- Layer 2: FlashAttention-3 -->
+<g class="interactive" data-card="layer-flashattn3" tabindex="0" role="button" aria-label="FlashAttention-3">
+  <rect x="80" y="480" width="220" height="40" rx="3" fill="#1F5560" fill-opacity="0.30" stroke="#1F5560" stroke-width="1.25"/>
+  <text x="190" y="504" class="body" font-size="12" fill="#1A1A1A" text-anchor="middle">FlashAttention-3 · async + warp-spec</text>
+  <text x="312" y="498" class="mono" font-size="11" fill="#5A5A5A">×2 · 3 000 tok/s</text>
+  <text x="312" y="512" class="body" font-size="10" font-style="italic" fill="#5A5A5A">75 % util. H100 BF16 · FP8 1,2 PFLOPS</text>
+</g>
+
+<!-- Layer 3: PagedAttention + continuous batching -->
+<g class="interactive" data-card="layer-paged-cb" tabindex="0" role="button" aria-label="PagedAttention et continuous batching">
+  <rect x="80" y="420" width="380" height="40" rx="3" fill="#1F5560" fill-opacity="0.40" stroke="#1F5560" stroke-width="1.25"/>
+  <text x="270" y="444" class="body" font-size="12" font-weight="500" fill="#1A1A1A" text-anchor="middle">PagedAttention + continuous batching</text>
+  <text x="472" y="438" class="mono" font-size="11" fill="#5A5A5A">×1,7 · 5 000 tok/s</text>
+  <text x="472" y="452" class="body" font-size="10" font-style="italic" fill="#5A5A5A">vLLM · util. GPU 40 % → 90 %</text>
+</g>
+
+<!-- Layer 4: FP8 quantization -->
+<g class="interactive" data-card="layer-fp8" tabindex="0" role="button" aria-label="Quantization FP8">
+  <rect x="80" y="360" width="540" height="40" rx="3" fill="#B58A2C" fill-opacity="0.30" stroke="#B58A2C" stroke-width="1.25"/>
+  <text x="350" y="384" class="body" font-size="12" fill="#1A1A1A" text-anchor="middle">Quantization FP8 (Hopper)</text>
+  <text x="632" y="378" class="mono" font-size="11" fill="#5A5A5A">×1,6 · 8 000 tok/s</text>
+  <text x="632" y="392" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Tensor Cores 2× densité, perte qualité &lt; 1 %</text>
+</g>
+
+<!-- Layer 5: FP4 (Blackwell) -->
+<g class="interactive" data-card="layer-fp4" tabindex="0" role="button" aria-label="Quantization FP4 sur Blackwell">
+  <rect x="80" y="300" width="660" height="40" rx="3" fill="#B58A2C" fill-opacity="0.45" stroke="#B58A2C" stroke-width="1.25"/>
+  <text x="410" y="324" class="body" font-size="12" fill="#1A1A1A" text-anchor="middle">FP4 (Blackwell, Tensor Cores 5e gén.)</text>
+  <text x="752" y="318" class="mono" font-size="11" fill="#5A5A5A">×1,4 · 11 000 tok/s</text>
+  <text x="752" y="332" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Calibration soigneuse requise</text>
+</g>
+
+<!-- Layer 6: Speculative decoding (EAGLE-3 / P-EAGLE) -->
+<g class="interactive" data-card="layer-spec-decode" tabindex="0" role="button" aria-label="Speculative decoding EAGLE-3 et P-EAGLE">
+  <rect x="80" y="240" width="780" height="40" rx="3" fill="#B7332C" fill-opacity="0.30" stroke="#B7332C" stroke-width="1.25"/>
+  <text x="470" y="264" class="body" font-size="12" font-weight="500" fill="#1A1A1A" text-anchor="middle">Speculative decoding (EAGLE-3 + P-EAGLE)</text>
+  <text x="872" y="258" class="mono" font-size="11" fill="#5A5A5A">×1,2 · 13 000 tok/s</text>
+  <text x="872" y="272" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Draft head 1-2 couches · 3-6,5×</text>
+</g>
+
+<!-- Layer 7: Prefix caching + harness tuning -->
+<g class="interactive" data-card="layer-prefix-cache" tabindex="0" role="button" aria-label="Prefix caching et harness tuning">
+  <rect x="80" y="180" width="840" height="40" rx="3" fill="#B7332C" fill-opacity="0.45" stroke="#B7332C" stroke-width="1.25"/>
+  <text x="500" y="204" class="body" font-size="12" font-weight="500" fill="#1A1A1A" text-anchor="middle">Prefix caching + désagrégation P/D + harness tuning</text>
+  <text x="932" y="198" class="mono" font-size="11" font-weight="500" fill="#1A1A1A">×1,08 · 14 000 tok/s</text>
+  <text x="932" y="212" class="body" font-size="10" font-style="italic" fill="#5A5A5A">RAG · agents · long-context</text>
+</g>
+
+<!-- Total annotation -->
+<line x1="80" y1="170" x2="80" y2="640" stroke="#1A1A1A" stroke-width="1.25"/>
+<line x1="78" y1="170" x2="86" y2="170" stroke="#1A1A1A" stroke-width="1.25"/>
+<line x1="78" y1="640" x2="86" y2="640" stroke="#1A1A1A" stroke-width="1.25"/>
+
+<g>
+  <rect x="990" y="350" width="180" height="80" rx="3" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.25"/>
+  <text x="1080" y="378" class="display" font-size="22" font-weight="600" fill="#B7332C" text-anchor="middle">×14</text>
+  <text x="1080" y="398" class="body" font-size="11" fill="#1A1A1A" text-anchor="middle">throughput total</text>
+  <text x="1080" y="416" class="body" font-size="10" font-style="italic" fill="#5A5A5A" text-anchor="middle">B300, même silicium</text>
+</g>
+
+<!-- Caption left of stack: "même silicium" -->
+<text x="60" y="200" class="mono" font-size="9" font-weight="600" letter-spacing="0.18em" fill="#5A5A5A" transform="rotate(-90 60 200)">SOFTWARE STACK · MÊME SILICIUM</text>
+
+<!-- Footer -->
+<line x1="60" y1="690" x2="1140" y2="690" stroke="#E5E1D8" stroke-width="1"/>
+<text x="60" y="714" class="body" font-size="10" font-style="italic" fill="#5A5A5A" letter-spacing="0.02em">Source : SemiAnalysis InferenceMAX (oct. 2025), benchmark B300 GPT-OSS-120B en mode TensorRT-LLM optimisé.</text>
+<text x="60" y="734" class="body" font-size="10" font-style="italic" fill="#5A5A5A" letter-spacing="0.02em">Note : les multiplicateurs par couche sont indicatifs (l'ordre de composition modifie les gains marginaux). Le ×14 total est mesuré, pas calculé.</text>
+<text x="60" y="754" class="body" font-size="10" font-style="italic" fill="#5A5A5A" letter-spacing="0.02em">Lecture : la largeur de chaque barre représente le throughput cumulé après cette couche, en tokens/seconde par GPU.</text>
+</svg>
+          <figcaption class="figure-caption">Schéma 3 — Sept couches d'optimisation (kernel fusion, FlashAttention-3, PagedAttention, batching continu, FP8, FP4, speculative decoding, prefix caching) multiplient le throughput par 14 sur un B300, sans changer une ligne de hardware.</figcaption>
+        </figure>
+
+        <p>De bas en haut, les couches s'empilent comme suit :</p>
+        <ol>
+          <li><strong>Kernel fusion + tensor cores</strong> (gain ~1,5×). Fusionner softmax + matmul + dropout dans un seul kernel CUDA évite les allers-retours en HBM. FlashAttention-1 (2022) a popularisé le pattern.</li>
+          <li><strong>FlashAttention-3</strong> (gain ~2×). En exploitant l'asynchronie des Tensor Cores Hopper, le warp-specialization et le block quantization, FA-3 atteint 75 % d'utilisation FLOPS H100 en BF16 (vs 35 % pour FA-2) et 1,2 PFLOPS en FP8<a class="cite" data-cite="3" href="#source-3">3</a>.</li>
+          <li><strong>PagedAttention + continuous batching</strong> (gain ~2-4×). vLLM remplace l'allocation contiguë du KV cache par un système paginé et active le batching continu<a class="cite" data-cite="2" href="#source-2">2</a>.</li>
+          <li><strong>Quantization <span class="term" data-tooltip="FP8 / FP4 : précisions flottantes réduites supportées nativement par les Tensor Cores de Hopper (FP8) et Blackwell (FP4). Chaque facteur 2 de précision donne ~2× de débit, à perte de qualité minime sur modèle bien calibré.">FP8 / FP4</span></strong> (gain ~2× chacune). La FP8 sur Hopper est devenue standard pour l'inférence ; la FP4 sur Blackwell apporte un nouveau facteur 2 sans perte significative de qualité sur les modèles correctement calibrés. DeepSeek V3 a démontré la faisabilité de l'entraînement FP8 à grande échelle<a class="cite" data-cite="4" href="#source-4">4</a>.</li>
+          <li><strong>Speculative decoding (EAGLE-3)</strong> (gain ~3-6,5×). Une tête de prédiction légère (1-2 couches au lieu de plusieurs dizaines) génère plusieurs tokens candidats que le modèle cible vérifie en un seul forward pass<a class="cite" data-cite="7" href="#source-7">7</a>. P-EAGLE, intégré dans vLLM, ajoute un 1,69× supplémentaire sur B200 grâce au parallélisme.</li>
+          <li><strong><span class="term" data-tooltip="Prefix caching : mémoriser le KV cache des préfixes communs entre requêtes (system prompts, retrieved docs). Évite des prefills redondants ; jusqu'à 10× de gain sur RAG.">Prefix caching</span></strong> (gain situationnel, jusqu'à 10× sur les workloads RAG). Mémoriser le KV cache des préfixes communs (system prompt, retrieved docs) entre requêtes évite des prefills redondants. Anthropic, OpenAI et Google le facturent désormais à un tarif réduit (10-25 % du prix nominal).</li>
+          <li><strong>Désagrégation prefill/decode</strong> (voir section suivante).</li>
+        </ol>
+        <p><mark>Aucune de ces couches n'est un breakthrough en soi.</mark> L'avantage compétitif vient de leur intégration cohérente : un harness comme vLLM ou TensorRT-LLM doit gérer simultanément la planification du KV cache paginé, le scheduling des requêtes en batch continu, les kernels FlashAttention, les calibrations de quantization et les vérifications spéculatives — sans que les couches ne se piétinent. C'est une dette d'ingénierie, pas une dette de recherche.</p>
+      </section>
+
+
+      <section id="s5">
+        <h2>4. Désagréger prefill et decode</h2>
+        <p>L'observation est simple : prefill et decode ont des profils opposés. Les forcer à cohabiter sur le même GPU revient à demander à un sprinter et à un marathonien de partager un short. La conséquence en production : si un utilisateur lance un long prefill, les utilisateurs en cours de decode subissent une latence dégradée (pic de <span class="term" data-tooltip="TTFT (Time to First Token) : latence entre la requête et l'apparition du premier token de réponse. Dominée par le prefill.">TTFT</span>, dégradation du <span class="term" data-tooltip="TPOT (Time Per Output Token) : intervalle entre deux tokens successifs de la réponse. Dominé par le decode et la HBM bandwidth.">TPOT</span>). À l'inverse, si on optimise pour le decode, le prefill est sous-utilisé.</p>
+        <p>La <strong>désagrégation prefill/decode</strong> sépare ces deux phases sur des pools de calcul distincts, communicants par un transfert de KV cache via réseau RDMA. Trois architectures de référence se sont imposées en 18 mois :</p>
+        <ul>
+          <li><strong>Splitwise</strong> (Microsoft / UW, ISCA 2024). Mélange hétérogène : prefill sur H100 (compute-bound), decode sur A100 (memory-bound, moins cher)<a class="cite" data-cite="5" href="#source-5">5</a>. Les nœuds communiquent via NCCL au niveau couche par couche. Gain : 1,4× sur la cost-per-query à perf égale.</li>
+          <li><strong>Mooncake</strong> (Moonshot AI, Kimi). Architecture KVCache-centric : un pool de KV cache partagé exploite la DRAM CPU et les SSDs des nœuds GPU sous-utilisés. <mark>Mooncake sert plus de 100 milliards de tokens par jour aux utilisateurs Kimi, déployé sur des milliers de nœuds</mark><a class="cite" data-cite="6" href="#source-6">6</a>. Le transfert utilise RDMA pour des latences sub-milliseconde.</li>
+          <li><strong>DistServe</strong> (UCSD, OSDI 2024). Sépare prefill et decode pour respecter des SLO de TTFT et de TPOT indépendants. Le retour d'expérience publié 18 mois plus tard montre une adoption industrielle massive<a class="cite" data-cite="13" href="#source-13">13</a>.</li>
+        </ul>
+
+        <figure class="figure" id="fig-04">
+          <svg data-schema-id="schema-04" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-labelledby="t04">
+<title id="t04">Architecture désagrégée prefill / decode / KV bus</title>
+<defs>
+<style>
+  .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+  .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+  .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+  .interactive { cursor: pointer; }
+</style>
+<marker id="arrow04" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+  <path d="M0,0 L10,5 L0,10 z" fill="#5A5A5A"/>
+</marker>
+<marker id="arrow04r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+  <path d="M0,0 L10,5 L0,10 z" fill="#B7332C"/>
+</marker>
+</defs>
+<rect width="1200" height="800" fill="#FAF8F3"/>
+
+<!-- Header -->
+<text x="60" y="62" class="mono" font-size="11" font-weight="600" letter-spacing="0.18em" fill="#B7332C">SCHÉMA 04 — DÉSAGRÉGATION P/D</text>
+<text x="60" y="100" class="display" font-size="26" font-weight="600" fill="#1A1A1A" letter-spacing="-0.01em">Deux clusters, un bus KV cache, +1,4-2,3× sur la TTFT.</text>
+<text x="60" y="126" class="display" font-size="16" font-style="italic" fill="#5A5A5A">Splitwise (Microsoft), Mooncake (Moonshot AI / Kimi), DistServe (UCSD) : architectures qui séparent les phases pour les optimiser.</text>
+<line x1="60" y1="146" x2="1140" y2="146" stroke="#E5E1D8" stroke-width="1"/>
+
+<!-- Client side -->
+<g class="interactive" data-card="client" tabindex="0" role="button" aria-label="Client / requête">
+  <rect x="80" y="380" width="140" height="80" rx="3" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1.25"/>
+  <text x="150" y="410" class="mono" font-size="10" font-weight="600" letter-spacing="0.18em" fill="#5A5A5A" text-anchor="middle">CLIENT</text>
+  <text x="150" y="432" class="body" font-size="12" fill="#1A1A1A" text-anchor="middle">Prompt</text>
+  <text x="150" y="450" class="body" font-size="10" font-style="italic" fill="#5A5A5A" text-anchor="middle">+ context</text>
+</g>
+
+<!-- Router/scheduler -->
+<g class="interactive" data-card="router" tabindex="0" role="button" aria-label="Router / scheduler">
+  <rect x="270" y="390" width="120" height="60" rx="3" fill="#1A1A1A" fill-opacity="0.06" stroke="#1A1A1A" stroke-width="1.25"/>
+  <text x="330" y="416" class="body" font-size="12" font-weight="500" fill="#1A1A1A" text-anchor="middle">Router</text>
+  <text x="330" y="434" class="body" font-size="10" font-style="italic" fill="#5A5A5A" text-anchor="middle">SLO TTFT / TPOT</text>
+</g>
+
+<!-- Prefill cluster (compute-bound, H100/B200) -->
+<g class="interactive" data-card="prefill-cluster" tabindex="0" role="button" aria-label="Cluster prefill">
+  <rect x="450" y="200" width="320" height="200" rx="3" fill="#1F5560" fill-opacity="0.10" stroke="#1F5560" stroke-width="1.25"/>
+  <text x="610" y="230" class="mono" font-size="10" font-weight="600" letter-spacing="0.18em" fill="#1F5560" text-anchor="middle">CLUSTER PREFILL</text>
+  <text x="610" y="252" class="display" font-size="16" font-weight="600" fill="#1A1A1A" text-anchor="middle">Compute-bound</text>
+  <text x="610" y="272" class="body" font-size="11" font-style="italic" fill="#5A5A5A" text-anchor="middle">H100 ou B200 · FLOPs élevés</text>
+  <!-- GPU rectangles -->
+  <g>
+    <rect x="478" y="294" width="56" height="40" rx="2" fill="#FAF8F3" stroke="#1F5560" stroke-width="1"/>
+    <text x="506" y="318" class="mono" font-size="10" fill="#1A1A1A" text-anchor="middle">GPU</text>
+    <rect x="544" y="294" width="56" height="40" rx="2" fill="#FAF8F3" stroke="#1F5560" stroke-width="1"/>
+    <text x="572" y="318" class="mono" font-size="10" fill="#1A1A1A" text-anchor="middle">GPU</text>
+    <rect x="610" y="294" width="56" height="40" rx="2" fill="#FAF8F3" stroke="#1F5560" stroke-width="1"/>
+    <text x="638" y="318" class="mono" font-size="10" fill="#1A1A1A" text-anchor="middle">GPU</text>
+    <rect x="676" y="294" width="56" height="40" rx="2" fill="#FAF8F3" stroke="#1F5560" stroke-width="1"/>
+    <text x="704" y="318" class="mono" font-size="10" fill="#1A1A1A" text-anchor="middle">GPU</text>
+  </g>
+  <text x="610" y="362" class="body" font-size="11" fill="#1A1A1A" text-anchor="middle">Util. FLOPs ≥ 80 %</text>
+  <text x="610" y="380" class="body" font-size="10" font-style="italic" fill="#5A5A5A" text-anchor="middle">Provisionné selon longueur de prompt p99</text>
+</g>
+
+<!-- Decode cluster (memory-bound, A100/H100/MI300X) -->
+<g class="interactive" data-card="decode-cluster" tabindex="0" role="button" aria-label="Cluster decode">
+  <rect x="450" y="440" width="320" height="200" rx="3" fill="#B7332C" fill-opacity="0.10" stroke="#B7332C" stroke-width="1.25"/>
+  <text x="610" y="470" class="mono" font-size="10" font-weight="600" letter-spacing="0.18em" fill="#B7332C" text-anchor="middle">CLUSTER DECODE</text>
+  <text x="610" y="492" class="display" font-size="16" font-weight="600" fill="#1A1A1A" text-anchor="middle">Memory-bound</text>
+  <text x="610" y="512" class="body" font-size="11" font-style="italic" fill="#5A5A5A" text-anchor="middle">A100 / MI300X · HBM élevée</text>
+  <g>
+    <rect x="478" y="534" width="56" height="40" rx="2" fill="#FAF8F3" stroke="#B7332C" stroke-width="1"/>
+    <text x="506" y="558" class="mono" font-size="10" fill="#1A1A1A" text-anchor="middle">GPU</text>
+    <rect x="544" y="534" width="56" height="40" rx="2" fill="#FAF8F3" stroke="#B7332C" stroke-width="1"/>
+    <text x="572" y="558" class="mono" font-size="10" fill="#1A1A1A" text-anchor="middle">GPU</text>
+    <rect x="610" y="534" width="56" height="40" rx="2" fill="#FAF8F3" stroke="#B7332C" stroke-width="1"/>
+    <text x="638" y="558" class="mono" font-size="10" fill="#1A1A1A" text-anchor="middle">GPU</text>
+    <rect x="676" y="534" width="56" height="40" rx="2" fill="#FAF8F3" stroke="#B7332C" stroke-width="1"/>
+    <text x="704" y="558" class="mono" font-size="10" fill="#1A1A1A" text-anchor="middle">GPU</text>
+  </g>
+  <text x="610" y="602" class="body" font-size="11" fill="#1A1A1A" text-anchor="middle">Util. HBM ≥ 80 %</text>
+  <text x="610" y="620" class="body" font-size="10" font-style="italic" fill="#5A5A5A" text-anchor="middle">Provisionné selon nb tokens output p99</text>
+</g>
+
+<!-- KV cache transfer bus -->
+<g class="interactive" data-card="kv-bus" tabindex="0" role="button" aria-label="Bus de transfert KV cache (RDMA)">
+  <rect x="830" y="380" width="280" height="80" rx="3" fill="#B58A2C" fill-opacity="0.18" stroke="#B58A2C" stroke-width="1.25"/>
+  <text x="970" y="410" class="mono" font-size="10" font-weight="600" letter-spacing="0.18em" fill="#B58A2C" text-anchor="middle">BUS KV CACHE</text>
+  <text x="970" y="432" class="body" font-size="12" font-weight="500" fill="#1A1A1A" text-anchor="middle">RDMA / NVLink / NCCL</text>
+  <text x="970" y="450" class="body" font-size="10" font-style="italic" fill="#5A5A5A" text-anchor="middle">800 Gbps Ethernet ou InfiniBand HDR</text>
+</g>
+
+<!-- Connectors -->
+<!-- Client → Router -->
+<line x1="222" y1="420" x2="266" y2="420" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#arrow04)"/>
+<!-- Router → Prefill -->
+<line x1="392" y1="408" x2="446" y2="320" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#arrow04)"/>
+<text x="408" y="350" class="body" font-size="10" font-style="italic" fill="#5A5A5A">prompt</text>
+<!-- Prefill → KV bus (writes KV cache) -->
+<line x1="772" y1="320" x2="826" y2="394" stroke="#B7332C" stroke-width="1.5" marker-end="url(#arrow04r)"/>
+<text x="800" y="350" class="body" font-size="10" font-style="italic" fill="#B7332C">KV cache</text>
+<!-- KV bus → Decode (delivers KV) -->
+<line x1="826" y1="446" x2="772" y2="520" stroke="#B7332C" stroke-width="1.5" marker-end="url(#arrow04r)"/>
+<text x="800" y="496" class="body" font-size="10" font-style="italic" fill="#B7332C">prefix KV</text>
+<!-- Decode → Router (tokens stream) -->
+<line x1="446" y1="520" x2="392" y2="436" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#arrow04)"/>
+<text x="392" y="500" class="body" font-size="10" font-style="italic" fill="#5A5A5A">tokens</text>
+<!-- Router → Client (tokens stream back) -->
+<line x1="266" y1="438" x2="222" y2="438" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#arrow04)"/>
+
+<!-- Numbered annotations on right -->
+<g class="interactive" data-card="annotation-ttft" tabindex="0" role="button" aria-label="Gain TTFT">
+  <circle cx="80" cy="650" r="9" fill="#B7332C"/>
+  <text x="80" y="654" class="mono" font-size="11" font-weight="600" fill="#FAF8F3" text-anchor="middle">1</text>
+  <text x="100" y="654" class="body" font-size="11" fill="#1A1A1A">TTFT (time-to-first-token) : 1,4× à 2,3× plus rapide que prefill+decode co-localisés.</text>
+</g>
+<g class="interactive" data-card="annotation-mooncake" tabindex="0" role="button" aria-label="Mooncake en production">
+  <circle cx="80" cy="678" r="9" fill="#B7332C"/>
+  <text x="80" y="682" class="mono" font-size="11" font-weight="600" fill="#FAF8F3" text-anchor="middle">2</text>
+  <text x="100" y="682" class="body" font-size="11" fill="#1A1A1A">Mooncake (Kimi) : &gt;100 G tokens/jour servis, KV cache mutualisé sur DRAM CPU + SSD.</text>
+</g>
+<g class="interactive" data-card="annotation-cost" tabindex="0" role="button" aria-label="Coût réseau du KV transfer">
+  <circle cx="80" cy="706" r="9" fill="#B7332C"/>
+  <text x="80" y="710" class="mono" font-size="11" font-weight="600" fill="#FAF8F3" text-anchor="middle">3</text>
+  <text x="100" y="710" class="body" font-size="11" fill="#1A1A1A">Coût : transfert KV linéaire avec contexte (~20 Go pour Llama 70B FP16 à 128K).</text>
+</g>
+
+<!-- Footer -->
+<line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="1"/>
+<text x="60" y="764" class="body" font-size="10" font-style="italic" fill="#5A5A5A" letter-spacing="0.02em">Source : Patel et al., Splitwise (ISCA 2024) ; Qin et al., Mooncake (ACM ToS 2025) ; Hao AI Lab UCSD, Disaggregated Inference: 18 Months Later (2025).</text>
+<text x="60" y="784" class="body" font-size="10" font-style="italic" fill="#5A5A5A" letter-spacing="0.02em">Note : la mixité matérielle prefill/decode (H100 vs A100) suit Splitwise. Mooncake utilise un seul type de GPU mais externalise le KV cache sur stockage hiérarchique.</text>
+</svg>
+          <figcaption class="figure-caption">Schéma 4 — Désagrégation à la Splitwise/Mooncake : un cluster prefill (compute-bound, H100/B200), un cluster decode (memory-bound, A100/MI300X), un bus KV cache RDMA. TTFT 1,4-2,3× plus rapide ; coût additionnel : trafic réseau qui croît avec la longueur de contexte.</figcaption>
+        </figure>
+
+        <p>Le coût n'est pas nul : le transfert du KV cache croît linéairement avec la longueur du contexte. Pour un contexte 128 K sur Llama 70B FP16, on déplace ~20 Go de prefill vers decode. Le réseau devient un budget à part entière — les datacenters d'inférence modernes provisionnent 800 Gbps Ethernet ou InfiniBand HDR/NDR par nœud. Les gains TTFT mesurés sur des workloads réels tournent autour de <strong>1,4 à 2,3×</strong><a class="cite" data-cite="13" href="#source-13">13</a>.</p>
+        <p>L'effet économique est plus subtil que la simple amélioration de latence. La désagrégation permet d'<strong>allouer</strong> le hardware en fonction du profil de charge : un fournisseur qui voit ses utilisateurs taper des prompts de 50 K tokens (RAG, code) dimensionnera son cluster prefill plus généreusement ; un fournisseur servant majoritairement du chat court fera l'inverse. Cette flexibilité d'allocation est <mark>la principale raison pour laquelle les hyperscalers maintiennent un avantage de coût sur les fournisseurs spécialisés</mark> — leur trafic est diversifié, ils peuvent rééquilibrer.</p>
+      </section>
+
+
+      <section id="s6">
+        <h2>5. MoE — la nouvelle économie de l'inférence</h2>
+        <p>L'architecture <strong>Mixture of Experts</strong> (MoE) découple les paramètres totaux des paramètres actifs. Un modèle MoE comme DeepSeek V3 a 671 milliards de paramètres au total, mais seulement ~37 milliards sont activés pour traiter chaque token<a class="cite" data-cite="4" href="#source-4">4</a>. Pour Mixtral 8×7B, ces chiffres sont 47 B / 13 B. Les FLOPs par token sont déterminés par les paramètres <em>actifs</em> (ce qui réduit le coût de génération), mais la VRAM requise est déterminée par les paramètres <em>totaux</em> (ce qui augmente le coût de hosting).</p>
+
+        <figure class="figure" id="fig-05">
+          <svg data-schema-id="schema-05" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 900" role="img" aria-labelledby="t05">
+<title id="t05">MoE vs dense — l'arbitrage VRAM / FLOPs</title>
+<defs>
+<style>
+  .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+  .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+  .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+  .interactive { cursor: pointer; }
+</style>
+<marker id="arrow05" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+  <path d="M0,0 L10,5 L0,10 z" fill="#5A5A5A"/>
+</marker>
+</defs>
+<rect width="900" height="900" fill="#FAF8F3"/>
+
+<!-- Header -->
+<text x="60" y="62" class="mono" font-size="11" font-weight="600" letter-spacing="0.18em" fill="#B7332C">SCHÉMA 05 — MoE vs DENSE</text>
+<text x="60" y="100" class="display" font-size="24" font-weight="600" fill="#1A1A1A" letter-spacing="-0.01em">L'arbitrage de l'inférence sparse.</text>
+<text x="60" y="124" class="display" font-size="14" font-style="italic" fill="#5A5A5A">Paramètres totaux (VRAM, en abscisse) × paramètres actifs par token (FLOPs, en ordonnée).</text>
+<line x1="60" y1="144" x2="840" y2="144" stroke="#E5E1D8" stroke-width="1"/>
+
+<!-- Plot area: x=140..820, y=200..720 -->
+<!-- X axis: total params (log) 7B → 700B -->
+<!-- Y axis: active params (log) 1B → 100B -->
+<line x1="140" y1="200" x2="140" y2="720" stroke="#1A1A1A" stroke-width="1.25"/>
+<line x1="140" y1="720" x2="820" y2="720" stroke="#1A1A1A" stroke-width="1.25"/>
+
+<!-- X axis labels (log: 7B at x=140, 70B at x=400, 700B at x=660) -->
+<g class="mono" font-size="11" fill="#5A5A5A" text-anchor="middle">
+  <text x="140" y="744">7 B</text>
+  <text x="270" y="744">~20 B</text>
+  <text x="400" y="744">70 B</text>
+  <text x="530" y="744">~200 B</text>
+  <text x="660" y="744">700 B</text>
+</g>
+<text x="480" y="772" class="body" font-size="12" font-weight="500" fill="#1A1A1A" text-anchor="middle">Paramètres totaux (VRAM requise) →</text>
+
+<!-- Y axis labels (log: 1B at y=720, 10B at y=480, 100B at y=240) -->
+<g class="mono" font-size="11" fill="#5A5A5A" text-anchor="end">
+  <text x="130" y="724">1 B</text>
+  <text x="130" y="604">~3 B</text>
+  <text x="130" y="484">10 B</text>
+  <text x="130" y="364">~30 B</text>
+  <text x="130" y="244">100 B</text>
+</g>
+<text x="60" y="460" class="body" font-size="12" font-weight="500" fill="#1A1A1A" text-anchor="middle" transform="rotate(-90 60 460)">↑ Paramètres actifs par token (FLOPs)</text>
+
+<!-- Gridlines -->
+<g stroke="#E5E1D8" stroke-width="0.5">
+  <line x1="270" y1="200" x2="270" y2="720"/>
+  <line x1="400" y1="200" x2="400" y2="720"/>
+  <line x1="530" y1="200" x2="530" y2="720"/>
+  <line x1="660" y1="200" x2="660" y2="720"/>
+  <line x1="140" y1="600" x2="820" y2="600"/>
+  <line x1="140" y1="480" x2="820" y2="480"/>
+  <line x1="140" y1="360" x2="820" y2="360"/>
+  <line x1="140" y1="240" x2="820" y2="240"/>
+</g>
+
+<!-- Diagonal "dense line": active = total -->
+<line x1="140" y1="640" x2="660" y2="240" stroke="#5A5A5A" stroke-width="0.75" stroke-dasharray="3 3"/>
+<text x="540" y="354" class="body" font-size="11" font-style="italic" fill="#5A5A5A" transform="rotate(-30 540 354)">ligne « dense » : actif = total</text>
+
+<!-- MoE region (below the diagonal) -->
+<path d="M 270,720 L 660,240 L 820,240 L 820,720 Z" fill="#1F5560" fill-opacity="0.05"/>
+<text x="700" y="500" class="body" font-size="11" font-style="italic" fill="#1F5560">zone MoE</text>
+<text x="700" y="516" class="body" font-size="11" font-style="italic" fill="#1F5560">actif &lt; total</text>
+
+<!-- Dense models (on or near diagonal) -->
+<g class="interactive" data-card="dense-llama7b" tabindex="0" role="button" aria-label="Llama 3 8B (dense)">
+  <circle cx="160" cy="624" r="9" fill="#1F5560" stroke="#FAF8F3" stroke-width="2"/>
+  <text x="180" y="620" class="body" font-size="11" fill="#1A1A1A">Llama 3 8B</text>
+  <text x="180" y="634" class="body" font-size="10" font-style="italic" fill="#5A5A5A">8 B / 8 B · dense</text>
+</g>
+
+<g class="interactive" data-card="dense-llama70b" tabindex="0" role="button" aria-label="Llama 3 70B (dense)">
+  <circle cx="400" cy="318" r="11" fill="#1F5560" stroke="#FAF8F3" stroke-width="2"/>
+  <text x="416" y="314" class="body" font-size="11" font-weight="500" fill="#1A1A1A">Llama 3 70B</text>
+  <text x="416" y="328" class="body" font-size="10" font-style="italic" fill="#5A5A5A">70 B / 70 B · dense</text>
+</g>
+
+<g class="interactive" data-card="dense-llama405b" tabindex="0" role="button" aria-label="Llama 3.1 405B (dense)">
+  <circle cx="600" cy="240" r="13" fill="#1F5560" stroke="#FAF8F3" stroke-width="2"/>
+  <text x="586" y="218" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="end">Llama 3.1 405B</text>
+  <text x="586" y="232" class="body" font-size="10" font-style="italic" fill="#5A5A5A" text-anchor="end">405 B / 405 B · dense</text>
+</g>
+
+<!-- MoE models (below diagonal) -->
+<g class="interactive" data-card="moe-mixtral" tabindex="0" role="button" aria-label="Mixtral 8x7B">
+  <circle cx="320" cy="448" r="11" fill="#B7332C" stroke="#FAF8F3" stroke-width="2"/>
+  <text x="336" y="444" class="body" font-size="11" font-weight="500" fill="#1A1A1A">Mixtral 8×7B</text>
+  <text x="336" y="458" class="body" font-size="10" font-style="italic" fill="#5A5A5A">47 B / 13 B</text>
+</g>
+
+<g class="interactive" data-card="moe-deepseek" tabindex="0" role="button" aria-label="DeepSeek V3 (671B / 37B actifs)">
+  <circle cx="660" cy="338" r="14" fill="#B7332C" stroke="#FAF8F3" stroke-width="2"/>
+  <text x="678" y="334" class="body" font-size="11" font-weight="600" fill="#1A1A1A">DeepSeek V3</text>
+  <text x="678" y="348" class="body" font-size="10" font-style="italic" fill="#5A5A5A">671 B / 37 B</text>
+</g>
+
+<g class="interactive" data-card="moe-llama4" tabindex="0" role="button" aria-label="Llama 4 Maverick (~400B / 17B actifs)">
+  <circle cx="600" cy="494" r="12" fill="#B7332C" stroke="#FAF8F3" stroke-width="2"/>
+  <text x="618" y="490" class="body" font-size="11" font-weight="500" fill="#1A1A1A">Llama 4 Maverick</text>
+  <text x="618" y="504" class="body" font-size="10" font-style="italic" fill="#5A5A5A">~400 B / 17 B</text>
+</g>
+
+<!-- Annotations -->
+<g class="interactive" data-card="annotation-vram" tabindex="0" role="button" aria-label="Coût VRAM (axe X)">
+  <circle cx="80" cy="800" r="9" fill="#B7332C"/>
+  <text x="80" y="804" class="mono" font-size="11" font-weight="600" fill="#FAF8F3" text-anchor="middle">1</text>
+  <text x="100" y="804" class="body" font-size="11" fill="#1A1A1A">Hosting (VRAM, prix d'entrée) : suit l'axe X — DeepSeek V3 demande la VRAM d'un dense 671B.</text>
+</g>
+<g class="interactive" data-card="annotation-flops" tabindex="0" role="button" aria-label="Coût FLOPs (axe Y)">
+  <circle cx="80" cy="828" r="9" fill="#B7332C"/>
+  <text x="80" y="832" class="mono" font-size="11" font-weight="600" fill="#FAF8F3" text-anchor="middle">2</text>
+  <text x="100" y="832" class="body" font-size="11" fill="#1A1A1A">Inférence (FLOPs/token) : suit l'axe Y — DeepSeek V3 calcule comme un dense 37 B.</text>
+</g>
+<g class="interactive" data-card="annotation-mla" tabindex="0" role="button" aria-label="MLA (Multi-head Latent Attention) compression KV">
+  <circle cx="80" cy="856" r="9" fill="#B7332C"/>
+  <text x="80" y="860" class="mono" font-size="11" font-weight="600" fill="#FAF8F3" text-anchor="middle">3</text>
+  <text x="100" y="860" class="body" font-size="11" fill="#1A1A1A">DeepSeek + MLA : KV cache compressé ×20 → l'arbitrage VRAM s'efface partiellement.</text>
+</g>
+
+<!-- Legend -->
+<g>
+  <circle cx="640" cy="178" r="7" fill="#1F5560"/>
+  <text x="654" y="182" class="body" font-size="11" fill="#1A1A1A">Dense</text>
+  <circle cx="720" cy="178" r="7" fill="#B7332C"/>
+  <text x="734" y="182" class="body" font-size="11" fill="#1A1A1A">MoE (sparse)</text>
+</g>
+</svg>
+          <figcaption class="figure-caption">Schéma 5 — Les modèles MoE comme DeepSeek V3 ou Mixtral 8×7B s'éloignent de la diagonale dense : ils paient la VRAM des paramètres totaux mais consomment seulement les FLOPs des paramètres actifs. L'arbitrage gagne quand le traffic dilue la VRAM sur de nombreuses requêtes.</figcaption>
+        </figure>
+
+        <p>L'arbitrage économique est clair : <mark>MoE bat un dense de même nombre total de paramètres en throughput, mais perd contre un dense de même nombre de paramètres actifs</mark><a class="cite" data-cite="11" href="#source-11">11</a>. Sur un workload à fort traffic — où la VRAM utilisée pour les poids est amortie sur des milliers de requêtes simultanées — le MoE gagne. Sur un workload à faible traffic — où chaque requête « paie » sa part de VRAM —, le dense gagne.</p>
+        <p>Trois techniques rendent les MoE viables à grande échelle :</p>
+        <ul>
+          <li><strong>Expert parallelism</strong>. Les experts sont distribués entre GPU. Une requête activant les experts 3 et 7 nécessite un all-to-all entre les nœuds qui les hébergent. Le trafic réseau se déplace du data parallelism (gradients en training) vers l'inférence (activations).</li>
+          <li><strong>Routing learning</strong>. Le routeur (un petit réseau qui choisit les experts) doit éviter le déséquilibre — sinon certains experts saturent pendant que d'autres dorment. DeepSeek V3 introduit un <em>auxiliary-loss-free balancing</em> qui élimine le coût supplémentaire d'entraînement<a class="cite" data-cite="4" href="#source-4">4</a>.</li>
+          <li><strong><span class="term" data-tooltip="Multi-head Latent Attention : compression du KV cache via une projection latente, introduite par DeepSeek V2/V3. Réduit la taille du KV jusqu'à un facteur 20.">Multi-head Latent Attention (MLA)</span></strong>. DeepSeek V3 compresse le KV cache via une projection latente. Pour un contexte 128 K, le KV cache de Llama 70B pèse ~20 Go ; celui de DeepSeek V3 environ 1 Go — un facteur 20. C'est la véritable raison pour laquelle DeepSeek peut servir des millions d'utilisateurs depuis une infrastructure modeste.</li>
+        </ul>
+        <p>Les chiffres économiques de DeepSeek V3 sont désormais publics : <strong>2,664 millions d'heures H800 pour le pre-training</strong>, à 2 $/heure cela donne 5,6 M$ pour le seul run de pré-entraînement<a class="cite" data-cite="4" href="#source-4">4</a>. SemiAnalysis a souligné que ce chiffre n'inclut ni la R&amp;D, ni les expérimentations préliminaires, ni les salaires — le coût <em>total</em> est sans doute 5-10× supérieur. Mais l'écart structurel avec un Llama 3.1 405B (entraîné en 30,8 millions d'heures H100) reste massif. <mark>DeepSeek a démontré qu'un modèle de qualité GPT-4 peut être entraîné pour &lt;10 M$ de compute pur, et servi à 60 % moins cher qu'OpenAI à qualité équivalente</mark><a class="cite" data-cite="4" href="#source-4">4</a>.</p>
+      </section>
+
+
+      <section id="s7">
+        <h2>6. Le mix matériel — Hopper, Blackwell, et les paris alternatifs</h2>
+        <p>Le marché de l'inférence en 2026 reste dominé par NVIDIA, mais avec une diversification croissante de la couche silicium. Quatre acteurs comptent vraiment :</p>
+
+        <table>
+          <thead>
+            <tr><th>Plateforme</th><th>TFLOPS FP8/FP4</th><th>VRAM</th><th>Cible</th><th>$/Mtok (modèle 70B-class)</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>NVIDIA H100</strong> (Hopper, 2023)</td><td>1 979 FP8</td><td>80 Go HBM3</td><td>Workhorse</td><td>~0,15 $</td></tr>
+            <tr><td><strong>NVIDIA H200</strong> (Hopper, 2024)</td><td>1 979 FP8</td><td>141 Go HBM3e</td><td>Long context</td><td>~0,10 $</td></tr>
+            <tr><td><strong>NVIDIA B200</strong> (Blackwell, 2025)</td><td>4 500 FP4</td><td>192 Go HBM3e</td><td>Inférence MoE</td><td>~0,02 $</td></tr>
+            <tr><td><strong>AMD MI300X</strong> (CDNA 3, 2024)</td><td>1 307 FP8</td><td>192 Go HBM3</td><td>Anti-NVIDIA</td><td>~0,12 $</td></tr>
+          </tbody>
+        </table>
+        <p><em>Source : InferenceMAX / SemiAnalysis, fiches produits constructeurs<a class="cite" data-cite="9" href="#source-9">9</a>.</em></p>
+
+        <figure class="figure" id="fig-06">
+          <svg data-schema-id="schema-06" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-labelledby="t06">
+<title id="t06">Mix matériel inference 2026 — Hopper, Blackwell, alternatives</title>
+<defs>
+<style>
+  .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+  .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+  .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+  .interactive { cursor: pointer; }
+</style>
+</defs>
+<rect width="1200" height="800" fill="#FAF8F3"/>
+
+<!-- Header -->
+<text x="60" y="62" class="mono" font-size="11" font-weight="600" letter-spacing="0.18em" fill="#B7332C">SCHÉMA 06 — MIX MATÉRIEL 2026</text>
+<text x="60" y="100" class="display" font-size="26" font-weight="600" fill="#1A1A1A" letter-spacing="-0.01em">Pas un GPU optimal, un mix optimal.</text>
+<text x="60" y="126" class="display" font-size="16" font-style="italic" fill="#5A5A5A">Six plateformes d'inférence comparées sur quatre dimensions : FLOPs, VRAM, coût-par-Mtok et workload cible.</text>
+<line x1="60" y1="146" x2="1140" y2="146" stroke="#E5E1D8" stroke-width="1"/>
+
+<!-- Matrix: rows = plateformes, columns = dimensions -->
+<!-- Layout: x=80..1100, y=200..640 -->
+
+<!-- Column headers -->
+<g class="mono" font-size="10" font-weight="600" letter-spacing="0.18em" fill="#5A5A5A" text-anchor="middle">
+  <text x="280" y="190">FLOPs FP8/FP4</text>
+  <text x="500" y="190">VRAM HBM</text>
+  <text x="720" y="190">$/Mtok (70B-class)</text>
+  <text x="940" y="190">CIBLE PRINCIPALE</text>
+</g>
+<line x1="80" y1="200" x2="1100" y2="200" stroke="#1A1A1A" stroke-width="1.25"/>
+
+<!-- Row labels (left) -->
+<!-- Row positions y: 240, 300, 360, 420, 480, 540 -->
+
+<!-- H100 -->
+<g class="interactive" data-card="hw-h100" tabindex="0" role="button" aria-label="NVIDIA H100">
+  <text x="80" y="244" class="display" font-size="14" font-weight="600" fill="#1A1A1A">NVIDIA H100</text>
+  <text x="80" y="260" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Hopper · 2023</text>
+  <!-- FLOPs bar -->
+  <rect x="190" y="232" width="80" height="14" rx="2" fill="#1F5560" fill-opacity="0.5"/>
+  <text x="278" y="244" class="mono" font-size="11" fill="#1A1A1A">1 979 FP8</text>
+  <!-- VRAM bar -->
+  <rect x="410" y="232" width="34" height="14" rx="2" fill="#B58A2C" fill-opacity="0.5"/>
+  <text x="452" y="244" class="mono" font-size="11" fill="#1A1A1A">80 Go</text>
+  <!-- $/Mtok bar -->
+  <rect x="630" y="232" width="100" height="14" rx="2" fill="#B7332C" fill-opacity="0.40"/>
+  <text x="738" y="244" class="mono" font-size="11" fill="#1A1A1A">~0,15 $</text>
+  <!-- Cible -->
+  <text x="850" y="244" class="body" font-size="11" fill="#1A1A1A">Workhorse général</text>
+</g>
+
+<!-- H200 -->
+<g class="interactive" data-card="hw-h200" tabindex="0" role="button" aria-label="NVIDIA H200">
+  <text x="80" y="304" class="display" font-size="14" font-weight="600" fill="#1A1A1A">NVIDIA H200</text>
+  <text x="80" y="320" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Hopper · 2024</text>
+  <rect x="190" y="292" width="80" height="14" rx="2" fill="#1F5560" fill-opacity="0.5"/>
+  <text x="278" y="304" class="mono" font-size="11" fill="#1A1A1A">1 979 FP8</text>
+  <rect x="410" y="292" width="60" height="14" rx="2" fill="#B58A2C" fill-opacity="0.5"/>
+  <text x="478" y="304" class="mono" font-size="11" fill="#1A1A1A">141 Go</text>
+  <rect x="630" y="292" width="68" height="14" rx="2" fill="#B7332C" fill-opacity="0.40"/>
+  <text x="706" y="304" class="mono" font-size="11" fill="#1A1A1A">~0,10 $</text>
+  <text x="850" y="304" class="body" font-size="11" fill="#1A1A1A">Long context, RAG</text>
+</g>
+
+<!-- B200 -->
+<g class="interactive" data-card="hw-b200" tabindex="0" role="button" aria-label="NVIDIA B200 Blackwell">
+  <text x="80" y="364" class="display" font-size="14" font-weight="600" fill="#B7332C">NVIDIA B200</text>
+  <text x="80" y="380" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Blackwell · 2025</text>
+  <rect x="190" y="352" width="180" height="14" rx="2" fill="#1F5560" fill-opacity="0.8"/>
+  <text x="378" y="364" class="mono" font-size="11" font-weight="500" fill="#1A1A1A">4 500 FP4</text>
+  <rect x="410" y="352" width="80" height="14" rx="2" fill="#B58A2C" fill-opacity="0.7"/>
+  <text x="498" y="364" class="mono" font-size="11" font-weight="500" fill="#1A1A1A">192 Go</text>
+  <rect x="630" y="352" width="14" height="14" rx="2" fill="#B7332C" fill-opacity="0.7"/>
+  <text x="652" y="364" class="mono" font-size="11" font-weight="600" fill="#B7332C">~0,02 $</text>
+  <text x="850" y="364" class="body" font-size="11" font-weight="500" fill="#1A1A1A">Inférence MoE haut débit</text>
+</g>
+
+<!-- AMD MI300X -->
+<g class="interactive" data-card="hw-mi300x" tabindex="0" role="button" aria-label="AMD MI300X">
+  <text x="80" y="424" class="display" font-size="14" font-weight="600" fill="#1A1A1A">AMD MI300X</text>
+  <text x="80" y="440" class="body" font-size="10" font-style="italic" fill="#5A5A5A">CDNA 3 · 2024</text>
+  <rect x="190" y="412" width="52" height="14" rx="2" fill="#1F5560" fill-opacity="0.5"/>
+  <text x="250" y="424" class="mono" font-size="11" fill="#1A1A1A">1 307 FP8</text>
+  <rect x="410" y="412" width="80" height="14" rx="2" fill="#B58A2C" fill-opacity="0.7"/>
+  <text x="498" y="424" class="mono" font-size="11" font-weight="500" fill="#1A1A1A">192 Go</text>
+  <rect x="630" y="412" width="80" height="14" rx="2" fill="#B7332C" fill-opacity="0.40"/>
+  <text x="718" y="424" class="mono" font-size="11" fill="#1A1A1A">~0,12 $</text>
+  <text x="850" y="424" class="body" font-size="11" fill="#1A1A1A">Decode memory-bound</text>
+</g>
+
+<!-- Trainium 2 -->
+<g class="interactive" data-card="hw-trainium2" tabindex="0" role="button" aria-label="AWS Trainium 2">
+  <text x="80" y="484" class="display" font-size="14" font-weight="600" fill="#1A1A1A">AWS Trainium 2</text>
+  <text x="80" y="500" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Annapurna · 2024</text>
+  <rect x="190" y="472" width="50" height="14" rx="2" fill="#1F5560" fill-opacity="0.5"/>
+  <text x="248" y="484" class="mono" font-size="11" fill="#1A1A1A">~1 250 BF16</text>
+  <rect x="410" y="472" width="40" height="14" rx="2" fill="#B58A2C" fill-opacity="0.5"/>
+  <text x="458" y="484" class="mono" font-size="11" fill="#1A1A1A">96 Go</text>
+  <rect x="630" y="472" width="55" height="14" rx="2" fill="#B7332C" fill-opacity="0.40"/>
+  <text x="693" y="484" class="mono" font-size="11" fill="#1A1A1A">~0,07 $</text>
+  <text x="850" y="484" class="body" font-size="11" fill="#1A1A1A">Verticalisé Anthropic</text>
+</g>
+
+<!-- Groq LPU -->
+<g class="interactive" data-card="hw-groq" tabindex="0" role="button" aria-label="Groq LPU">
+  <text x="80" y="544" class="display" font-size="14" font-weight="600" fill="#1A1A1A">Groq LPU</text>
+  <text x="80" y="560" class="body" font-size="10" font-style="italic" fill="#5A5A5A">SRAM-on-die · 2024</text>
+  <rect x="190" y="532" width="36" height="14" rx="2" fill="#1F5560" fill-opacity="0.4"/>
+  <text x="234" y="544" class="mono" font-size="11" fill="#1A1A1A">~750 FP16</text>
+  <rect x="410" y="532" width="14" height="14" rx="2" fill="#B58A2C" fill-opacity="0.5"/>
+  <text x="432" y="544" class="mono" font-size="11" fill="#1A1A1A">230 Mo SRAM</text>
+  <rect x="630" y="532" width="120" height="14" rx="2" fill="#B7332C" fill-opacity="0.40"/>
+  <text x="758" y="544" class="mono" font-size="11" fill="#1A1A1A">~0,20 $</text>
+  <text x="850" y="544" class="body" font-size="11" fill="#1A1A1A">Decode ultra-rapide (agents)</text>
+</g>
+
+<!-- Row dividers -->
+<g stroke="#E5E1D8" stroke-width="0.5">
+  <line x1="80" y1="270" x2="1100" y2="270"/>
+  <line x1="80" y1="330" x2="1100" y2="330"/>
+  <line x1="80" y1="390" x2="1100" y2="390"/>
+  <line x1="80" y1="450" x2="1100" y2="450"/>
+  <line x1="80" y1="510" x2="1100" y2="510"/>
+  <line x1="80" y1="570" x2="1100" y2="570"/>
+</g>
+
+<!-- Highlight callout: NVIDIA's claimed leap -->
+<g class="interactive" data-card="annotation-blackwell-leap" tabindex="0" role="button" aria-label="Saut Hopper → Blackwell">
+  <rect x="80" y="600" width="1020" height="60" rx="3" fill="#B7332C" fill-opacity="0.07" stroke="#B7332C" stroke-width="1"/>
+  <text x="100" y="624" class="body" font-size="12" font-weight="500" fill="#1A1A1A">Saut Hopper → Blackwell : <tspan font-weight="600" fill="#B7332C">×15 sur le coût-par-Mtok</tspan>, <tspan font-weight="600" fill="#B7332C">×10 sur le throughput par MW</tspan> pour MoE.</text>
+  <text x="100" y="644" class="body" font-size="11" fill="#5A5A5A" font-style="italic">Source : NVIDIA InferenceMAX (oct. 2025) sur GPT-OSS-120B avec TensorRT-LLM optimisé.</text>
+</g>
+
+<!-- Footer -->
+<line x1="60" y1="690" x2="1140" y2="690" stroke="#E5E1D8" stroke-width="1"/>
+<text x="60" y="714" class="body" font-size="10" font-style="italic" fill="#5A5A5A" letter-spacing="0.02em">Source : NVIDIA / AMD / AWS / Groq fiches produits ; SemiAnalysis InferenceMAX (oct. 2025) ; estimations $/Mtok pour modèle 70B-class en mode batch optimisé.</text>
+<text x="60" y="734" class="body" font-size="10" font-style="italic" fill="#5A5A5A" letter-spacing="0.02em">Note : les barres sont normalisées sur la valeur la plus élevée de chaque colonne. Trainium 2 et Groq LPU sont accessibles uniquement via leurs services managés (AWS, GroqCloud).</text>
+</svg>
+          <figcaption class="figure-caption">Schéma 6 — Comparatif H100 / H200 / B200 / MI300X / Trainium 2 / Groq LPU sur quatre dimensions. NVIDIA Blackwell impose un saut x15 sur le coût-par-Mtok ; les alternatives s'imposent sur des niches précises (decode memory-bound, latence ultra-basse, intégration verticale).</figcaption>
+        </figure>
+
+        <p>Le saut Hopper → Blackwell est vertical. NVIDIA revendique <strong>15× sur le coût-par-million-tokens</strong> et <strong>10× sur le throughput par mégawatt</strong> pour les charges MoE<a class="cite" data-cite="8" href="#source-8">8</a>. Le moteur principal est le support natif FP4 (Tensor Core de cinquième génération), qui double la densité de calcul à pourcentage d'erreur acceptable. Le NVLink 5 (1,8 To/s par GPU) divise par deux la latence des all-to-all MoE. Sur GPT-OSS-120B en TensorRT-LLM, un B200 produit <mark>60 000 tokens/seconde par GPU à 1 000 tokens/seconde par utilisateur</mark><a class="cite" data-cite="8" href="#source-8">8</a>.</p>
+        <p>Hors NVIDIA, trois paris :</p>
+        <ul>
+          <li><strong>AMD MI300X / MI400</strong>. Strictement compétitif sur le papier (192 Go HBM3, 1 307 TFLOPS FP8) ; en pratique, l'écosystème logiciel (ROCm vs CUDA) reste le talon d'Achille. Microsoft, Meta et Oracle ont déployé des MI300X en volume, mais surtout pour le decode memory-bound où la VRAM compte plus que les FLOPS.</li>
+          <li><strong>AWS Trainium 2 / Inferentia 3</strong>. AWS facture l'inférence Anthropic Claude sur Trainium 2 à des tarifs 30-40 % inférieurs aux mêmes modèles sur H100. Le pari : intégration verticale (silicium maison + datacenter + service managé) absorbe les marges intermédiaires.</li>
+          <li><strong>Groq, Cerebras, SambaNova</strong>. Spécialistes du decode ultra-rapide : la <span class="term" data-tooltip="LPU (Language Processing Unit) : architecture Groq qui place tout le modèle en SRAM on-die. Décode &gt;800 tokens/s/utilisateur sur Llama 3 70B, mais coût par token plus élevé que GPU.">LPU</span> de Groq dépasse 800 tokens/seconde par utilisateur sur Llama 3 70B, contre ~200 sur un H100 optimisé. Le coût par token reste plus élevé qu'un B200, mais la latence justifie un premium pour les agents en boucle serrée et les voice apps.</li>
+        </ul>
+        <p><mark>L'enseignement industriel : il n'y a pas un GPU optimal, mais un mix optimal pour un workload donné.</mark> Un fournisseur d'API serveuse à 10 $ par utilisateur-mois aura un mix dominé par H100 et B200 ; un fournisseur d'agents temps-réel à 100 $ par utilisateur-mois acceptera de payer une LPU Groq pour le decode et un H100 pour le prefill.</p>
+      </section>
+
+
+      <section id="s8">
+        <h2>7. La marge fragile, et l'angle mort des reasoning models</h2>
+        <p>L'économie d'un fournisseur d'inférence ressemble à celle d'un transporteur low-cost, pas à celle d'un éditeur SaaS. Le COGS contient le coût des GPU (loués ou amortis), le réseau, l'énergie, et le software stack. La marge brute typique tourne autour de <strong>45-50 %</strong>, contre 70-80 % pour un SaaS de référence<a class="cite" data-cite="10" href="#source-10">10</a>.</p>
+
+        <table>
+          <thead><tr><th>Fournisseur</th><th>Marge brute estimée (2025)</th><th>Cible déclarée</th><th>Modèle</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Together AI</strong></td><td>~45 %</td><td>60 %+</td><td>Inférence à coût (proche du break-even)</td></tr>
+            <tr><td><strong>Fireworks AI</strong></td><td>~50 %</td><td>60 %</td><td>Inférence + dédiés enterprise</td></tr>
+            <tr><td><strong>OpenAI / Anthropic</strong></td><td>non public, estimée 60-70 % sur les flagship</td><td>—</td><td>Marge captive sur les modèles propriétaires</td></tr>
+            <tr><td><strong>Hyperscalers (AWS, Azure)</strong></td><td>70-80 % sur Bedrock / OpenAI Service</td><td>—</td><td>Intégration verticale + premium enterprise</td></tr>
+          </tbody>
+        </table>
+        <p><em>Sources : Sacra (Together, Fireworks), estimations sectorielles SemiAnalysis<a class="cite" data-cite="10" href="#source-10">10</a>.</em></p>
+
+        <p>Trois forces tirent la marge vers le bas, trois la tirent vers le haut. <strong>À la baisse</strong> : la concurrence par les prix entre fournisseurs serveuse (chaque deal de Llama 4 70B se gagne au cent près) ; le coût d'amortissement des GPU achetés au pic 2023-2024 quand les prix retombent ; et la pression contractuelle des clients enterprise qui négocient des rabais de volume. <strong>À la hausse</strong> : la part croissante des deployments dédiés (un client paie un cluster réservé, marge proche du SaaS classique) ; les services à valeur ajoutée (fine-tuning, monitoring, RAG managé) ; et l'effet d'échelle sur l'utilisation GPU (un fournisseur qui charge 80 % de ses GPU au lieu de 50 % a un avantage structurel).</p>
+        <p>L'<strong>angle mort</strong> est arrivé fin 2024 avec o1 et la série des reasoning models. Ces modèles ne génèrent pas plus vite, ils génèrent <strong>plus</strong> : avant la réponse finale, ils produisent une longue chaîne de pensée invisible qui peut représenter 5 à 50× le nombre de tokens output. Le résultat sur la facture est sans appel : <mark>des recherches récentes ont mesuré que les reasoning models sont 10 à 74 fois plus chers à exploiter que leurs équivalents non-reasoning sur AIME</mark><a class="cite" data-cite="12" href="#source-12">12</a>.</p>
+
+        <figure class="figure" id="fig-07">
+          <svg data-schema-id="schema-07" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-labelledby="t07">
+<title id="t07">Reasoning models — la facture qui revient</title>
+<defs>
+<style>
+  .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+  .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+  .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+  .interactive { cursor: pointer; }
+</style>
+<marker id="arrow07" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+  <path d="M0,0 L10,5 L0,10 z" fill="#5A5A5A"/>
+</marker>
+</defs>
+<rect width="1200" height="800" fill="#FAF8F3"/>
+
+<!-- Header -->
+<text x="60" y="62" class="mono" font-size="11" font-weight="600" letter-spacing="0.18em" fill="#B7332C">SCHÉMA 07 — REASONING vs NON-REASONING</text>
+<text x="60" y="100" class="display" font-size="26" font-weight="600" fill="#1A1A1A" letter-spacing="-0.01em">×10 à ×74 sur le coût par tâche.</text>
+<text x="60" y="126" class="display" font-size="16" font-style="italic" fill="#5A5A5A">Performance AIME 2024 (axe Y) × coût par résolution complète (axe X, log) — deux nuages, deux régimes.</text>
+<line x1="60" y1="146" x2="1140" y2="146" stroke="#E5E1D8" stroke-width="1"/>
+
+<!-- Plot area: x=160..1100, y=200..620 -->
+<line x1="160" y1="200" x2="160" y2="620" stroke="#1A1A1A" stroke-width="1.25"/>
+<line x1="160" y1="620" x2="1100" y2="620" stroke="#1A1A1A" stroke-width="1.25"/>
+
+<!-- Y axis: AIME accuracy 0% to 100% -->
+<g class="mono" font-size="11" fill="#5A5A5A" text-anchor="end">
+  <text x="150" y="624">0 %</text>
+  <text x="150" y="540">20 %</text>
+  <text x="150" y="456">40 %</text>
+  <text x="150" y="372">60 %</text>
+  <text x="150" y="288">80 %</text>
+  <text x="150" y="204">100 %</text>
+</g>
+<g stroke="#E5E1D8" stroke-width="0.5">
+  <line x1="160" y1="540" x2="1100" y2="540"/>
+  <line x1="160" y1="456" x2="1100" y2="456"/>
+  <line x1="160" y1="372" x2="1100" y2="372"/>
+  <line x1="160" y1="288" x2="1100" y2="288"/>
+</g>
+<text x="100" y="410" class="body" font-size="12" font-weight="500" fill="#1A1A1A" text-anchor="middle" transform="rotate(-90 100 410)">↑ Accuracy AIME 2024</text>
+
+<!-- X axis: cost per problem (log) - $0.001 to $5.00 -->
+<!-- $0.001 → x=200; $0.01 → x=380; $0.10 → x=560; $1.00 → x=740; $10.00 → x=920 -->
+<g class="mono" font-size="11" fill="#5A5A5A" text-anchor="middle">
+  <text x="200" y="644">0,001 $</text>
+  <text x="380" y="644">0,01 $</text>
+  <text x="560" y="644">0,10 $</text>
+  <text x="740" y="644">1,00 $</text>
+  <text x="920" y="644">10 $</text>
+  <text x="1080" y="644">100 $</text>
+</g>
+<g stroke="#E5E1D8" stroke-width="0.5">
+  <line x1="380" y1="200" x2="380" y2="620"/>
+  <line x1="560" y1="200" x2="560" y2="620"/>
+  <line x1="740" y1="200" x2="740" y2="620"/>
+  <line x1="920" y1="200" x2="920" y2="620"/>
+  <line x1="1080" y1="200" x2="1080" y2="620"/>
+</g>
+<text x="630" y="680" class="body" font-size="12" font-weight="500" fill="#1A1A1A" text-anchor="middle">Coût par problème AIME résolu (échelle log) →</text>
+
+<!-- Non-reasoning cluster (low-left) -->
+<ellipse cx="320" cy="555" rx="180" ry="50" fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1" stroke-dasharray="2 3"/>
+<text x="320" y="498" class="body" font-size="13" font-style="italic" font-weight="500" fill="#1F5560" text-anchor="middle">Non-reasoning</text>
+
+<!-- Non-reasoning models -->
+<g class="interactive" data-card="model-gpt4o" tabindex="0" role="button" aria-label="GPT-4o">
+  <circle cx="380" cy="555" r="9" fill="#1F5560" stroke="#FAF8F3" stroke-width="2"/>
+  <text x="396" y="551" class="body" font-size="11" fill="#1A1A1A">GPT-4o · 12 % · 0,01 $</text>
+</g>
+<g class="interactive" data-card="model-claude35" tabindex="0" role="button" aria-label="Claude 3.5 Sonnet">
+  <circle cx="440" cy="525" r="9" fill="#1F5560" stroke="#FAF8F3" stroke-width="2"/>
+  <text x="456" y="521" class="body" font-size="11" fill="#1A1A1A">Claude 3.5 Sonnet · 16 % · 0,03 $</text>
+</g>
+<g class="interactive" data-card="model-llama70b" tabindex="0" role="button" aria-label="Llama 3.1 70B">
+  <circle cx="280" cy="585" r="8" fill="#1F5560" stroke="#FAF8F3" stroke-width="2"/>
+  <text x="296" y="581" class="body" font-size="11" fill="#1A1A1A">Llama 3.1 70B · 5 % · 0,003 $</text>
+</g>
+
+<!-- Reasoning cluster (high-right) -->
+<ellipse cx="900" cy="290" rx="180" ry="80" fill="#B7332C" fill-opacity="0.06" stroke="#B7332C" stroke-width="1" stroke-dasharray="2 3"/>
+<text x="900" y="200" class="body" font-size="13" font-style="italic" font-weight="500" fill="#B7332C" text-anchor="middle">Reasoning</text>
+
+<!-- o1 (74% on AIME for $1.20/problem) -->
+<g class="interactive" data-card="model-o1" tabindex="0" role="button" aria-label="OpenAI o1">
+  <circle cx="780" cy="310" r="11" fill="#B7332C" stroke="#FAF8F3" stroke-width="2"/>
+  <text x="798" y="306" class="body" font-size="11" font-weight="500" fill="#1A1A1A">o1 · 74 % · 1,20 $</text>
+  <text x="798" y="320" class="body" font-size="10" font-style="italic" fill="#5A5A5A">single sample</text>
+</g>
+<!-- o1 with reranking (93%) -->
+<g class="interactive" data-card="model-o1-rerank" tabindex="0" role="button" aria-label="o1 + reranking">
+  <circle cx="980" cy="231" r="11" fill="#B7332C" stroke="#FAF8F3" stroke-width="2"/>
+  <text x="996" y="227" class="body" font-size="11" font-weight="500" fill="#1A1A1A">o1 + reranking · 93 %</text>
+  <text x="996" y="241" class="body" font-size="10" font-style="italic" fill="#5A5A5A">~15 $ · 64 samples</text>
+</g>
+<!-- o3 -->
+<g class="interactive" data-card="model-o3" tabindex="0" role="button" aria-label="OpenAI o3">
+  <circle cx="900" cy="217" r="13" fill="#B7332C" stroke="#FAF8F3" stroke-width="2"/>
+  <text x="744" y="213" class="body" font-size="11" font-weight="600" fill="#1A1A1A" text-anchor="end">o3 · 96,7 %</text>
+  <text x="744" y="227" class="body" font-size="10" font-style="italic" fill="#5A5A5A" text-anchor="end">3 $-7 $</text>
+  <line x1="748" y1="217" x2="888" y2="217" stroke="#5A5A5A" stroke-width="0.75"/>
+</g>
+<!-- o3-mini (cheaper than o1-mini) -->
+<g class="interactive" data-card="model-o3mini" tabindex="0" role="button" aria-label="OpenAI o3-mini">
+  <circle cx="660" cy="350" r="9" fill="#B7332C" stroke="#FAF8F3" stroke-width="2"/>
+  <text x="676" y="346" class="body" font-size="11" fill="#1A1A1A">o3-mini · 60 % · 0,30 $</text>
+  <text x="676" y="360" class="body" font-size="10" font-style="italic" fill="#5A5A5A">63 % moins cher qu'o1-mini</text>
+</g>
+<!-- DeepSeek R1 -->
+<g class="interactive" data-card="model-r1" tabindex="0" role="button" aria-label="DeepSeek R1">
+  <circle cx="640" cy="295" r="9" fill="#B7332C" stroke="#FAF8F3" stroke-width="2"/>
+  <text x="490" y="291" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="end">DeepSeek R1 · 79 %</text>
+  <text x="490" y="305" class="body" font-size="10" font-style="italic" fill="#5A5A5A" text-anchor="end">~0,40 $ · open-weight</text>
+  <line x1="494" y1="295" x2="630" y2="295" stroke="#5A5A5A" stroke-width="0.75"/>
+</g>
+
+<!-- Pareto frontier curve -->
+<path d="M 280,585 C 380,560 500,510 660,360 C 720,330 760,310 800,290 C 850,255 880,235 920,215"
+      fill="none" stroke="#5A5A5A" stroke-width="1" stroke-dasharray="4 3"/>
+<text x="500" y="430" class="body" font-size="11" font-style="italic" fill="#5A5A5A" transform="rotate(-30 500 430)">frontière de Pareto perf/coût</text>
+
+<!-- Big gap arrow showing "10-74×" cost between regimes -->
+<g class="interactive" data-card="annotation-gap" tabindex="0" role="button" aria-label="Écart de coût 10-74×">
+  <line x1="400" y1="590" x2="780" y2="330" stroke="#B7332C" stroke-width="1" stroke-dasharray="3 3"/>
+  <rect x="540" y="430" width="160" height="46" rx="3" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.25"/>
+  <text x="620" y="450" class="body" font-size="13" font-weight="600" fill="#B7332C" text-anchor="middle">×10 à ×74</text>
+  <text x="620" y="466" class="body" font-size="11" font-style="italic" fill="#5A5A5A" text-anchor="middle">sur AIME (Raschka, 2025)</text>
+</g>
+
+<!-- Footer -->
+<line x1="60" y1="700" x2="1140" y2="700" stroke="#E5E1D8" stroke-width="1"/>
+<text x="60" y="724" class="body" font-size="10" font-style="italic" fill="#5A5A5A" letter-spacing="0.02em">Source : OpenAI o1/o3 announcements (sept. 2024 - janv. 2025) ; benchmarks AIME 2024 ; analyses Sebastian Raschka et Towards Data Science (déc. 2025).</text>
+<text x="60" y="744" class="body" font-size="10" font-style="italic" fill="#5A5A5A" letter-spacing="0.02em">Note : les coûts par problème agrègent input + chain-of-thought caché + output, aux tarifs publics au 1ᵉʳ mai 2026. Les modèles open-weight (R1) sont calculés sur API hébergée Together / Fireworks.</text>
+</svg>
+          <figcaption class="figure-caption">Schéma 7 — Deux nuages, deux régimes économiques. Les modèles non-reasoning plafonnent à 15-20 % d'accuracy AIME pour quelques centimes ; les reasoning models atteignent 75-97 % mais multiplient le coût par 10 à 74. La frontière de Pareto se déplace lentement vers le coin supérieur-gauche, mais la pente reste structurellement défavorable au reasoning.</figcaption>
+        </figure>
+
+        <p>Trois nuances tempèrent ce constat. Premièrement, l'efficacité des chaînes de pensée s'améliore vite : o3-mini est 63 % moins cher qu'o1-mini à performance comparable<a class="cite" data-cite="12" href="#source-12">12</a>. Deuxièmement, le reasoning n'est rentable que sur les workloads qui en ont besoin — un chatbot conversationnel n'a pas à invoquer un raisonnement à 50 K tokens. Troisièmement, le speculative decoding reste partiellement compatible avec les chaînes de pensée, ce qui ouvre une voie d'optimisation supplémentaire.</p>
+        <p>L'équation économique reste néanmoins inversée : <mark>la déflation tokens/seconde gagnée par la pile logicielle est partiellement consommée par l'inflation tokens/requête des reasoning models</mark>. Pour un usage code ou math intensif, la facture client peut paradoxalement augmenter en 2026 alors même que le prix unitaire baisse.</p>
+      </section>
+
+
+      <section id="s9">
+        <h2>8. Outlook 12-24 mois</h2>
+        <p>Trois trajectoires plausibles à horizon mai 2027 :</p>
+        <ul>
+          <li><strong>La déflation continue, à pente décroissante.</strong> Les gains software faciles ont été cueillis. Les prochains 5× viendront d'une nouvelle génération de hardware (Rubin chez NVIDIA, MI400 chez AMD) et d'optimisations plus marginales. a16z prévoit <mark>3-5× par an jusqu'en 2027, puis 1,5-2× par an</mark> à mesure que les opportunités se raréfient<a class="cite" data-cite="1" href="#source-1">1</a>.</li>
+          <li><strong>La désagrégation se généralise.</strong> Tous les serveurs majeurs (vLLM, TensorRT-LLM, SGLang) supportent désormais la séparation prefill/decode native. La prochaine étape est l'intégration cross-region : prefill à Paris, decode à Dublin, KV cache transféré sur backbone privé. C'est ce que Mooncake déploie aujourd'hui pour Kimi<a class="cite" data-cite="6" href="#source-6">6</a>.</li>
+          <li><strong>Le test-time compute redéfinit la métrique.</strong> Si la facture pertinente passe de « $/Mtok » à « $/résolution-de-problème », les comparaisons inter-fournisseurs se reconfigurent. Un modèle qui résout AIME en 20 K tokens à 0,02 $ le Mtok gagne contre un modèle qui le résout en 200 K tokens à 0,01 $ le Mtok. <mark>L'efficacité de raisonnement devient le KPI dominant</mark>, et les benchmarks comme InferenceMAX migrent vers le coût-par-tâche-réussie.</li>
+        </ul>
+        <p>L'industrie de l'inférence est en train d'achever sa phase de standardisation logicielle. Les briques techniques sont stables ; les architectures de référence convergent ; les benchmarks ouverts (InferenceMAX, MLPerf Inference v6) permettent une comparaison crédible entre acteurs. <mark>Le terrain de jeu se déplace vers la gestion fine du mix matériel, l'intégration verticale et la capacité à servir des reasoning models à un coût compétitif</mark> — pas vers de nouveaux modèles. Pour Mathieu, ça veut dire qu'un audit d'infrastructure d'inférence devient un livrable possible et lisible, sur la base de métriques publiques.</p>
+      </section>
+
+      <div class="colophon">
+        <span>Mathieu Guglielmino · 6 mai 2026</span>
+        <span>Publié à titre personnel</span>
+        <span>Format co-écrit avec l'aide d'une IA</span>
+      </div>
+    </main>
+
+    <aside id="sources" aria-label="Sources">
+      <button class="panel-close" type="button" aria-label="Fermer les sources">Fermer ✕</button>
+      <button id="sources-collapse-btn" class="sidebar-edge-toggle" type="button"
+              aria-label="Replier le panneau des sources" aria-controls="sources" aria-expanded="true"
+              title="Replier les sources">›</button>
+      <div class="sources-inner">
+        <h2>Sources</h2>
+        <ol id="sources-list">
+          <li id="source-1"><span class="cite-num">1</span>Andreessen Horowitz / Guido Appenzeller. <em>Welcome to LLMflation — LLM inference cost is going down fast</em>. Novembre 2024.<a href="https://a16z.com/llmflation-llm-inference-cost/" target="_blank" rel="noopener">a16z.com ↗</a><span class="accessed">consulté le 6 mai 2026</span></li>
+          <li id="source-2"><span class="cite-num">2</span>Kwon, Woosuk et al. <em>Efficient Memory Management for Large Language Model Serving with PagedAttention</em>. SOSP 2023, arXiv:2309.06180.<a href="https://arxiv.org/abs/2309.06180" target="_blank" rel="noopener">arxiv.org/2309.06180 ↗</a><span class="accessed">consulté le 6 mai 2026</span></li>
+          <li id="source-3"><span class="cite-num">3</span>Dao, Tri et al. <em>FlashAttention-3: Fast and Accurate Attention with Asynchrony and Low-precision</em>. NeurIPS 2024, arXiv:2407.08608.<a href="https://arxiv.org/abs/2407.08608" target="_blank" rel="noopener">arxiv.org/2407.08608 ↗</a><span class="accessed">consulté le 6 mai 2026</span></li>
+          <li id="source-4"><span class="cite-num">4</span>DeepSeek-AI. <em>DeepSeek-V3 Technical Report</em>. arXiv:2412.19437, décembre 2024.<a href="https://arxiv.org/abs/2412.19437" target="_blank" rel="noopener">arxiv.org/2412.19437 ↗</a><span class="accessed">consulté le 6 mai 2026</span></li>
+          <li id="source-5"><span class="cite-num">5</span>Patel, Pratyush et al. <em>Splitwise: Efficient Generative LLM Inference Using Phase Splitting</em>. ISCA 2024, arXiv:2311.18677.<a href="https://arxiv.org/abs/2311.18677" target="_blank" rel="noopener">arxiv.org/2311.18677 ↗</a><span class="accessed">consulté le 6 mai 2026</span></li>
+          <li id="source-6"><span class="cite-num">6</span>Qin, Ruoyu et al. (Moonshot AI). <em>Mooncake: A KVCache-centric Disaggregated Architecture for LLM Serving</em>. ACM Transactions on Storage, 2025.<a href="https://dl.acm.org/doi/10.1145/3773772" target="_blank" rel="noopener">dl.acm.org/3773772 ↗</a><span class="accessed">consulté le 6 mai 2026</span></li>
+          <li id="source-7"><span class="cite-num">7</span>Li, Yuhui et al. <em>EAGLE-3: Scaling up Inference Acceleration of Large Language Models via Training-Time Test</em>. NeurIPS 2025, arXiv:2503.01840.<a href="https://arxiv.org/abs/2503.01840" target="_blank" rel="noopener">arxiv.org/2503.01840 ↗</a><span class="accessed">consulté le 6 mai 2026</span></li>
+          <li id="source-8"><span class="cite-num">8</span>NVIDIA Technical Blog. <em>Blackwell Raises Bar in New InferenceMAX Benchmarks, Delivering Unmatched Performance and Lowest Cost Per Token</em>. Octobre 2025.<a href="https://blogs.nvidia.com/blog/blackwell-inferencemax-benchmark-results/" target="_blank" rel="noopener">blogs.nvidia.com ↗</a><span class="accessed">consulté le 6 mai 2026</span></li>
+          <li id="source-9"><span class="cite-num">9</span>SemiAnalysis. <em>InferenceMAX: Open Source Inference Benchmarking</em>. 2025.<a href="https://newsletter.semianalysis.com/p/inferencemax-open-source-inference" target="_blank" rel="noopener">semianalysis.com ↗</a><span class="accessed">consulté le 6 mai 2026</span></li>
+          <li id="source-10"><span class="cite-num">10</span>Sacra. <em>Together AI revenue, valuation &amp; funding</em> et <em>Fireworks AI revenue, valuation &amp; funding</em>. 2025.<a href="https://sacra.com/c/together-ai/" target="_blank" rel="noopener">sacra.com ↗</a><span class="accessed">consulté le 6 mai 2026</span></li>
+          <li id="source-11"><span class="cite-num">11</span>Epoch AI. <em>MoE vs AI dense models: How do they compare in inference?</em>. 2025.<a href="https://epoch.ai/gradient-updates/moe-vs-dense-models-inference" target="_blank" rel="noopener">epoch.ai ↗</a><span class="accessed">consulté le 6 mai 2026</span></li>
+          <li id="source-12"><span class="cite-num">12</span>OpenAI. <em>Learning to reason with LLMs</em>. Septembre 2024.<a href="https://openai.com/index/learning-to-reason-with-llms/" target="_blank" rel="noopener">openai.com ↗</a><span class="accessed">consulté le 6 mai 2026</span></li>
+          <li id="source-13"><span class="cite-num">13</span>Hao AI Lab UCSD. <em>Disaggregated Inference: 18 Months Later</em>. 2025.<a href="https://haoailab.com/blogs/distserve-retro/" target="_blank" rel="noopener">haoailab.com ↗</a><span class="accessed">consulté le 6 mai 2026</span></li>
+        </ol>
+      </div>
+    </aside>
+
+  </div>
+
+  <button id="sources-expand-btn" class="sidebar-edge-toggle" type="button"
+          aria-label="Déplier le panneau des sources" aria-controls="sources" aria-expanded="false"
+          title="Déplier les sources" hidden>‹</button>
+
+  <div id="modal-root" hidden role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card">
+      <button class="modal-close" data-close aria-label="Fermer">×</button>
+      <p class="modal-eyebrow" id="modal-eyebrow"></p>
+      <h3 class="modal-title" id="modal-title"></h3>
+      <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <div id="zoom-overlay" hidden role="dialog" aria-modal="true" aria-label="Schéma agrandi">
+    <header id="zoom-header">
+      <span id="zoom-caption"></span>
+      <div class="zoom-controls">
+        <button type="button" class="zoom-out" aria-label="Dézoomer" title="Dézoomer (−)">−</button>
+        <button type="button" class="zoom-reset" aria-label="Ajuster à l'écran" title="Ajuster à l'écran">Reset</button>
+        <button type="button" class="zoom-in" aria-label="Zoomer" title="Zoomer (+)">+</button>
+        <button type="button" class="zoom-close" aria-label="Fermer (Échap)" title="Fermer (Échap)">×</button>
+      </div>
+    </header>
+    <div id="zoom-stage" tabindex="-1">
+      <div id="zoom-content"></div>
+      <div id="zoom-hint">Molette pour zoomer · glisser pour déplacer · Échap pour fermer</div>
+    </div>
+  </div>
+
+  <script>
+
+    const SCHEMAS = {
+  "schema-01": {
+    "curve-trend": {
+      "eyebrow": "Schéma 1 · Tendance",
+      "title": "Une courbe log linéaire sur trois ans",
+      "body": "<p>La trajectoire de prix suit une loi log-linéaire remarquablement régulière sur 36 mois — environ 10× par an, calculé par a16z.</p><p>Cette régularité tient à l'addition de plusieurs facteurs largement indépendants : meilleure utilisation du silicium (FlashAttention, PagedAttention), nouveaux process matériels (HBM3e, FP4 sur Blackwell), open-weight competition, et architectures sparses (MoE).</p>"
+    },
+    "gpt3-launch": {
+      "eyebrow": "Schéma 1 · Novembre 2021",
+      "title": "GPT-3 davinci · 60 $/Mtok",
+      "body": "<p>OpenAI ouvre l'API GPT-3 davinci au public à 60 $ par million de tokens. Le tarif reflète une économie de l'inférence encore artisanale : modèle dense 175 B, batching statique, pas de PagedAttention, utilisation GPU autour de 30-40 %.</p><p>C'est le point de référence universel des courbes LLMflation.</p>"
+    },
+    "gpt35-turbo": {
+      "eyebrow": "Schéma 1 · Mars 2023",
+      "title": "gpt-3.5-turbo · 2,00 $/Mtok",
+      "body": "<p>OpenAI sort gpt-3.5-turbo à 2 $/Mtok — un facteur 30 sous GPT-3 en 16 mois. Premier moment où l'inférence GPT-class devient accessible aux indie devs et aux hackathons.</p><p>Le tarif sera ramené progressivement à 0,50 $ puis 0,15 $ avant d'être déprécié.</p>"
+    },
+    "mistral-7b": {
+      "eyebrow": "Schéma 1 · Octobre 2023",
+      "title": "Mistral 7B · 0,50 $/Mtok",
+      "body": "<p>Mistral 7B sort en open-weight sous licence Apache 2.0. Première démonstration qu'un modèle 7B optimisé peut rivaliser avec GPT-3.5 sur de nombreux benchmarks.</p><p>Together AI et Anyscale popularisent l'hébergement à 0,50 $/Mtok ou moins. La compétition open-weight commence.</p>"
+    },
+    "llama3-8b": {
+      "eyebrow": "Schéma 1 · Avril 2024",
+      "title": "Llama 3 8B · 0,10 $/Mtok",
+      "body": "<p>Meta sort Llama 3 8B et 70B. La version 8B atteint 0,10 $/Mtok sur Together AI, un facteur 5 sous Mistral 7B six mois plus tôt.</p><p>Le bond vient de l'amélioration combinée du modèle (entraînement plus long, dataset 15T tokens) et du software stack (vLLM, FlashAttention, batching continu industrialisés).</p>"
+    },
+    "llama32-3b": {
+      "eyebrow": "Schéma 1 · Novembre 2024",
+      "title": "Llama 3.2 3B · 0,06 $/Mtok",
+      "body": "<p>Llama 3.2 3B descend à 0,06 $/Mtok chez Together AI. C'est le point de référence canonique cité par a16z pour quantifier le facteur 1 000 vs GPT-3 davinci en trois ans.</p><p>Le modèle est à peine moins capable que GPT-3 en MMLU (~62 %) mais 1 000× moins cher à servir.</p>"
+    },
+    "gpt-oss-120b": {
+      "eyebrow": "Schéma 1 · Octobre 2025",
+      "title": "GPT-OSS-120B sur B200 · 0,02 $/Mtok",
+      "body": "<p>GPT-OSS-120B (modèle open-weight publié par OpenAI en réponse à la pression DeepSeek/Llama) servi sur Blackwell B200 + TensorRT-LLM atteint 0,02 $ par million de tokens à 55 TPS/utilisateur, mesuré par InferenceMAX (octobre 2025).</p><p>Combine l'effet matériel (Blackwell) et l'effet logiciel (TRT-LLM optimisé bout-en-bout).</p>"
+    },
+    "annotation-decline": {
+      "eyebrow": "Schéma 1 · Cadrage",
+      "title": "1 000× en 3 ans",
+      "body": "<p>De 60 $/Mtok à 0,06 $/Mtok en 36 mois pour le même score MMLU. Soit ~10× par an de manière soutenue.</p><p>Comparaison historique : Moore historique = 2× tous les 18-24 mois ; bandwidth dotcom = 5× par an au pic. La déflation LLM est plus rapide que les deux.</p>"
+    }
+  },
+  "schema-02": {
+    "prefill-phase": {
+      "eyebrow": "Schéma 2 · Phase compute-bound",
+      "title": "Le prefill",
+      "body": "<p>Le prefill traite tous les tokens du prompt en parallèle. Les Tensor Cores du GPU tournent à plein régime — utilisation FLOPs ≥ 80 % sur un H100 bien batché.</p><p>Coût dominé par le compute. Optimisations clés : FlashAttention-3 (asynchronie), batching de prompts, prefix caching. La HBM est sous-exploitée pendant cette phase.</p>"
+    },
+    "decode-phase": {
+      "eyebrow": "Schéma 2 · Phase memory-bound",
+      "title": "Le decode",
+      "body": "<p>Génération token-par-token. À chaque pas, le modèle relit l'intégralité de ses poids depuis la HBM pour produire un seul token de sortie.</p><p>Sur Llama 70B FP16, ça fait 140 Go à charger par token : la HBM3 du H100 (3,35 To/s) plafonne à ~24 tokens/seconde par requête. Les FLOPs Tensor sont sous-utilisés. C'est ici que le batching, MoE et speculative decoding font la différence.</p>"
+    },
+    "kv-cache": {
+      "eyebrow": "Schéma 2 · Le contrat HBM",
+      "title": "Le KV cache",
+      "body": "<p>Pour éviter de recalculer l'attention sur tous les tokens précédents à chaque pas de decode, le modèle stocke en HBM les clés (K) et valeurs (V) déjà calculées.</p><p>Taille linéaire avec le contexte. Llama 70B à 32K tokens : ~5 Go par utilisateur, donc 500 Go pour 100 utilisateurs simultanés — plus que la VRAM d'un H100 (80 Go) ou même d'un B200 (192 Go) seul. C'est cette contrainte qui dicte l'architecture du serveur.</p>"
+    },
+    "paged-attn": {
+      "eyebrow": "Schéma 2 · Annotation 1",
+      "title": "PagedAttention vs allocation contiguë",
+      "body": "<p>Avant PagedAttention (vLLM, SOSP 2023), le KV cache était alloué en blocs contigus de taille maximale. Si un utilisateur demandait 32K tokens et n'en consommait que 4K, les 28K restants étaient gaspillés.</p><p>PagedAttention applique le principe de la mémoire virtuelle paginée des OS : blocs de 16-256 tokens à la demande. Gaspillage 50 % → &lt;4 %, batch utilisable ×2-4.</p>"
+    },
+    "continuous-batching": {
+      "eyebrow": "Schéma 2 · Annotation 2",
+      "title": "Continuous batching",
+      "body": "<p>Le batching statique attend qu'une fenêtre de N requêtes soit pleine avant le forward pass — chaque requête progresse au rythme de la plus lente.</p><p>Le batching continu ajoute des requêtes au batch dès qu'une fente se libère. Utilisation GPU 40 % → 90+ % ; coût/token divisé par 2 en production. Devenu valeur par défaut de vLLM, TensorRT-LLM, SGLang.</p>"
+    }
+  },
+  "schema-03": {
+    "layer-baseline": {
+      "eyebrow": "Schéma 3 · Baseline",
+      "title": "PyTorch eager · ~1 000 tok/s",
+      "body": "<p>Le point de départ : un Llama 70B en PyTorch eager mode, sans aucune optimisation, sur un B300. Throughput d'environ 1 000 tokens/seconde par GPU.</p><p>C'est inutilisable en production mais c'est le repère contre lequel on mesure tous les gains de la pile logicielle.</p>"
+    },
+    "layer-kernel-fusion": {
+      "eyebrow": "Schéma 3 · Couche 1 · ×1,5",
+      "title": "Kernel fusion + Tensor Cores",
+      "body": "<p>Fusionner softmax + matmul + dropout dans un seul kernel CUDA évite les allers-retours en HBM. FlashAttention-1 (Tri Dao, 2022) a popularisé le pattern en attention.</p><p>Gain de ~1,5× sans changer le modèle ni l'algorithme. C'est la couche la plus universelle — toutes les implémentations modernes l'embarquent.</p>"
+    },
+    "layer-flashattn3": {
+      "eyebrow": "Schéma 3 · Couche 2 · ×2",
+      "title": "FlashAttention-3",
+      "body": "<p>FA-3 (NeurIPS 2024) exploite l'asynchronie des Tensor Cores Hopper, le warp-specialization et le block quantization.</p><p>Utilisation FLOPs H100 BF16 : 35 % (FA-2) → 75 %. FP8 atteint 1,2 PFLOPS sur H100. Gain ~2× sur le prefill et la majorité des workloads attention-heavy.</p>"
+    },
+    "layer-paged-cb": {
+      "eyebrow": "Schéma 3 · Couche 3 · ×1,7",
+      "title": "PagedAttention + continuous batching",
+      "body": "<p>Couche structurelle de vLLM. Combine la gestion paginée du KV cache avec le scheduling de batch continu.</p><p>Gain ~1,7× supplémentaire sur le throughput servi. Sans cette couche, les optimisations attention restent confinées à un seul utilisateur — vLLM débloque le scaling multi-tenant.</p>"
+    },
+    "layer-fp8": {
+      "eyebrow": "Schéma 3 · Couche 4 · ×1,6",
+      "title": "Quantization FP8",
+      "body": "<p>Hopper supporte FP8 nativement (Tensor Cores 4e gen). Réduit la précision de 16 à 8 bits, double la densité de calcul à perte qualité &lt;1 % sur modèle bien calibré.</p><p>DeepSeek V3 a démontré la faisabilité de l'<em>entraînement</em> FP8 à grande échelle, normalisant la pratique au-delà de l'inférence.</p>"
+    },
+    "layer-fp4": {
+      "eyebrow": "Schéma 3 · Couche 5 · ×1,4",
+      "title": "FP4 (Blackwell)",
+      "body": "<p>Tensor Cores 5e gen sur Blackwell supportent FP4 nativement. Encore un facteur 2 sur la densité de calcul vs FP8.</p><p>Calibration plus délicate : tous les modèles ne supportent pas FP4 sans dégradation. Les meilleurs cas (GPT-OSS-120B) atteignent &gt;1× le throughput FP8 avec une perte de qualité acceptable.</p>"
+    },
+    "layer-spec-decode": {
+      "eyebrow": "Schéma 3 · Couche 6 · ×1,2",
+      "title": "Speculative decoding (EAGLE-3)",
+      "body": "<p>Une tête de prédiction légère (1-2 couches au lieu de plusieurs dizaines) génère plusieurs tokens candidats en autoregressif rapide. Le modèle cible vérifie ces candidats en un seul forward pass.</p><p>EAGLE-3 (NeurIPS 2025) atteint 3-6,5× de speedup brut. P-EAGLE intégré dans vLLM ajoute 1,69× sur B200 grâce au parallélisme. Le gain net sur la pile entière est plus modeste (~1,2×) parce qu'il se compose mal avec le batching continu.</p>"
+    },
+    "layer-prefix-cache": {
+      "eyebrow": "Schéma 3 · Couche 7 · ×1,08",
+      "title": "Prefix caching + désagrégation P/D",
+      "body": "<p>Mémoriser le KV cache des préfixes communs entre requêtes (system prompts, retrieved docs) évite des prefills redondants. Anthropic, OpenAI, Google le facturent à 10-25 % du tarif nominal.</p><p>Combiné à la désagrégation prefill/decode, ajoute ~8 % de gain net sur la pile complète. Plus utile sur RAG et agents (jusqu'à 10× sur ces workloads spécifiques).</p>"
+    }
+  },
+  "schema-04": {
+    "client": {
+      "eyebrow": "Schéma 4 · Entrée",
+      "title": "Client",
+      "body": "<p>Émet un prompt + contexte (RAG, conversation, system prompt). Attend en retour un stream de tokens.</p><p>Du point de vue économique, c'est ce que le client paie au $/Mtok. Du point de vue technique, c'est l'unique point qui ne se désagrège pas.</p>"
+    },
+    "router": {
+      "eyebrow": "Schéma 4 · Plan de contrôle",
+      "title": "Router / scheduler",
+      "body": "<p>Reçoit la requête, choisit un nœud prefill, attend le KV cache, choisit un nœud decode, stream les tokens en retour.</p><p>Doit respecter des SLO indépendants : TTFT (time-to-first-token) borné par le prefill, TPOT (time per output token) borné par le decode. Sans désagrégation, ces deux SLO se piétinent.</p>"
+    },
+    "prefill-cluster": {
+      "eyebrow": "Schéma 4 · Cluster compute-bound",
+      "title": "Cluster prefill",
+      "body": "<p>Hardware : H100 ou B200, FLOPs élevés. Utilisation cible : ≥ 80 % FLOPs Tensor.</p><p>Provisionné selon la longueur de prompt p99. Un fournisseur RAG/code (prompts longs) dimensionne plus généreusement ; un fournisseur de chat court fait l'inverse.</p>"
+    },
+    "decode-cluster": {
+      "eyebrow": "Schéma 4 · Cluster memory-bound",
+      "title": "Cluster decode",
+      "body": "<p>Hardware : A100 (Splitwise) ou MI300X ou H100/B200 selon stratégie. Utilisation cible : HBM bandwidth ≥ 80 %.</p><p>Provisionné selon le nombre de tokens output p99. Le decode est l'étape qui domine la latence perçue après le premier token.</p>"
+    },
+    "kv-bus": {
+      "eyebrow": "Schéma 4 · Le tendon d'Achille",
+      "title": "Bus KV cache",
+      "body": "<p>RDMA, NVLink ou NCCL selon l'architecture. Transfère le KV cache calculé par le prefill vers le nœud decode qui prendra le relai.</p><p>Volume : linéaire avec le contexte. Llama 70B FP16 à 128K tokens = ~20 Go transférés. Datacenters d'inférence modernes provisionnent 800 Gbps Ethernet ou InfiniBand HDR par nœud.</p>"
+    },
+    "annotation-ttft": {
+      "eyebrow": "Schéma 4 · Annotation 1",
+      "title": "Gain TTFT 1,4-2,3×",
+      "body": "<p>La désagrégation libère les utilisateurs en cours de decode des pics de latence causés par les longs prefills d'autres utilisateurs.</p><p>Mesures publiées : 1,4× (Splitwise), 2,3× (DistServe sur certains workloads). Le gain s'accentue sur les charges hétérogènes (mix prompts longs / chat court).</p>"
+    },
+    "annotation-mooncake": {
+      "eyebrow": "Schéma 4 · Annotation 2 · cas réel",
+      "title": "Mooncake (Kimi)",
+      "body": "<p>Mooncake est l'architecture qui sert le chatbot Kimi (Moonshot AI). Spécificité : un pool de KV cache mutualisé exploite la DRAM CPU et les SSD des nœuds GPU sous-utilisés.</p><p>En production : &gt;100 milliards de tokens servis par jour, sur des milliers de nœuds. Démontre que la désagrégation tient à l'échelle hyperscale.</p>"
+    },
+    "annotation-cost": {
+      "eyebrow": "Schéma 4 · Annotation 3 · le revers",
+      "title": "Coût réseau du KV transfer",
+      "body": "<p>Le transfert du KV cache est un nouveau budget. Linéaire avec le contexte : ~20 Go pour Llama 70B FP16 à 128K.</p><p>Sur un cluster sous-provisionné en réseau, le transfert KV peut devenir le bottleneck — surtout pour les workloads agents avec des contextes &gt; 100K.</p>"
+    }
+  },
+  "schema-05": {
+    "dense-llama7b": {
+      "eyebrow": "Schéma 5 · Dense",
+      "title": "Llama 3 8B",
+      "body": "<p>Modèle dense classique. 8 milliards de paramètres totaux = 8 milliards de paramètres actifs par token.</p><p>Sur la diagonale dense. Excellent ratio FLOPs/qualité, mais ne profite pas du découplage MoE.</p>"
+    },
+    "dense-llama70b": {
+      "eyebrow": "Schéma 5 · Dense",
+      "title": "Llama 3 70B",
+      "body": "<p>Le workhorse dense de référence : 70 B paramètres totaux et actifs. ~140 Go de poids en FP16.</p><p>Sur la diagonale. Toujours fortement utilisé en production parce que son écosystème (fine-tuning, harness, déploiements) est mature.</p>"
+    },
+    "dense-llama405b": {
+      "eyebrow": "Schéma 5 · Dense",
+      "title": "Llama 3.1 405B",
+      "body": "<p>405 milliards de paramètres totaux et actifs. Entraîné en 30,8 millions d'heures H100 (vs 2,664 M H800 pour DeepSeek V3).</p><p>Démonstration que la voie dense reste compétitive en qualité — mais à un coût d'entraînement dix fois supérieur à un MoE équivalent.</p>"
+    },
+    "moe-mixtral": {
+      "eyebrow": "Schéma 5 · MoE pionnier",
+      "title": "Mixtral 8×7B",
+      "body": "<p>Mistral, décembre 2023. 8 experts de 7B, 2 activés par token. Total = 47 B (avec partage de paramètres), actifs = 13 B.</p><p>Premier MoE open-weight à matcher GPT-3.5 sur la majorité des benchmarks. Catalyseur de l'adoption MoE en production.</p>"
+    },
+    "moe-deepseek": {
+      "eyebrow": "Schéma 5 · Le standard 2026",
+      "title": "DeepSeek V3",
+      "body": "<p>671 B paramètres totaux, 37 B actifs. Entraîné en 2,664 M heures H800 ≈ 5,6 M$ de compute pur.</p><p>Atteint la qualité GPT-4 et est servi à ~60 % moins cher qu'OpenAI. La combinaison MoE + MLA (compression KV) rend l'inférence économique malgré la taille totale.</p>"
+    },
+    "moe-llama4": {
+      "eyebrow": "Schéma 5 · MoE Meta",
+      "title": "Llama 4 Maverick",
+      "body": "<p>~400 B paramètres totaux, 17 B actifs. Première itération MoE de Meta après les Llama 3 entièrement denses.</p><p>Positionnement : haute qualité avec un coût d'inférence comparable à un dense 17 B sur des serveurs avec assez de VRAM.</p>"
+    },
+    "annotation-vram": {
+      "eyebrow": "Schéma 5 · Annotation 1",
+      "title": "Hosting suit l'axe X (VRAM)",
+      "body": "<p>Le coût de hosting (location GPU/heure) est dimensionné par les paramètres totaux. Pour DeepSeek V3, il faut une infrastructure capable de loger 671 B de paramètres en HBM, même si seulement 37 B sont activés par token.</p><p>D'où l'expert parallelism : distribuer les experts entre nœuds.</p>"
+    },
+    "annotation-flops": {
+      "eyebrow": "Schéma 5 · Annotation 2",
+      "title": "Inférence suit l'axe Y (FLOPs)",
+      "body": "<p>Le coût de calcul par token (FLOPs) est dimensionné par les paramètres actifs. DeepSeek V3 calcule comme un dense 37 B à chaque token.</p><p>D'où l'effet d'échelle MoE : plus le traffic est élevé, plus la VRAM des experts est amortie sur les requêtes simultanées.</p>"
+    },
+    "annotation-mla": {
+      "eyebrow": "Schéma 5 · Annotation 3",
+      "title": "MLA — KV cache compressé ×20",
+      "body": "<p>Multi-head Latent Attention (DeepSeek V2/V3) compresse le KV cache via une projection latente partagée entre têtes.</p><p>Llama 70B à 128K = ~20 Go de KV cache ; DeepSeek V3 à 128K ≈ 1 Go. Facteur 20 qui rend l'inférence long-contexte économique. C'est l'innovation la plus sous-estimée de DeepSeek.</p>"
+    }
+  },
+  "schema-06": {
+    "hw-h100": {
+      "eyebrow": "Schéma 6 · Hopper",
+      "title": "NVIDIA H100",
+      "body": "<p>Le workhorse de l'inférence 2023-2025. 1 979 TFLOPS FP8, 80 Go HBM3, 3,35 To/s bandwidth.</p><p>Cloud price stabilisé à 2,85-3,50 $/heure début 2026. ~0,15 $/Mtok sur Llama 70B optimisé. Toujours dominant en flotte installée.</p>"
+    },
+    "hw-h200": {
+      "eyebrow": "Schéma 6 · Hopper refresh",
+      "title": "NVIDIA H200",
+      "body": "<p>Refresh de la H100 avec 141 Go HBM3e (vs 80 Go) et 4,8 To/s de bandwidth. Compute identique.</p><p>Cible : workloads long-contexte et RAG, où la VRAM supplémentaire évite de splitter les modèles. ~0,10 $/Mtok sur Llama 70B.</p>"
+    },
+    "hw-b200": {
+      "eyebrow": "Schéma 6 · Blackwell",
+      "title": "NVIDIA B200",
+      "body": "<p>Tensor Cores 5e gen avec FP4 natif. 4 500 TFLOPS FP4 (×2,3 vs H100 FP8). 192 Go HBM3e, NVLink 5 à 1,8 To/s.</p><p>NVIDIA revendique 15× sur le coût-par-Mtok et 10× sur le throughput par MW pour MoE. ~0,02 $/Mtok sur GPT-OSS-120B optimisé. Le standard 2026.</p>"
+    },
+    "hw-mi300x": {
+      "eyebrow": "Schéma 6 · AMD",
+      "title": "AMD MI300X",
+      "body": "<p>1 307 TFLOPS FP8, 192 Go HBM3 (égalité avec B200). Pari sur le decode memory-bound.</p><p>Talon d'Achille : ROCm vs CUDA. Microsoft, Meta, Oracle déploient en volume mais pour des workloads spécifiques. ~0,12 $/Mtok.</p>"
+    },
+    "hw-trainium2": {
+      "eyebrow": "Schéma 6 · AWS",
+      "title": "AWS Trainium 2",
+      "body": "<p>Silicium maison Annapurna. 96 Go HBM, ~1 250 TFLOPS BF16. Disponible uniquement via AWS managé.</p><p>Pari : intégration verticale absorbe les marges intermédiaires. AWS facture l'inférence Anthropic Claude sur Trainium 2 à 30-40 % de moins qu'H100 ; ~0,07 $/Mtok déclaré.</p>"
+    },
+    "hw-groq": {
+      "eyebrow": "Schéma 6 · Groq",
+      "title": "Groq LPU",
+      "body": "<p>Architecture SRAM-on-die — tout le modèle en SRAM, pas de HBM. 230 Mo SRAM par puce, donc on assemble des dizaines de LPU pour servir un Llama 70B.</p><p>Décode &gt;800 tok/s/utilisateur (vs ~200 sur H100). Coût/token plus élevé (~0,20 $/Mtok), mais latence justifie un premium pour agents et voice.</p>"
+    },
+    "annotation-blackwell-leap": {
+      "eyebrow": "Schéma 6 · Cadrage",
+      "title": "Le saut Blackwell",
+      "body": "<p>×15 sur le coût-par-Mtok, ×10 sur le throughput par MW vs Hopper, sur les charges MoE.</p><p>Moteurs : FP4 natif (Tensor Cores 5e gen) qui double la densité, NVLink 5 qui divise par 2 la latence des all-to-all MoE, HBM3e plus large. Source : InferenceMAX (octobre 2025) sur GPT-OSS-120B + TensorRT-LLM.</p>"
+    }
+  },
+  "schema-07": {
+    "model-gpt4o": {
+      "eyebrow": "Schéma 7 · Non-reasoning",
+      "title": "GPT-4o",
+      "body": "<p>Modèle non-reasoning de référence d'OpenAI. ~12 % d'accuracy AIME 2024 sur un single sample, ~0,01 $ par problème.</p><p>Le plafond conceptuel des modèles sans chaîne de pensée explicite : sans test-time compute, on ne dépasse pas ~15-20 % sur AIME, quel que soit le modèle.</p>"
+    },
+    "model-claude35": {
+      "eyebrow": "Schéma 7 · Non-reasoning",
+      "title": "Claude 3.5 Sonnet",
+      "body": "<p>Anthropic, 2024. ~16 % AIME 2024 single sample, ~0,03 $/problème.</p><p>Légèrement plus performant que GPT-4o mais reste contraint par le plafond non-reasoning. Sa version 3.7 (avril 2025) ajoute un mode reasoning qui le déplace vers le nuage de droite.</p>"
+    },
+    "model-llama70b": {
+      "eyebrow": "Schéma 7 · Non-reasoning",
+      "title": "Llama 3.1 70B",
+      "body": "<p>~5 % d'accuracy AIME 2024 à ~0,003 $ par problème — le pire en perf, le meilleur en coût.</p><p>Démontre que la déflation tokens/seconde sans test-time compute reste utile sur les workloads simples — chat, RAG, génération de texte courante.</p>"
+    },
+    "model-o1": {
+      "eyebrow": "Schéma 7 · Reasoning",
+      "title": "OpenAI o1",
+      "body": "<p>Premier reasoning model commercial. 74 % d'accuracy AIME single sample à ~1,20 $ par problème.</p><p>Saut de 60 points par rapport à GPT-4o, au prix d'un facteur 100 sur le coût. La chaîne de pensée cachée représente 10-30× le nombre de tokens output finaux.</p>"
+    },
+    "model-o1-rerank": {
+      "eyebrow": "Schéma 7 · Reasoning + reranking",
+      "title": "o1 + 64 samples reranking",
+      "body": "<p>En tirant 64 samples et en sélectionnant le meilleur via majority voting, o1 atteint 93 % sur AIME — pour ~15 $ par problème.</p><p>Démontre la scalabilité du test-time compute mais pose la question économique frontalement : 15 $ par problème est compatible avec un usage scientifique, pas avec un usage de masse.</p>"
+    },
+    "model-o3": {
+      "eyebrow": "Schéma 7 · Reasoning · état de l'art",
+      "title": "OpenAI o3",
+      "body": "<p>96,7 % d'accuracy AIME 2024 (Q4 2024 / Q1 2025), à un coût de l'ordre de 3-7 $ par problème selon configuration.</p><p>État de l'art en reasoning. Sur ARC-AGI, o3 a marqué un saut historique sur un benchmark conçu pour résister aux modèles de fondation.</p>"
+    },
+    "model-o3mini": {
+      "eyebrow": "Schéma 7 · Reasoning compact",
+      "title": "OpenAI o3-mini",
+      "body": "<p>Variante distillée d'o3. ~60 % AIME 2024 à ~0,30 $ par problème — soit 63 % moins cher qu'o1-mini à perf comparable.</p><p>Démontre que la pression d'optimisation s'applique aussi au reasoning : la frontière de Pareto se déplace, la pente reste défavorable mais s'aplatit.</p>"
+    },
+    "model-r1": {
+      "eyebrow": "Schéma 7 · Reasoning open-weight",
+      "title": "DeepSeek R1",
+      "body": "<p>Premier reasoning model open-weight crédible. 79 % AIME 2024 à ~0,40 $ par problème (sur Together / Fireworks).</p><p>Trained avec RL pure sur DeepSeek V3 base. Ouverture qui fait pression sur les marges des reasoning models propriétaires.</p>"
+    },
+    "annotation-gap": {
+      "eyebrow": "Schéma 7 · Cadrage",
+      "title": "L'écart 10-74×",
+      "body": "<p>Étude Raschka (2025) : sur AIME, les reasoning models sont 10 à 74× plus chers à exploiter que leurs équivalents non-reasoning à modèle base équivalent.</p><p>L'écart se contracte lentement (o3-mini, R1) mais reste structurel : la chaîne de pensée cachée représente une pénalité multiplicative que la pile d'inférence n'éliminera pas.</p>"
+    }
+  }
+};
+    const SOURCES = [];
+
+    const modalRoot = document.getElementById('modal-root');
+    const modalEyebrow = document.getElementById('modal-eyebrow');
+    const modalTitle = document.getElementById('modal-title');
+    const modalBody  = document.getElementById('modal-body');
+    let lastFocused = null;
+
+    function openModal(eyebrow, title, body) {
+      lastFocused = document.activeElement;
+      modalEyebrow.innerHTML = eyebrow || '';
+      modalTitle.innerHTML = title || '';
+      modalBody.innerHTML = body || '';
+      modalRoot.hidden = false;
+      document.body.style.overflow = 'hidden';
+      modalRoot.querySelector('.modal-close')?.focus();
+    }
+    function closeModal() {
+      modalRoot.hidden = true;
+      document.body.style.overflow = '';
+      lastFocused?.focus();
+    }
+
+    function dispatchInteractive(target) {
+      const region = target.closest?.('.interactive[data-card]');
+      if (!region) return false;
+      const svg = region.closest('svg[data-schema-id]');
+      const schemaId = svg?.dataset.schemaId;
+      const cardId = region.dataset.card;
+      const card = SCHEMAS?.[schemaId]?.[cardId];
+      if (card) { openModal(card.eyebrow || '', card.title || '', card.body || ''); return true; }
+      return false;
+    }
+
+    document.addEventListener('click', (e) => {
+      if (dispatchInteractive(e.target)) return;
+      if (e.target.matches('[data-close]')) { closeModal(); return; }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !modalRoot.hidden) { closeModal(); return; }
+      if ((e.key === 'Enter' || e.key === ' ') && document.activeElement?.matches('.interactive[data-card]')) {
+        e.preventDefault(); document.activeElement.click();
+      }
+    });
+
+    // Make every .interactive keyboard-focusable
+    document.querySelectorAll('.interactive[data-card]').forEach((el) => {
+      if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '0');
+      if (!el.hasAttribute('role')) el.setAttribute('role', 'button');
+    });
+
+    document.addEventListener('click', (e) => {
+      const cite = e.target.closest('.cite[data-cite]');
+      if (!cite) return;
+      e.preventDefault();
+      const n = cite.dataset.cite;
+      const li = document.getElementById('source-' + n);
+      if (!li) return;
+      const sources = document.getElementById('sources');
+      const layout = document.querySelector('.layout');
+      const isMobile = window.innerWidth <= 1024;
+      const wasCollapsed = !isMobile && layout?.classList.contains('sources-collapsed');
+      if (isMobile) sources.classList.add('open');
+      else if (wasCollapsed) document.getElementById('sources-expand-btn')?.click();
+      const doScrollAndHighlight = () => {
+        li.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        li.classList.add('highlight');
+        clearTimeout(li._hl);
+        li._hl = setTimeout(() => li.classList.remove('highlight'), 2400);
+      };
+      if (wasCollapsed) setTimeout(doScrollAndHighlight, 320);
+      else doScrollAndHighlight();
+    });
+
+    (function setupTooltipFloater() {
+      const floater = document.createElement('div');
+      floater.id = 'tooltip-floater';
+      floater.setAttribute('role', 'tooltip');
+      floater.hidden = true;
+      document.body.appendChild(floater);
+      let activeTerm = null;
+      let pinned = false;
+      document.querySelectorAll('.term').forEach(t => { if (!t.hasAttribute('tabindex')) t.setAttribute('tabindex', '0'); });
+      function show(term) {
+        const text = term.dataset.tooltip;
+        if (!text) return;
+        floater.textContent = text;
+        floater.hidden = false;
+        activeTerm = term;
+        position();
+      }
+      function hide() { floater.hidden = true; activeTerm = null; }
+      function position() {
+        if (!activeTerm) return;
+        const r = activeTerm.getBoundingClientRect();
+        const margin = 8;
+        floater.style.left = '0px'; floater.style.top = '0px';
+        const tip = floater.getBoundingClientRect();
+        let top = r.top - tip.height - margin;
+        let side = 'top';
+        if (top < margin) { top = r.bottom + margin; side = 'bottom'; }
+        let left = r.left + r.width / 2 - tip.width / 2;
+        const minLeft = margin;
+        const maxLeft = window.innerWidth - tip.width - margin;
+        if (left < minLeft) left = minLeft;
+        if (left > maxLeft) left = maxLeft;
+        const arrowX = (r.left + r.width / 2) - left;
+        floater.style.setProperty('--arrow-x', arrowX + 'px');
+        floater.dataset.side = side;
+        floater.style.left = left + 'px';
+        floater.style.top = top + 'px';
+      }
+      document.addEventListener('mouseover', (e) => {
+        const t = e.target.closest?.('.term[data-tooltip]');
+        if (t && t !== activeTerm) show(t);
+      });
+      document.addEventListener('mouseout', (e) => {
+        if (pinned) return;
+        const fromT = e.target.closest?.('.term[data-tooltip]');
+        const toT = e.relatedTarget?.closest?.('.term[data-tooltip]');
+        if (fromT && fromT !== toT) hide();
+      });
+      document.addEventListener('focusin', (e) => {
+        const t = e.target.closest?.('.term[data-tooltip]');
+        if (t) show(t);
+      });
+      document.addEventListener('focusout', (e) => {
+        if (pinned) return;
+        const t = e.target.closest?.('.term[data-tooltip]');
+        if (t) hide();
+      });
+      document.addEventListener('click', (e) => {
+        const t = e.target.closest?.('.term[data-tooltip]');
+        if (t) {
+          e.stopPropagation();
+          if (pinned && activeTerm === t) { pinned = false; hide(); }
+          else { pinned = true; show(t); }
+          return;
+        }
+        if (pinned) { pinned = false; hide(); }
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && pinned) { pinned = false; hide(); }
+      });
+      let raf = null;
+      function reposition() {
+        if (!activeTerm) return;
+        if (raf) return;
+        raf = requestAnimationFrame(() => { raf = null; position(); });
+      }
+      window.addEventListener('scroll', reposition, true);
+      window.addEventListener('resize', reposition);
+    })();
+
+    const tocLinks = document.querySelectorAll('#toc a[href^="#"]');
+    tocLinks.forEach(a => {
+      a.addEventListener('click', (e) => {
+        const id = a.getAttribute('href').slice(1);
+        const target = document.getElementById(id);
+        if (target) {
+          e.preventDefault();
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          document.getElementById('toc').classList.remove('open');
+        }
+      });
+    });
+
+    if ('IntersectionObserver' in window) {
+      const sections = Array.from(document.querySelectorAll('main section[id]'));
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            tocLinks.forEach(a => a.classList.remove('active'));
+            const link = document.querySelector('#toc a[href="#' + entry.target.id + '"]');
+            link?.classList.add('active');
+          }
+        });
+      }, { rootMargin: '-30% 0px -60% 0px' });
+      sections.forEach(s => observer.observe(s));
+    }
+
+    document.getElementById('toggle-toc')?.addEventListener('click', () => {
+      document.getElementById('sources').classList.remove('open');
+      document.getElementById('toc').classList.toggle('open');
+    });
+    document.getElementById('toggle-sources')?.addEventListener('click', () => {
+      document.getElementById('toc').classList.remove('open');
+      document.getElementById('sources').classList.toggle('open');
+    });
+    document.querySelectorAll('.panel-close').forEach((btn) => {
+      btn.addEventListener('click', () => { btn.closest('#toc, #sources')?.classList.remove('open'); });
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      const zoom  = document.getElementById('zoom-overlay');
+      const modal = document.getElementById('modal-root');
+      if (zoom && !zoom.hidden) return;
+      if (modal && !modal.hidden) return;
+      const open = document.querySelector('#toc.open, #sources.open');
+      if (open) { e.preventDefault(); open.classList.remove('open'); }
+    });
+
+    (function setupZoom() {
+      const overlay  = document.getElementById('zoom-overlay');
+      const stage    = document.getElementById('zoom-stage');
+      const content  = document.getElementById('zoom-content');
+      const captionE = document.getElementById('zoom-caption');
+      const hint     = document.getElementById('zoom-hint');
+      if (!overlay || !stage || !content) return;
+      let scale = 1, tx = 0, ty = 0;
+      let svgW = 0, svgH = 0;
+      let fitScale = 1;
+      let lastZoomTrigger = null;
+      const applyTransform = () => { content.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`; };
+      const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+      function fitToStage() {
+        if (!svgW || !svgH) return;
+        const r = stage.getBoundingClientRect();
+        const margin = 32;
+        fitScale = Math.min((r.width - margin*2) / svgW, (r.height - margin*2) / svgH);
+        scale = fitScale;
+        tx = (r.width  - svgW * scale) / 2;
+        ty = (r.height - svgH * scale) / 2;
+        applyTransform();
+      }
+      function zoomAt(mx, my, factor) {
+        const newScale = clamp(scale * factor, fitScale * 0.5, fitScale * 16);
+        tx = mx - newScale * (mx - tx) / scale;
+        ty = my - newScale * (my - ty) / scale;
+        scale = newScale;
+        applyTransform();
+      }
+      function openZoom(svgEl, captionText) {
+        const clone = svgEl.cloneNode(true);
+        const vb = clone.viewBox?.baseVal;
+        svgW = (vb && vb.width)  || svgEl.getBoundingClientRect().width  || 1200;
+        svgH = (vb && vb.height) || svgEl.getBoundingClientRect().height || 800;
+        clone.setAttribute('width', svgW); clone.setAttribute('height', svgH);
+        clone.style.width = svgW + 'px';   clone.style.height = svgH + 'px';
+        content.innerHTML = ''; content.appendChild(clone);
+        captionE.textContent = captionText || '';
+        lastZoomTrigger = document.activeElement;
+        overlay.hidden = false;
+        document.body.style.overflow = 'hidden';
+        requestAnimationFrame(() => {
+          fitToStage();
+          stage.focus({ preventScroll: true });
+          if (hint) {
+            hint.classList.remove('fade');
+            clearTimeout(hint._t);
+            hint._t = setTimeout(() => hint.classList.add('fade'), 2600);
+          }
+        });
+      }
+      function closeZoom() {
+        overlay.hidden = true; content.innerHTML = '';
+        document.body.style.overflow = '';
+        lastZoomTrigger?.focus?.();
+      }
+      document.querySelectorAll('.figure').forEach((fig) => {
+        const svg = fig.querySelector('svg');
+        if (!svg) return;
+        const cap = fig.querySelector('.figure-caption, figcaption');
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'zoom-btn';
+        btn.innerHTML = '⛶';
+        btn.setAttribute('aria-label', 'Agrandir le schéma en plein écran');
+        btn.title = 'Agrandir';
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openZoom(svg, cap?.textContent?.trim() || '');
+        });
+        fig.appendChild(btn);
+      });
+      overlay.querySelector('.zoom-close')?.addEventListener('click', closeZoom);
+      overlay.querySelector('.zoom-in')?.addEventListener('click',  () => { const r = stage.getBoundingClientRect(); zoomAt(r.width/2, r.height/2, 1.25); });
+      overlay.querySelector('.zoom-out')?.addEventListener('click', () => { const r = stage.getBoundingClientRect(); zoomAt(r.width/2, r.height/2, 1/1.25); });
+      overlay.querySelector('.zoom-reset')?.addEventListener('click', fitToStage);
+      document.addEventListener('keydown', (e) => {
+        if (overlay.hidden) return;
+        if (e.key === 'Escape') { e.preventDefault(); closeZoom(); }
+        else if (e.key === '+' || e.key === '=') { e.preventDefault(); const r = stage.getBoundingClientRect(); zoomAt(r.width/2, r.height/2, 1.25); }
+        else if (e.key === '-' || e.key === '_') { e.preventDefault(); const r = stage.getBoundingClientRect(); zoomAt(r.width/2, r.height/2, 1/1.25); }
+        else if (e.key === '0') { e.preventDefault(); fitToStage(); }
+      });
+      stage.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const r = stage.getBoundingClientRect();
+        const factor = e.deltaY < 0 ? 1.15 : 1/1.15;
+        zoomAt(e.clientX - r.left, e.clientY - r.top, factor);
+      }, { passive: false });
+      let dragging = false, sx = 0, sy = 0, stx = 0, sty = 0;
+      stage.addEventListener('pointerdown', (e) => {
+        if (e.target.closest('.interactive[data-card]')) return;
+        dragging = true; stage.classList.add('grabbing');
+        stage.setPointerCapture?.(e.pointerId);
+        sx = e.clientX; sy = e.clientY; stx = tx; sty = ty;
+      });
+      stage.addEventListener('pointermove', (e) => {
+        if (!dragging) return;
+        tx = stx + (e.clientX - sx); ty = sty + (e.clientY - sy);
+        applyTransform();
+      });
+      const endDrag = (e) => {
+        if (!dragging) return;
+        dragging = false; stage.classList.remove('grabbing');
+        stage.releasePointerCapture?.(e.pointerId);
+      };
+      stage.addEventListener('pointerup', endDrag);
+      stage.addEventListener('pointercancel', endDrag);
+      stage.addEventListener('pointerleave', endDrag);
+      let pinchStartDist = 0, pinchStartScale = 1, pinchMid = { x: 0, y: 0 };
+      stage.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 2) {
+          dragging = false;
+          const t1 = e.touches[0], t2 = e.touches[1];
+          pinchStartDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+          pinchStartScale = scale;
+          const r = stage.getBoundingClientRect();
+          pinchMid = { x: (t1.clientX + t2.clientX)/2 - r.left, y: (t1.clientY + t2.clientY)/2 - r.top };
+        }
+      }, { passive: true });
+      stage.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 2 && pinchStartDist > 0) {
+          e.preventDefault();
+          const t1 = e.touches[0], t2 = e.touches[1];
+          const d = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+          zoomAt(pinchMid.x, pinchMid.y, (d / pinchStartDist) * (pinchStartScale / scale));
+        }
+      }, { passive: false });
+      stage.addEventListener('touchend', (e) => { if (e.touches.length < 2) pinchStartDist = 0; });
+      window.addEventListener('resize', () => { if (!overlay.hidden) fitToStage(); });
+    })();
+
+    (function setupSourcesToggle() {
+      const layout      = document.querySelector('.layout');
+      const collapseBtn = document.getElementById('sources-collapse-btn');
+      const expandBtn   = document.getElementById('sources-expand-btn');
+      if (!layout || !collapseBtn || !expandBtn) return;
+      const STORAGE_KEY = 'idr-sources-collapsed:' + (location.pathname || 'default');
+      function setCollapsed(collapsed) {
+        layout.classList.toggle('sources-collapsed', collapsed);
+        expandBtn.hidden = !collapsed;
+        collapseBtn.setAttribute('aria-expanded', String(!collapsed));
+        expandBtn.setAttribute('aria-expanded', String(!collapsed));
+        try { localStorage.setItem(STORAGE_KEY, collapsed ? '1' : '0'); } catch (_) {}
+      }
+      collapseBtn.addEventListener('click', () => setCollapsed(true));
+      expandBtn.addEventListener('click', () => {
+        setCollapsed(false);
+        requestAnimationFrame(() => collapseBtn.focus({ preventScroll: true }));
+      });
+      try { if (localStorage.getItem(STORAGE_KEY) === '1') setCollapsed(true); } catch (_) {}
+    })();
+
+  </script>
+</body>
+</html>
