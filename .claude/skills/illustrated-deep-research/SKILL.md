@@ -88,6 +88,7 @@ The companion app template (`assets/app-template.html`) is a scaffold. Two failu
 | HTML app architecture (layout, modal system, tooltips, sources sidebar, JS) — and the **mobile-friendliness + panel-close + `<pre>`/`<code>` overflow** patterns required by the host site's `CLAUDE.md` | `references/companion-app.md` |
 | Building the **optional 10-min slideshow companion** (3rd format in the ZIP) | `references/slideshow.md` |
 | Working HTML scaffold to start from | `assets/app-template.html` |
+| Slideshow companion HTML scaffold (10-min scenic alternative) | `assets/slideshow-template.html` |
 | Helper to assemble the app from fragments (avoids 1500-line Edit chains) | `assets/build-app.py` |
 
 ## Avoid token-heavy app rewrites — use `assets/build-app.py`
