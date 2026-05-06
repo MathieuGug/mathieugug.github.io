@@ -144,7 +144,9 @@ Trois forces tirent la marge vers le bas, trois la tirent vers le haut. **À la 
 
 L'**angle mort** est arrivé fin 2024 avec o1 et la série des reasoning models. Ces modèles ne génèrent pas plus vite, ils génèrent **plus** : avant la réponse finale, ils produisent une longue chaîne de pensée invisible qui peut représenter 5 à 50× le nombre de tokens output. Le résultat sur la facture est sans appel : ==des recherches récentes ont mesuré que les reasoning models sont 10 à 74 fois plus chers à exploiter que leurs équivalents non-reasoning sur AIME==[^12].
 
-[SCHEMA-07]
+![Reasoning vs non-reasoning : la facture qui revient sur AIME 2024|1200](images/20260506-07-reasoning-cost.svg)
+
+*Schéma 7 — Deux nuages, deux régimes économiques. Les modèles non-reasoning plafonnent à 15-20 % d'accuracy AIME pour quelques centimes ; les reasoning models atteignent 75-97 % mais multiplient le coût par 10 à 74. La frontière de Pareto se déplace lentement vers le coin supérieur-gauche, mais la pente reste structurellement défavorable au reasoning.*
 
 Trois nuances tempèrent ce constat. Premièrement, l'efficacité des chaînes de pensée s'améliore vite : o3-mini est 63 % moins cher qu'o1-mini à performance comparable[^12]. Deuxièmement, le reasoning n'est rentable que sur les workloads qui en ont besoin — un chatbot conversationnel n'a pas à invoquer un raisonnement à 50 K tokens. Troisièmement, le speculative decoding reste partiellement compatible avec les chaînes de pensée, ce qui ouvre une voie d'optimisation supplémentaire.
 
