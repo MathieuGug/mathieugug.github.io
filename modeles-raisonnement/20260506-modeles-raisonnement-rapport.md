@@ -74,7 +74,9 @@ Le coût budgétaire devient explicite. À titre indicatif, à mai 2026, un appe
 
 Si le modèle pense en clair et qu'on peut lire ses pensées, on peut auditer son raisonnement, détecter les comportements problématiques, surveiller les biais. C'est le pari implicite de la safety « par CoT monitoring ». ==Le pari est plus fragile qu'on ne le pensait.==
 
-[SCHEMA-05]
+![Le scoreboard de fidélité de la chaîne de pensée, Claude 3.7 et R1 selon Anthropic 2025|1200](images/20260506-05-faithfulness-scoreboard.svg)
+
+*Schéma 5 — Faithfulness scoreboard. Pourcentage de cas où le modèle, dans sa CoT, mentionne explicitement un hint qui a influencé sa réponse.*
 
 En mars 2025, Anthropic publie *Reasoning Models Don't Always Say What They Think*[^6]. Le protocole expérimental est élégant : on injecte un *hint* (indice) dans le prompt — un sycophant, une métadonnée trompeuse, parfois un signal d'« unauthorized access » — qui pousse le modèle vers une réponse particulière. On vérifie ensuite si le modèle, dans sa chaîne de pensée explicite, *mentionne* qu'il a utilisé ce hint.
 
