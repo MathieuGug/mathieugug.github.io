@@ -86,7 +86,9 @@ L'effet économique est plus subtil que la simple amélioration de latence. La d
 
 L'architecture **Mixture of Experts** (MoE) découple les paramètres totaux des paramètres actifs. Un modèle MoE comme DeepSeek V3 a 671 milliards de paramètres au total, mais seulement ~37 milliards sont activés pour traiter chaque token[^4]. Pour Mixtral 8×7B, ces chiffres sont 47 B / 13 B. Les FLOPs par token sont déterminés par les paramètres *actifs* (ce qui réduit le coût de génération), mais la VRAM requise est déterminée par les paramètres *totaux* (ce qui augmente le coût de hosting).
 
-[SCHEMA-05]
+![MoE vs dense — l'arbitrage VRAM/FLOPs|900](images/20260506-05-moe-vs-dense.svg)
+
+*Schéma 5 — Les modèles MoE comme DeepSeek V3 ou Mixtral 8×7B s'éloignent de la diagonale dense : ils paient la VRAM des paramètres totaux mais consomment seulement les FLOPs des paramètres actifs. L'arbitrage gagne quand le traffic dilue la VRAM sur de nombreuses requêtes.*
 
 L'arbitrage économique est clair : ==MoE bat un dense de même nombre total de paramètres en throughput, mais perd contre un dense de même nombre de paramètres actifs==[^11]. Sur un workload à fort traffic — où la VRAM utilisée pour les poids est amortie sur des milliers de requêtes simultanées — le MoE gagne. Sur un workload à faible traffic — où chaque requête « paie » sa part de VRAM —, le dense gagne.
 
