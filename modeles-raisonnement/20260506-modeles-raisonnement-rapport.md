@@ -60,7 +60,9 @@ Implication économique : le calcul à l'inférence devient un *cost driver* exp
 
 À quoi ressemble un raisonneur côté API ? Pas à un chatbot. Le modèle émet désormais deux flux distincts : un flux de *thinking tokens*, internes, parfois résumés ou cachés, et un flux de *output tokens*, la réponse finale[^5].
 
-[SCHEMA-04]
+![Anatomie d'un raisonneur en production : flux de tokens, variantes par laboratoire|1200](images/20260506-04-anatomie-raisonneur.svg)
+
+*Schéma 4 — Côté API. Le flux de tokens, les trois variantes par laboratoire, et l'économie unitaire qui en découle.*
 
 Chez Anthropic, le bloc `<thinking>` est explicitement délimité dans la réponse de l'API. Sur Claude 4.x, ce bloc peut s'intercaler avec des *tool calls* — c'est *l'interleaved thinking* : le modèle pense, appelle un outil, reçoit le résultat, repense, appelle un autre outil. La pensée devient un programme outillé, pas un monologue isolé[^5]. Chez OpenAI, depuis o1, le modèle expose un *summary* du raisonnement plutôt que la chaîne brute — décision de produit liée à la concurrence (rendre la distillation plus difficile) et à la safety (cacher des chaînes potentiellement instables). Chez Google, Gemini 2.5 Deep Think introduit le *parallel thinking* : plusieurs branches explorées simultanément avant agrégation[^4].
 
