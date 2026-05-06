@@ -2,7 +2,7 @@
 _Mis à jour par la routine `Illustrated deep research · mer + ven`._
 
 ## En cours / prio haute
-- [ ] modeles-raisonnement
+- [ ] (vide)
 
 ## Deep dives candidats sur dossiers existants
 - harness-agentique : zoom sur le scheduler et la file d'attente d'outils
@@ -11,8 +11,9 @@ _Mis à jour par la routine `Illustrated deep research · mer + ven`._
 - evaluation-agentique : benchmarks agentiques contestés (SWE-bench, GAIA)
 
 ## Sujets evergreen — backlog
-- Modèles de raisonnement (o-séries, R1, Gemini Thinking) — l'inférence comme programme
 - MCP et la plateformisation de l'outil-LLM
+- Process Reward Models et verifier-as-a-service — le marché des « notateurs »
+- AlphaProof / Lean / formal math — la branche démonstrations formelles du raisonnement
 - Synthetic data et model collapse — Shumailov et al.
 - Souveraineté des semi-conducteurs (TSMC, ASML, Nvidia, AMD MI400)
 - Energy footprint des LLMs en 2026 — data centers et grids
@@ -28,6 +29,7 @@ _Mis à jour par la routine `Illustrated deep research · mer + ven`._
 - Procès Musk v. Altman — verdict mi-mai 2026
 
 ## Déjà couverts (date · slug · angle)
+- 2026-05-06 · modeles-raisonnement · pivot o1, RLVR, second axe scaling, anatomie raisonneur, faithfulness, diffusion
 - 2026-05-06 · economie-inference · LLMflation, pile logicielle, désagrégation, MoE, mix matériel, marges
 - 2026-04-21 · gouvernance-agentic · scrolly AI Act
 - 2026-04-27 · proces-musk-altman · veille jour-J
