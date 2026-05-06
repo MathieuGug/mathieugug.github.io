@@ -91,13 +91,10 @@ Pattern de référence : `proces-musk-altman/20260427-proces-musk-altman-app.htm
 
 ## Versionnement de la skill `illustrated-deep-research`
 
-Exception : `.claude/skills/illustrated-deep-research/` **est versionnée** (force-add, malgré le `.gitignore`) parce qu'elle est partagée via le repo. Les modifications de la skill (`SKILL.md`, `references/*.md`, `assets/*`) :
+`.claude/skills/illustrated-deep-research/` **est versionnée** (force-add, malgré le `.gitignore`) parce qu'elle est partagée via le repo. Les modifications de la skill (`SKILL.md`, `references/*.md`, `assets/*`) :
 
-- Doivent **toujours passer par une branche dédiée** (par exemple `claude/skill-<sujet>`), **jamais sur la branche d'un artefact en cours** (un dossier `.../*-app.html`, un journal, etc.). Ça évite que la skill soit livrée par mégarde lors du merge de l'artefact.
 - Doivent être commitées avec `git add -f .claude/skills/illustrated-deep-research/<file>` (le `-f` est nécessaire à cause du `.gitignore` parent).
-- Sont mergeables sur `main` indépendamment du contenu publié — la skill ne sert qu'aux Claudes qui clonent le repo, elle n'est ni indexée ni rendue par GitHub Pages.
-
-Si une modif skill arrive en même temps qu'un travail sur un artefact, créer **deux branches distinctes** et **deux PR distinctes** plutôt que de mélanger.
+- **Peuvent vivre sur la même branche qu'un artefact en cours** ou être commitées directement sur `main` au fil de l'eau. La skill ne sert qu'aux Claudes qui clonent le repo, elle n'est ni indexée ni rendue par GitHub Pages — donc aucun risque de "publication par mégarde". Plus besoin de branche skill dédiée ni de double PR : mieux vaut un commit clair qui bundle l'évolution de la skill avec son cas d'usage qu'un aller-retour entre deux PR.
 
 ## Création de PR
 
