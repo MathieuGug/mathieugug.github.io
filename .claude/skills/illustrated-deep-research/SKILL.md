@@ -42,7 +42,8 @@ The companion app ships with three baseline interactive features and two power-u
 5. **Generate each SVG** in editorial style following `references/svg-editorial-style.md`. For each schema, also draft the modal content for every interactive region.
 6. **Build the HTML companion app** following `references/companion-app.md` and `assets/app-template.html`. Inline all SVGs, all modal content, all tooltip definitions, all sources.
 7. **(Optional) Build the slideshow companion** — if requested or warranted, build a 10-12 scene narrative slideshow following `references/slideshow.md`. **Read the "Quick start" section at the top of that file FIRST** — it lists 10 non-obvious adaptations (transparent SVG background, header wrapped in `<g class="svg-header">`, viewBox cropped to `y=155` per-SVG, title in topbar not stage, modal as right sidebar not centered, timeline vertical not bottom, `SCHEMAS` 2-level object, dynamic zoom refactor, editorial titles for punchlines, 3ʳᵈ hub card) that the user should not have to ask for. The slideshow reuses the same SVGs and `SCHEMAS` / `SOURCES` content as the long-form app — no new authoring.
-8. **Package** the ZIP, move to `/mnt/user-data/outputs/`, and present with `present_files`.
+8. **(Optional) Add quiz widgets** — if the article has clear *zones de confusion classique* where a survol-reader would walk away with a wrong intuition, identify 3-4 of those charnières conceptuelles and author a `.quiz-card` per charnière in the long-form app. Pattern (CSS, IIFE, HTML scaffold) ships in `assets/app-template.html`; authoring rules and HTML template in `references/companion-app.md` § "Widgets quiz de compréhension". Skip this step if the article doesn't have such charnières — quiz widgets are not a default.
+9. **Package** the ZIP, move to `/mnt/user-data/outputs/`, and present with `present_files`.
 
 For the detailed step-by-step (research strategy, source quality bar, drafting standards), read `references/workflow.md`.
 
@@ -187,6 +188,20 @@ Before zipping, verify:
 - [ ] **`← Retour aux dossiers` back link** in `<header class="site">` (first child, before `.marker`), pointing to `../index.html#series`.
 - [ ] **Schema modal dispatcher** still works after the mobile changes — clicking any `.interactive[data-card]` region opens its modal with title + body (and optional eyebrow); tapping outside or pressing Esc closes the modal first, then the panel underneath.
 - [ ] **State-aware figure breakout on desktop** — under `@media (min-width: 1025px)`, `.figure` adapts to the sources panel state: **expanded** = fills the main grid cell only (`width: min(calc(100vw - 560px), 880px)`); **`.layout.sources-collapsed`** = extends to viewport-right (`width: calc(100vw - max(0px, (100vw - 1440px) / 2) - 240px)`). Mirrored negative `margin-left/right` align the figure's edges with the visible boundaries. Smooth 280 ms transition. `.figure-caption` re-anchored to 760 px centered max-width. Mobile keeps the figure inside its single column. See `references/companion-app.md` § 5 for the math.
+
+### If quiz widgets are included
+
+- [ ] **3 to 4 quiz cards maximum**, never one per section. Each placed at a *charnière conceptuelle* where a survol-reader risks a wrong intuition (counter-intuitive distinction, often-misread statistic, scenario the default human read simplifies).
+- [ ] Card structure verbatim per `references/companion-app.md` template: `<aside class="quiz-card">` with `data-quiz-id`, `data-anchor`, `role="region"`, `aria-labelledby`; `.quiz-card__head` with eyebrow + `<h3 class="quiz-card__title">` + `.quiz-card__toggle[aria-expanded="false"]`; `.quiz-card__body[hidden]` with `<article class="quiz-q" data-mode="single|multi">`.
+- [ ] **`data-correct` is on `.quiz-q__explain`, not on the option `<li>`** — forces every option to ship a real explanation paragraph, not a hidden attribute.
+- [ ] **Single-mode** (`data-mode="single"`): all radios share the same `name`. **Multi-mode** (`data-mode="multi"`): each checkbox has a distinct `name`.
+- [ ] **Mix single and multi within one article** — single for tranchant questions, multi for nuanced "lesquelles sont vraies parmi celles-ci" questions.
+- [ ] Each option ships a real `<p class="quiz-q__explain" data-correct="true|false" hidden>` paragraph. **One** anchor link `<a href="#ANCHOR">↗ relire §N</a>` in the most representative correct explanation, not duplicated.
+- [ ] **No score, no localStorage, no TOC indicator, no auto-trigger on scroll, no modal** — quiz is an inline expand widget only.
+- [ ] Footer present: `.quiz-q__check` "Valider", `.quiz-q__verdict[role="status" aria-live="polite" hidden]`, `.quiz-q__retry hidden` "Recommencer".
+- [ ] **Stabilo de validation tile par ligne** — CSS uses `background-image: linear-gradient(...)` + `background-size: 100% 1.5em` + `background-repeat: repeat-y` (NOT the `background:` shorthand which paints only one band on the whole span). Without this, multi-line options highlight only the last line.
+- [ ] Toggle button label flips between `Tester →` (closed) and `Replier ↑` (open).
+- [ ] Pattern reference for content rules: `references/companion-app.md` → "Widgets quiz de compréhension".
 
 ### If the optional slideshow companion is included
 

@@ -599,6 +599,88 @@ For each SVG in `images/`:
 
 ---
 
+## Widgets quiz de compréhension (optionnels)
+
+Les apps deep-research peuvent embarquer des micro-quiz « vérifier sa compréhension » placés à des charnières conceptuelles. Le pattern (CSS + IIFE `setupQuizzes()`) est embarqué par défaut dans `assets/app-template.html` et ne fait rien tant qu'aucune carte `.quiz-card` n'est ajoutée au DOM. **C'est une option d'authoring, pas un défaut.**
+
+### Quand en mettre, et combien
+
+- **3 à 4 quiz maximum par article**, jamais systématique. Placés où le lecteur peut sortir avec une **fausse intuition** s'il a survolé.
+- Une charnière typique : après une distinction conceptuelle contre-intuitive (e.g. exposition vs déplacement, automation vs augmentation), après une statistique souvent mal interprétée, après un scénario que le défaut humain est de simplifier.
+- 1 ou 2 questions par carte, jamais plus.
+- **Ne pas mettre** : un quiz récap final (transforme le widget en exam et casse le ton calme), un quiz par section (ritualise le geste, perd sa valeur).
+
+### Modalité visuelle
+
+- **Inline expand replié par défaut** : carte sobre `~64 px` insérée en fin de section, dépliable au clic. Pas d'auto-trigger sur scroll, pas de modal bloquant, pas de pastille marginale.
+- Marqueur visuel : `border-left: 3px solid var(--carmine)`, fond `var(--paper-2)`, eyebrow mono uppercase `// vérifier sa compréhension`, titre court sérif.
+- Pas d'emoji, pas de mascotte, pas de score, pas de barre de progression. Le widget est un outil de relecture, pas un jeu.
+
+### Authoring : HTML inline avec `data-*`
+
+Chaque carte est rédigée à la main dans le `{{REPORT_HTML}}`, juste avant le `<h2>` de la section suivante. Le contenu (stem, options, explications) vit dans le DOM aux côtés de la prose qu'il teste, pas dans une structure de données séparée — l'auteur édite les deux dans la foulée.
+
+```html
+<aside class="quiz-card" data-quiz-id="q-NAME" data-anchor="ANCHOR" role="region" aria-labelledby="quiz-title-NAME">
+  <header class="quiz-card__head">
+    <span class="quiz-card__eyebrow">// vérifier sa compréhension</span>
+    <h3 class="quiz-card__title" id="quiz-title-NAME">Titre court</h3>
+    <button class="quiz-card__toggle" type="button" aria-expanded="false" aria-controls="quiz-body-NAME">Tester →</button>
+  </header>
+  <div class="quiz-card__body" id="quiz-body-NAME" hidden>
+    <article class="quiz-q" data-mode="multi"><!-- ou data-mode="single" -->
+      <fieldset>
+        <legend class="quiz-q__stem">Stem de la question. (Plusieurs réponses possibles.)</legend>
+        <ul class="quiz-q__options">
+          <li>
+            <label>
+              <input type="checkbox" name="q-NAME-1"><!-- type="radio" si single -->
+              <span>Texte de l'option.</span>
+            </label>
+            <p class="quiz-q__explain" data-correct="true" hidden>Vrai. Phrase d'explication courte qui dit <em>pourquoi</em>. <a href="#ANCHOR">↗ relire §N</a></p>
+          </li>
+          <!-- … autres options. Pour chaque option, écrire une vraie phrase d'explication, même fausse — c'est ce qui donne sa valeur pédagogique au widget. -->
+        </ul>
+      </fieldset>
+      <button class="quiz-q__check" type="button">Valider</button>
+      <div class="quiz-q__verdict" role="status" aria-live="polite" hidden></div>
+      <button class="quiz-q__retry" type="button" hidden>Recommencer</button>
+    </article>
+  </div>
+</aside>
+```
+
+Règles :
+
+- **`data-mode="single"`** : `<input type="radio">`, tous avec le **même `name`** pour faire un radio-group (mutual exclusion). 1 seule option avec `data-correct="true"`.
+- **`data-mode="multi"`** : `<input type="checkbox">`, chaque input avec un `name` distinct. Plusieurs options peuvent être `data-correct="true"`. La logique de validation exige que l'utilisateur coche **exactement** les bonnes (ni plus, ni moins).
+- **`data-correct` est porté par la phrase d'explication, pas par l'option** : ça force l'auteur à toujours écrire une explication réelle, et le DOM reste sémantiquement propre.
+- **Lien d'ancre** : un seul `<a href="#ANCHOR">↗ relire §N</a>` dans la première explication correcte (ou la plus représentative). Évite la redondance.
+- **Pas de score, pas de localStorage, pas d'indicateur dans le TOC.** Le `Recommencer` permet de retenter, c'est tout.
+
+### Mode mixte single / multi
+
+Choisir le mode **par question**, selon la nuance du sujet :
+
+- **`single`** : la bonne réponse est unique et tranchée, les distracteurs sont des contresens classiques (ex. « lequel scénario est par défaut ? » → un seul, B).
+- **`multi`** : plusieurs affirmations partiellement vraies coexistent, et la pédagogie consiste à séparer le grain de l'ivraie (ex. « lesquelles de ces affirmations sont correctes ? »).
+
+Le mix par article est encouragé. Réduire à du tout-radio appauvrit la nuance ; tout-multi alourdit la lecture.
+
+### Accessibilité
+
+- `<fieldset>` + `<legend class="quiz-q__stem">` pour grouper question + options sous le lecteur d'écran.
+- `<input type="radio|checkbox">` natifs (jamais de `<div role="radio">` custom) : navigation Tab/Espace/Entrée fonctionne par défaut.
+- `aria-expanded` + `aria-controls` sur `.quiz-card__toggle`.
+- `role="status" aria-live="polite"` sur `.quiz-q__verdict` pour annoncer le résultat sans interrompre.
+- À l'ouverture, focus déplacé sur le premier `<input>` ; à la validation, focus sur `Recommencer`.
+
+### Stabilo de validation : tile par ligne
+
+Le surlignage des options correctes/fausses utilise le pattern stabilo signature du site (gradient `transparent 60%, color 60%`) **mais avec `background-size: 100% 1.5em` et `background-repeat: repeat-y`**, pour que la bande colorée se répète sous **chaque ligne** de texte d'une option multi-ligne. Sans ça, le gradient ne tache que la dernière ligne du span. Cf. `app-template.html` règles `.quiz-q__options li.is-correct > label > span` etc.
+
+---
+
 ## Performance & defensiveness
 
 - Total HTML file should stay under ~3 MB; if SVGs push it past, consider lossless SVGO-style minification (remove comments, collapse whitespace, but preserve `data-*` and class attributes)
