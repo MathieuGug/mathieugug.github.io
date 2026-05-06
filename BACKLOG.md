@@ -2,7 +2,7 @@
 _Mis à jour par la routine `Illustrated deep research · mer + ven`._
 
 ## En cours / prio haute
-- [ ] economie-inference (en rédaction · 2026-05-06)
+- [ ] (vide)
 
 ## Deep dives candidats sur dossiers existants
 - harness-agentique : zoom sur le scheduler et la file d'attente d'outils
@@ -28,6 +28,7 @@ _Mis à jour par la routine `Illustrated deep research · mer + ven`._
 - Procès Musk v. Altman — verdict mi-mai 2026
 
 ## Déjà couverts (date · slug · angle)
+- 2026-05-06 · economie-inference · LLMflation, pile logicielle, désagrégation, MoE, mix matériel, marges
 - 2026-04-21 · gouvernance-agentic · scrolly AI Act
 - 2026-04-27 · proces-musk-altman · veille jour-J
 - 2026-04-28 · llm-jailbreaking · asymétrie attaque/défense
