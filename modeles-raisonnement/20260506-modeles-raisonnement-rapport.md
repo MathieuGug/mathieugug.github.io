@@ -41,7 +41,9 @@ Mais une question fondamentale divise la communauté depuis 2025 : le RL crée-t
 
 Si le RL crée des raisonneurs, ce que ces raisonneurs font à l'inférence change la nature même du scaling. Pendant dix ans, la loi d'échelle de référence était simple : plus de paramètres, plus de données de pretraining, plus de FLOPs d'entraînement = meilleur modèle. Charlie Snell et collègues, à l'été 2024, publient un papier qui ouvre un second axe : *test-time compute*[^3].
 
-[SCHEMA-03]
+![Le diptyque scaling : pretraining FLOPs versus test-time tokens|1200](images/20260506-03-diptyque-scaling.svg)
+
+*Schéma 3 — Deux axes de scaling. Le pretraining sature ; le calcul à l'inférence ouvre un second levier — et les quatre stratégies pour l'utiliser.*
 
 Le résultat principal est saisissant. ==En allouant le calcul d'inférence de manière compute-optimale — c'est-à-dire en adaptant la stratégie au niveau de difficulté du problème — un petit modèle peut surclasser un modèle 14 fois plus gros à FLOPs équivalents, sur des problèmes de raisonnement.== Quatre stratégies principales émergent :
 
