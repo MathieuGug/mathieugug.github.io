@@ -48,7 +48,9 @@ Le **batching** complète l'optimisation. Le batching *statique* attend qu'une f
 
 Les gains de l'inférence ne viennent pas d'une seule innovation. Ils viennent de l'**empilement** de sept couches logicielles, chacune apportant 1,3× à 4× sur la précédente. Sur un B300, une version naïve produit environ 1 000 tokens/seconde par GPU ; une version pleinement optimisée atteint 14 000 — **un facteur 14 sur le même silicium**[^9].
 
-[SCHEMA-03]
+![Pile d'optimisation logicielle : sept couches, ×14 sur le même silicium|1200](images/20260506-03-pile-optimisation.svg)
+
+*Schéma 3 — Sept couches d'optimisation (kernel fusion, FlashAttention-3, PagedAttention, batching continu, FP8, FP4, speculative decoding, prefix caching) multiplient le throughput par 14 sur un B300, sans changer une ligne de hardware.*
 
 De bas en haut, les couches s'empilent comme suit :
 
