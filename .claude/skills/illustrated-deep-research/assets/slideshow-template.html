@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="{{LANG}}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#faf6ec">
+<title>{{TITLE}} — slideshow</title>
+<meta name="description" content="{{META_DESCRIPTION}}">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #faf6ec;
+  --bg-2: #f3eedf;
+  --paper: #ffffff;
+  --line: rgba(30,30,44,0.08);
+  --line-strong: rgba(30,30,44,0.20);
+  --text: #1e1e2a;
+  --text-dim: #3b3f4d;
+  --text-mid: #6b6f7c;
+  --text-faint: #9a9ca5;
+  --accent: #b8582e;
+  --carmine: #b23b1b;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; font-weight: 300; line-height: 1.55; -webkit-font-smoothing: antialiased; height: 100vh; overflow: hidden; max-width: 100vw; }
+body { background:
+  radial-gradient(ellipse at 14% 8%, rgba(184,88,46,0.06) 0%, transparent 55%),
+  radial-gradient(ellipse at 86% 92%, rgba(75,148,102,0.04) 0%, transparent 55%),
+  var(--bg);
+}
+a { color: inherit; }
+
+/* Topbar */
+.topbar { position: fixed; top: 0; left: 0; right: 0; z-index: 50; padding: 12px 28px; height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 24px; background: rgba(250,246,236,0.78); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid transparent; transition: opacity 0.25s, border-color 0.3s; }
+.topbar > a { font-family: 'Fraunces', serif; font-weight: 500; font-size: 15.5px; letter-spacing: -0.01em; text-decoration: none; color: var(--text); flex-shrink: 0; }
+.topbar em { font-style: italic; color: var(--accent); }
+.topbar .back { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-mid); }
+.topbar .back:hover { color: var(--accent); }
+.scene-title-bar { flex: 1; min-width: 0; display: flex; align-items: baseline; justify-content: center; gap: 14px; font-family: 'Fraunces', serif; font-weight: 400; font-size: clamp(20px, 2.6vw, 32px); letter-spacing: -0.01em; color: var(--text); text-align: center; opacity: 1; transition: opacity 220ms ease; overflow: hidden; }
+.scene-title-bar.fade { opacity: 0; }
+.scene-title-bar .num { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; letter-spacing: 0.24em; color: var(--text-faint); flex-shrink: 0; }
+.scene-title-bar .title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.scene-title-bar:empty { display: none; }
+
+/* Surlignage stabilo — signature site */
+mark { background: linear-gradient(transparent 58%, rgba(178, 59, 27, 0.14) 58%); color: inherit; padding: 0 2px; }
+
+/* Stage : zone scène plein écran (libère l'espace à droite pour la sidebar timeline) */
+.stage { position: fixed; top: 64px; left: 0; right: 64px; bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px 24px 24px; transition: opacity 250ms ease, right 280ms cubic-bezier(0.22, 1, 0.36, 1); }
+body.modal-open .stage { right: 480px; }
+@media (max-width: 1024px) {
+  body.modal-open .stage { right: 0; }
+}
+.stage.fading-out { opacity: 0; }
+
+/* Mobile */
+@media (max-width: 768px) {
+  .topbar { height: 56px; padding: 10px 16px; gap: 12px; }
+  .scene-title-bar { font-size: clamp(13px, 3vw, 18px); }
+  .scene-title-bar .num { font-size: 9px; letter-spacing: 0.18em; }
+  .stage { top: 56px; }
+}
+@media (max-width: 560px) {
+  .topbar { padding: 10px 14px; gap: 8px; }
+  .topbar > a { font-size: 13px; }
+  .topbar .back { font-size: 9px; letter-spacing: 0.16em; }
+  .scene-title-bar .num { display: none; }
+  .stage { padding: 16px 16px 80px; }
+}
+@media (max-width: 480px) {
+  .scene-title-bar { display: none; }
+}
+@media (max-width: 380px) {
+  .topbar > a:first-child em { display: none; }
+}
+
+.scene-punchline { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; max-width: 1000px; padding: 0 24px; gap: 32px; }
+.scene-punchline .body { font-family: 'Fraunces', serif; font-style: italic; font-weight: 300; font-size: clamp(32px, 5.5vw, 64px); line-height: 1.18; letter-spacing: -0.015em; color: var(--text); }
+.scene-punchline .body mark { background: linear-gradient(transparent 58%, rgba(178, 59, 27, 0.18) 58%); padding: 0 4px; }
+.scene-punchline .attribution { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-faint); }
+
+@media (max-width: 560px) {
+  .scene-punchline .body { font-size: clamp(22px, 7vw, 32px); line-height: 1.25; }
+}
+
+.scene-outro { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; max-width: 700px; gap: 36px; padding: 0 24px; }
+.scene-outro .eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--accent); }
+.scene-outro h2 { font-family: 'Fraunces', serif; font-weight: 300; font-size: clamp(36px, 5vw, 56px); line-height: 1.1; letter-spacing: -0.02em; }
+.scene-outro h2 em { font-style: italic; color: var(--accent); }
+.scene-outro .body { font-family: 'Fraunces', serif; font-style: italic; font-size: clamp(17px, 2.2vw, 22px); line-height: 1.5; color: var(--text-dim); max-width: 560px; }
+.scene-outro .ctas { display: flex; flex-direction: column; gap: 14px; align-items: stretch; min-width: 320px; }
+.scene-outro .cta-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 16px 28px; background: var(--accent); color: white; text-decoration: none; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; border-radius: 4px; transition: background 0.2s; }
+.scene-outro .cta-primary:hover { background: var(--carmine); }
+.scene-outro .cta-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 24px; background: transparent; color: var(--text); text-decoration: none; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase; border: 1px solid var(--line-strong); border-radius: 4px; transition: border-color 0.2s, color 0.2s; }
+.scene-outro .cta-secondary:hover { border-color: var(--accent); color: var(--accent); }
+.scene-outro .restart { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-faint); cursor: pointer; background: none; border: none; padding: 8px; }
+.scene-outro .restart:hover { color: var(--accent); }
+.scene-outro .disclosure { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-faint); margin-top: 24px; }
+
+#schemas { display: none; }
+#schemas[hidden] { display: none !important; }
+.schema-host { display: flex; flex-direction: column; align-items: center; justify-content: center; max-width: min(1400px, 92vw); width: 100%; gap: 12px; }
+.schema-host svg { width: 100%; max-width: 100%; height: auto; max-height: calc(100vh - 170px); display: block; }
+.schema-host .caption { font-family: 'Fraunces', serif; font-style: italic; font-weight: 300; font-size: clamp(16px, 1.8vw, 20px); line-height: 1.5; color: var(--text-dim); text-align: center; max-width: 720px; min-height: 2.4em; transition: opacity 180ms ease; }
+.schema-host .caption.fade-out { opacity: 0; }
+
+/* Vocabulaire visuel des révélations */
+.schema-host svg [data-step-state="dim"] { opacity: 0.18; transition: opacity 220ms ease, filter 220ms ease; }
+.schema-host svg [data-step-state="active"] { opacity: 1; transition: opacity 220ms ease, filter 220ms ease; }
+.schema-host svg [data-step-state="hidden"] { opacity: 0; pointer-events: none; transition: opacity 220ms ease; }
+
+/* Masquer l'en-tête interne du SVG (eyebrow + titre + lede) — le slideshow a son propre titre externe */
+.schema-host svg .svg-header { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .stage { transition: opacity 0ms ease, right 0ms ease !important; }
+  .schema-host svg [data-step-state] { transition: none !important; }
+  .schema-host .caption { transition: none !important; }
+  .scene-outro .cta-primary, .scene-outro .cta-secondary { transition: none !important; }
+  #modal-root { transition: transform 0ms ease !important; }
+  .toaster { transition: none !important; }
+}
+
+/* ── Zoom overlay ── */
+#zoom-overlay[hidden] { display: none !important; }
+#zoom-overlay {
+  position: fixed; inset: 0; z-index: 400;
+  display: flex; flex-direction: column;
+  background: rgba(26, 26, 26, 0.94);
+  backdrop-filter: blur(3px);
+}
+#zoom-header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; padding: 12px 20px;
+  color: #faf6ec;
+  font-family: 'Inter', system-ui, sans-serif; font-size: 0.85rem;
+  border-bottom: 1px solid rgba(250, 248, 243, 0.12);
+}
+#zoom-caption {
+  flex: 1; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  opacity: 0.85;
+}
+.zoom-controls { display: flex; gap: 4px; flex-shrink: 0; }
+.zoom-controls button {
+  background: transparent;
+  border: 1px solid rgba(250, 248, 243, 0.32);
+  color: #faf6ec; padding: 6px 12px;
+  min-width: 36px; cursor: pointer;
+  font: inherit; font-size: 0.85rem; border-radius: 3px;
+  transition: background 120ms, border-color 120ms;
+}
+.zoom-controls button:hover { background: rgba(250, 248, 243, 0.12); border-color: rgba(250, 248, 243, 0.6); }
+.zoom-controls button:focus-visible { outline: 2px solid #faf6ec; outline-offset: 2px; }
+.zoom-controls .zoom-close { font-size: 1.3rem; line-height: 1; padding: 2px 10px; }
+#zoom-stage { flex: 1; overflow: hidden; position: relative; cursor: grab; touch-action: none; }
+#zoom-stage.grabbing { cursor: grabbing; }
+#zoom-content { position: absolute; top: 0; left: 0; transform-origin: 0 0; will-change: transform; }
+#zoom-content > svg {
+  display: block; max-width: none; max-height: none;
+  background: var(--bg); box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+}
+#zoom-hint {
+  position: absolute; bottom: 16px; left: 50%;
+  transform: translateX(-50%);
+  color: rgba(250, 248, 243, 0.55);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.75rem; pointer-events: none;
+  transition: opacity 400ms;
+}
+#zoom-hint.fade { opacity: 0; }
+@media (max-width: 640px) {
+  .zoom-controls .zoom-reset { display: none; }
+  #zoom-caption { font-size: 0.78rem; }
+}
+
+/* Bouton zoom sur les schémas */
+.schema-wrapper { position: relative; }
+.zoom-btn {
+  position: absolute; top: 10px; left: 10px;
+  background: rgba(250,246,236,0.85); border: 1px solid rgba(30,30,44,0.18);
+  color: var(--text-dim); font-size: 1.15rem; line-height: 1;
+  width: 36px; height: 36px; border-radius: 4px;
+  cursor: pointer; opacity: 0;
+  transition: opacity 150ms, background 120ms, border-color 120ms, color 120ms;
+  z-index: 2;
+}
+.schema-wrapper:hover .zoom-btn, .schema-wrapper:focus-within .zoom-btn, .zoom-btn:focus-visible { opacity: 1; }
+.zoom-btn:hover { background: var(--bg-2); border-color: var(--text); color: var(--text); }
+@media (hover: none) { .zoom-btn { opacity: 0.85; } }
+
+/* ── Modal en sidebar toggable à droite (préserve la vue du SVG) ── */
+#modal-root[hidden] { display: none !important; }
+#modal-root {
+  position: fixed; right: 64px; top: 64px; bottom: 0;
+  width: 400px;
+  z-index: 200;
+  pointer-events: none;
+  transform: translateX(calc(100% + 64px));
+  transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+#modal-root:not([hidden]) {
+  transform: translateX(0);
+  pointer-events: auto;
+}
+.modal-backdrop { display: none; }
+.modal-card {
+  position: relative;
+  background: var(--paper);
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  padding: 36px 32px 32px;
+  border-left: 4px solid var(--carmine);
+  box-shadow: -16px 0 48px rgba(30,25,18,0.08);
+}
+@media (max-width: 1024px) {
+  #modal-root { right: 0; top: 0; bottom: 0; width: 100%; transform: translateY(100%); transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1); display: flex; align-items: flex-end; justify-content: center; }
+  #modal-root:not([hidden]) { transform: translateY(0); }
+  .modal-card { width: 100%; max-width: 100%; height: 90vh; max-height: 90vh; border-left: none; border-top: 4px solid var(--carmine); border-radius: 12px 12px 0 0; box-shadow: 0 -16px 48px rgba(30,25,18,0.2); }
+}
+.modal-close {
+  position: absolute; top: 12px; right: 12px;
+  background: none; border: none;
+  font-size: 1.6rem; line-height: 1; cursor: pointer;
+  color: var(--text-mid);
+  width: 32px; height: 32px; border-radius: 4px;
+}
+.modal-close:hover { background: var(--bg-2); color: var(--text); }
+.modal-card h3 {
+  font-family: 'Fraunces', serif; font-weight: 600;
+  font-size: 1.4rem; margin: 0 0 6px; letter-spacing: -0.01em;
+}
+.modal-card .modal-eyebrow {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.72rem;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--carmine); margin: 0 0 14px;
+}
+.modal-card .modal-body p { margin: 0 0 0.9rem; font-size: 0.95rem; }
+.modal-card .modal-body p:last-child { margin-bottom: 0; }
+.modal-card .modal-body figure.ref {
+  margin: 0.6rem 0 1.1rem;
+}
+.modal-card .modal-body figure.ref img {
+  display: block; width: 100%; height: auto;
+  border-radius: 3px;
+  border: 1px solid rgba(26,26,26,0.08);
+  box-shadow: 0 8px 22px rgba(0,0,0,0.12);
+  background: var(--bg-2);
+}
+.modal-card .modal-body figure.ref figcaption {
+  margin-top: 8px;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; line-height: 1.5;
+  letter-spacing: 0.02em; color: var(--text-mid);
+}
+.modal-card .modal-body figure.ref figcaption em { font-style: italic; color: var(--text); }
+.modal-card .modal-body figure.ref figcaption a { color: var(--accent); text-decoration: none; }
+.modal-card .modal-body figure.ref figcaption a:hover { text-decoration: underline; }
+
+/* Timeline en sidebar verticale à droite + boutons */
+.footer-bar { position: fixed; right: 18px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; gap: 24px; z-index: 40; pointer-events: none; }
+.timeline { display: flex; flex-direction: column; gap: 4px; align-items: center; pointer-events: auto; }
+.timeline .seg { width: 4px; height: 36px; background: var(--text-faint); opacity: 0.4; cursor: pointer; position: relative; transition: opacity 0.2s, background 0.2s; }
+.timeline .seg.visited { background: var(--accent); opacity: 0.5; }
+.timeline .seg.current { background: var(--accent); opacity: 1; }
+.timeline .seg .fill { position: absolute; left: 0; right: 0; top: 0; height: 0%; background: var(--accent); transition: height 220ms ease; }
+.timeline .seg:hover { opacity: 1; }
+.timeline .seg .label { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); white-space: nowrap; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-mid); background: var(--bg); padding: 4px 8px; border-radius: 3px; opacity: 0; pointer-events: none; transition: opacity 0.15s; box-shadow: 0 1px 3px rgba(30,30,44,0.08); }
+.timeline .seg:hover .label { opacity: 1; }
+.timeline .seg.punchline { width: 8px; height: 8px; border-radius: 50%; background: var(--text-faint); }
+.timeline .seg.punchline.visited { background: var(--accent); opacity: 0.7; }
+.timeline .seg.punchline.current { background: var(--accent); opacity: 1; transform: scale(1.3); }
+.timeline .seg.outro::after { content: '▸'; position: absolute; left: -7px; bottom: -2px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-faint); }
+.timeline .seg.outro.visited::after, .timeline .seg.outro.current::after { color: var(--accent); }
+.footer-actions { display: flex; flex-direction: column; gap: 10px; align-items: center; pointer-events: auto; writing-mode: vertical-rl; }
+.footer-actions .footer-btn { writing-mode: vertical-rl; transform: rotate(180deg); }
+.footer-btn { background: none; border: none; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-mid); cursor: pointer; padding: 6px 4px; transition: color 0.2s; }
+.footer-btn:hover { color: var(--accent); }
+
+@media (max-width: 1024px) {
+  .stage { right: 0; bottom: 64px; padding: 16px 16px 16px; }
+  .schema-host svg { max-height: calc(100vh - 280px); }
+  .footer-bar { right: 0; left: 0; top: auto; bottom: 16px; transform: none; flex-direction: row; justify-content: center; gap: 20px; padding: 0 16px; }
+  .timeline { flex-direction: row; }
+  .timeline .seg { width: 28px; height: 4px; }
+  .timeline .seg .fill { left: 0; right: auto; top: 0; bottom: 0; height: 100%; width: 0%; transition: width 220ms ease; }
+  .timeline .seg .label { right: auto; bottom: 14px; left: 50%; top: auto; transform: translateX(-50%); display: none; }
+  .timeline .seg.outro::after { left: auto; right: -2px; top: -7px; bottom: auto; }
+  .footer-actions { flex-direction: row; writing-mode: horizontal-tb; }
+  .footer-actions .footer-btn { writing-mode: horizontal-tb; transform: none; }
+  .footer-btn { font-size: 8px; }
+  .zoom-btn { opacity: 0.85; }
+  .scene-outro .ctas { min-width: 0; width: 100%; }
+}
+
+/* Overlays sommaire / sources */
+.full-overlay { position: fixed; inset: 0; background: rgba(250,246,236,0.96); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 300; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 80px 32px 80px; overflow-y: auto; }
+.full-overlay[hidden] { display: none !important; }
+.overlay-close { position: fixed; top: 24px; right: 32px; background: none; border: 1px solid var(--line-strong); padding: 10px 16px; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text); cursor: pointer; border-radius: 3px; transition: border-color 0.2s, color 0.2s; z-index: 310; }
+.overlay-close:hover { border-color: var(--accent); color: var(--accent); }
+.toc-list { list-style: none; max-width: 720px; width: 100%; display: flex; flex-direction: column; gap: 16px; counter-reset: scene-num; }
+.toc-list li { font-family: 'Fraunces', serif; font-size: clamp(20px, 2.4vw, 28px); font-weight: 300; cursor: pointer; padding: 12px 0; border-bottom: 1px dashed var(--line); transition: color 0.2s; display: flex; align-items: baseline; gap: 16px; }
+.toc-list li:hover { color: var(--accent); }
+.toc-list li .num { font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.18em; color: var(--text-faint); min-width: 32px; }
+.toc-list li .meta { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-faint); margin-left: auto; }
+
+.sources-filter { max-width: 720px; width: 100%; padding: 12px 16px; font-family: 'Inter', sans-serif; font-size: 14px; border: 1px solid var(--line-strong); background: transparent; color: var(--text); margin-bottom: 24px; border-radius: 3px; }
+.sources-filter:focus { outline: none; border-color: var(--accent); }
+.sources-list { list-style: none; max-width: 720px; width: 100%; display: flex; flex-direction: column; gap: 16px; }
+.sources-list li { font-family: 'Inter', sans-serif; font-size: 14.5px; line-height: 1.55; padding: 8px 0; border-bottom: 1px dashed var(--line); display: flex; gap: 14px; transition: background 0.4s; }
+.sources-list li.flash { background: rgba(184, 88, 46, 0.18); }
+.sources-list li .num { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--accent); min-width: 28px; padding-top: 2px; }
+.sources-list li a { color: var(--accent); text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 3px; transition: text-decoration-color 0.2s; }
+.sources-list li a:hover { text-decoration-color: var(--accent); }
+
+.toaster { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 12px 20px; border-radius: 24px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; z-index: 60; opacity: 0; pointer-events: none; transition: opacity 0.4s ease; max-width: calc(100vw - 32px); text-align: center; }
+.toaster.show { opacity: 1; }
+.toaster[hidden] { display: none; }
+
+.idle-cue { position: fixed; bottom: 60px; right: 88px; font-family: 'JetBrains Mono', monospace; font-size: 18px; color: var(--accent); opacity: 0; pointer-events: none; transition: opacity 0.5s; z-index: 35; animation: idle-pulse 1.5s ease-in-out infinite; }
+.idle-cue.show { opacity: 0.5; }
+@keyframes idle-pulse { 0%, 100% { transform: translateY(0); opacity: 0.3; } 50% { transform: translateY(-4px); opacity: 0.7; } }
+@media (prefers-reduced-motion: reduce) { .idle-cue { animation: none; } }
+@media (max-width: 1024px) { .idle-cue { display: none; } }
+
+.topbar.idle { opacity: 0.25; }
+.topbar:hover { opacity: 1 !important; }
+</style>
+</head>
+<body>
+
+<header class="topbar" id="topbar">
+  <a href="../index.html">{{TOPBAR_AUTHOR_HTML}}</a>
+  <div class="scene-title-bar" id="scene-title-bar"></div>
+  <a href="{{BACK_HREF}}" class="back">← Retour aux dossiers</a>
+</header>
+
+<div id="schemas" hidden>
+{{SCHEMAS_INLINE}}
+</div>
+
+<main class="stage" id="stage">
+  <!-- scènes injectées par JS -->
+</main>
+
+<footer class="footer-bar" id="footer-bar">
+  <div class="timeline" id="timeline" data-no-advance></div>
+  <div class="footer-actions" data-no-advance>
+    <button class="footer-btn" id="btn-sources" type="button">Sources</button>
+    <button class="footer-btn" id="btn-toc" type="button" aria-label="Sommaire">≡</button>
+  </div>
+</footer>
+
+<!-- Sommaire overlay -->
+<div id="toc-overlay" class="full-overlay" hidden role="dialog" aria-modal="true" aria-label="Sommaire des scènes">
+  <button class="overlay-close" type="button" aria-label="Fermer le sommaire">Fermer ✕</button>
+  <ol class="toc-list" id="toc-list"></ol>
+</div>
+
+<!-- Sources overlay -->
+<div id="sources-overlay" class="full-overlay" hidden role="dialog" aria-modal="true" aria-label="Sources">
+  <button class="overlay-close" type="button" aria-label="Fermer les sources">Fermer ✕</button>
+  <input type="search" class="sources-filter" id="sources-filter" placeholder="Filtrer les sources…" data-no-advance>
+  <ol class="sources-list" id="sources-list"></ol>
+</div>
+
+<!-- Zoom overlay -->
+<div id="zoom-overlay" hidden role="dialog" aria-modal="true" aria-label="Schéma agrandi">
+  <div id="zoom-header">
+    <span id="zoom-caption"></span>
+    <div class="zoom-controls">
+      <button class="zoom-out" type="button" aria-label="Dézoomer">−</button>
+      <button class="zoom-reset" type="button" aria-label="Réinitialiser">Reset</button>
+      <button class="zoom-in" type="button" aria-label="Zoomer">+</button>
+      <button class="zoom-close" type="button" aria-label="Fermer">×</button>
+    </div>
+  </div>
+  <div id="zoom-stage" tabindex="-1">
+    <div id="zoom-content"></div>
+    <div id="zoom-hint">molette / pinch pour zoomer · clic-glisser pour déplacer · Esc pour fermer</div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div id="modal-root" hidden role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-card">
+    <button class="modal-close" data-close type="button" aria-label="Fermer">×</button>
+    <p class="modal-eyebrow" id="modal-eyebrow"></p>
+    <h3 id="modal-title"></h3>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const FADE_MS = REDUCED_MOTION ? 0 : 250;
+
+{{SCENES_JS}}
+
+/* ───────── SCHEMAS — Modal content for interactive SVG regions ───────── */
+{{SCHEMAS_JS}}
+
+/* ───────── Sources ───────── */
+{{SOURCES_JS}}
+
+/* ───────── Modal dispatcher ───────── */
+const modalRoot    = document.getElementById('modal-root');
+const modalEyebrow = document.getElementById('modal-eyebrow');
+const modalTitle   = document.getElementById('modal-title');
+const modalBody    = document.getElementById('modal-body');
+let lastFocused = null;
+
+function openModal(eyebrow, title, body) {
+  lastFocused = document.activeElement;
+  modalEyebrow.textContent = eyebrow || '';
+  modalTitle.textContent = title || '';
+  modalBody.innerHTML = body || '';
+  /* Patch des références [N] en liens vers les sources */
+  const bodyEl = document.getElementById('modal-body');
+  if (bodyEl) {
+    bodyEl.innerHTML = bodyEl.innerHTML.replace(/\[(\d+)\]/g, (m, n) => `<a href="#" class="source-ref" data-source-num="${n}">[${n}]</a>`);
+    bodyEl.querySelectorAll('.source-ref').forEach(a => {
+      a.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        const num = parseInt(a.dataset.sourceNum, 10);
+        closeModal();
+        flashSource(num);
+      });
+    });
+  }
+  modalRoot.hidden = false;
+  document.body.classList.add('modal-open');
+  document.body.style.overflow = '';
+  modalRoot.querySelector('.modal-close')?.focus();
+}
+
+let __modalAutoActive = false;
+
+function closeModal() {
+  const root = document.getElementById('modal-root');
+  if (!root) return;
+  root.hidden = true;
+  document.body.classList.remove('modal-open');
+  __modalAutoActive = false;
+  lastFocused?.focus?.();
+}
+
+document.getElementById('modal-root').addEventListener('click', (e) => {
+  if (e.target.closest('.modal-content')) return;
+  if (e.target.matches('[data-close]')) { closeModal(); }
+});
+
+let state = { sceneIndex: 0, stepIndex: 0 };
+
+const stage = document.getElementById('stage');
+
+function applyStepStyles(scene, step) {
+  const svg = stage.querySelector('svg');
+  if (!svg) return;
+  const all = svg.querySelectorAll('[id]');
+  all.forEach(el => el.removeAttribute('data-step-state'));
+  (step.dim || []).forEach(sel => svg.querySelectorAll(sel).forEach(el => el.setAttribute('data-step-state', 'dim')));
+  (step.hidden || []).forEach(sel => svg.querySelectorAll(sel).forEach(el => el.setAttribute('data-step-state', 'hidden')));
+  (step.highlight || []).forEach(sel => svg.querySelectorAll(sel).forEach(el => el.setAttribute('data-step-state', 'active')));
+}
+
+function renderTimeline() {
+  const tl = document.getElementById('timeline');
+  if (!tl) return;
+  tl.innerHTML = SCENES.map((scene, i) => {
+    const visited = i < state.sceneIndex;
+    const current = i === state.sceneIndex;
+    const cls = ['seg'];
+    if (scene.type === 'punchline') cls.push('punchline');
+    if (scene.type === 'outro') cls.push('outro');
+    if (visited) cls.push('visited');
+    if (current) cls.push('current');
+    let fillPct = 0;
+    if (current && scene.steps && scene.steps.length > 1) {
+      fillPct = Math.round((state.stepIndex / (scene.steps.length - 1)) * 100);
+    } else if (visited) {
+      fillPct = 100;
+    }
+    const label = `${(i+1).toString().padStart(2,'0')} · ${scene.title || (scene.type === 'punchline' ? 'Respiration' : 'Outro')}`;
+    return `<div class="seg ${cls.join(' ')}" data-index="${i}"><div class="fill" style="height: ${fillPct}%; width: ${fillPct}%;"></div><div class="label">${label}</div></div>`;
+  }).join('');
+}
+
+function updateSceneTitleBar(scene) {
+  const bar = document.getElementById('scene-title-bar');
+  if (!bar) return;
+  const num = (state.sceneIndex + 1).toString().padStart(2, '0');
+  const title = scene.title || '';
+  if (!title) { bar.innerHTML = ''; return; }
+  bar.innerHTML = `<span class="num">${num}</span><span class="title">${title}</span>`;
+}
+
+function render() {
+  const scene = SCENES[state.sceneIndex];
+  if (!scene) return;
+
+  updateSceneTitleBar(scene);
+
+  if (scene.type === 'punchline') {
+    stage.innerHTML = `
+      <section class="scene-punchline" role="group" aria-roledescription="scène">
+        <div class="body">${scene.body}</div>
+        ${scene.attribution ? `<div class="attribution">${scene.attribution}</div>` : ''}
+      </section>
+    `;
+    renderTimeline();
+    return;
+  }
+
+  if (scene.type === 'outro') {
+    stage.innerHTML = `
+      <section class="scene-outro" role="group" aria-roledescription="scène">
+        <div class="eyebrow">Vous avez parcouru</div>
+        <h2>${scene.outroTitle || ''}</h2>
+        <div class="body">${scene.body}</div>
+        <div class="ctas" data-no-advance>
+          <a class="cta-primary" href="${scene.cta.href}">${scene.cta.label}</a>
+          <a class="cta-secondary" href="${scene.secondary.href}" download>${scene.secondary.label}</a>
+        </div>
+        <button class="restart" data-no-advance type="button" onclick="gotoScene(0)">↺ Recommencer</button>
+        <div class="disclosure">Format co-écrit avec l'aide d'une IA</div>
+      </section>
+    `;
+    renderTimeline();
+    return;
+  }
+
+  if (scene.type === 'schema') {
+    const svgEl = document.getElementById(scene.schemaId);
+    const svgClone = svgEl ? svgEl.outerHTML : `<div style="color: red; font-family: monospace;">SVG ${scene.schemaId} introuvable</div>`;
+    const step = scene.steps[state.stepIndex] || { caption: '(pas d\'étape définie)' };
+    stage.innerHTML = `
+      <section class="schema-host" role="group" aria-roledescription="scène">
+        <div class="schema-wrapper figure" style="position: relative; width: 100%; max-width: 100%;">
+          ${svgClone}
+          <button class="zoom-btn" type="button" aria-label="Zoom plein écran" data-no-advance>⛶</button>
+        </div>
+        <div class="caption" aria-live="polite">${step.caption}</div>
+      </section>
+    `;
+    applyStepStyles(scene, step);
+
+    if (step.modalAuto) {
+      const match = scene.schemaId ? scene.schemaId.match(/svg-(\d+)-/) : null;
+      const schKey = match ? 'schema-' + match[1].padStart(2, '0') : null;
+      const card = schKey ? (SCHEMAS?.[schKey]?.[step.modalAuto] || null) : null;
+      if (card) {
+        setTimeout(() => {
+          openModal(card.eyebrow || '', card.title || '', card.body || '');
+          __modalAutoActive = true;
+        }, 220);
+      }
+    }
+    renderTimeline();
+    return;
+  }
+}
+
+let __transitioning = false;
+
+async function gotoScene(index) {
+  if (index < 0 || index >= SCENES.length || __transitioning) return;
+  __transitioning = true;
+  stage.classList.add('fading-out');
+  await new Promise(r => setTimeout(r, FADE_MS));
+  state.sceneIndex = index;
+  state.stepIndex = 0;
+  render();
+  stage.classList.remove('fading-out');
+  await new Promise(r => setTimeout(r, FADE_MS));
+  __transitioning = false;
+}
+
+function advance() {
+  if (__transitioning) return;
+  const scene = SCENES[state.sceneIndex];
+  const lastStep = (scene.steps && scene.steps.length > 0) ? scene.steps.length - 1 : 0;
+  if (state.stepIndex < lastStep) {
+    state.stepIndex++;
+    render();
+  } else if (state.sceneIndex < SCENES.length - 1) {
+    gotoScene(state.sceneIndex + 1);
+  }
+}
+
+function retreat() {
+  if (__transitioning) return;
+  if (state.stepIndex > 0) {
+    state.stepIndex--;
+    render();
+  } else if (state.sceneIndex > 0) {
+    const prevScene = SCENES[state.sceneIndex - 1];
+    const prevLastStep = (prevScene.steps && prevScene.steps.length > 0) ? prevScene.steps.length - 1 : 0;
+    __transitioning = true;
+    stage.classList.add('fading-out');
+    setTimeout(() => {
+      state.sceneIndex--;
+      state.stepIndex = prevLastStep;
+      render();
+      stage.classList.remove('fading-out');
+      setTimeout(() => { __transitioning = false; }, FADE_MS);
+    }, FADE_MS);
+  }
+}
+
+render();
+
+function isAnyOverlayOpen() {
+  return !document.getElementById('modal-root').hidden
+      || !document.getElementById('toc-overlay').hidden
+      || !document.getElementById('sources-overlay').hidden
+      || !document.getElementById('zoom-overlay').hidden;
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+    e.preventDefault();
+    const modalOpen = !document.getElementById('modal-root').hidden;
+    if (modalOpen && __modalAutoActive) {
+      closeModal();
+      advance();
+    } else if (modalOpen) {
+      closeModal();
+    } else {
+      advance();
+    }
+  } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+    e.preventDefault();
+    if (isAnyOverlayOpen()) return;
+    retreat();
+  } else if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (isAnyOverlayOpen()) return;
+    gotoScene(state.sceneIndex + 1);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (isAnyOverlayOpen()) return;
+    gotoScene(state.sceneIndex - 1);
+  } else if (e.key === 's' || e.key === 'S') {
+    if (e.target.tagName === 'INPUT') return;
+    e.preventDefault();
+    toggleToc();
+  } else if (e.key === 'r' || e.key === 'R') {
+    if (e.target.tagName === 'INPUT') return;
+    e.preventDefault();
+    toggleSources();
+  } else if (e.key === 'Escape') {
+    if (!document.getElementById('modal-root').hidden) {
+      closeModal();
+      e.preventDefault();
+      return;
+    }
+    if (!document.getElementById('sources-overlay').hidden) {
+      toggleSources(false);
+      e.preventDefault();
+      return;
+    }
+    if (!document.getElementById('toc-overlay').hidden) {
+      toggleToc(false);
+      e.preventDefault();
+      return;
+    }
+    /* zoom-overlay Escape géré par setupZoom() interne */
+  }
+});
+
+document.getElementById('timeline').addEventListener('click', (e) => {
+  const seg = e.target.closest('.seg');
+  if (!seg) return;
+  e.stopPropagation();
+  gotoScene(parseInt(seg.dataset.index, 10));
+});
+
+/* ───────── Sommaire overlay ───────── */
+function renderToc() {
+  const list = document.getElementById('toc-list');
+  list.innerHTML = SCENES.map((scene, i) => {
+    const stepsCount = scene.steps ? scene.steps.length : 1;
+    const stepsLabel = stepsCount === 1 ? '1 étape' : `${stepsCount} étapes`;
+    const titleOrLabel = scene.title || (scene.type === 'punchline' ? '✴ Respiration' : 'Outro — pour aller plus loin');
+    return `<li data-index="${i}"><span class="num">${(i+1).toString().padStart(2,'0')}</span><span>${titleOrLabel}</span><span class="meta">${stepsLabel}</span></li>`;
+  }).join('');
+}
+
+function toggleToc(forceState) {
+  const o = document.getElementById('toc-overlay');
+  const newHidden = forceState !== undefined ? !forceState : !o.hidden;
+  o.hidden = newHidden;
+  if (!newHidden) renderToc();
+}
+
+document.getElementById('btn-toc').addEventListener('click', (e) => { e.stopPropagation(); toggleToc(true); });
+document.getElementById('toc-overlay').addEventListener('click', (e) => {
+  if (e.target.closest('.overlay-close')) { toggleToc(false); return; }
+  const li = e.target.closest('li[data-index]');
+  if (li) { gotoScene(parseInt(li.dataset.index, 10)); toggleToc(false); }
+});
+
+/* ───────── Sources overlay ───────── */
+function renderSources(filter) {
+  const list = document.getElementById('sources-list');
+  const f = (filter || '').toLowerCase();
+  const items = SOURCES
+    .filter(s => !f || (s.author + ' ' + s.title + ' ' + s.year).toLowerCase().includes(f))
+    .map(s => `
+      <li data-num="${s.num}">
+        <span class="num">[${s.num}]</span>
+        <span><strong>${s.author}</strong> — ${s.title}, ${s.year}.${s.publisher ? ' <em>' + s.publisher + '</em>.' : ''}${s.url ? ` <a href="${s.url}" target="_blank" rel="noopener">Lien ↗</a>` : ''}</span>
+      </li>
+    `);
+  list.innerHTML = items.join('');
+}
+
+function toggleSources(forceState) {
+  const o = document.getElementById('sources-overlay');
+  const newHidden = forceState !== undefined ? !forceState : !o.hidden;
+  o.hidden = newHidden;
+  if (!newHidden) {
+    renderSources('');
+    document.getElementById('sources-filter').value = '';
+    setTimeout(() => document.getElementById('sources-filter').focus(), 80);
+  }
+}
+
+function flashSource(num) {
+  toggleSources(true);
+  setTimeout(() => {
+    const li = document.querySelector(`#sources-list li[data-num="${num}"]`);
+    if (!li) return;
+    li.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    li.classList.add('flash');
+    setTimeout(() => li.classList.remove('flash'), 1500);
+  }, 100);
+}
+
+document.getElementById('btn-sources').addEventListener('click', (e) => { e.stopPropagation(); toggleSources(true); });
+document.getElementById('sources-overlay').addEventListener('click', (e) => {
+  if (e.target.closest('.overlay-close')) { toggleSources(false); }
+});
+document.getElementById('sources-filter').addEventListener('input', (e) => renderSources(e.target.value));
+
+stage.addEventListener('click', (e) => {
+  if (isAnyOverlayOpen()) return;
+  if (e.target.closest('[data-no-advance]')) return;
+  if (e.shiftKey) {
+    retreat();
+  } else {
+    advance();
+  }
+});
+
+/* Capture phase — intercepte les clics sur régions interactives data-card AVANT le listener bubble */
+stage.addEventListener('click', (e) => {
+  const target = e.target.closest('[data-card]');
+  if (!target) return;
+  e.stopPropagation();
+  const cardId = target.dataset.card;
+  const scene = SCENES[state.sceneIndex];
+  const schemaId = scene && scene.schemaId ? scene.schemaId : null;
+  /* schemaId : 'svg-01-*' → SCHEMAS key : 'schema-01' */
+  let card = null;
+  if (schemaId) {
+    const match = schemaId.match(/svg-(\d+)-/);
+    if (match) {
+      const schKey = 'schema-' + match[1].padStart(2, '0');
+      card = SCHEMAS?.[schKey]?.[cardId] || null;
+    }
+  }
+  if (card) {
+    openModal(card.eyebrow || '', card.title || '', card.body || '');
+  }
+}, true);
+
+console.log('[slideshow]', SCENES.length, 'scènes déclarées');
+
+/* ───────── Swipe horizontal sur la stage ───────── */
+let touchStart = null;
+stage.addEventListener('touchstart', (e) => {
+  if (e.touches.length !== 1) return;
+  touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() };
+}, { passive: true });
+
+stage.addEventListener('touchend', (e) => {
+  if (!touchStart) return;
+  const t = e.changedTouches[0];
+  const dx = t.clientX - touchStart.x;
+  const dy = t.clientY - touchStart.y;
+  const dt = Date.now() - touchStart.t;
+  touchStart = null;
+  if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+  if (dt > 600) return;
+  if (dx > 0) gotoScene(state.sceneIndex - 1);
+  else gotoScene(state.sceneIndex + 1);
+});
+
+/* ───────── Pulse d'inactivité ───────── */
+let __idleTimer = null;
+function resetIdle() {
+  const cue = document.getElementById('idle-cue');
+  if (cue) cue.classList.remove('show');
+  document.getElementById('topbar').classList.remove('idle');
+  clearTimeout(__idleTimer);
+  __idleTimer = setTimeout(() => {
+    if (cue) cue.classList.add('show');
+    document.getElementById('topbar').classList.add('idle');
+  }, 4000);
+}
+['keydown', 'click', 'touchstart', 'mousemove'].forEach(evt => window.addEventListener(evt, resetIdle, { passive: true }));
+resetIdle();
+
+/* ───────── Toaster d'onboarding mobile ───────── */
+function isTouchDevice() {
+  return ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+}
+
+function maybeShowOnboardingToaster() {
+  if (!isTouchDevice()) return;
+  if (localStorage.getItem('slideshow-onboarded')) return;
+  const t = document.getElementById('toaster');
+  if (!t) return;
+  t.hidden = false;
+  setTimeout(() => t.classList.add('show'), 50);
+  const dismiss = () => {
+    t.classList.remove('show');
+    setTimeout(() => { t.hidden = true; }, 400);
+    try { localStorage.setItem('slideshow-onboarded', '1'); } catch(_) {}
+    window.removeEventListener('touchstart', dismiss);
+  };
+  window.addEventListener('touchstart', dismiss, { once: true, passive: true });
+  setTimeout(dismiss, 6000);
+}
+
+maybeShowOnboardingToaster();
+
+/* ───────── Fullscreen zoom for schemas ───────── */
+const __zoom = (function setupZoom() {
+  const overlay  = document.getElementById('zoom-overlay');
+  const zStage   = document.getElementById('zoom-stage');
+  const content  = document.getElementById('zoom-content');
+  const captionE = document.getElementById('zoom-caption');
+  const hint     = document.getElementById('zoom-hint');
+  if (!overlay || !zStage || !content) return {};
+
+  let scale = 1, tx = 0, ty = 0;
+  let svgW = 0, svgH = 0;
+  let fitScale = 1;
+  let lastZoomTrigger = null;
+
+  function applyTransform() { content.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`; }
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+  function fitToStage() {
+    if (!svgW || !svgH) return;
+    const r = zStage.getBoundingClientRect();
+    const margin = 32;
+    fitScale = Math.min((r.width - margin * 2) / svgW, (r.height - margin * 2) / svgH);
+    scale = fitScale;
+    tx = (r.width - svgW * scale) / 2;
+    ty = (r.height - svgH * scale) / 2;
+    applyTransform();
+  }
+  function zoomAt(mx, my, factor) {
+    const newScale = clamp(scale * factor, fitScale * 0.5, fitScale * 16);
+    tx = mx - newScale * (mx - tx) / scale;
+    ty = my - newScale * (my - ty) / scale;
+    scale = newScale;
+    applyTransform();
+  }
+  function openZoom(svgEl, captionText) {
+    const clone = svgEl.cloneNode(true);
+    const vb = clone.viewBox?.baseVal;
+    svgW = (vb && vb.width)  || svgEl.getBoundingClientRect().width  || 1200;
+    svgH = (vb && vb.height) || svgEl.getBoundingClientRect().height || 780;
+    clone.setAttribute('width', svgW); clone.setAttribute('height', svgH);
+    clone.style.width = svgW + 'px'; clone.style.height = svgH + 'px';
+    content.innerHTML = '';
+    content.appendChild(clone);
+    captionE.textContent = captionText || '';
+    lastZoomTrigger = document.activeElement;
+    overlay.hidden = false;
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(() => {
+      fitToStage();
+      zStage.focus({ preventScroll: true });
+      if (hint) {
+        hint.classList.remove('fade');
+        clearTimeout(hint._t);
+        hint._t = setTimeout(() => hint.classList.add('fade'), 2600);
+      }
+    });
+  }
+  function closeZoom() {
+    overlay.hidden = true;
+    content.innerHTML = '';
+    document.body.style.overflow = '';
+    lastZoomTrigger?.focus?.();
+  }
+
+  overlay.querySelector('.zoom-close')?.addEventListener('click', closeZoom);
+  document.addEventListener('keydown', (e) => {
+    if (overlay.hidden) return;
+    if (e.key === 'Escape') { e.preventDefault(); closeZoom(); }
+    else if (e.key === '+' || e.key === '=') { e.preventDefault(); const r = zStage.getBoundingClientRect(); zoomAt(r.width/2, r.height/2, 1.25); }
+    else if (e.key === '-' || e.key === '_') { e.preventDefault(); const r = zStage.getBoundingClientRect(); zoomAt(r.width/2, r.height/2, 1/1.25); }
+    else if (e.key === '0') { e.preventDefault(); fitToStage(); }
+  });
+
+  overlay.querySelector('.zoom-in')?.addEventListener('click', () => { const r = zStage.getBoundingClientRect(); zoomAt(r.width/2, r.height/2, 1.25); });
+  overlay.querySelector('.zoom-out')?.addEventListener('click', () => { const r = zStage.getBoundingClientRect(); zoomAt(r.width/2, r.height/2, 1/1.25); });
+  overlay.querySelector('.zoom-reset')?.addEventListener('click', fitToStage);
+
+  zStage.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const r = zStage.getBoundingClientRect();
+    const mx = e.clientX - r.left;
+    const my = e.clientY - r.top;
+    const factor = e.deltaY < 0 ? 1.15 : 1/1.15;
+    zoomAt(mx, my, factor);
+  }, { passive: false });
+
+  let dragging = false, sx = 0, sy = 0, stx = 0, sty = 0;
+  zStage.addEventListener('pointerdown', (e) => {
+    dragging = true;
+    zStage.classList.add('grabbing');
+    zStage.setPointerCapture?.(e.pointerId);
+    sx = e.clientX; sy = e.clientY; stx = tx; sty = ty;
+  });
+  zStage.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    tx = stx + (e.clientX - sx);
+    ty = sty + (e.clientY - sy);
+    applyTransform();
+  });
+  function endDrag(e) {
+    if (!dragging) return;
+    dragging = false;
+    zStage.classList.remove('grabbing');
+    zStage.releasePointerCapture?.(e.pointerId);
+  }
+  zStage.addEventListener('pointerup', endDrag);
+  zStage.addEventListener('pointercancel', endDrag);
+  zStage.addEventListener('pointerleave', endDrag);
+
+  let pinchStartDist = 0, pinchStartScale = 1, pinchMid = { x: 0, y: 0 };
+  zStage.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+      dragging = false;
+      const t1 = e.touches[0], t2 = e.touches[1];
+      const dx = t1.clientX - t2.clientX, dy = t1.clientY - t2.clientY;
+      pinchStartDist = Math.hypot(dx, dy);
+      pinchStartScale = scale;
+      const r = zStage.getBoundingClientRect();
+      pinchMid = { x: (t1.clientX + t2.clientX) / 2 - r.left, y: (t1.clientY + t2.clientY) / 2 - r.top };
+    }
+  }, { passive: true });
+  zStage.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 2 && pinchStartDist > 0) {
+      e.preventDefault();
+      const t1 = e.touches[0], t2 = e.touches[1];
+      const d = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+      const factor = (d / pinchStartDist) * (pinchStartScale / scale);
+      zoomAt(pinchMid.x, pinchMid.y, factor);
+    }
+  }, { passive: false });
+  zStage.addEventListener('touchend', (e) => { if (e.touches.length < 2) pinchStartDist = 0; });
+
+  window.addEventListener('resize', () => { if (!overlay.hidden) fitToStage(); });
+
+  return { openZoom };
+})();
+
+/* Câble le bouton zoom après chaque render() sur une scène schema */
+stage.addEventListener('click', (e) => {
+  const btn = e.target.closest('.zoom-btn');
+  if (!btn) return;
+  e.stopPropagation();
+  const wrapper = btn.closest('.schema-wrapper');
+  const svg = wrapper ? wrapper.querySelector('svg') : null;
+  if (svg && __zoom.openZoom) {
+    const caption = stage.querySelector('.caption')?.textContent?.trim() || '';
+    __zoom.openZoom(svg, caption);
+  }
+}, true);
+</script>
+
+<div class="idle-cue" id="idle-cue" aria-hidden="true">→</div>
+
+<div class="toaster" id="toaster" hidden data-no-advance>
+  <span>Tape pour avancer · Swipe ←→ pour changer de scène · Pince pour zoomer</span>
+</div>
+</body>
+</html>
