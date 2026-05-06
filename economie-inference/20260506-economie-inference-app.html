@@ -1410,9 +1410,650 @@
   </div>
 
   <script>
-    /* SCHEMAS_PLACEHOLDER */
-    /* SOURCES_PLACEHOLDER */
-    /* JS_PLACEHOLDER */
+
+    const SCHEMAS = {
+  "schema-01": {
+    "curve-trend": {
+      "eyebrow": "Schéma 1 · Tendance",
+      "title": "Une courbe log linéaire sur trois ans",
+      "body": "<p>La trajectoire de prix suit une loi log-linéaire remarquablement régulière sur 36 mois — environ 10× par an, calculé par a16z.</p><p>Cette régularité tient à l'addition de plusieurs facteurs largement indépendants : meilleure utilisation du silicium (FlashAttention, PagedAttention), nouveaux process matériels (HBM3e, FP4 sur Blackwell), open-weight competition, et architectures sparses (MoE).</p>"
+    },
+    "gpt3-launch": {
+      "eyebrow": "Schéma 1 · Novembre 2021",
+      "title": "GPT-3 davinci · 60 $/Mtok",
+      "body": "<p>OpenAI ouvre l'API GPT-3 davinci au public à 60 $ par million de tokens. Le tarif reflète une économie de l'inférence encore artisanale : modèle dense 175 B, batching statique, pas de PagedAttention, utilisation GPU autour de 30-40 %.</p><p>C'est le point de référence universel des courbes LLMflation.</p>"
+    },
+    "gpt35-turbo": {
+      "eyebrow": "Schéma 1 · Mars 2023",
+      "title": "gpt-3.5-turbo · 2,00 $/Mtok",
+      "body": "<p>OpenAI sort gpt-3.5-turbo à 2 $/Mtok — un facteur 30 sous GPT-3 en 16 mois. Premier moment où l'inférence GPT-class devient accessible aux indie devs et aux hackathons.</p><p>Le tarif sera ramené progressivement à 0,50 $ puis 0,15 $ avant d'être déprécié.</p>"
+    },
+    "mistral-7b": {
+      "eyebrow": "Schéma 1 · Octobre 2023",
+      "title": "Mistral 7B · 0,50 $/Mtok",
+      "body": "<p>Mistral 7B sort en open-weight sous licence Apache 2.0. Première démonstration qu'un modèle 7B optimisé peut rivaliser avec GPT-3.5 sur de nombreux benchmarks.</p><p>Together AI et Anyscale popularisent l'hébergement à 0,50 $/Mtok ou moins. La compétition open-weight commence.</p>"
+    },
+    "llama3-8b": {
+      "eyebrow": "Schéma 1 · Avril 2024",
+      "title": "Llama 3 8B · 0,10 $/Mtok",
+      "body": "<p>Meta sort Llama 3 8B et 70B. La version 8B atteint 0,10 $/Mtok sur Together AI, un facteur 5 sous Mistral 7B six mois plus tôt.</p><p>Le bond vient de l'amélioration combinée du modèle (entraînement plus long, dataset 15T tokens) et du software stack (vLLM, FlashAttention, batching continu industrialisés).</p>"
+    },
+    "llama32-3b": {
+      "eyebrow": "Schéma 1 · Novembre 2024",
+      "title": "Llama 3.2 3B · 0,06 $/Mtok",
+      "body": "<p>Llama 3.2 3B descend à 0,06 $/Mtok chez Together AI. C'est le point de référence canonique cité par a16z pour quantifier le facteur 1 000 vs GPT-3 davinci en trois ans.</p><p>Le modèle est à peine moins capable que GPT-3 en MMLU (~62 %) mais 1 000× moins cher à servir.</p>"
+    },
+    "gpt-oss-120b": {
+      "eyebrow": "Schéma 1 · Octobre 2025",
+      "title": "GPT-OSS-120B sur B200 · 0,02 $/Mtok",
+      "body": "<p>GPT-OSS-120B (modèle open-weight publié par OpenAI en réponse à la pression DeepSeek/Llama) servi sur Blackwell B200 + TensorRT-LLM atteint 0,02 $ par million de tokens à 55 TPS/utilisateur, mesuré par InferenceMAX (octobre 2025).</p><p>Combine l'effet matériel (Blackwell) et l'effet logiciel (TRT-LLM optimisé bout-en-bout).</p>"
+    },
+    "annotation-decline": {
+      "eyebrow": "Schéma 1 · Cadrage",
+      "title": "1 000× en 3 ans",
+      "body": "<p>De 60 $/Mtok à 0,06 $/Mtok en 36 mois pour le même score MMLU. Soit ~10× par an de manière soutenue.</p><p>Comparaison historique : Moore historique = 2× tous les 18-24 mois ; bandwidth dotcom = 5× par an au pic. La déflation LLM est plus rapide que les deux.</p>"
+    }
+  },
+  "schema-02": {
+    "prefill-phase": {
+      "eyebrow": "Schéma 2 · Phase compute-bound",
+      "title": "Le prefill",
+      "body": "<p>Le prefill traite tous les tokens du prompt en parallèle. Les Tensor Cores du GPU tournent à plein régime — utilisation FLOPs ≥ 80 % sur un H100 bien batché.</p><p>Coût dominé par le compute. Optimisations clés : FlashAttention-3 (asynchronie), batching de prompts, prefix caching. La HBM est sous-exploitée pendant cette phase.</p>"
+    },
+    "decode-phase": {
+      "eyebrow": "Schéma 2 · Phase memory-bound",
+      "title": "Le decode",
+      "body": "<p>Génération token-par-token. À chaque pas, le modèle relit l'intégralité de ses poids depuis la HBM pour produire un seul token de sortie.</p><p>Sur Llama 70B FP16, ça fait 140 Go à charger par token : la HBM3 du H100 (3,35 To/s) plafonne à ~24 tokens/seconde par requête. Les FLOPs Tensor sont sous-utilisés. C'est ici que le batching, MoE et speculative decoding font la différence.</p>"
+    },
+    "kv-cache": {
+      "eyebrow": "Schéma 2 · Le contrat HBM",
+      "title": "Le KV cache",
+      "body": "<p>Pour éviter de recalculer l'attention sur tous les tokens précédents à chaque pas de decode, le modèle stocke en HBM les clés (K) et valeurs (V) déjà calculées.</p><p>Taille linéaire avec le contexte. Llama 70B à 32K tokens : ~5 Go par utilisateur, donc 500 Go pour 100 utilisateurs simultanés — plus que la VRAM d'un H100 (80 Go) ou même d'un B200 (192 Go) seul. C'est cette contrainte qui dicte l'architecture du serveur.</p>"
+    },
+    "paged-attn": {
+      "eyebrow": "Schéma 2 · Annotation 1",
+      "title": "PagedAttention vs allocation contiguë",
+      "body": "<p>Avant PagedAttention (vLLM, SOSP 2023), le KV cache était alloué en blocs contigus de taille maximale. Si un utilisateur demandait 32K tokens et n'en consommait que 4K, les 28K restants étaient gaspillés.</p><p>PagedAttention applique le principe de la mémoire virtuelle paginée des OS : blocs de 16-256 tokens à la demande. Gaspillage 50 % → &lt;4 %, batch utilisable ×2-4.</p>"
+    },
+    "continuous-batching": {
+      "eyebrow": "Schéma 2 · Annotation 2",
+      "title": "Continuous batching",
+      "body": "<p>Le batching statique attend qu'une fenêtre de N requêtes soit pleine avant le forward pass — chaque requête progresse au rythme de la plus lente.</p><p>Le batching continu ajoute des requêtes au batch dès qu'une fente se libère. Utilisation GPU 40 % → 90+ % ; coût/token divisé par 2 en production. Devenu valeur par défaut de vLLM, TensorRT-LLM, SGLang.</p>"
+    }
+  },
+  "schema-03": {
+    "layer-baseline": {
+      "eyebrow": "Schéma 3 · Baseline",
+      "title": "PyTorch eager · ~1 000 tok/s",
+      "body": "<p>Le point de départ : un Llama 70B en PyTorch eager mode, sans aucune optimisation, sur un B300. Throughput d'environ 1 000 tokens/seconde par GPU.</p><p>C'est inutilisable en production mais c'est le repère contre lequel on mesure tous les gains de la pile logicielle.</p>"
+    },
+    "layer-kernel-fusion": {
+      "eyebrow": "Schéma 3 · Couche 1 · ×1,5",
+      "title": "Kernel fusion + Tensor Cores",
+      "body": "<p>Fusionner softmax + matmul + dropout dans un seul kernel CUDA évite les allers-retours en HBM. FlashAttention-1 (Tri Dao, 2022) a popularisé le pattern en attention.</p><p>Gain de ~1,5× sans changer le modèle ni l'algorithme. C'est la couche la plus universelle — toutes les implémentations modernes l'embarquent.</p>"
+    },
+    "layer-flashattn3": {
+      "eyebrow": "Schéma 3 · Couche 2 · ×2",
+      "title": "FlashAttention-3",
+      "body": "<p>FA-3 (NeurIPS 2024) exploite l'asynchronie des Tensor Cores Hopper, le warp-specialization et le block quantization.</p><p>Utilisation FLOPs H100 BF16 : 35 % (FA-2) → 75 %. FP8 atteint 1,2 PFLOPS sur H100. Gain ~2× sur le prefill et la majorité des workloads attention-heavy.</p>"
+    },
+    "layer-paged-cb": {
+      "eyebrow": "Schéma 3 · Couche 3 · ×1,7",
+      "title": "PagedAttention + continuous batching",
+      "body": "<p>Couche structurelle de vLLM. Combine la gestion paginée du KV cache avec le scheduling de batch continu.</p><p>Gain ~1,7× supplémentaire sur le throughput servi. Sans cette couche, les optimisations attention restent confinées à un seul utilisateur — vLLM débloque le scaling multi-tenant.</p>"
+    },
+    "layer-fp8": {
+      "eyebrow": "Schéma 3 · Couche 4 · ×1,6",
+      "title": "Quantization FP8",
+      "body": "<p>Hopper supporte FP8 nativement (Tensor Cores 4e gen). Réduit la précision de 16 à 8 bits, double la densité de calcul à perte qualité &lt;1 % sur modèle bien calibré.</p><p>DeepSeek V3 a démontré la faisabilité de l'<em>entraînement</em> FP8 à grande échelle, normalisant la pratique au-delà de l'inférence.</p>"
+    },
+    "layer-fp4": {
+      "eyebrow": "Schéma 3 · Couche 5 · ×1,4",
+      "title": "FP4 (Blackwell)",
+      "body": "<p>Tensor Cores 5e gen sur Blackwell supportent FP4 nativement. Encore un facteur 2 sur la densité de calcul vs FP8.</p><p>Calibration plus délicate : tous les modèles ne supportent pas FP4 sans dégradation. Les meilleurs cas (GPT-OSS-120B) atteignent &gt;1× le throughput FP8 avec une perte de qualité acceptable.</p>"
+    },
+    "layer-spec-decode": {
+      "eyebrow": "Schéma 3 · Couche 6 · ×1,2",
+      "title": "Speculative decoding (EAGLE-3)",
+      "body": "<p>Une tête de prédiction légère (1-2 couches au lieu de plusieurs dizaines) génère plusieurs tokens candidats en autoregressif rapide. Le modèle cible vérifie ces candidats en un seul forward pass.</p><p>EAGLE-3 (NeurIPS 2025) atteint 3-6,5× de speedup brut. P-EAGLE intégré dans vLLM ajoute 1,69× sur B200 grâce au parallélisme. Le gain net sur la pile entière est plus modeste (~1,2×) parce qu'il se compose mal avec le batching continu.</p>"
+    },
+    "layer-prefix-cache": {
+      "eyebrow": "Schéma 3 · Couche 7 · ×1,08",
+      "title": "Prefix caching + désagrégation P/D",
+      "body": "<p>Mémoriser le KV cache des préfixes communs entre requêtes (system prompts, retrieved docs) évite des prefills redondants. Anthropic, OpenAI, Google le facturent à 10-25 % du tarif nominal.</p><p>Combiné à la désagrégation prefill/decode, ajoute ~8 % de gain net sur la pile complète. Plus utile sur RAG et agents (jusqu'à 10× sur ces workloads spécifiques).</p>"
+    }
+  },
+  "schema-04": {
+    "client": {
+      "eyebrow": "Schéma 4 · Entrée",
+      "title": "Client",
+      "body": "<p>Émet un prompt + contexte (RAG, conversation, system prompt). Attend en retour un stream de tokens.</p><p>Du point de vue économique, c'est ce que le client paie au $/Mtok. Du point de vue technique, c'est l'unique point qui ne se désagrège pas.</p>"
+    },
+    "router": {
+      "eyebrow": "Schéma 4 · Plan de contrôle",
+      "title": "Router / scheduler",
+      "body": "<p>Reçoit la requête, choisit un nœud prefill, attend le KV cache, choisit un nœud decode, stream les tokens en retour.</p><p>Doit respecter des SLO indépendants : TTFT (time-to-first-token) borné par le prefill, TPOT (time per output token) borné par le decode. Sans désagrégation, ces deux SLO se piétinent.</p>"
+    },
+    "prefill-cluster": {
+      "eyebrow": "Schéma 4 · Cluster compute-bound",
+      "title": "Cluster prefill",
+      "body": "<p>Hardware : H100 ou B200, FLOPs élevés. Utilisation cible : ≥ 80 % FLOPs Tensor.</p><p>Provisionné selon la longueur de prompt p99. Un fournisseur RAG/code (prompts longs) dimensionne plus généreusement ; un fournisseur de chat court fait l'inverse.</p>"
+    },
+    "decode-cluster": {
+      "eyebrow": "Schéma 4 · Cluster memory-bound",
+      "title": "Cluster decode",
+      "body": "<p>Hardware : A100 (Splitwise) ou MI300X ou H100/B200 selon stratégie. Utilisation cible : HBM bandwidth ≥ 80 %.</p><p>Provisionné selon le nombre de tokens output p99. Le decode est l'étape qui domine la latence perçue après le premier token.</p>"
+    },
+    "kv-bus": {
+      "eyebrow": "Schéma 4 · Le tendon d'Achille",
+      "title": "Bus KV cache",
+      "body": "<p>RDMA, NVLink ou NCCL selon l'architecture. Transfère le KV cache calculé par le prefill vers le nœud decode qui prendra le relai.</p><p>Volume : linéaire avec le contexte. Llama 70B FP16 à 128K tokens = ~20 Go transférés. Datacenters d'inférence modernes provisionnent 800 Gbps Ethernet ou InfiniBand HDR par nœud.</p>"
+    },
+    "annotation-ttft": {
+      "eyebrow": "Schéma 4 · Annotation 1",
+      "title": "Gain TTFT 1,4-2,3×",
+      "body": "<p>La désagrégation libère les utilisateurs en cours de decode des pics de latence causés par les longs prefills d'autres utilisateurs.</p><p>Mesures publiées : 1,4× (Splitwise), 2,3× (DistServe sur certains workloads). Le gain s'accentue sur les charges hétérogènes (mix prompts longs / chat court).</p>"
+    },
+    "annotation-mooncake": {
+      "eyebrow": "Schéma 4 · Annotation 2 · cas réel",
+      "title": "Mooncake (Kimi)",
+      "body": "<p>Mooncake est l'architecture qui sert le chatbot Kimi (Moonshot AI). Spécificité : un pool de KV cache mutualisé exploite la DRAM CPU et les SSD des nœuds GPU sous-utilisés.</p><p>En production : &gt;100 milliards de tokens servis par jour, sur des milliers de nœuds. Démontre que la désagrégation tient à l'échelle hyperscale.</p>"
+    },
+    "annotation-cost": {
+      "eyebrow": "Schéma 4 · Annotation 3 · le revers",
+      "title": "Coût réseau du KV transfer",
+      "body": "<p>Le transfert du KV cache est un nouveau budget. Linéaire avec le contexte : ~20 Go pour Llama 70B FP16 à 128K.</p><p>Sur un cluster sous-provisionné en réseau, le transfert KV peut devenir le bottleneck — surtout pour les workloads agents avec des contextes &gt; 100K.</p>"
+    }
+  },
+  "schema-05": {
+    "dense-llama7b": {
+      "eyebrow": "Schéma 5 · Dense",
+      "title": "Llama 3 8B",
+      "body": "<p>Modèle dense classique. 8 milliards de paramètres totaux = 8 milliards de paramètres actifs par token.</p><p>Sur la diagonale dense. Excellent ratio FLOPs/qualité, mais ne profite pas du découplage MoE.</p>"
+    },
+    "dense-llama70b": {
+      "eyebrow": "Schéma 5 · Dense",
+      "title": "Llama 3 70B",
+      "body": "<p>Le workhorse dense de référence : 70 B paramètres totaux et actifs. ~140 Go de poids en FP16.</p><p>Sur la diagonale. Toujours fortement utilisé en production parce que son écosystème (fine-tuning, harness, déploiements) est mature.</p>"
+    },
+    "dense-llama405b": {
+      "eyebrow": "Schéma 5 · Dense",
+      "title": "Llama 3.1 405B",
+      "body": "<p>405 milliards de paramètres totaux et actifs. Entraîné en 30,8 millions d'heures H100 (vs 2,664 M H800 pour DeepSeek V3).</p><p>Démonstration que la voie dense reste compétitive en qualité — mais à un coût d'entraînement dix fois supérieur à un MoE équivalent.</p>"
+    },
+    "moe-mixtral": {
+      "eyebrow": "Schéma 5 · MoE pionnier",
+      "title": "Mixtral 8×7B",
+      "body": "<p>Mistral, décembre 2023. 8 experts de 7B, 2 activés par token. Total = 47 B (avec partage de paramètres), actifs = 13 B.</p><p>Premier MoE open-weight à matcher GPT-3.5 sur la majorité des benchmarks. Catalyseur de l'adoption MoE en production.</p>"
+    },
+    "moe-deepseek": {
+      "eyebrow": "Schéma 5 · Le standard 2026",
+      "title": "DeepSeek V3",
+      "body": "<p>671 B paramètres totaux, 37 B actifs. Entraîné en 2,664 M heures H800 ≈ 5,6 M$ de compute pur.</p><p>Atteint la qualité GPT-4 et est servi à ~60 % moins cher qu'OpenAI. La combinaison MoE + MLA (compression KV) rend l'inférence économique malgré la taille totale.</p>"
+    },
+    "moe-llama4": {
+      "eyebrow": "Schéma 5 · MoE Meta",
+      "title": "Llama 4 Maverick",
+      "body": "<p>~400 B paramètres totaux, 17 B actifs. Première itération MoE de Meta après les Llama 3 entièrement denses.</p><p>Positionnement : haute qualité avec un coût d'inférence comparable à un dense 17 B sur des serveurs avec assez de VRAM.</p>"
+    },
+    "annotation-vram": {
+      "eyebrow": "Schéma 5 · Annotation 1",
+      "title": "Hosting suit l'axe X (VRAM)",
+      "body": "<p>Le coût de hosting (location GPU/heure) est dimensionné par les paramètres totaux. Pour DeepSeek V3, il faut une infrastructure capable de loger 671 B de paramètres en HBM, même si seulement 37 B sont activés par token.</p><p>D'où l'expert parallelism : distribuer les experts entre nœuds.</p>"
+    },
+    "annotation-flops": {
+      "eyebrow": "Schéma 5 · Annotation 2",
+      "title": "Inférence suit l'axe Y (FLOPs)",
+      "body": "<p>Le coût de calcul par token (FLOPs) est dimensionné par les paramètres actifs. DeepSeek V3 calcule comme un dense 37 B à chaque token.</p><p>D'où l'effet d'échelle MoE : plus le traffic est élevé, plus la VRAM des experts est amortie sur les requêtes simultanées.</p>"
+    },
+    "annotation-mla": {
+      "eyebrow": "Schéma 5 · Annotation 3",
+      "title": "MLA — KV cache compressé ×20",
+      "body": "<p>Multi-head Latent Attention (DeepSeek V2/V3) compresse le KV cache via une projection latente partagée entre têtes.</p><p>Llama 70B à 128K = ~20 Go de KV cache ; DeepSeek V3 à 128K ≈ 1 Go. Facteur 20 qui rend l'inférence long-contexte économique. C'est l'innovation la plus sous-estimée de DeepSeek.</p>"
+    }
+  },
+  "schema-06": {
+    "hw-h100": {
+      "eyebrow": "Schéma 6 · Hopper",
+      "title": "NVIDIA H100",
+      "body": "<p>Le workhorse de l'inférence 2023-2025. 1 979 TFLOPS FP8, 80 Go HBM3, 3,35 To/s bandwidth.</p><p>Cloud price stabilisé à 2,85-3,50 $/heure début 2026. ~0,15 $/Mtok sur Llama 70B optimisé. Toujours dominant en flotte installée.</p>"
+    },
+    "hw-h200": {
+      "eyebrow": "Schéma 6 · Hopper refresh",
+      "title": "NVIDIA H200",
+      "body": "<p>Refresh de la H100 avec 141 Go HBM3e (vs 80 Go) et 4,8 To/s de bandwidth. Compute identique.</p><p>Cible : workloads long-contexte et RAG, où la VRAM supplémentaire évite de splitter les modèles. ~0,10 $/Mtok sur Llama 70B.</p>"
+    },
+    "hw-b200": {
+      "eyebrow": "Schéma 6 · Blackwell",
+      "title": "NVIDIA B200",
+      "body": "<p>Tensor Cores 5e gen avec FP4 natif. 4 500 TFLOPS FP4 (×2,3 vs H100 FP8). 192 Go HBM3e, NVLink 5 à 1,8 To/s.</p><p>NVIDIA revendique 15× sur le coût-par-Mtok et 10× sur le throughput par MW pour MoE. ~0,02 $/Mtok sur GPT-OSS-120B optimisé. Le standard 2026.</p>"
+    },
+    "hw-mi300x": {
+      "eyebrow": "Schéma 6 · AMD",
+      "title": "AMD MI300X",
+      "body": "<p>1 307 TFLOPS FP8, 192 Go HBM3 (égalité avec B200). Pari sur le decode memory-bound.</p><p>Talon d'Achille : ROCm vs CUDA. Microsoft, Meta, Oracle déploient en volume mais pour des workloads spécifiques. ~0,12 $/Mtok.</p>"
+    },
+    "hw-trainium2": {
+      "eyebrow": "Schéma 6 · AWS",
+      "title": "AWS Trainium 2",
+      "body": "<p>Silicium maison Annapurna. 96 Go HBM, ~1 250 TFLOPS BF16. Disponible uniquement via AWS managé.</p><p>Pari : intégration verticale absorbe les marges intermédiaires. AWS facture l'inférence Anthropic Claude sur Trainium 2 à 30-40 % de moins qu'H100 ; ~0,07 $/Mtok déclaré.</p>"
+    },
+    "hw-groq": {
+      "eyebrow": "Schéma 6 · Groq",
+      "title": "Groq LPU",
+      "body": "<p>Architecture SRAM-on-die — tout le modèle en SRAM, pas de HBM. 230 Mo SRAM par puce, donc on assemble des dizaines de LPU pour servir un Llama 70B.</p><p>Décode &gt;800 tok/s/utilisateur (vs ~200 sur H100). Coût/token plus élevé (~0,20 $/Mtok), mais latence justifie un premium pour agents et voice.</p>"
+    },
+    "annotation-blackwell-leap": {
+      "eyebrow": "Schéma 6 · Cadrage",
+      "title": "Le saut Blackwell",
+      "body": "<p>×15 sur le coût-par-Mtok, ×10 sur le throughput par MW vs Hopper, sur les charges MoE.</p><p>Moteurs : FP4 natif (Tensor Cores 5e gen) qui double la densité, NVLink 5 qui divise par 2 la latence des all-to-all MoE, HBM3e plus large. Source : InferenceMAX (octobre 2025) sur GPT-OSS-120B + TensorRT-LLM.</p>"
+    }
+  },
+  "schema-07": {
+    "model-gpt4o": {
+      "eyebrow": "Schéma 7 · Non-reasoning",
+      "title": "GPT-4o",
+      "body": "<p>Modèle non-reasoning de référence d'OpenAI. ~12 % d'accuracy AIME 2024 sur un single sample, ~0,01 $ par problème.</p><p>Le plafond conceptuel des modèles sans chaîne de pensée explicite : sans test-time compute, on ne dépasse pas ~15-20 % sur AIME, quel que soit le modèle.</p>"
+    },
+    "model-claude35": {
+      "eyebrow": "Schéma 7 · Non-reasoning",
+      "title": "Claude 3.5 Sonnet",
+      "body": "<p>Anthropic, 2024. ~16 % AIME 2024 single sample, ~0,03 $/problème.</p><p>Légèrement plus performant que GPT-4o mais reste contraint par le plafond non-reasoning. Sa version 3.7 (avril 2025) ajoute un mode reasoning qui le déplace vers le nuage de droite.</p>"
+    },
+    "model-llama70b": {
+      "eyebrow": "Schéma 7 · Non-reasoning",
+      "title": "Llama 3.1 70B",
+      "body": "<p>~5 % d'accuracy AIME 2024 à ~0,003 $ par problème — le pire en perf, le meilleur en coût.</p><p>Démontre que la déflation tokens/seconde sans test-time compute reste utile sur les workloads simples — chat, RAG, génération de texte courante.</p>"
+    },
+    "model-o1": {
+      "eyebrow": "Schéma 7 · Reasoning",
+      "title": "OpenAI o1",
+      "body": "<p>Premier reasoning model commercial. 74 % d'accuracy AIME single sample à ~1,20 $ par problème.</p><p>Saut de 60 points par rapport à GPT-4o, au prix d'un facteur 100 sur le coût. La chaîne de pensée cachée représente 10-30× le nombre de tokens output finaux.</p>"
+    },
+    "model-o1-rerank": {
+      "eyebrow": "Schéma 7 · Reasoning + reranking",
+      "title": "o1 + 64 samples reranking",
+      "body": "<p>En tirant 64 samples et en sélectionnant le meilleur via majority voting, o1 atteint 93 % sur AIME — pour ~15 $ par problème.</p><p>Démontre la scalabilité du test-time compute mais pose la question économique frontalement : 15 $ par problème est compatible avec un usage scientifique, pas avec un usage de masse.</p>"
+    },
+    "model-o3": {
+      "eyebrow": "Schéma 7 · Reasoning · état de l'art",
+      "title": "OpenAI o3",
+      "body": "<p>96,7 % d'accuracy AIME 2024 (Q4 2024 / Q1 2025), à un coût de l'ordre de 3-7 $ par problème selon configuration.</p><p>État de l'art en reasoning. Sur ARC-AGI, o3 a marqué un saut historique sur un benchmark conçu pour résister aux modèles de fondation.</p>"
+    },
+    "model-o3mini": {
+      "eyebrow": "Schéma 7 · Reasoning compact",
+      "title": "OpenAI o3-mini",
+      "body": "<p>Variante distillée d'o3. ~60 % AIME 2024 à ~0,30 $ par problème — soit 63 % moins cher qu'o1-mini à perf comparable.</p><p>Démontre que la pression d'optimisation s'applique aussi au reasoning : la frontière de Pareto se déplace, la pente reste défavorable mais s'aplatit.</p>"
+    },
+    "model-r1": {
+      "eyebrow": "Schéma 7 · Reasoning open-weight",
+      "title": "DeepSeek R1",
+      "body": "<p>Premier reasoning model open-weight crédible. 79 % AIME 2024 à ~0,40 $ par problème (sur Together / Fireworks).</p><p>Trained avec RL pure sur DeepSeek V3 base. Ouverture qui fait pression sur les marges des reasoning models propriétaires.</p>"
+    },
+    "annotation-gap": {
+      "eyebrow": "Schéma 7 · Cadrage",
+      "title": "L'écart 10-74×",
+      "body": "<p>Étude Raschka (2025) : sur AIME, les reasoning models sont 10 à 74× plus chers à exploiter que leurs équivalents non-reasoning à modèle base équivalent.</p><p>L'écart se contracte lentement (o3-mini, R1) mais reste structurel : la chaîne de pensée cachée représente une pénalité multiplicative que la pile d'inférence n'éliminera pas.</p>"
+    }
+  }
+};
+    const SOURCES = [];
+
+    const modalRoot = document.getElementById('modal-root');
+    const modalEyebrow = document.getElementById('modal-eyebrow');
+    const modalTitle = document.getElementById('modal-title');
+    const modalBody  = document.getElementById('modal-body');
+    let lastFocused = null;
+
+    function openModal(eyebrow, title, body) {
+      lastFocused = document.activeElement;
+      modalEyebrow.innerHTML = eyebrow || '';
+      modalTitle.innerHTML = title || '';
+      modalBody.innerHTML = body || '';
+      modalRoot.hidden = false;
+      document.body.style.overflow = 'hidden';
+      modalRoot.querySelector('.modal-close')?.focus();
+    }
+    function closeModal() {
+      modalRoot.hidden = true;
+      document.body.style.overflow = '';
+      lastFocused?.focus();
+    }
+
+    function dispatchInteractive(target) {
+      const region = target.closest?.('.interactive[data-card]');
+      if (!region) return false;
+      const svg = region.closest('svg[data-schema-id]');
+      const schemaId = svg?.dataset.schemaId;
+      const cardId = region.dataset.card;
+      const card = SCHEMAS?.[schemaId]?.[cardId];
+      if (card) { openModal(card.eyebrow || '', card.title || '', card.body || ''); return true; }
+      return false;
+    }
+
+    document.addEventListener('click', (e) => {
+      if (dispatchInteractive(e.target)) return;
+      if (e.target.matches('[data-close]')) { closeModal(); return; }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !modalRoot.hidden) { closeModal(); return; }
+      if ((e.key === 'Enter' || e.key === ' ') && document.activeElement?.matches('.interactive[data-card]')) {
+        e.preventDefault(); document.activeElement.click();
+      }
+    });
+
+    // Make every .interactive keyboard-focusable
+    document.querySelectorAll('.interactive[data-card]').forEach((el) => {
+      if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '0');
+      if (!el.hasAttribute('role')) el.setAttribute('role', 'button');
+    });
+
+    document.addEventListener('click', (e) => {
+      const cite = e.target.closest('.cite[data-cite]');
+      if (!cite) return;
+      e.preventDefault();
+      const n = cite.dataset.cite;
+      const li = document.getElementById('source-' + n);
+      if (!li) return;
+      const sources = document.getElementById('sources');
+      const layout = document.querySelector('.layout');
+      const isMobile = window.innerWidth <= 1024;
+      const wasCollapsed = !isMobile && layout?.classList.contains('sources-collapsed');
+      if (isMobile) sources.classList.add('open');
+      else if (wasCollapsed) document.getElementById('sources-expand-btn')?.click();
+      const doScrollAndHighlight = () => {
+        li.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        li.classList.add('highlight');
+        clearTimeout(li._hl);
+        li._hl = setTimeout(() => li.classList.remove('highlight'), 2400);
+      };
+      if (wasCollapsed) setTimeout(doScrollAndHighlight, 320);
+      else doScrollAndHighlight();
+    });
+
+    (function setupTooltipFloater() {
+      const floater = document.createElement('div');
+      floater.id = 'tooltip-floater';
+      floater.setAttribute('role', 'tooltip');
+      floater.hidden = true;
+      document.body.appendChild(floater);
+      let activeTerm = null;
+      let pinned = false;
+      document.querySelectorAll('.term').forEach(t => { if (!t.hasAttribute('tabindex')) t.setAttribute('tabindex', '0'); });
+      function show(term) {
+        const text = term.dataset.tooltip;
+        if (!text) return;
+        floater.textContent = text;
+        floater.hidden = false;
+        activeTerm = term;
+        position();
+      }
+      function hide() { floater.hidden = true; activeTerm = null; }
+      function position() {
+        if (!activeTerm) return;
+        const r = activeTerm.getBoundingClientRect();
+        const margin = 8;
+        floater.style.left = '0px'; floater.style.top = '0px';
+        const tip = floater.getBoundingClientRect();
+        let top = r.top - tip.height - margin;
+        let side = 'top';
+        if (top < margin) { top = r.bottom + margin; side = 'bottom'; }
+        let left = r.left + r.width / 2 - tip.width / 2;
+        const minLeft = margin;
+        const maxLeft = window.innerWidth - tip.width - margin;
+        if (left < minLeft) left = minLeft;
+        if (left > maxLeft) left = maxLeft;
+        const arrowX = (r.left + r.width / 2) - left;
+        floater.style.setProperty('--arrow-x', arrowX + 'px');
+        floater.dataset.side = side;
+        floater.style.left = left + 'px';
+        floater.style.top = top + 'px';
+      }
+      document.addEventListener('mouseover', (e) => {
+        const t = e.target.closest?.('.term[data-tooltip]');
+        if (t && t !== activeTerm) show(t);
+      });
+      document.addEventListener('mouseout', (e) => {
+        if (pinned) return;
+        const fromT = e.target.closest?.('.term[data-tooltip]');
+        const toT = e.relatedTarget?.closest?.('.term[data-tooltip]');
+        if (fromT && fromT !== toT) hide();
+      });
+      document.addEventListener('focusin', (e) => {
+        const t = e.target.closest?.('.term[data-tooltip]');
+        if (t) show(t);
+      });
+      document.addEventListener('focusout', (e) => {
+        if (pinned) return;
+        const t = e.target.closest?.('.term[data-tooltip]');
+        if (t) hide();
+      });
+      document.addEventListener('click', (e) => {
+        const t = e.target.closest?.('.term[data-tooltip]');
+        if (t) {
+          e.stopPropagation();
+          if (pinned && activeTerm === t) { pinned = false; hide(); }
+          else { pinned = true; show(t); }
+          return;
+        }
+        if (pinned) { pinned = false; hide(); }
+      });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && pinned) { pinned = false; hide(); }
+      });
+      let raf = null;
+      function reposition() {
+        if (!activeTerm) return;
+        if (raf) return;
+        raf = requestAnimationFrame(() => { raf = null; position(); });
+      }
+      window.addEventListener('scroll', reposition, true);
+      window.addEventListener('resize', reposition);
+    })();
+
+    const tocLinks = document.querySelectorAll('#toc a[href^="#"]');
+    tocLinks.forEach(a => {
+      a.addEventListener('click', (e) => {
+        const id = a.getAttribute('href').slice(1);
+        const target = document.getElementById(id);
+        if (target) {
+          e.preventDefault();
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          document.getElementById('toc').classList.remove('open');
+        }
+      });
+    });
+
+    if ('IntersectionObserver' in window) {
+      const sections = Array.from(document.querySelectorAll('main section[id]'));
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            tocLinks.forEach(a => a.classList.remove('active'));
+            const link = document.querySelector('#toc a[href="#' + entry.target.id + '"]');
+            link?.classList.add('active');
+          }
+        });
+      }, { rootMargin: '-30% 0px -60% 0px' });
+      sections.forEach(s => observer.observe(s));
+    }
+
+    document.getElementById('toggle-toc')?.addEventListener('click', () => {
+      document.getElementById('sources').classList.remove('open');
+      document.getElementById('toc').classList.toggle('open');
+    });
+    document.getElementById('toggle-sources')?.addEventListener('click', () => {
+      document.getElementById('toc').classList.remove('open');
+      document.getElementById('sources').classList.toggle('open');
+    });
+    document.querySelectorAll('.panel-close').forEach((btn) => {
+      btn.addEventListener('click', () => { btn.closest('#toc, #sources')?.classList.remove('open'); });
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      const zoom  = document.getElementById('zoom-overlay');
+      const modal = document.getElementById('modal-root');
+      if (zoom && !zoom.hidden) return;
+      if (modal && !modal.hidden) return;
+      const open = document.querySelector('#toc.open, #sources.open');
+      if (open) { e.preventDefault(); open.classList.remove('open'); }
+    });
+
+    (function setupZoom() {
+      const overlay  = document.getElementById('zoom-overlay');
+      const stage    = document.getElementById('zoom-stage');
+      const content  = document.getElementById('zoom-content');
+      const captionE = document.getElementById('zoom-caption');
+      const hint     = document.getElementById('zoom-hint');
+      if (!overlay || !stage || !content) return;
+      let scale = 1, tx = 0, ty = 0;
+      let svgW = 0, svgH = 0;
+      let fitScale = 1;
+      let lastZoomTrigger = null;
+      const applyTransform = () => { content.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`; };
+      const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+      function fitToStage() {
+        if (!svgW || !svgH) return;
+        const r = stage.getBoundingClientRect();
+        const margin = 32;
+        fitScale = Math.min((r.width - margin*2) / svgW, (r.height - margin*2) / svgH);
+        scale = fitScale;
+        tx = (r.width  - svgW * scale) / 2;
+        ty = (r.height - svgH * scale) / 2;
+        applyTransform();
+      }
+      function zoomAt(mx, my, factor) {
+        const newScale = clamp(scale * factor, fitScale * 0.5, fitScale * 16);
+        tx = mx - newScale * (mx - tx) / scale;
+        ty = my - newScale * (my - ty) / scale;
+        scale = newScale;
+        applyTransform();
+      }
+      function openZoom(svgEl, captionText) {
+        const clone = svgEl.cloneNode(true);
+        const vb = clone.viewBox?.baseVal;
+        svgW = (vb && vb.width)  || svgEl.getBoundingClientRect().width  || 1200;
+        svgH = (vb && vb.height) || svgEl.getBoundingClientRect().height || 800;
+        clone.setAttribute('width', svgW); clone.setAttribute('height', svgH);
+        clone.style.width = svgW + 'px';   clone.style.height = svgH + 'px';
+        content.innerHTML = ''; content.appendChild(clone);
+        captionE.textContent = captionText || '';
+        lastZoomTrigger = document.activeElement;
+        overlay.hidden = false;
+        document.body.style.overflow = 'hidden';
+        requestAnimationFrame(() => {
+          fitToStage();
+          stage.focus({ preventScroll: true });
+          if (hint) {
+            hint.classList.remove('fade');
+            clearTimeout(hint._t);
+            hint._t = setTimeout(() => hint.classList.add('fade'), 2600);
+          }
+        });
+      }
+      function closeZoom() {
+        overlay.hidden = true; content.innerHTML = '';
+        document.body.style.overflow = '';
+        lastZoomTrigger?.focus?.();
+      }
+      document.querySelectorAll('.figure').forEach((fig) => {
+        const svg = fig.querySelector('svg');
+        if (!svg) return;
+        const cap = fig.querySelector('.figure-caption, figcaption');
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'zoom-btn';
+        btn.innerHTML = '⛶';
+        btn.setAttribute('aria-label', 'Agrandir le schéma en plein écran');
+        btn.title = 'Agrandir';
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openZoom(svg, cap?.textContent?.trim() || '');
+        });
+        fig.appendChild(btn);
+      });
+      overlay.querySelector('.zoom-close')?.addEventListener('click', closeZoom);
+      overlay.querySelector('.zoom-in')?.addEventListener('click',  () => { const r = stage.getBoundingClientRect(); zoomAt(r.width/2, r.height/2, 1.25); });
+      overlay.querySelector('.zoom-out')?.addEventListener('click', () => { const r = stage.getBoundingClientRect(); zoomAt(r.width/2, r.height/2, 1/1.25); });
+      overlay.querySelector('.zoom-reset')?.addEventListener('click', fitToStage);
+      document.addEventListener('keydown', (e) => {
+        if (overlay.hidden) return;
+        if (e.key === 'Escape') { e.preventDefault(); closeZoom(); }
+        else if (e.key === '+' || e.key === '=') { e.preventDefault(); const r = stage.getBoundingClientRect(); zoomAt(r.width/2, r.height/2, 1.25); }
+        else if (e.key === '-' || e.key === '_') { e.preventDefault(); const r = stage.getBoundingClientRect(); zoomAt(r.width/2, r.height/2, 1/1.25); }
+        else if (e.key === '0') { e.preventDefault(); fitToStage(); }
+      });
+      stage.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const r = stage.getBoundingClientRect();
+        const factor = e.deltaY < 0 ? 1.15 : 1/1.15;
+        zoomAt(e.clientX - r.left, e.clientY - r.top, factor);
+      }, { passive: false });
+      let dragging = false, sx = 0, sy = 0, stx = 0, sty = 0;
+      stage.addEventListener('pointerdown', (e) => {
+        if (e.target.closest('.interactive[data-card]')) return;
+        dragging = true; stage.classList.add('grabbing');
+        stage.setPointerCapture?.(e.pointerId);
+        sx = e.clientX; sy = e.clientY; stx = tx; sty = ty;
+      });
+      stage.addEventListener('pointermove', (e) => {
+        if (!dragging) return;
+        tx = stx + (e.clientX - sx); ty = sty + (e.clientY - sy);
+        applyTransform();
+      });
+      const endDrag = (e) => {
+        if (!dragging) return;
+        dragging = false; stage.classList.remove('grabbing');
+        stage.releasePointerCapture?.(e.pointerId);
+      };
+      stage.addEventListener('pointerup', endDrag);
+      stage.addEventListener('pointercancel', endDrag);
+      stage.addEventListener('pointerleave', endDrag);
+      let pinchStartDist = 0, pinchStartScale = 1, pinchMid = { x: 0, y: 0 };
+      stage.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 2) {
+          dragging = false;
+          const t1 = e.touches[0], t2 = e.touches[1];
+          pinchStartDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+          pinchStartScale = scale;
+          const r = stage.getBoundingClientRect();
+          pinchMid = { x: (t1.clientX + t2.clientX)/2 - r.left, y: (t1.clientY + t2.clientY)/2 - r.top };
+        }
+      }, { passive: true });
+      stage.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 2 && pinchStartDist > 0) {
+          e.preventDefault();
+          const t1 = e.touches[0], t2 = e.touches[1];
+          const d = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+          zoomAt(pinchMid.x, pinchMid.y, (d / pinchStartDist) * (pinchStartScale / scale));
+        }
+      }, { passive: false });
+      stage.addEventListener('touchend', (e) => { if (e.touches.length < 2) pinchStartDist = 0; });
+      window.addEventListener('resize', () => { if (!overlay.hidden) fitToStage(); });
+    })();
+
+    (function setupSourcesToggle() {
+      const layout      = document.querySelector('.layout');
+      const collapseBtn = document.getElementById('sources-collapse-btn');
+      const expandBtn   = document.getElementById('sources-expand-btn');
+      if (!layout || !collapseBtn || !expandBtn) return;
+      const STORAGE_KEY = 'idr-sources-collapsed:' + (location.pathname || 'default');
+      function setCollapsed(collapsed) {
+        layout.classList.toggle('sources-collapsed', collapsed);
+        expandBtn.hidden = !collapsed;
+        collapseBtn.setAttribute('aria-expanded', String(!collapsed));
+        expandBtn.setAttribute('aria-expanded', String(!collapsed));
+        try { localStorage.setItem(STORAGE_KEY, collapsed ? '1' : '0'); } catch (_) {}
+      }
+      collapseBtn.addEventListener('click', () => setCollapsed(true));
+      expandBtn.addEventListener('click', () => {
+        setCollapsed(false);
+        requestAnimationFrame(() => collapseBtn.focus({ preventScroll: true }));
+      });
+      try { if (localStorage.getItem(STORAGE_KEY) === '1') setCollapsed(true); } catch (_) {}
+    })();
+
   </script>
 </body>
 </html>
