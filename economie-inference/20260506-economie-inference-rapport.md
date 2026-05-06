@@ -74,7 +74,9 @@ La **désagrégation prefill/decode** sépare ces deux phases sur des pools de c
 - **Mooncake** (Moonshot AI, Kimi). Architecture KVCache-centric : un pool de KV cache partagé exploite la DRAM CPU et les SSDs des nœuds GPU sous-utilisés. ==Mooncake sert plus de 100 milliards de tokens par jour aux utilisateurs Kimi, déployé sur des milliers de nœuds==[^6]. Le transfert utilise RDMA pour des latences sub-milliseconde.
 - **DistServe** (UCSD, OSDI 2024). Sépare prefill et decode pour respecter des SLO de TTFT et de TPOT indépendants. Le retour d'expérience publié 18 mois plus tard montre une adoption industrielle massive[^13].
 
-[SCHEMA-04]
+![Architecture désagrégée prefill / decode / KV cache bus|1200](images/20260506-04-desagregation.svg)
+
+*Schéma 4 — Désagrégation à la Splitwise/Mooncake : un cluster prefill (compute-bound, H100/B200), un cluster decode (memory-bound, A100/MI300X), un bus KV cache RDMA. TTFT 1,4-2,3× plus rapide ; coût additionnel : trafic réseau qui croît avec la longueur de contexte.*
 
 Le coût n'est pas nul : le transfert du KV cache croît linéairement avec la longueur du contexte. Pour un contexte 128 K sur Llama 70B FP16, on déplace ~20 Go de prefill vers decode. Le réseau devient un budget à part entière — les datacenters d'inférence modernes provisionnent 800 Gbps Ethernet ou InfiniBand HDR/NDR par nœud. Les gains TTFT mesurés sur des workloads réels tournent autour de **1,4 à 2,3×**[^13].
 
