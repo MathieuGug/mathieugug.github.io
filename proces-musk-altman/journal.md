@@ -54,7 +54,7 @@ Symétrie procédurale, pour finir. Wachtell tient son verrou (*unclean hands* c
 
 **Angle du jour — « Clean hands ». Le procès se dédouble : Wachtell ne plaide plus l'innocence d'OpenAI, il bâtit l'enrayage doctrinal du demandeur.**
 
-![Le verrou de l'unclean hands se construit — schéma du jour](images/journal-2026-05-06-clean-hands.svg)
+![Le verrou de l'unclean hands se construit — schéma du jour|1300](images/journal-2026-05-06-clean-hands.svg)
 
 Hier, je notais que la séquence Brockman du lundi avait remis le rapport de force documentaire à parité : *« partly »* à OpenAI, *« greater allegiance »* à Musk. Mardi, Wachtell a posé la pièce que je n'avais pas anticipée. Le second jour de Brockman n'a pas porté sur ce que **lui** avait fait — c'était l'angle de lundi. Il a porté sur ce que **Musk** avait demandé à OpenAI de faire pour lui, pendant la fenêtre exacte où Musk se présente aujourd'hui en *settlor* trahi. Trois actes alignés en une seule audience, un quatrième cadré pour mercredi, et le « partly » de la semaine précédente qui ferme le cycle. Cinq pièces, même fenêtre temporelle, même demandeur, même charité.
 
