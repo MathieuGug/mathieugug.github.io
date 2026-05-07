@@ -8,8 +8,9 @@ Dossier illustré sur l'impact de l'IA sur le travail : littérature mondiale et
 
 ```
 ia-et-travail/
-├── 20260504-ia-et-travail-rapport.md   ← rapport markdown (Obsidian-compatible)
-├── 20260504-ia-et-travail-app.html     ← app interactive standalone
+├── 20260504-ia-et-travail-rapport.md     ← rapport markdown (Obsidian-compatible)
+├── 20260504-ia-et-travail-app.html       ← app interactive standalone
+├── 20260507-ia-et-travail-slideshow.html ← slideshow narratif 10-12 min
 ├── images/
 │   ├── 20260504-01-frise-estimations.svg
 │   ├── 20260504-02-triptyque-gpt.svg
@@ -25,6 +26,7 @@ ia-et-travail/
 ## Comment lire
 
 - **App interactive** (`*-app.html`) — ouvrir directement dans un navigateur. Sommaire à gauche, sources cliquables à droite (collapsible sur desktop, panneau plein écran sur mobile). Cliquer sur une région d'un schéma ouvre une fiche détaillée. Bouton ⛶ au survol d'un schéma pour zoom plein écran (molette / pinch / Esc). Termes en pointillés gris : tooltips.
+- **Slideshow narratif** (`*-slideshow.html`) — alternative scénique en treize scènes plein écran (~10-12 min). Réutilise les huit schémas du rapport, joués pas à pas avec révélation progressive. Modaux en sidebar, timeline verticale, hotkeys ←/→/S/R, swipe sur mobile.
 - **Rapport markdown** (`*-rapport.md`) — version texte avec footnotes numérotées. Compatible Obsidian (références d'images en syntaxe `![alt|width](images/...)`). Les schémas SVG sont externes dans `images/`.
 - **SVG individuels** (`images/*.svg`) — réutilisables tels quels dans un autre support (présentation, article, print).
 

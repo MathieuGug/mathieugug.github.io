@@ -1,0 +1,1738 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#faf6ec">
+<title>L'IA et le travail — slideshow</title>
+<meta name="description" content="L'IA et le travail · slideshow narratif : sept estimations, l'IA comme general-purpose technology, anatomie d'un framework, augmentation vs automatisation, pause d'Engels, carte des métiers français, quatre scénarios pour 2035, six leviers — par Mathieu Guglielmino.">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #faf6ec;
+  --bg-2: #f3eedf;
+  --paper: #ffffff;
+  --line: rgba(30,30,44,0.08);
+  --line-strong: rgba(30,30,44,0.20);
+  --text: #1e1e2a;
+  --text-dim: #3b3f4d;
+  --text-mid: #6b6f7c;
+  --text-faint: #9a9ca5;
+  --accent: #b8582e;
+  --carmine: #b23b1b;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; font-weight: 300; line-height: 1.55; -webkit-font-smoothing: antialiased; height: 100vh; overflow: hidden; max-width: 100vw; }
+body { background:
+  radial-gradient(ellipse at 14% 8%, rgba(184,88,46,0.06) 0%, transparent 55%),
+  radial-gradient(ellipse at 86% 92%, rgba(75,148,102,0.04) 0%, transparent 55%),
+  var(--bg);
+}
+a { color: inherit; }
+
+/* Topbar — copie du pattern site */
+.topbar { position: fixed; top: 0; left: 0; right: 0; z-index: 50; padding: 12px 28px; height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 24px; background: rgba(250,246,236,0.78); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid transparent; transition: opacity 0.25s, border-color 0.3s; }
+.topbar > a { font-family: 'Fraunces', serif; font-weight: 500; font-size: 15.5px; letter-spacing: -0.01em; text-decoration: none; color: var(--text); flex-shrink: 0; }
+.topbar em { font-style: italic; color: var(--accent); }
+.topbar .back { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-mid); }
+.topbar .back:hover { color: var(--accent); }
+.scene-title-bar { flex: 1; min-width: 0; display: flex; align-items: baseline; justify-content: center; gap: 14px; font-family: 'Fraunces', serif; font-weight: 400; font-size: clamp(20px, 2.6vw, 32px); letter-spacing: -0.01em; color: var(--text); text-align: center; opacity: 1; transition: opacity 220ms ease; overflow: hidden; }
+.scene-title-bar.fade { opacity: 0; }
+.scene-title-bar .num { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; letter-spacing: 0.24em; color: var(--text-faint); flex-shrink: 0; }
+.scene-title-bar .title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.scene-title-bar:empty { display: none; }
+
+/* Surlignage stabilo — signature site */
+mark { background: linear-gradient(transparent 58%, rgba(178, 59, 27, 0.14) 58%); color: inherit; padding: 0 2px; }
+
+/* Stage : zone scène plein écran (libère l'espace à droite pour la sidebar timeline) */
+.stage { position: fixed; top: 64px; left: 0; right: 64px; bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px 24px 24px; transition: opacity 250ms ease, right 280ms cubic-bezier(0.22, 1, 0.36, 1); }
+body.modal-open .stage { right: 480px; }
+@media (max-width: 1024px) {
+  /* Sur mobile, le modal occupe le bas de l'écran, la stage ne rétrécit pas */
+  body.modal-open .stage { right: 0; }
+}
+.stage.fading-out { opacity: 0; }
+
+/* Mobile */
+@media (max-width: 768px) {
+  .topbar { height: 56px; padding: 10px 16px; gap: 12px; }
+  .scene-title-bar { font-size: clamp(13px, 3vw, 18px); }
+  .scene-title-bar .num { font-size: 9px; letter-spacing: 0.18em; }
+  .stage { top: 56px; }
+}
+@media (max-width: 560px) {
+  .topbar { padding: 10px 14px; gap: 8px; }
+  .topbar > a { font-size: 13px; }
+  .topbar .back { font-size: 9px; letter-spacing: 0.16em; }
+  .scene-title-bar .num { display: none; }
+  .stage { padding: 16px 16px 80px; }
+}
+@media (max-width: 480px) {
+  .scene-title-bar { display: none; }
+}
+@media (max-width: 380px) {
+  .topbar > a:first-child em { display: none; }
+}
+
+.scene-punchline { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; max-width: 1000px; padding: 0 24px; gap: 32px; }
+.scene-punchline .body { font-family: 'Fraunces', serif; font-style: italic; font-weight: 300; font-size: clamp(32px, 5.5vw, 64px); line-height: 1.18; letter-spacing: -0.015em; color: var(--text); }
+.scene-punchline .body mark { background: linear-gradient(transparent 58%, rgba(178, 59, 27, 0.18) 58%); padding: 0 4px; }
+.scene-punchline .attribution { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-faint); }
+
+@media (max-width: 560px) {
+  .scene-punchline .body { font-size: clamp(22px, 7vw, 32px); line-height: 1.25; }
+}
+
+.scene-outro { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; max-width: 700px; gap: 36px; padding: 0 24px; }
+.scene-outro .eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--accent); }
+.scene-outro h2 { font-family: 'Fraunces', serif; font-weight: 300; font-size: clamp(36px, 5vw, 56px); line-height: 1.1; letter-spacing: -0.02em; }
+.scene-outro h2 em { font-style: italic; color: var(--accent); }
+.scene-outro .body { font-family: 'Fraunces', serif; font-style: italic; font-size: clamp(17px, 2.2vw, 22px); line-height: 1.5; color: var(--text-dim); max-width: 560px; }
+.scene-outro .ctas { display: flex; flex-direction: column; gap: 14px; align-items: stretch; min-width: 320px; }
+.scene-outro .cta-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 16px 28px; background: var(--accent); color: white; text-decoration: none; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; border-radius: 4px; transition: background 0.2s; }
+.scene-outro .cta-primary:hover { background: var(--carmine); }
+.scene-outro .cta-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 24px; background: transparent; color: var(--text); text-decoration: none; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase; border: 1px solid var(--line-strong); border-radius: 4px; transition: border-color 0.2s, color 0.2s; }
+.scene-outro .cta-secondary:hover { border-color: var(--accent); color: var(--accent); }
+.scene-outro .restart { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-faint); cursor: pointer; background: none; border: none; padding: 8px; }
+.scene-outro .restart:hover { color: var(--accent); }
+.scene-outro .disclosure { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-faint); margin-top: 24px; }
+
+#schemas { display: none; }
+#schemas[hidden] { display: none !important; }
+.schema-host { display: flex; flex-direction: column; align-items: center; justify-content: center; max-width: min(1400px, 92vw); width: 100%; gap: 12px; }
+.schema-host .scene-title { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--text-mid); display: flex; align-items: baseline; gap: 12px; }
+.schema-host .scene-title .num { color: var(--text-faint); }
+.schema-host .scene-title .title { font-family: 'Fraunces', serif; font-weight: 400; font-size: clamp(20px, 2.8vw, 32px); letter-spacing: -0.01em; text-transform: none; color: var(--text); }
+.schema-host svg { width: 100%; max-width: 100%; height: auto; max-height: calc(100vh - 170px); display: block; }
+.schema-host .caption { font-family: 'Fraunces', serif; font-style: italic; font-weight: 300; font-size: clamp(16px, 1.8vw, 20px); line-height: 1.5; color: var(--text-dim); text-align: center; max-width: 720px; min-height: 2.4em; transition: opacity 180ms ease; }
+.schema-host .caption.fade-out { opacity: 0; }
+
+/* Vocabulaire visuel des révélations */
+.schema-host svg [data-step-state="dim"] { opacity: 0.18; transition: opacity 220ms ease, filter 220ms ease; }
+.schema-host svg [data-step-state="active"] { opacity: 1; transition: opacity 220ms ease, filter 220ms ease; }
+.schema-host svg [data-step-state="hidden"] { opacity: 0; pointer-events: none; transition: opacity 220ms ease; }
+
+/* Masquer l'en-tête interne du SVG (eyebrow + titre + lede) — le slideshow a son propre titre externe */
+.schema-host svg .svg-header { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .stage { transition: opacity 0ms ease, right 0ms ease !important; }
+  .schema-host svg [data-step-state] { transition: none !important; }
+  .schema-host .caption { transition: none !important; }
+  .scene-outro .cta-primary, .scene-outro .cta-secondary { transition: none !important; }
+  #modal-root { transition: transform 0ms ease !important; }
+  .toaster { transition: none !important; }
+}
+
+/* ── Zoom overlay ── */
+#zoom-overlay[hidden] { display: none !important; }
+#zoom-overlay {
+  position: fixed; inset: 0; z-index: 400;
+  display: flex; flex-direction: column;
+  background: rgba(26, 26, 26, 0.94);
+  backdrop-filter: blur(3px);
+}
+#zoom-header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; padding: 12px 20px;
+  color: #faf6ec;
+  font-family: 'Inter', system-ui, sans-serif; font-size: 0.85rem;
+  border-bottom: 1px solid rgba(250, 248, 243, 0.12);
+}
+#zoom-caption {
+  flex: 1; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  opacity: 0.85;
+}
+.zoom-controls { display: flex; gap: 4px; flex-shrink: 0; }
+.zoom-controls button {
+  background: transparent;
+  border: 1px solid rgba(250, 248, 243, 0.32);
+  color: #faf6ec; padding: 6px 12px;
+  min-width: 36px; cursor: pointer;
+  font: inherit; font-size: 0.85rem; border-radius: 3px;
+  transition: background 120ms, border-color 120ms;
+}
+.zoom-controls button:hover { background: rgba(250, 248, 243, 0.12); border-color: rgba(250, 248, 243, 0.6); }
+.zoom-controls button:focus-visible { outline: 2px solid #faf6ec; outline-offset: 2px; }
+.zoom-controls .zoom-close { font-size: 1.3rem; line-height: 1; padding: 2px 10px; }
+#zoom-stage { flex: 1; overflow: hidden; position: relative; cursor: grab; touch-action: none; }
+#zoom-stage.grabbing { cursor: grabbing; }
+#zoom-content { position: absolute; top: 0; left: 0; transform-origin: 0 0; will-change: transform; }
+#zoom-content > svg {
+  display: block; max-width: none; max-height: none;
+  background: var(--bg); box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+}
+#zoom-hint {
+  position: absolute; bottom: 16px; left: 50%;
+  transform: translateX(-50%);
+  color: rgba(250, 248, 243, 0.55);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.75rem; pointer-events: none;
+  transition: opacity 400ms;
+}
+#zoom-hint.fade { opacity: 0; }
+@media (max-width: 640px) {
+  .zoom-controls .zoom-reset { display: none; }
+  #zoom-caption { font-size: 0.78rem; }
+}
+
+/* Bouton zoom sur les schémas */
+.schema-wrapper { position: relative; }
+.zoom-btn {
+  position: absolute; top: 10px; left: 10px;
+  background: rgba(250,246,236,0.85); border: 1px solid rgba(30,30,44,0.18);
+  color: var(--text-dim); font-size: 1.15rem; line-height: 1;
+  width: 36px; height: 36px; border-radius: 4px;
+  cursor: pointer; opacity: 0;
+  transition: opacity 150ms, background 120ms, border-color 120ms, color 120ms;
+  z-index: 2;
+}
+.schema-wrapper:hover .zoom-btn, .schema-wrapper:focus-within .zoom-btn, .zoom-btn:focus-visible { opacity: 1; }
+.zoom-btn:hover { background: var(--bg-2); border-color: var(--text); color: var(--text); }
+@media (hover: none) { .zoom-btn { opacity: 0.85; } }
+
+/* ── Modal en sidebar toggable à droite (préserve la vue du SVG) ── */
+#modal-root[hidden] { display: none !important; }
+#modal-root {
+  position: fixed; right: 64px; top: 64px; bottom: 0;
+  width: 400px;
+  z-index: 200;
+  pointer-events: none;
+  transform: translateX(calc(100% + 64px));
+  transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+#modal-root:not([hidden]) {
+  transform: translateX(0);
+  pointer-events: auto;
+}
+.modal-backdrop { display: none; }
+.modal-card {
+  position: relative;
+  background: var(--paper);
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  padding: 36px 32px 32px;
+  border-left: 4px solid var(--carmine);
+  box-shadow: -16px 0 48px rgba(30,25,18,0.08);
+}
+@media (max-width: 1024px) {
+  /* Sur mobile : modal redevient centré plein écran */
+  #modal-root { right: 0; top: 0; bottom: 0; width: 100%; transform: translateY(100%); transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1); display: flex; align-items: flex-end; justify-content: center; }
+  #modal-root:not([hidden]) { transform: translateY(0); }
+  .modal-card { width: 100%; max-width: 100%; height: 90vh; max-height: 90vh; border-left: none; border-top: 4px solid var(--carmine); border-radius: 12px 12px 0 0; box-shadow: 0 -16px 48px rgba(30,25,18,0.2); }
+}
+.modal-close {
+  position: absolute; top: 12px; right: 12px;
+  background: none; border: none;
+  font-size: 1.6rem; line-height: 1; cursor: pointer;
+  color: var(--text-mid);
+  width: 32px; height: 32px; border-radius: 4px;
+}
+.modal-close:hover { background: var(--bg-2); color: var(--text); }
+.modal-card h3 {
+  font-family: 'Fraunces', serif; font-weight: 600;
+  font-size: 1.4rem; margin: 0 0 6px; letter-spacing: -0.01em;
+}
+.modal-card .modal-eyebrow {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.72rem;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--carmine); margin: 0 0 14px;
+}
+.modal-card .modal-body p { margin: 0 0 0.9rem; font-size: 0.95rem; }
+.modal-card .modal-body p:last-child { margin-bottom: 0; }
+.modal-card .modal-body figure.ref {
+  margin: 0.6rem 0 1.1rem;
+}
+.modal-card .modal-body figure.ref img {
+  display: block; width: 100%; height: auto;
+  border-radius: 3px;
+  border: 1px solid rgba(26,26,26,0.08);
+  box-shadow: 0 8px 22px rgba(0,0,0,0.12);
+  background: var(--bg-2);
+}
+.modal-card .modal-body figure.ref figcaption {
+  margin-top: 8px;
+  font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; line-height: 1.5;
+  letter-spacing: 0.02em; color: var(--text-mid);
+}
+.modal-card .modal-body figure.ref figcaption em { font-style: italic; color: var(--text); }
+.modal-card .modal-body figure.ref figcaption a { color: var(--accent); text-decoration: none; }
+.modal-card .modal-body figure.ref figcaption a:hover { text-decoration: underline; }
+
+/* Timeline en sidebar verticale à droite + boutons */
+.footer-bar { position: fixed; right: 18px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; gap: 24px; z-index: 40; pointer-events: none; }
+.timeline { display: flex; flex-direction: column; gap: 4px; align-items: center; pointer-events: auto; }
+.timeline .seg { width: 4px; height: 36px; background: var(--text-faint); opacity: 0.4; cursor: pointer; position: relative; transition: opacity 0.2s, background 0.2s; }
+.timeline .seg.visited { background: var(--accent); opacity: 0.5; }
+.timeline .seg.current { background: var(--accent); opacity: 1; }
+.timeline .seg .fill { position: absolute; left: 0; right: 0; top: 0; height: 0%; background: var(--accent); transition: height 220ms ease; }
+.timeline .seg:hover { opacity: 1; }
+.timeline .seg .label { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); white-space: nowrap; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-mid); background: var(--bg); padding: 4px 8px; border-radius: 3px; opacity: 0; pointer-events: none; transition: opacity 0.15s; box-shadow: 0 1px 3px rgba(30,30,44,0.08); }
+.timeline .seg:hover .label { opacity: 1; }
+.timeline .seg.punchline { width: 8px; height: 8px; border-radius: 50%; background: var(--text-faint); }
+.timeline .seg.punchline.visited { background: var(--accent); opacity: 0.7; }
+.timeline .seg.punchline.current { background: var(--accent); opacity: 1; transform: scale(1.3); }
+.timeline .seg.outro::after { content: '▸'; position: absolute; left: -7px; bottom: -2px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-faint); }
+.timeline .seg.outro.visited::after, .timeline .seg.outro.current::after { color: var(--accent); }
+.footer-actions { display: flex; flex-direction: column; gap: 10px; align-items: center; pointer-events: auto; writing-mode: vertical-rl; }
+.footer-actions .footer-btn { writing-mode: vertical-rl; transform: rotate(180deg); }
+.footer-btn { background: none; border: none; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-mid); cursor: pointer; padding: 6px 4px; transition: color 0.2s; }
+.footer-btn:hover { color: var(--accent); }
+
+@media (max-width: 1024px) {
+  /* Sur écrans étroits/mobile : revenir à une timeline horizontale en bas */
+  .stage { right: 0; bottom: 64px; padding: 16px 16px 16px; }
+  .schema-host svg { max-height: calc(100vh - 220px); }
+  .footer-bar { right: 0; left: 0; top: auto; bottom: 16px; transform: none; flex-direction: row; justify-content: center; gap: 20px; padding: 0 16px; }
+  .timeline { flex-direction: row; }
+  .timeline .seg { width: 28px; height: 4px; }
+  .timeline .seg .fill { left: 0; right: auto; top: 0; bottom: 0; height: 100%; width: 0%; transition: width 220ms ease; }
+  .timeline .seg .label { right: auto; bottom: 14px; left: 50%; top: auto; transform: translateX(-50%); display: none; }
+  .timeline .seg.outro::after { left: auto; right: -2px; top: -7px; bottom: auto; }
+  .footer-actions { flex-direction: row; writing-mode: horizontal-tb; }
+  .footer-actions .footer-btn { writing-mode: horizontal-tb; transform: none; }
+  .footer-btn { font-size: 8px; }
+  .zoom-btn { opacity: 0.85; }
+  .scene-outro .ctas { min-width: 0; width: 100%; }
+}
+
+/* Mobile en paysage (téléphone tourné) : chrome compressée pour maximiser la hauteur du SVG */
+@media (max-height: 500px) {
+  .topbar { height: 48px; padding: 8px 18px; }
+  .topbar > a { font-size: 13px; }
+  .scene-title-bar { font-size: clamp(12px, 2.4vw, 16px); }
+  .scene-title-bar .num { font-size: 8px; letter-spacing: 0.18em; }
+  .stage { top: 48px; bottom: 52px; padding: 6px 14px 6px; }
+  .schema-host { gap: 6px; }
+  .schema-host svg { max-height: calc(100vh - 130px); }
+  .schema-host .caption { font-size: 13px; line-height: 1.4; min-height: 1.6em; max-width: 88vw; }
+  .footer-bar { bottom: 8px; gap: 14px; padding: 0 12px; }
+  .timeline .seg { width: 22px; height: 3px; }
+  .footer-btn { font-size: 8px; }
+  .scene-punchline .body { font-size: clamp(20px, 4.5vw, 30px); line-height: 1.2; }
+  .scene-punchline { gap: 18px; }
+  .scene-outro h2 { font-size: clamp(26px, 5vw, 38px); }
+  .scene-outro { gap: 18px; }
+}
+
+/* Hint de rotation : portrait mobile sur scène schema → suggère le paysage */
+.rotation-hint { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); display: none; align-items: center; gap: 10px; background: var(--text); color: var(--bg); padding: 9px 10px 9px 14px; border-radius: 24px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; z-index: 55; max-width: calc(100vw - 32px); box-shadow: 0 4px 14px rgba(30,25,18,0.18); opacity: 0; transition: opacity 0.35s ease; }
+.rotation-hint.show { display: inline-flex; opacity: 1; }
+.rotation-hint .icon { width: 16px; height: 16px; flex-shrink: 0; animation: rotation-spin 2.4s ease-in-out infinite; }
+.rotation-hint .text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rotation-hint .dismiss { background: none; border: none; color: inherit; cursor: pointer; font-size: 16px; line-height: 1; padding: 2px 6px; opacity: 0.65; }
+.rotation-hint .dismiss:hover { opacity: 1; }
+@keyframes rotation-spin { 0%, 100% { transform: rotate(0deg); } 40% { transform: rotate(-90deg); } 60% { transform: rotate(-90deg); } }
+@media (prefers-reduced-motion: reduce) { .rotation-hint .icon { animation: none; } }
+
+/* Overlays sommaire / sources */
+.full-overlay { position: fixed; inset: 0; background: rgba(250,246,236,0.96); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 300; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 80px 32px 80px; overflow-y: auto; }
+.full-overlay[hidden] { display: none !important; }
+.overlay-close { position: fixed; top: 24px; right: 32px; background: none; border: 1px solid var(--line-strong); padding: 10px 16px; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text); cursor: pointer; border-radius: 3px; transition: border-color 0.2s, color 0.2s; z-index: 310; }
+.overlay-close:hover { border-color: var(--accent); color: var(--accent); }
+.toc-list { list-style: none; max-width: 720px; width: 100%; display: flex; flex-direction: column; gap: 16px; counter-reset: scene-num; }
+.toc-list li { font-family: 'Fraunces', serif; font-size: clamp(20px, 2.4vw, 28px); font-weight: 300; cursor: pointer; padding: 12px 0; border-bottom: 1px dashed var(--line); transition: color 0.2s; display: flex; align-items: baseline; gap: 16px; }
+.toc-list li:hover { color: var(--accent); }
+.toc-list li .num { font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.18em; color: var(--text-faint); min-width: 32px; }
+.toc-list li .meta { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-faint); margin-left: auto; }
+
+.sources-filter { max-width: 720px; width: 100%; padding: 12px 16px; font-family: 'Inter', sans-serif; font-size: 14px; border: 1px solid var(--line-strong); background: transparent; color: var(--text); margin-bottom: 24px; border-radius: 3px; }
+.sources-filter:focus { outline: none; border-color: var(--accent); }
+.sources-list { list-style: none; max-width: 720px; width: 100%; display: flex; flex-direction: column; gap: 16px; }
+.sources-list li { font-family: 'Inter', sans-serif; font-size: 14.5px; line-height: 1.55; padding: 8px 0; border-bottom: 1px dashed var(--line); display: flex; gap: 14px; transition: background 0.4s; }
+.sources-list li.flash { background: rgba(184, 88, 46, 0.18); }
+.sources-list li .num { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; color: var(--accent); min-width: 28px; padding-top: 2px; }
+.sources-list li a { color: var(--accent); text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 3px; transition: text-decoration-color 0.2s; }
+.sources-list li a:hover { text-decoration-color: var(--accent); }
+
+.toaster { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 12px 20px; border-radius: 24px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; z-index: 60; opacity: 0; pointer-events: none; transition: opacity 0.4s ease; max-width: calc(100vw - 32px); text-align: center; }
+.toaster.show { opacity: 1; }
+.toaster[hidden] { display: none; }
+
+.idle-cue { position: fixed; bottom: 60px; right: 88px; font-family: 'JetBrains Mono', monospace; font-size: 18px; color: var(--accent); opacity: 0; pointer-events: none; transition: opacity 0.5s; z-index: 35; animation: idle-pulse 1.5s ease-in-out infinite; }
+.idle-cue.show { opacity: 0.5; }
+@keyframes idle-pulse { 0%, 100% { transform: translateY(0); opacity: 0.3; } 50% { transform: translateY(-4px); opacity: 0.7; } }
+@media (prefers-reduced-motion: reduce) { .idle-cue { animation: none; } }
+@media (max-width: 1024px) { .idle-cue { display: none; } }
+
+.topbar.idle { opacity: 0.25; }
+.topbar:hover { opacity: 1 !important; }
+</style>
+</head>
+<body>
+
+<header class="topbar" id="topbar">
+  <a href="../index.html">Mathieu <em>Guglielmino</em></a>
+  <div class="scene-title-bar" id="scene-title-bar"></div>
+  <a href="../index.html#series" class="back">← Retour aux dossiers</a>
+</header>
+
+<div id="schemas" hidden>
+<svg id="svg-01-estimations" role="img" aria-label="Sept estimations comparées de l'impact IA sur le travail" xmlns="http://www.w3.org/2000/svg" viewBox="0 155 1200 665" data-schema-id="schema-01">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+  </defs>
+  <rect width="1200" height="820" fill="transparent"/>
+  <g class="svg-header"><text x="60" y="55" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 01</text>
+  <text x="60" y="92" class="display" font-size="24" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Sept estimations, quatre unités de mesure incompatibles</text>
+  <text x="60" y="116" class="display" font-size="14" font-style="italic" fill="#5A5A5A">Les chiffres marquants regroupés par <tspan font-style="italic">type de métrique</tspan>. Lire en colonne, pas en ligne — un % d'emplois exposés ne se compare pas à un % de productivité gagné.</text>
+  <line x1="60" y1="138" x2="1140" y2="138" stroke="#E5E1D8" stroke-width="0.5"/></g>
+  <text x="60" y="166" class="mono" font-size="9" font-weight="600" letter-spacing="0.18em" fill="#5A5A5A">QUATRE FAÇONS DE MESURER L'IMPACT IA</text>
+  <g><rect x="60" y="178" width="270" height="28" rx="14" fill="#B7332C" opacity="0.10" stroke="#B7332C" stroke-width="1"/><circle cx="78" cy="192" r="5" fill="#B7332C"/><text x="92" y="196" class="mono" font-size="10" font-weight="600" letter-spacing="0.06em" fill="#B7332C">A · COMPTABILITÉ D'EXPOSITION</text></g>
+  <g><rect x="345" y="178" width="215" height="28" rx="14" fill="#B58A2C" opacity="0.10" stroke="#B58A2C" stroke-width="1"/><circle cx="363" cy="192" r="5" fill="#B58A2C"/><text x="377" y="196" class="mono" font-size="10" font-weight="600" letter-spacing="0.06em" fill="#B58A2C">B · HEURES-ÉQUIVALENT</text></g>
+  <g><rect x="575" y="178" width="290" height="28" rx="14" fill="#1F5560" opacity="0.10" stroke="#1F5560" stroke-width="1"/><circle cx="593" cy="192" r="5" fill="#1F5560"/><text x="607" y="196" class="mono" font-size="10" font-weight="600" letter-spacing="0.06em" fill="#1F5560">C · EXPOSITION × COMPLÉMENTARITÉ</text></g>
+  <g><rect x="880" y="178" width="260" height="28" rx="14" fill="#1A1A1A" opacity="0.08" stroke="#1A1A1A" stroke-width="1"/><circle cx="898" cy="192" r="5" fill="#1A1A1A"/><text x="912" y="196" class="mono" font-size="10" font-weight="600" letter-spacing="0.06em" fill="#1A1A1A">D · MACROÉCONOMIQUE (TFP / PIB)</text></g>
+  <text x="60" y="240" class="mono" font-size="9" font-weight="600" letter-spacing="0.18em" fill="#5A5A5A">SOURCE</text>
+  <text x="60" y="252" class="mono" font-size="8" fill="#9A9CA5">auteur · institution · année</text>
+  <text x="370" y="240" class="mono" font-size="9" font-weight="600" letter-spacing="0.18em" fill="#5A5A5A">CHIFFRE PHARE</text>
+  <text x="370" y="252" class="mono" font-size="8" fill="#9A9CA5">avec la vraie unité</text>
+  <text x="640" y="240" class="mono" font-size="9" font-weight="600" letter-spacing="0.18em" fill="#5A5A5A">CE QUE COMPTE LA MÉTRIQUE</text>
+  <text x="640" y="252" class="mono" font-size="8" fill="#9A9CA5">méthode + hypothèse principale</text>
+  <text x="1140" y="240" class="mono" font-size="9" font-weight="600" letter-spacing="0.18em" fill="#5A5A5A" text-anchor="end">FAMILLE</text>
+  <line x1="60" y1="262" x2="1140" y2="262" stroke="#1A1A1A" stroke-width="0.75"/>
+  <g class="interactive" data-card="est-frey-osborne" tabindex="0" role="button" aria-label="Frey et Osborne 2013">
+    <rect x="55" y="270" width="1090" height="68" fill="transparent"/>
+    <rect x="55" y="280" width="6" height="48" rx="3" fill="#B7332C"/>
+    <text x="72" y="298" class="display" font-size="14" font-weight="600" fill="#1A1A1A">Frey &amp; Osborne</text>
+    <text x="72" y="316" class="mono" font-size="10" fill="#5A5A5A">Oxford · 2013</text>
+    <text x="72" y="330" class="mono" font-size="9" fill="#B7332C" letter-spacing="0.08em">A</text>
+    <text x="370" y="304" class="display" font-size="32" font-weight="600" fill="#B7332C">47<tspan font-size="22">%</tspan></text>
+    <rect x="370" y="316" width="170" height="18" rx="9" fill="#B7332C" opacity="0.10"/>
+    <text x="378" y="329" class="mono" font-size="9" font-weight="600" fill="#B7332C">% des emplois US à haut risque</text>
+    <text x="640" y="294" class="body" font-size="11" fill="#1A1A1A">Profession entière classée 100% automatisable</text>
+    <text x="640" y="312" class="body" font-size="11" fill="#1A1A1A">si la majorité de ses tâches le sont.</text>
+    <text x="640" y="330" class="body" font-size="10.5" font-style="italic" fill="#5A5A5A">étiquetage par 70 experts ML, extrapolation à 702 professions.</text>
+    <text x="1140" y="298" class="mono" font-size="10" font-weight="600" fill="#B7332C" text-anchor="end">A</text>
+    <text x="1140" y="316" class="mono" font-size="9" fill="#5A5A5A" text-anchor="end">granularité : profession</text>
+  </g>
+  <line x1="60" y1="346" x2="1140" y2="346" stroke="#E5E1D8" stroke-width="0.5"/>
+  <g class="interactive" data-card="est-arntz" tabindex="0" role="button" aria-label="Arntz et al OCDE 2016">
+    <rect x="55" y="354" width="1090" height="68" fill="transparent"/>
+    <rect x="55" y="364" width="6" height="48" rx="3" fill="#B7332C"/>
+    <text x="72" y="382" class="display" font-size="14" font-weight="600" fill="#1A1A1A">Arntz, Gregory, Zierahn</text>
+    <text x="72" y="400" class="mono" font-size="10" fill="#5A5A5A">OCDE · 2016</text>
+    <text x="72" y="414" class="mono" font-size="9" fill="#B7332C" letter-spacing="0.08em">A</text>
+    <text x="370" y="388" class="display" font-size="32" font-weight="600" fill="#B7332C">9<tspan font-size="22">%</tspan></text>
+    <rect x="370" y="400" width="170" height="18" rx="9" fill="#B7332C" opacity="0.10"/>
+    <text x="378" y="413" class="mono" font-size="9" font-weight="600" fill="#B7332C">% des emplois OCDE</text>
+    <text x="640" y="378" class="body" font-size="11" fill="#1A1A1A">Refait Frey-Osborne, mais en granularité tâche</text>
+    <text x="640" y="396" class="body" font-size="11" fill="#1A1A1A">individuelle plutôt que profession entière.</text>
+    <text x="640" y="414" class="body" font-size="10.5" font-style="italic" fill="#5A5A5A">divise mécaniquement le chiffre Frey-Osborne par cinq.</text>
+    <text x="1140" y="382" class="mono" font-size="10" font-weight="600" fill="#B7332C" text-anchor="end">A</text>
+    <text x="1140" y="400" class="mono" font-size="9" fill="#5A5A5A" text-anchor="end">granularité : tâche</text>
+  </g>
+  <line x1="60" y1="430" x2="1140" y2="430" stroke="#E5E1D8" stroke-width="0.5"/>
+  <g class="interactive" data-card="est-eloundou" tabindex="0" role="button" aria-label="Eloundou OpenAI 2023">
+    <rect x="55" y="438" width="1090" height="68" fill="transparent"/>
+    <rect x="55" y="448" width="6" height="48" rx="3" fill="#B7332C"/>
+    <text x="72" y="466" class="display" font-size="14" font-weight="600" fill="#1A1A1A">Eloundou et al.</text>
+    <text x="72" y="484" class="mono" font-size="10" fill="#5A5A5A">OpenAI · 2023 / Science 2024</text>
+    <text x="72" y="498" class="mono" font-size="9" fill="#B7332C" letter-spacing="0.08em">A</text>
+    <text x="370" y="472" class="display" font-size="28" font-weight="600" fill="#B7332C">80<tspan font-size="20">%</tspan> <tspan fill="#5A5A5A" font-size="20">/</tspan> 19<tspan font-size="20">%</tspan></text>
+    <rect x="370" y="484" width="200" height="18" rx="9" fill="#B7332C" opacity="0.10"/>
+    <text x="378" y="497" class="mono" font-size="9" font-weight="600" fill="#B7332C">% travailleurs · ≥10% / ≥50% tâches</text>
+    <text x="640" y="462" class="body" font-size="11" fill="#1A1A1A">19 000 tâches O*NET évaluées par GPT-4 ;</text>
+    <text x="640" y="480" class="body" font-size="11" fill="#1A1A1A">trois niveaux d'exposition (E0 / E1 / E2).</text>
+    <text x="640" y="498" class="body" font-size="10.5" font-style="italic" fill="#5A5A5A">deux récits possibles selon la statistique mise en avant.</text>
+    <text x="1140" y="466" class="mono" font-size="10" font-weight="600" fill="#B7332C" text-anchor="end">A</text>
+    <text x="1140" y="484" class="mono" font-size="9" fill="#5A5A5A" text-anchor="end">granularité : tâche · LLM judge</text>
+  </g>
+  <line x1="60" y1="514" x2="1140" y2="514" stroke="#E5E1D8" stroke-width="0.5"/>
+  <g class="interactive" data-card="est-goldman" tabindex="0" role="button" aria-label="Goldman Sachs 2023">
+    <rect x="55" y="522" width="1090" height="68" fill="transparent"/>
+    <rect x="55" y="532" width="6" height="48" rx="3" fill="#B58A2C"/>
+    <text x="72" y="550" class="display" font-size="14" font-weight="600" fill="#1A1A1A">Briggs &amp; Kodnani</text>
+    <text x="72" y="568" class="mono" font-size="10" fill="#5A5A5A">Goldman Sachs · mars 2023</text>
+    <text x="72" y="582" class="mono" font-size="9" fill="#B58A2C" letter-spacing="0.08em">B</text>
+    <text x="370" y="556" class="display" font-size="32" font-weight="600" fill="#B58A2C">300<tspan font-size="20">M</tspan></text>
+    <rect x="370" y="568" width="200" height="18" rx="9" fill="#B58A2C" opacity="0.12"/>
+    <text x="378" y="581" class="mono" font-size="9" font-weight="600" fill="#B58A2C">M équivalents temps plein affectés</text>
+    <text x="640" y="546" class="body" font-size="11" fill="#1A1A1A">Pour chaque profession, % de tâches automatisables</text>
+    <text x="640" y="564" class="body" font-size="11" fill="#1A1A1A">× effectifs, sommé en heures-équivalent.</text>
+    <text x="640" y="582" class="body" font-size="10.5" font-style="italic" fill="#5A5A5A">≈ 25 % du temps US/UE · 6-7 % de déplacement net sur 10 ans.</text>
+    <text x="1140" y="550" class="mono" font-size="10" font-weight="600" fill="#B58A2C" text-anchor="end">B</text>
+    <text x="1140" y="568" class="mono" font-size="9" fill="#5A5A5A" text-anchor="end">+ macro résiduel : +7 % PIB monde</text>
+  </g>
+  <line x1="60" y1="598" x2="1140" y2="598" stroke="#E5E1D8" stroke-width="0.5"/>
+  <g class="interactive" data-card="est-mckinsey" tabindex="0" role="button" aria-label="McKinsey 2023">
+    <rect x="55" y="606" width="1090" height="68" fill="transparent"/>
+    <rect x="55" y="616" width="6" height="48" rx="3" fill="#B58A2C"/>
+    <text x="72" y="634" class="display" font-size="14" font-weight="600" fill="#1A1A1A">McKinsey Global Institute</text>
+    <text x="72" y="652" class="mono" font-size="10" fill="#5A5A5A">2023, mise à jour 2025</text>
+    <text x="72" y="666" class="mono" font-size="9" fill="#B58A2C" letter-spacing="0.08em">B</text>
+    <text x="370" y="640" class="display" font-size="32" font-weight="600" fill="#B58A2C">30<tspan font-size="22">%</tspan></text>
+    <rect x="370" y="652" width="200" height="18" rx="9" fill="#B58A2C" opacity="0.12"/>
+    <text x="378" y="665" class="mono" font-size="9" font-weight="600" fill="#B58A2C">% heures travaillées d'ici 2030</text>
+    <text x="640" y="630" class="body" font-size="11" fill="#1A1A1A">Heures × scénario d'adoption (point milieu),</text>
+    <text x="640" y="648" class="body" font-size="11" fill="#1A1A1A">par secteur, taille d'entreprise et délai d'amortissement.</text>
+    <text x="640" y="666" class="body" font-size="10.5" font-style="italic" fill="#5A5A5A">+ <tspan font-style="italic">reverse skill bias</tspan> · + macro : 2,6 à 4,4 T$/an de valeur.</text>
+    <text x="1140" y="634" class="mono" font-size="10" font-weight="600" fill="#B58A2C" text-anchor="end">B</text>
+    <text x="1140" y="652" class="mono" font-size="9" fill="#5A5A5A" text-anchor="end">cols blancs surexposés</text>
+  </g>
+  <line x1="60" y1="682" x2="1140" y2="682" stroke="#E5E1D8" stroke-width="0.5"/>
+  <g class="interactive" data-card="est-imf" tabindex="0" role="button" aria-label="FMI Cazzaniga Pizzinelli 2024">
+    <rect x="55" y="690" width="1090" height="68" fill="transparent"/>
+    <rect x="55" y="700" width="6" height="48" rx="3" fill="#1F5560"/>
+    <text x="72" y="718" class="display" font-size="14" font-weight="600" fill="#1A1A1A">Cazzaniga, Jaumotte, Pizzinelli</text>
+    <text x="72" y="736" class="mono" font-size="10" fill="#5A5A5A">FMI · janvier 2024</text>
+    <text x="72" y="750" class="mono" font-size="9" fill="#1F5560" letter-spacing="0.08em">C</text>
+    <text x="370" y="724" class="display" font-size="28" font-weight="600" fill="#1F5560">60<tspan font-size="20">%</tspan> <tspan fill="#5A5A5A" font-size="20">/</tspan> 40<tspan font-size="20">%</tspan></text>
+    <rect x="370" y="736" width="220" height="18" rx="9" fill="#1F5560" opacity="0.10"/>
+    <text x="378" y="749" class="mono" font-size="9" font-weight="600" fill="#1F5560">% emplois exposés · av. / mondial</text>
+    <text x="640" y="714" class="body" font-size="11" fill="#1A1A1A">Pondère l'exposition par un indice de complémentarité</text>
+    <text x="640" y="732" class="body" font-size="11" fill="#1A1A1A">humaine (jugement, présence, autorité légale).</text>
+    <text x="640" y="750" class="body" font-size="10.5" font-style="italic" fill="#5A5A5A">26 % pays à bas revenu · complémentarité corrélée au revenu.</text>
+    <text x="1140" y="718" class="mono" font-size="10" font-weight="600" fill="#1F5560" text-anchor="end">C</text>
+    <text x="1140" y="736" class="mono" font-size="9" fill="#5A5A5A" text-anchor="end">expo. pondérée par contexte</text>
+  </g>
+  <line x1="60" y1="766" x2="1140" y2="766" stroke="#E5E1D8" stroke-width="0.5"/>
+  <g class="interactive" data-card="est-acemoglu" tabindex="0" role="button" aria-label="Acemoglu 2024">
+    <rect x="55" y="774" width="1090" height="34" fill="transparent"/>
+    <rect x="55" y="776" width="6" height="28" rx="3" fill="#1A1A1A"/>
+    <text x="72" y="788" class="display" font-size="13" font-weight="600" fill="#1A1A1A">Daron Acemoglu</text>
+    <text x="72" y="803" class="mono" font-size="9" fill="#5A5A5A">MIT · 2024 · borne basse</text>
+    <text x="370" y="794" class="display" font-size="22" font-weight="600" fill="#1A1A1A">0,55<tspan font-size="16">%</tspan></text>
+    <rect x="370" y="800" width="180" height="13" rx="6.5" fill="#1A1A1A" opacity="0.08"/>
+    <text x="378" y="809" class="mono" font-size="8" font-weight="600" fill="#1A1A1A">% TFP cumulée sur 10 ans</text>
+    <text x="640" y="788" class="body" font-size="10.5" fill="#1A1A1A">Théorème de Hulten : 20 % tâches × 23 % profitables × 27 % gain.</text>
+    <text x="640" y="803" class="body" font-size="10" font-style="italic" fill="#5A5A5A">≈ 1,1-1,6 % PIB cumulé · 0,05 % par an.</text>
+    <text x="1140" y="788" class="mono" font-size="10" font-weight="600" fill="#1A1A1A" text-anchor="end">D</text>
+    <text x="1140" y="803" class="mono" font-size="9" fill="#5A5A5A" text-anchor="end">macro après adoption profitable</text>
+  </g>
+</svg>
+<svg id="svg-02-gpt" role="img" aria-label="L'IA comme general-purpose technology — triptyque GPT" xmlns="http://www.w3.org/2000/svg" viewBox="0 155 1200 625" data-schema-id="schema-02">
+  <defs><style>.display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }.body { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }.mono { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }</style></defs>
+  <rect width="1200" height="780" fill="transparent"/>
+  <g class="svg-header"><text x="60" y="55" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 02</text>
+  <text x="60" y="92" class="display" font-size="24" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Le triptyque GPT — pourquoi l'IA générative change d'époque</text>
+  <text x="60" y="116" class="display" font-size="14" font-style="italic" fill="#5A5A5A">Les trois critères de Bresnahan &amp; Trajtenberg (1995) appliqués à quatre technologies à usage général.</text>
+  <line x1="60" y1="138" x2="1140" y2="138" stroke="#E5E1D8" stroke-width="0.5"/></g>
+  <g class="interactive" data-card="gpt-pervasivite" tabindex="0" role="button" aria-label="Critère 1 — pervasivité"><rect x="80" y="170" width="320" height="118" rx="3" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.25"/><text x="100" y="196" class="mono" font-size="10" font-weight="600" letter-spacing="0.18em" fill="#B7332C">CRITÈRE 01</text><text x="100" y="224" class="display" font-size="18" font-weight="600" fill="#1A1A1A">Pervasivité</text><line x1="100" y1="234" x2="380" y2="234" stroke="#E5E1D8" stroke-width="0.5"/><text x="100" y="254" class="body" font-size="11.5" fill="#1A1A1A">La technologie se diffuse à la majorité</text><text x="100" y="270" class="body" font-size="11.5" fill="#1A1A1A">des secteurs économiques.</text></g>
+  <g class="interactive" data-card="gpt-amelioration" tabindex="0" role="button" aria-label="Critère 2 — amélioration"><rect x="440" y="170" width="320" height="118" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/><text x="460" y="196" class="mono" font-size="10" font-weight="600" letter-spacing="0.18em" fill="#1F5560">CRITÈRE 02</text><text x="460" y="224" class="display" font-size="18" font-weight="600" fill="#1A1A1A">Amélioration intrinsèque</text><line x1="460" y1="234" x2="740" y2="234" stroke="#E5E1D8" stroke-width="0.5"/><text x="460" y="254" class="body" font-size="11.5" fill="#1A1A1A">Elle se perfectionne dans le temps</text><text x="460" y="270" class="body" font-size="11.5" fill="#1A1A1A">et fait baisser ses propres coûts d'usage.</text></g>
+  <g class="interactive" data-card="gpt-complementarite" tabindex="0" role="button" aria-label="Critère 3 — complémentarités"><rect x="800" y="170" width="320" height="118" rx="3" fill="#FAF8F3" stroke="#B58A2C" stroke-width="1.25"/><text x="820" y="196" class="mono" font-size="10" font-weight="600" letter-spacing="0.18em" fill="#B58A2C">CRITÈRE 03</text><text x="820" y="224" class="display" font-size="18" font-weight="600" fill="#1A1A1A">Complémentarités</text><line x1="820" y1="234" x2="1100" y2="234" stroke="#E5E1D8" stroke-width="0.5"/><text x="820" y="254" class="body" font-size="11.5" fill="#1A1A1A">Son adoption stimule l'innovation</text><text x="820" y="270" class="body" font-size="11.5" fill="#1A1A1A">dans les secteurs qui l'utilisent.</text></g>
+  <text x="60" y="328" class="mono" font-size="9" font-weight="600" letter-spacing="0.18em" fill="#5A5A5A">QUATRE GPT, TROIS CRITÈRES</text>
+  <line x1="60" y1="340" x2="1140" y2="340" stroke="#1A1A1A" stroke-width="0.75"/>
+  <text x="60" y="368" class="mono" font-size="9" font-weight="600" letter-spacing="0.16em" fill="#5A5A5A">TECHNOLOGIE</text>
+  <text x="447" y="368" class="mono" font-size="10" font-weight="600" letter-spacing="0.16em" fill="#B7332C" text-anchor="middle">PERVASIVITÉ</text>
+  <text x="717" y="368" class="mono" font-size="10" font-weight="600" letter-spacing="0.16em" fill="#1F5560" text-anchor="middle">AMÉLIORATION</text>
+  <text x="1005" y="368" class="mono" font-size="10" font-weight="600" letter-spacing="0.16em" fill="#B58A2C" text-anchor="middle">COMPLÉMENTARITÉS</text>
+  <line x1="320" y1="380" x2="320" y2="690" stroke="#E5E1D8" stroke-width="0.5"/>
+  <line x1="575" y1="380" x2="575" y2="690" stroke="#E5E1D8" stroke-width="0.5"/>
+  <line x1="860" y1="380" x2="860" y2="690" stroke="#E5E1D8" stroke-width="0.5"/>
+  <g class="interactive" data-card="gpt-vapeur" tabindex="0" role="button" aria-label="Machine à vapeur"><rect x="55" y="385" width="1090" height="65" fill="transparent"/><text x="65" y="412" class="display" font-size="15" font-weight="600" fill="#1A1A1A">Machine à vapeur</text><text x="65" y="430" class="mono" font-size="9" fill="#5A5A5A">≈ 1769 — Watt</text><circle cx="340" cy="423" r="6" fill="#B7332C"/><circle cx="360" cy="423" r="6" fill="#B7332C"/><circle cx="380" cy="423" r="6" fill="#B7332C"/><circle cx="400" cy="423" r="6" fill="#E5E1D8"/><circle cx="420" cy="423" r="6" fill="#E5E1D8"/><text x="440" y="427" class="body" font-size="10" fill="#5A5A5A">manuf., transport, mines</text><circle cx="595" cy="423" r="6" fill="#1F5560"/><circle cx="615" cy="423" r="6" fill="#1F5560"/><circle cx="635" cy="423" r="6" fill="#1F5560"/><circle cx="655" cy="423" r="6" fill="#1F5560"/><circle cx="675" cy="423" r="6" fill="#E5E1D8"/><text x="695" y="427" class="body" font-size="10" fill="#5A5A5A">rendement × 4 / siècle</text><circle cx="880" cy="423" r="6" fill="#B58A2C"/><circle cx="900" cy="423" r="6" fill="#B58A2C"/><circle cx="920" cy="423" r="6" fill="#B58A2C"/><circle cx="940" cy="423" r="6" fill="#E5E1D8"/><circle cx="960" cy="423" r="6" fill="#E5E1D8"/><text x="980" y="427" class="body" font-size="10" fill="#5A5A5A">organisation usinière</text></g>
+  <line x1="60" y1="455" x2="1140" y2="455" stroke="#E5E1D8" stroke-width="0.5"/>
+  <g class="interactive" data-card="gpt-electricite" tabindex="0" role="button" aria-label="Électricité"><rect x="55" y="465" width="1090" height="65" fill="transparent"/><text x="65" y="492" class="display" font-size="15" font-weight="600" fill="#1A1A1A">Électricité</text><text x="65" y="510" class="mono" font-size="9" fill="#5A5A5A">≈ 1880 — Edison, Tesla</text><circle cx="340" cy="503" r="6" fill="#B7332C"/><circle cx="360" cy="503" r="6" fill="#B7332C"/><circle cx="380" cy="503" r="6" fill="#B7332C"/><circle cx="400" cy="503" r="6" fill="#B7332C"/><circle cx="420" cy="503" r="6" fill="#B7332C"/><text x="440" y="507" class="body" font-size="10" fill="#5A5A5A">tous secteurs et foyers</text><circle cx="595" cy="503" r="6" fill="#1F5560"/><circle cx="615" cy="503" r="6" fill="#1F5560"/><circle cx="635" cy="503" r="6" fill="#1F5560"/><circle cx="655" cy="503" r="6" fill="#1F5560"/><circle cx="675" cy="503" r="6" fill="#1F5560"/><text x="695" y="507" class="body" font-size="10" fill="#5A5A5A">coût/kWh ÷10 / 50 ans</text><circle cx="880" cy="503" r="6" fill="#B58A2C"/><circle cx="900" cy="503" r="6" fill="#B58A2C"/><circle cx="920" cy="503" r="6" fill="#B58A2C"/><circle cx="940" cy="503" r="6" fill="#B58A2C"/><circle cx="960" cy="503" r="6" fill="#E5E1D8"/><text x="980" y="507" class="body" font-size="10" fill="#5A5A5A">moteur unitaire, ligne d'ass.</text></g>
+  <line x1="60" y1="535" x2="1140" y2="535" stroke="#E5E1D8" stroke-width="0.5"/>
+  <g class="interactive" data-card="gpt-tic" tabindex="0" role="button" aria-label="Technologies de l'information"><rect x="55" y="545" width="1090" height="65" fill="transparent"/><text x="65" y="572" class="display" font-size="15" font-weight="600" fill="#1A1A1A">Technologies de l'information</text><text x="65" y="590" class="mono" font-size="9" fill="#5A5A5A">≈ 1970 — semi-conducteurs, Internet</text><circle cx="340" cy="583" r="6" fill="#B7332C"/><circle cx="360" cy="583" r="6" fill="#B7332C"/><circle cx="380" cy="583" r="6" fill="#B7332C"/><circle cx="400" cy="583" r="6" fill="#B7332C"/><circle cx="420" cy="583" r="6" fill="#B7332C"/><text x="440" y="587" class="body" font-size="10" fill="#5A5A5A">tous secteurs cognitifs</text><circle cx="595" cy="583" r="6" fill="#1F5560"/><circle cx="615" cy="583" r="6" fill="#1F5560"/><circle cx="635" cy="583" r="6" fill="#1F5560"/><circle cx="655" cy="583" r="6" fill="#1F5560"/><circle cx="675" cy="583" r="6" fill="#1F5560"/><text x="695" y="587" class="body" font-size="10" fill="#5A5A5A">Moore — coût/transistor ÷1000</text><circle cx="880" cy="583" r="6" fill="#B58A2C"/><circle cx="900" cy="583" r="6" fill="#B58A2C"/><circle cx="920" cy="583" r="6" fill="#B58A2C"/><circle cx="940" cy="583" r="6" fill="#B58A2C"/><circle cx="960" cy="583" r="6" fill="#B58A2C"/><text x="980" y="587" class="body" font-size="10" fill="#5A5A5A">e-commerce, biotech, finance</text></g>
+  <line x1="60" y1="615" x2="1140" y2="615" stroke="#E5E1D8" stroke-width="0.5"/>
+  <g class="interactive" data-card="gpt-ia" tabindex="0" role="button" aria-label="IA générative"><rect x="55" y="625" width="1090" height="65" fill="transparent"/><text x="65" y="652" class="display" font-size="15" font-weight="600" fill="#1A1A1A">IA générative</text><text x="65" y="670" class="mono" font-size="9" fill="#5A5A5A">≈ 2022 — Transformer, ChatGPT</text><circle cx="340" cy="663" r="6" fill="#B7332C"/><circle cx="360" cy="663" r="6" fill="#B7332C"/><circle cx="380" cy="663" r="6" fill="#B7332C"/><circle cx="400" cy="663" r="6" fill="#B7332C"/><circle cx="420" cy="663" r="6" fill="#E5E1D8"/><text x="440" y="667" class="body" font-size="10" fill="#5A5A5A">diffusion logicielle rapide</text><circle cx="595" cy="663" r="6" fill="#1F5560"/><circle cx="615" cy="663" r="6" fill="#1F5560"/><circle cx="635" cy="663" r="6" fill="#1F5560"/><circle cx="655" cy="663" r="6" fill="#1F5560"/><circle cx="675" cy="663" r="6" fill="#E5E1D8"/><text x="695" y="667" class="body" font-size="10" fill="#5A5A5A">coût/token ÷100 (2023-2025)</text><circle cx="880" cy="663" r="6" fill="#B58A2C"/><circle cx="900" cy="663" r="6" fill="#B58A2C"/><circle cx="920" cy="663" r="6" fill="#B58A2C"/><circle cx="940" cy="663" r="6" fill="#E5E1D8"/><circle cx="960" cy="663" r="6" fill="#E5E1D8"/><text x="980" y="667" class="body" font-size="10" fill="#5A5A5A">agents, copilots, recherche aug.</text></g>
+  <line x1="60" y1="695" x2="1140" y2="695" stroke="#1A1A1A" stroke-width="0.75"/>
+  <text x="60" y="722" class="mono" font-size="9" font-weight="600" letter-spacing="0.18em" fill="#5A5A5A">LECTURE</text>
+  <text x="60" y="744" class="body" font-size="11.5" fill="#1A1A1A">L'IA générative coche les trois critères avec une intensité comparable aux GPT historiques. <tspan font-style="italic">Sa différence : la diffusion logicielle est plus rapide</tspan></text>
+  <text x="60" y="761" class="body" font-size="11.5" fill="#1A1A1A">que la diffusion d'infrastructure physique — mais le palier de productivité dépend de la réorganisation, pas de la diffusion technique.</text>
+</svg>
+<svg id="svg-03-framework" role="img" aria-label="Anatomie d'un framework d'estimation" xmlns="http://www.w3.org/2000/svg" viewBox="0 155 1200 625" data-schema-id="schema-03">
+  <defs><style>.display{font-family:'Spectral','Playfair Display',Georgia,serif}.body{font-family:'Inter','Helvetica Neue',system-ui,sans-serif}.mono{font-family:'JetBrains Mono','IBM Plex Mono',monospace}</style><marker id="arr-03" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#5A5A5A"/></marker></defs>
+  <rect width="1200" height="780" fill="transparent"/>
+  <g class="svg-header"><text x="60" y="55" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 03</text>
+  <text x="60" y="92" class="display" font-size="24" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Anatomie d'un framework d'estimation</text>
+  <text x="60" y="116" class="display" font-size="14" font-style="italic" fill="#5A5A5A">Cinq étapes méthodologiques que chaque équipe combine différemment. Les choix faits à chaque étape déterminent l'ordre de grandeur du résultat.</text>
+  <line x1="60" y1="138" x2="1140" y2="138" stroke="#E5E1D8" stroke-width="0.5"/></g>
+  <g class="interactive" data-card="step-granularite" tabindex="0" role="button" aria-label="Étape 1"><rect x="60" y="170" width="200" height="86" rx="3" fill="#FAF8F3" stroke="#1A1A1A" stroke-width="1.25"/><text x="80" y="194" class="mono" font-size="10" font-weight="600" letter-spacing="0.16em" fill="#B7332C">ÉTAPE 01</text><text x="80" y="220" class="display" font-size="14" font-weight="600" fill="#1A1A1A">Granularité</text><text x="80" y="240" class="body" font-size="10.5" fill="#5A5A5A">profession entière vs tâche</text></g>
+  <g class="interactive" data-card="step-source" tabindex="0" role="button" aria-label="Étape 2"><rect x="280" y="170" width="200" height="86" rx="3" fill="#FAF8F3" stroke="#1A1A1A" stroke-width="1.25"/><text x="300" y="194" class="mono" font-size="10" font-weight="600" letter-spacing="0.16em" fill="#B7332C">ÉTAPE 02</text><text x="300" y="220" class="display" font-size="14" font-weight="600" fill="#1A1A1A">Source du jugement</text><text x="300" y="240" class="body" font-size="10.5" fill="#5A5A5A">expert, modèle, LLM</text></g>
+  <g class="interactive" data-card="step-metrique" tabindex="0" role="button" aria-label="Étape 3"><rect x="500" y="170" width="200" height="86" rx="3" fill="#FAF8F3" stroke="#1A1A1A" stroke-width="1.25"/><text x="520" y="194" class="mono" font-size="10" font-weight="600" letter-spacing="0.16em" fill="#B7332C">ÉTAPE 03</text><text x="520" y="220" class="display" font-size="14" font-weight="600" fill="#1A1A1A">Métrique d'exposition</text><text x="520" y="240" class="body" font-size="10.5" fill="#5A5A5A">substitution / complément</text></g>
+  <g class="interactive" data-card="step-complementarite" tabindex="0" role="button" aria-label="Étape 4"><rect x="720" y="170" width="200" height="86" rx="3" fill="#FAF8F3" stroke="#1A1A1A" stroke-width="1.25"/><text x="740" y="194" class="mono" font-size="10" font-weight="600" letter-spacing="0.16em" fill="#B7332C">ÉTAPE 04</text><text x="740" y="220" class="display" font-size="14" font-weight="600" fill="#1A1A1A">Complémentarité</text><text x="740" y="240" class="body" font-size="10.5" fill="#5A5A5A">contexte de la profession</text></g>
+  <g class="interactive" data-card="step-conversion" tabindex="0" role="button" aria-label="Étape 5"><rect x="940" y="170" width="200" height="86" rx="3" fill="#FAF8F3" stroke="#1A1A1A" stroke-width="1.25"/><text x="960" y="194" class="mono" font-size="10" font-weight="600" letter-spacing="0.16em" fill="#B7332C">ÉTAPE 05</text><text x="960" y="220" class="display" font-size="14" font-weight="600" fill="#1A1A1A">Conversion en impact</text><text x="960" y="240" class="body" font-size="10.5" fill="#5A5A5A">expo / heures / macro</text></g>
+  <line x1="262" y1="213" x2="278" y2="213" stroke="#5A5A5A" stroke-width="1" marker-end="url(#arr-03)"/>
+  <line x1="482" y1="213" x2="498" y2="213" stroke="#5A5A5A" stroke-width="1" marker-end="url(#arr-03)"/>
+  <line x1="702" y1="213" x2="718" y2="213" stroke="#5A5A5A" stroke-width="1" marker-end="url(#arr-03)"/>
+  <line x1="922" y1="213" x2="938" y2="213" stroke="#5A5A5A" stroke-width="1" marker-end="url(#arr-03)"/>
+  <g><rect x="60" y="285" width="95" height="50" rx="2" fill="#FAF8F3" stroke="#B7332C" stroke-width="0.75"/><text x="107" y="307" class="mono" font-size="10" fill="#B7332C" text-anchor="middle">PROFESSION</text><text x="107" y="324" class="body" font-size="10" font-style="italic" fill="#5A5A5A" text-anchor="middle">Frey 2013</text></g>
+  <g><rect x="165" y="285" width="95" height="50" rx="2" fill="#FAF8F3" stroke="#1F5560" stroke-width="0.75"/><text x="212" y="307" class="mono" font-size="10" fill="#1F5560" text-anchor="middle">TÂCHE</text><text x="212" y="324" class="body" font-size="10" font-style="italic" fill="#5A5A5A" text-anchor="middle">Acemoglu 2024</text></g>
+  <g><rect x="280" y="285" width="62" height="50" rx="2" fill="#FAF8F3" stroke="#B7332C" stroke-width="0.75"/><text x="311" y="307" class="mono" font-size="9" fill="#B7332C" text-anchor="middle">EXPERT</text><text x="311" y="324" class="body" font-size="9" font-style="italic" fill="#5A5A5A" text-anchor="middle">Frey</text></g>
+  <g><rect x="349" y="285" width="62" height="50" rx="2" fill="#FAF8F3" stroke="#1F5560" stroke-width="0.75"/><text x="380" y="307" class="mono" font-size="9" fill="#1F5560" text-anchor="middle">O*NET</text><text x="380" y="324" class="body" font-size="9" font-style="italic" fill="#5A5A5A" text-anchor="middle">Acemoglu</text></g>
+  <g><rect x="418" y="285" width="62" height="50" rx="2" fill="#FAF8F3" stroke="#B58A2C" stroke-width="0.75"/><text x="449" y="307" class="mono" font-size="9" fill="#B58A2C" text-anchor="middle">LLM</text><text x="449" y="324" class="body" font-size="9" font-style="italic" fill="#5A5A5A" text-anchor="middle">Eloundou</text></g>
+  <g><rect x="500" y="285" width="62" height="50" rx="2" fill="#FAF8F3" stroke="#B7332C" stroke-width="0.75"/><text x="531" y="307" class="mono" font-size="9" fill="#B7332C" text-anchor="middle">SUBST.</text><text x="531" y="324" class="body" font-size="9" font-style="italic" fill="#5A5A5A" text-anchor="middle">complète</text></g>
+  <g><rect x="569" y="285" width="62" height="50" rx="2" fill="#FAF8F3" stroke="#1F5560" stroke-width="0.75"/><text x="600" y="307" class="mono" font-size="9" fill="#1F5560" text-anchor="middle">SUBST.</text><text x="600" y="324" class="body" font-size="9" font-style="italic" fill="#5A5A5A" text-anchor="middle">partielle</text></g>
+  <g><rect x="638" y="285" width="62" height="50" rx="2" fill="#FAF8F3" stroke="#B58A2C" stroke-width="0.75"/><text x="669" y="307" class="mono" font-size="9" fill="#B58A2C" text-anchor="middle">COMPL.</text><text x="669" y="324" class="body" font-size="9" font-style="italic" fill="#5A5A5A" text-anchor="middle">augment.</text></g>
+  <g><rect x="720" y="285" width="95" height="50" rx="2" fill="#FAF8F3" stroke="#B7332C" stroke-width="0.75"/><text x="767" y="307" class="mono" font-size="10" fill="#B7332C" text-anchor="middle">FAIBLE</text><text x="767" y="324" class="body" font-size="10" font-style="italic" fill="#5A5A5A" text-anchor="middle">→ substitution</text></g>
+  <g><rect x="825" y="285" width="95" height="50" rx="2" fill="#FAF8F3" stroke="#1F5560" stroke-width="0.75"/><text x="872" y="307" class="mono" font-size="10" fill="#1F5560" text-anchor="middle">FORTE</text><text x="872" y="324" class="body" font-size="10" font-style="italic" fill="#5A5A5A" text-anchor="middle">→ complémentarité</text></g>
+  <g><rect x="940" y="285" width="62" height="50" rx="2" fill="#FAF8F3" stroke="#B7332C" stroke-width="0.75"/><text x="971" y="307" class="mono" font-size="9" fill="#B7332C" text-anchor="middle">EXPO.</text><text x="971" y="324" class="body" font-size="9" font-style="italic" fill="#5A5A5A" text-anchor="middle">% emplois</text></g>
+  <g><rect x="1009" y="285" width="62" height="50" rx="2" fill="#FAF8F3" stroke="#1F5560" stroke-width="0.75"/><text x="1040" y="307" class="mono" font-size="9" fill="#1F5560" text-anchor="middle">HEURES</text><text x="1040" y="324" class="body" font-size="9" font-style="italic" fill="#5A5A5A" text-anchor="middle">ETP-équiv.</text></g>
+  <g><rect x="1078" y="285" width="62" height="50" rx="2" fill="#FAF8F3" stroke="#B58A2C" stroke-width="0.75"/><text x="1109" y="307" class="mono" font-size="9" fill="#B58A2C" text-anchor="middle">MACRO</text><text x="1109" y="324" class="body" font-size="9" font-style="italic" fill="#5A5A5A" text-anchor="middle">TFP/PIB</text></g>
+  <line x1="60" y1="370" x2="1140" y2="370" stroke="#1A1A1A" stroke-width="0.5"/>
+  <text x="60" y="392" class="mono" font-size="9" font-weight="600" letter-spacing="0.18em" fill="#5A5A5A">DEUX CHEMINS, DEUX RÉCITS</text>
+  <g class="interactive" data-card="trace-frey" tabindex="0" role="button" aria-label="Chemin Frey-Osborne 2013"><rect x="60" y="410" width="540" height="160" rx="3" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.25"/><text x="80" y="436" class="mono" font-size="10" font-weight="600" letter-spacing="0.16em" fill="#B7332C">CHEMIN A — FREY &amp; OSBORNE 2013</text><line x1="80" y1="446" x2="580" y2="446" stroke="#E5E1D8" stroke-width="0.5"/><text x="80" y="468" class="body" font-size="11" fill="#1A1A1A"><tspan font-weight="600">Granularité :</tspan> profession · <tspan font-weight="600">Source :</tspan> 70 experts ML</text><text x="80" y="486" class="body" font-size="11" fill="#1A1A1A"><tspan font-weight="600">Métrique :</tspan> substitution complète si majorité tâches automatisables</text><text x="80" y="504" class="body" font-size="11" fill="#1A1A1A"><tspan font-weight="600">Complémentarité :</tspan> non considérée · <tspan font-weight="600">Conversion :</tspan> % emplois</text><line x1="80" y1="518" x2="580" y2="518" stroke="#B7332C" stroke-width="0.5" stroke-dasharray="2 2"/><text x="80" y="544" class="display" font-size="22" font-weight="600" fill="#B7332C">→ 47% des emplois</text><text x="80" y="562" class="body" font-size="10" font-style="italic" fill="#5A5A5A">à haut risque d'automatisation</text></g>
+  <g class="interactive" data-card="trace-acemoglu" tabindex="0" role="button" aria-label="Chemin Acemoglu 2024"><rect x="620" y="410" width="520" height="160" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/><text x="640" y="436" class="mono" font-size="10" font-weight="600" letter-spacing="0.16em" fill="#1F5560">CHEMIN B — ACEMOGLU 2024</text><line x1="640" y1="446" x2="1120" y2="446" stroke="#E5E1D8" stroke-width="0.5"/><text x="640" y="468" class="body" font-size="11" fill="#1A1A1A"><tspan font-weight="600">Granularité :</tspan> tâche O*NET · <tspan font-weight="600">Source :</tspan> données empiriques</text><text x="640" y="486" class="body" font-size="11" fill="#1A1A1A"><tspan font-weight="600">Métrique :</tspan> seulement tâches profitablement automatisables</text><text x="640" y="504" class="body" font-size="11" fill="#1A1A1A"><tspan font-weight="600">Complémentarité :</tspan> implicite · <tspan font-weight="600">Conversion :</tspan> macro (Hulten)</text><line x1="640" y1="518" x2="1120" y2="518" stroke="#1F5560" stroke-width="0.5" stroke-dasharray="2 2"/><text x="640" y="544" class="display" font-size="22" font-weight="600" fill="#1F5560">→ 0,55% TFP / 10 ans</text><text x="640" y="562" class="body" font-size="10" font-style="italic" fill="#5A5A5A">soit ≈ 1,1-1,6% PIB cumulé</text></g>
+  <line x1="60" y1="600" x2="1140" y2="600" stroke="#1A1A1A" stroke-width="0.75"/>
+  <text x="60" y="628" class="mono" font-size="9" font-weight="600" letter-spacing="0.18em" fill="#5A5A5A">L'AMPLEUR DE L'ÉCART</text>
+  <text x="60" y="652" class="body" font-size="12" fill="#1A1A1A">Les deux études parlent de la même réalité — l'IA agit sur le travail —, mais elles répondent à des questions différentes.</text>
+  <text x="60" y="671" class="body" font-size="12" fill="#1A1A1A">Frey-Osborne : <tspan font-style="italic">qu'est-ce qui pourrait techniquement être automatisé ?</tspan></text>
+  <text x="60" y="690" class="body" font-size="12" fill="#1A1A1A">Acemoglu : <tspan font-style="italic">quel impact macroéconomique attendre une fois les coûts d'adoption pris en compte ?</tspan></text>
+  <text x="60" y="722" class="body" font-size="11.5" font-style="italic" fill="#5A5A5A">Tout commentaire qui agrège ces chiffres sans préciser le framework les rend faussement comparables.</text>
+  <text x="60" y="740" class="body" font-size="11.5" font-style="italic" fill="#5A5A5A">La presse populaire et les décideurs gagnent à parler en fourchettes liées aux hypothèses, plutôt qu'en chiffre choc.</text>
+</svg>
+<svg id="svg-04-augmentation" role="img" aria-label="Augmentation vs automatisation — Anthropic Economic Index" xmlns="http://www.w3.org/2000/svg" viewBox="0 155 1200 625" data-schema-id="schema-04">
+  <defs><style>.display{font-family:'Spectral','Playfair Display',Georgia,serif}.body{font-family:'Inter','Helvetica Neue',system-ui,sans-serif}.mono{font-family:'JetBrains Mono','IBM Plex Mono',monospace}</style></defs>
+  <rect width="1200" height="780" fill="transparent"/>
+  <g class="svg-header"><text x="60" y="55" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 04</text>
+  <text x="60" y="92" class="display" font-size="24" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Augmentation vs automatisation, dans les conversations Claude</text>
+  <text x="60" y="116" class="display" font-size="14" font-style="italic" fill="#5A5A5A">Anthropic Economic Index, mai 2025 → février 2026. La part d'automatisation a crû, mais l'augmentation reste majoritaire.</text>
+  <line x1="60" y1="138" x2="1140" y2="138" stroke="#E5E1D8" stroke-width="0.5"/></g>
+  <g stroke="#E5E1D8" stroke-width="0.5" fill="none"><line x1="120" y1="220" x2="1100" y2="220"/><line x1="120" y1="320" x2="1100" y2="320"/><line x1="120" y1="420" x2="1100" y2="420"/><line x1="120" y1="520" x2="1100" y2="520"/></g>
+  <text x="110" y="222" class="mono" font-size="10" fill="#5A5A5A" text-anchor="end">100%</text>
+  <text x="110" y="322" class="mono" font-size="10" fill="#5A5A5A" text-anchor="end">75%</text>
+  <text x="110" y="422" class="mono" font-size="10" fill="#5A5A5A" text-anchor="end">50%</text>
+  <text x="110" y="522" class="mono" font-size="10" fill="#5A5A5A" text-anchor="end">25%</text>
+  <text x="110" y="595" class="mono" font-size="10" fill="#5A5A5A" text-anchor="end">0%</text>
+  <line x1="120" y1="220" x2="120" y2="595" stroke="#1A1A1A" stroke-width="0.75"/>
+  <line x1="120" y1="595" x2="1100" y2="595" stroke="#1A1A1A" stroke-width="0.75"/>
+  <path d="M 120 595 L 120 433.75 L 365 426.25 L 610 418.75 L 855 422.5 L 1100 426.25 L 1100 595 Z" fill="#B7332C" opacity="0.18"/>
+  <path d="M 120 433.75 L 365 426.25 L 610 418.75 L 855 422.5 L 1100 426.25" fill="none" stroke="#B7332C" stroke-width="2"/>
+  <path d="M 120 433.75 L 365 426.25 L 610 418.75 L 855 422.5 L 1100 426.25 L 1100 231.25 L 855 230.5 L 610 231.25 L 365 227.5 L 120 220 Z" fill="#1F5560" opacity="0.18"/>
+  <path d="M 120 220 L 365 227.5 L 610 231.25 L 855 230.5 L 1100 231.25" fill="none" stroke="#1F5560" stroke-width="2"/>
+  <g fill="#1F5560"><circle cx="120" cy="220" r="3.5"/><circle cx="365" cy="227.5" r="3.5"/><circle cx="610" cy="231.25" r="3.5"/><circle cx="855" cy="230.5" r="3.5"/><circle cx="1100" cy="231.25" r="3.5"/></g>
+  <g fill="#B7332C"><circle cx="120" cy="433.75" r="3.5"/><circle cx="365" cy="426.25" r="3.5"/><circle cx="610" cy="418.75" r="3.5"/><circle cx="855" cy="422.5" r="3.5"/><circle cx="1100" cy="426.25" r="3.5"/></g>
+  <text x="120" y="615" class="mono" font-size="9.5" fill="#5A5A5A" text-anchor="middle">mai 2025</text>
+  <text x="365" y="615" class="mono" font-size="9.5" fill="#5A5A5A" text-anchor="middle">juil 2025</text>
+  <text x="610" y="615" class="mono" font-size="9.5" fill="#5A5A5A" text-anchor="middle">sept 2025</text>
+  <text x="855" y="615" class="mono" font-size="9.5" fill="#5A5A5A" text-anchor="middle">déc 2025</text>
+  <text x="1100" y="615" class="mono" font-size="9.5" fill="#5A5A5A" text-anchor="middle">fév 2026</text>
+  <g class="interactive" data-card="aug-zone" tabindex="0" role="button" aria-label="Zone augmentation"><rect x="455" y="282" width="350" height="64" fill="transparent"/><text x="630" y="306" class="display" font-size="22" font-weight="600" fill="#1F5560" text-anchor="middle">AUGMENTATION</text><text x="630" y="328" class="body" font-size="11" font-style="italic" fill="#1F5560" text-anchor="middle" opacity="0.9">l'utilisateur apprend, itère, demande un retour</text><text x="630" y="343" class="mono" font-size="10" fill="#1F5560" text-anchor="middle">52% en février 2026</text></g>
+  <g class="interactive" data-card="auto-zone" tabindex="0" role="button" aria-label="Zone automatisation"><rect x="455" y="490" width="350" height="64" fill="transparent"/><text x="630" y="514" class="display" font-size="22" font-weight="600" fill="#B7332C" text-anchor="middle">AUTOMATISATION</text><text x="630" y="536" class="body" font-size="11" font-style="italic" fill="#B7332C" text-anchor="middle" opacity="0.9">l'IA fait la tâche à la place de l'utilisateur</text><text x="630" y="551" class="mono" font-size="10" fill="#B7332C" text-anchor="middle">45% en février 2026 — en croissance depuis fin 2024</text></g>
+  <text x="120" y="206" class="mono" font-size="9" fill="#1F5560" text-anchor="middle">57%</text>
+  <text x="1100" y="206" class="mono" font-size="9" fill="#1F5560" text-anchor="middle">52%</text>
+  <text x="120" y="448" class="mono" font-size="9" fill="#B7332C" text-anchor="middle">43%</text>
+  <text x="1100" y="448" class="mono" font-size="9" fill="#B7332C" text-anchor="middle">45%</text>
+  <line x1="60" y1="640" x2="1140" y2="640" stroke="#1A1A1A" stroke-width="0.75"/>
+  <text x="60" y="664" class="mono" font-size="9" font-weight="600" letter-spacing="0.18em" fill="#5A5A5A">CE QUE L'INDEX MESURE</text>
+  <g class="interactive" data-card="obs-conversational" tabindex="0" role="button" aria-label="Observation conversationnelle"><rect x="60" y="678" width="340" height="84" rx="3" fill="#FAF8F3" stroke="#E5E1D8" stroke-width="1"/><text x="78" y="700" class="display" font-size="13" font-weight="600" fill="#1A1A1A">Conversations réelles</text><text x="78" y="722" class="body" font-size="10.5" fill="#5A5A5A">Analyse de millions de dialogues Claude,</text><text x="78" y="736" class="body" font-size="10.5" fill="#5A5A5A">classification automatique sur la nature</text><text x="78" y="750" class="body" font-size="10.5" fill="#5A5A5A">de l'usage (apprendre / itérer / déléguer).</text></g>
+  <g class="interactive" data-card="obs-onet" tabindex="0" role="button" aria-label="Mapping O*NET"><rect x="430" y="678" width="340" height="84" rx="3" fill="#FAF8F3" stroke="#E5E1D8" stroke-width="1"/><text x="448" y="700" class="display" font-size="13" font-weight="600" fill="#1A1A1A">Mapping O*NET</text><text x="448" y="722" class="body" font-size="10.5" fill="#5A5A5A">Croisement avec la base américaine</text><text x="448" y="736" class="body" font-size="10.5" fill="#5A5A5A">des 900+ professions et leurs tâches.</text><text x="448" y="750" class="body" font-size="10.5" fill="#5A5A5A">Permet de voir <tspan font-style="italic">qui</tspan> automatise <tspan font-style="italic">quoi</tspan>.</text></g>
+  <g class="interactive" data-card="obs-limites" tabindex="0" role="button" aria-label="Limites de l'index"><rect x="800" y="678" width="340" height="84" rx="3" fill="#FAF8F3" stroke="#E5E1D8" stroke-width="1"/><text x="818" y="700" class="display" font-size="13" font-weight="600" fill="#1A1A1A">Limites importantes</text><text x="818" y="722" class="body" font-size="10.5" fill="#5A5A5A">Couvre les usagers de Claude, pas la totalité</text><text x="818" y="736" class="body" font-size="10.5" fill="#5A5A5A">des usages IA. Concentration géographique</text><text x="818" y="750" class="body" font-size="10.5" fill="#5A5A5A">forte (top 5 États US = 24% des usages).</text></g>
+</svg>
+<svg id="svg-05-engels" role="img" aria-label="La pause d'Engels — productivité versus salaires réels" xmlns="http://www.w3.org/2000/svg" viewBox="0 155 1200 625" data-schema-id="schema-05">
+  <defs><style>.display{font-family:'Spectral','Playfair Display',Georgia,serif}.body{font-family:'Inter','Helvetica Neue',system-ui,sans-serif}.mono{font-family:'JetBrains Mono','IBM Plex Mono',monospace}</style></defs>
+  <rect width="1200" height="780" fill="transparent"/>
+  <g class="svg-header"><text x="60" y="55" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 05</text>
+  <text x="60" y="92" class="display" font-size="24" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">La pause d'Engels — productivité versus salaires réels</text>
+  <text x="60" y="116" class="display" font-size="14" font-style="italic" fill="#5A5A5A">Grande-Bretagne, 1770-1900 (données Allen, 2009). Cinquante ans de gains capturés par le capital, jusqu'à ce que la politique change.</text>
+  <line x1="60" y1="138" x2="1140" y2="138" stroke="#E5E1D8" stroke-width="0.5"/></g>
+  <text x="60" y="172" class="mono" font-size="9" font-weight="600" letter-spacing="0.18em" fill="#5A5A5A">DONNÉES HISTORIQUES — GRANDE-BRETAGNE</text>
+  <g stroke="#E5E1D8" stroke-width="0.5" fill="none"><line x1="80" y1="540" x2="720" y2="540"/><line x1="80" y1="475" x2="720" y2="475"/><line x1="80" y1="410" x2="720" y2="410"/><line x1="80" y1="345" x2="720" y2="345"/><line x1="80" y1="280" x2="720" y2="280"/><line x1="80" y1="215" x2="720" y2="215"/></g>
+  <line x1="80" y1="540" x2="720" y2="540" stroke="#1A1A1A" stroke-width="0.75"/>
+  <line x1="80" y1="540" x2="80" y2="200" stroke="#1A1A1A" stroke-width="0.75"/>
+  <text x="74" y="544" class="mono" font-size="9" fill="#5A5A5A" text-anchor="end">100</text>
+  <text x="74" y="479" class="mono" font-size="9" fill="#5A5A5A" text-anchor="end">150</text>
+  <text x="74" y="414" class="mono" font-size="9" fill="#5A5A5A" text-anchor="end">200</text>
+  <text x="74" y="349" class="mono" font-size="9" fill="#5A5A5A" text-anchor="end">250</text>
+  <text x="74" y="284" class="mono" font-size="9" fill="#5A5A5A" text-anchor="end">300</text>
+  <text x="74" y="219" class="mono" font-size="9" fill="#5A5A5A" text-anchor="end">350</text>
+  <text x="80" y="558" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">1770</text>
+  <text x="178" y="558" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">1790</text>
+  <text x="276" y="558" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">1810</text>
+  <text x="374" y="558" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">1830</text>
+  <text x="472" y="558" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">1840</text>
+  <text x="570" y="558" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">1860</text>
+  <text x="668" y="558" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">1900</text>
+  <text x="720" y="572" class="mono" font-size="8" fill="#9A9CA5" text-anchor="end">indice base 100 = 1770</text>
+  <rect x="178" y="200" width="294" height="340" fill="#B7332C" opacity="0.06"/>
+  <text x="325" y="190" class="mono" font-size="10" font-weight="600" letter-spacing="0.16em" fill="#B7332C" text-anchor="middle">PAUSE D'ENGELS · 1790–1840</text>
+  <path d="M 80 540 L 178 527 L 276 501 L 374 455 L 472 430 L 570 371 L 668 254" fill="none" stroke="#1F5560" stroke-width="2.5"/>
+  <circle cx="80" cy="540" r="3" fill="#1F5560"/><circle cx="178" cy="527" r="3" fill="#1F5560"/><circle cx="276" cy="501" r="3" fill="#1F5560"/><circle cx="374" cy="455" r="3" fill="#1F5560"/><circle cx="472" cy="430" r="3" fill="#1F5560"/><circle cx="570" cy="371" r="3" fill="#1F5560"/><circle cx="668" cy="254" r="3" fill="#1F5560"/>
+  <path d="M 80 540 L 178 537 L 276 540 L 374 534 L 472 527 L 570 482 L 668 384" fill="none" stroke="#B7332C" stroke-width="2.5"/>
+  <circle cx="80" cy="540" r="3" fill="#B7332C"/><circle cx="178" cy="537" r="3" fill="#B7332C"/><circle cx="276" cy="540" r="3" fill="#B7332C"/><circle cx="374" cy="534" r="3" fill="#B7332C"/><circle cx="472" cy="527" r="3" fill="#B7332C"/><circle cx="570" cy="482" r="3" fill="#B7332C"/><circle cx="668" cy="384" r="3" fill="#B7332C"/>
+  <text x="676" y="252" class="mono" font-size="10" font-weight="600" fill="#1F5560">productivité</text>
+  <text x="676" y="266" class="body" font-size="9" font-style="italic" fill="#5A5A5A">×3,2</text>
+  <text x="676" y="384" class="mono" font-size="10" font-weight="600" fill="#B7332C">salaires réels</text>
+  <text x="676" y="398" class="body" font-size="9" font-style="italic" fill="#5A5A5A">×2,2</text>
+  <line x1="472" y1="200" x2="472" y2="540" stroke="#1A1A1A" stroke-width="0.5" stroke-dasharray="3 3"/>
+  <text x="472" y="200" class="mono" font-size="8" font-weight="600" letter-spacing="0.14em" fill="#1A1A1A" text-anchor="middle">FACTORY ACTS · ÉDUCATION · SUFFRAGE</text>
+  <text x="80" y="595" class="mono" font-size="8" fill="#9A9CA5">Allen 2009, Engels' Pause — Explorations in Economic History</text>
+  <line x1="765" y1="160" x2="765" y2="600" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="785" y="172" class="mono" font-size="9" font-weight="600" letter-spacing="0.18em" fill="#5A5A5A">PROJECTION SCÉNARIO IA</text>
+  <g class="interactive" data-card="engels-mecanisme" tabindex="0" role="button" aria-label="Mécanisme"><rect x="785" y="190" width="340" height="120" rx="3" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.25"/><text x="805" y="216" class="mono" font-size="9.5" font-weight="600" letter-spacing="0.16em" fill="#B7332C">MÉCANISME</text><text x="805" y="240" class="display" font-size="14" font-weight="600" fill="#1A1A1A">Productivité ↑, salaires →</text><line x1="805" y1="252" x2="1105" y2="252" stroke="#E5E1D8" stroke-width="0.5"/><text x="805" y="272" class="body" font-size="11" fill="#1A1A1A">Gains captés par le capital</text><text x="805" y="288" class="body" font-size="11" fill="#1A1A1A">si pouvoir de négociation faible</text><text x="805" y="304" class="body" font-size="11" fill="#1A1A1A">+ marché concentré IA.</text></g>
+  <g class="interactive" data-card="engels-vitesse" tabindex="0" role="button" aria-label="Vitesse"><rect x="785" y="325" width="340" height="120" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/><text x="805" y="351" class="mono" font-size="9.5" font-weight="600" letter-spacing="0.16em" fill="#1F5560">VITESSE</text><text x="805" y="375" class="display" font-size="14" font-weight="600" fill="#1A1A1A">50 ans → 10 ans ?</text><line x1="805" y1="387" x2="1105" y2="387" stroke="#E5E1D8" stroke-width="0.5"/><text x="805" y="407" class="body" font-size="11" fill="#1A1A1A">Diffusion logicielle plus rapide</text><text x="805" y="423" class="body" font-size="11" fill="#1A1A1A">— mais le palier dépend de la</text><text x="805" y="439" class="body" font-size="11" fill="#1A1A1A">réorganisation, pas de l'outil.</text></g>
+  <g class="interactive" data-card="engels-cible" tabindex="0" role="button" aria-label="Cible"><rect x="785" y="460" width="340" height="120" rx="3" fill="#FAF8F3" stroke="#B58A2C" stroke-width="1.25"/><text x="805" y="486" class="mono" font-size="9.5" font-weight="600" letter-spacing="0.16em" fill="#B58A2C">CIBLE</text><text x="805" y="510" class="display" font-size="14" font-weight="600" fill="#1A1A1A">Cols blancs cette fois</text><line x1="805" y1="522" x2="1105" y2="522" stroke="#E5E1D8" stroke-width="0.5"/><text x="805" y="542" class="body" font-size="11" fill="#1A1A1A">Reverse skill bias : la classe</text><text x="805" y="558" class="body" font-size="11" fill="#1A1A1A">moyenne cognitive est exposée,</text><text x="805" y="574" class="body" font-size="11" fill="#1A1A1A">pas l'ouvrier industriel.</text></g>
+  <line x1="60" y1="630" x2="1140" y2="630" stroke="#1A1A1A" stroke-width="0.75"/>
+  <text x="60" y="654" class="mono" font-size="9" font-weight="600" letter-spacing="0.18em" fill="#5A5A5A">LA LEÇON HISTORIQUE</text>
+  <text x="60" y="678" class="body" font-size="12" fill="#1A1A1A">Les gains de productivité ne se redistribuent pas automatiquement. La pause d'Engels n'a pris fin que par <tspan font-style="italic">conquête institutionnelle</tspan> :</text>
+  <text x="60" y="697" class="body" font-size="12" fill="#1A1A1A">syndicalisation, scolarité, suffrage élargi, régulation industrielle. Le scénario IA dépend des mêmes leviers — sans automatisme.</text>
+  <text x="60" y="730" class="body" font-size="11.5" font-style="italic" fill="#5A5A5A">Acemoglu, Johnson et Korinek convoquent explicitement ce précédent pour décrire le risque IA. La technologie est neuve ;</text>
+  <text x="60" y="748" class="body" font-size="11.5" font-style="italic" fill="#5A5A5A">l'asymétrie de pouvoir entre détenteurs de capital algorithmique et travailleurs cognitifs ne l'est pas.</text>
+</svg>
+<svg id="svg-06-metiers" role="img" aria-label="Familles professionnelles françaises — exposition × complémentarité" xmlns="http://www.w3.org/2000/svg" viewBox="0 155 1200 625" data-schema-id="schema-06">
+  <defs><style>.display{font-family:'Spectral','Playfair Display',Georgia,serif}.body{font-family:'Inter','Helvetica Neue',system-ui,sans-serif}.mono{font-family:'JetBrains Mono','IBM Plex Mono',monospace}</style></defs>
+  <rect width="1200" height="780" fill="transparent"/>
+  <g class="svg-header"><text x="60" y="55" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 06</text>
+  <text x="60" y="92" class="display" font-size="24" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Familles professionnelles françaises — exposition × complémentarité</text>
+  <text x="60" y="116" class="display" font-size="14" font-style="italic" fill="#5A5A5A">DARES × INSEE × cadre Pizzinelli/FMI. Forte exposition + faible complémentarité = zone de risque substitutif (en bas à droite).</text>
+  <line x1="60" y1="138" x2="1140" y2="138" stroke="#E5E1D8" stroke-width="0.5"/></g>
+  <rect x="600" y="180" width="400" height="190" fill="#1F5560" opacity="0.04"/>
+  <rect x="200" y="180" width="400" height="190" fill="#FAF8F3"/>
+  <rect x="200" y="370" width="400" height="190" fill="#FAF8F3"/>
+  <rect x="600" y="370" width="400" height="190" fill="#B7332C" opacity="0.06"/>
+  <line x1="200" y1="560" x2="1000" y2="560" stroke="#1A1A1A" stroke-width="0.75"/>
+  <line x1="200" y1="180" x2="200" y2="560" stroke="#1A1A1A" stroke-width="0.75"/>
+  <line x1="600" y1="180" x2="600" y2="560" stroke="#5A5A5A" stroke-width="0.5" stroke-dasharray="2 3"/>
+  <line x1="200" y1="370" x2="1000" y2="370" stroke="#5A5A5A" stroke-width="0.5" stroke-dasharray="2 3"/>
+  <text x="600" y="585" class="mono" font-size="10" fill="#1A1A1A" text-anchor="middle">EXPOSITION À L'IA →</text>
+  <text x="200" y="585" class="mono" font-size="9" fill="#5A5A5A" text-anchor="start">faible</text>
+  <text x="1000" y="585" class="mono" font-size="9" fill="#5A5A5A" text-anchor="end">forte</text>
+  <text x="180" y="370" class="mono" font-size="10" fill="#1A1A1A" text-anchor="end" transform="rotate(-90, 180, 370)">↑ COMPLÉMENTARITÉ HUMAINE</text>
+  <text x="180" y="180" class="mono" font-size="9" fill="#5A5A5A" text-anchor="end">forte</text>
+  <text x="180" y="555" class="mono" font-size="9" fill="#5A5A5A" text-anchor="end">faible</text>
+  <text x="400" y="200" class="mono" font-size="9.5" font-weight="600" letter-spacing="0.16em" fill="#5A5A5A" text-anchor="middle">PEU TOUCHÉS</text>
+  <text x="800" y="200" class="mono" font-size="9.5" font-weight="600" letter-spacing="0.16em" fill="#1F5560" text-anchor="middle">AUGMENTATION DE PRODUCTIVITÉ</text>
+  <text x="400" y="556" class="mono" font-size="9.5" font-weight="600" letter-spacing="0.16em" fill="#5A5A5A" text-anchor="middle">PEU CONCERNÉS</text>
+  <text x="800" y="556" class="mono" font-size="9.5" font-weight="600" letter-spacing="0.16em" fill="#B7332C" text-anchor="middle">RISQUE DE SUBSTITUTION</text>
+  <g class="interactive" data-card="metier-soins" tabindex="0" role="button" aria-label="Soins"><circle cx="320" cy="240" r="38" fill="#1F5560" opacity="0.2"/><circle cx="320" cy="240" r="38" fill="none" stroke="#1F5560" stroke-width="1.5"/><text x="320" y="237" class="display" font-size="11" font-weight="600" fill="#1A1A1A" text-anchor="middle">Soins,</text><text x="320" y="251" class="display" font-size="11" font-weight="600" fill="#1A1A1A" text-anchor="middle">aide</text></g>
+  <g class="interactive" data-card="metier-batiment" tabindex="0" role="button" aria-label="Bâtiment"><circle cx="430" cy="290" r="32" fill="#1F5560" opacity="0.2"/><circle cx="430" cy="290" r="32" fill="none" stroke="#1F5560" stroke-width="1.5"/><text x="430" y="294" class="display" font-size="11" font-weight="600" fill="#1A1A1A" text-anchor="middle">Bâtiment</text></g>
+  <g class="interactive" data-card="metier-artisan" tabindex="0" role="button" aria-label="Artisanat"><circle cx="280" cy="335" r="22" fill="#1F5560" opacity="0.2"/><circle cx="280" cy="335" r="22" fill="none" stroke="#1F5560" stroke-width="1.5"/><text x="280" y="338" class="display" font-size="10" font-weight="600" fill="#1A1A1A" text-anchor="middle">Artisanat</text></g>
+  <g class="interactive" data-card="metier-medecins" tabindex="0" role="button" aria-label="Médecins"><circle cx="730" cy="225" r="26" fill="#1F5560" opacity="0.25"/><circle cx="730" cy="225" r="26" fill="none" stroke="#1F5560" stroke-width="1.5"/><text x="730" y="228" class="display" font-size="11" font-weight="600" fill="#1A1A1A" text-anchor="middle">Médecins</text></g>
+  <g class="interactive" data-card="metier-ingenieurs" tabindex="0" role="button" aria-label="Ingénieurs"><circle cx="850" cy="270" r="40" fill="#1F5560" opacity="0.25"/><circle cx="850" cy="270" r="40" fill="none" stroke="#1F5560" stroke-width="1.5"/><text x="850" y="266" class="display" font-size="11" font-weight="600" fill="#1A1A1A" text-anchor="middle">Ingénieurs,</text><text x="850" y="280" class="display" font-size="11" font-weight="600" fill="#1A1A1A" text-anchor="middle">cadres tech.</text></g>
+  <g class="interactive" data-card="metier-enseignement" tabindex="0" role="button" aria-label="Enseignement"><circle cx="940" cy="320" r="28" fill="#1F5560" opacity="0.25"/><circle cx="940" cy="320" r="28" fill="none" stroke="#1F5560" stroke-width="1.5"/><text x="940" y="316" class="display" font-size="10" font-weight="600" fill="#1A1A1A" text-anchor="middle">Enseignants</text><text x="940" y="328" class="display" font-size="9" font-style="italic" fill="#5A5A5A" text-anchor="middle">supérieur</text></g>
+  <g class="interactive" data-card="metier-magistrats" tabindex="0" role="button" aria-label="Magistrats"><circle cx="660" cy="320" r="20" fill="#1F5560" opacity="0.25"/><circle cx="660" cy="320" r="20" fill="none" stroke="#1F5560" stroke-width="1.5"/><text x="660" y="324" class="display" font-size="10" font-weight="600" fill="#1A1A1A" text-anchor="middle">Magistrats</text></g>
+  <g class="interactive" data-card="metier-restauration" tabindex="0" role="button" aria-label="Restauration"><circle cx="350" cy="450" r="34" fill="#5A5A5A" opacity="0.15"/><circle cx="350" cy="450" r="34" fill="none" stroke="#5A5A5A" stroke-width="1.5"/><text x="350" y="453" class="display" font-size="11" font-weight="600" fill="#1A1A1A" text-anchor="middle">Restauration</text></g>
+  <g class="interactive" data-card="metier-agriculture" tabindex="0" role="button" aria-label="Agriculture"><circle cx="280" cy="500" r="22" fill="#5A5A5A" opacity="0.15"/><circle cx="280" cy="500" r="22" fill="none" stroke="#5A5A5A" stroke-width="1.5"/><text x="280" y="503" class="display" font-size="10" font-weight="600" fill="#1A1A1A" text-anchor="middle">Agriculture</text></g>
+  <g class="interactive" data-card="metier-secretariat" tabindex="0" role="button" aria-label="Secrétariat"><circle cx="850" cy="430" r="42" fill="#B7332C" opacity="0.22"/><circle cx="850" cy="430" r="42" fill="none" stroke="#B7332C" stroke-width="1.5"/><text x="850" y="426" class="display" font-size="11" font-weight="600" fill="#1A1A1A" text-anchor="middle">Secrétariat,</text><text x="850" y="440" class="display" font-size="11" font-weight="600" fill="#1A1A1A" text-anchor="middle">gestion admin.</text></g>
+  <g class="interactive" data-card="metier-comptabilite" tabindex="0" role="button" aria-label="Comptabilité"><circle cx="940" cy="475" r="26" fill="#B7332C" opacity="0.22"/><circle cx="940" cy="475" r="26" fill="none" stroke="#B7332C" stroke-width="1.5"/><text x="940" y="479" class="display" font-size="11" font-weight="600" fill="#1A1A1A" text-anchor="middle">Compta.</text></g>
+  <g class="interactive" data-card="metier-centres-appel" tabindex="0" role="button" aria-label="Centres d'appel"><circle cx="730" cy="430" r="22" fill="#B7332C" opacity="0.22"/><circle cx="730" cy="430" r="22" fill="none" stroke="#B7332C" stroke-width="1.5"/><text x="730" y="427" class="display" font-size="9.5" font-weight="600" fill="#1A1A1A" text-anchor="middle">Centres</text><text x="730" y="438" class="display" font-size="9.5" font-weight="600" fill="#1A1A1A" text-anchor="middle">d'appel</text></g>
+  <g class="interactive" data-card="metier-banque" tabindex="0" role="button" aria-label="Banque détail"><circle cx="690" cy="490" r="22" fill="#B7332C" opacity="0.22"/><circle cx="690" cy="490" r="22" fill="none" stroke="#B7332C" stroke-width="1.5"/><text x="690" y="488" class="display" font-size="10" font-weight="600" fill="#1A1A1A" text-anchor="middle">Banque</text><text x="690" y="499" class="display" font-size="9" font-style="italic" fill="#5A5A5A" text-anchor="middle">détail</text></g>
+  <g class="interactive" data-card="metier-journalisme" tabindex="0" role="button" aria-label="Journalisme"><circle cx="800" cy="510" r="18" fill="#B7332C" opacity="0.22"/><circle cx="800" cy="510" r="18" fill="none" stroke="#B7332C" stroke-width="1.5"/><text x="800" y="513" class="display" font-size="10" font-weight="600" fill="#1A1A1A" text-anchor="middle">Journ.</text></g>
+  <text x="1030" y="195" class="mono" font-size="9" font-weight="600" letter-spacing="0.14em" fill="#5A5A5A">EFFECTIFS</text>
+  <circle cx="1050" cy="225" r="14" fill="none" stroke="#1A1A1A" stroke-width="1"/>
+  <text x="1075" y="229" class="mono" font-size="9" fill="#5A5A5A">≈ 0,5 M</text>
+  <circle cx="1050" cy="265" r="22" fill="none" stroke="#1A1A1A" stroke-width="1"/>
+  <text x="1080" y="269" class="mono" font-size="9" fill="#5A5A5A">≈ 1,5 M</text>
+  <circle cx="1050" cy="320" r="34" fill="none" stroke="#1A1A1A" stroke-width="1"/>
+  <text x="1093" y="324" class="mono" font-size="9" fill="#5A5A5A">≈ 3 M</text>
+  <line x1="60" y1="610" x2="1140" y2="610" stroke="#1A1A1A" stroke-width="0.75"/>
+  <text x="60" y="634" class="mono" font-size="9" font-weight="600" letter-spacing="0.18em" fill="#5A5A5A">CHIFFRES CLÉS · FRANCE 2024</text>
+  <g><text x="60" y="664" class="display" font-size="32" font-weight="600" fill="#B7332C">35,5%</text><text x="60" y="690" class="body" font-size="11" fill="#1A1A1A">des postes français en zone</text><text x="60" y="706" class="body" font-size="11" fill="#1A1A1A">forte exposition (score ≥7/10)</text></g>
+  <g><text x="280" y="664" class="display" font-size="32" font-weight="600" fill="#1F5560">28,7M</text><text x="280" y="690" class="body" font-size="11" fill="#1A1A1A">de postes analysés (228 familles</text><text x="280" y="706" class="body" font-size="11" fill="#1A1A1A">professionnelles DARES)</text></g>
+  <g><text x="500" y="664" class="display" font-size="32" font-weight="600" fill="#B58A2C">10%</text><text x="500" y="690" class="body" font-size="11" fill="#1A1A1A">des entreprises FR 10 sal.+</text><text x="500" y="706" class="body" font-size="11" fill="#1A1A1A">utilisent au moins une IA en 2024</text></g>
+  <g><text x="720" y="664" class="display" font-size="32" font-weight="600" fill="#1A1A1A">800k</text><text x="720" y="690" class="body" font-size="11" fill="#1A1A1A">conducteurs concernés à terme</text><text x="720" y="706" class="body" font-size="11" fill="#1A1A1A">(France Stratégie 2025)</text></g>
+  <g><text x="940" y="664" class="display" font-size="32" font-weight="600" fill="#1A1A1A">≈ 4×</text><text x="940" y="690" class="body" font-size="11" fill="#1A1A1A">retard d'adoption IA</text><text x="940" y="706" class="body" font-size="11" fill="#1A1A1A">par rapport aux États-Unis</text></g>
+  <text x="60" y="746" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Lecture : un point dans le quadrant rouge cumule forte exposition (l'IA peut faire la tâche) et faible complémentarité (peu de contexte humain irréductible).</text>
+  <text x="60" y="762" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Le diamètre des bulles est proportionnel aux effectifs en France ; la position est indicative et synthétise plusieurs sources.</text>
+</svg>
+<svg id="svg-07-scenarios" role="img" aria-label="Quatre scénarios pour 2035" xmlns="http://www.w3.org/2000/svg" viewBox="0 155 1200 625" data-schema-id="schema-07">
+  <defs><style>.display{font-family:'Spectral','Playfair Display',Georgia,serif}.body{font-family:'Inter','Helvetica Neue',system-ui,sans-serif}.mono{font-family:'JetBrains Mono','IBM Plex Mono',monospace}</style></defs>
+  <rect width="1200" height="780" fill="transparent"/>
+  <g class="svg-header"><text x="60" y="55" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 07</text>
+  <text x="60" y="92" class="display" font-size="24" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Quatre scénarios pour 2035</text>
+  <text x="60" y="116" class="display" font-size="14" font-style="italic" fill="#5A5A5A">Vitesse de diffusion (lente / rapide) × distribution des gains (concentrée / partagée). Aucun n'est inéluctable.</text>
+  <line x1="60" y1="138" x2="1140" y2="138" stroke="#E5E1D8" stroke-width="0.5"/></g>
+  <line x1="650" y1="180" x2="650" y2="600" stroke="#1A1A1A" stroke-width="0.75"/>
+  <line x1="200" y1="390" x2="1100" y2="390" stroke="#1A1A1A" stroke-width="0.75"/>
+  <rect x="200" y="180" width="900" height="420" fill="none" stroke="#1A1A1A" stroke-width="0.75"/>
+  <text x="650" y="170" class="mono" font-size="10" font-weight="600" letter-spacing="0.16em" fill="#1A1A1A" text-anchor="middle">VITESSE DE DIFFUSION</text>
+  <text x="425" y="170" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">← lente (palier &gt; 15 ans)</text>
+  <text x="875" y="170" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">rapide (palier &lt; 7 ans) →</text>
+  <text x="183" y="390" class="mono" font-size="10" font-weight="600" letter-spacing="0.16em" fill="#1A1A1A" text-anchor="middle" transform="rotate(-90, 183, 390)">DISTRIBUTION DES GAINS</text>
+  <text x="190" y="285" class="mono" font-size="9" fill="#5A5A5A" text-anchor="end">↑ partagés</text>
+  <text x="190" y="500" class="mono" font-size="9" fill="#5A5A5A" text-anchor="end">↓ concentrés</text>
+  <rect x="200.5" y="180.5" width="449" height="209" fill="#1F5560" opacity="0.06"/>
+  <rect x="650.5" y="180.5" width="449" height="209" fill="#1F5560" opacity="0.10"/>
+  <rect x="200.5" y="390.5" width="449" height="209" fill="#5A5A5A" opacity="0.04"/>
+  <rect x="650.5" y="390.5" width="449" height="209" fill="#B7332C" opacity="0.08"/>
+  <g class="interactive" data-card="scenario-c-plateau" tabindex="0" role="button" aria-label="Scénario C — Plateau"><rect x="210" y="190" width="430" height="190" fill="transparent"/><text x="225" y="216" class="mono" font-size="10" font-weight="600" letter-spacing="0.16em" fill="#1F5560">SCÉNARIO C</text><text x="225" y="244" class="display" font-size="22" font-weight="600" fill="#1A1A1A">Le plateau</text><line x1="225" y1="256" x2="625" y2="256" stroke="#1F5560" stroke-width="0.5"/><text x="225" y="278" class="body" font-size="11.5" fill="#1A1A1A">L'IA atteint un palier capacitaire ; gains</text><text x="225" y="295" class="body" font-size="11.5" fill="#1A1A1A">diffus, lente intégration dans les processus.</text><text x="225" y="324" class="body" font-size="11" font-style="italic" fill="#5A5A5A">≈ Acemoglu, scénario bas : 0,55% TFP / 10 ans</text><text x="225" y="346" class="mono" font-size="10" fill="#1F5560">+ adaptation institutionnelle aisée</text><text x="225" y="362" class="mono" font-size="10" fill="#5A5A5A">– désillusion politique post-bulle</text></g>
+  <g class="interactive" data-card="scenario-a-partagee" tabindex="0" role="button" aria-label="Scénario A — Productivité partagée"><rect x="660" y="190" width="430" height="190" fill="transparent"/><text x="675" y="216" class="mono" font-size="10" font-weight="600" letter-spacing="0.16em" fill="#1F5560">SCÉNARIO A</text><text x="675" y="244" class="display" font-size="22" font-weight="600" fill="#1A1A1A">Productivité partagée</text><line x1="675" y1="256" x2="1075" y2="256" stroke="#1F5560" stroke-width="0.5"/><text x="675" y="278" class="body" font-size="11.5" fill="#1A1A1A">Palier en 7-10 ans, gains entre 1 et 2%/an,</text><text x="675" y="295" class="body" font-size="11.5" fill="#1A1A1A">redistribution active. Semaine de 4 jours.</text><text x="675" y="324" class="body" font-size="11" font-style="italic" fill="#5A5A5A">≈ McKinsey haut, Aghion, Brynjolfsson</text><text x="675" y="346" class="mono" font-size="10" fill="#1F5560">+ croissance + bien-être médian</text><text x="675" y="362" class="mono" font-size="10" fill="#5A5A5A">– demande 3 conditions politiques fortes</text></g>
+  <g class="interactive" data-card="scenario-c2-stagnation" tabindex="0" role="button" aria-label="Variante C' — Stagnation inégale"><rect x="210" y="400" width="430" height="190" fill="transparent"/><text x="225" y="426" class="mono" font-size="10" font-weight="600" letter-spacing="0.16em" fill="#5A5A5A">VARIANTE C'</text><text x="225" y="454" class="display" font-size="22" font-weight="600" fill="#1A1A1A">Stagnation inégale</text><line x1="225" y1="466" x2="625" y2="466" stroke="#5A5A5A" stroke-width="0.5"/><text x="225" y="488" class="body" font-size="11.5" fill="#1A1A1A">Diffusion lente, mais les rentes se</text><text x="225" y="505" class="body" font-size="11.5" fill="#1A1A1A">concentrent quand même au sommet.</text><text x="225" y="534" class="body" font-size="11" font-style="italic" fill="#5A5A5A">≈ extension de la stagnation TIC 2000-2020</text><text x="225" y="556" class="mono" font-size="10" fill="#5A5A5A">– pire des deux mondes : pas de gain agrégé,</text><text x="225" y="572" class="mono" font-size="10" fill="#5A5A5A">distribution dégradée, désengagement civique</text></g>
+  <g class="interactive" data-card="scenario-b-engels" tabindex="0" role="button" aria-label="Scénario B — Pause d'Engels 2.0"><rect x="660" y="400" width="370" height="190" fill="transparent"/><text x="675" y="426" class="mono" font-size="10" font-weight="600" letter-spacing="0.16em" fill="#B7332C">SCÉNARIO B</text><text x="675" y="454" class="display" font-size="22" font-weight="600" fill="#1A1A1A">Pause d'Engels 2.0</text><line x1="675" y1="466" x2="1015" y2="466" stroke="#B7332C" stroke-width="0.5"/><text x="675" y="488" class="body" font-size="11.5" fill="#1A1A1A">Productivité ↑, salaires médians stagnent,</text><text x="675" y="505" class="body" font-size="11.5" fill="#1A1A1A">classe moyenne cognitive polarisée.</text><text x="675" y="534" class="body" font-size="11" font-style="italic" fill="#5A5A5A">≈ Acemoglu-Korinek, scénario d'alerte</text><text x="675" y="556" class="mono" font-size="10" fill="#5A5A5A">– défiance démocratique, vote populiste</text><text x="675" y="572" class="mono" font-size="10" fill="#5A5A5A">– par défaut sans choix politique</text></g>
+  <g class="interactive" data-card="scenario-d-rupture" tabindex="0" role="button" aria-label="Scénario D — Rupture agentique"><rect x="1108" y="430" width="90" height="142" rx="6" fill="#B58A2C" opacity="0.10" stroke="#B58A2C" stroke-width="1.5" stroke-dasharray="4 3"/><text x="1153" y="452" class="mono" font-size="8.5" font-weight="600" letter-spacing="0.10em" fill="#B58A2C" text-anchor="middle">SCÉNARIO D</text><text x="1153" y="476" class="display" font-size="13" font-weight="600" fill="#1A1A1A" text-anchor="middle">Rupture</text><text x="1153" y="492" class="display" font-size="13" font-weight="600" fill="#1A1A1A" text-anchor="middle">agentique</text><line x1="1118" y1="506" x2="1188" y2="506" stroke="#B58A2C" stroke-width="0.5"/><text x="1153" y="525" class="body" font-size="9" font-style="italic" fill="#5A5A5A" text-anchor="middle">palier &lt; 5 ans</text><text x="1153" y="540" class="body" font-size="9" font-style="italic" fill="#5A5A5A" text-anchor="middle">+3-4 %/an</text><text x="1153" y="560" class="mono" font-size="8" fill="#B58A2C" text-anchor="middle">extrême de B</text></g>
+  <line x1="1090" y1="495" x2="1106" y2="495" stroke="#B58A2C" stroke-width="0.75" stroke-dasharray="2 2"/>
+  <line x1="60" y1="630" x2="1140" y2="630" stroke="#1A1A1A" stroke-width="0.75"/>
+  <text x="60" y="654" class="mono" font-size="9" font-weight="600" letter-spacing="0.18em" fill="#5A5A5A">VARIABLES CLÉS — CE QUI BASCULE LE SCÉNARIO</text>
+  <g><text x="60" y="684" class="display" font-size="13" font-weight="600" fill="#1A1A1A">Vitesse</text><text x="60" y="704" class="body" font-size="11" fill="#5A5A5A">Capacités &amp; coûts modèles</text><text x="60" y="720" class="body" font-size="11" fill="#5A5A5A">Délai de réorganisation</text><text x="60" y="736" class="body" font-size="11" fill="#5A5A5A">Disponibilité des données</text></g>
+  <g><text x="280" y="684" class="display" font-size="13" font-weight="600" fill="#1A1A1A">Distribution</text><text x="280" y="704" class="body" font-size="11" fill="#5A5A5A">Pouvoir de négociation</text><text x="280" y="720" class="body" font-size="11" fill="#5A5A5A">Fiscalité du capital algo</text><text x="280" y="736" class="body" font-size="11" fill="#5A5A5A">Concurrence amont</text></g>
+  <g><text x="500" y="684" class="display" font-size="13" font-weight="600" fill="#1A1A1A">Gouvernance</text><text x="500" y="704" class="body" font-size="11" fill="#5A5A5A">AI Act, NIST AI RMF</text><text x="500" y="720" class="body" font-size="11" fill="#5A5A5A">Gouvernance agentique</text><text x="500" y="736" class="body" font-size="11" fill="#5A5A5A">Régulation marchés</text></g>
+  <g><text x="720" y="684" class="display" font-size="13" font-weight="600" fill="#1A1A1A">Formation</text><text x="720" y="704" class="body" font-size="11" fill="#5A5A5A">Continue, à grande échelle</text><text x="720" y="720" class="body" font-size="11" fill="#5A5A5A">Reconversion sectorielle</text><text x="720" y="736" class="body" font-size="11" fill="#5A5A5A">Compétences cognitives</text></g>
+  <g><text x="940" y="684" class="display" font-size="13" font-weight="600" fill="#1A1A1A">Géographie</text><text x="940" y="704" class="body" font-size="11" fill="#5A5A5A">Concentration calcul/données</text><text x="940" y="720" class="body" font-size="11" fill="#5A5A5A">Souveraineté numérique</text><text x="940" y="736" class="body" font-size="11" fill="#5A5A5A">Maillage territorial</text></g>
+  <text x="60" y="765" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Lecture : la trajectoire 2026 → 2035 dépend moins de la technologie que des cinq variables ci-dessus, toutes politiquement actionnables.</text>
+</svg>
+<svg id="svg-08-leviers" role="img" aria-label="Six leviers contre la catastrophe" xmlns="http://www.w3.org/2000/svg" viewBox="0 155 1200 625" data-schema-id="schema-08">
+  <defs><style>.display{font-family:'Spectral','Playfair Display',Georgia,serif}.body{font-family:'Inter','Helvetica Neue',system-ui,sans-serif}.mono{font-family:'JetBrains Mono','IBM Plex Mono',monospace}</style></defs>
+  <rect width="1200" height="780" fill="transparent"/>
+  <g class="svg-header"><text x="60" y="55" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 08</text>
+  <text x="60" y="92" class="display" font-size="24" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Six leviers contre la catastrophe</text>
+  <text x="60" y="116" class="display" font-size="14" font-style="italic" fill="#5A5A5A">Familles d'intervention publique pour orienter la trajectoire IA vers la productivité partagée. Convergent dans la littérature 2023-2025.</text>
+  <line x1="60" y1="138" x2="1140" y2="138" stroke="#E5E1D8" stroke-width="0.5"/></g>
+  <circle cx="600" cy="420" r="92" fill="#FAF8F3" stroke="#1A1A1A" stroke-width="2"/>
+  <circle cx="600" cy="420" r="80" fill="none" stroke="#1A1A1A" stroke-width="0.5"/>
+  <text x="600" y="408" class="display" font-size="13" font-weight="600" fill="#1A1A1A" text-anchor="middle">Orienter la</text>
+  <text x="600" y="426" class="display" font-size="14" font-weight="600" fill="#1A1A1A" text-anchor="middle">trajectoire IA</text>
+  <text x="600" y="448" class="mono" font-size="9" font-style="italic" fill="#B7332C" text-anchor="middle">six leviers convergents</text>
+  <g class="interactive" data-card="levier-01-redirection" tabindex="0" role="button" aria-label="Levier 1"><rect x="60" y="180" width="290" height="140" rx="3" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.25"/><text x="80" y="206" class="mono" font-size="10" font-weight="600" letter-spacing="0.16em" fill="#B7332C">LEVIER 01</text><text x="80" y="232" class="display" font-size="15" font-weight="600" fill="#1A1A1A">Redirection technologique</text><line x1="80" y1="244" x2="330" y2="244" stroke="#E5E1D8" stroke-width="0.5"/><text x="80" y="265" class="body" font-size="10.5" fill="#1A1A1A">Aligner fiscalement travail / capital algo</text><text x="80" y="281" class="body" font-size="10.5" fill="#1A1A1A">Financer la R&amp;D <tspan font-style="italic">complémentaire</tspan></text><text x="80" y="297" class="body" font-size="10.5" fill="#1A1A1A">Préférence achats publics</text><text x="80" y="316" class="mono" font-size="9" fill="#5A5A5A">→ Acemoglu-Johnson, Power and Progress</text></g>
+  <line x1="350" y1="320" x2="510" y2="395" stroke="#5A5A5A" stroke-width="0.75" stroke-dasharray="2 3"/>
+  <g class="interactive" data-card="levier-02-formation" tabindex="0" role="button" aria-label="Levier 2"><rect x="455" y="180" width="290" height="140" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/><text x="475" y="206" class="mono" font-size="10" font-weight="600" letter-spacing="0.16em" fill="#1F5560">LEVIER 02</text><text x="475" y="232" class="display" font-size="15" font-weight="600" fill="#1A1A1A">Formation continue</text><line x1="475" y1="244" x2="725" y2="244" stroke="#E5E1D8" stroke-width="0.5"/><text x="475" y="265" class="body" font-size="10.5" fill="#1A1A1A">CPF universel et portable</text><text x="475" y="281" class="body" font-size="10.5" fill="#1A1A1A">100% des cadres formés en 5 ans</text><text x="475" y="297" class="body" font-size="10.5" fill="#1A1A1A">Filières de reconversion 12-24 mois</text><text x="475" y="316" class="mono" font-size="9" fill="#5A5A5A">→ OCDE Employment Outlook 2025</text></g>
+  <line x1="600" y1="320" x2="600" y2="328" stroke="#5A5A5A" stroke-width="0.75" stroke-dasharray="2 3"/>
+  <g class="interactive" data-card="levier-03-securisation" tabindex="0" role="button" aria-label="Levier 3"><rect x="850" y="180" width="290" height="140" rx="3" fill="#FAF8F3" stroke="#B58A2C" stroke-width="1.25"/><text x="870" y="206" class="mono" font-size="10" font-weight="600" letter-spacing="0.16em" fill="#B58A2C">LEVIER 03</text><text x="870" y="232" class="display" font-size="15" font-weight="600" fill="#1A1A1A">Sécurisation des transitions</text><line x1="870" y1="244" x2="1120" y2="244" stroke="#E5E1D8" stroke-width="0.5"/><text x="870" y="265" class="body" font-size="10.5" fill="#1A1A1A">Indemnisation longue durée</text><text x="870" y="281" class="body" font-size="10.5" fill="#1A1A1A">VAE accélérée, accompagnement</text><text x="870" y="297" class="body" font-size="10.5" fill="#1A1A1A">Modèle flexicurité danois / suédois</text><text x="870" y="316" class="mono" font-size="9" fill="#5A5A5A">→ Benhamou France Stratégie 2025</text></g>
+  <line x1="850" y1="320" x2="690" y2="395" stroke="#5A5A5A" stroke-width="0.75" stroke-dasharray="2 3"/>
+  <g class="interactive" data-card="levier-04-partage" tabindex="0" role="button" aria-label="Levier 4"><rect x="60" y="520" width="290" height="140" rx="3" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.25"/><text x="80" y="546" class="mono" font-size="10" font-weight="600" letter-spacing="0.16em" fill="#B7332C">LEVIER 04</text><text x="80" y="572" class="display" font-size="15" font-weight="600" fill="#1A1A1A">Partage des gains</text><line x1="80" y1="584" x2="330" y2="584" stroke="#E5E1D8" stroke-width="0.5"/><text x="80" y="605" class="body" font-size="10.5" fill="#1A1A1A">Fiscalité du capital algorithmique</text><text x="80" y="621" class="body" font-size="10.5" fill="#1A1A1A">Renforcement négociation collective</text><text x="80" y="637" class="body" font-size="10.5" fill="#1A1A1A">Revenu universel (cas extrême)</text><text x="80" y="656" class="mono" font-size="9" fill="#5A5A5A">→ Costinot-Werning, Hamon, Delvaux</text></g>
+  <line x1="350" y1="520" x2="510" y2="445" stroke="#5A5A5A" stroke-width="0.75" stroke-dasharray="2 3"/>
+  <g class="interactive" data-card="levier-05-gouvernance" tabindex="0" role="button" aria-label="Levier 5"><rect x="455" y="520" width="290" height="140" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/><text x="475" y="546" class="mono" font-size="10" font-weight="600" letter-spacing="0.16em" fill="#1F5560">LEVIER 05</text><text x="475" y="572" class="display" font-size="15" font-weight="600" fill="#1A1A1A">Gouvernance des modèles</text><line x1="475" y1="584" x2="725" y2="584" stroke="#E5E1D8" stroke-width="0.5"/><text x="475" y="605" class="body" font-size="10.5" fill="#1A1A1A">AI Act EU, NIST AI RMF, audit</text><text x="475" y="621" class="body" font-size="10.5" fill="#1A1A1A">14 piliers gouvernance agentique</text><text x="475" y="637" class="body" font-size="10.5" fill="#1A1A1A">Coût ≈ 17% du budget projet IA</text><text x="475" y="656" class="mono" font-size="9" fill="#5A5A5A">→ voir dossier Gouverner l'agent</text></g>
+  <line x1="600" y1="520" x2="600" y2="512" stroke="#5A5A5A" stroke-width="0.75" stroke-dasharray="2 3"/>
+  <g class="interactive" data-card="levier-06-territoires" tabindex="0" role="button" aria-label="Levier 6"><rect x="850" y="520" width="290" height="140" rx="3" fill="#FAF8F3" stroke="#B58A2C" stroke-width="1.25"/><text x="870" y="546" class="mono" font-size="10" font-weight="600" letter-spacing="0.16em" fill="#B58A2C">LEVIER 06</text><text x="870" y="572" class="display" font-size="15" font-weight="600" fill="#1A1A1A">Revitalisation territoriale</text><line x1="870" y1="584" x2="1120" y2="584" stroke="#E5E1D8" stroke-width="0.5"/><text x="870" y="605" class="body" font-size="10.5" fill="#1A1A1A">Implantation IA hors métropoles</text><text x="870" y="621" class="body" font-size="10.5" fill="#1A1A1A">Transformation numérique des PME</text><text x="870" y="637" class="body" font-size="10.5" fill="#1A1A1A">Investir santé, éducation, social</text><text x="870" y="656" class="mono" font-size="9" fill="#5A5A5A">→ Case-Deaton, deaths of despair</text></g>
+  <line x1="850" y1="520" x2="690" y2="445" stroke="#5A5A5A" stroke-width="0.75" stroke-dasharray="2 3"/>
+  <line x1="60" y1="690" x2="1140" y2="690" stroke="#1A1A1A" stroke-width="0.75"/>
+  <text x="60" y="714" class="mono" font-size="9" font-weight="600" letter-spacing="0.18em" fill="#5A5A5A">LECTURE</text>
+  <text x="60" y="738" class="body" font-size="12" fill="#1A1A1A">Aucun levier ne suffit seul. La <tspan font-style="italic">combinaison</tspan> définit le scénario qu'une société choisit. La France a des atouts (formation continue,</text>
+  <text x="60" y="757" class="body" font-size="12" fill="#1A1A1A">dialogue social) et des handicaps (lenteur d'adoption, fracture territoriale). Les choix faits dans les 3-5 prochaines années pèseront dix fois leur poids.</text>
+</svg>
+</div>
+
+<main class="stage" id="stage">
+  <!-- scènes injectées par JS -->
+</main>
+
+<footer class="footer-bar" id="footer-bar">
+  <div class="timeline" id="timeline" data-no-advance></div>
+  <div class="footer-actions" data-no-advance>
+    <button class="footer-btn" id="btn-sources" type="button">Sources</button>
+    <button class="footer-btn" id="btn-toc" type="button" aria-label="Sommaire">≡</button>
+  </div>
+</footer>
+
+<!-- Sommaire overlay -->
+<div id="toc-overlay" class="full-overlay" hidden role="dialog" aria-modal="true" aria-label="Sommaire des scènes">
+  <button class="overlay-close" type="button" aria-label="Fermer le sommaire">Fermer ✕</button>
+  <ol class="toc-list" id="toc-list"></ol>
+</div>
+
+<!-- Sources overlay -->
+<div id="sources-overlay" class="full-overlay" hidden role="dialog" aria-modal="true" aria-label="Sources">
+  <button class="overlay-close" type="button" aria-label="Fermer les sources">Fermer ✕</button>
+  <input type="search" class="sources-filter" id="sources-filter" placeholder="Filtrer les 37 sources…" data-no-advance>
+  <ol class="sources-list" id="sources-list"></ol>
+</div>
+
+<!-- Zoom overlay -->
+<div id="zoom-overlay" hidden role="dialog" aria-modal="true" aria-label="Schéma agrandi">
+  <div id="zoom-header">
+    <span id="zoom-caption"></span>
+    <div class="zoom-controls">
+      <button class="zoom-out" type="button" aria-label="Dézoomer">−</button>
+      <button class="zoom-reset" type="button" aria-label="Réinitialiser">Reset</button>
+      <button class="zoom-in" type="button" aria-label="Zoomer">+</button>
+      <button class="zoom-close" type="button" aria-label="Fermer">×</button>
+    </div>
+  </div>
+  <div id="zoom-stage" tabindex="-1">
+    <div id="zoom-content"></div>
+    <div id="zoom-hint">molette / pinch pour zoomer · clic-glisser pour déplacer · Esc pour fermer</div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div id="modal-root" hidden role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="modal-backdrop" data-close></div>
+  <div class="modal-card">
+    <button class="modal-close" data-close type="button" aria-label="Fermer">×</button>
+    <p class="modal-eyebrow" id="modal-eyebrow"></p>
+    <h3 id="modal-title"></h3>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<div class="idle-cue" id="idle-cue" aria-hidden="true">→</div>
+
+<div class="toaster" id="toaster" hidden data-no-advance>
+  <span>Tape pour avancer · Swipe ←→ pour changer de scène · Pince pour zoomer</span>
+</div>
+
+<div class="rotation-hint" id="rotation-hint" role="status" aria-live="polite" data-no-advance>
+  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+    <path d="M12 18h.01"/>
+  </svg>
+  <span class="text">Tournez le téléphone</span>
+  <button class="dismiss" type="button" aria-label="Masquer">×</button>
+</div>
+
+<script>
+'use strict';
+
+const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const FADE_MS = REDUCED_MOTION ? 0 : 250;
+
+const SCENES = [
+  { id: 'intro', type: 'punchline', title: 'L’écart', body: 'Entre <mark>0,55 % de productivité sur dix ans</mark> (Acemoglu) et <mark>300 millions d’emplois exposés</mark> (Goldman Sachs), ce n’est pas un débat technique. C’est un choix politique sur la direction de la technologie.', attribution: 'Mathieu Guglielmino, mai 2026' },
+  {
+    id: 'estimations',
+    type: 'schema',
+    title: 'Sept estimations, quatre unités incompatibles',
+    schemaId: 'svg-01-estimations',
+    steps: [
+      { caption: 'Sept études de référence, sept métriques différentes — % d’emplois, ETP, expo. pondérée, productivité macro.', highlight: ['[data-card="est-frey-osborne"]','[data-card="est-arntz"]','[data-card="est-eloundou"]','[data-card="est-goldman"]','[data-card="est-mckinsey"]','[data-card="est-imf"]','[data-card="est-acemoglu"]'], dim: [], hidden: [] },
+      { caption: 'Famille A — comptabilité d’exposition. Frey-Osborne (47%), Arntz (9%), Eloundou (80%/19%) : la même technologie, des résultats divergents selon la granularité et le seuil.', highlight: ['[data-card="est-frey-osborne"]','[data-card="est-arntz"]','[data-card="est-eloundou"]'], dim: ['[data-card="est-goldman"]','[data-card="est-mckinsey"]','[data-card="est-imf"]','[data-card="est-acemoglu"]'], hidden: [], modalAuto: 'est-frey-osborne' },
+      { caption: 'Famille B — heures-équivalent. Goldman additionne 300 millions d’ETP affectés ; McKinsey traduit en 30 % du temps automatisable d’ici 2030.', highlight: ['[data-card="est-goldman"]','[data-card="est-mckinsey"]'], dim: ['[data-card="est-frey-osborne"]','[data-card="est-arntz"]','[data-card="est-eloundou"]','[data-card="est-imf"]','[data-card="est-acemoglu"]'], hidden: [] },
+      { caption: 'Famille C — le FMI introduit la <em>complémentarité humaine</em> : 60 % d’emplois exposés en éco. avancées, mais l’expo. ne dit pas tout sans le contexte.', highlight: ['[data-card="est-imf"]'], dim: ['[data-card="est-frey-osborne"]','[data-card="est-arntz"]','[data-card="est-eloundou"]','[data-card="est-goldman"]','[data-card="est-mckinsey"]','[data-card="est-acemoglu"]'], hidden: [] },
+      { caption: 'Famille D — macroéconomique. Acemoglu, théorème de Hulten : 0,55 % de TFP cumulée sur 10 ans. Borne basse — le contrepoint méthodologique aux annonces optimistes.', highlight: ['[data-card="est-acemoglu"]'], dim: ['[data-card="est-frey-osborne"]','[data-card="est-arntz"]','[data-card="est-eloundou"]','[data-card="est-goldman"]','[data-card="est-mckinsey"]','[data-card="est-imf"]'], hidden: [], modalAuto: 'est-acemoglu' }
+    ]
+  },
+  {
+    id: 'gpt',
+    type: 'schema',
+    title: 'L’IA comme <em>general-purpose technology</em>',
+    schemaId: 'svg-02-gpt',
+    steps: [
+      { caption: 'Bresnahan & Trajtenberg (1995) : trois critères qualifient une GPT — pervasivité, amélioration, complémentarités.', highlight: ['[data-card="gpt-pervasivite"]','[data-card="gpt-amelioration"]','[data-card="gpt-complementarite"]'], dim: ['[data-card="gpt-vapeur"]','[data-card="gpt-electricite"]','[data-card="gpt-tic"]','[data-card="gpt-ia"]'], hidden: [] },
+      { caption: 'Trois précédents : la machine à vapeur, l’électricité, les TIC. Trois fois, l’écart entre invention et productivité agrégée a été de 25 à 80 ans.', highlight: ['[data-card="gpt-vapeur"]','[data-card="gpt-electricite"]','[data-card="gpt-tic"]'], dim: ['[data-card="gpt-pervasivite"]','[data-card="gpt-amelioration"]','[data-card="gpt-complementarite"]','[data-card="gpt-ia"]'], hidden: [], modalAuto: 'gpt-electricite' },
+      { caption: 'L’IA générative coche les trois critères. Sa différence : la diffusion logicielle est rapide — mais le palier de productivité dépend de la réorganisation, pas de l’outil.', highlight: ['[data-card="gpt-ia"]'], dim: ['[data-card="gpt-pervasivite"]','[data-card="gpt-amelioration"]','[data-card="gpt-complementarite"]','[data-card="gpt-vapeur"]','[data-card="gpt-electricite"]','[data-card="gpt-tic"]'], hidden: [], modalAuto: 'gpt-ia' }
+    ]
+  },
+  { id: 'respi-1', type: 'punchline', title: 'Comprendre les frameworks', body: 'Aucun de ces chiffres n’est faux <em>en soi</em>. Mais leur addition produit des récits incohérents. Pour comprendre ce qui se joue, il faut comprendre <mark>les choix méthodologiques</mark>.' },
+  {
+    id: 'framework',
+    type: 'schema',
+    title: 'Anatomie d’un framework',
+    schemaId: 'svg-03-framework',
+    steps: [
+      { caption: 'Cinq étapes structurent toute estimation. Les choix faits à chaque étape déterminent l’ordre de grandeur du résultat — pas la réalité mesurée.', highlight: ['[data-card="step-granularite"]','[data-card="step-source"]','[data-card="step-metrique"]','[data-card="step-complementarite"]','[data-card="step-conversion"]'], dim: ['[data-card="trace-frey"]','[data-card="trace-acemoglu"]'], hidden: [] },
+      { caption: 'Étape 1 — granularité. Profession entière vs tâche. Le passage de l’une à l’autre divise mécaniquement le chiffre par cinq.', highlight: ['[data-card="step-granularite"]'], dim: ['[data-card="step-source"]','[data-card="step-metrique"]','[data-card="step-complementarite"]','[data-card="step-conversion"]','[data-card="trace-frey"]','[data-card="trace-acemoglu"]'], hidden: [], modalAuto: 'step-granularite' },
+      { caption: 'Étapes 2-5 — source du jugement, métrique d’exposition, complémentarité contextuelle, conversion en impact. Aucune neutre.', highlight: ['[data-card="step-source"]','[data-card="step-metrique"]','[data-card="step-complementarite"]','[data-card="step-conversion"]'], dim: ['[data-card="step-granularite"]','[data-card="trace-frey"]','[data-card="trace-acemoglu"]'], hidden: [] },
+      { caption: 'Deux chemins, deux récits. Frey-Osborne : 47 % d’emplois à risque. Acemoglu : 0,55 % de TFP. Même réalité, méthodes opposées.', highlight: ['[data-card="trace-frey"]','[data-card="trace-acemoglu"]'], dim: ['[data-card="step-granularite"]','[data-card="step-source"]','[data-card="step-metrique"]','[data-card="step-complementarite"]','[data-card="step-conversion"]'], hidden: [], modalAuto: 'trace-acemoglu' }
+    ]
+  },
+  {
+    id: 'augmentation',
+    type: 'schema',
+    title: 'Augmentation ou automatisation ?',
+    schemaId: 'svg-04-augmentation',
+    steps: [
+      { caption: 'Anthropic Economic Index : analyse de millions de conversations Claude depuis mai 2025. Vue d’ensemble.', highlight: ['[data-card="aug-zone"]','[data-card="auto-zone"]','[data-card="obs-conversational"]','[data-card="obs-onet"]','[data-card="obs-limites"]'], dim: [], hidden: [] },
+      { caption: 'Augmentation : 52 % en février 2026. L’utilisateur apprend, itère, demande un retour — le travail humain n’est pas remplacé, il est outillé.', highlight: ['[data-card="aug-zone"]'], dim: ['[data-card="auto-zone"]','[data-card="obs-conversational"]','[data-card="obs-onet"]','[data-card="obs-limites"]'], hidden: [], modalAuto: 'aug-zone' },
+      { caption: 'Automatisation : 45 %, en croissance constante depuis fin 2024 (27 % → 39 % → 45 %). La frontière n’est pas figée.', highlight: ['[data-card="auto-zone"]'], dim: ['[data-card="aug-zone"]','[data-card="obs-conversational"]','[data-card="obs-onet"]','[data-card="obs-limites"]'], hidden: [], modalAuto: 'auto-zone' },
+      { caption: 'Limites : usagers Claude, surreprésentation cadres tech anglophones. L’Index donne une <em>tendance</em>, pas un nombre absolu.', highlight: ['[data-card="obs-conversational"]','[data-card="obs-onet"]','[data-card="obs-limites"]'], dim: ['[data-card="aug-zone"]','[data-card="auto-zone"]'], hidden: [] }
+    ]
+  },
+  { id: 'respi-2', type: 'punchline', title: 'Pause d’Engels', body: 'Le scénario que la littérature évoque le plus n’est pas le chômage de masse. C’est <mark>cinquante ans de productivité capturée par le capital</mark> — jusqu’à ce que la politique change.' },
+  {
+    id: 'engels',
+    type: 'schema',
+    title: 'Productivité contre salaires réels',
+    schemaId: 'svg-05-engels',
+    steps: [
+      { caption: 'Grande-Bretagne 1770-1900 (Allen 2009). La productivité triple ; les salaires réels ne suivent qu’à partir de 1840 — après les Factory Acts, l’éducation, l’élargissement du suffrage.', highlight: ['[data-card="engels-mecanisme"]','[data-card="engels-vitesse"]','[data-card="engels-cible"]'], dim: [], hidden: [] },
+      { caption: 'Mécanisme : quand le pouvoir de négociation est faible et le marché amont concentré, les gains de productivité se redistribuent vers le capital.', highlight: ['[data-card="engels-mecanisme"]'], dim: ['[data-card="engels-vitesse"]','[data-card="engels-cible"]'], hidden: [], modalAuto: 'engels-mecanisme' },
+      { caption: 'Vitesse : la pause anglaise a duré 50 ans. Acemoglu et Korinek argumentent qu’une pause IA pourrait être plus courte (5-15 ans). Le palier dépend de la réorganisation.', highlight: ['[data-card="engels-vitesse"]'], dim: ['[data-card="engels-mecanisme"]','[data-card="engels-cible"]'], hidden: [] },
+      { caption: 'Cible : <em>reverse skill bias</em>. Cette fois, c’est la classe moyenne cognitive qui est exposée — pas l’ouvrier industriel.', highlight: ['[data-card="engels-cible"]'], dim: ['[data-card="engels-mecanisme"]','[data-card="engels-vitesse"]'], hidden: [], modalAuto: 'engels-cible' }
+    ]
+  },
+  {
+    id: 'metiers',
+    type: 'schema',
+    title: 'Carte des métiers français',
+    schemaId: 'svg-06-metiers',
+    steps: [
+      { caption: 'France 2024, 14 familles professionnelles. Deux axes : exposition à l’IA × complémentarité humaine. La taille des bulles est proportionnelle aux effectifs.', highlight: ['[data-card="metier-soins"]','[data-card="metier-batiment"]','[data-card="metier-artisan"]','[data-card="metier-medecins"]','[data-card="metier-ingenieurs"]','[data-card="metier-enseignement"]','[data-card="metier-magistrats"]','[data-card="metier-restauration"]','[data-card="metier-agriculture"]','[data-card="metier-secretariat"]','[data-card="metier-comptabilite"]','[data-card="metier-centres-appel"]','[data-card="metier-banque"]','[data-card="metier-journalisme"]'], dim: [], hidden: [] },
+      { caption: 'Q1 — peu touchés : soins, bâtiment, artisanat. Faible exposition + forte complémentarité. Présence physique, jugement contextuel, savoir-faire transmis.', highlight: ['[data-card="metier-soins"]','[data-card="metier-batiment"]','[data-card="metier-artisan"]'], dim: ['[data-card="metier-medecins"]','[data-card="metier-ingenieurs"]','[data-card="metier-enseignement"]','[data-card="metier-magistrats"]','[data-card="metier-restauration"]','[data-card="metier-agriculture"]','[data-card="metier-secretariat"]','[data-card="metier-comptabilite"]','[data-card="metier-centres-appel"]','[data-card="metier-banque"]','[data-card="metier-journalisme"]'], hidden: [] },
+      { caption: 'Q2 — augmentation de productivité : médecins, ingénieurs, enseignants, magistrats. Forte exposition + forte complémentarité = l’IA outille, ne remplace pas.', highlight: ['[data-card="metier-medecins"]','[data-card="metier-ingenieurs"]','[data-card="metier-enseignement"]','[data-card="metier-magistrats"]'], dim: ['[data-card="metier-soins"]','[data-card="metier-batiment"]','[data-card="metier-artisan"]','[data-card="metier-restauration"]','[data-card="metier-agriculture"]','[data-card="metier-secretariat"]','[data-card="metier-comptabilite"]','[data-card="metier-centres-appel"]','[data-card="metier-banque"]','[data-card="metier-journalisme"]'], hidden: [], modalAuto: 'metier-ingenieurs' },
+      { caption: 'Q3 — peu concernés : restauration, agriculture. Exposition modérée mais le cœur du métier dépend de capital ou de relation, pas de l’IA.', highlight: ['[data-card="metier-restauration"]','[data-card="metier-agriculture"]'], dim: ['[data-card="metier-soins"]','[data-card="metier-batiment"]','[data-card="metier-artisan"]','[data-card="metier-medecins"]','[data-card="metier-ingenieurs"]','[data-card="metier-enseignement"]','[data-card="metier-magistrats"]','[data-card="metier-secretariat"]','[data-card="metier-comptabilite"]','[data-card="metier-centres-appel"]','[data-card="metier-banque"]','[data-card="metier-journalisme"]'], hidden: [] },
+      { caption: 'Q4 — risque de substitution. Secrétariat, comptabilité, centres d’appel, banque, journalisme. Forte exposition + faible complémentarité = la zone rouge des reconversions.', highlight: ['[data-card="metier-secretariat"]','[data-card="metier-comptabilite"]','[data-card="metier-centres-appel"]','[data-card="metier-banque"]','[data-card="metier-journalisme"]'], dim: ['[data-card="metier-soins"]','[data-card="metier-batiment"]','[data-card="metier-artisan"]','[data-card="metier-medecins"]','[data-card="metier-ingenieurs"]','[data-card="metier-enseignement"]','[data-card="metier-magistrats"]','[data-card="metier-restauration"]','[data-card="metier-agriculture"]'], hidden: [], modalAuto: 'metier-secretariat' }
+    ]
+  },
+  {
+    id: 'scenarios',
+    type: 'schema',
+    title: 'Quatre scénarios pour 2035',
+    schemaId: 'svg-07-scenarios',
+    steps: [
+      { caption: 'Deux axes : vitesse de diffusion (palier court / long) × distribution des gains (partagés / concentrés). Aucun scénario n’est inéluctable.', highlight: ['[data-card="scenario-a-partagee"]','[data-card="scenario-b-engels"]','[data-card="scenario-c-plateau"]','[data-card="scenario-c2-stagnation"]','[data-card="scenario-d-rupture"]'], dim: [], hidden: [] },
+      { caption: 'A — productivité partagée. Palier en 7-10 ans, 1-2 %/an, redistribution active. Demande trois conditions politiques fortes — aucune n’est mécanique.', highlight: ['[data-card="scenario-a-partagee"]'], dim: ['[data-card="scenario-b-engels"]','[data-card="scenario-c-plateau"]','[data-card="scenario-c2-stagnation"]','[data-card="scenario-d-rupture"]'], hidden: [] },
+      { caption: 'B — pause d’Engels 2.0. Productivité ↑, salaires médians stagnent, classe moyenne cognitive polarisée. Le scénario par défaut sans choix politique.', highlight: ['[data-card="scenario-b-engels"]'], dim: ['[data-card="scenario-a-partagee"]','[data-card="scenario-c-plateau"]','[data-card="scenario-c2-stagnation"]','[data-card="scenario-d-rupture"]'], hidden: [], modalAuto: 'scenario-b-engels' },
+      { caption: 'C — le plateau. Modèles atteignant leurs limites, gains diffus, intégration lente. Le moins déstabilisant, mais l’Europe reste dépendante des modèles américains.', highlight: ['[data-card="scenario-c-plateau"]','[data-card="scenario-c2-stagnation"]'], dim: ['[data-card="scenario-a-partagee"]','[data-card="scenario-b-engels"]','[data-card="scenario-d-rupture"]'], hidden: [] },
+      { caption: 'D — rupture agentique. Palier &lt; 5 ans, +3-4 %/an, choc institutionnel extrême. Plausible selon Hinton, Bengio, Russell ; demande deux ruptures simultanées — jamais réussi historiquement.', highlight: ['[data-card="scenario-d-rupture"]'], dim: ['[data-card="scenario-a-partagee"]','[data-card="scenario-b-engels"]','[data-card="scenario-c-plateau"]','[data-card="scenario-c2-stagnation"]'], hidden: [], modalAuto: 'scenario-d-rupture' }
+    ]
+  },
+  {
+    id: 'leviers',
+    type: 'schema',
+    title: 'Six leviers contre la catastrophe',
+    schemaId: 'svg-08-leviers',
+    steps: [
+      { caption: 'Acemoglu-Johnson, Korinek, Benhamou, FMI, OCDE convergent en 2023-2025 sur six familles d’intervention publique. Aucun levier ne suffit seul.', highlight: ['[data-card="levier-01-redirection"]','[data-card="levier-02-formation"]','[data-card="levier-03-securisation"]','[data-card="levier-04-partage"]','[data-card="levier-05-gouvernance"]','[data-card="levier-06-territoires"]'], dim: [], hidden: [] },
+      { caption: 'Leviers 01 à 03 — économie du travail. Redirection technologique, formation continue, sécurisation des transitions. Le cœur des politiques actives.', highlight: ['[data-card="levier-01-redirection"]','[data-card="levier-02-formation"]','[data-card="levier-03-securisation"]'], dim: ['[data-card="levier-04-partage"]','[data-card="levier-05-gouvernance"]','[data-card="levier-06-territoires"]'], hidden: [], modalAuto: 'levier-01-redirection' },
+      { caption: 'Leviers 04 à 06 — institutions et territoire. Partage des gains, gouvernance des modèles, revitalisation territoriale. La France a des atouts et des handicaps.', highlight: ['[data-card="levier-04-partage"]','[data-card="levier-05-gouvernance"]','[data-card="levier-06-territoires"]'], dim: ['[data-card="levier-01-redirection"]','[data-card="levier-02-formation"]','[data-card="levier-03-securisation"]'], hidden: [], modalAuto: 'levier-04-partage' }
+    ]
+  },
+  { id: 'conclusion', type: 'punchline', title: 'Le choix', body: 'Le débat technique est un <mark>débat politique</mark>. Les choix faits dans les <mark>3-5 prochaines années</mark> pèseront dix fois leur poids.' },
+  { id: 'outro', type: 'outro', title: 'Pour aller plus loin', body: 'Le rapport long détaille les huit schémas, les frameworks d’estimation, le précédent historique de la pause d’Engels et les six leviers d’action publique.', cta: { href: '20260504-ia-et-travail-app.html', label: 'Ouvrir le rapport illustré →' }, secondary: { href: '20260504-ia-et-travail-rapport.md', label: 'Télécharger le rapport ↓' } }
+];
+
+/* ───────── SCHEMAS — Modal content for interactive SVG regions ───────── */
+const SCHEMAS = {
+  "schema-01": {
+    "est-frey-osborne": { eyebrow: "Schéma 1 — Frey & Osborne 2013", title: "47 % des emplois US à haut risque", body: "<p>Étiquetage manuel par 70 chercheurs en machine learning : pour chacune de 70 professions, 1 si « toutes les tâches automatisables », 0 sinon. Extrapolation par modèle gaussien aux 702 professions du <em>Standard Occupational Classification</em>.</p><p>Critique principale : le passage automatique à <em>profession entière classée</em> dès qu'une majorité de tâches sont automatisables exagère mécaniquement le score. Refait par tâches en 2016, le chiffre tombe à 9 %.</p>" },
+    "est-arntz": { eyebrow: "Schéma 1 — Arntz, Gregory, Zierahn 2016", title: "9 % moyenne OCDE", body: "<p>Reproduction de l'analyse Frey-Osborne en passant de la granularité-profession à la granularité-tâche, en utilisant les données PIAAC qui décrivent les tâches effectivement réalisées par les travailleurs.</p><p>Variation dans l'OCDE : de 6 % en Corée à 12 % en Allemagne. France : 9 %. Cette étude est devenue la référence sceptique vis-à-vis de Frey-Osborne dans la littérature institutionnelle.</p>" },
+    "est-eloundou": { eyebrow: "Schéma 1 — Eloundou et al. 2023", title: "80 % de la main-d'œuvre, 19 % à >50 % de tâches", body: "<p>Méthodologie : 19 000 tâches O*NET évaluées par GPT-4 et par humains, sur trois niveaux d'exposition (E0 / E1 / E2). E1 = LLM réduit le temps d'au moins 50 % avec accès direct ; E2 = avec logiciels supplémentaires.</p><p>Le chiffre de 80 % couvre les emplois où ≥10 % des tâches sont touchées au niveau E1. Le chiffre de 19 % couvre les emplois où ≥50 % des tâches le sont. La même étude, deux récits possibles selon la statistique mise en avant.</p>" },
+    "est-goldman": { eyebrow: "Schéma 1 — Goldman Sachs 2023", title: "300 millions d'ETP exposés", body: "<p>Méthode : pour chaque profession O*NET, proportion de tâches automatisables × effectifs. Le chiffre de 300 millions est l'<em>équivalent en heures de travail</em>, pas un nombre d'emplois détruits.</p><p>Goldman Sachs estime 6-7 % de déplacement net sur 10 ans, et un gain de productivité mondial à terme de 7 % du PIB. La note conclut sur un <strong>palier d'effets visibles à partir de 2027</strong>, pic dans les années 2030.</p>" },
+    "est-imf": { eyebrow: "Schéma 1 — FMI Cazzaniga et al. 2024", title: "60 % éco. avancées, 40 % global", body: "<p>Innovation méthodologique : pondération de l'exposition par un <strong>indice de complémentarité</strong> qui capte le contexte humain irréductible (jugement, relation, autorité, présence physique).</p><p>Une profession peut être très exposée mais avec forte complémentarité (médecin) : gain de productivité sans destruction. Ou exposée avec faible complémentarité (secrétariat) : risque de substitution. La complémentarité est <em>fortement corrélée au revenu</em>, ce qui pose un risque d'inégalités internationales croissantes.</p>" },
+    "est-mckinsey": { eyebrow: "Schéma 1 — McKinsey 2023/2025", title: "30 % des heures automatisables d'ici 2030", body: "<p>Scénario médian d'un modèle d'adoption avec ajustement par secteur, taille d'entreprise, et délai d'amortissement. Estimation macro associée : <strong>2,6 à 4,4 trillions de dollars de valeur ajoutée annuelle</strong> à terme.</p><p>Innovation conceptuelle : <em>reverse skill bias</em> — pour la première fois, l'automatisation impacte plus fort les emplois qualifiés que les emplois manuels. 51 % des organisations McKinsey 2025 rapportent une réduction du besoin en juniors.</p>" },
+    "est-acemoglu": { eyebrow: "Schéma 1 — Acemoglu 2024", title: "0,55 % de TFP cumulée sur 10 ans", body: "<p>Application stricte du théorème de Hulten : effet macro = Σ (part de la tâche dans les coûts × baisse de coût). Hypothèses : 20 % de tâches exposées × 23 % profitablement automatisables × 27 % d'économie moyenne.</p><p>Acemoglu argue que ces hypothèses sont déjà optimistes, parce que les premiers gains viennent de tâches faciles. Sa borne basse est volontairement conservatrice et sert de contrepoint méthodologique aux estimations de Goldman Sachs et McKinsey.</p>" }
+  },
+  "schema-02": {
+    "gpt-pervasivite": { eyebrow: "Schéma 2 — Critère 1", title: "Pervasivité", body: "<p>La technologie se diffuse à la majorité des secteurs économiques. Critère le plus visuellement intuitif : on cherche une technologie « partout ».</p><p>L'IA générative a atteint un seuil de pervasivité comparable à l'électricité dans les services tertiaires en moins de trois ans (rare). Encore peu pénétrée dans les secteurs primaires et l'industrie lourde — sauf via la robotique d'usine.</p>" },
+    "gpt-amelioration": { eyebrow: "Schéma 2 — Critère 2", title: "Amélioration intrinsèque", body: "<p>La technologie se perfectionne dans le temps et fait baisser ses propres coûts d'usage. Sans ce critère, on a une technologie utile mais figée — pas une GPT.</p><p>Pour l'IA générative : coût par million de tokens divisé par 100 entre 2023 et 2025 (GPT-3 → GPT-4o → modèles open-weight). Capacités sur les benchmarks de raisonnement triplées sur la même période. Loi de Moore mentale.</p>" },
+    "gpt-complementarite": { eyebrow: "Schéma 2 — Critère 3", title: "Complémentarités innovationnelles", body: "<p>L'adoption de la GPT stimule l'innovation chez ses utilisateurs (<em>spillovers</em>). C'est ce critère qui distingue une vraie GPT d'un simple gadget : si elle ne génère pas de nouvelles industries, elle reste périphérique.</p><p>Pour l'IA générative : agents autonomes, copilots métiers, recherche augmentée, biotech assistée, drug discovery. Industries entières en émergence. Critère validé.</p>" },
+    "gpt-vapeur": { eyebrow: "Schéma 2 — Machine à vapeur", title: "Watt, 1769", body: "<p>Première GPT moderne. Pervasivité progressive (manufacture → transport → mines), amélioration continue (rendement multiplié par 4 en un siècle), complémentarité forte avec l'organisation usinière.</p><p>Délai de matérialisation économique : ≈ 50-80 ans. Coïncide avec la pause d'Engels (1790-1840).</p>" },
+    "gpt-electricite": { eyebrow: "Schéma 2 — Électricité", title: "Edison, Tesla, ≈ 1880", body: "<p>GPT-archétype dans la littérature économique. Pervasivité totale (tous secteurs et foyers), amélioration spectaculaire (coût/kWh ÷10 en 50 ans), complémentarité massive (moteur unitaire, ligne d'assemblage, électronique).</p><p>Délai entre invention et productivité agrégée : 30-40 ans (David, 1990). Le précédent le plus cité pour calibrer les attentes IA.</p>" },
+    "gpt-tic": { eyebrow: "Schéma 2 — TIC", title: "Semi-conducteurs, Internet, ≈ 1970", body: "<p>GPT contemporaine la plus proche de l'IA. Pervasivité totale, amélioration extrême (loi de Moore — coût/transistor ÷1000 en 30 ans), complémentarité massive (e-commerce, biotech, finance algorithmique).</p><p>Délai 25 ans entre arrivée commerciale et impact macro mesurable. <em>Solow paradox</em> documenté.</p>" },
+    "gpt-ia": { eyebrow: "Schéma 2 — IA générative", title: "Transformer, ChatGPT, ≈ 2022", body: "<p>Diffusion logicielle inédite (100M utilisateurs en 2 mois pour ChatGPT), amélioration extrême (coût/token ÷100 en 24 mois), complémentarité en construction.</p><p>Différence-clé : <em>diffusion logicielle vs diffusion physique</em>. Mais le palier de productivité économique dépend de la réorganisation, pas du déploiement de l'outil — donc le palier sera lent malgré la rapidité de diffusion.</p>" }
+  },
+  "schema-03": {
+    "step-granularite": { eyebrow: "Schéma 3 — Étape 1", title: "Granularité", body: "<p>Profession entière vs tâche. Choix le plus structurant. Refaire Frey-Osborne (profession) en granularité-tâche (Arntz et al. 2016) divise l'estimation par cinq.</p><p>Depuis 2018, la littérature mainstream (Acemoglu, Eloundou, FMI) raisonne par tâche. Frey-Osborne reste cité comme référence historique, plus comme méthode courante.</p>" },
+    "step-source": { eyebrow: "Schéma 3 — Étape 2", title: "Source du jugement", body: "<p>Trois sources possibles : (a) experts humains qui étiquettent, (b) modèle économétrique sur attributs O*NET, (c) LLM lui-même comme évaluateur.</p><p>Chaque source a ses biais : humains influencés par les démos récentes, modèle statistique cristallisant des corrélations historiques, LLM tendant à surestimer ses propres capacités sur les tâches qu'il décrit. Aucune source n'est neutre.</p>" },
+    "step-metrique": { eyebrow: "Schéma 3 — Étape 3", title: "Métrique d'exposition", body: "<p>Substitution complète, partielle, ou complémentarité. Eloundou utilise trois niveaux (E0/E1/E2). Le seuil retenu (≥10 % de tâches affectées vs ≥50 %) change radicalement le récit que produit la même étude.</p><p>Recommandation : toujours préciser le seuil quand on cite un chiffre de cette littérature.</p>" },
+    "step-complementarite": { eyebrow: "Schéma 3 — Étape 4", title: "Complémentarité contextuelle", body: "<p>Approche du FMI (Pizzinelli et al. 2023). Pour chaque profession exposée, on évalue le contexte non-technologique : présence physique, jugement clinique/légal, autorité décisionnelle, relation interpersonnelle.</p><p>Cette pondération transforme une <em>liste d'emplois exposés</em> en <em>distribution de risques de substitution</em>, beaucoup plus utile pour les politiques publiques.</p>" },
+    "step-conversion": { eyebrow: "Schéma 3 — Étape 5", title: "Conversion en impact", body: "<p>Quatre approches : comptabilité d'exposition (% emplois), heures-équivalent (ETP), macroéconomique (TFP/PIB via Hulten), empirique (RCT, A/B tests).</p><p>Chaque approche répond à une question différente. Aucune n'est dominante. Le débat public confond souvent les quatre.</p>" },
+    "trace-frey": { eyebrow: "Schéma 3 — Chemin A", title: "Frey & Osborne — 47 % d'emplois", body: "<p>Granularité <strong>profession</strong> + source <strong>experts ML</strong> + métrique <strong>substitution complète</strong> + pas de complémentarité + conversion <strong>% emplois</strong>. Résultat : 47 %.</p><p>Le chemin choisi maximise mécaniquement le chiffre. Aucune erreur factuelle, mais le chiffre n'est pas comparable à un chiffre macroéconomique.</p>" },
+    "trace-acemoglu": { eyebrow: "Schéma 3 — Chemin B", title: "Acemoglu — 0,55 % TFP", body: "<p>Granularité <strong>tâche</strong> + source <strong>O*NET + données empiriques</strong> + métrique <strong>tâches profitablement automatisables</strong> + complémentarité implicite + conversion <strong>macro Hulten</strong>. Résultat : 0,55 % TFP / 10 ans.</p><p>Le chemin choisi minimise mécaniquement le chiffre. Borne basse de la littérature. Très utile comme contrepoint méthodologique aux annonces optimistes.</p>" }
+  },
+  "schema-04": {
+    "aug-zone": { eyebrow: "Schéma 4 — Augmentation", title: "L'utilisateur reste pilote", body: "<p>Conversations où l'utilisateur apprend, itère, demande un retour, vérifie son travail. Le travail humain n'est pas remplacé — il est outillé.</p><p>52 % des conversations Claude en février 2026. Tendance : légère baisse depuis le pic de mai 2025 (57 %), mais reste majoritaire.</p>" },
+    "auto-zone": { eyebrow: "Schéma 4 — Automatisation", title: "L'IA fait le travail", body: "<p>Conversations <em>directives</em> où l'utilisateur délègue une tâche complète. Pas de retour itératif, juste un livrable.</p><p>45 % des conversations en février 2026. Tendance : croissance constante depuis fin 2024 (27 % → 39 % → 45 %). Signe d'une délégation croissante à mesure que la confiance et les capacités augmentent.</p>" },
+    "obs-conversational": { eyebrow: "Schéma 4 — Méthodologie", title: "Analyse de conversations réelles", body: "<p>Anthropic Economic Index analyse des millions de conversations Claude (anonymisées, avec garanties de confidentialité), classifiées automatiquement sur la nature de l'usage.</p><p>Avantage : mesure directe de l'usage effectif, pas de l'usage déclaré. Limite : couvre un seul fournisseur, biais de sélection des utilisateurs Claude.</p>" },
+    "obs-onet": { eyebrow: "Schéma 4 — Mapping O*NET", title: "Croisement avec les professions", body: "<p>Les conversations sont mappées sur les 900+ professions et 19 000 tâches de la base O*NET. Permet de distinguer <em>quelle</em> activité est augmentée vs automatisée.</p><p>Trouvaille : les usages varient fortement par profession. Programmeurs et rédacteurs en haut de la fréquence ; soignants et ouvriers en bas.</p>" },
+    "obs-limites": { eyebrow: "Schéma 4 — Limites", title: "Concentration et biais", body: "<p>Les utilisateurs Claude ne sont pas représentatifs : surreprésentation des cadres tech et des marchés anglophones. Top 5 États US = 24 % des usages par habitant ; top 20 pays = 48 % de l'usage par habitant.</p><p>L'index donne une <em>tendance</em> et une <em>structure</em>, pas un nombre absolu d'emplois. Lecture relative recommandée.</p>" }
+  },
+  "schema-05": {
+    "engels-mecanisme": { eyebrow: "Schéma 5 — Mécanisme", title: "Productivité ↑, salaires →", body: "<p>Quand le pouvoir de négociation des travailleurs est faible et que le marché des producteurs de la technologie est concentré, les gains de productivité se redistribuent à 90 % vers le capital.</p><p>Cas historique : Grande-Bretagne 1790-1840. Cas contemporain potentiel : économies OCDE 2025-2035 si aucune politique de partage n'est activée. Les six leviers du Schéma 8 répondent précisément à ce risque.</p>" },
+    "engels-vitesse": { eyebrow: "Schéma 5 — Vitesse", title: "50 ans hier, 10 ans demain ?", body: "<p>La pause d'Engels britannique a duré 50 ans (1790-1840). Acemoglu et Korinek argumentent qu'une pause IA pourrait être plus courte (5-15 ans) parce que la diffusion logicielle est rapide.</p><p>Mais le palier de productivité agrégée dépend de la réorganisation, pas de la diffusion. Le scénario réaliste : un palier de 7-10 ans pendant lequel les pertes locales se concrétisent avant que les gains agrégés ne soient visibles.</p>" },
+    "engels-cible": { eyebrow: "Schéma 5 — Cible", title: "Cols blancs cette fois", body: "<p>Reverse skill bias documenté par McKinsey, OCDE, FMI. La pause d'Engels frappait l'ouvrier industriel, mal organisé politiquement. La pause IA frapperait la classe moyenne cognitive — qui a (en théorie) plus de pouvoir politique.</p><p>Conséquence : la réaction politique pourrait être plus rapide qu'au XIX<sup>e</sup> siècle. Mais aussi plus chaotique, parce que les coalitions habituelles (gauche / droite, urbain / rural) ne sont pas stables sur ce clivage.</p>" }
+  },
+  "schema-06": {
+    "metier-soins": { eyebrow: "Schéma 6 — Q1", title: "Soins, aide à la personne", body: "<p>Faible exposition à l'IA, forte complémentarité humaine. Présence physique, relation, jugement contextuel — tâches difficiles à automatiser et où le contexte humain est essentiel.</p><p>≈ 2,3 millions de postes en France. Secteur en croissance démographique (vieillissement). Rare cas où l'IA libère du temps administratif pour <em>plus</em> de relation humaine, pas <em>moins</em>.</p>" },
+    "metier-batiment": { eyebrow: "Schéma 6 — Q1", title: "Bâtiment", body: "<p>Exposition très faible (gestes physiques, environnement non-structuré, conditions variables). Complémentarité forte (jugement, sécurité, savoir-faire).</p><p>1,7 million de postes. L'IA y entre par la marge (BIM, planification, achat de matériaux), mais le cœur du métier reste protégé pour les 10-15 prochaines années.</p>" },
+    "metier-artisan": { eyebrow: "Schéma 6 — Q1", title: "Artisanat", body: "<p>Très peu exposé — combinaison gestes manuels, savoir-faire transmis, marché de niche. La rénovation et la création artisanale échappent aux modèles génériques.</p><p>≈ 0,6 million de postes. Métier sociétalement valorisé, soutenu par les politiques de transition écologique.</p>" },
+    "metier-medecins": { eyebrow: "Schéma 6 — Q2", title: "Médecins", body: "<p>Forte exposition (l'IA performe dans certains diagnostics), <strong>très</strong> forte complémentarité (consultation, jugement clinique, autorité légale). Les LLM augmentent — pas remplacent.</p><p>≈ 0,2 million de postes. Le risque n'est pas la suppression mais une intensification (plus de patients, moins de temps par patient) si l'IA n'est pas négociée comme outil au service du soignant.</p>" },
+    "metier-ingenieurs": { eyebrow: "Schéma 6 — Q2", title: "Ingénieurs et cadres techniques", body: "<p>Forte exposition (Copilot, design assisté, simulation), forte complémentarité (architecture, jugement système, responsabilité). C'est dans ce quadrant que les gains de productivité par travailleur sont les plus mesurables (Peng et al. : -56 % de temps).</p><p>≈ 1,2 million de postes en France. Risque marché : compression des juniors si la productivité par senior + IA suffit à couvrir la demande.</p>" },
+    "metier-enseignement": { eyebrow: "Schéma 6 — Q2", title: "Enseignement supérieur", body: "<p>Exposition réelle (l'IA peut tenir une partie du cours magistral, faire l'évaluation), forte complémentarité (relation pédagogique, recherche, mentorat).</p><p>L'enjeu est moins le remplacement que la transformation des méthodes (classe inversée, accompagnement individualisé). Adoption institutionnelle lente.</p>" },
+    "metier-magistrats": { eyebrow: "Schéma 6 — Q2", title: "Magistrats et juristes seniors", body: "<p>Forte exposition (IA juridique pour la recherche de jurisprudence, rédaction d'avis), très forte complémentarité (autorité, jugement, décision finale).</p><p>Le métier de magistrat senior est protégé. Les juniors juridiques (paralégaux, juristes en cabinet) sont en zone de risque (Schéma 6, Q4).</p>" },
+    "metier-restauration": { eyebrow: "Schéma 6 — Q3", title: "Restauration", body: "<p>Exposition modérée (commande automatisée, optimisation de stocks, planning), faible complémentarité <em>algorithmique</em> mais forte composante humaine (service, ambiance).</p><p>≈ 1 million de postes. Ce qui s'automatise n'est pas le métier mais sa marge — caisse, prise de commande, certaines préparations.</p>" },
+    "metier-agriculture": { eyebrow: "Schéma 6 — Q3", title: "Agriculture", body: "<p>Exposition limitée (robotique agricole, vision par ordinateur), faible complémentarité par travailleur (la transformation y est plus un sujet capital que travail).</p><p>≈ 0,5 million de postes. La pression vient moins de l'IA que de la concentration foncière, du climat, du commerce mondial.</p>" },
+    "metier-secretariat": { eyebrow: "Schéma 6 — Q4", title: "Secrétariat, gestion administrative", body: "<p><strong>Quadrant rouge.</strong> Forte exposition (rédaction, planning, classement, comptabilité simple), faible complémentarité (peu de contexte humain irréductible). C'est la famille la plus à risque de substitution nette.</p><p>≈ 2 millions de postes en France. Première cible des reconversions, premier candidat aux scénarios « pause d'Engels » si les gains ne sont pas redistribués.</p>" },
+    "metier-comptabilite": { eyebrow: "Schéma 6 — Q4", title: "Comptabilité", body: "<p>Forte exposition (saisie, contrôle, reporting), faible complémentarité (peu de relation client). L'IA + RPA peut absorber 50-70 % du temps comptable selon les études McKinsey.</p><p>≈ 0,5 million de postes. Métier qui s'élève vers l'expertise (audit, analyse) — les opérationnels sont en zone de risque.</p>" },
+    "metier-centres-appel": { eyebrow: "Schéma 6 — Q4", title: "Centres d'appel", body: "<p>Forte exposition (Brynjolfsson et al. ont mesuré +14 % de productivité par agent ; certains rôles sont 100 % automatisables avec un agent vocal).</p><p>≈ 0,3 million de postes en France. Pression directe sur l'emploi attendue dès 2026-2028. Localisation souvent en villes moyennes — risque territorial significatif.</p>" },
+    "metier-banque": { eyebrow: "Schéma 6 — Q4", title: "Banque de détail", body: "<p>Forte exposition (back-office, conformité, analyse de risque), faible complémentarité pour les rôles standardisés. Le rapport Benhamou identifie ce secteur comme l'un des trois prioritaires en France.</p><p>Restructurations bancaires déjà en cours depuis 2015 ; l'IA accélère un mouvement, ne le démarre pas.</p>" },
+    "metier-journalisme": { eyebrow: "Schéma 6 — Q4", title: "Journalisme", body: "<p>Forte exposition (rédaction, recherche, traduction), complémentarité variable (l'investigation reste humaine ; la production de contenu de stock est automatisable).</p><p>Marché de l'emploi déjà tendu depuis 2010. L'IA accentue la pression sur les rôles standardisés et amplifie la concentration des médias.</p>" }
+  },
+  "schema-07": {
+    "scenario-a-partagee": { eyebrow: "Schéma 7 — Scénario A", title: "Productivité partagée", body: "<p>Palier IA atteint en 7-10 ans, productivité agrégée +1 à +2 %/an, gains partagés entre capital et travail. Semaine de 4 jours dans les secteurs à fort gain. Revenu médian en croissance.</p><p>Conditions : politique fiscale active, formation continue à grande échelle, institutions de partage. <strong>Aucune n'est mécanique.</strong> Probabilité conditionnelle aux 3-5 prochaines années de choix politiques.</p>" },
+    "scenario-b-engels": { eyebrow: "Schéma 7 — Scénario B", title: "Pause d'Engels 2.0", body: "<p>Productivité ↑, salaires médians stagnants. Concentration des gains au sommet. Polarisation de la classe moyenne cognitive. PIB mondial monte, bien-être médian stagne.</p><p>C'est le scénario par défaut sans choix politique. Politiquement explosif : réémergence des phénomènes de défiance démocratique, populisme, fragmentation. Acemoglu, Korinek le tiennent pour le risque dominant.</p>" },
+    "scenario-c-plateau": { eyebrow: "Schéma 7 — Scénario C", title: "Le plateau", body: "<p>Palier IA plus long que prévu (15-20 ans). Modèles atteignant leurs limites (données, énergie, saturation des cas faciles). Gains diffus, intégration lente.</p><p>Le moins déstabilisant, mais aussi celui où l'Europe reste dépendante des modèles américains sans bénéfice industriel. Désillusion politique post-bulle possible.</p>" },
+    "scenario-c2-stagnation": { eyebrow: "Schéma 7 — Variante C'", title: "Stagnation inégale", body: "<p>Diffusion lente <em>et</em> distribution dégradée. Pire des deux mondes : pas de gain agrégé suffisant pour amortir la transition, mais concentration croissante des rentes.</p><p>Configuration historiquement rare mais possible si les institutions de partage se dégradent plus vite que l'adoption IA ne progresse.</p>" },
+    "scenario-d-rupture": { eyebrow: "Schéma 7 — Scénario D", title: "Rupture agentique", body: "<p>Palier &lt; 5 ans, porté par l'auto-amélioration des agents autonomes. Productivité macro +3-4 %/an. Choc de transition extrême sur le marché du travail.</p><p>Plausible selon les chercheurs en sécurité IA (Hinton, Bengio, Russell). Implique simultanément un saut technique et un effondrement institutionnel — soit deux questions à résoudre en parallèle, ce qui n'a quasiment jamais marché historiquement.</p>" }
+  },
+  "schema-08": {
+    "levier-01-redirection": { eyebrow: "Schéma 8 — Levier 01", title: "Redirection technologique", body: "<p>Aligner fiscalement le travail et le capital algorithmique (aujourd'hui le travail supporte des cotisations massives, le capital algo presque rien). Financer la R&D <em>complémentaire</em>. Préférer dans les achats publics les systèmes qui démontrent une logique de complémentarité.</p><p>Référence : Acemoglu &amp; Johnson, <em>Power and Progress</em>, 2023. Levier le plus structurant à long terme — le moins activé politiquement aujourd'hui.</p>" },
+    "levier-02-formation": { eyebrow: "Schéma 8 — Levier 02", title: "Formation continue à grande échelle", body: "<p>CPF universel et portable, formation aux outils IA pour 100 % des cadres en 5 ans, filières de reconversion accélérées 12-24 mois pour les métiers à forte exposition / faible complémentarité.</p><p>Référence : OCDE Employment Outlook 2025. Levier le plus consensuel, le plus cher, le plus structurellement difficile à activer dans des systèmes éducatifs conçus pour la formation initiale.</p>" },
+    "levier-03-securisation": { eyebrow: "Schéma 8 — Levier 03", title: "Sécurisation des transitions", body: "<p>Indemnisation longue durée pour reconversions complexes (modèle danois), VAE accélérée, accompagnement individualisé (modèle suédois <em>Trygghetsråd</em>).</p><p>Référence : Benhamou, France Stratégie 2025. Coût ≈ 0,5-1 % du PIB pour une transition à grande échelle ; inférieur au coût social et politique d'une transition non-sécurisée.</p>" },
+    "levier-04-partage": { eyebrow: "Schéma 8 — Levier 04", title: "Partage des gains", body: "<p>(a) Fiscalité du capital algorithmique (taxe modeste 1-3,7 %, MIT 2022). (b) Renforcement de la négociation collective. (c) Revenu universel (cas extrême, scénario D).</p><p>Le plus politiquement chargé. Convergence ponctuelle de Bill Gates, Mady Delvaux, Benoît Hamon, OIT, MIT — mais aucune mise en œuvre à grande échelle à ce jour.</p>" },
+    "levier-05-gouvernance": { eyebrow: "Schéma 8 — Levier 05", title: "Gouvernance des modèles", body: "<p>AI Act EU (2024-2026), NIST AI RMF, codes de conduite volontaires. Audit, transparence, évaluation préalable, responsabilité. Voir mon dossier <em>Gouverner l'agent</em> pour le détail des 14 piliers et le coût ≈ 17 % du budget projet.</p><p>Levier transversal : plus la gouvernance est faible, plus le risque de scénarios B et D dominants augmente. Lien direct avec le procès Musk v. Altman sur la direction de l'IA.</p>" },
+    "levier-06-territoires": { eyebrow: "Schéma 8 — Levier 06", title: "Revitalisation territoriale", body: "<p>Implantation IA hors métropoles, transformation numérique des PME régionales, investissement dans les infrastructures cognitives (santé, éducation) qui sont à la fois résistantes à l'automatisation et essentielles aux territoires.</p><p>Référence : Case &amp; Deaton, <em>Deaths of Despair</em> (2020). Le moins théorisé, le plus localement efficace. Les villes moyennes françaises sont la zone à risque dominante.</p>" }
+  }
+};
+
+/* ───────── Sources ───────── */
+const SOURCES = [
+  { num: 1, author: 'Briggs, Joseph et Devesh Kodnani.', title: 'The Potentially Large Effects of Artificial Intelligence on Economic Growth', year: '2023', publisher: 'Goldman Sachs Global Economics Analyst, 26 mars', url: 'https://www.gspublishing.com/content/research/en/reports/2023/03/27/d64e052b-0f6e-45d7-967b-d7be35fabd16.html' },
+  { num: 2, author: 'Acemoglu, Daron.', title: 'The Simple Macroeconomics of AI', year: '2024', publisher: 'NBER WP 32487, mai  ; <em>Economic Policy</em> vol. 40 n°121, 2025', url: 'https://www.nber.org/papers/w32487' },
+  { num: 3, author: 'Arntz, Melanie, Terry Gregory et Ulrich Zierahn.', title: 'The Risk of Automation for Jobs in OECD Countries', year: '2016', publisher: 'OECD WP n°189', url: 'https://www.oecd.org/en/publications/the-risk-of-automation-for-jobs-in-oecd-countries_5jlz9h56dvq7-en.html' },
+  { num: 4, author: 'Bresnahan, Timothy F. et Manuel Trajtenberg.', title: 'General Purpose Technologies « Engines of Growth ? »', year: '1995', publisher: 'Journal of Econometrics, vol. 65', url: 'https://www.sciencedirect.com/science/article/pii/030440769401598T' },
+  { num: 5, author: 'Brynjolfsson, Erik, Daniel Rock et Chad Syverson.', title: 'Artificial Intelligence and the Modern Productivity Paradox', year: '2017', publisher: 'NBER WP 24001', url: 'https://www.nber.org/papers/w24001' },
+  { num: 6, author: 'Acemoglu, Daron et Pascual Restrepo.', title: 'Artificial Intelligence, Automation and Work', year: '2018', publisher: 'NBER WP 24196', url: 'https://www.nber.org/papers/w24196' },
+  { num: 7, author: 'Cazzaniga, Mauro et al.', title: 'Gen-AI: Artificial Intelligence and the Future of Work', year: '2024', publisher: 'IMF Staff Discussion Note SDN//001, janvier', url: 'https://www.imf.org/en/Publications/Staff-Discussion-Notes/Issues/2024/01/14/Gen-AI-Artificial-Intelligence-and-the-Future-of-Work-542379' },
+  { num: 8, author: 'Acemoglu, Daron et Simon Johnson.', title: 'Power and Progress: Our Thousand-Year Struggle Over Technology and Prosperity', year: '2023', publisher: 'PublicAffairs', url: 'https://shapingwork.mit.edu/power-and-progress/' },
+  { num: 9, author: 'Acemoglu (2024),.', title: 'op. cit.', year: '', publisher: 'section 5 — « Numerical Estimates »', url: 'https://shapingwork.mit.edu/research/the-simple-macroeconomics-of-ai/' },
+  { num: 10, author: 'Frey, Carl B. et Michael A. Osborne.', title: 'The Future of Employment: How Susceptible Are Jobs to Computerisation ?', year: '2013', publisher: 'Oxford Martin School,  ; TFSC vol. 114, 2017', url: 'https://www.oxfordmartin.ox.ac.uk/publications/the-future-of-employment' },
+  { num: 12, author: 'Acemoglu, Daron et Pascual Restrepo.', title: 'Automation and New Tasks: How Technology Displaces and Reinstates Labor', year: '2019', publisher: 'JEP vol. 33 n°2', url: 'https://www.aeaweb.org/articles?id=10.1257/jep.33.2.3' },
+  { num: 13, author: 'Anthropic.', title: 'Anthropic Economic Index Report: Economic Primitives', year: '2026', publisher: 'Janvier', url: 'https://www.anthropic.com/research/anthropic-economic-index-january-2026-report' },
+  { num: 14, author: 'Anthropic.', title: 'Anthropic Economic Index Report: Uneven Geographic and Occupational Adoption', year: '2025', publisher: 'Septembre', url: 'https://www.anthropic.com/research/anthropic-economic-index-september-2025-report' },
+  { num: 16, author: 'Eloundou, Tyna, Sam Manning, Pamela Mishkin et Daniel Rock.', title: 'GPTs are GPTs', year: '2023', publisher: 'arXiv:2303.10130,  ; Science vol. 384 n°6702, 2024', url: 'https://arxiv.org/abs/2303.10130' },
+  { num: 17, author: 'David, Paul A.', title: 'The Dynamo and the Computer: An Historical Perspective on the Modern Productivity Paradox', year: '1990', publisher: 'AER vol. 80 n°2, mai', url: 'https://www.jstor.org/stable/2006600' },
+  { num: 18, author: '', title: 'Solow, Robert. « We\'d better watch out ». New York Times Book Review, 12 juillet 1987, p. 36.', year: '', publisher: null, url: null },
+  { num: 19, author: 'McKinsey Global Institute.', title: 'Generative AI and the Future of Work in America', year: '2023', publisher: 'Juillet , mise à jour 2025', url: 'https://www.mckinsey.com/mgi/our-research/generative-ai-and-the-future-of-work-in-america/' },
+  { num: 20, author: 'Bengio, Yoshua, Geoffrey Hinton, Andrew Yao, Stuart Russell et al.', title: 'Managing extreme AI risks amid rapid progress', year: '2024', publisher: 'Science vol. 384, mai', url: 'https://arxiv.org/abs/2310.17688' },
+  { num: 21, author: 'Eloundou et al. (2023/2024),.', title: 'op. cit.', year: '', publisher: 'tableau 4', url: 'https://www.science.org/doi/10.1126/science.adj0998' },
+  { num: 22, author: 'Cazzaniga et al. (2024),.', title: 'op. cit.', year: '', publisher: null, url: 'https://www.imf.org/-/media/files/publications/sdn/2024/english/sdnea2024001.pdf' },
+  { num: 23, author: 'Brynjolfsson, Erik, Danielle Li et Lindsey R. Raymond.', title: 'Generative AI at Work', year: '2023', publisher: 'NBER WP 31161, avril', url: 'https://www.nber.org/papers/w31161' },
+  { num: 24, author: 'Noy, Shakked et Whitney Zhang.', title: 'Experimental Evidence on the Productivity Effects of Generative Artificial Intelligence', year: '2023', publisher: 'Science vol. 381 n°6654, juillet', url: 'https://www.science.org/doi/10.1126/science.adh2586' },
+  { num: 25, author: 'Peng, Sida, Eirini Kalliamvakou, Peter Cihon et Mert Demirer.', title: 'The Impact of AI on Developer Productivity: Evidence from GitHub Copilot', year: '2023', publisher: 'arXiv:2302.06590, février', url: 'https://arxiv.org/abs/2302.06590' },
+  { num: 26, author: 'Anthropic.', title: 'Anthropic Economic Index Report: Learning Curves', year: '2026', publisher: 'Mars', url: 'https://www.anthropic.com/research/economic-index-march-2026-report' },
+  { num: 27, author: 'Goldman Sachs.', title: 'AI\'s Impact on the US Labor Market: An Update', year: '2025', publisher: 'Mars', url: 'https://www.goldmansachs.com/insights/articles/how-will-ai-affect-the-us-labor-market' },
+  { num: 28, author: 'Allen, Robert C.', title: 'Engels\' Pause: Technical Change, Capital Accumulation, and Inequality in the British Industrial Revolution', year: '2009', publisher: 'Explorations in Economic History vol. 46 n°4', url: 'https://www.sciencedirect.com/science/article/abs/pii/S0014498309000199' },
+  { num: 29, author: 'Korinek, Anton et Joseph Stiglitz.', title: 'Artificial Intelligence, Globalization, and Strategies for Economic Development', year: '2021', publisher: 'NBER WP 28453,  ; Korinek (2024) <em>Scenarios for the Transition to AGI</em>', url: 'https://www.nber.org/papers/w28453' },
+  { num: 30, author: 'Brynjolfsson, Erik et Andrew McAfee.', title: 'The Second Machine Age', year: '2014', publisher: 'W. W. Norton, . Voir aussi Brynjolfsson, Rock, Syverson (2017)', url: 'https://www.nber.org/papers/w24001' },
+  { num: 31, author: 'Acemoglu &amp; Johnson (2023),.', title: 'op. cit.', year: '', publisher: 'p. 415 sur la phrase « not like the wind »', url: 'https://shapingwork.mit.edu/power-and-progress/' },
+  { num: 32, author: 'Bouverot, Anne et Philippe Aghion.', title: 'IA : notre ambition pour la France', year: '2024', publisher: 'Rapport au Président de la République, mars', url: 'https://www.info.gouv.fr/upload/media/content/0001/09/4d3cc456dd2f5b9d79ee75feea63b47f10d75158.pdf' },
+  { num: 33, author: 'Benhamou, Salima et al.', title: 'Intelligence artificielle et travail', year: '2025', publisher: 'France Stratégie, avril', url: 'https://www.strategie-plan.gouv.fr/en/publications/intelligence-artificielle-travail' },
+  { num: 34, author: 'Données croisées DARES.', title: 'Familles professionnelles 2021', year: '2024', publisher: '× INSEE <em>Enquête Emploi Continu </em>. Synthèse via treemap interactif', url: 'https://www.yassineabouzaid.com/jobs-fr' },
+  { num: 35, author: 'INSEE.', title: 'Les technologies de l\'information et de la communication dans les entreprises en 2024', year: '2061', publisher: 'Insee Première n°, 2025', url: 'https://www.insee.fr/fr/statistiques/8604126' },
+  { num: 36, author: 'Case, Anne et Angus Deaton.', title: 'Deaths of Despair and the Future of Capitalism', year: '2020', publisher: 'Princeton UP,  ; <em>Education, Despair and Death</em>, NBER WP 29241, 2021', url: 'https://www.nber.org/papers/w29241' },
+  { num: 37, author: 'OCDE.', title: 'OECD Employment Outlook 2025: Can we get through the demographic crunch ?', year: '2025', publisher: 'OECD Publishing', url: 'https://www.oecd.org/en/topics/future-of-work.html' },
+  { num: 38, author: 'Costinot, Arnaud et Iván Werning.', title: 'Robots, Trade, and Luddism: A Sufficient Statistic Approach to Optimal Technology Regulation', year: '2023', publisher: 'Review of Economic Studies vol. 90 n°5', url: 'https://academic.oup.com/restud/article/90/5/2261/7008999' },
+  { num: 39, author: 'Bartik, Alexander, Elizabeth Rhodes, David Broockman, Patrick Krause, Sarah Miller, Eva Vivalt.', title: 'The Employment Effects of a Guaranteed Income', year: '2024', publisher: 'NBER WP 32719,  (étude OpenResearch)', url: 'https://www.nber.org/papers/w32719' },
+];
+
+/* ───────── Modal dispatcher ───────── */
+const modalRoot    = document.getElementById('modal-root');
+const modalEyebrow = document.getElementById('modal-eyebrow');
+const modalTitle   = document.getElementById('modal-title');
+const modalBody    = document.getElementById('modal-body');
+let lastFocused = null;
+
+function openModal(eyebrow, title, body) {
+  lastFocused = document.activeElement;
+  modalEyebrow.textContent = eyebrow || '';
+  modalTitle.textContent = title || '';
+  modalBody.innerHTML = body || '';
+  // Patch des références [N] en liens vers les sources
+  const bodyEl = document.getElementById('modal-body');
+  if (bodyEl) {
+    bodyEl.innerHTML = bodyEl.innerHTML.replace(/\[(\d+)\]/g, (m, n) => `<a href="#" class="source-ref" data-source-num="${n}">[${n}]</a>`);
+    bodyEl.querySelectorAll('.source-ref').forEach(a => {
+      a.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        const num = parseInt(a.dataset.sourceNum, 10);
+        closeModal();
+        flashSource(num);
+      });
+    });
+  }
+  modalRoot.hidden = false;
+  document.body.classList.add('modal-open');
+  document.body.style.overflow = '';
+  modalRoot.querySelector('.modal-close')?.focus();
+  if (typeof updateRotationHint === 'function') updateRotationHint();
+}
+
+let __modalAutoActive = false;
+
+function closeModal() {
+  const root = document.getElementById('modal-root');
+  if (!root) return;
+  root.hidden = true;
+  document.body.classList.remove('modal-open');
+  __modalAutoActive = false;
+  lastFocused?.focus?.();
+  if (typeof updateRotationHint === 'function') updateRotationHint();
+}
+
+document.getElementById('modal-root').addEventListener('click', (e) => {
+  if (e.target.closest('.modal-content')) return;
+  if (e.target.matches('[data-close]')) { closeModal(); }
+});
+
+let state = { sceneIndex: 0, stepIndex: 0 };
+
+const stage = document.getElementById('stage');
+
+function applyStepStyles(scene, step) {
+  const svg = stage.querySelector('svg');
+  if (!svg) return;
+  const all = svg.querySelectorAll('[id]');
+  all.forEach(el => el.removeAttribute('data-step-state'));
+  (step.dim || []).forEach(sel => svg.querySelectorAll(sel).forEach(el => el.setAttribute('data-step-state', 'dim')));
+  (step.hidden || []).forEach(sel => svg.querySelectorAll(sel).forEach(el => el.setAttribute('data-step-state', 'hidden')));
+  (step.highlight || []).forEach(sel => svg.querySelectorAll(sel).forEach(el => el.setAttribute('data-step-state', 'active')));
+}
+
+function renderTimeline() {
+  const tl = document.getElementById('timeline');
+  if (!tl) return;
+  tl.innerHTML = SCENES.map((scene, i) => {
+    const visited = i < state.sceneIndex;
+    const current = i === state.sceneIndex;
+    const cls = ['seg'];
+    if (scene.type === 'punchline') cls.push('punchline');
+    if (scene.type === 'outro') cls.push('outro');
+    if (visited) cls.push('visited');
+    if (current) cls.push('current');
+    let fillPct = 0;
+    if (current && scene.steps && scene.steps.length > 1) {
+      fillPct = Math.round((state.stepIndex / (scene.steps.length - 1)) * 100);
+    } else if (visited) {
+      fillPct = 100;
+    }
+    const label = `${(i+1).toString().padStart(2,'0')} · ${scene.title || (scene.type === 'punchline' ? 'Respiration' : 'Outro')}`;
+    return `<div class="seg ${cls.join(' ')}" data-index="${i}"><div class="fill" style="height: ${fillPct}%; width: ${fillPct}%;"></div><div class="label">${label}</div></div>`;
+  }).join('');
+}
+
+function updateSceneTitleBar(scene) {
+  const bar = document.getElementById('scene-title-bar');
+  if (!bar) return;
+  const num = (state.sceneIndex + 1).toString().padStart(2, '0');
+  const title = scene.title || '';
+  if (!title) { bar.innerHTML = ''; return; }
+  bar.innerHTML = `<span class="num">${num}</span><span class="title">${title}</span>`;
+}
+
+function render() {
+  const scene = SCENES[state.sceneIndex];
+  if (!scene) return;
+
+  updateSceneTitleBar(scene);
+
+  if (scene.type === 'punchline') {
+    stage.innerHTML = `
+      <section class="scene-punchline" role="group" aria-roledescription="scène">
+        <div class="body">${scene.body}</div>
+        ${scene.attribution ? `<div class="attribution">${scene.attribution}</div>` : ''}
+      </section>
+    `;
+    renderTimeline();
+    return;
+  }
+
+  if (scene.type === 'outro') {
+    stage.innerHTML = `
+      <section class="scene-outro" role="group" aria-roledescription="scène">
+        <div class="eyebrow">Vous avez parcouru</div>
+        <h2>L'IA <em>et le travail</em> — l'essentiel</h2>
+        <div class="body">${scene.body}</div>
+        <div class="ctas" data-no-advance>
+          <a class="cta-primary" href="${scene.cta.href}">${scene.cta.label}</a>
+          <a class="cta-secondary" href="${scene.secondary.href}" download>${scene.secondary.label}</a>
+        </div>
+        <button class="restart" data-no-advance type="button" onclick="gotoScene(0)">↺ Recommencer</button>
+        <div class="disclosure">Format co-écrit avec l'aide d'une IA</div>
+      </section>
+    `;
+    renderTimeline();
+    return;
+  }
+
+  if (scene.type === 'schema') {
+    const svgEl = document.getElementById(scene.schemaId);
+    const svgClone = svgEl ? svgEl.outerHTML : `<div style="color: red; font-family: monospace;">SVG ${scene.schemaId} introuvable</div>`;
+    const step = scene.steps[state.stepIndex] || { caption: '(pas d\'étape définie)' };
+    stage.innerHTML = `
+      <section class="schema-host" role="group" aria-roledescription="scène">
+        <div class="schema-wrapper figure" style="position: relative; width: 100%; max-width: 100%;">
+          ${svgClone}
+          <button class="zoom-btn" type="button" aria-label="Zoom plein écran" data-no-advance>⛶</button>
+        </div>
+        <div class="caption" aria-live="polite">${step.caption}</div>
+      </section>
+    `;
+    applyStepStyles(scene, step);
+
+    if (step.modalAuto) {
+      const match = scene.schemaId ? scene.schemaId.match(/svg-(\d+)-/) : null;
+      const schKey = match ? 'schema-' + match[1].padStart(2, '0') : null;
+      const card = schKey ? (SCHEMAS?.[schKey]?.[step.modalAuto] || null) : null;
+      if (card) {
+        setTimeout(() => {
+          openModal(card.eyebrow || '', card.title || '', card.body || '');
+          __modalAutoActive = true;
+        }, 220);
+      }
+    }
+    renderTimeline();
+    return;
+  }
+}
+
+let __transitioning = false;
+
+async function gotoScene(index) {
+  if (index < 0 || index >= SCENES.length || __transitioning) return;
+  __transitioning = true;
+  stage.classList.add('fading-out');
+  await new Promise(r => setTimeout(r, FADE_MS));
+  state.sceneIndex = index;
+  state.stepIndex = 0;
+  render();
+  stage.classList.remove('fading-out');
+  await new Promise(r => setTimeout(r, FADE_MS));
+  __transitioning = false;
+}
+
+function advance() {
+  if (__transitioning) return;
+  const scene = SCENES[state.sceneIndex];
+  const lastStep = (scene.steps && scene.steps.length > 0) ? scene.steps.length - 1 : 0;
+  if (state.stepIndex < lastStep) {
+    state.stepIndex++;
+    render();
+  } else if (state.sceneIndex < SCENES.length - 1) {
+    gotoScene(state.sceneIndex + 1);
+  }
+}
+
+function retreat() {
+  if (__transitioning) return;
+  if (state.stepIndex > 0) {
+    state.stepIndex--;
+    render();
+  } else if (state.sceneIndex > 0) {
+    const prevScene = SCENES[state.sceneIndex - 1];
+    const prevLastStep = (prevScene.steps && prevScene.steps.length > 0) ? prevScene.steps.length - 1 : 0;
+    __transitioning = true;
+    stage.classList.add('fading-out');
+    setTimeout(() => {
+      state.sceneIndex--;
+      state.stepIndex = prevLastStep;
+      render();
+      stage.classList.remove('fading-out');
+      setTimeout(() => { __transitioning = false; }, FADE_MS);
+    }, FADE_MS);
+  }
+}
+
+render();
+
+function isAnyOverlayOpen() {
+  return !document.getElementById('modal-root').hidden
+      || !document.getElementById('toc-overlay').hidden
+      || !document.getElementById('sources-overlay').hidden
+      || !document.getElementById('zoom-overlay').hidden;
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+    e.preventDefault();
+    const modalOpen = !document.getElementById('modal-root').hidden;
+    if (modalOpen && __modalAutoActive) {
+      closeModal();
+      advance();
+    } else if (modalOpen) {
+      closeModal();
+    } else {
+      advance();
+    }
+  } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+    e.preventDefault();
+    // Si TOC, sources ou zoom sont ouverts, on laisse leurs propres handlers gérer
+    if (!document.getElementById('toc-overlay').hidden) return;
+    if (!document.getElementById('sources-overlay').hidden) return;
+    if (!document.getElementById('zoom-overlay').hidden) return;
+    const modalOpen = !document.getElementById('modal-root').hidden;
+    if (modalOpen && __modalAutoActive) {
+      closeModal();
+      retreat();
+    } else if (modalOpen) {
+      closeModal();
+    } else {
+      retreat();
+    }
+  } else if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (isAnyOverlayOpen()) return;
+    gotoScene(state.sceneIndex + 1);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (isAnyOverlayOpen()) return;
+    gotoScene(state.sceneIndex - 1);
+  } else if (e.key === 's' || e.key === 'S') {
+    if (e.target.tagName === 'INPUT') return;
+    e.preventDefault();
+    toggleToc();
+  } else if (e.key === 'r' || e.key === 'R') {
+    if (e.target.tagName === 'INPUT') return;
+    e.preventDefault();
+    toggleSources();
+  } else if (e.key === 'Escape') {
+    if (!document.getElementById('modal-root').hidden) {
+      closeModal();
+      e.preventDefault();
+      return;
+    }
+    if (!document.getElementById('sources-overlay').hidden) {
+      toggleSources(false);
+      e.preventDefault();
+      return;
+    }
+    if (!document.getElementById('toc-overlay').hidden) {
+      toggleToc(false);
+      e.preventDefault();
+      return;
+    }
+    // zoom-overlay Escape géré par setupZoom() interne
+  }
+});
+
+document.getElementById('timeline').addEventListener('click', (e) => {
+  const seg = e.target.closest('.seg');
+  if (!seg) return;
+  e.stopPropagation();
+  gotoScene(parseInt(seg.dataset.index, 10));
+});
+
+/* ───────── Sommaire overlay ───────── */
+function renderToc() {
+  const list = document.getElementById('toc-list');
+  list.innerHTML = SCENES.map((scene, i) => {
+    const stepsCount = scene.steps ? scene.steps.length : 1;
+    const stepsLabel = stepsCount === 1 ? '1 étape' : `${stepsCount} étapes`;
+    const titleOrLabel = scene.title || (scene.type === 'punchline' ? '✴ Respiration' : 'Outro — pour aller plus loin');
+    return `<li data-index="${i}"><span class="num">${(i+1).toString().padStart(2,'0')}</span><span>${titleOrLabel}</span><span class="meta">${stepsLabel}</span></li>`;
+  }).join('');
+}
+
+function toggleToc(forceState) {
+  const o = document.getElementById('toc-overlay');
+  const newHidden = forceState !== undefined ? !forceState : !o.hidden;
+  o.hidden = newHidden;
+  if (!newHidden) renderToc();
+  if (typeof updateRotationHint === 'function') updateRotationHint();
+}
+
+document.getElementById('btn-toc').addEventListener('click', (e) => { e.stopPropagation(); toggleToc(true); });
+document.getElementById('toc-overlay').addEventListener('click', (e) => {
+  if (e.target.closest('.overlay-close')) { toggleToc(false); return; }
+  const li = e.target.closest('li[data-index]');
+  if (li) { gotoScene(parseInt(li.dataset.index, 10)); toggleToc(false); }
+});
+
+/* ───────── Sources overlay ───────── */
+function renderSources(filter) {
+  const list = document.getElementById('sources-list');
+  const f = (filter || '').toLowerCase();
+  const items = SOURCES
+    .filter(s => !f || (s.author + ' ' + s.title + ' ' + s.year).toLowerCase().includes(f))
+    .map(s => `
+      <li data-num="${s.num}">
+        <span class="num">[${s.num}]</span>
+        <span><strong>${s.author}</strong> — ${s.title}, ${s.year}.${s.publisher ? ' <em>' + s.publisher + '</em>.' : ''}${s.url ? ` <a href="${s.url}" target="_blank" rel="noopener">Lien ↗</a>` : ''}</span>
+      </li>
+    `);
+  list.innerHTML = items.join('');
+}
+
+function toggleSources(forceState) {
+  const o = document.getElementById('sources-overlay');
+  const newHidden = forceState !== undefined ? !forceState : !o.hidden;
+  o.hidden = newHidden;
+  if (!newHidden) {
+    renderSources('');
+    document.getElementById('sources-filter').value = '';
+    setTimeout(() => document.getElementById('sources-filter').focus(), 80);
+  }
+  if (typeof updateRotationHint === 'function') updateRotationHint();
+}
+
+function flashSource(num) {
+  toggleSources(true);
+  setTimeout(() => {
+    const li = document.querySelector(`#sources-list li[data-num="${num}"]`);
+    if (!li) return;
+    li.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    li.classList.add('flash');
+    setTimeout(() => li.classList.remove('flash'), 1500);
+  }, 100);
+}
+
+document.getElementById('btn-sources').addEventListener('click', (e) => { e.stopPropagation(); toggleSources(true); });
+document.getElementById('sources-overlay').addEventListener('click', (e) => {
+  if (e.target.closest('.overlay-close')) { toggleSources(false); }
+});
+document.getElementById('sources-filter').addEventListener('input', (e) => renderSources(e.target.value));
+
+stage.addEventListener('click', (e) => {
+  if (isAnyOverlayOpen()) return;
+  if (e.target.closest('[data-no-advance]')) return;
+  if (e.shiftKey) {
+    retreat();
+  } else {
+    advance();
+  }
+});
+
+// Capture phase — intercepte les clics sur régions interactives data-card AVANT le listener bubble
+stage.addEventListener('click', (e) => {
+  const target = e.target.closest('[data-card]');
+  if (!target) return;
+  e.stopPropagation();
+  const cardId = target.dataset.card;
+  // Cherche la card dans le schéma courant
+  const scene = SCENES[state.sceneIndex];
+  const schemaId = scene && scene.schemaId ? scene.schemaId : null;
+  // schemaId est de la forme 'svg-01-spectre', les clés SCHEMAS sont 'schema-01', 'schema-02'…
+  // Mapping : svg-01-* → schema-01, svg-02-* → schema-02, etc.
+  let card = null;
+  if (schemaId) {
+    const match = schemaId.match(/svg-(\d+)-/);
+    if (match) {
+      const schKey = 'schema-' + match[1].padStart(2, '0');
+      card = SCHEMAS?.[schKey]?.[cardId] || null;
+    }
+  }
+  if (card) {
+    openModal(card.eyebrow || '', card.title || '', card.body || '');
+  }
+}, true);
+
+console.log('[slideshow]', SCENES.length, 'scènes déclarées');
+
+/* ───────── Swipe horizontal sur la stage ───────── */
+let touchStart = null;
+stage.addEventListener('touchstart', (e) => {
+  if (e.touches.length !== 1) return;
+  touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: Date.now() };
+}, { passive: true });
+
+stage.addEventListener('touchend', (e) => {
+  if (!touchStart) return;
+  const t = e.changedTouches[0];
+  const dx = t.clientX - touchStart.x;
+  const dy = t.clientY - touchStart.y;
+  const dt = Date.now() - touchStart.t;
+  touchStart = null;
+  if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+  if (dt > 600) return;
+  if (dx > 0) gotoScene(state.sceneIndex - 1);
+  else gotoScene(state.sceneIndex + 1);
+});
+
+/* ───────── Pulse d'inactivité ───────── */
+let __idleTimer = null;
+function resetIdle() {
+  const cue = document.getElementById('idle-cue');
+  if (cue) cue.classList.remove('show');
+  document.getElementById('topbar').classList.remove('idle');
+  clearTimeout(__idleTimer);
+  __idleTimer = setTimeout(() => {
+    if (cue) cue.classList.add('show');
+    document.getElementById('topbar').classList.add('idle');
+  }, 4000);
+}
+['keydown', 'click', 'touchstart', 'mousemove'].forEach(evt => window.addEventListener(evt, resetIdle, { passive: true }));
+resetIdle();
+
+/* ───────── Toaster d'onboarding mobile ───────── */
+function isTouchDevice() {
+  return ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+}
+
+function maybeShowOnboardingToaster() {
+  if (!isTouchDevice()) return;
+  if (localStorage.getItem('slideshow-onboarded')) return;
+  const t = document.getElementById('toaster');
+  if (!t) return;
+  t.hidden = false;
+  setTimeout(() => t.classList.add('show'), 50);
+  const dismiss = () => {
+    t.classList.remove('show');
+    setTimeout(() => { t.hidden = true; }, 400);
+    try { localStorage.setItem('slideshow-onboarded', '1'); } catch(_) {}
+    window.removeEventListener('touchstart', dismiss);
+  };
+  window.addEventListener('touchstart', dismiss, { once: true, passive: true });
+  setTimeout(dismiss, 6000);
+}
+
+maybeShowOnboardingToaster();
+
+/* ───────── Rotation hint mobile portrait sur scènes schema ───────── */
+const portraitMQ = window.matchMedia('(orientation: portrait)');
+const narrowMQ = window.matchMedia('(max-width: 900px)');
+let __rotationHintDismissed = false;
+
+function updateRotationHint() {
+  const hint = document.getElementById('rotation-hint');
+  if (!hint) return;
+  const scene = SCENES[state.sceneIndex];
+  const shouldShow = isTouchDevice()
+    && portraitMQ.matches
+    && narrowMQ.matches
+    && scene && scene.type === 'schema'
+    && !__rotationHintDismissed
+    && document.getElementById('modal-root').hidden
+    && document.getElementById('toc-overlay').hidden
+    && document.getElementById('sources-overlay').hidden
+    && document.getElementById('zoom-overlay').hidden;
+  hint.classList.toggle('show', shouldShow);
+}
+
+(function setupRotationHint() {
+  const hint = document.getElementById('rotation-hint');
+  if (!hint) return;
+  hint.querySelector('.dismiss')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    __rotationHintDismissed = true;
+    updateRotationHint();
+  });
+  // Auto-update sur changement d'orientation, ouverture/fermeture de modal/overlay, render
+  const onChange = () => updateRotationHint();
+  if (portraitMQ.addEventListener) portraitMQ.addEventListener('change', onChange);
+  else if (portraitMQ.addListener) portraitMQ.addListener(onChange);
+  window.addEventListener('orientationchange', onChange);
+  // Premier appel au chargement
+  setTimeout(updateRotationHint, 0);
+})();
+
+// Hooke updateRotationHint() à la fin de chaque render
+const __rawRender = render;
+render = function() {
+  __rawRender();
+  updateRotationHint();
+};
+
+/* ───────── Fullscreen zoom for schemas ───────── */
+const __zoom = (function setupZoom() {
+  const overlay  = document.getElementById('zoom-overlay');
+  const zStage   = document.getElementById('zoom-stage');
+  const content  = document.getElementById('zoom-content');
+  const captionE = document.getElementById('zoom-caption');
+  const hint     = document.getElementById('zoom-hint');
+  if (!overlay || !zStage || !content) return {};
+
+  let scale = 1, tx = 0, ty = 0;
+  let svgW = 0, svgH = 0;
+  let fitScale = 1;
+  let lastZoomTrigger = null;
+
+  function applyTransform() { content.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`; }
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+  function fitToStage() {
+    if (!svgW || !svgH) return;
+    const r = zStage.getBoundingClientRect();
+    const margin = 32;
+    fitScale = Math.min((r.width - margin * 2) / svgW, (r.height - margin * 2) / svgH);
+    scale = fitScale;
+    tx = (r.width - svgW * scale) / 2;
+    ty = (r.height - svgH * scale) / 2;
+    applyTransform();
+  }
+  function zoomAt(mx, my, factor) {
+    const newScale = clamp(scale * factor, fitScale * 0.5, fitScale * 16);
+    tx = mx - newScale * (mx - tx) / scale;
+    ty = my - newScale * (my - ty) / scale;
+    scale = newScale;
+    applyTransform();
+  }
+  function openZoom(svgEl, captionText) {
+    const clone = svgEl.cloneNode(true);
+    const vb = clone.viewBox?.baseVal;
+    svgW = (vb && vb.width)  || svgEl.getBoundingClientRect().width  || 1200;
+    svgH = (vb && vb.height) || svgEl.getBoundingClientRect().height || 780;
+    clone.setAttribute('width', svgW); clone.setAttribute('height', svgH);
+    clone.style.width = svgW + 'px'; clone.style.height = svgH + 'px';
+    content.innerHTML = '';
+    content.appendChild(clone);
+    captionE.textContent = captionText || '';
+    lastZoomTrigger = document.activeElement;
+    overlay.hidden = false;
+    document.body.style.overflow = 'hidden';
+    requestAnimationFrame(() => {
+      fitToStage();
+      zStage.focus({ preventScroll: true });
+      if (hint) {
+        hint.classList.remove('fade');
+        clearTimeout(hint._t);
+        hint._t = setTimeout(() => hint.classList.add('fade'), 2600);
+      }
+    });
+  }
+  function closeZoom() {
+    overlay.hidden = true;
+    content.innerHTML = '';
+    document.body.style.overflow = '';
+    lastZoomTrigger?.focus?.();
+  }
+
+  overlay.querySelector('.zoom-close')?.addEventListener('click', closeZoom);
+  document.addEventListener('keydown', (e) => {
+    if (overlay.hidden) return;
+    if (e.key === 'Escape') { e.preventDefault(); closeZoom(); }
+    else if (e.key === '+' || e.key === '=') { e.preventDefault(); const r = zStage.getBoundingClientRect(); zoomAt(r.width/2, r.height/2, 1.25); }
+    else if (e.key === '-' || e.key === '_') { e.preventDefault(); const r = zStage.getBoundingClientRect(); zoomAt(r.width/2, r.height/2, 1/1.25); }
+    else if (e.key === '0') { e.preventDefault(); fitToStage(); }
+  });
+
+  overlay.querySelector('.zoom-in')?.addEventListener('click', () => { const r = zStage.getBoundingClientRect(); zoomAt(r.width/2, r.height/2, 1.25); });
+  overlay.querySelector('.zoom-out')?.addEventListener('click', () => { const r = zStage.getBoundingClientRect(); zoomAt(r.width/2, r.height/2, 1/1.25); });
+  overlay.querySelector('.zoom-reset')?.addEventListener('click', fitToStage);
+
+  zStage.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const r = zStage.getBoundingClientRect();
+    const mx = e.clientX - r.left;
+    const my = e.clientY - r.top;
+    const factor = e.deltaY < 0 ? 1.15 : 1/1.15;
+    zoomAt(mx, my, factor);
+  }, { passive: false });
+
+  let dragging = false, sx = 0, sy = 0, stx = 0, sty = 0;
+  zStage.addEventListener('pointerdown', (e) => {
+    dragging = true;
+    zStage.classList.add('grabbing');
+    zStage.setPointerCapture?.(e.pointerId);
+    sx = e.clientX; sy = e.clientY; stx = tx; sty = ty;
+  });
+  zStage.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    tx = stx + (e.clientX - sx);
+    ty = sty + (e.clientY - sy);
+    applyTransform();
+  });
+  function endDrag(e) {
+    if (!dragging) return;
+    dragging = false;
+    zStage.classList.remove('grabbing');
+    zStage.releasePointerCapture?.(e.pointerId);
+  }
+  zStage.addEventListener('pointerup', endDrag);
+  zStage.addEventListener('pointercancel', endDrag);
+  zStage.addEventListener('pointerleave', endDrag);
+
+  let pinchStartDist = 0, pinchStartScale = 1, pinchMid = { x: 0, y: 0 };
+  zStage.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+      dragging = false;
+      const t1 = e.touches[0], t2 = e.touches[1];
+      const dx = t1.clientX - t2.clientX, dy = t1.clientY - t2.clientY;
+      pinchStartDist = Math.hypot(dx, dy);
+      pinchStartScale = scale;
+      const r = zStage.getBoundingClientRect();
+      pinchMid = { x: (t1.clientX + t2.clientX) / 2 - r.left, y: (t1.clientY + t2.clientY) / 2 - r.top };
+    }
+  }, { passive: true });
+  zStage.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 2 && pinchStartDist > 0) {
+      e.preventDefault();
+      const t1 = e.touches[0], t2 = e.touches[1];
+      const d = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+      const factor = (d / pinchStartDist) * (pinchStartScale / scale);
+      zoomAt(pinchMid.x, pinchMid.y, factor);
+    }
+  }, { passive: false });
+  zStage.addEventListener('touchend', (e) => { if (e.touches.length < 2) pinchStartDist = 0; });
+
+  window.addEventListener('resize', () => { if (!overlay.hidden) fitToStage(); });
+
+  return { openZoom };
+})();
+
+// Câble le bouton zoom après chaque render() sur une scène schema
+// (les éléments sont injectés dynamiquement, pas présents au chargement)
+stage.addEventListener('click', (e) => {
+  const btn = e.target.closest('.zoom-btn');
+  if (!btn) return;
+  e.stopPropagation();
+  const wrapper = btn.closest('.schema-wrapper');
+  const svg = wrapper ? wrapper.querySelector('svg') : null;
+  if (svg && __zoom.openZoom) {
+    const caption = stage.querySelector('.caption')?.textContent?.trim() || '';
+    __zoom.openZoom(svg, caption);
+  }
+}, true);
+</script>
+
+</body>
+</html>
