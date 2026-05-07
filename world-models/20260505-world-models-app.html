@@ -147,7 +147,7 @@
       .figure-caption { max-width: 760px; margin-left: auto; margin-right: auto; padding: 0 48px; }
     }
 
-    .zoom-btn { position: absolute; top: 32px; right: 8px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: var(--paper); border: 1px solid var(--rule); border-radius: 4px; cursor: pointer; font-size: 18px; line-height: 1; color: var(--graphite); opacity: 0; transition: opacity 140ms, background 140ms, color 140ms, border-color 140ms; z-index: 2; }
+    .zoom-btn { position: absolute; top: 32px; left: 8px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: var(--paper); border: 1px solid var(--rule); border-radius: 4px; cursor: pointer; font-size: 18px; line-height: 1; color: var(--graphite); opacity: 0; transition: opacity 140ms, background 140ms, color 140ms, border-color 140ms; z-index: 2; }
     .figure:hover .zoom-btn, .figure:focus-within .zoom-btn, .zoom-btn:focus-visible { opacity: 1; }
     .zoom-btn:hover { background: var(--paper-2); border-color: var(--ink); color: var(--ink); }
     @media (hover: none) { .zoom-btn { opacity: 0.85; } }
@@ -243,6 +243,54 @@
       main#report { max-width: none; padding: 0; }
       .figure { page-break-inside: avoid; }
     }
+  
+    /* Schema sigil — MG monogram blason injected into each figure, links to author site.
+       Positioned over the schema SVG (top-right, aligned with the schema title);
+       .zoom-btn relegated to top-left. */
+    .schema-sigil {
+      position: absolute;
+      top: 72px;
+      right: clamp(14px, 4vw, 60px);
+      width: 38px; height: 38px;
+      display: inline-block;
+      text-decoration: none;
+      z-index: 3;
+      opacity: 0.78;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.18));
+      transition: transform 0.42s cubic-bezier(0.22,1,0.36,1), filter 0.3s ease, opacity 0.25s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .schema-sigil:hover, .schema-sigil:focus-visible {
+      transform: rotate(-7deg) scale(1.10);
+      filter: drop-shadow(0 6px 14px rgba(0,0,0,0.28));
+      opacity: 1;
+      outline: none;
+    }
+    .schema-sigil .sigil-mark { display: block; width: 100%; height: 100%; }
+    .schema-sigil .sigil-bg { fill: var(--carmine); }
+    .schema-sigil .sigil-ring {
+      fill: none; stroke: var(--paper);
+      stroke-width: 0.8; stroke-opacity: 0.55;
+      stroke-dasharray: 1.4 1.6;
+      transition: stroke-dashoffset 1.6s linear;
+    }
+    .schema-sigil:hover .sigil-ring { stroke-dashoffset: -24; }
+    .schema-sigil .sigil-letters text {
+      font-family: var(--serif);
+      font-style: italic; font-weight: 500;
+      font-size: 21px; letter-spacing: -0.04em;
+      fill: var(--paper);
+    }
+    @media (max-width: 640px) {
+      .schema-sigil { width: 32px; height: 32px; top: 28px; right: 12px; opacity: 0.85; }
+    }
+    /* Variant pour l'overlay zoom — z-index plus haut, drop-shadow renforcé */
+    .schema-sigil.zoom-sigil {
+      z-index: 20;
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,0.45)), drop-shadow(0 0 8px rgba(250,248,243,0.18));
+      opacity: 0.9;
+    }
+    @media print { .schema-sigil { display: none; } }
   </style>
 </head>
 <body>
@@ -1991,6 +2039,13 @@
     <div id="zoom-stage" tabindex="-1">
       <div id="zoom-content"></div>
       <div id="zoom-hint">Molette pour zoomer · glisser pour déplacer · Échap pour fermer</div>
+      <a class="schema-sigil zoom-sigil" href="https://mathieugug.github.io/" target="_blank" rel="noopener" aria-label="Mathieu Guglielmino — visiter mathieugug.github.io" title="Mathieu Guglielmino · mathieugug.github.io">
+        <svg class="sigil-mark" viewBox="0 0 44 44" aria-hidden="true" focusable="false">
+          <circle class="sigil-bg" cx="22" cy="22" r="20.5"/>
+          <circle class="sigil-ring" cx="22" cy="22" r="17.5"/>
+          <g class="sigil-letters"><text x="7.5" y="29">M</text><text x="22" y="29">G</text></g>
+        </svg>
+      </a>
     </div>
   </div>
 
@@ -2496,6 +2551,30 @@
         requestAnimationFrame(() => collapseBtn.focus({ preventScroll: true }));
       });
       try { if (localStorage.getItem(STORAGE_KEY) === '1') setCollapsed(true); } catch (_) {}
+    })();
+  
+    /* ───────── Schema sigil injection — MG monogram on each figure ───────── */
+    (function () {
+      const SIGIL = '<svg class="sigil-mark" viewBox="0 0 44 44" aria-hidden="true" focusable="false">'
+        + '<circle class="sigil-bg" cx="22" cy="22" r="20.5"/>'
+        + '<circle class="sigil-ring" cx="22" cy="22" r="17.5"/>'
+        + '<g class="sigil-letters">'
+        +   '<text x="7.5" y="29">M</text>'
+        +   '<text x="22" y="29">G</text>'
+        + '</g>'
+      + '</svg>';
+      document.querySelectorAll('figure.figure').forEach(function (fig) {
+        if (fig.querySelector('.schema-sigil')) return;
+        const a = document.createElement('a');
+        a.className = 'schema-sigil';
+        a.href = 'https://mathieugug.github.io/';
+        a.target = '_blank';
+        a.rel = 'noopener';
+        a.setAttribute('aria-label', 'Mathieu Guglielmino — visiter mathieugug.github.io');
+        a.title = 'Mathieu Guglielmino · mathieugug.github.io';
+        a.innerHTML = SIGIL;
+        fig.appendChild(a);
+      });
     })();
   </script>
 </body>

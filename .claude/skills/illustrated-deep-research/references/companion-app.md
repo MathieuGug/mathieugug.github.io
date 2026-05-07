@@ -553,6 +553,33 @@ The overlay clones the SVG (rather than moving it) so the original interactive r
 
 Implementation lives in the `setupZoom()` IIFE in the template. The selector for "what gets a zoom button" is `.figure svg` — every figure that wraps an SVG. If you add a non-SVG figure (e.g., a raster image), it will be skipped automatically.
 
+### 4b. Schema sigil — MG monogram brand mark
+
+Every `.figure` also gets a small **MG monogram badge** injected at runtime in the top-right corner, right next to the schema title. It links to `https://mathieugug.github.io/`. This is the author's brand sigil — same monogram as the favicon (italic Fraunces "MG", paper on carmine), rendered as an inline SVG circle.
+
+Two variants:
+
+- **`.schema-sigil`** — the per-figure badge. Position `absolute; top: 72px; right: clamp(14px, 4vw, 60px)` so it sits at the level of the schema title (≈ y=72 in viewBox units for a 1200-wide landscape SVG). The `top: 72px` value is non-arbitrary: it aligns the badge with the schema title text inside the SVG, so when a reader takes a screenshot of the schema, the sigil ends up in the frame.
+- **`.schema-sigil.zoom-sigil`** — the same badge cloned into the `#zoom-stage` (top-right of fullscreen overlay). Higher z-index, stronger drop-shadow to remain readable over the panned SVG.
+
+When the sigil is present, **the `.zoom-btn` moves to top-LEFT** (`left: 8px` instead of `right: 8px`) to leave the top-right empty for the sigil. Don't try to put both in the same corner.
+
+Mobile (`max-width: 640px`) shrinks the badge to 32×32 px and bumps `top` to 28px so it stays visible inside the smaller schema header on a phone.
+
+The static markup in `#zoom-stage` is:
+
+```html
+<a class="schema-sigil zoom-sigil" href="https://mathieugug.github.io/" target="_blank" rel="noopener" aria-label="Mathieu Guglielmino — visiter mathieugug.github.io" title="Mathieu Guglielmino · mathieugug.github.io">
+  <svg class="sigil-mark" viewBox="0 0 44 44" aria-hidden="true" focusable="false">
+    <circle class="sigil-bg" cx="22" cy="22" r="20.5"/>
+    <circle class="sigil-ring" cx="22" cy="22" r="17.5"/>
+    <g class="sigil-letters"><text x="7.5" y="29">M</text><text x="22" y="29">G</text></g>
+  </svg>
+</a>
+```
+
+The runtime injection IIFE clones the same `<svg.sigil-mark>` into every `<figure.figure>` (skipping figures that already have a sigil — idempotent). Implementation lives near the bottom of the script block in `assets/app-template.html`.
+
 ### 5. Sidebar collapse (desktop)
 
 `#sources-collapse-btn` (left edge of the sidebar, only visible on hover/focus per its small footprint) collapses the sidebar by toggling `.sources-collapsed` on the `.layout` grid. The grid template animates from `240px / 1fr / 320px` to `240px / 1fr / 0`, and the sidebar itself slides out via `transform: translateX(100%)`. The mirrored `#sources-expand-btn`, fixed to the right edge of the viewport, brings it back.
