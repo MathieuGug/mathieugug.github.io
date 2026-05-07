@@ -20,7 +20,7 @@ Tenu à partir du 1ᵉʳ mai 2026, dans le sillage du dossier de veille publié 
 
 **Angle du jour — Le Slack de Jason Kwon ramène, à Oakland, le verdict que la corporate governance avait enterré en novembre 2023.**
 
-![Le Slack qui rejuge novembre 2023 — schéma du jour](images/journal-2026-05-07-pattern-fiduciaire.svg)
+![Le Slack qui rejuge novembre 2023 — schéma du jour|1300](images/journal-2026-05-07-pattern-fiduciaire.svg)
 
 Hier, j'ai écrit que la défense Wachtell avait posé sur la table le verrou de l'*unclean hands defense* : cinq actes documentés (Mars, Autopilot, Zilis, *partly*, term sheet 2018 non lu) qui, pris ensemble, fragilisaient la qualité de *settlor désintéressé* de Musk. Mercredi 6 mai, à 14h PT, Steven Molo — ou, plus exactement, Mira Murati par déposition vidéo interposée — a posé la pièce miroir : un *pattern of breach* documenté du *fiduciary* lui-même. La séquence est techniquement courte (l'extrait diffusé tient en quelques minutes), documentairement nucléaire. Et elle ne déplace pas le procès devant le jury — elle le déplace, là encore, devant la juge.
 
@@ -89,7 +89,7 @@ C'est à mon sens le mouvement tactique le plus important de Wachtell depuis l'o
 
 **Angle du jour — « La compensation à côté ». Le jour où le procès a cessé d'être sur Musk.**
 
-![Le template fiduciaire complété — l'enchevêtrement Brockman-Altman](images/journal-2026-05-05-compensation-a-cote.svg)
+![Le template fiduciaire complété — l'enchevêtrement Brockman-Altman|1300](images/journal-2026-05-05-compensation-a-cote.svg)
 
 Pendant quatre jours, OpenAI a marqué des points sur le terrain narratif — le « partly » de jeudi, la lecture *Musk-est-le-protagoniste-de-sa-propre-chute*, la motion *doomer*, l'instruction de cadrage *« This is not a trial on the safety of AI »*. Lundi 4 mai, le procès a basculé sur un autre terrain. Pour la première fois depuis l'ouverture, la partie demanderesse a obtenu — par le témoin de la défense, sous serment, devant le jury — exactement la pièce que la doctrine du *charitable trust* exige et que les *opening statements* de Molo n'avaient jusqu'ici qu'esquissée : la **conjonction d'un conflit d'intérêts documenté et d'une intention déloyale documentée**. C'est-à-dire le squelette même de la rupture fiduciaire en équité.
 
@@ -126,7 +126,7 @@ Russell, en seconde partie de journée, a tenu son rôle prévu : gouvernance, t
 
 **Angle du jour — La doctrine d'OpenAI a deux états : public (2023) et judiciaire (2026). La juge a retenu le second.**
 
-![La doctrine à deux états — schéma du jour](images/journal-2026-05-04-deux-etats.svg)
+![La doctrine à deux états — schéma du jour|1300](images/journal-2026-05-04-deux-etats.svg)
 
 L'analyse de la première semaine, je l'ai écrite samedi et dimanche : « partly » a déplacé le centre de gravité narratif ; la juridiction d'équité réduit le jury à un avis. Ce lundi, le procès rentre dans une phase moins télégénique mais plus structurante — la chaîne des témoins, et avec elle la mécanique des pièces que la défense laisse entrer ou pas. Le détail le plus brutal n'est pourtant pas dans la salle d'audience d'Oakland : il est dans une motion *in limine* déposée par OpenAI il y a trois semaines, et que the-decoder a remontée dimanche. La défense y qualifie Stuart Russell de **« prominent AI doomer »**, ses opinions de « dystopian, speculative, alarmist ». Russell est l'auteur du manuel de référence en IA (*Artificial Intelligence: A Modern Approach*, quatre éditions, plus d'un million d'exemplaires en circulation). Il est aussi co-fondateur du Center for Human-Compatible AI à Berkeley. Ce n'est pas la rhétorique qui frappe — c'est la signature.
 
@@ -161,7 +161,7 @@ L'ouverture de Russell ce lundi sera donc lue à deux niveaux. Au premier niveau
 
 **Angle du jour — « Advisory only ». Le détail procédural qui pèse plus que le « partly » d'hier**
 
-![L'architecture qui décide à la place du jury — schéma du jour](images/journal-2026-05-03-advisory.svg)
+![L'architecture qui décide à la place du jury — schéma du jour|1300](images/journal-2026-05-03-advisory.svg)
 
 Hier, j'écrivais que le « *partly* » de Musk allait reconfigurer la lecture du procès parce qu'il fragilisait la cohérence narrative devant le jury. C'est vrai. Mais c'est partiel. Dimanche, en reprenant les Sunday papers à froid — Washington Post (« *the case is all about him* »), Bloomberg (« *rough spots in first week* »), CNN (« *which billionaires deserve the keys to the god machine?* »), DNyuz (« *the judge wasn't amused* ») — un autre fait apparaît, plus structurel, presque caché à force d'être technique : **le jury qui écoute Musk depuis quatre jours ne décide pas le procès**. Il rend un avis. La juge Gonzalez Rogers tranchera seule.
 
@@ -196,7 +196,7 @@ Au total : la victoire de Musk au jury, si elle vient, sera nécessaire mais lar
 
 **Angle du jour — « Partly » : l'aveu qui retourne le procès, et que le week-end ne suffira pas à neutraliser**
 
-![Le mot « partly » et ses trois ondes de choc — schéma du jour](images/journal-2026-05-02-partly.svg)
+![Le mot « partly » et ses trois ondes de choc — schéma du jour|1300](images/journal-2026-05-02-partly.svg)
 
 Pendant quatre jours, le procès s'est déroulé sur le terrain choisi par Musk : l'origine charitable d'OpenAI, la fiducie trahie, le risque AGI, l'admiration mal placée pour Sam Altman. Jeudi 30 avril en fin de matinée, William Savitt — l'avocat d'OpenAI chez Wachtell Lipton — a déplacé le point d'application sans préavis. Pas de pièce nouvelle, pas d'expert, pas de témoin surprise : une question. *Has xAI used distillation techniques on OpenAI's models?* La réponse de Musk a tenté l'esquive de principe, puis a calé sur un mot : « *Partly.* » Cinq secondes. La séquence est documentée par TechCrunch et The Information le jour même, consolidée vendredi par MIT Technology Review et Semafor ([Semafor, 1ᵉʳ mai 2026](https://www.semafor.com/article/05/01/2026/elon-musk-admits-xai-distilled-openai-models)). Plusieurs personnes dans la salle auraient eu un soupir audible.
 
