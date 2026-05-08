@@ -120,6 +120,25 @@ def discover_files(slug: str) -> list[Path]:
     return sorted(p for p in folder.glob("*.html") if p.is_file())
 
 
+def clean_social_title(title: str) -> str:
+    """Strip the trailing ' — dossier NN' / ' · étude NN' / ' · veille NN'
+    suffix from a page title — these numbers are useful on the index page
+    for at-a-glance ordering, but they add noise on a LinkedIn / Slack /
+    iMessage unfurl. The browser-tab `<title>` keeps the number; only the
+    `og:title` and `twitter:title` are cleaned.
+
+    Also strips a few other low-value taglines like ' · couverture' or a
+    trailing ' — Mathieu Guglielmino' (since og:site_name and meta author
+    already convey authorship).
+    """
+    s = title
+    # Trailing dossier/etude/veille number, with em-dash, en-dash, or middle dot
+    s = re.sub(r"\s*[—–·\-]\s*(?:dossier|étude|etude|veille|note|chronique)\s*\d+\s*$", "", s, flags=re.IGNORECASE)
+    # Trailing author name, in case it slipped into a <title>
+    s = re.sub(r"\s*[—–·\-]\s*Mathieu\s+Guglielmino\s*$", "", s, flags=re.IGNORECASE)
+    return s.strip()
+
+
 def short_desc(full: str, max_chars: int = 240) -> str:
     """Compact description for og:description (target ≤ 200 chars). Cuts on sentence boundary."""
     txt = re.sub(r"\s+", " ", full).strip()
@@ -228,8 +247,15 @@ def build_seo_block(
     keywords: list[str] | None = None,
 ) -> str:
     """Return the multi-line SEO block (no leading/trailing newline). Wrapped
-    in <!-- og:start --> / <!-- og:end --> markers for idempotency."""
-    title_attr = html_escape_attr(title)
+    in <!-- og:start --> / <!-- og:end --> markers for idempotency.
+
+    The browser-tab `<title>` and the social `og:title` / `twitter:title` use
+    different strings: the tab keeps useful nav metadata (e.g. ' — dossier 14')
+    while the social title is cleaned via `clean_social_title()` so unfurls
+    don't show that filler number prominently.
+    """
+    social_title = clean_social_title(title)
+    title_attr = html_escape_attr(social_title)
     desc_attr = html_escape_attr(description)
     image_attr = og_image_url
     url_attr = canonical_url
@@ -267,12 +293,13 @@ def build_seo_block(
         f'<meta name="twitter:image" content="{image_attr}">',
     ]
 
-    # JSON-LD
+    # JSON-LD — also use the cleaned social_title (search engines surface
+    # `headline` directly; the dossier number is filler in that context too).
     if og_type == "article":
         ld = {
             "@context": "https://schema.org",
             "@type": "Article",
-            "headline": title,
+            "headline": social_title,
             "description": description,
             "image": og_image_url,
             "url": canonical_url,
