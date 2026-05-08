@@ -2,16 +2,17 @@
 _Mis à jour par la routine `Illustrated deep research · mer + ven`._
 
 ## En cours / prio haute
-- [ ] mcp-plateforme — MCP, le HTTP des agents (effet de réseau, donation Linux Foundation, surface de risque)
+- [ ] (vide)
 
 ## Deep dives candidats sur dossiers existants
 - harness-agentique : zoom sur le scheduler et la file d'attente d'outils
 - observabilite-agents-ia : trace OpenTelemetry GenAI semconv en production
 - memoire-agentique : compaction et oubli sélectif
 - evaluation-agentique : benchmarks agentiques contestés (SWE-bench, GAIA)
+- mcp-plateforme : OWASP MCP Top 10, dissection des 10 vecteurs et matrice défensive
+- mcp-plateforme : MCP en production enterprise — patterns d'isolation, audit log OTel, OAuth 2.0 + PKCE
 
 ## Sujets evergreen — backlog
-- MCP et la plateformisation de l'outil-LLM
 - Process Reward Models et verifier-as-a-service — le marché des « notateurs »
 - AlphaProof / Lean / formal math — la branche démonstrations formelles du raisonnement
 - Synthetic data et model collapse — Shumailov et al.
@@ -27,8 +28,11 @@ _Mis à jour par la routine `Illustrated deep research · mer + ven`._
 - AISI / NIST — frontier model evals publiées
 - M&A : Mistral / Cohere / xAI
 - Procès Musk v. Altman — verdict mi-mai 2026
+- AAIF — révision majeure de la spec MCP attendue automne 2026 (signature Sigstore, isolation, audit log)
+- A2A (Google) — adoption cross-vendor ou absorption par MCP via sampling/subagents
 
 ## Déjà couverts (date · slug · angle)
+- 2026-05-08 · mcp-plateforme · effet de réseau, donation Linux Foundation, surface d'attaque tool-poisoning + cross-server, layering MCP / function calling / OpenAPI / A2A
 - 2026-05-06 · modeles-raisonnement · pivot o1, RLVR, second axe scaling, anatomie raisonneur, faithfulness, diffusion
 - 2026-05-06 · economie-inference · LLMflation, pile logicielle, désagrégation, MoE, mix matériel, marges
 - 2026-04-21 · gouvernance-agentic · scrolly AI Act
