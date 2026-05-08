@@ -20,6 +20,23 @@ Site personnel de Mathieu Guglielmino, hébergé sur GitHub Pages. Il publie des
 - **Surlignage stabilo (`<mark>`)** : signature visuelle du site, à utiliser pour les phrases-clés que je veux faire ressortir dans le corps narratif. En markdown : syntaxe Obsidian `==texte==` qui rend `<mark>texte</mark>`. Style : un dégradé qui ne tache que la moitié basse du texte, façon stylo feutre — `background: linear-gradient(transparent 58%, rgba(178, 59, 27, 0.14) 58%); color: inherit; padding: 0 2px;`. La règle CSS doit cibler `main mark` (apps `header.site` + `main#report`) ou `.entry .body mark` (journal/scrolly). Le pattern d'origine vient de `gouvernance/20260421-pitch-gouvernance-agentic.html:189`. Embarqué dans les huit apps deep-research, dans `proces-musk-altman/journal.html`, et dans les deux templates de la skill `illustrated-deep-research/assets/` (`app-template.html` et `slideshow-template.html`). Toute nouvelle app HTML longue (rapport, journal) doit l'embarquer.
 - **Hint de largeur Obsidian `|1300` sur les images des journaux markdown** : dans tout fichier journal `.md` (cas en cours : `proces-musk-altman/journal.md`), chaque image inline doit porter le suffixe `|1300` — syntaxe Obsidian `![alt|1300](path.svg)`. C'est purement un hint pour homogénéiser la prévisualisation Obsidian locale (sinon les schémas s'affichent à la largeur du wrap éditeur, trop étroite pour relire). **N'affecte pas le rendu HTML publié** : le `journal.html` est écrit/maintenu à la main, pas auto-généré depuis le `.md`. Toute nouvelle entrée journal qui ajoute un `![...](...)` doit l'embarquer dès sa rédaction.
 
+## SEO et social previews
+
+Toute page publiée embarque le bloc OpenGraph + Twitter Card + canonical + JSON-LD `Article`/`WebSite`, encadré par les markers `<!-- og:start -->` / `<!-- og:end -->` (anchor d'idempotence pour `tools/seo_dossiers.py`). L'**og:image** est obligatoirement un PNG 1200×630 — pas de SVG, Twitter/LinkedIn/Slack ne le supportent pas en preview.
+
+Pipeline :
+
+- **`tools/og-card.py`** — générateur PIL d'une carte 1200×630 brandée (Cambria italique pour le titre, Consolas pour eyebrow + footer, accent orange sur un mot-clé du titre, monogramme MG en bas à droite). Sortie : `{slug}/og.png`. Pour modifier la charte des cartes (couleurs, polices, layout), éditer les constantes en haut du script.
+- **`tools/seo_dossiers.py`** — driver idempotent qui parse `index.html` pour extraire les métadonnées canoniques de chaque dossier (`<a class="serie">`), regénère les `og.png`, puis injecte/met à jour le bloc SEO dans **toutes** les pages HTML d'un dossier (hub + app + slideshow + scrolly + journal + livre — exclut `livre-print.html`). Re-run met à jour le bloc en place via les markers.
+
+À chaque **nouveau dossier publié** : ajouter sa tuile dans `index.html`, puis :
+
+```
+python tools/seo_dossiers.py --only <slug>
+```
+
+À chaque **modification d'un titre / description / date** d'un dossier dans `index.html`, re-run la même commande pour propager. Spec complète des meta tags + heuristique d'accent : `.claude/skills/illustrated-deep-research/references/seo.md`.
+
 ## Schémas SVG
 
 - **Flèches → cibles** : laisser **un blanc visible** entre la pointe de la flèche et le bord de la boîte cible (≈ 12–18 px en unités SVG). Ne jamais terminer une flèche pile sur le bord d'un rectangle — avec `marker-end`, l'œil lit ça comme une pénétration dans la boîte.
