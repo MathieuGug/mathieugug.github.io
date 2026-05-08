@@ -2,7 +2,7 @@
 _Mis à jour par la routine `Illustrated deep research · mer + ven`._
 
 ## En cours / prio haute
-- [ ] (vide)
+- [ ] mcp-plateforme — MCP, le HTTP des agents (effet de réseau, donation Linux Foundation, surface de risque)
 
 ## Deep dives candidats sur dossiers existants
 - harness-agentique : zoom sur le scheduler et la file d'attente d'outils
