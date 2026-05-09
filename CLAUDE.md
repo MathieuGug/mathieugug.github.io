@@ -63,15 +63,58 @@ Tout artefact (hub + format[s]) **doit** être lisible sur petit écran (320–4
 6. **Blocs de code et formules (`<pre>`, `<code>` inline)** : un `<pre>` sans contrainte déborde la viewport sur mobile (formules, JSON, prompts XML — cas vu sur `evaluation-agentique` avec `TestCase = (Persona × Quest × Environment) → Expected Outcome`). Pattern obligatoire dans le bloc `main code` de chaque app : ajouter `overflow-wrap: anywhere` sur `main code` (casse les longs identifiants/URLs inline qui n'ont pas d'espace), puis une règle `main pre { margin: 1.5rem 0; padding: 14px 16px; background: var(--paper-2); border-radius: 4px; overflow-x: auto; max-width: 100%; font-size: 0.85em; line-height: 1.5; -webkit-overflow-scrolling: touch; }` qui rend le bloc scrollable horizontalement plutôt que de pousser la page, et un override `main pre code { background: transparent; padding: 0; border-radius: 0; font-size: 1em; overflow-wrap: normal; }` pour neutraliser le style inline et préserver les sauts de ligne du `<pre>`. Le `overflow-wrap: normal` interne empêche que le navigateur casse les lignes du bloc et fasse disparaître l'ascenseur horizontal. **Toute nouvelle app `header.site` + `main#report` doit embarquer ces trois règles**, même si elle ne contient pas encore de `<pre>` — la prochaine itération de contenu en aura.
 7. **Tableaux (`<table>`)** : par défaut un `<table>` avec `width: 100%` ne réduit pas en deçà de la largeur naturelle des colonnes — sur mobile, les cellules débordent et la dernière colonne est tronquée à droite (cas vu le 2026-05-04 sur `ia-et-travail` avec le tableau « Étape 5 — La conversion en impact », colonne *Exemple* coupée). Pattern obligatoire à embarquer dans le `@media (max-width: 1024px)` à côté des règles `<pre>` : `main table { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }` + `main th, main td { white-space: normal; }`. Mécanique : `display: block` sur le `<table>` génère une table anonyme à l'intérieur qui se dimensionne à son contenu ; combiné à `overflow-x: auto`, le débordement devient un scroll horizontal plutôt qu'une troncature. **Toute nouvelle app `header.site` + `main#report` doit embarquer ces deux règles**, même sans tableau présent — un comparatif arrive vite.
 
-## Bouton retour sur chaque page
+## Topbar des pages internes (3 items)
 
-Toute page publiée (hub, app, slideshow, scrolly, livre, journal) embarque un lien `← Retour aux dossiers` pointant vers `../index.html#series`. Style : mono, `letter-spacing: 0.16–0.22em`, `text-transform: uppercase`, couleur dim (passe à `--accent`/`--carmine` au survol). Position selon le format :
+Toutes les pages **internes** d'un dossier (apps, slideshows, journal, scrollies, livre, gouvernance scrolly) embarquent une topbar sticky uniforme à 3 zones — pattern PR #29 :
 
-- **Hubs et journal** : dans la `.topbar` fixe, à droite (le nom de l'auteur reste à gauche).
-- **Apps `header.site`** : tout début du `<header class="site">`, juste avant `<span class="marker">`. Classe `.back`.
-- **Slideshow scénique** (3e format optionnel produit par la skill `illustrated-deep-research`) : dans la `.topbar` fixe scénique (64 px desktop / 56 px mobile), à droite. Classe `.back`. Le template `assets/slideshow-template.html` l'embarque déjà.
-- **Scrolly plein écran** : pastille `position: fixed` en haut à droite (ou à gauche pour les anciens layouts) avec `backdrop-filter: blur`.
-- **Livre** : pastille `.back-link` `position: fixed; top: 26px; left: 26px` symétrique du `.toc-toggle`.
+```
+[Mathieu Guglielmino]    [titre du dossier (mono caps)]    [← Hub  ·  Accueil]
+```
+
+- **Gauche** : `<a href="../index.html">Mathieu <em>Guglielmino</em></a>` — identité + lien accueil. L'`em>Guglielmino</em>` se masque sous 380 px.
+- **Milieu** : `<span class="dossier-context">{titre}</span>` — mono caps, `opacity: 0.55`, `max-width: 320px` avec ellipsis. **Masqué sous 768 px.** Le titre vient de l'`og:title` du hub (`*/index.html`), suffixe `— N formats / — étude / — comprendre les enjeux` retiré.
+- **Droite** : `<nav class="back-nav" aria-label="Navigation retour">` à 2 liens — `← Hub` (→ `index.html` du dossier) et `Accueil` (→ `../index.html#series`), séparés par `<span class="back-sep" aria-hidden="true">·</span>`. Le `←` arrow n'est que sur "Hub" pour différencier visuellement le retour proche du retour lointain. `title=` donne la version longue ("Revenir au hub du dossier" / "Revenir à l'accueil").
+
+**Hubs ≠ pages internes** : les hubs `*/index.html` gardent leur topbar à 2 items (Mathieu + `← Retour aux dossiers`) — ils SONT le hub, pas besoin du lien `← Hub`. La grille de l'accueil garde aussi sa topbar à 2 items.
+
+### Constantes structurelles
+
+- **Hauteur** : 56 px partout (`height: 56px`, `padding: 12px 28px`)
+- **Z-index** : 60 par défaut, 70 sur le livre (au-dessus de `.toc-toggle`), 99 sur `proces-musk-altman/scrolly` (sous le `#progress` à 100)
+- **Background** : `rgba(<paper>, 0.82-0.85)` + `backdrop-filter: blur(10px)`
+- **Apps `header.site`** : la topbar est injectée AVANT la `.layout` (pas dedans), `body { padding-top: 56px }` libère la place. L'ancien lien `.back` du `<header class="site">` est retiré.
+
+### Ajustements obligatoires sur les sticky/fixed adjacents
+
+Toute page qui ajoute la topbar **doit** aussi ajuster ses éléments sticky/fixed pour ne pas être recouverts ou décalés :
+
+- **Apps** : `#toc` et `#sources` passent de `top: 0; height: 100vh` à `top: 56px; height: calc(100vh - 56px)`. Attention au CSS multi-ligne (`height: 100vh;\n overflow-y: auto;`) vs single-line (`height: 100vh; overflow-y: auto;`) — les deux variants existent dans le repo, le script `tools/add_dossier_topbar.py` gère les deux via un simple `replace("height: 100vh", "height: calc(100vh - 56px)")`.
+- **Scrolly avec `.pin`** (ex. `anatomie/scrolly`) : `top: 56px; height: calc(100vh - 56px); height: calc(100dvh - 56px)` — sinon le pin est recouvert par la topbar pendant le scroll.
+- **Livre interactif** (`anatomie/livre`) : `.stage` passe à `top: 56px; height: calc(100vh - 56px)` pour que le livre vive sous la topbar. Le `.toc-toggle` (Sommaire) descend de `top: 26px` à `top: 70px`.
+- **Scrolly proces-musk-altman** : le `#marker` éditorial est **retiré** (la topbar reprend la fonction d'identité, plus de redondance).
+
+### Vars CSS adaptatives selon le format hôte
+
+Chaque page a son propre système de variables. Le bloc topbar CSS doit respecter la convention locale :
+
+- **Apps** : `var(--ink)`, `var(--carmine)`, `var(--graphite)`, `var(--mono)`, `var(--serif)`, `var(--rule)`
+- **Slideshows / journal / `anatomie/scrolly`** : `var(--text)`, `var(--accent)`, `var(--text-mid)`, `var(--text-faint)`, `var(--line)` + `'Fraunces', serif` + `'JetBrains Mono', monospace` hardcodés
+- **Livre** : `var(--ink)`, `var(--ink-2)`, `var(--accent)` (pas de carmine)
+- **Gouvernance scrolly** : utilise sa **masthead** existante restructurée au pattern (gardée pour préserver le style éditorial), pas une `.topbar` séparée — sélecteurs `.masthead-left`, `.masthead .dossier-context`, `.masthead .back-nav`.
+
+### Pages hors scope (pas de topbar, intentionnel)
+
+- `anatomie/livre-print.html` — version imprimable, navigation hors propos
+- `gouvernance/20260421-pitch-gouvernance-agentic.html` — pitch interne non lié au hub
+
+### Outils
+
+Deux scripts idempotents sous `tools/` rendent l'opération rejouable et propagable aux futurs dossiers :
+
+- `tools/add_dossier_topbar.py` — injecte la topbar (CSS + HTML) dans les apps `header.site` qui n'en ont pas, ajuste TOC/Sources sticky, retire l'ancien `.back` du `header.site` et insère un petit JS pour la classe `.scrolled`. Pour ajouter un nouveau dossier app : ajouter le fichier dans la liste `APPS` et relancer.
+- `tools/add_topbar_dossier_title.py` — ajoute le `<span class="dossier-context">` à toute page qui a déjà une topbar (apps + slideshows + journal). Lit l'`og:title` du hub.
+
+Pour scrollies / livre / gouvernance scrolly : Edits manuels ciblés (chaque page a sa structure spécifique, voir PR #29 pour les patches de référence). À chaque **nouvelle page interne publiée**, embarquer le pattern dès la rédaction — les templates `illustrated-deep-research/assets/` doivent être maintenus en miroir.
 
 ## Apps interactives — sidebars Sommaire/Sources
 
@@ -80,7 +123,7 @@ Toute app long format avec sidebars `#toc` et `#sources` (les six études + tout
 - En CSS, dans `@media (max-width: 1024px)` : padding top de `64px` sur `#toc.open`/`#sources.open` (pour ne pas masquer le bouton), styles de `.panel-close` (`position: fixed; top:16px; right:16px; z-index:91`). Hors media query : `.panel-close { display: none; }`.
 - En HTML : un `<button class="panel-close" type="button" aria-label="Fermer le sommaire">Fermer ✕</button>` en première position dans `<nav id="toc">` ET dans `<aside id="sources">`.
 - En JS : (1) handler click sur `.panel-close` qui retire la classe `open` du parent ; (2) handler `keydown` global qui ferme tout panneau ouvert sur `Escape` (en s'effaçant si un `#zoom-overlay` ou un `#modal-root` est déjà ouvert, pour ne pas marcher sur leurs propres handlers Escape).
-- **Hauteur des panneaux desktop** : utiliser `height: 100vh` (pas `max-height: 100vh`) sur `#toc` et `#sources`. Avec `align-self: start` dans la grille, `max-height` n'impose pas la hauteur — le panneau se rétrécit à la hauteur de son contenu, ce qui laisse un trou en bas si la liste est plus courte qu'une viewport (cf. bug visible le 2026-05-04 sur la sidebar Sources d'`agents-computer-use` : la liste s'arrêtait à mi-écran). `height: 100vh` force la hauteur ; `overflow-y: auto` reste là pour scroller le contenu interne.
+- **Hauteur des panneaux desktop** : utiliser `height: calc(100vh - 56px)` (pas `max-height: …`) sur `#toc` et `#sources`, avec `top: 56px` pour le sticky — la topbar fixe (cf. section dédiée) consomme les 56 premiers pixels de la viewport. Avec `align-self: start` dans la grille, `max-height` n'impose pas la hauteur — le panneau se rétrécit à la hauteur de son contenu, ce qui laisse un trou en bas si la liste est plus courte qu'une viewport (cf. bug visible le 2026-05-04 sur la sidebar Sources d'`agents-computer-use` : la liste s'arrêtait à mi-écran). `height: calc(100vh - 56px)` force la hauteur ; `overflow-y: auto` reste là pour scroller le contenu interne.
 - **Bouton replier Sources (`#sources-collapse-btn`) : `position: fixed`, pas `position: absolute`**. En `absolute` à l'intérieur du panneau qui a `overflow-y: auto`, le bouton scrolle avec le contenu interne — quand la liste de sources dépasse une viewport, l'utilisateur doit remonter le panneau pour le retrouver. Pattern correct : `position: fixed; top: 50%; right: 320px; transform: translate(50%, -50%); z-index: 70;` — bouton centré verticalement sur le bord gauche du panneau Sources (qui fait 320px de large), ancré à la viewport, fixe au scroll. Le bouton miroir `#sources-expand-btn` est déjà en `fixed` à `right: 0; top: 50%` ; les deux occupent le même axe vertical milieu-droit, alternant via la classe `.layout.sources-collapsed`.
 
 Pattern de référence : `proces-musk-altman/20260427-proces-musk-altman-app.html` (rechercher `panel-close`). **Nouvelle app = vérifier ces 3 points avant de merger**, sinon le panneau couvre tout l'écran sur mobile sans moyen de revenir en arrière.
