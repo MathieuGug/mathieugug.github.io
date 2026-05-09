@@ -8,10 +8,10 @@ Suite de tests zero-dep qui valide que :
 
 Local :
 ```
-node --test tests/
+node --test tests/lib-contract.test.mjs tests/apps-integration.test.mjs
 ```
 
-Node ≥ 20 requis (`node:test` builtin).
+Node ≥ 20 requis (`node:test` builtin). Le mode `node --test <dir>` (auto-discovery par dossier) ne fonctionne pas de manière portable sur Windows — passer chaque fichier explicitement.
 
 ## Périmètre
 
