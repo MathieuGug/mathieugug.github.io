@@ -1171,7 +1171,141 @@ function applyStepStyles(scene, step) {
   (step.dim || []).forEach(sel => svg.querySelectorAll(sel).forEach(el => el.setAttribute('data-step-state', 'dim')));
   (step.hidden || []).forEach(sel => svg.querySelectorAll(sel).forEach(el => el.setAttribute('data-step-state', 'hidden')));
   (step.highlight || []).forEach(sel => svg.querySelectorAll(sel).forEach(el => el.setAttribute('data-step-state', 'active')));
+  __schemaZoom.applyZoom(svg, step);
 }
+
+/* ── Zoom progressif du viewBox sur la zone mise en valeur ──
+   Quand un step focalise (dim/hidden non vides), recadre le SVG
+   sur l'union des bboxes des éléments en `highlight`. Sinon,
+   restore le viewBox d'origine. Le zoom plein-écran (overlay)
+   restaure toujours le viewBox d'origine. */
+const __schemaZoom = (() => {
+  const PAD_RATIO = 0.06;
+  const PAD_MIN = 16;
+  const DURATION = 520;
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let raf = null;
+
+  const ease = t => 1 - Math.pow(1 - t, 3);
+  const lerp = (a, b, t) => a + (b - a) * t;
+
+  function userSpaceBBox(svg, el) {
+    let bb;
+    try { bb = el.getBBox(); } catch (e) { return null; }
+    if (!bb || (bb.width === 0 && bb.height === 0)) return null;
+    const root = svg.getCTM ? svg.getCTM() : null;
+    const local = el.getCTM ? el.getCTM() : null;
+    let m = local;
+    if (local && root) {
+      try { m = root.inverse().multiply(local); } catch (e) { m = local; }
+    }
+    if (!m) return { x: bb.x, y: bb.y, width: bb.width, height: bb.height };
+    const corners = [
+      [bb.x, bb.y],
+      [bb.x + bb.width, bb.y],
+      [bb.x, bb.y + bb.height],
+      [bb.x + bb.width, bb.y + bb.height]
+    ];
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const [x, y] of corners) {
+      const tx = m.a * x + m.c * y + m.e;
+      const ty = m.b * x + m.d * y + m.f;
+      if (tx < minX) minX = tx;
+      if (ty < minY) minY = ty;
+      if (tx > maxX) maxX = tx;
+      if (ty > maxY) maxY = ty;
+    }
+    return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+  }
+
+  function unionBBox(svg, selectors) {
+    let result = null;
+    for (const sel of selectors) {
+      svg.querySelectorAll(sel).forEach(el => {
+        const bb = userSpaceBBox(svg, el);
+        if (!bb) return;
+        if (!result) {
+          result = { x: bb.x, y: bb.y, width: bb.width, height: bb.height };
+        } else {
+          const x1 = Math.min(result.x, bb.x);
+          const y1 = Math.min(result.y, bb.y);
+          const x2 = Math.max(result.x + result.width, bb.x + bb.width);
+          const y2 = Math.max(result.y + result.height, bb.y + bb.height);
+          result = { x: x1, y: y1, width: x2 - x1, height: y2 - y1 };
+        }
+      });
+    }
+    return result;
+  }
+
+  function ensureOriginal(svg) {
+    let orig = svg.getAttribute('data-original-viewbox');
+    if (!orig) {
+      orig = svg.getAttribute('viewBox') || '';
+      svg.setAttribute('data-original-viewbox', orig);
+    }
+    const parts = orig.split(/[\s,]+/).filter(Boolean).map(Number);
+    return parts.length === 4 && parts.every(n => Number.isFinite(n)) ? parts : null;
+  }
+
+  function fitToAspect(box, aspect) {
+    let { x, y, width, height } = box;
+    const cx = x + width / 2;
+    const cy = y + height / 2;
+    if (width / height > aspect) {
+      height = width / aspect;
+    } else {
+      width = height * aspect;
+    }
+    return { x: cx - width / 2, y: cy - height / 2, width, height };
+  }
+
+  function animate(svg, fromVB, toVB) {
+    if (raf) cancelAnimationFrame(raf);
+    if (reduceMotion) {
+      svg.setAttribute('viewBox', toVB.join(' '));
+      return;
+    }
+    const t0 = performance.now();
+    function tick(now) {
+      const t = Math.min(1, (now - t0) / DURATION);
+      const e = ease(t);
+      const cur = fromVB.map((s, i) => lerp(s, toVB[i], e));
+      svg.setAttribute('viewBox', cur.map(v => Math.round(v * 100) / 100).join(' '));
+      if (t < 1) raf = requestAnimationFrame(tick);
+      else raf = null;
+    }
+    raf = requestAnimationFrame(tick);
+  }
+
+  function applyZoom(svg, step) {
+    if (!svg) return;
+    const orig = ensureOriginal(svg);
+    if (!orig) return;
+    const cur = svg.viewBox.baseVal;
+    const fromVB = [cur.x, cur.y, cur.width, cur.height];
+    const focusing = ((step.dim && step.dim.length) || (step.hidden && step.hidden.length))
+                     && step.highlight && step.highlight.length;
+    let toVB = orig;
+    if (focusing) {
+      const bbox = unionBBox(svg, step.highlight);
+      if (bbox && bbox.width > 0 && bbox.height > 0) {
+        const aspect = orig[2] / orig[3];
+        const padX = Math.max(PAD_MIN, bbox.width * PAD_RATIO);
+        const padY = Math.max(PAD_MIN, bbox.height * PAD_RATIO);
+        const padded = {
+          x: bbox.x - padX, y: bbox.y - padY,
+          width: bbox.width + 2 * padX, height: bbox.height + 2 * padY
+        };
+        const fitted = fitToAspect(padded, aspect);
+        toVB = [fitted.x, fitted.y, fitted.width, fitted.height];
+      }
+    }
+    animate(svg, fromVB, toVB);
+  }
+
+  return { applyZoom };
+})();
 
 function renderTimeline() {
   const tl = document.getElementById('timeline');
@@ -1642,6 +1776,8 @@ const __zoom = (function setupZoom() {
   }
   function openZoom(svgEl, captionText) {
     const clone = svgEl.cloneNode(true);
+    const orig = clone.getAttribute('data-original-viewbox');
+    if (orig) clone.setAttribute('viewBox', orig);
     const vb = clone.viewBox?.baseVal;
     svgW = (vb && vb.width)  || svgEl.getBoundingClientRect().width  || 1200;
     svgH = (vb && vb.height) || svgEl.getBoundingClientRect().height || 780;
