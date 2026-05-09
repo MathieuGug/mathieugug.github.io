@@ -66,7 +66,7 @@ Expected sections candidates pour la lib :
 Crée `assets/dossier-app.js` avec ce squelette initial :
 
 ```javascript
-/* dossier-app — shared runtime for /*/2026*-app.html
+/* dossier-app — shared runtime for dossier 2026*-app.html pages
  *
  * Source unique de vérité : ce fichier remplace le JS comportemental
  * inline qui était dupliqué dans 14 apps. Il se réveille sur
@@ -652,7 +652,7 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 Crée `assets/dossier-app.css` avec ce squelette :
 
 ```css
-/* dossier-app — shared structural CSS for /*/2026*-app.html
+/* dossier-app — shared structural CSS for dossier 2026*-app.html pages
  *
  * Source unique pour les patterns visuels partagés : zoom overlay,
  * modal, panel-close mobile, topbar sticky, sources collapse,
