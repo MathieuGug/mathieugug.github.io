@@ -72,12 +72,14 @@ a { color: inherit; }
 /* Surlignage stabilo — signature site */
 mark { background: linear-gradient(transparent 58%, rgba(178, 59, 27, 0.14) 58%); color: inherit; padding: 0 2px; }
 
-/* Stage : zone scène plein écran (libère l'espace à droite pour la sidebar timeline) */
-.stage { position: fixed; top: 64px; left: 0; right: 64px; bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px 24px 24px; transition: opacity 250ms ease, right 280ms cubic-bezier(0.22, 1, 0.36, 1); }
-body.modal-open .stage { right: 480px; }
-@media (max-width: 1024px) {
-  body.modal-open .stage { right: 0; }
-}
+/* Stage : zone scène plein écran (libère l'espace à droite pour la sidebar timeline).
+   Le modal flotte par-dessus la stage et n'altère pas sa taille — on évite ainsi les
+   sauts de width du SVG entre les steps avec/sans modalAuto. La partie droite du
+   schéma se retrouve cachée derrière le panneau modal sur desktop, mais ce n'est pas
+   la zone en focus (le focus zoom centre toujours le highlight dans la stage entière).
+   `overflow: hidden` clippe le débordement du SVG transformé (zoom-in) au lieu de
+   laisser déborder dans la timeline ou sous le panneau modal. */
+.stage { position: fixed; top: 64px; left: 0; right: 64px; bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px 24px 24px; overflow: hidden; transition: opacity 250ms ease; }
 .stage.fading-out { opacity: 0; }
 
 /* Mobile */
@@ -128,8 +130,21 @@ body.modal-open .stage { right: 480px; }
 #schemas[hidden] { display: none !important; }
 .schema-host { display: flex; flex-direction: column; align-items: center; justify-content: center; max-width: min(1400px, 92vw); width: 100%; gap: 12px; }
 .schema-host svg { width: 100%; max-width: 100%; height: auto; max-height: calc(100vh - 170px); display: block; }
-.schema-host .caption { font-family: 'Fraunces', serif; font-style: italic; font-weight: 300; font-size: clamp(16px, 1.8vw, 20px); line-height: 1.5; color: var(--text-dim); text-align: center; max-width: 720px; min-height: 2.4em; transition: opacity 180ms ease; }
+.schema-host .caption { font-family: 'Fraunces', serif; font-style: italic; font-weight: 300; font-size: clamp(16px, 1.8vw, 20px); line-height: 1.5; color: var(--text-dim); text-align: center; max-width: 720px; min-height: 2.4em; padding: 8px 24px; position: relative; z-index: 2; transition: opacity 180ms ease, max-width 280ms cubic-bezier(0.22, 1, 0.36, 1), transform 280ms cubic-bezier(0.22, 1, 0.36, 1); }
 .schema-host .caption.fade-out { opacity: 0; }
+/* Bloc opaque full-screen-width derrière la caption, pour masquer ce qui
+   pourrait subsister du SVG transformé (zoom-in extending below natural box,
+   contenu shifté hors zone, etc.). Posé sur la stage avec un soft fade-in
+   en haut pour que la transition entre schéma et caption soit douce. */
+.stage::after { content: ''; position: fixed; left: 0; right: 0; bottom: 0; height: 96px; background: linear-gradient(to top, var(--bg) 0%, var(--bg) 55%, rgba(250,246,236,0) 100%); pointer-events: none; z-index: 1; }
+/* Caption recentrée dans l'espace restant quand un modal est ouvert sur
+   desktop. La stage ne shrink pas (le SVG reste full-width avec sa droite
+   cachée derrière le panneau modal), mais le texte de la caption se déplace
+   pour rester centré dans la portion de stage encore visible.
+   Shift = (modal_w − timeline_w) / 2 = (480 − 64) / 2 = 208 px. */
+@media (min-width: 1025px) {
+  body.modal-open .schema-host .caption { max-width: min(720px, calc(100vw - 560px)); transform: translateX(-208px); }
+}
 
 /* Vocabulaire visuel des révélations */
 .schema-host svg [data-step-state="dim"] { opacity: 0.18; transition: opacity 220ms ease, filter 220ms ease; }
@@ -283,6 +298,12 @@ body.modal-open .stage { right: 480px; }
 .modal-card .modal-body figure.ref figcaption em { font-style: italic; color: var(--text); }
 .modal-card .modal-body figure.ref figcaption a { color: var(--accent); text-decoration: none; }
 .modal-card .modal-body figure.ref figcaption a:hover { text-decoration: underline; }
+/* Modal aggrégé : quand un step focus plusieurs éléments qui ont chacun une
+   fiche dans SCHEMAS, render() empile les fiches en autant de .combined-card. */
+.modal-card .modal-body .combined-card { margin-top: 1.4rem; padding-top: 1.1rem; border-top: 1px solid var(--line, #E5E1D8); }
+.modal-card .modal-body .combined-card:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+.modal-card .modal-body .combined-card .combined-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--carmine); margin: 0 0 6px; }
+.modal-card .modal-body .combined-card h4 { font-family: 'Fraunces', serif; font-size: 1.05rem; font-weight: 600; margin: 0 0 0.55rem; letter-spacing: -0.01em; }
 
 /* Timeline en sidebar verticale à droite + boutons */
 .footer-bar { position: fixed; right: 18px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; gap: 24px; z-index: 40; pointer-events: none; }
@@ -465,6 +486,7 @@ function openModal(eyebrow, title, body) {
 }
 
 let __modalAutoActive = false;
+let __currentModalCardId = null;
 
 function closeModal() {
   const root = document.getElementById('modal-root');
@@ -472,6 +494,7 @@ function closeModal() {
   root.hidden = true;
   document.body.classList.remove('modal-open');
   __modalAutoActive = false;
+  __currentModalCardId = null;
   lastFocused?.focus?.();
 }
 
@@ -487,12 +510,260 @@ const stage = document.getElementById('stage');
 function applyStepStyles(scene, step) {
   const svg = stage.querySelector('svg');
   if (!svg) return;
-  const all = svg.querySelectorAll('[id]');
-  all.forEach(el => el.removeAttribute('data-step-state'));
+  // Clear de tout état précédent (sur tous les éléments, pas juste [id]).
+  svg.querySelectorAll('[data-step-state]').forEach(el => el.removeAttribute('data-step-state'));
+
+  // En fullView (overview explicite ou recap synthétique) : on n'applique
+  // AUCUN état. Tout est à pleine opacité, le schéma est rendu tel qu'à l'origine.
+  if (step.fullView) {
+    __schemaZoom.applyZoom(svg, step);
+    return;
+  }
+
   (step.dim || []).forEach(sel => svg.querySelectorAll(sel).forEach(el => el.setAttribute('data-step-state', 'dim')));
   (step.hidden || []).forEach(sel => svg.querySelectorAll(sel).forEach(el => el.setAttribute('data-step-state', 'hidden')));
   (step.highlight || []).forEach(sel => svg.querySelectorAll(sel).forEach(el => el.setAttribute('data-step-state', 'active')));
+
+  // Mode focus = step a un highlight ET au moins un dim/hidden non vide.
+  // En focus, on traite les éléments top-level non-active :
+  //  - <text> loose situés dans le BAS du viewBox (sources, lecture, footer) → "hidden"
+  //  - autres <text> loose (axes, noms de quadrants, légendes, annotations sur courbe)
+  //    → laissés à pleine opacité, sinon le schéma perd ses repères de lecture
+  //  - reste (cards dim, lignes, flèches, paths, circles, rects de fond, <g> non listés)
+  //    → "dim" pour garder le contexte visuel sans masquer la zone active
+  // Skip si step.fullView pour les steps « overview » (aperçu ou récap final).
+  const focusing = ((step.dim && step.dim.length) || (step.hidden && step.hidden.length))
+                   && step.highlight && step.highlight.length
+                   && !step.fullView;
+  if (focusing) {
+    const vb = svg.viewBox && svg.viewBox.baseVal;
+    const footerThreshold = vb && vb.width
+      ? vb.y + vb.height - Math.min(120, vb.height * 0.18)
+      : Infinity;
+
+    svg.querySelectorAll(':scope > *').forEach(el => {
+      const ln = el.localName;
+      if (ln === 'defs' || ln === 'style' || ln === 'metadata' || ln === 'title' || ln === 'desc') return;
+      if (el.classList && el.classList.contains('svg-header')) return;
+      if (el.getAttribute('data-step-state') === 'active') return;
+
+      if (ln === 'text') {
+        let yPos = parseFloat(el.getAttribute('y') || '');
+        if (!Number.isFinite(yPos)) {
+          try { const bb = el.getBBox(); if (bb) yPos = bb.y; } catch (e) {}
+        }
+        if (Number.isFinite(yPos) && yPos >= footerThreshold
+            && !el.hasAttribute('data-step-state')) {
+          el.setAttribute('data-step-state', 'hidden');
+        }
+      } else if (!el.hasAttribute('data-step-state')) {
+        el.setAttribute('data-step-state', 'dim');
+      }
+    });
+  }
+
+  __schemaZoom.applyZoom(svg, step);
 }
+
+/* ── Zoom CSS transform sur le SVG, calculé en pixels écran ──
+   Quand un step focalise (dim/hidden non vide + highlight non vide + !fullView),
+   applique un transform CSS translate+scale sur le SVG racine pour que la cible
+   highlight soit centrée dans la portion de stage qui restera visible (en
+   excluant la zone qu'occupera le modal panel quand modalAuto est set).
+   La stage a `overflow: hidden` → tout débordement (cards voisines à gauche
+   ou à droite, lignes scale-up, etc.) est clippé proprement.
+   La stage NE shrink PAS quand un modal s'ouvre (pas de saut de width entre
+   steps) — on calcule juste availW = stageW − modalReserveX dans `compute()`.
+   Le ResizeObserver recompute le transform au resize de la stage (viewport).
+   Le zoom plein-écran (overlay ⛶) reste sur viewBox d'origine. */
+const __schemaZoom = (() => {
+  const DURATION = 520;
+  const PAD = 0.86;
+  const MAX_SCALE = 1.6;       // zoom-in max — au-delà ça devient absurde
+  const CAPTION_RESERVE = 80;  // espace réservé sous le SVG pour la caption
+  const MODAL_W = 480;         // largeur du panneau modal desktop
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  let currentSvg = null;
+  let currentStep = null;
+  let resizeObs = null;
+  let resizeIdleTimer = null;
+  let lastStageW = -1;
+  let lastStageH = -1;
+
+  function unionUserBBox(svg, selectors) {
+    let result = null;
+    (selectors || []).forEach(sel => svg.querySelectorAll(sel).forEach(el => {
+      let bb;
+      try { bb = el.getBBox(); } catch (e) { return; }
+      if (!bb || (bb.width === 0 && bb.height === 0)) return;
+      if (!result) {
+        result = { x: bb.x, y: bb.y, width: bb.width, height: bb.height };
+      } else {
+        const x1 = Math.min(result.x, bb.x);
+        const y1 = Math.min(result.y, bb.y);
+        const x2 = Math.max(result.x + result.width, bb.x + bb.width);
+        const y2 = Math.max(result.y + result.height, bb.y + bb.height);
+        result = { x: x1, y: y1, width: x2 - x1, height: y2 - y1 };
+      }
+    }));
+    return result;
+  }
+
+  function compute(svg, step) {
+    const focusing = ((step.dim && step.dim.length) || (step.hidden && step.hidden.length))
+                     && step.highlight && step.highlight.length
+                     && !step.fullView;
+    if (!focusing) return null;
+
+    const bbox = unionUserBBox(svg, step.highlight);
+    if (!bbox || bbox.width === 0 || bbox.height === 0) return null;
+
+    const wrapper = svg.parentElement;
+    const stage = document.getElementById('stage');
+    if (!wrapper || !stage) return null;
+
+    const svgW = svg.clientWidth;
+    const svgH = svg.clientHeight;
+    const vb = svg.viewBox.baseVal;
+    if (svgW === 0 || svgH === 0 || !vb || vb.width === 0 || vb.height === 0) return null;
+
+    // Wrapper a position:relative, aucune transform : son rect est fiable
+    // même quand le SVG porte déjà une transform. SVG width:100% du wrapper.
+    const wrapperRect = wrapper.getBoundingClientRect();
+    const svgX = wrapperRect.left;
+    const svgY = wrapperRect.top;
+
+    // preserveAspectRatio="xMidYMid meet" — calcule l'échelle et le letterbox
+    // de rendu du contenu SVG dans la box CSS de l'élément.
+    const userAspect = vb.width / vb.height;
+    const boxAspect = svgW / svgH;
+    let cs, cox, coy;
+    if (boxAspect > userAspect) {
+      cs = svgH / vb.height;
+      cox = (svgW - vb.width * cs) / 2;
+      coy = 0;
+    } else {
+      cs = svgW / vb.width;
+      cox = 0;
+      coy = (svgH - vb.height * cs) / 2;
+    }
+
+    // Highlight en pixels écran (sans transform appliquée).
+    const hlScreenCx = svgX + cox + (bbox.x + bbox.width / 2 - vb.x) * cs;
+    const hlScreenCy = svgY + coy + (bbox.y + bbox.height / 2 - vb.y) * cs;
+    const hlScreenW = bbox.width * cs;
+    const hlScreenH = bbox.height * cs;
+
+    // Stage = zone visible. La stage ne shrink pas quand un modal s'ouvre
+    // (pas de saut de width entre steps), mais quand modalAuto est set on
+    // déduit de la zone disponible la place qu'occupera le panneau modal
+    // (MODAL_W à droite sur desktop, ~50 % de hauteur en bas sur mobile).
+    // Le highlight se retrouve alors centré dans la portion qui restera
+    // visible — un highlight pleine-largeur reste entièrement affiché
+    // au lieu d'être tronqué par le modal.
+    const stageRect = stage.getBoundingClientRect();
+    // modalActive = état réel du modal (body.modal-open), pas step.modalAuto.
+    // Si l'utilisateur ferme le modal manuellement, le transform recompute
+    // pour utiliser à nouveau toute la stage (et inversement s'il l'ouvre
+    // au clic sur une card non-active).
+    const modalActive = document.body.classList.contains('modal-open');
+    const isDesktopModal = window.innerWidth > 1024;
+    const modalReserveX = (modalActive && isDesktopModal) ? MODAL_W : 0;
+    const modalReserveY = (modalActive && !isDesktopModal) ? Math.min(window.innerHeight * 0.5, 400) : 0;
+    const availW = Math.max(200, stageRect.width - modalReserveX);
+    const availH = Math.max(160, stageRect.height - CAPTION_RESERVE - modalReserveY);
+    const availCx = stageRect.left + availW / 2;
+    const availCy = stageRect.top + availH / 2;
+
+    // Scale capé à MAX_SCALE pour autoriser un vrai zoom-in quand le
+    // highlight est petit (single card, sub-tree, etc.) sans partir dans
+    // des proportions absurdes. Scale-down si le highlight déborde.
+    const scaleX = (availW * PAD) / hlScreenW;
+    const scaleY = (availH * PAD) / hlScreenH;
+    const scale = Math.min(MAX_SCALE, Math.min(scaleX, scaleY));
+
+    // transform-origin: 0 0 ; transform: translate(tx,ty) scale(s)
+    // tx : centre horizontal du highlight sur availCx (toujours).
+    // ty : si scale ≤ 1 (highlight déjà large), garde la position verticale
+    // naturelle pour ne pas pousser dans la zone caption. Si scale > 1
+    // (zoom-in), recentre verticalement dans availCy.
+    const tx = availCx - svgX - (hlScreenCx - svgX) * scale;
+    const ty = scale > 1
+      ? availCy - svgY - (hlScreenCy - svgY) * scale
+      : (hlScreenCy - svgY) * (1 - scale);
+
+    return { tx, ty, scale };
+  }
+
+  function setStyle(svg, t) {
+    if (t) {
+      svg.style.transform = 'translate(' + t.tx.toFixed(2) + 'px, ' + t.ty.toFixed(2) + 'px) scale(' + t.scale.toFixed(4) + ')';
+    } else {
+      svg.style.transform = '';
+    }
+  }
+
+  function applySync() {
+    if (!currentSvg || !currentStep) return;
+    setStyle(currentSvg, compute(currentSvg, currentStep));
+  }
+
+  function setupObservers() {
+    if (resizeObs) return;
+    const stage = document.getElementById('stage');
+    if (!stage) return;
+    const r = stage.getBoundingClientRect();
+    lastStageW = r.width;
+    lastStageH = r.height;
+
+    resizeObs = new ResizeObserver(() => {
+      if (!currentSvg || !currentStep) return;
+      const rr = stage.getBoundingClientRect();
+      if (Math.abs(rr.width - lastStageW) < 0.5 && Math.abs(rr.height - lastStageH) < 0.5) return;
+      lastStageW = rr.width;
+      lastStageH = rr.height;
+      currentSvg.style.transition = 'none';
+      applySync();
+      clearTimeout(resizeIdleTimer);
+      resizeIdleTimer = setTimeout(() => {
+        if (currentSvg && !reduceMotion) {
+          currentSvg.style.transition = 'transform ' + DURATION + 'ms cubic-bezier(0.22, 1, 0.36, 1)';
+        }
+      }, 220);
+    });
+    resizeObs.observe(stage);
+
+    // body.modal-open toggle ne change pas la taille de la stage (la stage
+    // reste full-width), mais compute() en tient compte (modalActive) pour
+    // réserver la zone modal. On recompute donc à chaque changement de classe
+    // pour que le transform suive l'apparition/fermeture du modal.
+    new MutationObserver(() => {
+      if (currentSvg && currentStep) requestAnimationFrame(applySync);
+    }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  }
+
+  function applyZoom(svg, step) {
+    currentSvg = svg;
+    currentStep = step;
+
+    svg.style.transformOrigin = '0 0';
+    svg.style.willChange = 'transform';
+    svg.style.transition = reduceMotion ? 'none' : 'transform ' + DURATION + 'ms cubic-bezier(0.22, 1, 0.36, 1)';
+
+    setupObservers();
+
+    // SVG fraîchement inséré via innerHTML : double rAF pour laisser le
+    // layout se poser avant de mesurer et appliquer le transform.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (currentSvg === svg) applySync();
+      });
+    });
+  }
+
+  return { applyZoom };
+})();
 
 function renderTimeline() {
   const tl = document.getElementById('timeline');
@@ -563,7 +834,12 @@ function render() {
   if (scene.type === 'schema') {
     const svgEl = document.getElementById(scene.schemaId);
     const svgClone = svgEl ? svgEl.outerHTML : `<div style="color: red; font-family: monospace;">SVG ${scene.schemaId} introuvable</div>`;
-    const step = scene.steps[state.stepIndex] || { caption: '(pas d\'étape définie)' };
+    let step = scene.steps[state.stepIndex] || { caption: '(pas d\'étape définie)' };
+    // Recap synthétique : si on est en `__pendingRecap` (déclenché par
+    // advance() après un dernier step en focus), on rerend le step courant
+    // en fullView — schéma complet, pas de modal — pour donner un moment
+    // « vue d'ensemble » avant de passer à la scène suivante.
+    if (__pendingRecap) step = { ...step, fullView: true };
     stage.innerHTML = `
       <section class="schema-host" role="group" aria-roledescription="scène">
         <div class="schema-wrapper figure" style="position: relative; width: 100%; max-width: 100%;">
@@ -575,13 +851,54 @@ function render() {
     `;
     applyStepStyles(scene, step);
 
-    if (step.modalAuto) {
+    // En recap (fullView forcé), on ferme tout modal qui aurait été ouvert
+    // par le step précédent.
+    if (step.fullView && !document.getElementById('modal-root').hidden) closeModal();
+
+    if (step.modalAuto && !step.fullView) {
       const match = scene.schemaId ? scene.schemaId.match(/svg-(\d+)-/) : null;
       const schKey = match ? 'schema-' + match[1].padStart(2, '0') : null;
-      const card = schKey ? (SCHEMAS?.[schKey]?.[step.modalAuto] || null) : null;
-      if (card) {
+      // Si plusieurs highlights ont une fiche dans SCHEMAS, on combine
+      // toutes les fiches en un seul modal — sinon le focus sur N éléments
+      // avec un modal qui ne parle que d'un seul est incohérent.
+      const cards = [];
+      if (schKey && step.highlight && step.highlight.length) {
+        const seen = new Set();
+        step.highlight.forEach(sel => {
+          const m = sel.match(/data-card="([^"]+)"/);
+          if (!m || seen.has(m[1])) return;
+          seen.add(m[1]);
+          const c = SCHEMAS && SCHEMAS[schKey] && SCHEMAS[schKey][m[1]];
+          if (c) cards.push(c);
+        });
+      }
+      // Fallback : si les highlights n'ont pas de fiche, prendre modalAuto seul.
+      if (cards.length === 0 && schKey) {
+        const c = SCHEMAS && SCHEMAS[schKey] && SCHEMAS[schKey][step.modalAuto];
+        if (c) cards.push(c);
+      }
+      if (cards.length > 0) {
         setTimeout(() => {
-          openModal(card.eyebrow || '', card.title || '', card.body || '');
+          let eyebrow, title, body;
+          if (cards.length === 1) {
+            eyebrow = cards[0].eyebrow || '';
+            title = cards[0].title || '';
+            body = cards[0].body || '';
+          } else {
+            // Combiner. Eyebrow = base commune (avant le " — ") du 1er,
+            // titre = titre de scène, body = stack des fiches.
+            const baseEy = cards[0].eyebrow ? cards[0].eyebrow.split(' — ')[0] : '';
+            eyebrow = baseEy;
+            title = scene.title || cards[0].title || '';
+            body = cards.map(c =>
+              '<div class="combined-card">'
+              + (c.eyebrow ? '<p class="combined-eyebrow">' + c.eyebrow + '</p>' : '')
+              + (c.title ? '<h4>' + c.title + '</h4>' : '')
+              + (c.body || '')
+              + '</div>'
+            ).join('');
+          }
+          openModal(eyebrow, title, body);
           __modalAutoActive = true;
         }, 220);
       }
@@ -592,10 +909,19 @@ function render() {
 }
 
 let __transitioning = false;
+let __pendingRecap = false;
+
+function isFocusStep(step) {
+  return step
+    && ((step.dim && step.dim.length) || (step.hidden && step.hidden.length))
+    && step.highlight && step.highlight.length
+    && !step.fullView;
+}
 
 async function gotoScene(index) {
   if (index < 0 || index >= SCENES.length || __transitioning) return;
   __transitioning = true;
+  __pendingRecap = false;
   stage.classList.add('fading-out');
   await new Promise(r => setTimeout(r, FADE_MS));
   state.sceneIndex = index;
@@ -610,16 +936,42 @@ function advance() {
   if (__transitioning) return;
   const scene = SCENES[state.sceneIndex];
   const lastStep = (scene.steps && scene.steps.length > 0) ? scene.steps.length - 1 : 0;
+
+  // Avance step dans la scène.
   if (state.stepIndex < lastStep) {
     state.stepIndex++;
+    __pendingRecap = false;
     render();
-  } else if (state.sceneIndex < SCENES.length - 1) {
+    return;
+  }
+
+  // Au dernier step. Si le step était en focus (zoom + dim/hidden) et qu'il
+  // y a une scène suivante, on force d'abord un rendu fullView (recap) pour
+  // que le lecteur retrouve le schéma complet avant la transition.
+  if (!__pendingRecap && scene.type === 'schema'
+      && state.sceneIndex < SCENES.length - 1
+      && isFocusStep(scene.steps && scene.steps[lastStep])) {
+    __pendingRecap = true;
+    render();
+    return;
+  }
+
+  __pendingRecap = false;
+  if (state.sceneIndex < SCENES.length - 1) {
     gotoScene(state.sceneIndex + 1);
   }
 }
 
 function retreat() {
   if (__transitioning) return;
+
+  // Si on est en recap synthétique, le ← repasse au step focus correspondant.
+  if (__pendingRecap) {
+    __pendingRecap = false;
+    render();
+    return;
+  }
+
   if (state.stepIndex > 0) {
     state.stepIndex--;
     render();
@@ -631,6 +983,9 @@ function retreat() {
     setTimeout(() => {
       state.sceneIndex--;
       state.stepIndex = prevLastStep;
+      // Si le dernier step de la scène précédente était en focus, on
+      // re-rentre par son recap (état que le lecteur a vu en quittant).
+      __pendingRecap = prevScene.type === 'schema' && isFocusStep(prevScene.steps && prevScene.steps[prevLastStep]);
       render();
       stage.classList.remove('fading-out');
       setTimeout(() => { __transitioning = false; }, FADE_MS);
@@ -790,6 +1145,14 @@ stage.addEventListener('click', (e) => {
   if (!target) return;
   e.stopPropagation();
   const cardId = target.dataset.card;
+
+  /* Toggle : reclic sur la même zone que celle qui a ouvert le modal → ferme. */
+  const modalOpen = !document.getElementById('modal-root').hidden;
+  if (modalOpen && __currentModalCardId === cardId) {
+    closeModal();
+    return;
+  }
+
   const scene = SCENES[state.sceneIndex];
   const schemaId = scene && scene.schemaId ? scene.schemaId : null;
   /* schemaId : 'svg-01-*' → SCHEMAS key : 'schema-01' */
@@ -803,6 +1166,7 @@ stage.addEventListener('click', (e) => {
   }
   if (card) {
     openModal(card.eyebrow || '', card.title || '', card.body || '');
+    __currentModalCardId = cardId;
   }
 }, true);
 
