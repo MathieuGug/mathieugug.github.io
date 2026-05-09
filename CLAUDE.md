@@ -94,6 +94,15 @@ Pattern de référence : `proces-musk-altman/20260427-proces-musk-altman-app.htm
 - **Bouton retour des hubs** : pointe vers `../index.html#series` avec le label `← Retour aux dossiers` — ramène à la grille des séries de l'accueil, pas à la hero/CV.
 - Un dossier peut aussi contenir : scrollytelling HTML, livre/app interactive, version print, README, médias.
 
+## Mode admin (easter egg) et annexes markdown masquées
+
+Les rapports markdown (`*-rapport.md`) sont **masqués des hubs par défaut** : aucune carte « version texte » ni lien de téléchargement n'est visible publiquement. Ils ne sont révélés qu'en **mode admin**, activé par un easter egg clavier.
+
+- Raccourci : `Ctrl/Cmd + Alt + M` → modal injectée par `/admin.js` (présent à la racine, inclus dans tous les `index.html` hubs + `index.html` racine via `<script src="/admin.js" defer></script>` juste avant `</body>`). Mot de passe provisoire : `K1ng-Mathi3u`. État stocké dans `localStorage.mg_admin === 'true'`. Même raccourci en mode admin → modal avec bouton de déconnexion.
+- Pattern HTML : la carte md du hub porte `class="format format--admin"` (en plus de `format`). Le CSS injecté par `admin.js` (`.format--admin{display:none}` / `html.is-admin .format--admin{display:block}`) gère la révélation. Ne **pas** cacher la carte autrement (ex. `hidden`, inline `style="display:none"`) — la classe suffit.
+- En mode admin, le clic sur une carte `format--admin` pointant vers un `.md` est intercepté par `admin.js` : JSZip est chargé à la demande depuis le CDN, le rapport et toutes les images référencées (regex `!\[...\](path)`, chemins relatifs uniquement) sont emballés dans un `.zip` généré côté client (`{slug}-rapport.zip`). Si JSZip échoue à charger, fallback gracieux sur le téléchargement `.md` natif. Conséquence : **toute nouvelle carte admin doit être un `<a href="...rapport.md" class="format format--admin" download>`** — le href reste le `.md` (pas un `.zip` pré-buildé), c'est admin.js qui transforme le download au runtime.
+- Note de sécurité : ce gating est purement cosmétique. Les fichiers `*.md` et `images/*.svg` restent servis publiquement par GitHub Pages — n'importe qui connaissant l'URL directe peut les télécharger. C'est un voile sur l'affordance, pas un contrôle d'accès. Ne jamais y mettre de contenu confidentiel.
+
 ## Index : tri et typologie
 
 - Les séries sont listées en **ordre décroissant par date** (publication la plus récente en premier).
