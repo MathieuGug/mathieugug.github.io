@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 APPS = [
     "agents-computer-use/20260502-agents-computer-use-app.html",
+    "coding-agents/20260512-coding-agents-app.html",
     "economie-inference/20260506-economie-inference-app.html",
     "evaluation-agentique/20260501-evaluation-agentique-app.html",
     "harness-agentique/20260429-harness-agentique-app.html",
