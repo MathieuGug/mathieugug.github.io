@@ -2539,5 +2539,164 @@ h1 em {
 })();
 </script>
 <script src="/admin.js" defer></script>
+<script>
+(function () {
+  const PAGE_SIZE = 12;
+
+  const grid = document.getElementById('biblio-grid');
+  if (!grid) return;
+
+  const cards = Array.from(grid.querySelectorAll('.serie'));
+  const searchInput = document.getElementById('biblio-q');
+  const typeChips = document.querySelectorAll('.chip-type');
+  const themeChips = document.querySelectorAll('.chip-theme');
+  const shownEl = document.getElementById('biblio-shown');
+  const matchedEl = document.getElementById('biblio-matched');
+  const moreCountEl = document.getElementById('biblio-more-count');
+  const moreBtn = document.getElementById('biblio-more');
+  const moreWrap = document.getElementById('biblio-more-wrap');
+  const empty = document.getElementById('biblio-empty');
+  const resetBtn = document.getElementById('biblio-reset');
+  const filtersForm = document.querySelector('.biblio-filters');
+
+  let state = {
+    q: '',
+    type: '',
+    themes: new Set(),
+    shown: PAGE_SIZE,
+  };
+
+  function readUrl() {
+    const p = new URLSearchParams(location.search);
+    state.q = p.get('q') || '';
+    state.type = p.get('type') || '';
+    const t = p.get('theme');
+    state.themes = t ? new Set(t.split(',').filter(Boolean)) : new Set();
+  }
+  function writeUrl() {
+    const p = new URLSearchParams();
+    if (state.q) p.set('q', state.q);
+    if (state.type) p.set('type', state.type);
+    if (state.themes.size) p.set('theme', Array.from(state.themes).join(','));
+    const qs = p.toString();
+    const target = qs ? '?' + qs : location.pathname;
+    history.replaceState(null, '', target + location.hash);
+  }
+
+  function norm(s) {
+    return (s || '').toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '');
+  }
+
+  function matches(card) {
+    if (state.type && card.dataset.type !== state.type) return false;
+    if (state.themes.size) {
+      const cardThemes = (card.dataset.themes || '').split(/\s+/);
+      const hit = cardThemes.some(t => state.themes.has(t));
+      if (!hit) return false;
+    }
+    if (state.q) {
+      const needle = norm(state.q);
+      const hay = card.dataset.searchText || '';
+      if (!hay.includes(needle)) return false;
+    }
+    return true;
+  }
+
+  function render() {
+    let matched = 0, shown = 0;
+    cards.forEach(card => {
+      const ok = matches(card);
+      if (!ok) { card.hidden = true; return; }
+      matched++;
+      if (shown < state.shown) {
+        card.hidden = false;
+        shown++;
+      } else {
+        card.hidden = true;
+      }
+    });
+    shownEl.textContent = shown;
+    matchedEl.textContent = matched;
+    empty.hidden = matched > 0;
+    moreWrap.hidden = matched <= state.shown;
+    grid.hidden = matched === 0;
+    const remaining = Math.max(0, matched - state.shown);
+    moreCountEl.textContent = Math.min(PAGE_SIZE, remaining);
+  }
+
+  function syncUi() {
+    searchInput.value = state.q;
+    typeChips.forEach(c => {
+      const on = (c.dataset.type || '') === state.type;
+      c.setAttribute('aria-checked', on ? 'true' : 'false');
+    });
+    themeChips.forEach(c => {
+      const on = state.themes.has(c.dataset.theme);
+      c.setAttribute('aria-checked', on ? 'true' : 'false');
+    });
+  }
+
+  function reset() {
+    state = { q: '', type: '', themes: new Set(), shown: PAGE_SIZE };
+    syncUi();
+    writeUrl();
+    render();
+  }
+
+  let qTimer;
+  searchInput.addEventListener('input', e => {
+    clearTimeout(qTimer);
+    qTimer = setTimeout(() => {
+      state.q = e.target.value;
+      state.shown = PAGE_SIZE;
+      writeUrl();
+      render();
+    }, 100);
+  });
+
+  typeChips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      state.type = chip.dataset.type || '';
+      state.shown = PAGE_SIZE;
+      syncUi();
+      writeUrl();
+      render();
+    });
+  });
+
+  themeChips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      const t = chip.dataset.theme;
+      if (state.themes.has(t)) state.themes.delete(t);
+      else state.themes.add(t);
+      state.shown = PAGE_SIZE;
+      syncUi();
+      writeUrl();
+      render();
+    });
+  });
+
+  moreBtn.addEventListener('click', () => {
+    state.shown += PAGE_SIZE;
+    render();
+  });
+
+  resetBtn.addEventListener('click', reset);
+
+  filtersForm.addEventListener('submit', e => e.preventDefault());
+
+  function checkScroll() {
+    const top = filtersForm.getBoundingClientRect().top;
+    filtersForm.classList.toggle('scrolled', top <= 57);
+  }
+  window.addEventListener('scroll', checkScroll, { passive: true });
+
+  readUrl();
+  syncUi();
+  render();
+  checkScroll();
+})();
+</script>
 </body>
 </html>
