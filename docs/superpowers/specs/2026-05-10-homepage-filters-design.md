@@ -51,7 +51,7 @@ L'homepage publie 16 artefacts (avril–mai 2026) répartis en deux sections sé
    ║  🔍 Rechercher…    chips Type · chips Thèmes  ║   sticky top: 56px
    ║                                       12 / 47 ║
    ╚══════════════════════════════════════════════╝
-   [grille 2 col desktop / 1 col mobile, 12 cartes initiales]
+   [grille 3 col desktop / 1 col <960px, 12 cartes initiales]
    [Voir 12 de plus →]
 ─────────────────────────────────────────────────────
 [À propos] [Aujourd'hui] [Expertise] [Parcours]       (existant)
@@ -89,14 +89,14 @@ Les ancres `#series` et `#dossiers` existent dans plusieurs liens (topbar du her
 </section>
 ```
 
-- **3 cartes**, format identique aux cartes actuelles (cover SVG pleine largeur, eyebrow date, badge type, titre, sub, meta, CTA).
+- **3 cartes**, format identique aux cartes actuelles (cover SVG pleine largeur, eyebrow date, badge type, titre, sub, meta, CTA). 3 cartes = exactement une rangée desktop (`.series-grid` est en `repeat(3, 1fr)`).
 - Curation manuelle : Mathieu choisit les 3 slugs en éditant le HTML. Pas de mécanique automatique.
 - Les **mêmes cartes** apparaissent **aussi** dans la grille en dessous (pas de duplication HTML : on duplique uniquement le markup `.serie` dans la section `#a-la-une` ET dans `#bibliotheque .biblio-grid`. Ça reste deux liens vers la même URL ; volume HTML +3 cartes, négligeable).
 - Initiale proposée (à confirmer par Mathieu) : `proces-musk-altman` · `evaluation-agentique` · `mcp-plateforme`.
 
 ### CSS
 
-`.featured-grid` reprend `.series-grid` à l'identique (deux colonnes ≥768px, une colonne <768px). Pas de classe modificatrice `.featured` qui change le rendu — uniquement le contexte (section `#a-la-une`). Si plus tard on veut un styling différent (cover plus haute, lede plus long), on ajoute des règles ciblées `.featured-grid .serie {…}`.
+`.featured-grid` reprend `.series-grid` à l'identique (3 colonnes ≥960px, 1 colonne <960px). Pas de classe modificatrice `.featured` qui change le rendu — uniquement le contexte (section `#a-la-une`). Si plus tard on veut un styling différent (cover plus haute, lede plus long), on ajoute des règles ciblées `.featured-grid .serie {…}`.
 
 ## Section Bibliothèque
 
@@ -249,10 +249,10 @@ Aucune nouvelle variable CSS — on réutilise `--bg`, `--bg-2`, `--surface`, `-
 }
 ```
 
-Sur mobile (`max-width: 767px`) :
+Sur mobile (`max-width: 960px`, aligné sur le breakpoint existant de `.series-grid`) :
 
 ```css
-@media (max-width: 767px) {
+@media (max-width: 960px) {
   .biblio-filters {
     grid-template-columns: 1fr;
     grid-template-areas:
@@ -599,7 +599,7 @@ Bloc `<script>` inline en bas de `index.html`, après les sections. ~120 lignes 
 - Empty state = visible (pas `display:none` mais attribut `hidden`) pour rester dans le flux a11y quand re-affiché.
 - Navigation clavier : Tab parcourt search → chips Type → chips Thèmes → cartes → bouton Voir plus. Aucune trap.
 
-## Mobile (< 768 px)
+## Mobile (< 960 px)
 
 - Filter bar stack en colonne (search → type → thèmes → counter).
 - Chips passent en row scrollable horizontalement (plutôt que wrap multi-ligne) pour éviter une filter bar de 200px de hauteur. Indication visuelle subtile : un fade gradient au bord droit pour suggérer le scroll.
