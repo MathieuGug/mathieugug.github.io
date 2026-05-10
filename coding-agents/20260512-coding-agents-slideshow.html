@@ -147,6 +147,26 @@ body.modal-open .stage { right: 480px; }
 /* Masquer l'en-tête interne du SVG (eyebrow + titre + lede) — le slideshow a son propre titre externe */
 .schema-host svg .svg-header { display: none; }
 
+/* Flou doux sur le bas du schéma — atténue la légende/source quand le focus est sur les blocs internes.
+   Activé via la classe body.legend-blur (toggle par step.blurLegend). Overlay HTML par-dessus le SVG,
+   limité au schema-wrapper pour ne pas voiler la caption italique en dessous. */
+.schema-wrapper .legend-mask {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  height: 14%;
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgba(250,246,236,0) 0%, rgba(250,246,236,0.65) 55%, rgba(250,246,236,0.92) 100%);
+  backdrop-filter: blur(2.5px);
+  -webkit-backdrop-filter: blur(2.5px);
+  opacity: 0;
+  transition: opacity 220ms ease;
+  z-index: 1;
+  border-radius: 0 0 4px 4px;
+}
+body.legend-blur .schema-wrapper .legend-mask { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .schema-wrapper .legend-mask { transition: none !important; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .stage { transition: opacity 0ms ease, right 0ms ease !important; }
   .schema-host svg [data-step-state] { transition: none !important; }
@@ -1967,7 +1987,10 @@ const SCENES = [
         hidden: [],
         modalAuto: ['card-contexte', 'card-tools', 'card-skills'],
         modalGroupEyebrow: 'ROUAGES · INFRASTRUCTURE',
-        modalGroupTitle: 'Contexte, tools, skills — la matière partagée'
+        modalGroupTitle: 'Contexte, tools, skills — la matière partagée',
+        // Zoom moitié haute : Contexte (haut), Skills (gauche-haut), Tools (droite-haut) + hub central
+        viewBox: '0 130 1100 420',
+        blurLegend: true
       },
       {
         caption: 'Trois rouages d\'orchestration : sub-agents (parallélisation), hooks (déterministe), permissions (la frontière du sans-demande).',
@@ -1976,7 +1999,10 @@ const SCENES = [
         hidden: [],
         modalAuto: ['card-subagents', 'card-hooks', 'card-permissions'],
         modalGroupEyebrow: 'ROUAGES · ORCHESTRATION',
-        modalGroupTitle: 'Sub-agents, hooks, permissions — la mécanique d\'exécution'
+        modalGroupTitle: 'Sub-agents, hooks, permissions — la mécanique d\'exécution',
+        // Zoom moitié basse : Sub-agents (droite-bas), Hooks (bas), Permissions (gauche-bas) + hub central
+        viewBox: '0 440 1100 420',
+        blurLegend: true
       }
     ]
   },
@@ -2017,7 +2043,10 @@ const SCENES = [
         hidden: [],
         modalAuto: ['cell-claude-philo', 'cell-claude-contexte', 'cell-claude-skills', 'cell-claude-mcp', 'cell-claude-prix', 'cell-claude-securite'],
         modalGroupEyebrow: 'COLONNE · CLAUDE CODE',
-        modalGroupTitle: 'Claude Code — les six axes en bloc'
+        modalGroupTitle: 'Claude Code — les six axes en bloc',
+        // Zoom sur colonne 1 (Claude Code) — cells x=320..540, axis labels gardés à gauche x=60..310
+        viewBox: '0 155 580 745',
+        blurLegend: true
       }
     ]
   },
@@ -2036,7 +2065,10 @@ const SCENES = [
         hidden: [],
         modalAuto: ['cell-codex-philo', 'cell-codex-contexte', 'cell-codex-skills', 'cell-codex-mcp', 'cell-codex-prix', 'cell-codex-securite'],
         modalGroupEyebrow: 'COLONNE · CODEX CLI',
-        modalGroupTitle: 'Codex CLI — les six axes en bloc'
+        modalGroupTitle: 'Codex CLI — les six axes en bloc',
+        // Zoom sur colonne 2 (Codex CLI) — cells x=590..810, on garde un peu de marge à gauche pour les labels d'axe
+        viewBox: '300 155 580 745',
+        blurLegend: true
       },
       {
         caption: 'La colonne GitHub Copilot — plateforme d\'orchestration. La force vient de la place dans GitHub (issues/PR/Actions) et d\'Agent HQ qui ouvre Copilot à Anthropic, OpenAI, Google.',
@@ -2045,7 +2077,10 @@ const SCENES = [
         hidden: [],
         modalAuto: ['cell-copilot-philo', 'cell-copilot-contexte', 'cell-copilot-skills', 'cell-copilot-mcp', 'cell-copilot-prix', 'cell-copilot-securite'],
         modalGroupEyebrow: 'COLONNE · GITHUB COPILOT',
-        modalGroupTitle: 'GitHub Copilot — les six axes en bloc'
+        modalGroupTitle: 'GitHub Copilot — les six axes en bloc',
+        // Zoom sur colonne 3 (GitHub Copilot) — cells x=860..1080
+        viewBox: '620 155 580 745',
+        blurLegend: true
       }
     ]
   },
@@ -2062,7 +2097,10 @@ const SCENES = [
         highlight: ['[data-card="etage-transverse"]'],
         dim: ['[data-card="etage-quotidien"]', '[data-card="etage-expert"]', '[data-card="etage-produit-decideurs"]'],
         hidden: [],
-        modalAuto: 'etage-transverse'
+        modalAuto: 'etage-transverse',
+        // Zoom sur l'étage 1 (transverse, base) — y=720..860 + sticker à gauche
+        viewBox: '0 700 1200 200',
+        blurLegend: true
       }
     ]
   },
@@ -2079,7 +2117,10 @@ const SCENES = [
         highlight: ['[data-card="etage-quotidien"]'],
         dim: ['[data-card="etage-transverse"]', '[data-card="etage-expert"]', '[data-card="etage-produit-decideurs"]'],
         hidden: [],
-        modalAuto: 'etage-quotidien'
+        modalAuto: 'etage-quotidien',
+        // Zoom sur l'étage 2 (data quotidien) — y=560..720
+        viewBox: '0 545 1200 200',
+        blurLegend: true
       },
       {
         caption: 'Au sommet — l\'étage expert (pipelines, refactos, audits) et l\'étage produit/décideurs (managers, PO, leads). Les deux profils les plus exposés : l\'un par la maturité du code, l\'autre par le cadrage des permissions.',
@@ -2088,7 +2129,10 @@ const SCENES = [
         hidden: [],
         modalAuto: ['etage-expert', 'etage-produit-decideurs'],
         modalGroupEyebrow: 'SOMMET DE LA PYRAMIDE',
-        modalGroupTitle: 'Data expert et produit/décideurs — les deux étages stratégiques'
+        modalGroupTitle: 'Data expert et produit/décideurs — les deux étages stratégiques',
+        // Zoom sur les étages 3+4 (sommet : expert + produit/décideurs) — y=255..565 + stickers à gauche
+        viewBox: '0 240 1200 340',
+        blurLegend: true
       }
     ]
   },
@@ -2145,7 +2189,10 @@ const SCENES = [
         hidden: [],
         modalAuto: ['profil-consultant', 'profil-analyst'],
         modalGroupEyebrow: 'PROFILS NON-TECH',
-        modalGroupTitle: 'Consultant et data analyst — par où commencer'
+        modalGroupTitle: 'Consultant et data analyst — par où commencer',
+        // Zoom sur cols 1+2 (consultant + data analyst) — x=152..518, on garde les row labels x=30 à gauche
+        viewBox: '0 140 580 580',
+        blurLegend: true
       },
       {
         caption: 'Profils tech — data engineer, data scientist, manager/lead. Refacto isolée, notebook EDA, brief de specs. Les trois portes qui mènent au plus haut levier — et aux plus grands écueils.',
@@ -2154,7 +2201,10 @@ const SCENES = [
         hidden: [],
         modalAuto: ['profil-eng', 'profil-scientist', 'profil-manager'],
         modalGroupEyebrow: 'PROFILS TECH',
-        modalGroupTitle: 'Data engineer, data scientist, manager — par où commencer'
+        modalGroupTitle: 'Data engineer, data scientist, manager — par où commencer',
+        // Zoom sur cols 3+4+5 (eng + scientist + manager) — x=520..1100
+        viewBox: '520 140 600 580',
+        blurLegend: true
       }
     ]
   },
@@ -2484,6 +2534,55 @@ function applyStepStyles(scene, step) {
   (step.highlight || []).forEach(sel => svg.querySelectorAll(sel).forEach(el => el.setAttribute('data-step-state', 'active')));
 }
 
+/* ── Feature : zoom partiel sur portion de schéma + flou légende, par step ──
+   step.viewBox : string '<x> <y> <w> <h>' qui override le viewBox du SVG actif.
+                  Animé sur ~280 ms via requestAnimationFrame depuis le viewBox courant
+                  (lecture du SVG en place pour gérer transitions step→step de zoom).
+                  Si non fourni : restauration du viewBox par défaut (sauvegardé sur
+                  svg.dataset.defaultViewbox au premier render de chaque schéma).
+   step.blurLegend : booléen qui ajoute body.legend-blur — voile les éléments en bas
+                     du SVG (légende cliquable, sources, footer). Overlay HTML géré CSS.
+*/
+function parseViewBox(str) {
+  if (!str || typeof str !== 'string') return null;
+  const parts = str.trim().split(/[\s,]+/).map(Number);
+  if (parts.length !== 4 || parts.some(n => !Number.isFinite(n))) return null;
+  return parts;
+}
+function applyViewBoxAndLegend(scene, step) {
+  const svg = stage.querySelector('svg');
+  if (!svg) return;
+  // Sauvegarde du viewBox d'origine au premier passage
+  if (!svg.dataset.defaultViewbox) {
+    svg.dataset.defaultViewbox = svg.getAttribute('viewBox') || '';
+  }
+  const targetStr = step.viewBox || svg.dataset.defaultViewbox;
+  const target = parseViewBox(targetStr);
+  if (!target) return;
+  const current = parseViewBox(svg.getAttribute('viewBox')) || target;
+  // Animation tweenée du viewBox (les transitions CSS ne fonctionnent pas sur viewBox)
+  const DUR = REDUCED_MOTION ? 0 : 280;
+  if (DUR === 0 || current.every((v, i) => v === target[i])) {
+    svg.setAttribute('viewBox', target.join(' '));
+  } else {
+    const start = performance.now();
+    const ease = (t) => 1 - Math.pow(1 - t, 3); // easeOutCubic
+    function frame(now) {
+      const t = Math.min(1, (now - start) / DUR);
+      const e = ease(t);
+      const vb = current.map((c, i) => c + (target[i] - c) * e);
+      // Vérifie qu'on est toujours sur le bon SVG (évite glitch si scène a changé)
+      if (svg.isConnected) {
+        svg.setAttribute('viewBox', vb.map(n => Math.round(n * 100) / 100).join(' '));
+        if (t < 1) requestAnimationFrame(frame);
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+  // Toggle flou légende
+  document.body.classList.toggle('legend-blur', !!step.blurLegend);
+}
+
 function renderTimeline() {
   const tl = document.getElementById('timeline');
   if (!tl) return;
@@ -2522,6 +2621,7 @@ function render() {
   updateSceneTitleBar(scene);
 
   if (scene.type === 'punchline') {
+    document.body.classList.remove('legend-blur');
     stage.innerHTML = `
       <section class="scene-punchline" role="group" aria-roledescription="scène">
         <div class="body">${scene.body}</div>
@@ -2533,6 +2633,7 @@ function render() {
   }
 
   if (scene.type === 'outro') {
+    document.body.classList.remove('legend-blur');
     stage.innerHTML = `
       <section class="scene-outro" role="group" aria-roledescription="scène">
         <div class="eyebrow">Vous avez parcouru</div>
@@ -2559,12 +2660,14 @@ function render() {
       <section class="schema-host" role="group" aria-roledescription="scène">
         <div class="schema-wrapper figure" style="position: relative; width: 100%; max-width: 100%;">
           ${svgClone}
+          <div class="legend-mask" aria-hidden="true"></div>
           <button class="zoom-btn" type="button" aria-label="Zoom plein écran" data-no-advance>⛶</button>
         </div>
         <div class="caption" aria-live="polite">${step.caption}</div>
       </section>
     `;
     applyStepStyles(scene, step);
+    applyViewBoxAndLegend(scene, step);
 
     if (step.modalAuto) {
       // scene.schemaId est directement la clé SCHEMAS (forme "schema-NN").
