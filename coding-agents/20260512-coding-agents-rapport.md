@@ -355,11 +355,11 @@ Copilot décroche quand on cherche des **skills versionnables** (pas d'équivale
 
 ![Pyramide des cas d'usage|1300](images/20260512-05-pyramide.svg)
 
-Trois étages. Au bas, le plus large, l'étage transverse — ce que tout knowledge worker peut déléguer à un coding agent dans son quotidien, qu'il soit consultant, manager, chef de projet, fonction support. Au milieu, l'étage data quotidien — ce qu'un analyste, un BI dev, un data scientist déclenche dix fois par semaine. Au sommet, le plus étroit, l'étage data expert — ce qui touche aux pipelines critiques, aux refactos de repo, aux audits sécurité.
+Quatre étages. Au bas, le plus large, l'étage transverse — ce que tout knowledge worker peut déléguer à un coding agent dans son quotidien, qu'il soit consultant, fonction support, contributeur individuel. Au-dessus, l'étage data quotidien — ce qu'un analyste, un BI dev, un data scientist déclenche dix fois par semaine. Plus haut, l'étage data expert — ce qui touche aux pipelines critiques, aux refactos de repo, aux audits sécurité. Au sommet, le plus étroit, l'étage produit / décideurs — managers, PO, chefs de projet : ils ne codent pas au quotidien mais ils **cadrent l'usage** que leur équipe fait de l'agent.
 
-==Le sommet n'est pas mieux que la base, il est plus technique.== Cette nuance est cruciale. La pyramide est une carte de complexité, pas de valeur. Un livrable transverse réussi (un brief client de cinq pages structuré en deux heures plutôt qu'en huit) génère autant de valeur qu'un audit de sécurité réussi.
+==Le sommet n'est pas mieux que la base, il est plus stratégique.== Cette nuance est cruciale. La pyramide est une carte de **posture face à l'agent** — utilisateur quotidien en bas, expert technique au milieu, leader qui cadre l'usage en haut —, pas une carte de valeur. Un livrable transverse réussi (un brief client de cinq pages structuré en deux heures plutôt qu'en huit) génère autant de valeur qu'un audit de sécurité ou qu'une décision de gouvernance bien posée.
 
-Les chevauchements sont assumés. Un data engineer utilise aussi le bas — il rédige des briefs, des slides, des notes. Un consultant utilise aussi le haut quand il manipule des CSV ou écrit un script Python ad hoc. La pyramide trace une distribution moyenne par persona, pas une assignation rigide.
+Les chevauchements sont la règle. Un data engineer utilise aussi le bas — il rédige des briefs, des slides, des notes. Un consultant utilise aussi le haut quand il manipule des CSV ou écrit un script Python ad hoc. Un manager fait parfois du haut technique quand il audite un repo legacy avant de le confier à son équipe. La pyramide trace une distribution moyenne par posture, pas une assignation rigide.
 
 ### §5.1 Étage transverse — pour tout knowledge worker
 
@@ -408,6 +408,24 @@ Selon Stack Overflow Survey 2025, **Claude Sonnet est le LLM le plus admiré (sa
 **Contre-cas pour cet étage.** Les tâches où l'agent **rallentit** un senior. C'est le scénario documenté par METR en juillet 2025[^22] : 16 développeurs OSS experts, 5+ ans d'ancienneté, codebases massives (>1M LOC), 246 tâches réelles. Avec accès à l'IA, ils sont **19% plus lents**, alors qu'ils prédisaient être 24% plus rapides. La cause probable : leur maîtrise du codebase est telle que le contexte humain bat le contexte IA — ils savent où aller plus vite que ce que l'agent peut découvrir. Le code généré nécessite review et debug, qui ajoute du temps. METR a auto-critiqué cette étude en février 2026[^23] : le -19% est probablement une **borne haute du ralentissement** (donc une borne basse du speedup réel) à cause de biais de sélection — 30 à 50% des devs ont admis avoir retiré du panel les tâches avec gain anticipé maximal, et la mesure du temps est cassée sur workflows agentiques (le dev fait autre chose pendant que l'agent tourne).
 
 Le résultat brut reste néanmoins instructif. ==Sur les codebases qu'on connaît par cœur, l'agent peut être un frein.== C'est aussi pour ça qu'on ne le déploie pas dans une équipe sans une réflexion sur où il aide vraiment.
+
+### §5.4 Étage produit / décideurs — managers, PO, chefs de projet
+
+L'étage du sommet est le plus étroit, mais c'est le plus déterminant — parce que c'est là qu'on **cadre l'usage** que les autres étages vont faire de l'agent. Managers d'équipes data, product owners, chefs de projet, leads techniques qui ne codent plus au quotidien : ils n'écrivent pas le SQL, ils ne refactorent pas le repo, mais ils décident des permissions, des SLA, des périmètres MCP. Ce sont eux qui fixent la posture sécurité de leur équipe face à l'agent.
+
+**Cadrage permissions équipe.** Qui peut utiliser `acceptEdits` ou le mode `auto`, sur quels projets ? Quels MCP servers ont droit au CRM, à la base de prod, à GitHub en écriture ? Quelle SLA pour la revue d'une PR ouverte par un agent ? Ces questions n'ont pas de réponse universelle ; elles ont une réponse **par équipe**, par criticité. Le manager qui ne pose pas ces règles laisse chaque membre arbitrer seul, et la posture sécurité s'aligne sur celle du moins prudent.
+
+**Brief specs technique en mode `plan`.** Un PO utilise Claude Code en **mode `plan`** (cf. §2.6) pour cadrer un nouvel epic : il fournit le contexte business, l'agent propose un plan d'implémentation, soulève les zones grises du cahier des charges, demande des décisions explicites avant la première ligne de code. Le mode `plan` ne touche à rien — il produit un document de cadrage qu'on transmet à l'équipe. ==C'est l'inverse de la délégation aveugle : l'agent oblige le donneur d'ordre à expliciter ce qu'il a en tête.==
+
+**Audit de repo legacy.** Un nouveau lead reçoit un repo legacy. En trente minutes avec Claude Code, il en sort la dette principale, les tests manquants, les vulnérabilités triviales. Sans agent, ce diagnostic prendrait deux semaines de lecture en diagonale. Avec agent, il devient le point de départ d'une conversation informée avec l'équipe — *« voilà ce que j'ai compris, qu'est-ce que je rate ? »* — plutôt qu'une question naïve.
+
+**Lecture critique d'un livrable agent.** Un manager valide une PR ouverte par un coding agent. Il sait quoi chercher : tests significatifs, side effects sur les fichiers de config, conformité aux conventions de `CLAUDE.md`, dépendances ajoutées. Cette compétence-là n'est pas du code — c'est une **posture de revue**, qui se construit en lisant beaucoup de PRs agent.
+
+**Le profil le plus exposé aux mauvais réflexes.** Cet étage est aussi le plus risqué. Un manager qui ne code pas au quotidien peut déléguer un livrable critique sans capacité de revue sérieuse, ou accorder des permissions trop laxes par méconnaissance technique. Birgitta Böckeler décrit dans *I still care about the code* l'effet *« enthusiastic but overconfident teammates »*[^36] — encore plus vrai pour un manager que pour un dev qui co-pilote l'agent. Le dev voit immédiatement ce qui sonne faux ; le manager doit construire cette capacité de revue de seconde main, par rituels (pair-review des PRs agent, post-mortems quand ça casse).
+
+==C'est l'étage qui détermine si l'agent devient un multiplicateur sain ou une dette qui s'accumule.==
+
+**Note finale §5.** Les chevauchements sont assumés. Un data engineer utilise aussi le bas. Un consultant utilise aussi le haut quand il manipule des CSV. Un manager fait parfois du haut technique quand il audite un repo. ==La pyramide ordonne la posture face à l'agent — utilisateur quotidien, expert technique, leader stratégique —, pas la valeur.==
 
 ## §6. Gains
 
