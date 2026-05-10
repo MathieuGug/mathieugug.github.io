@@ -40,7 +40,7 @@
     function openModal(eyebrow, title, body) {
       lastFocused = document.activeElement;
       if (modalEyebrow) modalEyebrow.textContent = eyebrow || '';
-      if (modalTitle)   modalTitle.textContent   = title || '';
+      if (modalTitle)   modalTitle.innerHTML     = title || '';
       if (modalBody)    modalBody.innerHTML      = body || '';
       modalRoot.hidden = false;
       document.body.style.overflow = 'hidden';
