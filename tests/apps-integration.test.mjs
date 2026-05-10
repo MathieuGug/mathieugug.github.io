@@ -24,13 +24,15 @@ for (const app of apps) {
   }
 
   test(`${app}: includes lib JS via /assets/dossier-app.js`, () => {
-    assert.match(html, /<script[^>]+src=["']\/assets\/dossier-app\.js["']/,
-      `Missing <script src="/assets/dossier-app.js"> in ${app}`);
+    // Accept absolute (/assets/...) or relative (../assets/...) — both resolve
+    // to the same file on GitHub Pages, but only the relative one works via file://
+    assert.match(html, /<script[^>]+src=["'](?:\.\.\/)?\/?assets\/dossier-app\.js["']/,
+      `Missing <script src="(/|../)assets/dossier-app.js"> in ${app}`);
   });
 
   test(`${app}: includes lib CSS via /assets/dossier-app.css`, () => {
-    assert.match(html, /<link[^>]+href=["']\/assets\/dossier-app\.css["']/,
-      `Missing <link href="/assets/dossier-app.css"> in ${app}`);
+    assert.match(html, /<link[^>]+href=["'](?:\.\.\/)?\/?assets\/dossier-app\.css["']/,
+      `Missing <link href="(/|../)assets/dossier-app.css"> in ${app}`);
   });
 
   test(`${app}: provides window.SCHEMAS`, () => {

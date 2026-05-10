@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 APPS = [
     "agents-computer-use/20260502-agents-computer-use-app.html",
+    "coding-agents/20260512-coding-agents-app.html",
     "economie-inference/20260506-economie-inference-app.html",
     "evaluation-agentique/20260501-evaluation-agentique-app.html",
     "harness-agentique/20260429-harness-agentique-app.html",
@@ -31,6 +32,7 @@ APPS = [
 ]
 
 SLIDESHOWS = [
+    "coding-agents/20260512-coding-agents-slideshow.html",
     "ia-et-travail/20260507-ia-et-travail-slideshow.html",
     "measure-roi/20260507-roi-ia-generative-agentique-slideshow.html",
     "narrative-experiences/20260505-narrative-experiences-slideshow.html",
