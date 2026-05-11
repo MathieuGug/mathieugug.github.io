@@ -6,7 +6,7 @@
 
 ---
 
-## Lede — ce qu'il faut retenir en trois minutes
+## Ce qu'il faut retenir en trois minutes
 
 Depuis quinze ans, la communauté de la visualisation a forgé un vocabulaire stable pour parler de ce qu'on appelle, faute de mieux, *narrative visualization*, *data storytelling*, ou — formulation que je préfère et que j'adopte ici — **expériences narratives**. Ces objets ne sont pas des graphiques avec un titre éditorial : ce sont des dispositifs où **l'auteur impose une structure** (séquence, hiérarchie, points d'arrêt, registre émotionnel) à un matériau quantitatif, **tout en laissant au lecteur des poignées d'exploration** calibrées (zoom, filtre, branchement, scrollytelling).
 

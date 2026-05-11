@@ -6,7 +6,7 @@
 
 ---
 
-## Lede — ce qu'il faut retenir en trois minutes
+## Ce qu'il faut retenir en trois minutes
 
 Entre les pronostics de catastrophe (Goldman Sachs : 300 millions d'équivalents temps plein exposés à l'automatisation[^1]) et les estimations modestes (Acemoglu : 0,55 % de productivité totale des facteurs sur dix ans[^2]), la littérature économique sur l'IA et le travail paraît irréconciliable. Elle ne l'est pas — pour peu qu'on lise les frameworks plutôt que les communiqués.
 
