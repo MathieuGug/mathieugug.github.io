@@ -76,13 +76,12 @@ a { color: inherit; }
 /* Surlignage stabilo — signature site */
 mark { background: linear-gradient(transparent 58%, rgba(178, 59, 27, 0.14) 58%); color: inherit; padding: 0 2px; }
 
-/* Stage : zone scène plein écran (libère l'espace à droite pour la sidebar timeline) */
-.stage { position: fixed; top: 64px; left: 0; right: 64px; bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px 24px 24px; transition: opacity 250ms ease, right 280ms cubic-bezier(0.22, 1, 0.36, 1); }
-body.modal-open .stage { right: 480px; }
-@media (max-width: 1024px) {
-  /* Sur mobile, le modal occupe le bas de l'écran, la stage ne rétrécit pas */
-  body.modal-open .stage { right: 0; }
-}
+/* Stage : zone scène plein écran (libère l'espace à droite pour la sidebar timeline).
+   Le modal flotte par-dessus la stage et n'altère pas sa taille — on évite ainsi les
+   sauts de width du SVG entre les steps avec/sans modalAuto. La partie droite du
+   schéma se retrouve cachée derrière le panneau modal sur desktop, mais ce n'est pas
+   la zone en focus (le focus zoom centre toujours le highlight dans la stage entière). */
+.stage { position: fixed; top: 64px; left: 0; right: 64px; bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px 24px 24px; overflow: hidden; transition: opacity 250ms ease; }
 .stage.fading-out { opacity: 0; }
 
 /* Mobile */
@@ -136,8 +135,25 @@ body.modal-open .stage { right: 480px; }
 .schema-host .scene-title .num { color: var(--text-faint); }
 .schema-host .scene-title .title { font-family: 'Fraunces', serif; font-weight: 400; font-size: clamp(20px, 2.8vw, 32px); letter-spacing: -0.01em; text-transform: none; color: var(--text); }
 .schema-host svg { width: 100%; max-width: 100%; height: auto; max-height: calc(100vh - 170px); display: block; }
-.schema-host .caption { font-family: 'Fraunces', serif; font-style: italic; font-weight: 300; font-size: clamp(16px, 1.8vw, 20px); line-height: 1.5; color: var(--text-dim); text-align: center; max-width: 720px; min-height: 2.4em; transition: opacity 180ms ease; }
+/* Caption ancrée au bas de la viewport (sortie du flex flow). Le SVG zoomé
+   peut déborder visuellement sous sa boîte naturelle ; pour qu'il ne passe
+   pas par-dessus le texte, la caption est position:fixed avec un bloc opaque
+   (.stage::after) plus haut qu'elle, qui masque tout ce qui dépasse. */
+.schema-host .caption { font-family: 'Fraunces', serif; font-style: italic; font-weight: 300; font-size: clamp(16px, 1.8vw, 20px); line-height: 1.5; color: var(--text-dim); text-align: center; max-width: 720px; min-height: 2.4em; padding: 8px 24px; position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 3; pointer-events: none; transition: opacity 180ms ease, max-width 280ms cubic-bezier(0.22, 1, 0.36, 1), transform 280ms cubic-bezier(0.22, 1, 0.36, 1); }
 .schema-host .caption.fade-out { opacity: 0; }
+/* Bloc opaque full-screen-width plus HAUT que la caption (160 px) pour masquer
+   ce qui pourrait subsister du SVG transformé (zoom-in extending below natural
+   box, contenu shifté hors zone, etc.). Soft fade-in en haut. */
+.stage::after { content: ''; position: fixed; left: 0; right: 0; bottom: 0; height: 160px; background: linear-gradient(to top, var(--bg) 0%, var(--bg) 70%, rgba(250,246,236,0) 100%); pointer-events: none; z-index: 2; }
+/* Caption recentrée dans l'espace restant quand un modal est ouvert sur desktop. */
+@media (min-width: 1025px) {
+  body.modal-open .schema-host .caption { max-width: min(720px, calc(100vw - 560px)); transform: translateX(calc(-50% - 240px)); }
+}
+/* Mobile : le modal occupe la moitié basse, la caption doit remonter au-dessus.
+   Au cas où la caption fixe overlap le modal, on la masque (info est dans le modal). */
+@media (max-width: 1024px) {
+  body.modal-open .schema-host .caption { opacity: 0; pointer-events: none; }
+}
 
 /* Vocabulaire visuel des révélations */
 .schema-host svg [data-step-state="dim"] { opacity: 0.18; transition: opacity 220ms ease, filter 220ms ease; }
@@ -146,26 +162,8 @@ body.modal-open .stage { right: 480px; }
 
 /* Masquer l'en-tête interne du SVG (eyebrow + titre + lede) — le slideshow a son propre titre externe */
 .schema-host svg .svg-header { display: none; }
-
-/* Flou doux sur le bas du schéma — atténue la légende/source quand le focus est sur les blocs internes.
-   Activé via la classe body.legend-blur (toggle par step.blurLegend). Overlay HTML par-dessus le SVG,
-   limité au schema-wrapper pour ne pas voiler la caption italique en dessous. */
-.schema-wrapper .legend-mask {
-  position: absolute; left: 0; right: 0; bottom: 0;
-  height: 14%;
-  pointer-events: none;
-  background: linear-gradient(to bottom, rgba(250,246,236,0) 0%, rgba(250,246,236,0.65) 55%, rgba(250,246,236,0.92) 100%);
-  backdrop-filter: blur(2.5px);
-  -webkit-backdrop-filter: blur(2.5px);
-  opacity: 0;
-  transition: opacity 220ms ease;
-  z-index: 1;
-  border-radius: 0 0 4px 4px;
-}
-body.legend-blur .schema-wrapper .legend-mask { opacity: 1; }
-@media (prefers-reduced-motion: reduce) {
-  .schema-wrapper .legend-mask { transition: none !important; }
-}
+/* Masquer le footer interne du SVG (rule + citation/source line) — le slideshow expose ses sources via la sidebar dédiée */
+.schema-host svg .svg-footer { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .stage { transition: opacity 0ms ease, right 0ms ease !important; }
@@ -312,25 +310,10 @@ body.legend-blur .schema-wrapper .legend-mask { opacity: 1; }
 .modal-card .modal-body figure.ref figcaption em { font-style: italic; color: var(--text); }
 .modal-card .modal-body figure.ref figcaption a { color: var(--accent); text-decoration: none; }
 .modal-card .modal-body figure.ref figcaption a:hover { text-decoration: underline; }
-/* Modal stacked cards (modalAuto: array) */
-.modal-card .modal-body .modal-substack { padding: 4px 0; }
-.modal-card .modal-body .modal-substack-eyebrow {
-  font-family: 'JetBrains Mono', monospace; font-size: 0.68rem;
-  letter-spacing: 0.1em; text-transform: uppercase;
-  color: var(--carmine); margin: 0 0 6px;
-}
-.modal-card .modal-body .modal-substack-title {
-  font-family: 'Fraunces', serif; font-weight: 600;
-  font-size: 1.08rem; line-height: 1.25;
-  margin: 0 0 10px; letter-spacing: -0.005em;
-  color: var(--text);
-}
-.modal-card .modal-body .modal-substack-body p { margin: 0 0 0.7rem; font-size: 0.92rem; }
-.modal-card .modal-body .modal-substack-body p:last-child { margin-bottom: 0; }
-.modal-card .modal-body .modal-stack-sep {
-  border: 0; border-top: 1px dashed rgba(178, 59, 27, 0.28);
-  margin: 22px 0;
-}
+.modal-card .modal-body .combined-card { margin-top: 1.4rem; padding-top: 1.1rem; border-top: 1px solid var(--line, #E5E1D8); }
+.modal-card .modal-body .combined-card:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+.modal-card .modal-body .combined-card .combined-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--carmine); margin: 0 0 6px; }
+.modal-card .modal-body .combined-card h4 { font-family: 'Fraunces', serif; font-size: 1.05rem; font-weight: 600; margin: 0 0 0.55rem; letter-spacing: -0.01em; }
 
 /* Timeline en sidebar verticale à droite + boutons */
 .footer-bar { position: fixed; right: 18px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; gap: 24px; z-index: 40; pointer-events: none; }
@@ -355,7 +338,7 @@ body.legend-blur .schema-wrapper .legend-mask { opacity: 1; }
 @media (max-width: 1024px) {
   /* Sur écrans étroits/mobile : revenir à une timeline horizontale en bas */
   .stage { right: 0; bottom: 64px; padding: 16px 16px 16px; }
-  .schema-host svg { max-height: calc(100vh - 280px); }
+  .schema-host svg { max-height: calc(100vh - 220px); }
   .footer-bar { right: 0; left: 0; top: auto; bottom: 16px; transform: none; flex-direction: row; justify-content: center; gap: 20px; padding: 0 16px; }
   .timeline { flex-direction: row; }
   .timeline .seg { width: 28px; height: 4px; }
@@ -368,6 +351,35 @@ body.legend-blur .schema-wrapper .legend-mask { opacity: 1; }
   .zoom-btn { opacity: 0.85; }
   .scene-outro .ctas { min-width: 0; width: 100%; }
 }
+
+/* Mobile en paysage (téléphone tourné) : chrome compressée pour maximiser la hauteur du SVG */
+@media (max-height: 500px) {
+  .topbar { height: 48px; padding: 8px 18px; }
+  .topbar > a { font-size: 13px; }
+  .scene-title-bar { font-size: clamp(12px, 2.4vw, 16px); }
+  .scene-title-bar .num { font-size: 8px; letter-spacing: 0.18em; }
+  .stage { top: 48px; bottom: 52px; padding: 6px 14px 6px; }
+  .schema-host { gap: 6px; }
+  .schema-host svg { max-height: calc(100vh - 130px); }
+  .schema-host .caption { font-size: 13px; line-height: 1.4; min-height: 1.6em; max-width: 88vw; }
+  .footer-bar { bottom: 8px; gap: 14px; padding: 0 12px; }
+  .timeline .seg { width: 22px; height: 3px; }
+  .footer-btn { font-size: 8px; }
+  .scene-punchline .body { font-size: clamp(20px, 4.5vw, 30px); line-height: 1.2; }
+  .scene-punchline { gap: 18px; }
+  .scene-outro h2 { font-size: clamp(26px, 5vw, 38px); }
+  .scene-outro { gap: 18px; }
+}
+
+/* Hint de rotation : portrait mobile sur scène schema → suggère le paysage */
+.rotation-hint { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); display: none; align-items: center; gap: 10px; background: var(--text); color: var(--bg); padding: 9px 10px 9px 14px; border-radius: 24px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; z-index: 55; max-width: calc(100vw - 32px); box-shadow: 0 4px 14px rgba(30,25,18,0.18); opacity: 0; transition: opacity 0.35s ease; }
+.rotation-hint.show { display: inline-flex; opacity: 1; }
+.rotation-hint .icon { width: 16px; height: 16px; flex-shrink: 0; animation: rotation-spin 2.4s ease-in-out infinite; }
+.rotation-hint .text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rotation-hint .dismiss { background: none; border: none; color: inherit; cursor: pointer; font-size: 16px; line-height: 1; padding: 2px 6px; opacity: 0.65; }
+.rotation-hint .dismiss:hover { opacity: 1; }
+@keyframes rotation-spin { 0%, 100% { transform: rotate(0deg); } 40% { transform: rotate(-90deg); } 60% { transform: rotate(-90deg); } }
+@media (prefers-reduced-motion: reduce) { .rotation-hint .icon { animation: none; } }
 
 /* Overlays sommaire / sources */
 .full-overlay { position: fixed; inset: 0; background: rgba(250,246,236,0.96); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 300; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 80px 32px 80px; overflow-y: auto; }
@@ -575,7 +587,7 @@ body.legend-blur .schema-wrapper .legend-mask { opacity: 1; }
   <!-- BOX 1 — Contexte (12h) — cx=550 cy=200 -->
   <g class="interactive" data-card="card-contexte" tabindex="0" role="button" aria-label="Contexte : CLAUDE.md, mémoire, projet entier">
     <rect class="box" x="450" y="150" width="200" height="100" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
-    <text class="mono" x="550" y="174" font-size="12" fill="#1F5560" letter-spacing="1.6" text-anchor="middle">ROUAGE 01</text>
+    <text class="mono" x="550" y="174" font-size="12" fill="#1F5560" letter-spacing="1.6" text-anchor="middle">ROUAGE 02</text>
     <text class="display" x="550" y="202" font-size="16" font-weight="600" fill="#1A1A1A" text-anchor="middle">Contexte</text>
     <text class="body" x="550" y="226" font-size="12" fill="#5A5A5A" text-anchor="middle">CLAUDE.md, mémoire, projet entier</text>
   </g>
@@ -583,7 +595,7 @@ body.legend-blur .schema-wrapper .legend-mask { opacity: 1; }
   <!-- BOX 2 — Tools (1h30) — cx=805 cy=320 -->
   <g class="interactive" data-card="card-tools" tabindex="0" role="button" aria-label="Tools : Read, Write, Bash, Grep, MCP">
     <rect class="box" x="705" y="270" width="200" height="100" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
-    <text class="mono" x="805" y="294" font-size="12" fill="#1F5560" letter-spacing="1.6" text-anchor="middle">ROUAGE 02</text>
+    <text class="mono" x="805" y="294" font-size="12" fill="#1F5560" letter-spacing="1.6" text-anchor="middle">ROUAGE 03</text>
     <text class="display" x="805" y="322" font-size="16" font-weight="600" fill="#1A1A1A" text-anchor="middle">Tools</text>
     <text class="body" x="805" y="346" font-size="12" fill="#5A5A5A" text-anchor="middle">Read · Write · Bash · Grep · MCP</text>
   </g>
@@ -591,7 +603,7 @@ body.legend-blur .schema-wrapper .legend-mask { opacity: 1; }
   <!-- BOX 3 — Sub-agents (4h30) — cx=805 cy=640 -->
   <g class="interactive" data-card="card-subagents" tabindex="0" role="button" aria-label="Sub-agents : fenêtres de contexte parallèles">
     <rect class="box" x="705" y="590" width="200" height="100" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
-    <text class="mono" x="805" y="614" font-size="12" fill="#1F5560" letter-spacing="1.6" text-anchor="middle">ROUAGE 03</text>
+    <text class="mono" x="805" y="614" font-size="12" fill="#1F5560" letter-spacing="1.6" text-anchor="middle">ROUAGE 06</text>
     <text class="display" x="805" y="642" font-size="16" font-weight="600" fill="#1A1A1A" text-anchor="middle">Sub-agents</text>
     <text class="body" x="805" y="666" font-size="12" fill="#5A5A5A" text-anchor="middle">fenêtres de contexte parallèles</text>
   </g>
@@ -599,7 +611,7 @@ body.legend-blur .schema-wrapper .legend-mask { opacity: 1; }
   <!-- BOX 4 — Hooks (6h) — cx=550 cy=760 -->
   <g class="interactive" data-card="card-hooks" tabindex="0" role="button" aria-label="Hooks : déclencheurs déterministes">
     <rect class="box" x="450" y="710" width="200" height="100" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
-    <text class="mono" x="550" y="734" font-size="12" fill="#1F5560" letter-spacing="1.6" text-anchor="middle">ROUAGE 04</text>
+    <text class="mono" x="550" y="734" font-size="12" fill="#1F5560" letter-spacing="1.6" text-anchor="middle">ROUAGE 05</text>
     <text class="display" x="550" y="762" font-size="16" font-weight="600" fill="#1A1A1A" text-anchor="middle">Hooks</text>
     <text class="body" x="550" y="786" font-size="12" fill="#5A5A5A" text-anchor="middle">déclencheurs déterministes</text>
   </g>
@@ -607,7 +619,7 @@ body.legend-blur .schema-wrapper .legend-mask { opacity: 1; }
   <!-- BOX 5 — Permissions (7h30) — cx=295 cy=640 -->
   <g class="interactive" data-card="card-permissions" tabindex="0" role="button" aria-label="Permissions : allowlist par tool, modes">
     <rect class="box" x="195" y="590" width="200" height="100" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
-    <text class="mono" x="295" y="614" font-size="12" fill="#1F5560" letter-spacing="1.6" text-anchor="middle">ROUAGE 05</text>
+    <text class="mono" x="295" y="614" font-size="12" fill="#1F5560" letter-spacing="1.6" text-anchor="middle">ROUAGE 04</text>
     <text class="display" x="295" y="642" font-size="16" font-weight="600" fill="#1A1A1A" text-anchor="middle">Permissions</text>
     <text class="body" x="295" y="666" font-size="12" fill="#5A5A5A" text-anchor="middle">allowlist par tool, modes</text>
   </g>
@@ -615,7 +627,7 @@ body.legend-blur .schema-wrapper .legend-mask { opacity: 1; }
   <!-- BOX 6 — Skills (10h30) — cx=295 cy=320 -->
   <g class="interactive" data-card="card-skills" tabindex="0" role="button" aria-label="Skills : modules .md invocables">
     <rect class="box" x="195" y="270" width="200" height="100" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
-    <text class="mono" x="295" y="294" font-size="12" fill="#1F5560" letter-spacing="1.6" text-anchor="middle">ROUAGE 06</text>
+    <text class="mono" x="295" y="294" font-size="12" fill="#1F5560" letter-spacing="1.6" text-anchor="middle">ROUAGE 01</text>
     <text class="display" x="295" y="322" font-size="16" font-weight="600" fill="#1A1A1A" text-anchor="middle">Skills</text>
     <text class="body" x="295" y="346" font-size="12" fill="#5A5A5A" text-anchor="middle">modules .md invocables</text>
   </g>
@@ -627,7 +639,7 @@ body.legend-blur .schema-wrapper .legend-mask { opacity: 1; }
   <line x1="60" y1="868" x2="1040" y2="868" stroke="#E5E1D8" stroke-width="1"/>
   <text class="body" x="60" y="888" font-size="12" font-style="italic" fill="#5A5A5A">D'après documentation Anthropic Claude Code, mai 2026.</text>
 </svg>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 155 1200 745" data-schema-id="schema-03" role="img" aria-labelledby="schema-03-title">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 90 1200 770" data-schema-id="schema-03" role="img" aria-labelledby="schema-03-title">
   <title id="schema-03-title">Le cycle de vie d'une skill</title>
   <defs>
     <style><![CDATA[
@@ -711,83 +723,84 @@ body.legend-blur .schema-wrapper .legend-mask { opacity: 1; }
   </g>
 
   <!-- ===== CENTRE DU CYCLE ===== -->
-  <!-- Cercle centre (820, 470). Rayon positionnement centres rect = 220. Rayon arcs = 300. -->
+  <!-- Ellipse centre (820, 470). Rx_pos=220, Ry_pos=320 (étirée verticalement). -->
   <!-- 5 étapes à 72° d'écart depuis 12h, horaire (θ = 0, 72, 144, 216, 288). -->
-  <!-- Rect 220×110 → x = centre_x − 110, y = centre_y − 55. -->
+  <!-- Position card N : (cx + Rx·sin θ, cy − Ry·cos θ), rect 220×110 → x = c_x − 110, y = c_y − 55. -->
 
   <!-- Texte central -->
   <text class="display graphite" x="820" y="462" font-size="20" font-style="italic" text-anchor="middle">5 moments dans la vie</text>
   <text class="display graphite" x="820" y="490" font-size="20" font-style="italic" text-anchor="middle">d'une skill</text>
 
-  <!-- ===== FLÈCHES — arcs de cercle (R=305 autour du centre 820,470) ===== -->
-  <!-- 5 arcs sur le cercle r=305, chaque arc parcourt 44° (72° − 2×14°). -->
-  <!-- Δ=14° de marge angulaire de part et d'autre du centre du rect cible. -->
+  <!-- ===== FLÈCHES — arcs elliptiques (Rx_arc=305, Ry_arc=380 autour du centre 820,470) ===== -->
+  <!-- 5 arcs, chacun parcourant 44° (72° − 2×14° de marge angulaire). -->
   <!-- large-arc-flag=0 (arc <180°), sweep-flag=1 (sens horaire). -->
 
   <!-- 1 → 2 : θ_start=14° → θ_end=58° -->
-  <path d="M 893.8,174.1 A 305,305 0 0 1 1078.7,308.4" fill="none" stroke="#5A5A5A" stroke-width="1" marker-end="url(#arrow)"/>
+  <path d="M 893.78,101.29 A 305,380 0 0 1 1078.65,268.64" fill="none" stroke="#5A5A5A" stroke-width="1" marker-end="url(#arrow)"/>
 
   <!-- 2 → 3 : θ_start=86° → θ_end=130° -->
-  <path d="M 1124.3,448.7 A 305,305 0 0 1 1053.6,666.1" fill="none" stroke="#5A5A5A" stroke-width="1" marker-end="url(#arrow)"/>
+  <path d="M 1124.26,443.47 A 305,380 0 0 1 1053.66,714.27" fill="none" stroke="#5A5A5A" stroke-width="1" marker-end="url(#arrow)"/>
 
   <!-- 3 → 4 : θ_start=158° → θ_end=202° -->
-  <path d="M 934.3,752.8 A 305,305 0 0 1 705.7,752.8" fill="none" stroke="#5A5A5A" stroke-width="1" marker-end="url(#arrow)"/>
+  <path d="M 934.27,822.39 A 305,380 0 0 1 705.73,822.39" fill="none" stroke="#5A5A5A" stroke-width="1" marker-end="url(#arrow)"/>
 
   <!-- 4 → 5 : θ_start=230° → θ_end=274° -->
-  <path d="M 586.4,666.1 A 305,305 0 0 1 515.7,448.7" fill="none" stroke="#5A5A5A" stroke-width="1" marker-end="url(#arrow)"/>
+  <path d="M 586.34,714.27 A 305,380 0 0 1 515.74,443.47" fill="none" stroke="#5A5A5A" stroke-width="1" marker-end="url(#arrow)"/>
 
   <!-- 5 → 1 : θ_start=302° → θ_end=346° -->
-  <path d="M 561.3,308.4 A 305,305 0 0 1 746.2,174.1" fill="none" stroke="#5A5A5A" stroke-width="1" marker-end="url(#arrow)"/>
+  <path d="M 561.35,268.64 A 305,380 0 0 1 746.22,101.29" fill="none" stroke="#5A5A5A" stroke-width="1" marker-end="url(#arrow)"/>
 
   <!-- ===== ÉTAPE 1 — CRÉATION (top, θ=0°) ===== -->
-  <!-- Centre (820, 250), rect 220×110 à x=710 y=195 -->
+  <!-- Centre (820, 150), rect 220×110 à x=710 y=95 -->
   <g>
-    <rect x="710" y="195" width="220" height="110" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
-    <text class="mono teal" x="726" y="222" font-size="11" font-weight="600" letter-spacing="0.16em">01 CRÉATION</text>
-    <text class="display ink" x="726" y="250" font-size="15" font-weight="600">Création</text>
-    <text class="body graphite" x="726" y="274" font-size="11">fichier <tspan class="mono" font-size="11">SKILL.md</tspan> + frontmatter YAML</text>
+    <rect x="710" y="95" width="220" height="110" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
+    <text class="mono teal" x="726" y="122" font-size="11" font-weight="600" letter-spacing="0.16em">01 CRÉATION</text>
+    <text class="display ink" x="726" y="150" font-size="15" font-weight="600">Création</text>
+    <text class="body graphite" x="726" y="174" font-size="11">fichier <tspan class="mono" font-size="11">SKILL.md</tspan> + frontmatter YAML</text>
   </g>
 
   <!-- ===== ÉTAPE 2 — ENREGISTREMENT (θ=72°) ===== -->
-  <!-- Centre (1029, 402), rect 220×110 à x=919 y=347 -->
+  <!-- Centre (1029, 371), rect 220×110 à x=919 y=316 -->
   <g>
-    <rect x="919" y="347" width="220" height="110" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
-    <text class="mono teal" x="935" y="374" font-size="11" font-weight="600" letter-spacing="0.16em">02 ENREGISTREMENT</text>
-    <text class="display ink" x="935" y="402" font-size="15" font-weight="600">Enregistrement</text>
-    <text class="body graphite" x="935" y="426" font-size="11"><tspan class="mono" font-size="11">.claude/skills/</tspan> ou plugin</text>
+    <rect x="919" y="316" width="220" height="110" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
+    <text class="mono teal" x="935" y="343" font-size="11" font-weight="600" letter-spacing="0.16em">02 ENREGISTREMENT</text>
+    <text class="display ink" x="935" y="371" font-size="15" font-weight="600">Enregistrement</text>
+    <text class="body graphite" x="935" y="395" font-size="11"><tspan class="mono" font-size="11">.claude/skills/</tspan> ou plugin</text>
   </g>
 
   <!-- ===== ÉTAPE 3 — INVOCATION (carmine, θ=144°) ===== -->
-  <!-- Centre (949, 648), rect 220×110 à x=839 y=593 -->
+  <!-- Centre (949, 729), rect 220×110 à x=839 y=674 -->
   <g>
-    <rect x="839" y="593" width="220" height="110" rx="3" fill="#FAF8F3" stroke="#B7332C" stroke-width="2.5"/>
-    <text class="mono carmine" x="855" y="620" font-size="11" font-weight="600" letter-spacing="0.16em">03 INVOCATION</text>
-    <text class="display ink" x="855" y="648" font-size="15" font-weight="600">Invocation</text>
-    <text class="body graphite" x="855" y="672" font-size="11">match auto sur <tspan class="mono" font-size="11">description</tspan></text>
-    <text class="body graphite" x="855" y="690" font-size="11">ou /commande</text>
+    <rect x="839" y="674" width="220" height="110" rx="3" fill="#FAF8F3" stroke="#B7332C" stroke-width="2.5"/>
+    <text class="mono carmine" x="855" y="701" font-size="11" font-weight="600" letter-spacing="0.16em">03 INVOCATION</text>
+    <text class="display ink" x="855" y="729" font-size="15" font-weight="600">Invocation</text>
+    <text class="body graphite" x="855" y="753" font-size="11">match auto sur <tspan class="mono" font-size="11">description</tspan></text>
+    <text class="body graphite" x="855" y="771" font-size="11">ou /commande</text>
   </g>
 
   <!-- ===== ÉTAPE 4 — EXÉCUTION (θ=216°) ===== -->
-  <!-- Centre (691, 648), rect 220×110 à x=581 y=593 -->
+  <!-- Centre (691, 729), rect 220×110 à x=581 y=674 -->
   <g>
-    <rect x="581" y="593" width="220" height="110" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
-    <text class="mono teal" x="597" y="620" font-size="11" font-weight="600" letter-spacing="0.16em">04 EXÉCUTION</text>
-    <text class="display ink" x="597" y="648" font-size="15" font-weight="600">Exécution</text>
-    <text class="body graphite" x="597" y="672" font-size="11">instructions chargées dans le contexte</text>
+    <rect x="581" y="674" width="220" height="110" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
+    <text class="mono teal" x="597" y="701" font-size="11" font-weight="600" letter-spacing="0.16em">04 EXÉCUTION</text>
+    <text class="display ink" x="597" y="729" font-size="15" font-weight="600">Exécution</text>
+    <text class="body graphite" x="597" y="753" font-size="11">instructions chargées dans le contexte</text>
   </g>
 
   <!-- ===== ÉTAPE 5 — VERSIONNEMENT (θ=288°) ===== -->
-  <!-- Centre (611, 402), rect 220×110 à x=501 y=347 -->
+  <!-- Centre (611, 371), rect 220×110 à x=501 y=316 -->
   <g>
-    <rect x="501" y="347" width="220" height="110" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
-    <text class="mono teal" x="517" y="374" font-size="11" font-weight="600" letter-spacing="0.16em">05 VERSIONNEMENT</text>
-    <text class="display ink" x="517" y="402" font-size="15" font-weight="600">Versionnement</text>
-    <text class="body graphite" x="517" y="426" font-size="11">git, plugins, partage cross-projets</text>
+    <rect x="501" y="316" width="220" height="110" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
+    <text class="mono teal" x="517" y="343" font-size="11" font-weight="600" letter-spacing="0.16em">05 VERSIONNEMENT</text>
+    <text class="display ink" x="517" y="371" font-size="15" font-weight="600">Versionnement</text>
+    <text class="body graphite" x="517" y="395" font-size="11">git, plugins, partage cross-projets</text>
   </g>
 
-  <!-- ===== FOOTER CAPTION ===== -->
-  <line x1="60" y1="855" x2="1140" y2="855" stroke="#E5E1D8" stroke-width="1"/>
-  <text class="display graphite" x="60" y="878" font-size="11" font-style="italic">« D'après documentation Anthropic et standard ouvert agentskills.io. »</text>
+  <!-- ===== FOOTER CAPTION (hidden in slideshow via .svg-footer CSS) ===== -->
+  <g class="svg-footer">
+    <line x1="60" y1="855" x2="1140" y2="855" stroke="#E5E1D8" stroke-width="1"/>
+    <text class="display graphite" x="60" y="878" font-size="11" font-style="italic">« D'après documentation Anthropic et standard ouvert agentskills.io. »</text>
+  </g>
 </svg>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 155 1200 745" data-schema-id="schema-04" role="img" aria-label="Matrice comparative Claude Code, Codex CLI et GitHub Copilot sur six axes">
   <defs>
@@ -1070,12 +1083,20 @@ body.legend-blur .schema-wrapper .legend-mask { opacity: 1; }
   <!-- Hairline rule --></g>
   <line x1="60" y1="148" x2="1140" y2="148" stroke="#E5E1D8" stroke-width="1"/>
 
+  <!-- ============ SILHOUETTE UNIFIÉE (trapèze pyramide) + 3 DIVIDERS ============ -->
+  <!-- Pente régulière ±0.6 (= (200−560)/(860−260)). Apex « plat » 560→640 à y=260.
+       Pas de rupture sur les lignes : un seul tracé en silhouette + 3 lignes internes. -->
+  <path d="M 560,260 L 640,260 L 1000,860 L 200,860 Z" fill="none" stroke="#5A5A5A" stroke-width="1.25"/>
+  <line x1="476" y1="400" x2="724" y2="400" stroke="#5A5A5A" stroke-width="0.75"/>
+  <line x1="380" y1="560" x2="820" y2="560" stroke="#5A5A5A" stroke-width="0.75"/>
+  <line x1="284" y1="720" x2="916" y2="720" stroke="#5A5A5A" stroke-width="0.75"/>
+
   <!-- ============ ÉTAGE 4 — PRODUIT / DÉCIDEURS (SOMMET) ============ -->
   <g class="interactive" data-card="etage-produit-decideurs" tabindex="0" role="button" aria-label="Étage 4 — Produit / décideurs">
     <polygon class="stage-frame"
-             points="500,400 700,400 640,260 560,260"
-             fill="#B58A2C" fill-opacity="0.10"
-             stroke="#B58A2C" stroke-width="1.25"/>
+             points="476,400 724,400 640,260 560,260"
+             fill="#B58A2C" fill-opacity="0.15"
+             stroke="none"/>
 
     <text x="600" y="290" class="mono" font-size="12" font-weight="600" fill="#B58A2C"
           letter-spacing="0.16em" text-anchor="middle">ÉTAGE 4 · PRODUIT / DÉCIDEURS</text>
@@ -1095,9 +1116,9 @@ body.legend-blur .schema-wrapper .legend-mask { opacity: 1; }
   <!-- ============ ÉTAGE 3 — DATA EXPERT ============ -->
   <g class="interactive" data-card="etage-expert" tabindex="0" role="button" aria-label="Étage 3 — Data expert">
     <polygon class="stage-frame"
-             points="380,560 820,560 700,400 500,400"
-             fill="#B7332C" fill-opacity="0.10"
-             stroke="#B7332C" stroke-width="1.5"/>
+             points="380,560 820,560 724,400 476,400"
+             fill="#B7332C" fill-opacity="0.15"
+             stroke="none"/>
 
     <text x="600" y="425" class="mono" font-size="12" font-weight="600" fill="#B7332C"
           letter-spacing="0.16em" text-anchor="middle">ÉTAGE 3 · DATA EXPERT</text>
@@ -1126,9 +1147,9 @@ body.legend-blur .schema-wrapper .legend-mask { opacity: 1; }
   <!-- ============ ÉTAGE 2 — DATA QUOTIDIEN ============ -->
   <g class="interactive" data-card="etage-quotidien" tabindex="0" role="button" aria-label="Étage 2 — Data quotidien">
     <polygon class="stage-frame"
-             points="280,720 920,720 820,560 380,560"
-             fill="#1F5560" fill-opacity="0.10"
-             stroke="#1F5560" stroke-width="1.25"/>
+             points="284,720 916,720 820,560 380,560"
+             fill="#1F5560" fill-opacity="0.15"
+             stroke="none"/>
 
     <text x="600" y="587" class="mono" font-size="12" font-weight="600" fill="#1F5560"
           letter-spacing="0.16em" text-anchor="middle">ÉTAGE 2 · DATA QUOTIDIEN</text>
@@ -1157,9 +1178,9 @@ body.legend-blur .schema-wrapper .legend-mask { opacity: 1; }
   <!-- ============ ÉTAGE 1 — TRANSVERSE / TOUS (BAS) ============ -->
   <g class="interactive" data-card="etage-transverse" tabindex="0" role="button" aria-label="Étage 1 — Transverse pour tous">
     <polygon class="stage-frame"
-             points="200,860 1000,860 920,720 280,720"
-             fill="#2F5D3F" fill-opacity="0.08"
-             stroke="#2F5D3F" stroke-width="1.25"/>
+             points="200,860 1000,860 916,720 284,720"
+             fill="#2F5D3F" fill-opacity="0.13"
+             stroke="none"/>
 
     <text x="600" y="745" class="mono" font-size="12" font-weight="600" fill="#2F5D3F"
           letter-spacing="0.16em" text-anchor="middle">ÉTAGE 1 · TRANSVERSE / TOUS</text>
@@ -1233,9 +1254,11 @@ body.legend-blur .schema-wrapper .legend-mask { opacity: 1; }
   <text x="600" y="910" class="body" font-size="13" font-style="italic" fill="#5A5A5A" text-anchor="middle">« Les chevauchements sont la règle : un manager utilise aussi le bas, un consultant fait parfois du haut, un data engineer cadre aussi des permissions.</text>
   <text x="600" y="928" class="body" font-size="13" font-style="italic" fill="#5A5A5A" text-anchor="middle">La pyramide ordonne la posture face à l'agent — utilisateur quotidien, expert technique, leader stratégique —, pas la valeur. »</text>
 
-  <!-- ============ FOOTER ============ -->
-  <line x1="60" y1="990" x2="1140" y2="990" stroke="#E5E1D8" stroke-width="1"/>
-  <text x="60" y="1018" class="body" font-size="13" font-style="italic" fill="#5A5A5A">« Cadre éditorial de l'auteur, illustré sur des cas observés (Stack Overflow Survey 2025, retex Block, Stripe, Anthropic). »</text>
+  <!-- ============ FOOTER (hidden in slideshow via .svg-footer CSS) ============ -->
+  <g class="svg-footer">
+    <line x1="60" y1="990" x2="1140" y2="990" stroke="#E5E1D8" stroke-width="1"/>
+    <text x="60" y="1018" class="body" font-size="13" font-style="italic" fill="#5A5A5A">« Cadre éditorial de l'auteur, illustré sur des cas observés (Stack Overflow Survey 2025, retex Block, Stripe, Anthropic). »</text>
+  </g>
 </svg>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 155 1200 795" data-schema-id="schema-06" role="img" aria-labelledby="schema-06-title">
   <title id="schema-06-title">Ce que les gains valent vraiment — ordres de grandeur observés par tâche-type</title>
@@ -1613,7 +1636,7 @@ body.legend-blur .schema-wrapper .legend-mask { opacity: 1; }
     <text x="1080" y="10" class="body" font-style="italic" font-size="12" fill="#5A5A5A" text-anchor="end">Repères 2026-05 · revue valorisée 75 €/h · hypothèses pédagogiques.</text>
   </g>
 </svg>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 155 1200 945" data-schema-id="schema-08" role="img" aria-label="Carte de décision par profil — 5 portes d'entrée × 3 horizons">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 155 1200 700" data-schema-id="schema-08" role="img" aria-label="Carte de décision par profil — 5 portes d'entrée × 3 horizons">
   <defs>
     <style>
       .display { font-family: 'Spectral', Georgia, serif; }
@@ -1874,8 +1897,10 @@ body.legend-blur .schema-wrapper .legend-mask { opacity: 1; }
   </g>
 
   <!-- ============ FOOTER ============ -->
-  <line x1="60" y1="1040" x2="1140" y2="1040" stroke="#E5E1D8" stroke-width="0.75"/>
-  <text x="60" y="1065" class="body" font-size="12" font-style="italic" fill="#5A5A5A">« Cadre éditorial de l'auteur, calibré sur cas d'usage observés (mai 2026). »</text>
+  <g class="svg-footer">
+    <line x1="60" y1="1040" x2="1140" y2="1040" stroke="#E5E1D8" stroke-width="0.75"/>
+    <text x="60" y="1065" class="body" font-size="12" font-style="italic" fill="#5A5A5A">« Cadre éditorial de l'auteur, calibré sur cas d'usage observés (mai 2026). »</text>
+  </g>
 </svg>
 </div>
 
@@ -1932,6 +1957,21 @@ body.legend-blur .schema-wrapper .legend-mask { opacity: 1; }
   </div>
 </div>
 
+<div class="idle-cue" id="idle-cue" aria-hidden="true">→</div>
+
+<div class="toaster" id="toaster" hidden data-no-advance>
+  <span>Tape pour avancer · Swipe ←→ pour changer de scène · Pince pour zoomer</span>
+</div>
+
+<div class="rotation-hint" id="rotation-hint" role="status" aria-live="polite" data-no-advance>
+  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/>
+    <path d="M12 18h.01"/>
+  </svg>
+  <span class="text">Tournez le téléphone</span>
+  <button class="dismiss" type="button" aria-label="Masquer">×</button>
+</div>
+
 <script>
 'use strict';
 
@@ -1961,8 +2001,8 @@ const SCENES = [
         dim: [],
         hidden: [],
         modalAuto: ['regime-autocomplete', 'regime-ide', 'regime-agent'],
-        modalGroupEyebrow: 'TROIS RÉGIMES · 2018-2025',
-        modalGroupTitle: 'Autocomplete, IDE, agent — la trajectoire en bloc'
+        modalEyebrow: 'TROIS RÉGIMES · 2018-2025',
+        modalTitle: 'Autocomplete, IDE, agent — la trajectoire en bloc'
       }
     ]
   },
@@ -1986,11 +2026,8 @@ const SCENES = [
         dim: ['[data-card="card-subagents"]', '[data-card="card-hooks"]', '[data-card="card-permissions"]'],
         hidden: [],
         modalAuto: ['card-contexte', 'card-tools', 'card-skills'],
-        modalGroupEyebrow: 'ROUAGES · INFRASTRUCTURE',
-        modalGroupTitle: 'Contexte, tools, skills — la matière partagée',
-        // Zoom moitié haute : Contexte (haut), Skills (gauche-haut), Tools (droite-haut) + hub central
-        viewBox: '0 130 1100 420',
-        blurLegend: true
+        modalEyebrow: 'ROUAGES · INFRASTRUCTURE',
+        modalTitle: 'Contexte, tools, skills — la matière partagée',
       },
       {
         caption: 'Trois rouages d\'orchestration : sub-agents (parallélisation), hooks (déterministe), permissions (la frontière du sans-demande).',
@@ -1998,11 +2035,8 @@ const SCENES = [
         dim: ['[data-card="card-contexte"]', '[data-card="card-tools"]', '[data-card="card-skills"]'],
         hidden: [],
         modalAuto: ['card-subagents', 'card-hooks', 'card-permissions'],
-        modalGroupEyebrow: 'ROUAGES · ORCHESTRATION',
-        modalGroupTitle: 'Sub-agents, hooks, permissions — la mécanique d\'exécution',
-        // Zoom moitié basse : Sub-agents (droite-bas), Hooks (bas), Permissions (gauche-bas) + hub central
-        viewBox: '0 440 1100 420',
-        blurLegend: true
+        modalEyebrow: 'ROUAGES · ORCHESTRATION',
+        modalTitle: 'Sub-agents, hooks, permissions — la mécanique d\'exécution',
       }
     ]
   },
@@ -2023,7 +2057,7 @@ const SCENES = [
     ]
   },
 
-  // Scène 5 — Schéma 04 : Comparatif — Claude Code (colonne entière, 2 steps)
+  // Scène 5 — Schéma 04 : Comparatif — Claude Code (colonne entière, 1 step)
   {
     id: 'comparatif-claude',
     type: 'schema',
@@ -2031,22 +2065,13 @@ const SCENES = [
     schemaId: 'schema-04',
     steps: [
       {
-        caption: 'Trois agents, six axes structurants. On regarde d\'abord la colonne Claude Code — référence par densité documentaire.',
-        highlight: ['[data-card="cell-claude-philo"]', '[data-card="cell-claude-contexte"]', '[data-card="cell-claude-skills"]', '[data-card="cell-claude-mcp"]', '[data-card="cell-claude-prix"]', '[data-card="cell-claude-securite"]'],
-        dim: ['[data-card="cell-codex-philo"]', '[data-card="cell-codex-contexte"]', '[data-card="cell-codex-skills"]', '[data-card="cell-codex-mcp"]', '[data-card="cell-codex-prix"]', '[data-card="cell-codex-securite"]', '[data-card="cell-copilot-philo"]', '[data-card="cell-copilot-contexte"]', '[data-card="cell-copilot-skills"]', '[data-card="cell-copilot-mcp"]', '[data-card="cell-copilot-prix"]', '[data-card="cell-copilot-securite"]'],
-        hidden: []
-      },
-      {
         caption: 'Six axes pour Claude Code — philosophie, contexte, skills, MCP, prix, sécurité. La référence du marché par densité documentaire et largeur d\'écosystème.',
         highlight: ['[data-card="cell-claude-philo"]', '[data-card="cell-claude-contexte"]', '[data-card="cell-claude-skills"]', '[data-card="cell-claude-mcp"]', '[data-card="cell-claude-prix"]', '[data-card="cell-claude-securite"]'],
         dim: ['[data-card="cell-codex-philo"]', '[data-card="cell-codex-contexte"]', '[data-card="cell-codex-skills"]', '[data-card="cell-codex-mcp"]', '[data-card="cell-codex-prix"]', '[data-card="cell-codex-securite"]', '[data-card="cell-copilot-philo"]', '[data-card="cell-copilot-contexte"]', '[data-card="cell-copilot-skills"]', '[data-card="cell-copilot-mcp"]', '[data-card="cell-copilot-prix"]', '[data-card="cell-copilot-securite"]'],
         hidden: [],
         modalAuto: ['cell-claude-philo', 'cell-claude-contexte', 'cell-claude-skills', 'cell-claude-mcp', 'cell-claude-prix', 'cell-claude-securite'],
-        modalGroupEyebrow: 'COLONNE · CLAUDE CODE',
-        modalGroupTitle: 'Claude Code — les six axes en bloc',
-        // Zoom sur colonne 1 (Claude Code) — cells x=320..540, axis labels gardés à gauche x=60..310
-        viewBox: '0 155 580 745',
-        blurLegend: true
+        modalEyebrow: 'COLONNE · CLAUDE CODE',
+        modalTitle: 'Claude Code — les six axes en bloc',
       }
     ]
   },
@@ -2064,11 +2089,8 @@ const SCENES = [
         dim: ['[data-card="cell-claude-philo"]', '[data-card="cell-claude-contexte"]', '[data-card="cell-claude-skills"]', '[data-card="cell-claude-mcp"]', '[data-card="cell-claude-prix"]', '[data-card="cell-claude-securite"]', '[data-card="cell-copilot-philo"]', '[data-card="cell-copilot-contexte"]', '[data-card="cell-copilot-skills"]', '[data-card="cell-copilot-mcp"]', '[data-card="cell-copilot-prix"]', '[data-card="cell-copilot-securite"]'],
         hidden: [],
         modalAuto: ['cell-codex-philo', 'cell-codex-contexte', 'cell-codex-skills', 'cell-codex-mcp', 'cell-codex-prix', 'cell-codex-securite'],
-        modalGroupEyebrow: 'COLONNE · CODEX CLI',
-        modalGroupTitle: 'Codex CLI — les six axes en bloc',
-        // Zoom sur colonne 2 (Codex CLI) — cells x=590..810, on garde un peu de marge à gauche pour les labels d'axe
-        viewBox: '300 155 580 745',
-        blurLegend: true
+        modalEyebrow: 'COLONNE · CODEX CLI',
+        modalTitle: 'Codex CLI — les six axes en bloc',
       },
       {
         caption: 'La colonne GitHub Copilot — plateforme d\'orchestration. La force vient de la place dans GitHub (issues/PR/Actions) et d\'Agent HQ qui ouvre Copilot à Anthropic, OpenAI, Google.',
@@ -2076,63 +2098,46 @@ const SCENES = [
         dim: ['[data-card="cell-claude-philo"]', '[data-card="cell-claude-contexte"]', '[data-card="cell-claude-skills"]', '[data-card="cell-claude-mcp"]', '[data-card="cell-claude-prix"]', '[data-card="cell-claude-securite"]', '[data-card="cell-codex-philo"]', '[data-card="cell-codex-contexte"]', '[data-card="cell-codex-skills"]', '[data-card="cell-codex-mcp"]', '[data-card="cell-codex-prix"]', '[data-card="cell-codex-securite"]'],
         hidden: [],
         modalAuto: ['cell-copilot-philo', 'cell-copilot-contexte', 'cell-copilot-skills', 'cell-copilot-mcp', 'cell-copilot-prix', 'cell-copilot-securite'],
-        modalGroupEyebrow: 'COLONNE · GITHUB COPILOT',
-        modalGroupTitle: 'GitHub Copilot — les six axes en bloc',
-        // Zoom sur colonne 3 (GitHub Copilot) — cells x=860..1080
-        viewBox: '620 155 580 745',
-        blurLegend: true
+        modalEyebrow: 'COLONNE · GITHUB COPILOT',
+        modalTitle: 'GitHub Copilot — les six axes en bloc',
       }
     ]
   },
 
-  // Scène 7 — Schéma 05 : Pyramide — vue + étage transverse
+  // Scène 7 — Schéma 05 : Pyramide — 4 steps, un étage par step (transverse, quotidien, expert, produit/décideurs)
   {
-    id: 'pyramide-transverse',
+    id: 'pyramide',
     type: 'schema',
-    title: 'La pyramide des cas d\'usage — la base',
+    title: 'La pyramide des cas d\'usage',
     schemaId: 'schema-05',
     steps: [
       {
-        caption: 'Quatre étages, quatre postures. Le sommet n\'est pas mieux : il est plus stratégique. La base, la plus large : l\'étage transverse — toutes les personnes qui écrivent sans coder.',
+        caption: 'Étage 1 — la base, transverse. Toutes les personnes qui écrivent sans coder : rédaction, slides, veille, briefs. La porte la plus large, celle qu\'on traverse en premier.',
         highlight: ['[data-card="etage-transverse"]'],
         dim: ['[data-card="etage-quotidien"]', '[data-card="etage-expert"]', '[data-card="etage-produit-decideurs"]'],
         hidden: [],
         modalAuto: 'etage-transverse',
-        // Zoom sur l'étage 1 (transverse, base) — y=720..860 + sticker à gauche
-        viewBox: '0 700 1200 200',
-        blurLegend: true
-      }
-    ]
-  },
-
-  // Scène 8 — Schéma 05 : Pyramide — quotidien, puis expert + produit/décideurs combinés
-  {
-    id: 'pyramide-data',
-    type: 'schema',
-    title: 'La pyramide — étages data et décideurs',
-    schemaId: 'schema-05',
-    steps: [
+      },
       {
-        caption: 'Étage data quotidien — analyste, BI dev, data scientist. SQL ad hoc, notebook EDA, scripts ponctuels. Claude Sonnet : LLM le plus admiré sur ce terrain.',
+        caption: 'Étage 2 — data quotidien. Analyste, BI dev, data scientist junior. SQL ad hoc, notebook EDA, scripts ponctuels. Claude Sonnet : LLM le plus admiré sur ce terrain.',
         highlight: ['[data-card="etage-quotidien"]'],
         dim: ['[data-card="etage-transverse"]', '[data-card="etage-expert"]', '[data-card="etage-produit-decideurs"]'],
         hidden: [],
         modalAuto: 'etage-quotidien',
-        // Zoom sur l'étage 2 (data quotidien) — y=560..720
-        viewBox: '0 545 1200 200',
-        blurLegend: true
       },
       {
-        caption: 'Au sommet — l\'étage expert (pipelines, refactos, audits) et l\'étage produit/décideurs (managers, PO, leads). Les deux profils les plus exposés : l\'un par la maturité du code, l\'autre par le cadrage des permissions.',
-        highlight: ['[data-card="etage-expert"]', '[data-card="etage-produit-decideurs"]'],
-        dim: ['[data-card="etage-transverse"]', '[data-card="etage-quotidien"]'],
+        caption: 'Étage 3 — data expert. Data engineer, MLOps, data scientist senior. Pipelines ETL/dbt, refacto repo, audits sécu, MLOps + tests. La maturité du code rend l\'agent rentable mais exposé.',
+        highlight: ['[data-card="etage-expert"]'],
+        dim: ['[data-card="etage-transverse"]', '[data-card="etage-quotidien"]', '[data-card="etage-produit-decideurs"]'],
         hidden: [],
-        modalAuto: ['etage-expert', 'etage-produit-decideurs'],
-        modalGroupEyebrow: 'SOMMET DE LA PYRAMIDE',
-        modalGroupTitle: 'Data expert et produit/décideurs — les deux étages stratégiques',
-        // Zoom sur les étages 3+4 (sommet : expert + produit/décideurs) — y=255..565 + stickers à gauche
-        viewBox: '0 240 1200 340',
-        blurLegend: true
+        modalAuto: 'etage-expert',
+      },
+      {
+        caption: 'Étage 4 — produit / décideurs. Managers, PO, chefs de projet. Pas pour coder : pour cadrer permissions, briefs de specs, audits. Le sommet n\'est pas mieux — il est plus stratégique.',
+        highlight: ['[data-card="etage-produit-decideurs"]'],
+        dim: ['[data-card="etage-transverse"]', '[data-card="etage-quotidien"]', '[data-card="etage-expert"]'],
+        hidden: [],
+        modalAuto: 'etage-produit-decideurs',
       }
     ]
   },
@@ -2188,11 +2193,8 @@ const SCENES = [
         dim: ['[data-card="profil-eng"]', '[data-card="profil-scientist"]', '[data-card="profil-manager"]'],
         hidden: [],
         modalAuto: ['profil-consultant', 'profil-analyst'],
-        modalGroupEyebrow: 'PROFILS NON-TECH',
-        modalGroupTitle: 'Consultant et data analyst — par où commencer',
-        // Zoom sur cols 1+2 (consultant + data analyst) — x=152..518, on garde les row labels x=30 à gauche
-        viewBox: '0 140 580 580',
-        blurLegend: true
+        modalEyebrow: 'PROFILS NON-TECH',
+        modalTitle: 'Consultant et data analyst — par où commencer',
       },
       {
         caption: 'Profils tech — data engineer, data scientist, manager/lead. Refacto isolée, notebook EDA, brief de specs. Les trois portes qui mènent au plus haut levier — et aux plus grands écueils.',
@@ -2200,11 +2202,8 @@ const SCENES = [
         dim: ['[data-card="profil-consultant"]', '[data-card="profil-analyst"]'],
         hidden: [],
         modalAuto: ['profil-eng', 'profil-scientist', 'profil-manager'],
-        modalGroupEyebrow: 'PROFILS TECH',
-        modalGroupTitle: 'Data engineer, data scientist, manager — par où commencer',
-        // Zoom sur cols 3+4+5 (eng + scientist + manager) — x=520..1100
-        viewBox: '520 140 600 580',
-        blurLegend: true
+        modalEyebrow: 'PROFILS TECH',
+        modalTitle: 'Data engineer, data scientist, manager — par où commencer',
       }
     ]
   },
@@ -2234,22 +2233,22 @@ const SCHEMAS = {
   },
   "schema-02": {
     "card-contexte": {
-      "eyebrow": "ROUAGE 01 · CONTEXTE",
+      "eyebrow": "ROUAGE 02 · CONTEXTE",
       "title": "Le contexte versionné",
       "body": "<p>Pas une fenêtre de tokens, pas un prompt — un objet partagé. <code>CLAUDE.md</code> à la racine du projet, conventions et choix d'archi en markdown, ré-injecté à chaque compaction depuis le disque<sup class=\"cite\" data-cite=\"6\">[6]</sup>. Quatre scopes concaténés (projet, user, enterprise, local), pas d'override. Recommandation : moins de 200 lignes par fichier.</p><p>La différence concrète avec ChatGPT : l'onboarding sur un projet ne se fait plus via une page Confluence à lire par un humain, mais via un <code>CLAUDE.md</code> à écrire <em>pour les agents</em>. Toute l'équipe — humaine et agentique — partage la même source de vérité.</p>"
     },
     "card-tools": {
-      "eyebrow": "ROUAGE 02 · TOOLS",
+      "eyebrow": "ROUAGE 03 · TOOLS",
       "title": "Six tools natifs + MCP pour le reste",
       "body": "<p>Chez Claude Code : <code>Read</code>, <code>Write</code>, <code>Edit</code>, <code>Grep</code> (via ripgrep), <code>Bash</code>, <code>Glob</code>. Six tools couvrent 80% du quotidien dev. Le reste passe par MCP — un serveur Postgres, GitHub, Slack, Linear, Filesystem, etc.<sup class=\"cite\" data-cite=\"4\">[4]</sup></p><p>Anthropic a donné MCP à la <strong>Agentic AI Foundation</strong> sous Linux Foundation en décembre 2025<sup class=\"cite\" data-cite=\"7\">[7]</sup>. C'est désormais un standard neutre — un serveur MCP fonctionne dans Claude Code, Cursor, ChatGPT, VS Code. Une innovation Claude Code à noter : <strong>Tool Search</strong> charge dynamiquement les définitions de tools, réduisant la consommation contextuelle de ~85% sur sessions chargées (72k → 8.7k tokens).</p>"
     },
     "card-skills": {
-      "eyebrow": "ROUAGE 03 · SKILLS",
+      "eyebrow": "ROUAGE 01 · SKILLS",
       "title": "Procédures partageables",
       "body": "<p>Un dossier <code>&lt;nom&gt;/</code> avec <code>SKILL.md</code> (frontmatter YAML + corps d'instructions). Invocable par mots-clés (Claude matche sur la description) ou via <code>/&lt;nom-skill&gt;</code><sup class=\"cite\" data-cite=\"1\">[1]</sup>. Quatre emplacements par priorité décroissante : enterprise, personnel, projet, plugin. Format aligné sur le standard ouvert <strong>Agent Skills</strong>.</p><p>Simon Willison, prudent sur les modes, a qualifié les skills d'objet <em>« peut-être plus important que MCP »</em><sup class=\"cite\" data-cite=\"33\">[33]</sup>. Sa raison : MCP donne des outils nouveaux ; les skills donnent des <strong>procédures</strong> — des manières de faire codifiées. Une skill <code>audit-dbt-schema</code> n'est pas un nouveau tool, c'est une recette qui combine les tools existants selon un protocole précis.</p>"
     },
     "card-subagents": {
-      "eyebrow": "ROUAGE 04 · SUB-AGENTS",
+      "eyebrow": "ROUAGE 06 · SUB-AGENTS",
       "title": "Déléguer dans la délégation",
       "body": "<p>Un sub-agent a sa propre fenêtre de contexte, son system prompt, son accès tools restreint, et renvoie un <em>résumé</em> au thread principal — pas l'intégralité de son travail<sup class=\"cite\" data-cite=\"3\">[3]</sup>. Trois built-in : <code>Explore</code> (read-only, cartographie), <code>Plan</code> (mode plan, draft sans toucher), <code>general-purpose</code>.</p><p>L'usage récurrent en data team : triplet <code>Explore → Plan → général</code>. Ou trois sub-agents parallèles pour un audit sécurité (secrets, désérialisation, endpoints) qui retournent chacun 3-5 findings résumés. Avantage : la fenêtre du main-thread reste autour de 20-30k tokens, là où un audit linéaire l'aurait saturée à 200k.</p>"
     },
@@ -2259,7 +2258,7 @@ const SCHEMAS = {
       "body": "<p>Une commande shell <em>déterministe</em> que Claude Code lance à des points fixes du cycle de vie<sup class=\"cite\" data-cite=\"2\">[2]</sup>. Pas de modèle dans la boucle ; un programme externe avec ses arguments. Six événements : <code>PreToolUse</code>, <code>PostToolUse</code>, <code>Notification</code>, <code>Stop</code>, <code>SessionStart</code>, <code>InstructionsLoaded</code>.</p><p>Trois usages dominent : formattage auto (Prettier/ruff sur <code>PostToolUse Edit</code>), garde-fou destructif (<code>PreToolUse Bash</code> qui bloque <code>rm -rf</code>), audit log. <em>« Hooks provide deterministic control over Claude Code's behavior, ensuring certain actions always happen rather than relying on the LLM to choose to run them »</em><sup class=\"cite\" data-cite=\"2\">[2]</sup>. Note de sécurité : les hooks s'exécutent hors sandbox, à traiter comme du code privilégié.</p>"
     },
     "card-permissions": {
-      "eyebrow": "ROUAGE 06 · PERMISSIONS",
+      "eyebrow": "ROUAGE 04 · PERMISSIONS",
       "title": "La frontière du sans-demande",
       "body": "<p>Six modes<sup class=\"cite\" data-cite=\"5\">[5]</sup> : <code>default</code> (lectures auto, reste en prompt), <code>acceptEdits</code> (édits auto), <code>plan</code> (read-only), <code>auto</code> (un classifier IA décide), <code>dontAsk</code> (CI), <code>bypassPermissions</code> (conteneur isolé). Au-dessus : allowlist granulaire <code>Bash(npm test)</code>, <code>Skill(deploy *)</code>.</p><p>Notion essentielle : les <strong>protected paths</strong>. Quel que soit le mode (sauf bypass), <code>.git</code>, <code>.claude</code> (sauf sous-dossiers <code>commands/</code>, <code>agents/</code>, <code>skills/</code>, <code>worktrees/</code>), <code>.mcp.json</code>, <code>.claude.json</code> ne sont jamais auto-approuvés en écriture. C'est ce qui protège la configuration de l'agent contre l'agent lui-même.</p>"
     }
@@ -2477,34 +2476,11 @@ function openModal(eyebrow, title, body) {
   document.body.classList.add('modal-open');
   document.body.style.overflow = '';
   modalRoot.querySelector('.modal-close')?.focus();
-}
-
-/**
- * openModalStack — Affiche plusieurs cards SCHEMAS empilées dans une seule
- * modale (séparateurs visuels entre chaque). Utilisé quand un step combine
- * 2-4 data-cards thématiquement cohérents pour réduire le nombre de steps.
- * cards = [{eyebrow, title, body}]
- * groupTitle / groupEyebrow facultatifs : si fournis, affichés une seule fois en haut.
- */
-function openModalStack(cards, groupEyebrow, groupTitle) {
-  if (!cards || cards.length === 0) return;
-  if (cards.length === 1) {
-    return openModal(cards[0].eyebrow, cards[0].title, cards[0].body);
-  }
-  // Construit un body unique avec les sous-cards séparées par <hr class="modal-stack-sep">
-  const stackedBody = cards.map((c, i) => {
-    const sep = i > 0 ? '<hr class="modal-stack-sep" aria-hidden="true">' : '';
-    return `${sep}
-      <div class="modal-substack">
-        <p class="modal-substack-eyebrow">${c.eyebrow || ''}</p>
-        <h4 class="modal-substack-title">${c.title || ''}</h4>
-        <div class="modal-substack-body">${c.body || ''}</div>
-      </div>`;
-  }).join('');
-  openModal(groupEyebrow || '', groupTitle || '', stackedBody);
+  if (typeof updateRotationHint === 'function') updateRotationHint();
 }
 
 let __modalAutoActive = false;
+let __currentModalCardId = null;
 
 function closeModal() {
   const root = document.getElementById('modal-root');
@@ -2512,7 +2488,9 @@ function closeModal() {
   root.hidden = true;
   document.body.classList.remove('modal-open');
   __modalAutoActive = false;
+  __currentModalCardId = null;
   lastFocused?.focus?.();
+  if (typeof updateRotationHint === 'function') updateRotationHint();
 }
 
 document.getElementById('modal-root').addEventListener('click', (e) => {
@@ -2527,61 +2505,236 @@ const stage = document.getElementById('stage');
 function applyStepStyles(scene, step) {
   const svg = stage.querySelector('svg');
   if (!svg) return;
-  const all = svg.querySelectorAll('[id]');
-  all.forEach(el => el.removeAttribute('data-step-state'));
+  // Clear de tout état précédent (sur tous les éléments, pas juste [id]).
+  svg.querySelectorAll('[data-step-state]').forEach(el => el.removeAttribute('data-step-state'));
+
+  // En fullView (overview explicite ou recap synthétique) : on n'applique
+  // AUCUN état. Tout est à pleine opacité, le schéma est rendu tel qu'à l'origine.
+  if (step.fullView) {
+    __schemaZoom.applyZoom(svg, step);
+    return;
+  }
+
   (step.dim || []).forEach(sel => svg.querySelectorAll(sel).forEach(el => el.setAttribute('data-step-state', 'dim')));
   (step.hidden || []).forEach(sel => svg.querySelectorAll(sel).forEach(el => el.setAttribute('data-step-state', 'hidden')));
   (step.highlight || []).forEach(sel => svg.querySelectorAll(sel).forEach(el => el.setAttribute('data-step-state', 'active')));
+
+  // Mode focus = step a un highlight ET au moins un dim/hidden non vide.
+  // En focus, on traite les éléments top-level non-active :
+  // - les <text> loose situés dans le BAS du viewBox (sources, lecture,
+  //   footer) → "hidden"
+  // - les autres <text> loose (labels d'axes, noms de quadrants, légendes,
+  //   annotations sur courbe) → laissés à pleine opacité, sinon le schéma
+  //   perd ses repères de lecture.
+  // - le reste (cards dim, lignes, flèches, paths, circles, rects de fond,
+  //   <g> non listés) → "dim" pour garder le contexte visuel sans masquer
+  //   la zone active.
+  // Skip si step.fullView pour les steps « overview » (aperçu ou récap final).
+  const focusing = ((step.dim && step.dim.length) || (step.hidden && step.hidden.length))
+                   && step.highlight && step.highlight.length
+                   && !step.fullView;
+  if (focusing) {
+    const vb = svg.viewBox && svg.viewBox.baseVal;
+    const footerThreshold = vb && vb.width
+      ? vb.y + vb.height - Math.min(120, vb.height * 0.18)
+      : Infinity;
+
+    svg.querySelectorAll(':scope > *').forEach(el => {
+      const ln = el.localName;
+      if (ln === 'defs' || ln === 'style' || ln === 'metadata' || ln === 'title' || ln === 'desc') return;
+      if (el.classList && el.classList.contains('svg-header')) return;
+      if (el.getAttribute('data-step-state') === 'active') return;
+
+      if (ln === 'text') {
+        // <text> loose : hidden uniquement si dans le bas (sources/lecture).
+        // Sinon, on les laisse à pleine opacité (axes, quadrants, annotations).
+        let yPos = parseFloat(el.getAttribute('y') || '');
+        if (!Number.isFinite(yPos)) {
+          try { const bb = el.getBBox(); if (bb) yPos = bb.y; } catch (e) {}
+        }
+        if (Number.isFinite(yPos) && yPos >= footerThreshold
+            && !el.hasAttribute('data-step-state')) {
+          el.setAttribute('data-step-state', 'hidden');
+        }
+      } else if (!el.hasAttribute('data-step-state')) {
+        el.setAttribute('data-step-state', 'dim');
+      }
+    });
+  }
+
+  __schemaZoom.applyZoom(svg, step);
 }
 
-/* ── Feature : zoom partiel sur portion de schéma + flou légende, par step ──
-   step.viewBox : string '<x> <y> <w> <h>' qui override le viewBox du SVG actif.
-                  Animé sur ~280 ms via requestAnimationFrame depuis le viewBox courant
-                  (lecture du SVG en place pour gérer transitions step→step de zoom).
-                  Si non fourni : restauration du viewBox par défaut (sauvegardé sur
-                  svg.dataset.defaultViewbox au premier render de chaque schéma).
-   step.blurLegend : booléen qui ajoute body.legend-blur — voile les éléments en bas
-                     du SVG (légende cliquable, sources, footer). Overlay HTML géré CSS.
-*/
-function parseViewBox(str) {
-  if (!str || typeof str !== 'string') return null;
-  const parts = str.trim().split(/[\s,]+/).map(Number);
-  if (parts.length !== 4 || parts.some(n => !Number.isFinite(n))) return null;
-  return parts;
-}
-function applyViewBoxAndLegend(scene, step) {
-  const svg = stage.querySelector('svg');
-  if (!svg) return;
-  // Sauvegarde du viewBox d'origine au premier passage
-  if (!svg.dataset.defaultViewbox) {
-    svg.dataset.defaultViewbox = svg.getAttribute('viewBox') || '';
-  }
-  const targetStr = step.viewBox || svg.dataset.defaultViewbox;
-  const target = parseViewBox(targetStr);
-  if (!target) return;
-  const current = parseViewBox(svg.getAttribute('viewBox')) || target;
-  // Animation tweenée du viewBox (les transitions CSS ne fonctionnent pas sur viewBox)
-  const DUR = REDUCED_MOTION ? 0 : 280;
-  if (DUR === 0 || current.every((v, i) => v === target[i])) {
-    svg.setAttribute('viewBox', target.join(' '));
-  } else {
-    const start = performance.now();
-    const ease = (t) => 1 - Math.pow(1 - t, 3); // easeOutCubic
-    function frame(now) {
-      const t = Math.min(1, (now - start) / DUR);
-      const e = ease(t);
-      const vb = current.map((c, i) => c + (target[i] - c) * e);
-      // Vérifie qu'on est toujours sur le bon SVG (évite glitch si scène a changé)
-      if (svg.isConnected) {
-        svg.setAttribute('viewBox', vb.map(n => Math.round(n * 100) / 100).join(' '));
-        if (t < 1) requestAnimationFrame(frame);
+/* ── Zoom CSS transform sur le SVG, calculé en pixels écran ──
+   Quand un step focalise (dim/hidden non vides), applique un transform
+   CSS translate+scale sur le SVG racine pour que la cible highlight
+   soit centrée et remplisse la stage actuelle. La stage a overflow:hidden
+   donc le débordement (cards voisines, etc.) est clippé proprement
+   au lieu d'être tronqué par le panneau modal sur desktop.
+   ResizeObserver + MutationObserver recompute le transform quand la
+   stage change de taille (modal qui ouvre/ferme, viewport resize).
+   Le zoom plein-écran (overlay) reste sur viewBox d'origine. */
+const __schemaZoom = (() => {
+  const DURATION = 520;
+  const PAD = 0.86;
+  const MAX_SCALE = 1.6;
+  const CAPTION_RESERVE = 80;
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  let currentSvg = null;
+  let currentStep = null;
+  let resizeObs = null;
+  let mutObs = null;
+  let resizeIdleTimer = null;
+  let lastStageW = -1;
+  let lastStageH = -1;
+
+  function unionUserBBox(svg, selectors) {
+    let result = null;
+    (selectors || []).forEach(sel => svg.querySelectorAll(sel).forEach(el => {
+      let bb;
+      try { bb = el.getBBox(); } catch (e) { return; }
+      if (!bb || (bb.width === 0 && bb.height === 0)) return;
+      if (!result) {
+        result = { x: bb.x, y: bb.y, width: bb.width, height: bb.height };
+      } else {
+        const x1 = Math.min(result.x, bb.x);
+        const y1 = Math.min(result.y, bb.y);
+        const x2 = Math.max(result.x + result.width, bb.x + bb.width);
+        const y2 = Math.max(result.y + result.height, bb.y + bb.height);
+        result = { x: x1, y: y1, width: x2 - x1, height: y2 - y1 };
       }
-    }
-    requestAnimationFrame(frame);
+    }));
+    return result;
   }
-  // Toggle flou légende
-  document.body.classList.toggle('legend-blur', !!step.blurLegend);
-}
+
+  function compute(svg, step) {
+    const focusing = ((step.dim && step.dim.length) || (step.hidden && step.hidden.length))
+                     && step.highlight && step.highlight.length
+                     && !step.fullView;
+    if (!focusing) return null;
+
+    const bbox = unionUserBBox(svg, step.highlight);
+    if (!bbox || bbox.width === 0 || bbox.height === 0) return null;
+
+    const wrapper = svg.parentElement;
+    const stage = document.getElementById('stage');
+    if (!wrapper || !stage) return null;
+
+    const svgW = svg.clientWidth;
+    const svgH = svg.clientHeight;
+    const vb = svg.viewBox.baseVal;
+    if (svgW === 0 || svgH === 0 || !vb || vb.width === 0 || vb.height === 0) return null;
+
+    const wrapperRect = wrapper.getBoundingClientRect();
+    const svgX = wrapperRect.left;
+    const svgY = wrapperRect.top;
+
+    // preserveAspectRatio="xMidYMid meet" — calcule l'échelle et le letterbox.
+    const userAspect = vb.width / vb.height;
+    const boxAspect = svgW / svgH;
+    let cs, cox, coy;
+    if (boxAspect > userAspect) {
+      cs = svgH / vb.height;
+      cox = (svgW - vb.width * cs) / 2;
+      coy = 0;
+    } else {
+      cs = svgW / vb.width;
+      cox = 0;
+      coy = (svgH - vb.height * cs) / 2;
+    }
+
+    const hlScreenCx = svgX + cox + (bbox.x + bbox.width / 2 - vb.x) * cs;
+    const hlScreenCy = svgY + coy + (bbox.y + bbox.height / 2 - vb.y) * cs;
+    const hlScreenW = bbox.width * cs;
+    const hlScreenH = bbox.height * cs;
+
+    const stageRect = stage.getBoundingClientRect();
+    const modalActive = document.body.classList.contains('modal-open');
+    const isDesktopModal = window.innerWidth > 1024;
+    const modalReserveX = (modalActive && isDesktopModal) ? 480 : 0;
+    const modalReserveY = (modalActive && !isDesktopModal) ? Math.min(window.innerHeight * 0.5, 400) : 0;
+    const availW = Math.max(200, stageRect.width - modalReserveX);
+    const availH = Math.max(160, stageRect.height - CAPTION_RESERVE - modalReserveY);
+    const availCx = stageRect.left + availW / 2;
+    const availCy = stageRect.top + availH / 2;
+
+    const scaleX = (availW * PAD) / hlScreenW;
+    const scaleY = (availH * PAD) / hlScreenH;
+    const scale = Math.min(MAX_SCALE, Math.min(scaleX, scaleY));
+
+    const tx = availCx - svgX - (hlScreenCx - svgX) * scale;
+    const ty = scale > 1
+      ? availCy - svgY - (hlScreenCy - svgY) * scale
+      : (hlScreenCy - svgY) * (1 - scale);
+
+    return { tx, ty, scale };
+  }
+
+  function setStyle(svg, t) {
+    if (t) {
+      svg.style.transform = 'translate(' + t.tx.toFixed(2) + 'px, ' + t.ty.toFixed(2) + 'px) scale(' + t.scale.toFixed(4) + ')';
+    } else {
+      svg.style.transform = '';
+    }
+  }
+
+  function applySync() {
+    if (!currentSvg || !currentStep) return;
+    setStyle(currentSvg, compute(currentSvg, currentStep));
+  }
+
+  function setupObservers() {
+    if (resizeObs) return;
+    const stage = document.getElementById('stage');
+    if (!stage) return;
+
+    const r = stage.getBoundingClientRect();
+    lastStageW = r.width;
+    lastStageH = r.height;
+
+    resizeObs = new ResizeObserver(() => {
+      if (!currentSvg || !currentStep) return;
+      const rr = stage.getBoundingClientRect();
+      if (Math.abs(rr.width - lastStageW) < 0.5 && Math.abs(rr.height - lastStageH) < 0.5) return;
+      lastStageW = rr.width;
+      lastStageH = rr.height;
+      currentSvg.style.transition = 'none';
+      applySync();
+      clearTimeout(resizeIdleTimer);
+      resizeIdleTimer = setTimeout(() => {
+        if (currentSvg && !reduceMotion) {
+          currentSvg.style.transition = 'transform ' + DURATION + 'ms cubic-bezier(0.22, 1, 0.36, 1)';
+        }
+      }, 220);
+    });
+    resizeObs.observe(stage);
+
+    mutObs = new MutationObserver(() => {
+      if (currentSvg && currentStep) requestAnimationFrame(applySync);
+    });
+    mutObs.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  }
+
+  function applyZoom(svg, step) {
+    currentSvg = svg;
+    currentStep = step;
+
+    svg.style.transformOrigin = '0 0';
+    svg.style.willChange = 'transform';
+    svg.style.transition = reduceMotion ? 'none' : 'transform ' + DURATION + 'ms cubic-bezier(0.22, 1, 0.36, 1)';
+
+    setupObservers();
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (currentSvg === svg) applySync();
+      });
+    });
+  }
+
+  return { applyZoom };
+})();
 
 function renderTimeline() {
   const tl = document.getElementById('timeline');
@@ -2621,7 +2774,6 @@ function render() {
   updateSceneTitleBar(scene);
 
   if (scene.type === 'punchline') {
-    document.body.classList.remove('legend-blur');
     stage.innerHTML = `
       <section class="scene-punchline" role="group" aria-roledescription="scène">
         <div class="body">${scene.body}</div>
@@ -2633,7 +2785,6 @@ function render() {
   }
 
   if (scene.type === 'outro') {
-    document.body.classList.remove('legend-blur');
     stage.innerHTML = `
       <section class="scene-outro" role="group" aria-roledescription="scène">
         <div class="eyebrow">Vous avez parcouru</div>
@@ -2652,37 +2803,84 @@ function render() {
   }
 
   if (scene.type === 'schema') {
-    // Le SVG est référencé par data-schema-id="schema-NN" (pas un id="...").
+    // Le SVG est référencé par data-schema-id="schema-NN".
     const svgEl = document.querySelector(`#schemas svg[data-schema-id="${scene.schemaId}"]`);
     const svgClone = svgEl ? svgEl.outerHTML : `<div style="color: red; font-family: monospace;">SVG ${scene.schemaId} introuvable</div>`;
-    const step = scene.steps[state.stepIndex] || { caption: '(pas d\'étape définie)' };
+    let step = scene.steps[state.stepIndex] || { caption: '(pas d\'étape définie)' };
+    // Recap synthétique : si on est en `__pendingRecap` (déclenché par
+    // advance() après un dernier step en focus), on rerend le step courant
+    // en fullView — schéma complet, pas de modal — pour donner un moment
+    // « vue d'ensemble » avant de passer à la scène suivante.
+    if (__pendingRecap) step = { ...step, fullView: true };
     stage.innerHTML = `
       <section class="schema-host" role="group" aria-roledescription="scène">
         <div class="schema-wrapper figure" style="position: relative; width: 100%; max-width: 100%;">
           ${svgClone}
-          <div class="legend-mask" aria-hidden="true"></div>
           <button class="zoom-btn" type="button" aria-label="Zoom plein écran" data-no-advance>⛶</button>
         </div>
         <div class="caption" aria-live="polite">${step.caption}</div>
       </section>
     `;
     applyStepStyles(scene, step);
-    applyViewBoxAndLegend(scene, step);
 
-    if (step.modalAuto) {
+    // En recap (fullView forcé), on ferme tout modal qui aurait été ouvert
+    // par le step précédent.
+    if (step.fullView && !document.getElementById('modal-root').hidden) closeModal();
+
+    if (step.modalAuto && !step.fullView) {
       // scene.schemaId est directement la clé SCHEMAS (forme "schema-NN").
       const schKey = scene.schemaId || null;
-      const bucket = schKey ? (SCHEMAS?.[schKey] || null) : null;
-      if (bucket) {
-        // modalAuto peut être une string (1 card) ou un array (cards empilées).
-        const cardIds = Array.isArray(step.modalAuto) ? step.modalAuto : [step.modalAuto];
-        const cards = cardIds.map(id => bucket[id]).filter(Boolean);
-        if (cards.length > 0) {
-          setTimeout(() => {
-            openModalStack(cards, step.modalGroupEyebrow, step.modalGroupTitle);
-            __modalAutoActive = true;
-          }, 220);
-        }
+      // Si plusieurs highlights ont une fiche dans SCHEMAS, on combine
+      // toutes les fiches en un seul modal — sinon le focus sur N éléments
+      // avec un modal qui ne parle que d'un seul est incohérent.
+      const cards = [];
+      if (schKey && step.highlight && step.highlight.length) {
+        const seen = new Set();
+        step.highlight.forEach(sel => {
+          const m = sel.match(/data-card="([^"]+)"/);
+          if (!m || seen.has(m[1])) return;
+          seen.add(m[1]);
+          const c = SCHEMAS && SCHEMAS[schKey] && SCHEMAS[schKey][m[1]];
+          if (c) cards.push(c);
+        });
+      }
+      // Fallback : si les highlights n'ont pas de fiche, prendre modalAuto seul
+      // (string ou array — l'array tombe sur la 1ʳᵉ entrée si la 1ʳᵉ pose problème).
+      if (cards.length === 0 && schKey) {
+        const ids = Array.isArray(step.modalAuto) ? step.modalAuto : [step.modalAuto];
+        ids.forEach(id => {
+          const c = SCHEMAS && SCHEMAS[schKey] && SCHEMAS[schKey][id];
+          if (c) cards.push(c);
+        });
+      }
+      if (cards.length > 0) {
+        setTimeout(() => {
+          let eyebrow, title, body;
+          if (cards.length === 1) {
+            eyebrow = cards[0].eyebrow || '';
+            title = cards[0].title || '';
+            body = cards[0].body || '';
+          } else {
+            // Combiner. Eyebrow = base commune (avant le " — ") du 1er,
+            // titre = titre de scène, body = stack des fiches.
+            const baseEy = cards[0].eyebrow ? cards[0].eyebrow.split(' — ')[0] : '';
+            eyebrow = baseEy;
+            title = scene.title || cards[0].title || '';
+            body = cards.map(c =>
+              '<div class="combined-card">'
+              + (c.eyebrow ? '<p class="combined-eyebrow">' + c.eyebrow + '</p>' : '')
+              + (c.title ? '<h4>' + c.title + '</h4>' : '')
+              + (c.body || '')
+              + '</div>'
+            ).join('');
+          }
+          // Overrides explicites par step (utiles pour donner un titre/eyebrow
+          // plus spécifique qu'un titre de scène dans une modale combinée).
+          if (step.modalEyebrow) eyebrow = step.modalEyebrow;
+          if (step.modalTitle) title = step.modalTitle;
+          openModal(eyebrow, title, body);
+          __modalAutoActive = true;
+        }, 220);
       }
     }
     renderTimeline();
@@ -2691,10 +2889,19 @@ function render() {
 }
 
 let __transitioning = false;
+let __pendingRecap = false;
+
+function isFocusStep(step) {
+  return step
+    && ((step.dim && step.dim.length) || (step.hidden && step.hidden.length))
+    && step.highlight && step.highlight.length
+    && !step.fullView;
+}
 
 async function gotoScene(index) {
   if (index < 0 || index >= SCENES.length || __transitioning) return;
   __transitioning = true;
+  __pendingRecap = false;
   stage.classList.add('fading-out');
   await new Promise(r => setTimeout(r, FADE_MS));
   state.sceneIndex = index;
@@ -2709,16 +2916,42 @@ function advance() {
   if (__transitioning) return;
   const scene = SCENES[state.sceneIndex];
   const lastStep = (scene.steps && scene.steps.length > 0) ? scene.steps.length - 1 : 0;
+
+  // Avance step dans la scène.
   if (state.stepIndex < lastStep) {
     state.stepIndex++;
+    __pendingRecap = false;
     render();
-  } else if (state.sceneIndex < SCENES.length - 1) {
+    return;
+  }
+
+  // Au dernier step. Si le step était en focus (zoom + dim/hidden) et qu'il
+  // y a une scène suivante, on force d'abord un rendu fullView (recap) pour
+  // que le lecteur retrouve le schéma complet avant la transition.
+  if (!__pendingRecap && scene.type === 'schema'
+      && state.sceneIndex < SCENES.length - 1
+      && isFocusStep(scene.steps && scene.steps[lastStep])) {
+    __pendingRecap = true;
+    render();
+    return;
+  }
+
+  __pendingRecap = false;
+  if (state.sceneIndex < SCENES.length - 1) {
     gotoScene(state.sceneIndex + 1);
   }
 }
 
 function retreat() {
   if (__transitioning) return;
+
+  // Si on est en recap synthétique, le ← repasse au step focus correspondant.
+  if (__pendingRecap) {
+    __pendingRecap = false;
+    render();
+    return;
+  }
+
   if (state.stepIndex > 0) {
     state.stepIndex--;
     render();
@@ -2730,6 +2963,9 @@ function retreat() {
     setTimeout(() => {
       state.sceneIndex--;
       state.stepIndex = prevLastStep;
+      // Si le dernier step de la scène précédente était en focus, on
+      // re-rentre par son recap (état que le lecteur a vu en quittant).
+      __pendingRecap = prevScene.type === 'schema' && isFocusStep(prevScene.steps && prevScene.steps[prevLastStep]);
       render();
       stage.classList.remove('fading-out');
       setTimeout(() => { __transitioning = false; }, FADE_MS);
@@ -2760,8 +2996,19 @@ document.addEventListener('keydown', (e) => {
     }
   } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
     e.preventDefault();
-    if (isAnyOverlayOpen()) return;
-    retreat();
+    // Si TOC, sources ou zoom sont ouverts, on laisse leurs propres handlers gérer
+    if (!document.getElementById('toc-overlay').hidden) return;
+    if (!document.getElementById('sources-overlay').hidden) return;
+    if (!document.getElementById('zoom-overlay').hidden) return;
+    const modalOpen = !document.getElementById('modal-root').hidden;
+    if (modalOpen && __modalAutoActive) {
+      closeModal();
+      retreat();
+    } else if (modalOpen) {
+      closeModal();
+    } else {
+      retreat();
+    }
   } else if (e.key === 'ArrowDown') {
     e.preventDefault();
     if (isAnyOverlayOpen()) return;
@@ -2821,6 +3068,7 @@ function toggleToc(forceState) {
   const newHidden = forceState !== undefined ? !forceState : !o.hidden;
   o.hidden = newHidden;
   if (!newHidden) renderToc();
+  if (typeof updateRotationHint === 'function') updateRotationHint();
 }
 
 document.getElementById('btn-toc').addEventListener('click', (e) => { e.stopPropagation(); toggleToc(true); });
@@ -2854,6 +3102,7 @@ function toggleSources(forceState) {
     document.getElementById('sources-filter').value = '';
     setTimeout(() => document.getElementById('sources-filter').focus(), 80);
   }
+  if (typeof updateRotationHint === 'function') updateRotationHint();
 }
 
 function flashSource(num) {
@@ -2889,6 +3138,14 @@ stage.addEventListener('click', (e) => {
   if (!target) return;
   e.stopPropagation();
   const cardId = target.dataset.card;
+
+  // Toggle : reclic sur la même zone que celle qui a ouvert le modal → ferme.
+  const modalOpen = !document.getElementById('modal-root').hidden;
+  if (modalOpen && __currentModalCardId === cardId) {
+    closeModal();
+    return;
+  }
+
   // Cherche la card dans le schéma courant.
   // scene.schemaId est directement la clé SCHEMAS (forme "schema-NN").
   const scene = SCENES[state.sceneIndex];
@@ -2896,6 +3153,7 @@ stage.addEventListener('click', (e) => {
   const card = schKey ? (SCHEMAS?.[schKey]?.[cardId] || null) : null;
   if (card) {
     openModal(card.eyebrow || '', card.title || '', card.body || '');
+    __currentModalCardId = cardId;
   }
 }, true);
 
@@ -2959,6 +3217,49 @@ function maybeShowOnboardingToaster() {
 }
 
 maybeShowOnboardingToaster();
+
+/* ───────── Rotation hint mobile portrait sur scènes schema ───────── */
+const portraitMQ = window.matchMedia('(orientation: portrait)');
+const narrowMQ = window.matchMedia('(max-width: 900px)');
+let __rotationHintDismissed = false;
+
+function updateRotationHint() {
+  const hint = document.getElementById('rotation-hint');
+  if (!hint) return;
+  const scene = SCENES[state.sceneIndex];
+  const shouldShow = isTouchDevice()
+    && portraitMQ.matches
+    && narrowMQ.matches
+    && scene && scene.type === 'schema'
+    && !__rotationHintDismissed
+    && document.getElementById('modal-root').hidden
+    && document.getElementById('toc-overlay').hidden
+    && document.getElementById('sources-overlay').hidden
+    && document.getElementById('zoom-overlay').hidden;
+  hint.classList.toggle('show', shouldShow);
+}
+
+(function setupRotationHint() {
+  const hint = document.getElementById('rotation-hint');
+  if (!hint) return;
+  hint.querySelector('.dismiss')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    __rotationHintDismissed = true;
+    updateRotationHint();
+  });
+  const onChange = () => updateRotationHint();
+  if (portraitMQ.addEventListener) portraitMQ.addEventListener('change', onChange);
+  else if (portraitMQ.addListener) portraitMQ.addListener(onChange);
+  window.addEventListener('orientationchange', onChange);
+  setTimeout(updateRotationHint, 0);
+})();
+
+// Hooke updateRotationHint() à la fin de chaque render
+const __rawRender = render;
+render = function() {
+  __rawRender();
+  updateRotationHint();
+};
 
 /* ───────── Fullscreen zoom for schemas ───────── */
 const __zoom = (function setupZoom() {
@@ -3112,10 +3413,5 @@ stage.addEventListener('click', (e) => {
 }, true);
 </script>
 
-<div class="idle-cue" id="idle-cue" aria-hidden="true">→</div>
-
-<div class="toaster" id="toaster" hidden data-no-advance>
-  <span>Tape pour avancer · Swipe ←→ pour changer de scène · Pince pour zoomer</span>
-</div>
 </body>
 </html>
