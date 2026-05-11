@@ -9,7 +9,7 @@
 Le centre de compétences data (~400 ingénieurs, profils mixtes *users IA* et *builders d'agents*) vient de publier un baromètre interne qui éclaire la situation. Le syllabus a deux objectifs :
 
 1. **Acculturer** régulièrement le CoC à l'IA agentique (sessions courtes, presque informelles)
-2. **Converger** vers un événement officiel (1h30) qui présente les agents *en production* avec deux consultants externes (évaluation + observabilité)
+2. **Converger** vers un événement officiel (1h30) qui présente les agents *en production* avec deux REX externes (évaluation + observabilité)
 
 Le syllabus doit s'appuyer **maximalement** sur le matériel déjà publié sur mathieugug.github.io (huit dossiers deep research + leurs schémas SVG inline interactifs), pour éviter de produire du nouveau contenu et capitaliser sur le travail existant.
 
@@ -47,9 +47,9 @@ Session 2 — LA MÉCANIQUE     ce qu'il y a sous le capot d'un agent
 Session 3 — LA VALEUR        comment chiffrer l'impact d'un projet IA (teaser → final)
 Session 4 — LE FUTUR         ce que ça change au travail data (et au CoC)
 ÉVÉNEMENT FINAL (1h30)       les agents en production
-                              ├─ intro Mathieu (capitalise les 4 sessions)
-                              ├─ consultant 1 — évaluation
-                              ├─ consultant 2 — observabilité
+                              ├─ intro syllabus (capitalise les 4 sessions)
+                              ├─ REX 1 — évaluation
+                              ├─ REX 2 — observabilité
                               └─ échange tripartite + roadmap CoC
 ```
 
@@ -67,7 +67,7 @@ Session 4 — LE FUTUR         ce que ça change au travail data (et au CoC)
 | Paramètre | Valeur |
 |---|---|
 | Sessions courtes | 4 sessions × 45 min (30 présent + 15 échange) |
-| Événement final | 1 × 1h30 (15' intro + 30' consultant 1 + 30' consultant 2 + 15' échange) |
+| Événement final | 1 × 1h30 (15' intro + 30' REX 1 + 30' REX 2 + 15' échange) |
 | Schémas par session courte | 4 max + 1 bonus optionnel |
 | Réutilisation | 100 % des schémas viennent de dossiers existants (sauf ceux du baromètre, fournis par Mathieu) |
 
@@ -78,7 +78,8 @@ Session 4 — LE FUTUR         ce que ça change au travail data (et au CoC)
 
 | Slot | Contenu | Schémas |
 |---|---|---|
-| 0-12' | Restitution baromètre — 4 visuels (chiffres clés, profil répondants, adoption & impact, tâches par profil) **reformatés au style site** (papier ivoire, accent orange, polices Fraunces/Inter/JetBrains Mono) ; mention « Lincoln » retirée des CTAs (cf. règle CLAUDE.md : Lincoln en footer uniquement) | 4 SVG inédits à créer dans `syllabus/images/baromètre/` à partir des PNG fournis par Mathieu : `baro-01-chiffres-cles.svg`, `baro-02-profil-repondants.svg`, `baro-03-adoption-impact.svg`, `baro-04-taches-par-profil.svg` |
+| 0-3' | Plan du syllabus — carte de route des 5 sessions | `syllabus/images/baromètre/baro-05-plan-syllabus.svg` |
+| 3-12' | Restitution baromètre — 4 visuels (chiffres clés, profil répondants, adoption & impact, tâches par profil) **reformatés au style site** (papier ivoire, accent orange, polices Fraunces/Inter/JetBrains Mono) ; mention « Lincoln » retirée des CTAs (cf. règle CLAUDE.md : Lincoln en footer uniquement) | 4 SVG inédits à créer dans `syllabus/images/baromètre/` à partir des PNG fournis par Mathieu : `baro-01-chiffres-cles.svg`, `baro-02-profil-repondants.svg`, `baro-03-adoption-impact.svg`, `baro-04-taches-par-profil.svg` |
 | 12-30' | Coding agents 2026 — Claude Code / Codex / Copilot. Cadrer en partant du chiffre **58 % génération de code** : ce que les outils permettent vraiment au-delà de la complétion | `coding-agents/images/20260512-01-trois-regimes.svg` · `04-comparatif.svg` · `08-carte-decision.svg` |
 | 30-45' | Échange + appel à pilotes (5-10 volontaires, cible prioritaire Data Analyst / BI vu les 47 % de l'audience) | — |
 
@@ -111,19 +112,19 @@ Session 4 — LE FUTUR         ce que ça change au travail data (et au CoC)
 |---|---|---|
 | 0-10' | L'écart entre les estimations | `ia-et-travail/images/20260504-01-frise-estimations.svg` |
 | 10-25' | Augmentation vs automatisation, scénarios, leviers | `04-augmentation-automatisation.svg` · `07-quatre-scenarios.svg` · `08-six-leviers.svg` |
-| 25-32' | **Bonus baromètre — l'angle mort** : le baromètre montre 3 % de data storytelling et 7 % de livrables clients. Pointer vers le dossier `narrative-experiences/` comme ouverture pour ceux qui veulent creuser | `narrative-experiences/` (lien vers le hub, pas de schéma intégré pour rester sur 4 schémas max) |
+| 25-32' | **Bonus narrative-experiences — l'angle mort** : 3 % storytelling, illustré par le schéma chaîne-augmentée. Pointer vers le dossier `narrative-experiences/` comme ouverture pour ceux qui veulent creuser | `narrative-experiences/images/20260505-06-chaine-augmentee.svg` |
 | 32-45' | Échange — quel scénario pour le CoC, quelles compétences à développer (au-delà du code), comment le CoC se positionne | — |
 
 ### Événement final · 1h30 — Les agents en production
 
 | Slot | Contenu | Schémas |
 |---|---|---|
-| 0-15' | Intro Mathieu — capitalisation des 4 sessions | reprises rapides : `coding-agents/01-trois-regimes` · `harness-agentique/01-anatomie-harness` · `measure-roi/01-paradoxe-roi` |
-| 15-45' | **Consultant 1 — Évaluation** | `evaluation-agentique/images/20260501-04-pyramide-metriques.svg` · `05-llm-as-judge.svg` · `10-playbook-gruyere.svg` (placeholder, à confirmer avec consultant) |
-| 45-75' | **Consultant 2 — Observabilité** | `observabilite-agents-ia/images/20260430-02-six-piliers-telemetrie.svg` · `04-anatomie-trace-otel-genai.svg` · `08-echelle-maturite-observabilite.svg` (placeholder, à confirmer avec consultant) |
+| 0-15' | Intro syllabus — capitalisation des 4 sessions | reprises rapides : `coding-agents/01-trois-regimes` · `harness-agentique/01-anatomie-harness` · `measure-roi/01-paradoxe-roi` |
+| 15-45' | **REX 1 — Évaluation** | `evaluation-agentique/images/20260501-04-pyramide-metriques.svg` · `05-llm-as-judge.svg` · `10-playbook-gruyere.svg` (placeholder, à confirmer avec le REX) |
+| 45-75' | **REX 2 — Observabilité** | `observabilite-agents-ia/images/20260430-02-six-piliers-telemetrie.svg` · `04-anatomie-trace-otel-genai.svg` · `08-echelle-maturite-observabilite.svg` (placeholder, à confirmer avec le REX) |
 | 75-90' | Échange tripartite + roadmap CoC | — |
 
-**Total** : ~25 schémas existants réutilisés + 4 schémas baromètre à créer (reformat des PNG fournis au style site). Aucune autre création requise.
+**Total** : ~27 schémas existants réutilisés + 5 SVG inédits (4 baromètre + 1 plan-syllabus). Aucune autre création requise.
 
 ## Architecture technique
 
@@ -135,21 +136,22 @@ syllabus/
 ├── 02-la-mecanique-slideshow.html         ← session 2
 ├── 03-la-valeur-slideshow.html            ← session 3
 ├── 04-le-futur-slideshow.html             ← session 4
-├── 05-evenement-final-slideshow.html      ← intro Mathieu + placeholders consultants
+├── 05-evenement-final-slideshow.html      ← intro syllabus + placeholders REX
 └── images/
     └── baromètre/                         ← seuls SVG locaux (créations inédites)
         ├── baro-01-chiffres-cles.svg
         ├── baro-02-profil-repondants.svg
         ├── baro-03-adoption-impact.svg
-        └── baro-04-taches-par-profil.svg
+        ├── baro-04-taches-par-profil.svg
+        └── baro-05-plan-syllabus.svg
 ```
 
 **Décisions** :
 
 - **Pas de copie des SVG des dossiers existants** : les slideshows pointent directement vers `../coding-agents/images/...`, etc. Plus léger, mais **risque de dérive** : si un schéma source est modifié plus tard, le slideshow syllabus reflète automatiquement la nouvelle version. Accepté en l'état ; si une session est jouée puis le schéma modifié, on pourra rétroactivement copier la version « gelée » dans `syllabus/images/` pour cette session.
-- **Seul `syllabus/images/baromètre/` contient des SVG locaux** : ce sont des créations inédites (reformat des PNG du deck baromètre fournis par Mathieu) qui n'ont pas vocation à exister ailleurs dans le repo. 4 SVG, créés au style éditorial du site (palette ivoire/orange, polices Fraunces/Inter/JetBrains Mono, mention « Lincoln » retirée), interactifs (régions cliquables → modaux explicatifs).
+- **Seul `syllabus/images/baromètre/` contient des SVG locaux** : ce sont des créations inédites (reformat des PNG du deck baromètre fournis par Mathieu + carte de route plan-syllabus) qui n'ont pas vocation à exister ailleurs dans le repo. 5 SVG inédits, créés au style éditorial du site (palette ivoire/orange, polices Fraunces/Inter/JetBrains Mono, mention « Lincoln » retirée), interactifs (régions cliquables → modaux explicatifs).
 - **Hub `syllabus/index.html` non listé dans la grille de l'accueil** : artefact interne CoC, pas un dossier public au même titre que `coding-agents/`, etc. Accessible via URL directe `https://mathieugug.github.io/syllabus/`. Si Mathieu décide plus tard d'en faire un artefact public, il suffira d'ajouter une tuile dans `index.html` racine.
-- **Slideshow événement final inclus** : trame complète pour les 15' d'intro Mathieu + sections placeholder pour les 2 consultants (titres, schémas pressentis, mais contenu modaux vide). Mathieu et les consultants compléteront ensemble en pré-prod du final.
+- **Slideshow événement final inclus** : trame complète pour les 15' d'intro syllabus + sections placeholder pour les 2 REX (titres, schémas pressentis, mais contenu modaux vide). Le contenu sera complété en pré-prod du final.
 - **Toutes les pages internes embarquent les conventions du site** : favicon `/favicon.svg`, polices Google (Fraunces / Inter / JetBrains Mono), palette `--bg #faf6ec` / `--accent #b8582e`, topbar 3 zones (cf. CLAUDE.md), bibliothèque partagée `/assets/dossier-app.{js,css}` pour les patterns interactifs (zoom, modaux, panel-close mobile).
 - **Slideshows = pattern `illustrated-deep-research/assets/slideshow-template.html`** : focus sur un schéma à la fois, modaux explicatifs au clic sur les régions interactives, navigation flèches clavier, exécutable en projection (mode plein écran) **et** explorable individuellement après. Embarque le `<mark>` style stabilo pour les phrases-clés (cf. CLAUDE.md).
 
@@ -167,11 +169,13 @@ présent → mécanique → valeur → futur → mise en production
 ## Session 1 — Le présent · 45 min
 **Hook** : ...
 **Plan minuté**
-- 0-10'  Restitution baromètre
-- 10-30' Coding agents 2026
+- 0-3'   Plan du syllabus — carte de route des 5 sessions
+- 3-12'  Restitution baromètre
+- 12-30' Coding agents 2026
 - 30-45' Échange + appel à pilotes
 
 **Schémas embarqués** *(syntaxe Obsidian, preview inline dans Obsidian, ignorée par GitHub Pages)*
+- ![[images/baromètre/baro-05-plan-syllabus.svg]]
 - ![[../coding-agents/images/20260512-01-trois-regimes.svg]]
 - ![[../coding-agents/images/20260512-04-comparatif.svg]]
 - ![[../coding-agents/images/20260512-08-carte-decision.svg]]
@@ -183,13 +187,13 @@ présent → mécanique → valeur → futur → mise en production
 **Slideshow** : [01-le-present-slideshow.html](01-le-present-slideshow.html)
 
 ## Sessions 2, 3, 4 — même structure
-## Événement final — brief consultants
+## Événement final — brief REX
 ## Logistique — planning, salle, captation
 ```
 
 ## Critères de succès
 
-1. **Mathieu peut animer chaque session** sans préparation supplémentaire substantielle (les slideshows sont prêts, les notes d'animation dans `syllabus.md` suffisent).
+1. **Le syllabus peut être animé par une seule personne** sans préparation supplémentaire substantielle (les slideshows sont prêts, les notes d'animation dans `syllabus.md` suffisent).
 2. **Les 4 sessions sont auto-suffisantes** : un participant qui en rate une peut consulter le slideshow correspondant chez lui.
 3. **L'arc narratif est lisible** : à la fin de la session 4, l'événement final apparaît comme la suite logique, pas comme un addendum.
 4. **Le matériel est exclusivement réutilisé** des dossiers existants, sauf 1-2 schémas baromètre fournis par Mathieu en aval.
@@ -208,5 +212,5 @@ présent → mécanique → valeur → futur → mise en production
 |---|---|---|
 | Dérive des SVG sources (un schéma modifié casse le sens du slideshow) | Moyen | Si une session est jouée et le schéma modifié, copier rétroactivement la version « gelée » dans `syllabus/images/` |
 | Audience trop hétérogène (users vs builders) → personne ne se reconnaît | Moyen | Hooks de session ciblés *« pour les users : ... · pour les builders : ... »* explicitement annoncés |
-| Le baromètre ne donne pas matière suffisante à 10 min d'ouverture session 1 | Faible | Mathieu peut compléter avec des observations terrain CoC |
-| Les 2 consultants n'arrivent pas à temps pour le final | Élevé | Calage très en amont ; backup possible : Mathieu présente seul en s'appuyant sur les apps `evaluation-agentique/` et `observabilite-agents-ia/` |
+| Le baromètre ne donne pas matière suffisante à 10 min d'ouverture session 1 | Faible | Compléter avec des observations terrain CoC |
+| Les 2 REX n'arrivent pas à temps pour le final | Élevé | Calage très en amont ; backup possible : présenter seul en s'appuyant sur les apps `evaluation-agentique/` et `observabilite-agents-ia/` |

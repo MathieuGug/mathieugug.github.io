@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Construire un dossier `syllabus/` autonome qui contient le document maître (`syllabus.md`), un hub HTML interne (`index.html`), 5 slideshows interactifs (4 sessions courtes + 1 événement final) et 4 SVG inédits du baromètre, prêts à être animés par Mathieu pour acculturer le CoC data (~400 ingénieurs, 103 répondants au baromètre).
+**Goal:** Construire un dossier `syllabus/` autonome qui contient le document maître (`syllabus.md`), un hub HTML interne (`index.html`), 5 slideshows interactifs (4 sessions courtes + 1 événement final) et 5 SVG inédits (4 baromètre + 1 plan-syllabus), prêts à être animés pour acculturer le CoC data (~400 ingénieurs, 103 répondants au baromètre).
 
 **Architecture:** Reproduit le pattern HTML/CSS/JS vanille du site (`coding-agents/`, `measure-roi/`, etc.) en réutilisant la lib partagée `/assets/dossier-app.{js,css}` et le template slideshow de la skill `illustrated-deep-research`. Aucun framework, aucun build. Les slideshows pointent directement vers les SVG des dossiers existants (`../coding-agents/images/...`) ; seuls les SVG du baromètre sont créés localement dans `syllabus/images/baromètre/`.
 
@@ -23,6 +23,7 @@
 | 3 | SVG baromètre #2 — profil répondants | `syllabus/images/baromètre/baro-02-profil-repondants.svg` |
 | 4 | SVG baromètre #3 — adoption & impact | `syllabus/images/baromètre/baro-03-adoption-impact.svg` |
 | 5 | SVG baromètre #4 — tâches par profil | `syllabus/images/baromètre/baro-04-taches-par-profil.svg` |
+| T7.5-7.7 | SVG baromètre #5 — plan syllabus (inséré après T7, voir note en fin de plan) | `syllabus/images/baromètre/baro-05-plan-syllabus.svg` |
 | 6 | Document maître `syllabus.md` | `syllabus/syllabus.md` |
 | 7 | Hub HTML `syllabus/index.html` | `syllabus/index.html` |
 | 8 | Slideshow Session 1 — Le présent | `syllabus/01-le-present-slideshow.html` |
@@ -508,7 +509,7 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 
 ## Vue d'ensemble
 
-L'acculturation se fait en cinq temps : **présent → mécanique → valeur → futur → mise en production**. Chaque session courte est conçue pour 45 min (30 min de présentation + 15 min d'échange), animée par Mathieu seul. L'événement final (1h30) capitalise sur les 4 sessions et fait intervenir deux consultants externes (évaluation et observabilité).
+L'acculturation se fait en cinq temps : **présent → mécanique → valeur → futur → mise en production**. Chaque session courte est conçue pour 45 min (30 min de présentation + 15 min d'échange), animée par une seule personne. L'événement final (1h30) capitalise sur les 4 sessions et fait intervenir deux REX externes (évaluation et observabilité).
 
 Tous les supports sont autonomes : un participant qui rate une session peut consulter le slideshow correspondant chez lui. Tous embarquent zoom plein écran, modaux explicatifs et navigation clavier.
 
@@ -528,11 +529,13 @@ Tous les supports sont autonomes : un participant qui rate une session peut cons
 **Hook** : *« 60 % d'entre vous utilisent l'IA chaque semaine, 58 % pour coder. Voilà comment on en tire vraiment parti — et pourquoi c'est un début, pas la fin. »*
 
 **Plan minuté**
-- 0-12'  Restitution baromètre — 4 visuels reformatés, focus sur les chiffres qui parlent à l'audience
+- 0-3'   Plan du syllabus — carte de route des 5 sessions
+- 3-12'  Restitution baromètre — 4 visuels reformatés, focus sur les chiffres qui parlent à l'audience
 - 12-30' Coding agents 2026 — Claude Code / Codex / Copilot, en partant du chiffre 58 %
 - 30-45' Échange + appel à pilotes (cible : 5 DA/BI + 2 Data Engineers minimum)
 
 **Schémas embarqués** (syntaxe Obsidian, preview inline ; ignorée par GitHub Pages)
+- ![[images/baromètre/baro-05-plan-syllabus.svg]]
 - ![[images/baromètre/baro-01-chiffres-cles.svg]]
 - ![[images/baromètre/baro-02-profil-repondants.svg]]
 - ![[images/baromètre/baro-03-adoption-impact.svg]]
@@ -596,7 +599,7 @@ Tous les supports sont autonomes : un participant qui rate une session peut cons
 - Le chiffre 95 % accroche — l'utiliser comme le hook qui force l'attention.
 - Être très clair sur le **paradoxe agentique** : le coût par token baisse, mais la complexité de l'agent augmente → le coût par tâche peut monter même si le coût par token baisse.
 - Klarna : raconter l'histoire (pic communication, recul, ré-embauche) — exemple culturel partageable.
-- **Annoncer explicitement l'événement final** dans les 5 dernières minutes : « pour mesurer vraiment, il faut instrumenter, et pour instrumenter il faut savoir ce qu'on mesure — c'est ce que les deux consultants viennent expliquer le [date] ».
+- **Annoncer explicitement l'événement final** dans les 5 dernières minutes : « pour mesurer vraiment, il faut instrumenter, et pour instrumenter il faut savoir ce qu'on mesure — c'est ce que les deux REX viennent expliquer le [date] ».
 
 **Slideshow** : [03-la-valeur-slideshow.html](03-la-valeur-slideshow.html)
 
@@ -609,8 +612,8 @@ Tous les supports sont autonomes : un participant qui rate une session peut cons
 **Plan minuté**
 - 0-10'  L'écart entre les estimations
 - 10-25' Augmentation vs automatisation, 4 scénarios 2035, 6 leviers d'action
-- 25-32' **Bonus baromètre — l'angle mort** : le baromètre montre 3 % de data storytelling et 7 % de livrables clients. Pointer vers le dossier `narrative-experiences/` comme ouverture pour ceux qui veulent creuser après.
-- 32-45' Échange — quel scénario pour le CoC, quelles compétences à développer (au-delà du code), comment le CoC se positionne
+- 22-35' **Bonus narrative-experiences — l'angle mort** : 3 % storytelling, illustré par le schéma chaîne-augmentée. Pointer vers le dossier `narrative-experiences/` comme ouverture pour ceux qui veulent creuser après.
+- 35-45' Échange — quel scénario pour le CoC, quelles compétences à développer (au-delà du code), comment le CoC se positionne
 
 **Schémas embarqués**
 - ![[../ia-et-travail/images/20260504-01-frise-estimations.svg]]
@@ -629,12 +632,12 @@ Tous les supports sont autonomes : un participant qui rate une session peut cons
 
 ## Événement final — Les agents en production · 1h30
 
-**Format** : Mathieu (intro 15 min) + 2 consultants (30 min chacun) + échange tripartite (15 min). Cible : tout le CoC + management invité.
+**Format** : intro syllabus (15 min) + 2 REX (30 min chacun) + échange tripartite (15 min). Cible : tout le CoC + management invité.
 
 **Plan minuté**
-- 0-15'   Intro Mathieu — capitalisation des 4 sessions, pourquoi on amène 2 experts externes maintenant
-- 15-45'  **Consultant 1 — Évaluation des agents** : pyramide des métriques, LLM-as-judge, playbook gruyère
-- 45-75'  **Consultant 2 — Observabilité** : 6 piliers, anatomie d'une trace OpenTelemetry GenAI, échelle de maturité
+- 0-15'   intro syllabus — capitalisation des 4 sessions, pourquoi on amène 2 REX maintenant
+- 15-45'  **REX 1 — Évaluation des agents** : pyramide des métriques, LLM-as-judge, playbook gruyère
+- 45-75'  **REX 2 — Observabilité** : 6 piliers, anatomie d'une trace OpenTelemetry GenAI, échelle de maturité
 - 75-90'  Échange tripartite + roadmap CoC (mois suivants)
 
 **Schémas embarqués**
@@ -648,12 +651,12 @@ Tous les supports sont autonomes : un participant qui rate une session peut cons
 - ![[../observabilite-agents-ia/images/20260430-04-anatomie-trace-otel-genai.svg]]
 - ![[../observabilite-agents-ia/images/20260430-08-echelle-maturite-observabilite.svg]]
 
-**Brief consultants**
+**Brief REX**
 - Envoyer aux deux : ce syllabus.md + les rapports complets `evaluation-agentique/` et `observabilite-agents-ia/`
 - Demander : 30 min chrono, 3 schémas max, focus production (pas POC)
 - Cadrage commun : « le CoC a vu mécanique + ROI + travail — vous arrivez sur la mise en production »
 
-**Slideshow** : [05-evenement-final-slideshow.html](05-evenement-final-slideshow.html) (intro Mathieu prête, sections consultants en placeholder à compléter ensemble)
+**Slideshow** : [05-evenement-final-slideshow.html](05-evenement-final-slideshow.html) (intro syllabus prête, sections REX en placeholder à compléter en pré-prod)
 
 ---
 
@@ -714,7 +717,7 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 **Contenu fonctionnel** :
 - Topbar 2 zones (Mathieu Guglielmino à gauche, ← Retour aux dossiers à droite) — convention CLAUDE.md « Hubs ≠ pages internes »
 - Hero : eyebrow `Syllabus interne · CoC Data` (pas de date), h1 `Acculturation IA <em>agentique</em>.`, lede court avec les chiffres clés (103 répondants, 4 sessions + 1 final)
-- Meta : `4 sessions · 1 événement final · 25 schémas réutilisés · 4 schémas baromètre inédits`
+- Meta : `4 sessions · 1 événement final · 27 schémas réutilisés · 5 schémas inédits`
 - Grille 5 cartes (1 par slideshow) :
   - Carte 1 : `Session 1 — Le présent` (lien `01-le-present-slideshow.html`)
   - Carte 2 : `Session 2 — La mécanique`
@@ -785,16 +788,17 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 | # | Type | Contenu |
 |---|---|---|
 | 1 | intro | Eyebrow `Session 1 / 4`, h1 `Le présent`, lede court |
-| 2 | punchline | `60 % d'entre vous utilisent l'IA chaque semaine.` (citation grand format) |
-| 3 | schema | `baro-01-chiffres-cles.svg` — view d'ensemble, 1 modal sur le 60 % |
-| 4 | schema | `baro-02-profil-repondants.svg` — focus DA/BI 47 %, modal sur la card poste |
-| 5 | schema | `baro-03-adoption-impact.svg` — focus 27 % POC + 59 % accès limité |
-| 6 | schema | `baro-04-taches-par-profil.svg` — focus 58 % code, modal sur l'asymétrie DS/ML 84 % vs DE 44 % |
-| 7 | punchline | `58 % pour coder. Voilà ce qu'on peut vraiment en faire.` |
-| 8 | schema | `coding-agents/01-trois-regimes.svg` — copilote / collègue / autonome |
-| 9 | schema | `coding-agents/04-comparatif.svg` — Claude Code / Codex CLI / Copilot, modaux par outil |
-| 10 | schema | `coding-agents/08-carte-decision.svg` — quand utiliser quoi |
-| 11 | outro | Eyebrow `À retenir`, h2 `3 choses pour démarrer demain`, body 3 bullets, CTA « Volontaires pilote ? » |
+| 2 | schema | `baro-05-plan-syllabus.svg` — carte de route des 5 sessions (projeté pendant qu'on s'installe) |
+| 3 | punchline | `60 % d'entre vous utilisent l'IA chaque semaine.` (citation grand format) |
+| 4 | schema | `baro-01-chiffres-cles.svg` — view d'ensemble, 1 modal sur le 60 % |
+| 5 | schema | `baro-02-profil-repondants.svg` — focus DA/BI 47 %, modal sur la card poste |
+| 6 | schema | `baro-03-adoption-impact.svg` — focus 27 % POC + 59 % accès limité |
+| 7 | schema | `baro-04-taches-par-profil.svg` — focus 58 % code, modal sur l'asymétrie DS/ML 84 % vs DE 44 % |
+| 8 | punchline | `58 % pour coder. Voilà ce qu'on peut vraiment en faire.` |
+| 9 | schema | `coding-agents/01-trois-regimes.svg` — copilote / collègue / autonome |
+| 10 | schema | `coding-agents/04-comparatif.svg` — Claude Code / Codex CLI / Copilot, modaux par outil |
+| 11 | schema | `coding-agents/08-carte-decision.svg` — quand utiliser quoi |
+| 12 | outro | Eyebrow `À retenir`, h2 `3 choses pour démarrer demain`, body 3 bullets, CTA « Volontaires pilote ? » |
 
 **Données techniques (objet `SCHEMAS` JS) — extraits clés** :
 
@@ -844,6 +848,7 @@ const SCHEMAS = {
 
 const SCENES = [
   { type: "intro", eyebrow: "Session 1 / 4", title: "Le présent", lede: "Ce que dit le baromètre. Ce que les outils permettent dès demain matin." },
+  { type: "schema", svg: "images/baromètre/baro-05-plan-syllabus.svg", focus: [], title: "Plan du syllabus — carte de route des 5 sessions" },
   { type: "punchline", body: "<mark>60 %</mark> d'entre vous utilisent l'IA chaque semaine." },
   { type: "schema", svg: "images/baromètre/baro-01-chiffres-cles.svg", focus: ["60-pct-usage"], title: "Vue d'ensemble — 6 chiffres qui posent le décor" },
   { type: "schema", svg: "images/baromètre/baro-02-profil-repondants.svg", focus: ["poste-da-bi"], title: "Profil des répondants — Data Analyst / BI dominent" },
@@ -1046,9 +1051,9 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 | 5 | schema | `ia-et-travail/07-quatre-scenarios.svg` |
 | 6 | schema | `ia-et-travail/08-six-leviers.svg` |
 | 7 | punchline | `<mark>3 % data storytelling. 7 % livrables clients.</mark> Les vrais angles morts du baromètre.` |
-| 8 | outro intermédiaire | `Bonus — narrative experiences`, body « Si vous voulez creuser : un dossier complet sur le data storytelling et l'IA dans la chaîne de production de visuels », CTA `Ouvrir narrative-experiences →` |
+| 8 | schema | `narrative-experiences/images/20260505-06-chaine-augmentee.svg` — l'IA dans la chaîne de production de visuels, illustre l'angle mort 3 % storytelling |
 | 9 | punchline | `Et après ? L'événement final.` |
-| 10 | outro | h2 `Le cycle se termine`, body « 1h30 avec deux consultants externes : évaluation et observabilité des agents en production », CTA `Réserver l'événement final` (placeholder URL — Mathieu remplace par le vrai lien d'inscription) |
+| 10 | outro | h2 `Le cycle se termine`, body « 1h30 avec deux REX : évaluation et observabilité des agents en production », CTA `Réserver l'événement final` (placeholder URL) |
 
 **Modaux** : lire le slideshow `ia-et-travail/20260507-ia-et-travail-slideshow.html` pour récupérer les modaux des 4 SVG.
 
@@ -1060,7 +1065,7 @@ Substitutions :
 - `{{TITLE}}` → `Syllabus CoC Data — Session 4 : Le futur`
 - `{{OG_IMAGE_URL}}` → `https://mathieugug.github.io/ia-et-travail/og.png`
 
-Pour la scène 8 (outro intermédiaire bonus), réutiliser le composant `scene-outro` du template mais avec un seul CTA et sans `h2 em`.
+Pour la scène 8 (schema narrative-experiences), utiliser le SVG `../narrative-experiences/images/20260505-06-chaine-augmentee.svg` avec un modal qui contextualise l'angle mort 3 % storytelling.
 
 - [ ] **Step 3 : Validation visuelle**
 
@@ -1080,29 +1085,29 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 **Files:**
 - Create: `syllabus/05-evenement-final-slideshow.html`
 
-**Particularité** : ce slideshow a 3 zones distinctes — l'intro Mathieu (15 min, contenu complet) + section Consultant 1 (placeholders) + section Consultant 2 (placeholders) + outro échange.
+**Particularité** : ce slideshow a 3 zones distinctes — l'intro syllabus (15 min, contenu complet) + section REX 1 (placeholders) + section REX 2 (placeholders) + outro échange.
 
 **Plan des scènes (15 scènes)** :
 
 | # | Type | Section | Contenu |
 |---|---|---|---|
 | 1 | intro | — | `Événement final · 1h30`, h1 `Les agents en <em>production</em>`, lede |
-| 2 | punchline | Intro Mathieu | `On a parlé du présent, de la mécanique, de la valeur, du futur. <mark>Aujourd'hui, on parle de la mise en production.</mark>` |
-| 3 | schema | Intro Mathieu | `coding-agents/01-trois-regimes.svg` (rappel session 1) |
-| 4 | schema | Intro Mathieu | `harness-agentique/01-anatomie-harness.svg` (rappel session 2) |
-| 5 | schema | Intro Mathieu | `measure-roi/01-paradoxe-roi.svg` (rappel session 3) |
-| 6 | punchline | Intro Mathieu | `Trois questions ouvertes : peut-on évaluer ? peut-on observer ? peut-on chiffrer ? — réponses dans la prochaine heure.` |
-| 7 | section | — | Eyebrow `Consultant 1`, h2 `Évaluation des agents`, body « Présenté par [nom à confirmer] » (placeholder) |
-| 8 | schema | Consultant 1 | `evaluation-agentique/04-pyramide-metriques.svg` *(placeholder modal — à confirmer avec consultant)* |
-| 9 | schema | Consultant 1 | `evaluation-agentique/05-llm-as-judge.svg` |
-| 10 | schema | Consultant 1 | `evaluation-agentique/10-playbook-gruyere.svg` |
-| 11 | section | — | Eyebrow `Consultant 2`, h2 `Observabilité`, body « Présenté par [nom à confirmer] » (placeholder) |
-| 12 | schema | Consultant 2 | `observabilite-agents-ia/02-six-piliers-telemetrie.svg` |
-| 13 | schema | Consultant 2 | `observabilite-agents-ia/04-anatomie-trace-otel-genai.svg` |
-| 14 | schema | Consultant 2 | `observabilite-agents-ia/08-echelle-maturite-observabilite.svg` |
+| 2 | punchline | Intro syllabus | `On a parlé du présent, de la mécanique, de la valeur, du futur. <mark>Aujourd'hui, on parle de la mise en production.</mark>` |
+| 3 | schema | Intro syllabus | `coding-agents/01-trois-regimes.svg` (rappel session 1) |
+| 4 | schema | Intro syllabus | `harness-agentique/01-anatomie-harness.svg` (rappel session 2) |
+| 5 | schema | Intro syllabus | `measure-roi/01-paradoxe-roi.svg` (rappel session 3) |
+| 6 | punchline | Intro syllabus | `Trois questions ouvertes : peut-on évaluer ? peut-on observer ? peut-on chiffrer ? — réponses dans la prochaine heure.` |
+| 7 | section | — | Eyebrow `REX 1`, h2 `Évaluation des agents`, body « Présenté par [nom à confirmer] » (placeholder) |
+| 8 | schema | REX 1 | `evaluation-agentique/04-pyramide-metriques.svg` *(placeholder modal — à confirmer avec le REX)* |
+| 9 | schema | REX 1 | `evaluation-agentique/05-llm-as-judge.svg` |
+| 10 | schema | REX 1 | `evaluation-agentique/10-playbook-gruyere.svg` |
+| 11 | section | — | Eyebrow `REX 2`, h2 `Observabilité`, body « Présenté par [nom à confirmer] » (placeholder) |
+| 12 | schema | REX 2 | `observabilite-agents-ia/02-six-piliers-telemetrie.svg` |
+| 13 | schema | REX 2 | `observabilite-agents-ia/04-anatomie-trace-otel-genai.svg` |
+| 14 | schema | REX 2 | `observabilite-agents-ia/08-echelle-maturite-observabilite.svg` |
 | 15 | outro | — | h2 `Échange tripartite + roadmap CoC`, body « 15 min restantes pour vos questions et l'esquisse de la roadmap CoC », pas de CTA (fin du syllabus) |
 
-**Note importante sur les placeholders** : les modaux des SVG des sections Consultant 1 et 2 doivent être pré-remplis avec le contenu des slideshows existants (s'ils existent) OU avec le contenu des rapports `*-rapport.md` correspondants. **Marquer chaque modal placeholder par un eyebrow `À CONFIRMER AVEC CONSULTANT`** pour que Mathieu sache où ajuster.
+**Note importante sur les placeholders** : les modaux des SVG des sections REX 1 et 2 doivent être pré-remplis avec le contenu des slideshows existants (s'ils existent) OU avec le contenu des rapports `*-rapport.md` correspondants. **Marquer chaque modal placeholder par un eyebrow `À CONFIRMER AVEC LE REX`** pour identifier les ajustements à faire en pré-prod.
 
 Pour la nouvelle scène type `section` qui n'existe pas dans le template : ajouter au CSS du slideshow une classe `.scene-section` qui affiche un grand eyebrow + h2 + body, similaire à `.scene-outro` mais sans CTAs et avec une barre verticale carmine sur le côté gauche pour marquer la transition.
 
@@ -1119,7 +1124,7 @@ ls "C:/Users/mguglielmino/Documents/code/mathieugug.github.io/observabilite-agen
 
 Substitutions :
 - `{{TITLE}}` → `Syllabus CoC Data — Événement final : Les agents en production`
-- `{{META_DESCRIPTION}}` → `Événement final 1h30 du syllabus CoC Data — intro Mathieu + 2 consultants externes (évaluation et observabilité des agents en production).`
+- `{{META_DESCRIPTION}}` → `Événement final 1h30 du syllabus CoC Data — intro syllabus + 2 REX externes (évaluation et observabilité des agents en production).`
 - `{{OG_IMAGE_URL}}` → `https://mathieugug.github.io/observabilite-agents-ia/og.png`
 
 Ajouter au CSS la nouvelle classe `.scene-section` :
@@ -1170,8 +1175,8 @@ Et étendre le rendu JS dans le template pour gérer le `type: "section"` (simil
 
 Critères :
 - Les 3 schémas de rappel (scènes 3, 4, 5) sont identifiés visuellement comme des reprises (pas de modaux à cliquer dessus, ou modaux génériques type « Vu en session N »)
-- Les sections (scènes 7, 11) introduisent visuellement les consultants
-- Les modaux placeholder ont bien un eyebrow `À CONFIRMER AVEC CONSULTANT` orange ou carmine
+- Les sections (scènes 7, 11) introduisent visuellement les REX
+- Les modaux placeholder ont bien un eyebrow `À CONFIRMER AVEC LE REX` orange ou carmine
 
 - [ ] **Step 4 : Commit**
 
@@ -1179,12 +1184,12 @@ Critères :
 git add syllabus/05-evenement-final-slideshow.html
 git commit -m "feat(syllabus): slideshow événement final — Les agents en production (15 scènes)
 
-3 zones : intro Mathieu (15 min, contenu complet), Consultant 1 — Évaluation
-(modaux placeholder), Consultant 2 — Observabilité (modaux placeholder), outro
+3 zones : intro syllabus (15 min, contenu complet), REX 1 — Évaluation
+(modaux placeholder), REX 2 — Observabilité (modaux placeholder), outro
 échange tripartite. Nouvelle classe .scene-section pour marquer les
 transitions entre interventions.
 
-Modaux placeholder marqués 'À CONFIRMER AVEC CONSULTANT' pour identifier les
+Modaux placeholder marqués 'À CONFIRMER AVEC LE REX' pour identifier les
 ajustements à faire en pré-prod du final.
 
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
@@ -1291,18 +1296,19 @@ Acculturation IA agentique du CoC Data (~400 ingénieurs) basée sur les chiffre
 - Session 1 — Le présent (baromètre + coding agents)
 - Session 2 — La mécanique (anatomie agent + MCP + mémoire)
 - Session 3 — La valeur (paradoxe ROI + teaser final)
-- Session 4 — Le futur (impact travail + bonus narrative-experiences)
-- Événement final — Les agents en production (intro Mathieu + 2 consultants placeholder)
+- Session 4 — Le futur (impact travail + bonus narrative-experiences + schéma chaîne-augmentée)
+- Événement final — Les agents en production (intro syllabus + 2 REX placeholder)
 
-**4 SVG inédits du baromètre**
-- Reformat des PNG corporate au style site (palette ivoire/orange, polices site, mention « Lincoln » retirée conformément à CLAUDE.md)
+**5 SVG inédits**
+- 4 baromètre : reformat des PNG corporate au style site (palette ivoire/orange, polices site, mention « Lincoln » retirée conformément à CLAUDE.md)
+- 1 plan-syllabus : carte de route des 5 sessions, projetée en ouverture de session 1
 - ~30 régions cliquables au total
 
 ## Ce qui n'est pas livré (volontairement)
 
 - Pas de tuile dans `index.html` racine (artefact interne CoC)
 - Pas de bloc OpenGraph (pas de partage social prévu)
-- Pas de modaux finalisés pour les sections Consultants — placeholders à compléter en pré-prod du final
+- Pas de modaux finalisés pour les sections REX — placeholders à compléter en pré-prod du final
 
 ## Risques connus
 
@@ -1315,13 +1321,17 @@ Acculturation IA agentique du CoC Data (~400 ingénieurs) basée sur les chiffre
 - Spec : `docs/superpowers/specs/2026-05-11-syllabus-coc-data-design.md`
 - Plan : `docs/superpowers/plans/2026-05-11-syllabus-coc-data.md`
 
-## Note pour Mathieu
+## Note post-livraison
 
 Le syllabus est prêt à animer. Étapes restantes hors PR :
 1. Caler les dates des 5 sessions
-2. Identifier les 2 consultants pour le final + leur briefer (envoyer ce syllabus.md)
-3. Compléter les modaux placeholder du slideshow 05 avec les consultants
+2. Identifier les 2 REX pour le final + leur briefer (envoyer ce syllabus.md)
+3. Compléter les modaux placeholder du slideshow 05 avec les REX
 4. Communiquer le cycle au CoC en S-1
+
+## Note sur les tâches T7.5–T7.7 (insérées après T7)
+
+Tasks T7.5 (rework baros), T7.6 (création baro-05-plan-syllabus), T7.7 (mise à jour docs) ont été insérées entre T7 et T8 sur demande utilisateur. Voir commits 1d0c40b, 471d6bf et le présent commit.
 ```
 
 - [ ] **Step 8 : Vérifier la PR créée**
