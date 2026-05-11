@@ -188,23 +188,82 @@ You don't author this choreography per step — it kicks in automatically whenev
 
 ### 4.2 modalAuto and combined modals
 
-A step can declare `modalAuto: 'card-id'`. The engine auto-opens that modal 220 ms after the step's CSS transition. Once open, the next `→` keypress closes the modal AND advances to the next step (combo).
+A step can declare `modalAuto: 'card-id'` (string) or `modalAuto: ['card-id-1', 'card-id-2', …]` (array). The engine auto-opens the corresponding modal(s) 220 ms after the step's CSS transition. Once open, the next `→` keypress closes the modal AND advances to the next step (combo).
 
-**Combined modals when `highlight` covers multiple cards.** When several elements in `step.highlight` each have a SCHEMAS entry (`SCHEMAS[schemaId][cardId]`), the engine **doesn't pick just `modalAuto`** — it stacks all matching cards in a single modal:
+#### Anti-pattern: one step = one modal
+
+The naive shape — one step that focuses one card and opens its modal, repeated for every card on the schema — bloats the slideshow:
+
+| Schema | Cards | Naive step count |
+|---|---|---|
+| Anatomy (6 spokes) | 6 | 6 (+1 overview = 7) |
+| Comparative matrix (3 cols × 6 axes) | 18 | 18 (+1 overview = 19) |
+| Decision card (5 profiles) | 5 | 5 (+1 overview = 6) |
+
+For a typical dossier with 8 schemas, that yields **40–50 steps**. The narrative rhythm shatters: the audience can't keep the thread of the chapter under a barrage of single-card pop-ups. Cap the count.
+
+#### Pattern: one step = one focus + 1 to 4 modals stacked
+
+Group cards by thematic coherence and surface them in a single step. Pass an array to `modalAuto`; the engine renders all cards in one modal panel with a dashed separator between each. Optional `modalGroupEyebrow` + `modalGroupTitle` give the stack a shared header (otherwise the modal opens with an empty eyebrow/title and the substacks carry their own).
+
+```js
+{
+  caption: 'Trois rouages d\'infrastructure : un contexte versionné, un set de tools, des skills.',
+  highlight: ['[data-card="card-contexte"]', '[data-card="card-tools"]', '[data-card="card-skills"]'],
+  dim:       ['[data-card="card-subagents"]', '[data-card="card-hooks"]', '[data-card="card-permissions"]'],
+  hidden:    [],
+  modalAuto: ['card-contexte', 'card-tools', 'card-skills'],
+  modalGroupEyebrow: 'ROUAGES · INFRASTRUCTURE',
+  modalGroupTitle:   'Contexte, tools, skills — la matière partagée'
+}
+```
+
+The engine resolves the array via `SCHEMAS[scene.schemaId][cardId]` for each id and feeds the list to `openModalStack(cards, groupEyebrow, groupTitle)`. The DOM emitted inside `.modal-body` is:
 
 ```
-eyebrow = base before the " — " of the first card's eyebrow (e.g. "Schéma 8")
-title   = scene.title
-body    = each card as <div class="combined-card">
-            <p class="combined-eyebrow">…</p>
-            <h4>{card.title}</h4>
-            {card.body}
-          </div>
+<div class="modal-substack">
+  <p class="modal-substack-eyebrow">{card.eyebrow}</p>
+  <h4 class="modal-substack-title">{card.title}</h4>
+  <div class="modal-substack-body">{card.body}</div>
+</div>
+<hr class="modal-stack-sep" aria-hidden="true">
+<div class="modal-substack">…</div>
+…
 ```
 
-This matters for steps like "Famille A — Frey-Osborne, Arntz, Eloundou" or "Trois précédents — vapeur, électricité, TIC" or "Leviers 04 à 06" where the highlight is intentionally a group: showing only the modal pinned by `modalAuto` would make the reader think the others are decoration. The aggregation makes the focus + modal coherent.
+Single-card arrays (`['card-id']`) work too and degrade to the single-card path. Mix freely: same scene can have a stacked step followed by a single-card step.
 
-If only one highlight has a SCHEMAS entry, the modal renders as a single card (legacy behavior). Reserve `modalAuto` for moments the narrative cannot afford to skip — at most 1-2 per schema scene.
+#### Worked examples — typical reductions
+
+- **Anatomy schema (6 cards) → 3 steps**: overview + "infrastructure" stack (contexte + tools + skills) + "orchestration" stack (sub-agents + hooks + permissions).
+- **Comparative matrix (3 tools × 6 axes = 18 cells) → 3 steps**: one per column (full column stacked, 6 cards each).
+- **Decision card (5 profiles) → 3 steps**: overview + non-tech stack (consultant + analyst) + tech stack (eng + scientist + manager).
+- **Three-phase timeline (3 cells) → 2 steps**: overview + all 3 stacked in one narrative beat.
+
+#### Target totals and required coverage
+
+Aim for **~15–20 schema steps total** across the slideshow (plus intro + outro = 17–22 actual `→` presses). A 12-scene slideshow should rarely exceed 25 steps. The step should narrate ONE thing — not unroll a list.
+
+**Coverage constraint (mémoire `feedback_slideshow_scene_coverage`)** : every `data-card` that has a SCHEMAS entry MUST appear in `modalAuto` (string or array) at some point during linear playback. The combined-modal pattern preserves coverage while compressing steps — there is no trade-off. Audit script (Python one-liner) at the bottom of this section.
+
+#### Coverage audit
+
+```python
+# Run from repo root after editing the slideshow's SCENES array.
+import re
+with open('dossier-slug/YYYYMMDD-slug-slideshow.html', encoding='utf-8') as f:
+    text = f.read()
+m = re.search(r'const SCENES = \[(.*?)\];\s*\n\s*/\* .*? SCHEMAS', text, re.DOTALL)
+scenes_text = m.group(1)
+simple  = re.findall(r"modalAuto:\s*'([^']+)'", scenes_text)
+arrays  = re.findall(r"modalAuto:\s*\[([^\]]+)\]", scenes_text)
+covered = set(simple)
+for arr in arrays:
+    covered.update(re.findall(r"'([^']+)'", arr))
+print(f'modalAuto covers {len(covered)} cards')  # compare with SCHEMAS keys count
+```
+
+Reference implementation: `coding-agents/20260512-coding-agents-slideshow.html` (46 steps → 18 schema steps + intro + outro = 20 total, 36/36 cards covered).
 
 ### 4.3 `step.fullView` — opt-out of focus
 

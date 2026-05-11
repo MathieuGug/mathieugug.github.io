@@ -50,6 +50,17 @@ python tools/seo_dossiers.py --only <slug>
   - **Sources repliées (`.layout.sources-collapsed`)** : figure s'étend `[TOC-right, viewport-right]`. À 1920 px : 1680.
 
   Formules : `.figure { margin-inline: calc(-1 * max(0px, (100vw - 1320px) / 2 + 48px)); width: auto }` (default) puis `.layout.sources-collapsed .figure { margin-inline: calc(-1 * max(0px, (100vw - 904px) / 2)) }`. Le `width: auto` + marges négatives symétriques absorbent à la fois le centrage de `main#report` dans le main-cell **et** son padding interne 48 px. Transition smoothe 280 ms alignée avec la transition `grid-template-columns` du layout. **Aucun chevauchement des sidebars visibles** (contrainte stricte : avec `width: 100vw`, le background `--paper` de la figure peint au-dessus des items du TOC et les masque visuellement). Pattern CSS et dérivation mathématique complète dans la skill `illustrated-deep-research` (`references/companion-app.md` § 5). Mobile (<1025 px) : la grille s'effondre en colonne unique, la figure remplit naturellement, pas d'override. Appliqué aux huit apps existantes ; tout nouveau rapport généré par la skill l'embarque par défaut.
+- **Convention typo des schémas (TODO design system unifié)** : à date (2026-05), les schémas du dossier `coding-agents/` ont été calibrés sur les tailles ci-dessous, +2pt par rapport à la table de `illustrated-deep-research/references/svg-editorial-style.md`. À harmoniser sur les autres dossiers progressivement (todo : audit complet + alignement) :
+  - Title : `.display` 28pt 600 weight letter-spacing -0.01em
+  - Subtitle : `.display` 18pt 400 italic
+  - Body label : `.body` 15pt 500 weight
+  - Annotation : `.body` 13pt
+  - Caption / source : `.body` 12pt italic
+  - Numeric callout : `.mono` 15pt 500 weight
+  - Marker (numéro / lettre) : `.mono` 12pt 600 weight
+  - Schema marker (SCHÉMA NN) : `.mono` 12pt 600 weight letter-spacing 0.16em CARMINE
+
+  **TODO** : (1) auditer les ~70 schémas SVG existants (`grep -lE 'font-size="[6-9]"|font-size="10"' */images/*.svg`) pour repérer ceux qui ont des polices < 11pt et les remettre aux tailles minimales ; (2) mettre à jour `illustrated-deep-research/references/svg-editorial-style.md` pour qu'il pointe sur cette nouvelle convention ; (3) optionnel : ajouter un test CI qui vérifie que les SVG ne contiennent pas de `font-size="<11"`. À cadrer une fois ce dossier publié.
 
 ## Mobile-friendliness
 

@@ -18,7 +18,6 @@ _Mis à jour par la routine `Illustrated deep research · mer + ven`._
 - Synthetic data et model collapse — Shumailov et al.
 - Souveraineté des semi-conducteurs (TSMC, ASML, Nvidia, AMD MI400)
 - Energy footprint des LLMs en 2026 — data centers et grids
-- Coding agents en production (Cursor, Claude Code, Devin, Aider)
 - Edge AI / on-device — Apple Intelligence, Phi-5, Gemma
 - Speculative decoding et batching dynamique (vLLM, SGLang, TensorRT-LLM)
 
@@ -32,6 +31,7 @@ _Mis à jour par la routine `Illustrated deep research · mer + ven`._
 - A2A (Google) — adoption cross-vendor ou absorption par MCP via sampling/subagents
 
 ## Déjà couverts (date · slug · angle)
+- 2026-05-12 · coding-agents · Claude Code / Codex CLI / Copilot, anatomie + pyramide d'usage 4 étages (transverse / data quotidien / data expert / produit-décideurs), retex chiffrés vs benchmarks publics
 - 2026-05-08 · mcp-plateforme · effet de réseau, donation Linux Foundation, surface d'attaque tool-poisoning + cross-server, layering MCP / function calling / OpenAPI / A2A
 - 2026-05-06 · modeles-raisonnement · pivot o1, RLVR, second axe scaling, anatomie raisonneur, faithfulness, diffusion
 - 2026-05-06 · economie-inference · LLMflation, pile logicielle, désagrégation, MoE, mix matériel, marges

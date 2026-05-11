@@ -17,6 +17,7 @@ INDEX = ROOT / "index.html"
 # slug -> (type, [themes], iso_date)
 # Date manquante (Avril 2026 sans jour) -> 1er du mois.
 CARDS = {
+    "coding-agents":          ("etude",   ["agentique"],                  "2026-05-12"),
     "proces-musk-altman":     ("veille",  ["gouvernance", "economie"],   "2026-04-27"),
     "evaluation-agentique":   ("etude",   ["agentique", "production"],   "2026-05-01"),
     "observabilite-agents-ia":("etude",   ["agentique", "production"],   "2026-04-30"),
