@@ -6,12 +6,32 @@
 
 ## Contexte
 
-Le centre de compétences data (~400 ingénieurs, profils mixtes *users IA* et *builders d'agents*) vient de publier un baromètre interne (100 répondants) qui montre un **usage limité de l'IA**. Le syllabus a deux objectifs :
+Le centre de compétences data (~400 ingénieurs, profils mixtes *users IA* et *builders d'agents*) vient de publier un baromètre interne qui éclaire la situation. Le syllabus a deux objectifs :
 
 1. **Acculturer** régulièrement le CoC à l'IA agentique (sessions courtes, presque informelles)
 2. **Converger** vers un événement officiel (1h30) qui présente les agents *en production* avec deux consultants externes (évaluation + observabilité)
 
 Le syllabus doit s'appuyer **maximalement** sur le matériel déjà publié sur mathieugug.github.io (huit dossiers deep research + leurs schémas SVG inline interactifs), pour éviter de produire du nouveau contenu et capitaliser sur le travail existant.
+
+### Chiffres clés du baromètre (mai 2026)
+
+- **103 répondants** consultants Data & Analytics, 92 % Grand Compte ou CAC 40
+- **Profils dominants** : Data Analyst / BI **47 %**, Data Scientist / ML 18 %, Data Engineer 15 %, Architecte / Tech Lead 6 %, Autre 15 %
+- **Niveaux d'expérience** : Expert/Lead 16 %, Senior 35 %, Confirmé 47 %, Junior 3 % (cœur de cible Senior + Confirmé = 82 %)
+- **Adoption IA** : 60 % usage régulier (en continu, quotidien ou hebdomadaire) ; 36 % rarement ou jamais
+- **Tâche IA n°1** : génération / débogage de code **58 %**, loin devant veille techno 11 %, doc 7 %, livrables clients 7 %, **data storytelling 3 %**
+- **Asymétrie code par profil** : DS/ML 84 %, Architecte 67 %, DA/BI 60 %, Data Engineer 44 %, Manager 33 %
+- **IA chez les clients** : 27 % en POC, 21 % agents/analytics conv, 18 % copilots BI, 14 % pas du tout
+- **Contrainte structurelle** : 59 % d'accès IA limité chez les clients, 27 % libre, 11 % bloqué
+- **Perception** : « IA bouleverse le métier » 3.6/5, maturité data clients 3.8/5
+
+### Lectures structurantes pour le syllabus
+
+- **Le syllabus est légitimé par les chiffres** : 58 % génération de code → session 1 (coding agents) tape pile dans l'usage actuel ; 36 % d'usage faible → l'acculturation est nécessaire ; 11 % de veille → le syllabus *est* une réponse à ce manque.
+- **Profil cible session 1** : Data Analyst / BI (47 %, le plus nombreux, le plus à acculturer côté code).
+- **Asymétrie à exploiter en session 2** : pourquoi 84 % des DS/ML utilisent l'IA pour coder mais seulement 44 % des Data Engineers ? Mécaniques d'agents → ouvrir le champ aux profils sous-représentés.
+- **Le ROI (session 3) prend du sens** vu la pression POC clients (27 %) — les ingénieurs CoC seront sollicités pour chiffrer.
+- **Session 4 ou bonus** : data storytelling 3 % et livrables clients 7 % sont les deux usages les plus sous-exploités. Teaser optionnel vers le dossier `narrative-experiences/` (publié, accessible) pour ceux qui veulent creuser.
 
 ## Cible
 
@@ -54,15 +74,17 @@ Session 4 — LE FUTUR         ce que ça change au travail data (et au CoC)
 ## Contenu détaillé
 
 ### Session 1 — Le présent · 45 min
-**Hook** : *« Le baromètre dit X. Voilà ce qu'on peut faire dès demain matin. »*
+**Hook** : *« 60 % d'entre vous utilisent l'IA chaque semaine, 58 % pour coder. Voilà comment on en tire vraiment parti — et pourquoi c'est un début, pas la fin. »*
 
 | Slot | Contenu | Schémas |
 |---|---|---|
-| 0-10' | Restitution baromètre — chiffres clés du deck Mathieu | 1-2 schémas issus du deck baromètre (à reformatter au style site si besoin) |
-| 10-30' | Coding agents 2026 — Claude Code / Codex / Copilot | `coding-agents/images/20260512-01-trois-regimes.svg` · `04-comparatif.svg` · `08-carte-decision.svg` |
-| 30-45' | Échange + appel à pilotes (5-10 volontaires) | — |
+| 0-12' | Restitution baromètre — 4 visuels (chiffres clés, profil répondants, adoption & impact, tâches par profil) **reformatés au style site** (papier ivoire, accent orange, polices Fraunces/Inter/JetBrains Mono) ; mention « Lincoln » retirée des CTAs (cf. règle CLAUDE.md : Lincoln en footer uniquement) | 4 SVG inédits à créer dans `syllabus/images/baromètre/` à partir des PNG fournis par Mathieu : `baro-01-chiffres-cles.svg`, `baro-02-profil-repondants.svg`, `baro-03-adoption-impact.svg`, `baro-04-taches-par-profil.svg` |
+| 12-30' | Coding agents 2026 — Claude Code / Codex / Copilot. Cadrer en partant du chiffre **58 % génération de code** : ce que les outils permettent vraiment au-delà de la complétion | `coding-agents/images/20260512-01-trois-regimes.svg` · `04-comparatif.svg` · `08-carte-decision.svg` |
+| 30-45' | Échange + appel à pilotes (5-10 volontaires, cible prioritaire Data Analyst / BI vu les 47 % de l'audience) | — |
 
-**Sortie attendue** : engagement à venir aux sessions suivantes + liste de volontaires pour expérimenter.
+**Sortie attendue** : engagement à venir aux sessions suivantes + liste de volontaires pour expérimenter (au moins 5 DA/BI + 2 DE).
+
+**Note importante sur le reformat des visuels baromètre** : les PNG fournis par Mathieu sont au style corporate Lincoln (bleu, ton institutionnel). Les recréer en SVG au style site (palette ivoire/orange, polices serif/mono) garantit la cohérence visuelle du syllabus *et* respecte la règle CLAUDE.md « Lincoln = footer uniquement ». Les chiffres restent identiques ; seule la mise en forme change. Les 4 SVG suivent les conventions typo des schémas du site (cf. CLAUDE.md « Convention typo des schémas »).
 
 ### Session 2 — La mécanique · 45 min
 **Hook** : *« Pour bien utiliser un agent (et bien le construire), il faut savoir comment il pense. »*
@@ -88,8 +110,9 @@ Session 4 — LE FUTUR         ce que ça change au travail data (et au CoC)
 | Slot | Contenu | Schémas |
 |---|---|---|
 | 0-10' | L'écart entre les estimations | `ia-et-travail/images/20260504-01-frise-estimations.svg` |
-| 10-30' | Augmentation vs automatisation, scénarios, leviers | `04-augmentation-automatisation.svg` · `07-quatre-scenarios.svg` · `08-six-leviers.svg` |
-| 30-45' | Échange — quel scénario pour le CoC, quelles compétences | — |
+| 10-25' | Augmentation vs automatisation, scénarios, leviers | `04-augmentation-automatisation.svg` · `07-quatre-scenarios.svg` · `08-six-leviers.svg` |
+| 25-32' | **Bonus baromètre — l'angle mort** : le baromètre montre 3 % de data storytelling et 7 % de livrables clients. Pointer vers le dossier `narrative-experiences/` comme ouverture pour ceux qui veulent creuser | `narrative-experiences/` (lien vers le hub, pas de schéma intégré pour rester sur 4 schémas max) |
+| 32-45' | Échange — quel scénario pour le CoC, quelles compétences à développer (au-delà du code), comment le CoC se positionne | — |
 
 ### Événement final · 1h30 — Les agents en production
 
@@ -100,7 +123,7 @@ Session 4 — LE FUTUR         ce que ça change au travail data (et au CoC)
 | 45-75' | **Consultant 2 — Observabilité** | `observabilite-agents-ia/images/20260430-02-six-piliers-telemetrie.svg` · `04-anatomie-trace-otel-genai.svg` · `08-echelle-maturite-observabilite.svg` (placeholder, à confirmer avec consultant) |
 | 75-90' | Échange tripartite + roadmap CoC | — |
 
-**Total réutilisé** : ~25 schémas existants. Aucune création nouvelle requise hors les schémas du baromètre fournis par Mathieu.
+**Total** : ~25 schémas existants réutilisés + 4 schémas baromètre à créer (reformat des PNG fournis au style site). Aucune autre création requise.
 
 ## Architecture technique
 
@@ -112,12 +135,19 @@ syllabus/
 ├── 02-la-mecanique-slideshow.html         ← session 2
 ├── 03-la-valeur-slideshow.html            ← session 3
 ├── 04-le-futur-slideshow.html             ← session 4
-└── 05-evenement-final-slideshow.html      ← intro Mathieu + placeholders consultants
+├── 05-evenement-final-slideshow.html      ← intro Mathieu + placeholders consultants
+└── images/
+    └── baromètre/                         ← seuls SVG locaux (créations inédites)
+        ├── baro-01-chiffres-cles.svg
+        ├── baro-02-profil-repondants.svg
+        ├── baro-03-adoption-impact.svg
+        └── baro-04-taches-par-profil.svg
 ```
 
 **Décisions** :
 
-- **Pas de dossier `images/` local** : les slideshows pointent directement vers `../coding-agents/images/...`, etc. Plus léger, mais **risque de dérive** : si un schéma source est modifié plus tard, le slideshow syllabus reflète automatiquement la nouvelle version. Accepté en l'état ; si une session est jouée puis le schéma modifié, on pourra rétroactivement copier la version « gelée » dans `syllabus/images/` pour cette session.
+- **Pas de copie des SVG des dossiers existants** : les slideshows pointent directement vers `../coding-agents/images/...`, etc. Plus léger, mais **risque de dérive** : si un schéma source est modifié plus tard, le slideshow syllabus reflète automatiquement la nouvelle version. Accepté en l'état ; si une session est jouée puis le schéma modifié, on pourra rétroactivement copier la version « gelée » dans `syllabus/images/` pour cette session.
+- **Seul `syllabus/images/baromètre/` contient des SVG locaux** : ce sont des créations inédites (reformat des PNG du deck baromètre fournis par Mathieu) qui n'ont pas vocation à exister ailleurs dans le repo. 4 SVG, créés au style éditorial du site (palette ivoire/orange, polices Fraunces/Inter/JetBrains Mono, mention « Lincoln » retirée), interactifs (régions cliquables → modaux explicatifs).
 - **Hub `syllabus/index.html` non listé dans la grille de l'accueil** : artefact interne CoC, pas un dossier public au même titre que `coding-agents/`, etc. Accessible via URL directe `https://mathieugug.github.io/syllabus/`. Si Mathieu décide plus tard d'en faire un artefact public, il suffira d'ajouter une tuile dans `index.html` racine.
 - **Slideshow événement final inclus** : trame complète pour les 15' d'intro Mathieu + sections placeholder pour les 2 consultants (titres, schémas pressentis, mais contenu modaux vide). Mathieu et les consultants compléteront ensemble en pré-prod du final.
 - **Toutes les pages internes embarquent les conventions du site** : favicon `/favicon.svg`, polices Google (Fraunces / Inter / JetBrains Mono), palette `--bg #faf6ec` / `--accent #b8582e`, topbar 3 zones (cf. CLAUDE.md), bibliothèque partagée `/assets/dossier-app.{js,css}` pour les patterns interactifs (zoom, modaux, panel-close mobile).
