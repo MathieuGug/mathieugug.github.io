@@ -9,7 +9,7 @@
 Le centre de compétences data (~400 ingénieurs, profils mixtes *users IA* et *builders d'agents*) vient de publier un baromètre interne qui éclaire la situation. Le syllabus a deux objectifs :
 
 1. **Acculturer** régulièrement le CoC à l'IA agentique (sessions courtes, presque informelles)
-2. **Converger** vers un événement officiel (1h30) qui présente les agents *en production* avec deux REX externes (évaluation + observabilité)
+2. **Converger** vers un événement officiel (1h30) qui présente les agents *en production* avec deux REX internes — collègues du groupe ayant mis des agents en production — sur l'évaluation et l'observabilité
 
 Le syllabus doit s'appuyer **maximalement** sur le matériel déjà publié sur mathieugug.github.io (huit dossiers deep research + leurs schémas SVG inline interactifs), pour éviter de produire du nouveau contenu et capitaliser sur le travail existant.
 
@@ -35,8 +35,8 @@ Le syllabus doit s'appuyer **maximalement** sur le matériel déjà publié sur 
 
 ## Cible
 
-- **Audience mixte** users + builders dans la même salle pour les 4 sessions courtes et l'événement final
-- ~400 ingénieurs au total ; sessions ouvertes (présence variable, à estimer après session 1)
+- **Sessions courtes (4 × 45 min)** : audience mixte users + builders dans la même salle (~400 ingénieurs au total, sessions ouvertes, présence variable)
+- **Événement final (1h30)** : recentré sur les **builders** — Data Engineers + Data Scientists, soit ~33 % du CoC selon le baromètre (DS/ML 18 % + DE 15 %). Les contenus eval + observabilité sont des sujets de mise en production technique : les profils qui déploient des agents en sont les destinataires naturels.
 - Format **presque informel** : présentation + échange, pas une conférence
 
 ## Arc narratif
@@ -67,7 +67,7 @@ Session 4 — LE FUTUR         ce que ça change au travail data (et au CoC)
 | Paramètre | Valeur |
 |---|---|
 | Sessions courtes | 4 sessions × 45 min (30 présent + 15 échange) |
-| Événement final | 1 × 1h30 (15' intro + 30' REX 1 + 30' REX 2 + 15' échange) |
+| Événement final | 1 × 1h30 (15' intro + 30' REX interne 1 + 30' REX interne 2 + 15' échange) |
 | Schémas par session courte | 4 max + 1 bonus optionnel |
 | Réutilisation | 100 % des schémas viennent de dossiers existants (sauf ceux du baromètre, fournis par Mathieu) |
 

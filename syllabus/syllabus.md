@@ -9,7 +9,7 @@
 
 ## Vue d'ensemble
 
-L'acculturation se fait en cinq temps : **présent → mécanique → valeur → futur → mise en production**. Chaque session courte est conçue pour 45 min (30 min de présentation + 15 min d'échange), animée par une seule personne. L'événement final (1h30) capitalise sur les 4 sessions et fait intervenir deux REX externes (évaluation et observabilité).
+L'acculturation se fait en cinq temps : **présent → mécanique → valeur → futur → mise en production**. Chaque session courte est conçue pour 45 min (30 min de présentation + 15 min d'échange), animée par une seule personne. L'événement final (1h30) capitalise sur les 4 sessions et fait intervenir deux REX internes (collègues du groupe sur évaluation et observabilité).
 
 Tous les supports sont autonomes : un participant qui rate une session peut consulter le slideshow correspondant chez lui. Tous embarquent zoom plein écran, modaux explicatifs et navigation clavier.
 
@@ -134,7 +134,7 @@ Tous les supports sont autonomes : un participant qui rate une session peut cons
 
 ## Événement final — Les agents en production · 1h30
 
-**Format** : intro syllabus (15 min) + 2 REX (30 min chacun) + échange tripartite (15 min). Cible : tout le CoC + management invité.
+**Format** : intro syllabus (15 min) + 2 REX internes (30 min chacun) + échange tripartite (15 min). Cible : **builders du CoC** — Data Engineers + Data Scientists (~33 % de l'audience baromètre, soit ~130 personnes sur les ~400 du CoC).
 
 **Plan minuté**
 - 0-15'   intro syllabus — capitalisation des 4 sessions, pourquoi on amène 2 REX maintenant
