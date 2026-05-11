@@ -2,7 +2,9 @@
 
 A scenic full-screen slideshow that condenses the long-form study into 10-12 minutes. **Optional**: only build it when the user asks, or when the topic warrants a third entry door alongside the report.md and the long-form HTML app. Reuses the report's existing SVGs and modal cards — no new schemas, no new sources.
 
-Reference proto: `narrative-experiences/20260505-narrative-experiences-slideshow.html` on `mathieugug.github.io`. ~2200 lines, single self-contained HTML. The proto is the source of truth — when in doubt about a CSS rule or a JS handler, read it there.
+**Always start from `assets/slideshow-template.html` in this skill — never clone an old slideshow file directly.** The V1 proto (`narrative-experiences/20260505-narrative-experiences-slideshow.html`) is **outdated**: it lacks the post-May-2026 engine improvements (focus zoom in CSS transform with `__schemaZoom`, recap synthétique `__pendingRecap`, modal floating over stage, toggle-on-reclick `__currentModalCardId`, combined-card aggregation, `step.fullView` opt-out). Cloning it produces a stale slideshow that has to be back-ported by hand (see `coding-agents/20260512-coding-agents-slideshow.html` → fixed on 2026-05-11 — this is exactly what NOT to repeat).
+
+The same warning applies if you choose to copy a recently shipped slideshow (e.g. `ia-et-travail/20260507-…-slideshow.html`) as a base — that's fine, but verify it ships the post-May-2026 engine: grep for `__schemaZoom`, `__pendingRecap`, `__currentModalCardId`, `combined-card`. If any is missing, the file is stale; use `assets/slideshow-template.html` instead.
 
 ---
 
@@ -506,4 +508,12 @@ These cost real iteration cycles when building the first slideshow on `narrative
 
 The slideshow is the third entry door to a deep-research deliverable. It reuses the report's SVGs and modals with three light adaptations (transparent rect, hidden header, cropped viewBox), wraps them in a 11-scene narrative driven by a declarative `SCENES` table, and ships in a single self-contained HTML file. The persistent UI (topbar with scene title, vertical timeline sidebar, sliding modal sidebar) keeps the SVG visible at all times — the reader's mental model stays anchored on the schema, never covered by chrome.
 
-When in doubt, read `narrative-experiences/20260505-narrative-experiences-slideshow.html` directly — it's the V1 proto and the source of truth for every CSS rule and JS handler.
+When in doubt, read `assets/slideshow-template.html` in this skill — it's kept current with every engine improvement. The V1 proto (`narrative-experiences/20260505-narrative-experiences-slideshow.html`) is **deprecated** as a starting point; it lacks the post-May-2026 engine (focus zoom CSS transform, recap synthétique, modal float, toggle-on-reclick, combined-card, `step.fullView`). Do NOT clone it.
+
+### Pitfall 23 — Caption "censée accrochée en bas" qui se retrouve au milieu du schéma
+
+**Symptom**: the caption appears partway down the screen, visually overlapping the SVG (rendered between rows of a matrix, or on top of cells). User feedback: "légende censée accrochée en bas".
+
+**Why**: when the focus zoom applies `transform: scale > 1` to the SVG, the *visual content* extends below the SVG's CSS box. With caption in flex flow (`position: relative`), the caption sits right after the SVG box in the DOM order — i.e. roughly where the box ends, which is *above* the actual visual bottom of the SVG. The transformed schema content paints on top of the caption area.
+
+**Fix**: caption goes `position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%)` (out of flex flow, always anchored to viewport bottom). `.stage::after` becomes a **160 px** tall opaque mask (gradient from `var(--bg)` to transparent at top) at `z-index: 2`, the caption at `z-index: 3` — so any SVG content below the SVG's natural bottom is masked behind the gradient before reaching the caption. Modal-open desktop variant adapts `transform: translateX(calc(-50% - 240px))`. Mobile under modal-open hides the caption (info is in the modal anyway). This pattern lives in `assets/slideshow-template.html` since 2026-05-11. Cross-verified with the `coding-agents` schema-04 matrix where the bug originally surfaced.
