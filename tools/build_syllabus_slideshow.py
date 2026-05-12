@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build syllabus slideshow N from the T8 (Session 1) slideshow as base.
 
-Token-efficient: cp T8 → T<N>, then surgical regex replacements
+Token-efficient: cp T8 -> T<N>, then surgical regex replacements
 (head metadata, SVG inlining, SCHEMAS, SCENES, dossier-context).
 
 Usage: python tools/build_syllabus_slideshow.py <session-number>
@@ -55,7 +55,7 @@ SESSION_2 = {
     schemaId: 'harness-01',
     steps: [
       { caption: 'Un agent agentique n\'est pas un modèle. C\'est sept couches qui orchestrent un modèle. Vue d\'ensemble.', highlight: [], dim: [], hidden: [], fullView: true },
-      { caption: 'La boucle — c\'est le cœur. Think → Act → Observe, en cycles successifs jusqu\'à la complétion.', highlight: ['[data-card="boucle"]'], dim: ['[data-card="contexte"]','[data-card="modele"]','[data-card="outils"]','[data-card="memoire"]','[data-card="observabilite"]','[data-card="gouvernance"]'], hidden: [], modalAuto: 'boucle' },
+      { caption: 'La boucle — c\'est le cœur. Think -> Act -> Observe, en cycles successifs jusqu\'à la complétion.', highlight: ['[data-card="boucle"]'], dim: ['[data-card="contexte"]','[data-card="modele"]','[data-card="outils"]','[data-card="memoire"]','[data-card="observabilite"]','[data-card="gouvernance"]'], hidden: [], modalAuto: 'boucle' },
       { caption: 'Les outils — ce que l\'agent peut faire au monde extérieur (lire un fichier, exécuter du code, appeler une API).', highlight: ['[data-card="outils"]'], dim: ['[data-card="boucle"]','[data-card="contexte"]','[data-card="modele"]','[data-card="memoire"]','[data-card="observabilite"]','[data-card="gouvernance"]'], hidden: [], modalAuto: 'outils' },
       { caption: 'La mémoire — ce qui survit d\'un cycle au suivant. Critère structurant pour distinguer un assistant d\'un délégué.', highlight: ['[data-card="memoire"]'], dim: ['[data-card="boucle"]','[data-card="contexte"]','[data-card="modele"]','[data-card="outils"]','[data-card="observabilite"]','[data-card="gouvernance"]'], hidden: [], modalAuto: 'memoire' }
     ]
@@ -63,7 +63,7 @@ SESSION_2 = {
   /* 04 — Boucle GAN (harness-02) — LE pivot */
   {
     type: 'schema',
-    title: 'Boucle agentique — think → act → observe',
+    title: 'Boucle agentique — think -> act -> observe',
     schemaId: 'harness-02',
     steps: [
       { caption: 'La boucle de raisonnement détaillée. Pivot de la session — passer le temps qu\'il faut dessus. Exemple : Claude Code qui lit un fichier, le modifie, lance un test, lit le résultat.', highlight: [], dim: [], hidden: [], fullView: true },
@@ -132,7 +132,7 @@ SESSION_2 = {
   /* ── Harness anatomie (harness-01) ── */
   "harness-01": {
     "boucle": {
-      "eyebrow": "PIVOT", "title": "La boucle — think → act → observe",
+      "eyebrow": "PIVOT", "title": "La boucle — think -> act -> observe",
       "body": "<p>Le cycle de raisonnement de l'agent. À chaque tour : il pense (génère une action), il agit (appelle un outil), il observe (lit le résultat), puis il replanifie. Ce cycle se répète jusqu'à la complétion ou l'arrêt.</p><p><strong>Pour les users :</strong> c'est ce qui fait que Claude Code peut « lire un fichier, le modifier, vérifier son test ». Pour les builders : c'est l'unité atomique qu'on instrumente, qu'on cache, qu'on observe.</p>"
     },
     "outils": {
@@ -145,7 +145,7 @@ SESSION_2 = {
     },
     "contexte": {
       "eyebrow": "CONTEXT WINDOW", "title": "Le contexte — la fenêtre de raisonnement",
-      "body": "<p>Tout ce que l'agent « voit » à un instant T : prompt système, historique de conversation, fichiers en cache, retours d'outils. Limite physique du modèle (200k → 1M tokens en 2026).</p><p>Bien gérer le contexte = sélectionner ce qui entre, compresser ce qui s'accumule. C'est l'art du <em>context engineering</em>.</p>"
+      "body": "<p>Tout ce que l'agent « voit » à un instant T : prompt système, historique de conversation, fichiers en cache, retours d'outils. Limite physique du modèle (200k -> 1M tokens en 2026).</p><p>Bien gérer le contexte = sélectionner ce qui entre, compresser ce qui s'accumule. C'est l'art du <em>context engineering</em>.</p>"
     },
     "modele": {
       "eyebrow": "MOTEUR", "title": "Le modèle — le moteur de raisonnement",
@@ -267,13 +267,14 @@ SESSION_2 = {
 # Build function
 # ============================================================================
 
-def build_session(cfg: dict) -> None:
+BASE_SLIDESHOW = REPO / "coding-agents" / "20260512-coding-agents-slideshow.html"
+
+def build_session(cfg: dict, force: bool = False) -> None:
     target = REPO / "syllabus" / cfg["out_filename"]
-    if not target.exists():
-        # cp from T8 base
-        base = REPO / "syllabus" / "01-le-present-slideshow.html"
-        target.write_bytes(base.read_bytes())
-        print(f"[cp] {base.name} → {target.name}")
+    if force or not target.exists():
+        # cp from up-to-date reference slideshow (coding-agents — has all the fixes)
+        target.write_bytes(BASE_SLIDESHOW.read_bytes())
+        print(f"[cp] {BASE_SLIDESHOW.name} -> {target.name}")
 
     text = target.read_text(encoding="utf-8")
 
@@ -360,6 +361,29 @@ def build_session(cfg: dict) -> None:
                 svg_text,
                 count=1,
             )
+        # Strip the FIRST background <rect> with a paper-ivory fill so SVG is transparent.
+        # The slideshow stage and zoom-overlay supply the background. Without strip, the
+        # SVG shows a visible ivory panel on the dark zoom backdrop.
+        svg_text = re.sub(
+            r'\s*<rect\b[^>]*\bwidth="\d+"[^>]*\bheight="\d+"[^>]*\bfill="#[fF][aA0-9a-fA-F][fF0-9a-fA-F]{4}"[^>]*/>',
+            '',
+            svg_text,
+            count=1,
+        )
+        # Crop viewBox vertically to hide the SVG header (schema marker + title + subtitle +
+        # hairline rule) — the slideshow already shows the scene title via scene-title-bar.
+        # Pattern : transform `viewBox="0 0 W H"` into `viewBox="0 155 W (H-155)"`.
+        # 155 px is the typical header height in the site's SVG convention (cf. coding-agents
+        # which uses `viewBox="0 155 1200 645"`).
+        def _crop(m):
+            w, h = int(m.group(1)), int(m.group(2))
+            return f'viewBox="0 155 {w} {h - 155}"'
+        svg_text = re.sub(
+            r'viewBox="0\s+0\s+(\d+)\s+(\d+)"',
+            _crop,
+            svg_text,
+            count=1,
+        )
         inlined_blocks.append(svg_text.strip())
     new_svgs_block = "\n\n".join(inlined_blocks)
 
@@ -647,8 +671,8 @@ SESSION_5 = {
     "regime-ide": { "eyebrow": "RAPPEL S1", "title": "Régime 2 — Assistant IDE", "body": "<p>Le contexte s'élargit au fichier. Réponse ou patch local.</p>" }
   },
   "recap-harness": {
-    "boucle": { "eyebrow": "RAPPEL S2", "title": "La boucle", "body": "<p>Think → act → observe.</p>" },
-    "observabilite": { "eyebrow": "RAPPEL S2 → AUJOURD'HUI", "title": "L'observabilité", "body": "<p>Couche critique pour la production. <mark>REX 2 va y consacrer 30 minutes.</mark></p>" },
+    "boucle": { "eyebrow": "RAPPEL S2", "title": "La boucle", "body": "<p>Think -> act -> observe.</p>" },
+    "observabilite": { "eyebrow": "RAPPEL S2 -> AUJOURD'HUI", "title": "L'observabilité", "body": "<p>Couche critique pour la production. <mark>REX 2 va y consacrer 30 minutes.</mark></p>" },
     "outils": { "eyebrow": "RAPPEL S2", "title": "Les outils", "body": "<p>Le langage que l'agent parle au monde. MCP standardise.</p>" },
     "memoire": { "eyebrow": "RAPPEL S2", "title": "La mémoire", "body": "<p>Ce qui survit d'un cycle au suivant.</p>" },
     "modele": { "eyebrow": "RAPPEL S2", "title": "Le modèle", "body": "<p>Le moteur — plus la pièce critique.</p>" },
@@ -656,7 +680,7 @@ SESSION_5 = {
     "gouvernance": { "eyebrow": "RAPPEL S2", "title": "La gouvernance", "body": "<p>Permissions et escalades.</p>" }
   },
   "recap-roi": {
-    "echec": { "eyebrow": "RAPPEL S3 → AUJOURD'HUI", "title": "95 % de pilotes sans P&L mesurable", "body": "<p>La cause : <mark>absence d'instrumentation.</mark> Que les deux REX vont précisément combler.</p>" },
+    "echec": { "eyebrow": "RAPPEL S3 -> AUJOURD'HUI", "title": "95 % de pilotes sans P&L mesurable", "body": "<p>La cause : <mark>absence d'instrumentation.</mark> Que les deux REX vont précisément combler.</p>" },
     "potentiel": { "eyebrow": "RAPPEL S3", "title": "2,6-4,4 trillions $/an", "body": "<p>Le potentiel annoncé McKinsey.</p>" },
     "realite": { "eyebrow": "RAPPEL S3", "title": "L'écart", "body": "<p>Pilotes nombreux, P&amp;L muet.</p>" }
   },
@@ -687,7 +711,7 @@ SESSION_5 = {
   "obs-02": {
     "pillar-drift": { "eyebrow": "PILIER SUBTIL", "title": "Drift — la dérive silencieuse", "body": "<p>Le modèle change (mises à jour fournisseur), les données changent (saisons, marchés), les comportements dérivent. Sans monitoring drift, <mark>on découvre le problème en production</mark>, après les incidents.</p>" },
     "pillar-performance": { "eyebrow": "PILIER", "title": "Performance — latence et coût", "body": "<p>Latence par étape, coût par requête. Première ligne de défense — l'utilisateur ressent immédiatement.</p>" },
-    "pillar-qualite": { "eyebrow": "PILIER", "title": "Qualité — pertinence des sorties", "body": "<p>Évaluation continue (couplée au pilier eval). Pas de mesure → pas de boucle d'amélioration.</p>" },
+    "pillar-qualite": { "eyebrow": "PILIER", "title": "Qualité — pertinence des sorties", "body": "<p>Évaluation continue (couplée au pilier eval). Pas de mesure -> pas de boucle d'amélioration.</p>" },
     "pillar-comportement": { "eyebrow": "PILIER", "title": "Comportement — patterns d'usage", "body": "<p>Quels outils l'agent utilise le plus ? Quelle est la longueur moyenne des trajectoires ? Indicateur de design.</p>" },
     "pillar-usage": { "eyebrow": "PILIER", "title": "Usage — qui utilise quoi", "body": "<p>Volumes par utilisateur, par cas d'usage. Permet de détecter les abus et les sous-usages.</p>" },
     "pillar-gouvernance": { "eyebrow": "PILIER", "title": "Gouvernance — qui a accès, qui a fait quoi", "body": "<p>Audit trail. Indispensable pour les contextes régulés (santé, finance) et pour la conformité RGPD.</p>" }
@@ -715,13 +739,14 @@ SESSIONS = {2: SESSION_2, 3: SESSION_3, 4: SESSION_4, 5: SESSION_5}
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python tools/build_syllabus_slideshow.py <session-number>")
+        print("Usage: python tools/build_syllabus_slideshow.py <session-number> [--force]")
         sys.exit(1)
     n = int(sys.argv[1])
+    force = "--force" in sys.argv[2:]
     if n not in SESSIONS:
         print(f"Session {n} not implemented. Available: {sorted(SESSIONS)}")
         sys.exit(1)
-    build_session(SESSIONS[n])
+    build_session(SESSIONS[n], force=force)
 
 
 if __name__ == "__main__":
