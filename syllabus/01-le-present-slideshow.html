@@ -80,7 +80,7 @@ mark { background: linear-gradient(transparent 58%, rgba(178, 59, 27, 0.14) 58%)
 .schema-host .caption.fade-out { opacity: 0; }
 .stage::after { content: ''; position: fixed; left: 0; right: 0; bottom: 0; height: 96px; background: linear-gradient(to top, var(--bg) 0%, var(--bg) 55%, rgba(250,246,236,0) 100%); pointer-events: none; z-index: 1; }
 @media (min-width: 1025px) { body.modal-open .schema-host .caption { max-width: min(720px, calc(100vw - 560px)); transform: translateX(-208px); } }
-.schema-host svg [data-step-state="dim"] { opacity: 0.18; transition: opacity 220ms ease; }
+.schema-host svg [data-step-state="dim"] { opacity: 0.18; transition: opacity 220ms ease, filter 220ms ease; }
 .schema-host svg [data-step-state="active"] { opacity: 1; transition: opacity 220ms ease; }
 .schema-host svg [data-step-state="hidden"] { opacity: 0; pointer-events: none; transition: opacity 220ms ease; }
 .schema-host svg .svg-header { display: none; }
@@ -132,6 +132,13 @@ mark { background: linear-gradient(transparent 58%, rgba(178, 59, 27, 0.14) 58%)
 .modal-card .modal-body .combined-card:first-child { margin-top: 0; padding-top: 0; border-top: none; }
 .modal-card .modal-body .combined-card .combined-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--carmine); margin: 0 0 6px; }
 .modal-card .modal-body .combined-card h4 { font-family: 'Fraunces', serif; font-size: 1.05rem; font-weight: 600; margin: 0 0 0.55rem; }
+/* Modal stacked cards (openModalStack) */
+.modal-card .modal-body .modal-substack { padding: 4px 0; }
+.modal-card .modal-body .modal-substack-eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--carmine); margin: 0 0 6px; }
+.modal-card .modal-body .modal-substack-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 1.08rem; line-height: 1.25; margin: 0 0 10px; letter-spacing: -0.005em; color: var(--text); }
+.modal-card .modal-body .modal-substack-body p { margin: 0 0 0.7rem; font-size: 0.92rem; }
+.modal-card .modal-body .modal-substack-body p:last-child { margin-bottom: 0; }
+.modal-card .modal-body .modal-stack-sep { border: 0; border-top: 1px dashed rgba(178, 59, 27, 0.28); margin: 22px 0; }
 .footer-bar { position: fixed; right: 18px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; gap: 24px; z-index: 40; pointer-events: none; }
 .timeline { display: flex; flex-direction: column; gap: 4px; align-items: center; pointer-events: auto; }
 .timeline .seg { width: 4px; height: 36px; background: var(--text-faint); opacity: 0.4; cursor: pointer; position: relative; transition: opacity 0.2s, background 0.2s; }
@@ -2652,9 +2659,53 @@ function openModal(eyebrow, title, body) {
   modalEyebrow.textContent = eyebrow || '';
   modalTitle.innerHTML = title || '';
   modalBody.innerHTML = body || '';
+  // Patch des références [N] en liens vers les sources
+  const bodyEl = document.getElementById('modal-body');
+  if (bodyEl) {
+    bodyEl.innerHTML = bodyEl.innerHTML.replace(/\[(\d+)\]/g, (m, n) => `<a href="#" class="source-ref" data-source-num="${n}">[${n}]</a>`);
+    bodyEl.querySelectorAll('.source-ref').forEach(a => {
+      a.addEventListener('click', (ev) => {
+        ev.preventDefault();
+        const num = parseInt(a.dataset.sourceNum, 10);
+        closeModal();
+        flashSource(num);
+      });
+    });
+  }
   modalRoot.hidden = false;
   document.body.classList.add('modal-open');
+  document.body.style.overflow = '';
   modalRoot.querySelector('.modal-close')?.focus();
+}
+
+/**
+ * openModalStack — Affiche plusieurs cards SCHEMAS empilées dans une seule
+ * modale (séparateurs visuels entre chaque). Utilisé quand un step combine
+ * 2-4 data-cards thématiquement cohérents pour réduire le nombre de steps.
+ * cards = [{eyebrow, title, body}]
+ * groupTitle / groupEyebrow facultatifs : si fournis, affichés une seule fois en haut.
+ */
+function openModalStack(cards, groupEyebrow, groupTitle) {
+  if (!cards || cards.length === 0) return;
+  if (cards.length === 1) {
+    return openModal(cards[0].eyebrow, cards[0].title, cards[0].body);
+  }
+  const stackedBody = cards.map((c, i) => {
+    const sep = i > 0 ? '<hr class="modal-stack-sep" aria-hidden="true">' : '';
+    return `${sep}<div class="modal-substack"><p class="modal-substack-eyebrow">${c.eyebrow || ''}</p><h4 class="modal-substack-title">${c.title || ''}</h4><div class="modal-substack-body">${c.body || ''}</div></div>`;
+  }).join('');
+  openModal(groupEyebrow || '', groupTitle || '', stackedBody);
+}
+
+function flashSource(num) {
+  toggleSources(true);
+  setTimeout(() => {
+    const li = document.querySelector(`#sources-list li[data-num="${num}"]`);
+    if (!li) return;
+    li.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    li.classList.add('flash');
+    setTimeout(() => li.classList.remove('flash'), 1500);
+  }, 100);
 }
 
 let __modalAutoActive = false;
@@ -2681,7 +2732,7 @@ function applyStepStyles(scene, step) {
   const svg = stage.querySelector('svg');
   if (!svg) return;
   svg.querySelectorAll('[data-step-state]').forEach(el => el.removeAttribute('data-step-state'));
-  if (step.fullView) { __schemaZoom.applyZoom(svg, step); return; }
+  if (step.fullView) { return; }
   (step.dim || []).forEach(sel => svg.querySelectorAll(sel).forEach(el => el.setAttribute('data-step-state', 'dim')));
   (step.hidden || []).forEach(sel => svg.querySelectorAll(sel).forEach(el => el.setAttribute('data-step-state', 'hidden')));
   (step.highlight || []).forEach(sel => svg.querySelectorAll(sel).forEach(el => el.setAttribute('data-step-state', 'active')));
@@ -2703,73 +2754,7 @@ function applyStepStyles(scene, step) {
       }
     });
   }
-  __schemaZoom.applyZoom(svg, step);
 }
-
-const __schemaZoom = (() => {
-  const DURATION = 520, PAD = 0.86, MAX_SCALE = 1.6, CAPTION_RESERVE = 80, MODAL_W = 480;
-  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let currentSvg = null, currentStep = null, resizeObs = null, resizeIdleTimer = null, lastStageW = -1, lastStageH = -1;
-  function unionUserBBox(svg, selectors) {
-    let result = null;
-    (selectors || []).forEach(sel => svg.querySelectorAll(sel).forEach(el => {
-      let bb; try { bb = el.getBBox(); } catch(e) { return; }
-      if (!bb || (bb.width === 0 && bb.height === 0)) return;
-      if (!result) result = { x: bb.x, y: bb.y, width: bb.width, height: bb.height };
-      else { const x1=Math.min(result.x,bb.x),y1=Math.min(result.y,bb.y),x2=Math.max(result.x+result.width,bb.x+bb.width),y2=Math.max(result.y+result.height,bb.y+bb.height); result={x:x1,y:y1,width:x2-x1,height:y2-y1}; }
-    }));
-    return result;
-  }
-  function compute(svg, step) {
-    const focusing = ((step.dim&&step.dim.length)||(step.hidden&&step.hidden.length))&&step.highlight&&step.highlight.length&&!step.fullView;
-    if (!focusing) return null;
-    const bbox = unionUserBBox(svg, step.highlight);
-    if (!bbox || bbox.width===0 || bbox.height===0) return null;
-    const wrapper=svg.parentElement, stage=document.getElementById('stage');
-    if (!wrapper||!stage) return null;
-    const svgW=svg.clientWidth, svgH=svg.clientHeight, vb=svg.viewBox.baseVal;
-    if (svgW===0||svgH===0||!vb||vb.width===0||vb.height===0) return null;
-    const wR=wrapper.getBoundingClientRect(), svgX=wR.left, svgY=wR.top;
-    const uA=vb.width/vb.height, bA=svgW/svgH;
-    let cs,cox,coy;
-    if (bA>uA){cs=svgH/vb.height;cox=(svgW-vb.width*cs)/2;coy=0;}
-    else{cs=svgW/vb.width;cox=0;coy=(svgH-vb.height*cs)/2;}
-    const hCx=svgX+cox+(bbox.x+bbox.width/2-vb.x)*cs, hCy=svgY+coy+(bbox.y+bbox.height/2-vb.y)*cs;
-    const hW=bbox.width*cs, hH=bbox.height*cs;
-    const sR=stage.getBoundingClientRect();
-    const mA=document.body.classList.contains('modal-open'), isDM=window.innerWidth>1024;
-    const mX=(mA&&isDM)?MODAL_W:0, mY=(mA&&!isDM)?Math.min(window.innerHeight*0.5,400):0;
-    const aW=Math.max(200,sR.width-mX), aH=Math.max(160,sR.height-CAPTION_RESERVE-mY);
-    const aCx=sR.left+aW/2, aCy=sR.top+aH/2;
-    const sX=(aW*PAD)/hW, sY=(aH*PAD)/hH, scale=Math.min(MAX_SCALE,Math.min(sX,sY));
-    const tx=aCx-svgX-(hCx-svgX)*scale, ty=scale>1?aCy-svgY-(hCy-svgY)*scale:(hCy-svgY)*(1-scale);
-    return {tx,ty,scale};
-  }
-  function setStyle(svg,t){svg.style.transform=t?'translate('+t.tx.toFixed(2)+'px,'+t.ty.toFixed(2)+'px) scale('+t.scale.toFixed(4)+')':(svg.style.transform='','');}
-  function applySync(){if(!currentSvg||!currentStep)return;setStyle(currentSvg,compute(currentSvg,currentStep));}
-  function setupObservers(){
-    if(resizeObs)return;
-    const stage=document.getElementById('stage');if(!stage)return;
-    const r=stage.getBoundingClientRect();lastStageW=r.width;lastStageH=r.height;
-    resizeObs=new ResizeObserver(()=>{
-      if(!currentSvg||!currentStep)return;
-      const rr=stage.getBoundingClientRect();
-      if(Math.abs(rr.width-lastStageW)<0.5&&Math.abs(rr.height-lastStageH)<0.5)return;
-      lastStageW=rr.width;lastStageH=rr.height;currentSvg.style.transition='none';applySync();
-      clearTimeout(resizeIdleTimer);resizeIdleTimer=setTimeout(()=>{if(currentSvg&&!reduceMotion)currentSvg.style.transition='transform '+DURATION+'ms cubic-bezier(0.22,1,0.36,1)';},220);
-    });
-    resizeObs.observe(stage);
-    new MutationObserver(()=>{if(currentSvg&&currentStep)requestAnimationFrame(applySync);}).observe(document.body,{attributes:true,attributeFilter:['class']});
-  }
-  function applyZoom(svg,step){
-    currentSvg=svg;currentStep=step;
-    svg.style.transformOrigin='0 0';svg.style.willChange='transform';
-    svg.style.transition=reduceMotion?'none':'transform '+DURATION+'ms cubic-bezier(0.22,1,0.36,1)';
-    setupObservers();
-    requestAnimationFrame(()=>requestAnimationFrame(()=>{if(currentSvg===svg)applySync();}));
-  }
-  return {applyZoom};
-})();
 
 function renderTimeline(){
   const tl=document.getElementById('timeline');if(!tl)return;
@@ -2814,28 +2799,16 @@ function render(){
     if(step.fullView&&!document.getElementById('modal-root').hidden)closeModal();
     if(step.modalAuto&&!step.fullView){
       const schKey=scene.schemaId||null;
-      const cards=[];
-      if(schKey&&step.highlight&&step.highlight.length){
-        const seen=new Set();
-        step.highlight.forEach(sel=>{
-          const m=sel.match(/data-card="([^"]+)"/);
-          if(!m||seen.has(m[1]))return;seen.add(m[1]);
-          const c=SCHEMAS&&SCHEMAS[schKey]&&SCHEMAS[schKey][m[1]];
-          if(c)cards.push(c);
-        });
-      }
-      if(cards.length===0&&schKey){const c=SCHEMAS&&SCHEMAS[schKey]&&SCHEMAS[schKey][step.modalAuto];if(c)cards.push(c);}
-      if(cards.length>0){
-        setTimeout(()=>{
-          let eyebrow,title,body;
-          if(cards.length===1){eyebrow=cards[0].eyebrow||'';title=cards[0].title||'';body=cards[0].body||'';}
-          else{
-            const bE=cards[0].eyebrow?cards[0].eyebrow.split(' — ')[0]:'';
-            eyebrow=bE;title=scene.title||cards[0].title||'';
-            body=cards.map(c=>'<div class="combined-card">'+(c.eyebrow?'<p class="combined-eyebrow">'+c.eyebrow+'</p>':'')+(c.title?'<h4>'+c.title+'</h4>':'')+(c.body||'')+'</div>').join('');
-          }
-          openModal(eyebrow,title,body);__modalAutoActive=true;
-        },220);
+      const bucket=schKey?(SCHEMAS?.[schKey]||null):null;
+      if(bucket){
+        const cardIds=Array.isArray(step.modalAuto)?step.modalAuto:[step.modalAuto];
+        const cards=cardIds.map(id=>bucket[id]).filter(Boolean);
+        if(cards.length>0){
+          setTimeout(()=>{
+            openModalStack(cards,step.modalGroupEyebrow,step.modalGroupTitle);
+            __modalAutoActive=true;
+          },220);
+        }
       }
     }
     renderTimeline();return;
