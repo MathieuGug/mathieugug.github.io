@@ -568,7 +568,149 @@ SESSION_4 = {
 }""",
 }
 
-SESSIONS = {2: SESSION_2, 3: SESSION_3, 4: SESSION_4}
+# ============================================================================
+# Session 5 — Événement final · Les agents en production (1h30)
+# ============================================================================
+
+SESSION_5 = {
+    "out_filename": "05-evenement-final-slideshow.html",
+    "title": "Événement final — Les agents en production",
+    "description": "Slideshow interactif — Événement final 1h30 du syllabus CoC Data : intro syllabus + 2 REX internes (évaluation et observabilité). Cible : builders du CoC (Data Engineers + Data Scientists). 15 scènes.",
+    "dossier_context": "Syllabus CoC Data — Final · Builders",
+    "canonical_url": "https://mathieugug.github.io/syllabus/05-evenement-final-slideshow.html",
+    "og_image_url": "https://mathieugug.github.io/observabilite-agents-ia/og.png",
+    "svgs": [
+        ("recap-coding",  "coding-agents/images/20260512-01-trois-regimes.svg"),
+        ("recap-harness", "harness-agentique/images/20260429-01-anatomie-harness.svg"),
+        ("recap-roi",     "measure-roi/images/20260507-01-paradoxe-roi.svg"),
+        ("eval-04",       "evaluation-agentique/images/20260501-04-pyramide-metriques.svg"),
+        ("eval-05",       "evaluation-agentique/images/20260501-05-llm-as-judge.svg"),
+        ("eval-10",       "evaluation-agentique/images/20260501-10-playbook-gruyere.svg"),
+        ("obs-02",        "observabilite-agents-ia/images/20260430-02-six-piliers-telemetrie.svg"),
+        ("obs-04",        "observabilite-agents-ia/images/20260430-04-anatomie-trace-otel-genai.svg"),
+        ("obs-08",        "observabilite-agents-ia/images/20260430-08-echelle-maturite-observabilite.svg"),
+    ],
+    "scenes_js": r"""[
+  { type: 'punchline', title: 'Événement final · 1h30', body: 'Les agents <em>en production</em>.', attribution: 'Cible : Data Engineers + Data Scientists' },
+  { type: 'punchline', title: 'Le cycle se referme', body: '4 sessions courtes. Aujourd\'hui : <mark>la mise en production technique</mark>. 2 REX internes, 1 cycle d\'échanges.' },
+  /* === Rappels des 3 sessions courtes === */
+  { type: 'schema', title: 'Rappel Session 1 — Trois régimes', schemaId: 'recap-coding', steps: [
+    { caption: 'Vu en Session 1. Trois régimes successifs : autocomplete (2018), assistant IDE (2022), coding agent (2025). C\'est le saut de régime qui change tout.', highlight: [], dim: [], hidden: [], fullView: true },
+    { caption: 'Le régime agent est le seul qui produit du livrable autonome — la PR. Tout le reste s\'organise autour.', highlight: ['[data-card="regime-agent"]'], dim: ['[data-card="regime-autocomplete"]','[data-card="regime-ide"]'], hidden: [], modalAuto: 'regime-agent' }
+  ]},
+  { type: 'schema', title: 'Rappel Session 2 — Anatomie d\'un harness', schemaId: 'recap-harness', steps: [
+    { caption: 'Vu en Session 2. Sept couches : boucle, outils, mémoire, contexte, modèle, observabilité, gouvernance. Aujourd\'hui on zoome sur deux d\'entre elles.', highlight: [], dim: [], hidden: [], fullView: true },
+    { caption: 'Observabilité — REX 2 va creuser cette couche. Sans elle, l\'agent en prod est une boîte noire.', highlight: ['[data-card="observabilite"]'], dim: ['[data-card="boucle"]','[data-card="contexte"]','[data-card="modele"]','[data-card="outils"]','[data-card="memoire"]','[data-card="gouvernance"]'], hidden: [], modalAuto: 'observabilite' }
+  ]},
+  { type: 'schema', title: 'Rappel Session 3 — Le paradoxe ROI', schemaId: 'recap-roi', steps: [
+    { caption: 'Vu en Session 3. 95 % des pilotes GenAI sans P&amp;L mesurable. La cause n\'est pas l\'IA — c\'est l\'absence d\'instrumentation.', highlight: [], dim: [], hidden: [], fullView: true },
+    { caption: 'Pour mesurer vraiment, il faut instrumenter. C\'est précisément ce que les deux REX vont raconter.', highlight: ['[data-card="echec"]'], dim: ['[data-card="potentiel"]','[data-card="realite"]'], hidden: [], modalAuto: 'echec' }
+  ]},
+  /* === REX 1 — Évaluation === */
+  { type: 'punchline', title: 'REX 1 — Évaluation des agents', body: 'Comment on <mark>juge</mark> un agent en production. Pyramide des métriques, LLM-as-judge, playbook gruyère.', attribution: 'Retour d\'expérience interne · 30 min' },
+  { type: 'schema', title: 'Pyramide des métriques d\'évaluation', schemaId: 'eval-04', steps: [
+    { caption: 'Cinq niveaux de métriques pour évaluer un agent. Du retrieval au comportement multi-étapes. Chaque niveau a son coût et sa précision.', highlight: [], dim: [], hidden: [], fullView: true },
+    { caption: 'Le niveau Agent — où on évalue la trajectoire complète, pas une réponse isolée. Le plus coûteux mais le plus représentatif de la production.', highlight: ['[data-card="level-agent"]'], dim: ['[data-card="level-classical"]','[data-card="level-retrieval"]','[data-card="level-generation"]','[data-card="level-clear"]'], hidden: [], modalAuto: 'level-agent' }
+  ]},
+  { type: 'schema', title: 'LLM-as-judge — biais, calibration, corrections', schemaId: 'eval-05', steps: [
+    { caption: 'Pattern dominant : un LLM juge la sortie d\'un autre LLM. Économique mais piégé : biais de position, biais de longueur, biais d\'auto-préférence.', highlight: [], dim: [], hidden: [], fullView: true },
+    { caption: 'Quand ne PAS utiliser LLM-as-judge : critères objectifs (ex : code qui compile), high-stakes (santé, juridique), évaluations à fort enjeu réputationnel.', highlight: ['[data-card="when-not"]'], dim: [], hidden: [], modalAuto: 'when-not' },
+    { caption: 'Les biais connus à neutraliser : position, longueur, verbosité, auto-préférence. La calibration humaine reste indispensable au démarrage.', highlight: ['[data-card="biases"]'], dim: [], hidden: [], modalAuto: 'biases' }
+  ]},
+  { type: 'schema', title: 'Playbook gruyère — 8 étapes, des trous à boucher', schemaId: 'eval-10', steps: [
+    { caption: 'Image du gruyère : chaque étape de l\'éval a ses trous. L\'art consiste à aligner les étapes pour que les trous ne se superposent pas.', highlight: [], dim: [], hidden: [], fullView: true },
+    { caption: 'Étape 1 — définir le périmètre. Sans périmètre clair, toute mesure est arbitraire.', highlight: ['[data-card="step-1"]'], dim: ['[data-card="step-0"]','[data-card="step-2"]','[data-card="step-3"]'], hidden: [], modalAuto: 'step-1' }
+  ]},
+  /* === REX 2 — Observabilité === */
+  { type: 'punchline', title: 'REX 2 — Observabilité', body: 'Comment on <mark>voit</mark> un agent en production. Six piliers, OpenTelemetry GenAI, échelle de maturité.', attribution: 'Retour d\'expérience interne · 30 min' },
+  { type: 'schema', title: 'Six piliers de la télémétrie agentique', schemaId: 'obs-02', steps: [
+    { caption: 'Six dimensions à instrumenter : performance, qualité, comportement, drift, usage, gouvernance. Aucune ne suffit seule.', highlight: [], dim: [], hidden: [], fullView: true },
+    { caption: 'Drift — le pilier le plus subtil. Le modèle change, les données changent, les comportements dérivent. Sans monitoring drift, on découvre le problème en production.', highlight: ['[data-card="pillar-drift"]'], dim: ['[data-card="pillar-performance"]','[data-card="pillar-qualite"]','[data-card="pillar-comportement"]','[data-card="pillar-usage"]','[data-card="pillar-gouvernance"]'], hidden: [], modalAuto: 'pillar-drift' }
+  ]},
+  { type: 'schema', title: 'Anatomie d\'une trace OpenTelemetry GenAI', schemaId: 'obs-04', steps: [
+    { caption: 'Standard OpenTelemetry GenAI (2025). Trace l\'invocation d\'un agent depuis le chat jusqu\'aux appels d\'outils. Permet de reconstruire toute la trajectoire.', highlight: [], dim: [], hidden: [], fullView: true },
+    { caption: 'execute-tool — le span clé. Chaque outil appelé devient un span enfant. Permet de voir où le temps et les tokens s\'évaporent.', highlight: ['[data-card="execute-tool"]'], dim: ['[data-card="chat-1"]','[data-card="chat-2"]','[data-card="invoke-agent"]','[data-card="external-api"]','[data-card="eval-event"]'], hidden: [], modalAuto: 'execute-tool' }
+  ]},
+  { type: 'schema', title: 'Échelle de maturité observabilité — où est-on ?', schemaId: 'obs-08', steps: [
+    { caption: 'Cinq niveaux de maturité. Du logs basiques au cognitive audit trail. La majorité des projets sont à L1-L2.', highlight: [], dim: [], hidden: [], fullView: true },
+    { caption: 'L3 — passage critique. C\'est ici qu\'on démarre la vraie évaluation continue. En dessous, on bricole. Au-dessus, on industrialise.', highlight: ['[data-card="maturity-l3"]'], dim: ['[data-card="maturity-l1"]','[data-card="maturity-l2"]','[data-card="maturity-l4"]','[data-card="maturity-l5"]'], hidden: [], modalAuto: 'maturity-l3' }
+  ]},
+  /* === Échange + outro === */
+  { type: 'punchline', title: 'Échange tripartite', body: '<mark>15 minutes</mark> pour vos questions, vos cas, vos blocages. Roadmap CoC à esquisser ensemble.' },
+  { type: 'outro', title: 'Lincoln Transform', outroTitle: 'Le cycle <em>se ferme</em>', body: 'Quatre sessions, un événement final. Reste à transformer ce savoir en pratique : pilotes, instrumentation, mesure. La balle est dans votre camp.', cta: { href: 'index.html', label: 'Revenir au hub du syllabus' }, secondary: { href: 'syllabus.md', label: 'Document maître' } }
+]""",
+    "schemas_js": r"""{
+  /* === RAPPELS — modaux ultra-courts === */
+  "recap-coding": {
+    "regime-agent": { "eyebrow": "RAPPEL S1", "title": "Régime 3 — Coding agent", "body": "<p>Accès au système de fichiers, boucle de plusieurs minutes, livrable en pull request. <mark>Le délégué.</mark></p>" },
+    "regime-autocomplete": { "eyebrow": "RAPPEL S1", "title": "Régime 1 — Autocomplete", "body": "<p>L'outil prédit la suite du curseur. Latence en millisecondes.</p>" },
+    "regime-ide": { "eyebrow": "RAPPEL S1", "title": "Régime 2 — Assistant IDE", "body": "<p>Le contexte s'élargit au fichier. Réponse ou patch local.</p>" }
+  },
+  "recap-harness": {
+    "boucle": { "eyebrow": "RAPPEL S2", "title": "La boucle", "body": "<p>Think → act → observe.</p>" },
+    "observabilite": { "eyebrow": "RAPPEL S2 → AUJOURD'HUI", "title": "L'observabilité", "body": "<p>Couche critique pour la production. <mark>REX 2 va y consacrer 30 minutes.</mark></p>" },
+    "outils": { "eyebrow": "RAPPEL S2", "title": "Les outils", "body": "<p>Le langage que l'agent parle au monde. MCP standardise.</p>" },
+    "memoire": { "eyebrow": "RAPPEL S2", "title": "La mémoire", "body": "<p>Ce qui survit d'un cycle au suivant.</p>" },
+    "modele": { "eyebrow": "RAPPEL S2", "title": "Le modèle", "body": "<p>Le moteur — plus la pièce critique.</p>" },
+    "contexte": { "eyebrow": "RAPPEL S2", "title": "Le contexte", "body": "<p>La fenêtre de raisonnement.</p>" },
+    "gouvernance": { "eyebrow": "RAPPEL S2", "title": "La gouvernance", "body": "<p>Permissions et escalades.</p>" }
+  },
+  "recap-roi": {
+    "echec": { "eyebrow": "RAPPEL S3 → AUJOURD'HUI", "title": "95 % de pilotes sans P&L mesurable", "body": "<p>La cause : <mark>absence d'instrumentation.</mark> Que les deux REX vont précisément combler.</p>" },
+    "potentiel": { "eyebrow": "RAPPEL S3", "title": "2,6-4,4 trillions $/an", "body": "<p>Le potentiel annoncé McKinsey.</p>" },
+    "realite": { "eyebrow": "RAPPEL S3", "title": "L'écart", "body": "<p>Pilotes nombreux, P&amp;L muet.</p>" }
+  },
+  /* === REX 1 — Évaluation === */
+  "eval-04": {
+    "level-agent": { "eyebrow": "NIVEAU CRITIQUE", "title": "Niveau Agent — la trajectoire complète", "body": "<p>Le niveau le plus représentatif de la production. On évalue toute la session : décisions intermédiaires, choix d'outils, qualité du livrable final. <mark>Coûteux mais incontournable</mark> pour un agent en production.</p>" },
+    "level-classical": { "eyebrow": "NIVEAU 1", "title": "Métriques classiques", "body": "<p>Précision, rappel, F1. Adapté aux tâches discrètes (classification, NER) — peu adapté aux trajectoires d'agents.</p>" },
+    "level-retrieval": { "eyebrow": "NIVEAU 2", "title": "Métriques retrieval", "body": "<p>Mesure la qualité du RAG : recall@k, MRR, NDCG. Essentiel quand l'agent puise dans une base de connaissances.</p>" },
+    "level-generation": { "eyebrow": "NIVEAU 3", "title": "Métriques de génération", "body": "<p>Qualité du texte produit : coherence, factualité, style. Demande des juges (humains ou LLM).</p>" },
+    "level-clear": { "eyebrow": "NIVEAU 4", "title": "Métriques claires (CLEAR)", "body": "<p>Critères explicites : la sortie est-elle conforme aux exigences ? Mesurable de façon binaire ou par grille.</p>" }
+  },
+  "eval-05": {
+    "judge-model": { "eyebrow": "PATTERN", "title": "Le judge — un LLM qui en juge un autre", "body": "<p>Pattern économique mais piégé. Demande calibration humaine au démarrage et monitoring continu (les biais évoluent avec les versions du modèle).</p>" },
+    "biases": { "eyebrow": "ATTENTION", "title": "Les biais à neutraliser", "body": "<p>Position (l'option A est préférée), longueur (les longues réponses gagnent), auto-préférence (le judge préfère son propre style), verbosité. <mark>Sans corrections, le judge ment.</mark></p>" },
+    "when-not": { "eyebrow": "QUAND NE PAS", "title": "Cas où LLM-as-judge n'a pas sa place", "body": "<p>Critères objectifs (le code compile-t-il ?), high-stakes (santé, juridique), évaluations à fort enjeu réputationnel. Préférer alors des juges déterministes ou humains.</p>" },
+    "mode-pointwise": { "eyebrow": "MODE", "title": "Pointwise — note absolue", "body": "<p>Le judge note chaque sortie indépendamment, sur une échelle. Simple mais peu robuste aux dérives d'échelle.</p>" },
+    "mode-pairwise": { "eyebrow": "MODE", "title": "Pairwise — A ou B", "body": "<p>Le judge compare deux sorties. Plus fiable car relatif, mais coûte O(n²) en évaluations.</p>" },
+    "mode-listwise": { "eyebrow": "MODE", "title": "Listwise — classement", "body": "<p>Le judge ordonne plusieurs sorties. Compromis pairwise/pointwise.</p>" },
+    "mode-reference": { "eyebrow": "MODE", "title": "Reference-based", "body": "<p>Le judge compare à une réponse de référence. Précis mais demande une vérité de terrain.</p>" }
+  },
+  "eval-10": {
+    "step-1": { "eyebrow": "ÉTAPE 1", "title": "Définir le périmètre", "body": "<p>Quel est l'agent ? Quels sont ses inputs ? Quelles sont les sorties attendues ? <mark>Sans périmètre, toute mesure est arbitraire.</mark></p>" },
+    "step-0": { "eyebrow": "ÉTAPE 0", "title": "Préalable — la spec", "body": "<p>Avant tout, un jeu d'exemples canoniques validés humainement. La base de toute évaluation.</p>" },
+    "step-2": { "eyebrow": "ÉTAPE 2", "title": "Construire le dataset d'éval", "body": "<p>Cas faciles, cas pénibles, cas adverses. Représentativité du trafic réel.</p>" },
+    "step-3": { "eyebrow": "ÉTAPE 3", "title": "Choisir les métriques", "body": "<p>Sortie objective ? Métriques classiques. Sortie générative ? Judges. Trajectoire ? Métriques agent.</p>" }
+  },
+  /* === REX 2 — Observabilité === */
+  "obs-02": {
+    "pillar-drift": { "eyebrow": "PILIER SUBTIL", "title": "Drift — la dérive silencieuse", "body": "<p>Le modèle change (mises à jour fournisseur), les données changent (saisons, marchés), les comportements dérivent. Sans monitoring drift, <mark>on découvre le problème en production</mark>, après les incidents.</p>" },
+    "pillar-performance": { "eyebrow": "PILIER", "title": "Performance — latence et coût", "body": "<p>Latence par étape, coût par requête. Première ligne de défense — l'utilisateur ressent immédiatement.</p>" },
+    "pillar-qualite": { "eyebrow": "PILIER", "title": "Qualité — pertinence des sorties", "body": "<p>Évaluation continue (couplée au pilier eval). Pas de mesure → pas de boucle d'amélioration.</p>" },
+    "pillar-comportement": { "eyebrow": "PILIER", "title": "Comportement — patterns d'usage", "body": "<p>Quels outils l'agent utilise le plus ? Quelle est la longueur moyenne des trajectoires ? Indicateur de design.</p>" },
+    "pillar-usage": { "eyebrow": "PILIER", "title": "Usage — qui utilise quoi", "body": "<p>Volumes par utilisateur, par cas d'usage. Permet de détecter les abus et les sous-usages.</p>" },
+    "pillar-gouvernance": { "eyebrow": "PILIER", "title": "Gouvernance — qui a accès, qui a fait quoi", "body": "<p>Audit trail. Indispensable pour les contextes régulés (santé, finance) et pour la conformité RGPD.</p>" }
+  },
+  "obs-04": {
+    "execute-tool": { "eyebrow": "SPAN CLÉ", "title": "execute-tool — où le temps s'évapore", "body": "<p>Chaque outil appelé devient un span enfant. <mark>Permet de voir où le temps et les tokens s'évaporent</mark> — souvent c'est un appel d'outil lent ou un retry caché qui plombe.</p>" },
+    "invoke-agent": { "eyebrow": "SPAN", "title": "invoke-agent — l'invocation racine", "body": "<p>Le span racine de toute la trace. Toutes les actions de l'agent en sont les descendants.</p>" },
+    "chat-1": { "eyebrow": "SPAN", "title": "chat — l'appel LLM", "body": "<p>Un span par appel au modèle. Permet de chiffrer combien de tokens à chaque cycle.</p>" },
+    "chat-2": { "eyebrow": "SPAN", "title": "chat suivant — la répétition", "body": "<p>L'agent rappelle le LLM autant de fois que la boucle l'exige. Visibilité directe sur la profondeur de raisonnement.</p>" },
+    "external-api": { "eyebrow": "SPAN", "title": "external-api — appel sortant", "body": "<p>Quand l'agent contacte une API externe (RAG, base, service). Souvent le maillon faible en latence.</p>" },
+    "eval-event": { "eyebrow": "EVENT", "title": "eval-event — évaluation continue", "body": "<p>Émission d'un événement d'évaluation (judge, métrique). Couple eval et observabilité.</p>" }
+  },
+  "obs-08": {
+    "maturity-l1": { "eyebrow": "L1", "title": "Logs basiques", "body": "<p>On enregistre les inputs/outputs. Indispensable, insuffisant.</p>" },
+    "maturity-l2": { "eyebrow": "L2", "title": "Métriques agrégées", "body": "<p>Latence, taux d'erreur, coûts. Vue d'ensemble mais aveugle au détail.</p>" },
+    "maturity-l3": { "eyebrow": "L3 — PALIER", "title": "Évaluation continue", "body": "<p>Judges automatiques, datasets de régression. <mark>C'est ici que la vraie observabilité commence.</mark> En dessous on bricole, au-dessus on industrialise.</p>" },
+    "maturity-l4": { "eyebrow": "L4", "title": "Cognitive trace", "body": "<p>Reconstruction du raisonnement. Pourquoi l'agent a fait ce choix ? Permet le debug profond.</p>" },
+    "maturity-l5": { "eyebrow": "L5", "title": "Cognitive audit trail", "body": "<p>Audit complet de la cognition de l'agent — pour les contextes les plus régulés. État de l'art 2026.</p>" }
+  }
+}""",
+}
+
+SESSIONS = {2: SESSION_2, 3: SESSION_3, 4: SESSION_4, 5: SESSION_5}
 
 
 def main():
