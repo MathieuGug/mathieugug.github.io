@@ -392,7 +392,183 @@ def build_session(cfg: dict) -> None:
     print(f"[ok] wrote {target}")
 
 
-SESSIONS = {2: SESSION_2}
+# ============================================================================
+# Session 3 — La valeur
+# ============================================================================
+
+SESSION_3 = {
+    "out_filename": "03-la-valeur-slideshow.html",
+    "title": "La valeur — Session 3 Syllabus CoC Data",
+    "description": "Slideshow interactif — Session 3 : La valeur. 95 % des pilotes GenAI sans P&L mesurable — pourquoi, et comment chiffrer l'impact d'un projet IA. 9 scènes.",
+    "dossier_context": "Syllabus CoC Data — Session 3",
+    "canonical_url": "https://mathieugug.github.io/syllabus/03-la-valeur-slideshow.html",
+    "og_image_url": "https://mathieugug.github.io/measure-roi/og.png",
+    "svgs": [
+        ("roi-01",  "measure-roi/images/20260507-01-paradoxe-roi.svg"),
+        ("roi-05",  "measure-roi/images/20260507-05-hard-vs-soft.svg"),
+        ("roi-03",  "measure-roi/images/20260507-03-grille-5-axes.svg"),
+        ("roi-09",  "measure-roi/images/20260507-09-productivity-findings.svg"),
+        ("eval-09", "evaluation-agentique/images/20260501-09-couts-goulots.svg"),
+    ],
+    "scenes_js": r"""[
+  { type: 'punchline', title: 'La valeur — Session 3', body: '<mark>95 %</mark> des pilotes GenAI sans P&amp;L mesurable.', attribution: 'MIT NANDA, 2026' },
+  { type: 'punchline', title: 'Le malentendu', body: 'On mesure ce qui est <em>facile à compter</em> (les heures économisées). On rate ce qui crée de la valeur (la <mark>réallocation</mark>).' },
+  { type: 'schema', title: 'Le paradoxe agentique', schemaId: 'roi-01', steps: [
+    { caption: 'Trois constats. Un potentiel annoncé, une réalité décevante, et un échec mesuré.', highlight: [], dim: [], hidden: [], fullView: true },
+    { caption: 'Le potentiel : 2,6-4,4 trillions $ par an (McKinsey 2024). Le chiffre qui fait rêver les directions.', highlight: ['[data-card="potentiel"]'], dim: ['[data-card="realite"]','[data-card="echec"]'], hidden: [], modalAuto: 'potentiel' },
+    { caption: 'La réalité observée : 95 % des pilotes sans P&amp;L mesurable. L\'écart est béant.', highlight: ['[data-card="echec"]'], dim: ['[data-card="potentiel"]','[data-card="realite"]'], hidden: [], modalAuto: 'echec' }
+  ]},
+  { type: 'schema', title: 'Hard savings vs soft savings', schemaId: 'roi-05', steps: [
+    { caption: 'Cinq axes de valeur — mais tous ne sont pas mesurables de la même façon. Les soft savings (bien-être, qualité) résistent à la quantification.', highlight: [], dim: [], hidden: [], fullView: true },
+    { caption: 'Coût et volume : hard savings — directement chiffrables en P&amp;L.', highlight: ['[data-card="bar-cout"]','[data-card="bar-volume"]'], dim: ['[data-card="bar-vitesse"]','[data-card="bar-qualite"]','[data-card="bar-bien-etre"]'], hidden: [], modalAuto: 'bar-cout' },
+    { caption: 'Bien-être : soft saving le plus rétif à la mesure. Pourtant souvent le plus durable.', highlight: ['[data-card="bar-bien-etre"]'], dim: ['[data-card="bar-cout"]','[data-card="bar-volume"]','[data-card="bar-vitesse"]','[data-card="bar-qualite"]'], hidden: [], modalAuto: 'bar-bien-etre' }
+  ]},
+  { type: 'schema', title: 'La grille à 5 axes', schemaId: 'roi-03', steps: [
+    { caption: 'Cinq axes pour évaluer un projet IA : Coût, Bien-être, Vitesse, Volume, Qualité. Lus ensemble — pas en silos.', highlight: [], dim: [], hidden: [], fullView: true },
+    { caption: 'Vitesse : un cycle qui passe de 3 jours à 30 minutes change la nature du livrable, pas que sa cadence.', highlight: ['[data-card="vitesse"]'], dim: ['[data-card="cout"]','[data-card="qualite"]','[data-card="bien-etre"]','[data-card="volume"]'], hidden: [], modalAuto: 'vitesse' }
+  ]},
+  { type: 'schema', title: 'Empirique — ce que les études disent', schemaId: 'roi-09', steps: [
+    { caption: 'Six études marquantes. Les chiffres ne convergent pas — et c\'est précisément l\'intérêt.', highlight: [], dim: [], hidden: [], fullView: true },
+    { caption: 'Brynjolfsson : +14 % de productivité au support client. Bénéfice maximal pour les juniors.', highlight: ['[data-card="study-brynjolfsson"]'], dim: ['[data-card="study-copilot"]','[data-card="study-jagged-positive"]','[data-card="study-jagged-negative"]','[data-card="study-klarna"]','[data-card="study-metr"]'], hidden: [], modalAuto: 'study-brynjolfsson' },
+    { caption: 'Klarna : pic communication, puis recul. Cas culte de la mesure ROI mal cadrée.', highlight: ['[data-card="study-klarna"]'], dim: ['[data-card="study-brynjolfsson"]','[data-card="study-copilot"]','[data-card="study-jagged-positive"]','[data-card="study-jagged-negative"]','[data-card="study-metr"]'], hidden: [], modalAuto: 'study-klarna' },
+    { caption: 'Jagged frontier : ±19 pp selon que la tâche est dans la frontière de l\'IA ou pas.', highlight: ['[data-card="study-jagged-positive"]','[data-card="study-jagged-negative"]'], dim: ['[data-card="study-brynjolfsson"]','[data-card="study-copilot"]','[data-card="study-klarna"]','[data-card="study-metr"]'], hidden: [], modalAuto: 'study-jagged-positive' }
+  ]},
+  { type: 'punchline', title: 'Mesurer = instrumenter', body: 'Pour mesurer vraiment, il faut <mark>instrumenter</mark>. C\'est l\'objet de l\'événement final.', attribution: 'Teaser Lincoln Transform' },
+  { type: 'schema', title: 'Coûts et goulots — teaser final', schemaId: 'eval-09', steps: [
+    { caption: 'Évaluer un agent en production a un coût caché : la dette d\'instrumentation. Avant-goût de l\'événement final.', highlight: [], dim: [], hidden: [], fullView: true },
+    { caption: 'Le piège des tokens : on optimise ce qu\'on facture, pas ce qui crée de la valeur.', highlight: ['[data-card="token-trap"]'], dim: [], hidden: [], modalAuto: 'token-trap' }
+  ]},
+  { type: 'outro', title: 'Session 3', outroTitle: 'Session 3 — <em>La valeur</em>', body: 'Une grille à 5 axes, 6 études empiriques, un paradoxe à 95 %. La prochaine session prend de la hauteur : ce que l\'IA change au travail data, et au CoC lui-même.', cta: { href: '04-le-futur-slideshow.html', label: 'Session 4 — Le futur' }, secondary: { href: 'index.html', label: 'Revenir au hub' } }
+]""",
+    "schemas_js": r"""{
+  "roi-01": {
+    "potentiel": { "eyebrow": "MIRAGE", "title": "Le potentiel annoncé — 2,6-4,4 trillions $/an", "body": "<p>Chiffre McKinsey 2024 — la fourchette qui a déclenché les budgets IA dans toutes les directions financières du monde. C'est l'estimation théorique de la création de valeur si toute l'économie capturait l'IA générative à pleine puissance.</p>" },
+    "realite": { "eyebrow": "ÉCART", "title": "La réalité observée — pilotes nombreux, P&L muet", "body": "<p>Multiplication des POC, succès locaux dans les démos. Mais l'impact P&amp;L reste invisible. La cause n'est pas l'IA — c'est le passage à l'échelle qui ne se fait pas.</p>" },
+    "echec": { "eyebrow": "MIT NANDA 2026", "title": "95 % de pilotes sans impact P&L mesurable", "body": "<p>Étude MIT NANDA : sur 100 pilotes GenAI suivis, 95 ne convertissent pas en valeur économique mesurée. <mark>Le problème n'est pas l'absence de valeur — c'est l'absence de mesure adaptée.</mark></p>" }
+  },
+  "roi-05": {
+    "bar-cout": { "eyebrow": "HARD", "title": "Coût — l'axe le plus tangible", "body": "<p>Heures économisées × taux horaire = baisse de coût. Direct, lisible, mais souvent surévalué (ne capture pas la réallocation des heures gagnées).</p>" },
+    "bar-volume": { "eyebrow": "HARD", "title": "Volume — produire plus avec autant", "body": "<p>Plus de tickets traités, plus d'analyses livrées. Mesurable mais conditionné à la demande (un volume gagné sans usage est du gâchis).</p>" },
+    "bar-vitesse": { "eyebrow": "MIXTE", "title": "Vitesse — le cycle qui se compresse", "body": "<p>Time-to-market raccourci. Lisible si le marché valorise la vitesse (Tech, finance), invisible sinon (réglementé, B2B long).</p>" },
+    "bar-qualite": { "eyebrow": "SOFT", "title": "Qualité — l'erreur évitée", "body": "<p>Moins de bugs, moins de litiges. Mesurable a posteriori (incidents évités) mais difficile à attribuer ex ante.</p>" },
+    "bar-bien-etre": { "eyebrow": "SOFT", "title": "Bien-être — la couche invisible et durable", "body": "<p>Moins de tâches répétitives, plus de focus sur le métier. <mark>L'axe le plus difficile à chiffrer, souvent le plus durable</mark> en termes de rétention et de qualité de delivery.</p>" }
+  },
+  "roi-03": {
+    "cout": { "eyebrow": "AXE 1", "title": "Coût", "body": "<p>Baisse directe ou évitement. Le réflexe naturel — mais réducteur si seul utilisé.</p>" },
+    "bien-etre": { "eyebrow": "AXE 2", "title": "Bien-être", "body": "<p>Charge cognitive, satisfaction, sens. Difficile à mesurer mais cité par 80 % des répondants comme bénéfice principal de l'IA dans leur quotidien.</p>" },
+    "vitesse": { "eyebrow": "AXE 3", "title": "Vitesse", "body": "<p>Cycle de livraison. <mark>Quand un livrable passe de 3 jours à 30 min, ce n'est pas un gain de productivité — c'est un changement de nature.</mark></p>" },
+    "volume": { "eyebrow": "AXE 4", "title": "Volume", "body": "<p>Capacité à traiter plus de cas avec les mêmes ressources. Sensé seulement si la demande suit.</p>" },
+    "qualite": { "eyebrow": "AXE 5", "title": "Qualité", "body": "<p>Erreurs évitées, conformité accrue. Souvent le levier le plus rentable mais le moins visible court terme.</p>" }
+  },
+  "roi-09": {
+    "study-brynjolfsson": { "eyebrow": "BRYNJOLFSSON 2023", "title": "+14 % au support client", "body": "<p>Étude au support client tech. Productivity boost de +14 % en moyenne. <mark>Bénéfice concentré sur les juniors</mark> : +35 % pour eux, négligeable pour les seniors.</p>" },
+    "study-copilot": { "eyebrow": "COPILOT 2024", "title": "+26 % vitesse, qualité stable", "body": "<p>Étude GitHub Copilot sur 4867 développeurs. Vitesse de complétion +26 %, sans baisse de qualité du code mergé. Effet plus marqué sur les tâches répétitives.</p>" },
+    "study-jagged-positive": { "eyebrow": "JAGGED FRONTIER (+)", "title": "+40 % qualité — dans la frontière", "body": "<p>Dell'Acqua et al. — pour les tâches dans le périmètre de l'IA, gain massif. <mark>+40 % de qualité, +12 % de vitesse.</mark></p>" },
+    "study-jagged-negative": { "eyebrow": "JAGGED FRONTIER (-)", "title": "-19 pp — hors frontière", "body": "<p>Mais pour les tâches hors frontière, l'IA induit des erreurs : -19 pp de qualité quand elle est utilisée à mauvais escient. Connaître la frontière est devenu une compétence.</p>" },
+    "study-klarna": { "eyebrow": "KLARNA 2024", "title": "Pic communication puis recul", "body": "<p>Cas culte. Klarna communique en 2024 sur le remplacement de 700 agents support. En 2025, recul partiel — recrutement humain repris pour la qualité conversationnelle. <mark>Mesurer le ROI, c'est aussi mesurer ce qu'on sacrifie.</mark></p>" },
+    "study-metr": { "eyebrow": "METR 2025", "title": "-19 % sur tâches longues complexes", "body": "<p>METR : sur des tâches d'ingénierie longues (>2h), les développeurs avec IA sont en moyenne 19 % moins productifs — alors qu'ils estiment être plus rapides. Biais d'auto-évaluation massif.</p>" }
+  },
+  "eval-09": {
+    "token-trap": { "eyebrow": "PIÈGE", "title": "Le piège des tokens", "body": "<p>Optimiser ce qu'on facture (tokens consommés) au lieu d'optimiser ce qui crée de la valeur (qualité de la sortie). Pattern classique : on baisse les coûts unitaires mais on régresse sur la qualité, et personne ne le voit.</p>" },
+    "cost-bar": { "eyebrow": "COÛT TOTAL", "title": "Coût total d'une eval", "body": "<p>L'évaluation continue d'agents en production a un coût propre — souvent 10-30 % du coût d'inférence de l'agent lui-même. Sujet de l'événement final.</p>" },
+    "optim-levers": { "eyebrow": "LEVIERS", "title": "Optimiser sans dégrader", "body": "<p>Sampling, sub-models, caching. Trois leviers pour réduire le coût d'éval sans perdre en signal.</p>" }
+  }
+}""",
+}
+
+# ============================================================================
+# Session 4 — Le futur
+# ============================================================================
+
+SESSION_4 = {
+    "out_filename": "04-le-futur-slideshow.html",
+    "title": "Le futur — Session 4 Syllabus CoC Data",
+    "description": "Slideshow interactif — Session 4 : Le futur. De Frey-Osborne (47 % d'emplois exposés) à Acemoglu (0,55 % de productivité) — quel scénario pour le CoC ? Bonus narrative-experiences. 10 scènes.",
+    "dossier_context": "Syllabus CoC Data — Session 4",
+    "canonical_url": "https://mathieugug.github.io/syllabus/04-le-futur-slideshow.html",
+    "og_image_url": "https://mathieugug.github.io/ia-et-travail/og.png",
+    "svgs": [
+        ("travail-01", "ia-et-travail/images/20260504-01-frise-estimations.svg"),
+        ("travail-04", "ia-et-travail/images/20260504-04-augmentation-automatisation.svg"),
+        ("travail-07", "ia-et-travail/images/20260504-07-quatre-scenarios.svg"),
+        ("travail-08", "ia-et-travail/images/20260504-08-six-leviers.svg"),
+        ("narr-06",    "narrative-experiences/images/20260505-06-chaine-augmentee.svg"),
+    ],
+    "scenes_js": r"""[
+  { type: 'punchline', title: 'Le futur — Session 4', body: 'De <mark>47 %</mark> d\'emplois exposés (Frey-Osborne 2013) à <mark>0,55 %</mark> de productivité gagnée sur 10 ans (Acemoglu 2024).', attribution: 'L\'écart entre les estimations' },
+  { type: 'schema', title: 'L\'écart entre les estimations', schemaId: 'travail-01', steps: [
+    { caption: 'Sept estimations majeures de l\'impact emploi/productivité de l\'IA, sur dix ans. L\'écart entre la plus haute et la plus basse est d\'un facteur 100.', highlight: [], dim: [], hidden: [], fullView: true },
+    { caption: 'Frey-Osborne 2013 : 47 % d\'emplois exposés à l\'automatisation. Le chiffre fondateur, repris partout.', highlight: ['[data-card="est-frey-osborne"]'], dim: ['[data-card="est-acemoglu"]','[data-card="est-arntz"]','[data-card="est-eloundou"]','[data-card="est-goldman"]','[data-card="est-imf"]','[data-card="est-mckinsey"]'], hidden: [], modalAuto: 'est-frey-osborne' },
+    { caption: 'Acemoglu 2024 : 0,55 % de productivité gagnée sur 10 ans. À l\'opposé radical du précédent.', highlight: ['[data-card="est-acemoglu"]'], dim: ['[data-card="est-frey-osborne"]','[data-card="est-arntz"]','[data-card="est-eloundou"]','[data-card="est-goldman"]','[data-card="est-imf"]','[data-card="est-mckinsey"]'], hidden: [], modalAuto: 'est-acemoglu' }
+  ]},
+  { type: 'schema', title: 'Augmentation vs automatisation', schemaId: 'travail-04', steps: [
+    { caption: 'Deux trajectoires opposées. Augmentation : l\'humain + IA fait mieux que l\'humain seul. Automatisation : l\'IA remplace.', highlight: [], dim: [], hidden: [], fullView: true },
+    { caption: 'Zone d\'augmentation : tâches où l\'humain reste central, l\'IA l\'amplifie. C\'est le scénario souhaitable pour le CoC.', highlight: ['[data-card="aug-zone"]'], dim: ['[data-card="auto-zone"]'], hidden: [], modalAuto: 'aug-zone' },
+    { caption: 'Zone d\'automatisation : tâches où l\'humain disparaît. C\'est le scénario qu\'il faut anticiper, pas subir.', highlight: ['[data-card="auto-zone"]'], dim: ['[data-card="aug-zone"]'], hidden: [], modalAuto: 'auto-zone' }
+  ]},
+  { type: 'schema', title: 'Quatre scénarios pour 2035', schemaId: 'travail-07', steps: [
+    { caption: 'Quatre futurs possibles pour le travail data en 2035. Aucun n\'est certain — chacun se joue par les choix qu\'on fait maintenant.', highlight: [], dim: [], hidden: [], fullView: true },
+    { caption: 'Scénario A — Productivité partagée. L\'IA augmente, les gains sont redistribués.', highlight: ['[data-card="scenario-a-partagee"]'], dim: ['[data-card="scenario-b-engels"]','[data-card="scenario-c-plateau"]','[data-card="scenario-c2-stagnation"]','[data-card="scenario-d-rupture"]'], hidden: [], modalAuto: 'scenario-a-partagee' },
+    { caption: 'Scénario B — La pause d\'Engels. Les gains restent concentrés, les salaires stagnent une décennie.', highlight: ['[data-card="scenario-b-engels"]'], dim: ['[data-card="scenario-a-partagee"]','[data-card="scenario-c-plateau"]','[data-card="scenario-c2-stagnation"]','[data-card="scenario-d-rupture"]'], hidden: [], modalAuto: 'scenario-b-engels' }
+  ]},
+  { type: 'schema', title: 'Six leviers d\'action publique (et d\'entreprise)', schemaId: 'travail-08', steps: [
+    { caption: 'Six leviers concrets pour orienter le scénario vers A (partagé) plutôt que B (Engels). Applicables à l\'échelle entreprise comme État.', highlight: [], dim: [], hidden: [], fullView: true },
+    { caption: 'Levier 2 — Formation. Le levier le plus directement actionnable au niveau d\'un CoC.', highlight: ['[data-card="levier-02-formation"]'], dim: ['[data-card="levier-01-redirection"]','[data-card="levier-03-securisation"]','[data-card="levier-04-partage"]','[data-card="levier-05-gouvernance"]','[data-card="levier-06-territoires"]'], hidden: [], modalAuto: 'levier-02-formation' }
+  ]},
+  { type: 'punchline', title: 'L\'angle mort', body: '<mark>3 % data storytelling. 7 % livrables clients.</mark> Les vrais angles morts du baromètre — où l\'IA pourrait pourtant tout changer.' },
+  { type: 'schema', title: 'Bonus — Narrative experiences augmentées par l\'IA', schemaId: 'narr-06', steps: [
+    { caption: 'La chaîne de production de visuels narratifs : 7 étapes. L\'IA peut intervenir à chaque étape — c\'est tout le sujet du dossier narrative-experiences.', highlight: [], dim: [], hidden: [], fullView: true },
+    { caption: 'Étape Cadrage — angle, audience, message clé. L\'IA aide à formuler, pas à décider.', highlight: ['[data-card="step-cadrage"]'], dim: ['[data-card="step-donnees"]','[data-card="step-exploration"]','[data-card="step-scenario"]','[data-card="step-production"]','[data-card="step-qa"]','[data-card="step-integration"]'], hidden: [], modalAuto: 'step-cadrage' },
+    { caption: 'Étape Production — graphismes, mises en scène. L\'IA accélère le rendu mais ne remplace pas le jugement esthétique.', highlight: ['[data-card="step-production"]'], dim: ['[data-card="step-cadrage"]','[data-card="step-donnees"]','[data-card="step-exploration"]','[data-card="step-scenario"]','[data-card="step-qa"]','[data-card="step-integration"]'], hidden: [], modalAuto: 'step-production' }
+  ]},
+  { type: 'punchline', title: 'Et après ?', body: 'Le cycle se referme. La prochaine session : <mark>les agents en production.</mark>' },
+  { type: 'outro', title: 'Session 4', outroTitle: 'Session 4 — <em>Le futur</em>', body: 'Sept estimations, deux trajectoires, quatre scénarios, six leviers, un angle mort à creuser. Le cycle court se termine — l\'événement final 1h30 attend, ciblé builders.', cta: { href: '05-evenement-final-slideshow.html', label: 'Événement final — Les agents en production' }, secondary: { href: '../narrative-experiences/', label: 'Creuser l\'angle mort — narrative-experiences' } }
+]""",
+    "schemas_js": r"""{
+  "travail-01": {
+    "est-frey-osborne": { "eyebrow": "FREY-OSBORNE 2013", "title": "47 % d'emplois exposés à l'automatisation", "body": "<p>Étude fondatrice. Calcul par tâches automatisables. Repris partout, mais largement contesté depuis (méthode jugée trop optimiste sur ce qui est automatisable).</p>" },
+    "est-arntz": { "eyebrow": "ARNTZ-GREGORY-ZIERAHN 2016", "title": "9 % seulement (OCDE) — quand on regarde par poste", "body": "<p>Réplication de l'étude Frey-Osborne mais en regardant les postes (pas les tâches isolées). Résultat : 9 %. La méthode de comptage change tout.</p>" },
+    "est-mckinsey": { "eyebrow": "MCKINSEY 2017-2024", "title": "60-70 % d'activités potentiellement automatisables", "body": "<p>Approche par activités, pas par emplois. Le chiffre est haut, mais l'horizon est long (2030-2055) et conditionné à de nombreux paramètres (coûts, acceptabilité, régulation).</p>" },
+    "est-goldman": { "eyebrow": "GOLDMAN SACHS 2023", "title": "300 millions d'emplois exposés", "body": "<p>L'étude qui a fait la une des médias. Estimation à l'échelle mondiale, GenAI uniquement. <mark>Mais « exposé » ne veut pas dire « supprimé » — beaucoup d'exposés seront augmentés, pas remplacés.</mark></p>" },
+    "est-eloundou": { "eyebrow": "ELOUNDOU 2023", "title": "80 % des emplois US affectés à au moins 10 %", "body": "<p>Étude OpenAI/Penn. Mesure plus fine : combien d'emplois ont au moins 10 % de leurs tâches affectées par les LLMs. Le chiffre signale l'ubiquité, pas l'ampleur.</p>" },
+    "est-imf": { "eyebrow": "FMI 2024", "title": "40 % des emplois mondiaux exposés", "body": "<p>Étude FMI. Estimation médiane des projections macro. Note importante : 60 % dans les économies avancées, 40 % émergentes — les outils profitent d'abord aux contextes outillés.</p>" },
+    "est-acemoglu": { "eyebrow": "ACEMOGLU 2024", "title": "0,55 % de TFP gagné sur 10 ans", "body": "<p>L'estimation la plus pessimiste. Acemoglu (Nobel 2024) modèlise les gains effectifs après diffusion, déploiement, frictions. <mark>L'écart avec Goldman (×100) raconte l'incertitude réelle du débat.</mark></p>" }
+  },
+  "travail-04": {
+    "aug-zone": { "eyebrow": "AUGMENTATION", "title": "L'IA amplifie l'humain", "body": "<p>L'humain reste décideur, l'IA exécute, propose, accélère. Modèle dominant pour le travail data en 2026 : Claude Code en pair programming, copilots BI en assistance.</p>" },
+    "auto-zone": { "eyebrow": "AUTOMATISATION", "title": "L'IA remplace l'humain", "body": "<p>Tâches entièrement déléguées : génération de rapports types, classification, première triage. Périmètre qui grandit lentement mais irréversiblement.</p>" },
+    "obs-conversational": { "eyebrow": "OBSERVATION", "title": "Conversational tasks plus exposées", "body": "<p>Les tâches conversationnelles (support, rédaction) sont les premières touchées. Pas par hasard — c'est le terrain natif des LLMs.</p>" },
+    "obs-onet": { "eyebrow": "DONNÉES O*NET", "title": "Cartographie des activités automatisables", "body": "<p>Base O*NET : 1000 occupations US décomposées en activités. Permet d'évaluer finement quelles activités sont susceptibles d'être automatisées par les outils actuels.</p>" },
+    "obs-limites": { "eyebrow": "LIMITES", "title": "Ce que l'IA ne fait pas (encore)", "body": "<p>Décision à fort enjeu, négociation, créativité ouverte, responsabilité juridique. Ces zones restent humaines — pour des raisons techniques, légales, et culturelles.</p>" }
+  },
+  "travail-07": {
+    "scenario-a-partagee": { "eyebrow": "SCÉNARIO A", "title": "Productivité partagée", "body": "<p>L'IA augmente, les gains sont distribués (salaires, formation, temps libre). Scénario souhaitable mais demande des choix politiques actifs.</p>" },
+    "scenario-b-engels": { "eyebrow": "SCÉNARIO B", "title": "La pause d'Engels", "body": "<p>Référence historique : 1820-1840 en Angleterre, productivité industrielle qui explose, salaires qui stagnent. Une décennie d'attente avant que les gains ne se diffusent. <mark>Scénario où la valeur est captée par les détenteurs des outils.</mark></p>" },
+    "scenario-c-plateau": { "eyebrow": "SCÉNARIO C", "title": "Plateau de productivité", "body": "<p>L'IA n'apporte pas autant qu'espéré. Frictions de déploiement, attentes irréalistes, retour à un usage plus modeste. Scénario probable si on regarde les cycles précédents (Internet, mobile).</p>" },
+    "scenario-c2-stagnation": { "eyebrow": "SCÉNARIO C bis", "title": "Stagnation par dette technique", "body": "<p>Variante : l'IA produit du code/contenu en masse, mais la qualité globale baisse. La dette technique l'emporte sur les gains de vitesse. Risque réel pour les CoC qui n'instrumentent pas.</p>" },
+    "scenario-d-rupture": { "eyebrow": "SCÉNARIO D", "title": "Rupture — AGI ou choc majeur", "body": "<p>Soit AGI atteint (probabilité faible mais non nulle), soit choc régulatoire ou géopolitique majeur qui change les règles du jeu. Scénario à anticiper sans pouvoir s'y préparer.</p>" }
+  },
+  "travail-08": {
+    "levier-01-redirection": { "eyebrow": "LEVIER 1", "title": "Réorienter la R&D vers l'augmentation", "body": "<p>Choisir consciemment de financer/déployer les usages qui complètent l'humain plutôt que ceux qui le remplacent. Choix politique et éthique avant d'être technique.</p>" },
+    "levier-02-formation": { "eyebrow": "LEVIER 2", "title": "Formation continue — actionnable au niveau CoC", "body": "<p>Le seul levier sur lequel un CoC a un contrôle direct. Acculturation, parcours techniques, montée en compétences. <mark>Le syllabus que vous animez est précisément ce levier.</mark></p>" },
+    "levier-03-securisation": { "eyebrow": "LEVIER 3", "title": "Sécurisation des transitions", "body": "<p>Filets sociaux, accompagnement des reconversions. Niveau État/branche, pas entreprise.</p>" },
+    "levier-04-partage": { "eyebrow": "LEVIER 4", "title": "Partage de la valeur créée", "body": "<p>Mécanismes de redistribution des gains de productivité (salaires, intéressement, temps de travail). Bataille collective.</p>" },
+    "levier-05-gouvernance": { "eyebrow": "LEVIER 5", "title": "Gouvernance des modèles fondamentaux", "body": "<p>Régulation à l'échelle mondiale (AI Act EU, Executive Orders US). Lent mais structurant pour ce qui sera autorisé.</p>" },
+    "levier-06-territoires": { "eyebrow": "LEVIER 6", "title": "Implantation territoriale", "body": "<p>Éviter la concentration des bénéfices dans quelques métropoles. Levier de cohésion territoriale, pas seulement économique.</p>" }
+  },
+  "narr-06": {
+    "step-cadrage": { "eyebrow": "ÉTAPE 1", "title": "Cadrage — l'angle, l'audience", "body": "<p>L'IA aide à reformuler le brief, à explorer les angles. Mais le choix d'angle reste humain — c'est éditorial avant d'être technique.</p>" },
+    "step-donnees": { "eyebrow": "ÉTAPE 2", "title": "Données — collecte, qualité, sources", "body": "<p>L'IA accélère la collecte (scraping, API, parsing) et la vérification de qualité. Vigilance sur la provenance et les biais.</p>" },
+    "step-exploration": { "eyebrow": "ÉTAPE 3", "title": "Exploration — patterns, surprises", "body": "<p>L'IA explore largement les patterns possibles. L'humain choisit lesquels valent la peine d'être racontés.</p>" },
+    "step-scenario": { "eyebrow": "ÉTAPE 4", "title": "Scénario — arc narratif, dramaturgie", "body": "<p>Construction de l'histoire, choix des moments clés, gestion de la tension. <mark>Zone humaine par excellence</mark> — l'IA propose, l'humain choisit la cohérence.</p>" },
+    "step-production": { "eyebrow": "ÉTAPE 5", "title": "Production — graphismes, mises en scène", "body": "<p>L'IA accélère le rendu (SVG, illustrations, animations). Mais la cohérence visuelle, la signature graphique, restent du jugement humain.</p>" },
+    "step-qa": { "eyebrow": "ÉTAPE 6", "title": "QA — vérification, accessibilité", "body": "<p>L'IA vérifie l'accessibilité, le contraste, l'orthographe. Filet de sécurité utile mais imparfait.</p>" },
+    "step-integration": { "eyebrow": "ÉTAPE 7", "title": "Intégration — diffusion, métriques", "body": "<p>Publication, mesure d'audience, itération. L'IA aide à analyser les retours et à proposer des ajustements.</p>" }
+  }
+}""",
+}
+
+SESSIONS = {2: SESSION_2, 3: SESSION_3, 4: SESSION_4}
 
 
 def main():
