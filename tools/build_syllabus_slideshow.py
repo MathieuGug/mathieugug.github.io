@@ -384,6 +384,19 @@ def build_session(cfg: dict, force: bool = False) -> None:
             svg_text,
             count=1,
         )
+        # Replace HTML inline tags inside <text> with SVG-compatible <tspan>. When inlining
+        # SVG into HTML, the HTML parser sees `<em>`, `<i>`, `<strong>`, `<b>` as exits from
+        # the SVG context and aborts parsing — only the first few children of the SVG land
+        # in the DOM, leaving the schema visually empty. Replacing them with `<tspan>` keeps
+        # the SVG well-formed for the HTML parser. (Bug observed on ia-et-travail/01-frise.)
+        svg_text = re.sub(r'<em>', '<tspan font-style="italic">', svg_text)
+        svg_text = re.sub(r'</em>', '</tspan>', svg_text)
+        svg_text = re.sub(r'<i>', '<tspan font-style="italic">', svg_text)
+        svg_text = re.sub(r'</i>', '</tspan>', svg_text)
+        svg_text = re.sub(r'<strong>', '<tspan font-weight="600">', svg_text)
+        svg_text = re.sub(r'</strong>', '</tspan>', svg_text)
+        svg_text = re.sub(r'<b>', '<tspan font-weight="600">', svg_text)
+        svg_text = re.sub(r'</b>', '</tspan>', svg_text)
         inlined_blocks.append(svg_text.strip())
     new_svgs_block = "\n\n".join(inlined_blocks)
 
@@ -410,6 +423,20 @@ def build_session(cfg: dict, force: bool = False) -> None:
         text,
         flags=re.DOTALL,
         count=1,
+    )
+
+    # Patch the outro template fragment that the base (coding-agents) hardcoded with its own
+    # title and a `download` attribute on the secondary CTA. These break two things in the
+    # syllabus context : (1) scene.outroTitle from our SCENES is never used (the user sees
+    # 'Coding agents 2026' on every outro); (2) the `download` attribute on the link forces
+    # the browser to download `index.html` instead of navigating to the hub.
+    text = text.replace(
+        "<h2>Coding agents <em>2026</em> — l'essentiel</h2>",
+        "<h2>${scene.outroTitle || scene.title || ''}</h2>",
+    )
+    text = text.replace(
+        'href="${scene.secondary.href}" download',
+        'href="${scene.secondary.href}"',
     )
 
     target.write_text(text, encoding="utf-8")
