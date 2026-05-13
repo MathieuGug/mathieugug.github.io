@@ -23,6 +23,7 @@
     setupZoom();
     setupSigil();
     setupTopbarScroll();
+    setupQuizzes();
   }
 
   // ──────────────────────────────────────────────────────────
@@ -431,6 +432,99 @@
     window.addEventListener('scroll', function () {
       b.classList.toggle('scrolled', window.scrollY > 4);
     }, { passive: true });
+  }
+
+  // ──────────────────────────────────────────────────────────
+  // Quiz cards (vérification de compréhension)
+  // ──────────────────────────────────────────────────────────
+
+  function setupQuizzes() {
+    const cards = document.querySelectorAll('.quiz-card');
+    if (!cards.length) return;
+
+    cards.forEach(card => {
+      const toggle = card.querySelector('.quiz-card__toggle');
+      const body = card.querySelector('.quiz-card__body');
+      if (!toggle || !body) return;
+
+      const initialLabel = toggle.textContent.trim() || 'Tester →';
+      const openLabel = 'Replier ↑';
+
+      toggle.addEventListener('click', () => {
+        const open = toggle.getAttribute('aria-expanded') === 'true';
+        toggle.setAttribute('aria-expanded', String(!open));
+        body.hidden = open;
+        toggle.textContent = open ? initialLabel : openLabel;
+        if (!open) {
+          const firstInput = body.querySelector('input');
+          if (firstInput) setTimeout(() => firstInput.focus(), 0);
+        }
+      });
+
+      card.querySelectorAll('.quiz-q').forEach(q => attachQuizQuestion(q));
+    });
+  }
+
+  function attachQuizQuestion(q) {
+    const mode = q.dataset.mode || 'single';
+    const check = q.querySelector('.quiz-q__check');
+    const retry = q.querySelector('.quiz-q__retry');
+    const verdict = q.querySelector('.quiz-q__verdict');
+    const items = Array.from(q.querySelectorAll('.quiz-q__options > li'));
+    if (!check || !retry || !verdict || !items.length) return;
+
+    check.addEventListener('click', () => evaluateQuiz(q, mode, items, verdict, check, retry));
+    retry.addEventListener('click', () => resetQuiz(items, verdict, check, retry, q));
+  }
+
+  function evaluateQuiz(q, mode, items, verdict, check, retry) {
+    const userPicked = items.map(li => {
+      const inp = li.querySelector('input');
+      return inp ? !!inp.checked : false;
+    });
+    const expected = items.map(li => li.querySelector('.quiz-q__explain[data-correct="true"]') !== null);
+    let allRight = true;
+    items.forEach((li, i) => {
+      const explain = li.querySelector('.quiz-q__explain');
+      if (explain) explain.hidden = false;
+      const input = li.querySelector('input');
+      if (input) input.disabled = true;
+      if (mode === 'single') {
+        if (userPicked[i] && expected[i]) li.classList.add('is-correct');
+        else if (userPicked[i] && !expected[i]) { li.classList.add('is-wrong'); allRight = false; }
+        else if (!userPicked[i] && expected[i]) { li.classList.add('expected'); allRight = false; }
+      } else {
+        if (userPicked[i] === expected[i] && userPicked[i]) li.classList.add('is-correct');
+        else if (userPicked[i] && !expected[i]) { li.classList.add('is-wrong'); allRight = false; }
+        else if (!userPicked[i] && expected[i]) { li.classList.add('expected'); allRight = false; }
+      }
+    });
+    verdict.textContent = allRight ? 'Bonne réponse.' : 'Pas tout à fait — relisez la section concernée.';
+    verdict.classList.toggle('is-correct', allRight);
+    verdict.classList.toggle('is-wrong', !allRight);
+    verdict.hidden = false;
+    check.disabled = true;
+    retry.hidden = false;
+    retry.focus();
+  }
+
+  function resetQuiz(items, verdict, check, retry, q) {
+    items.forEach(li => {
+      li.classList.remove('is-correct', 'is-wrong', 'expected');
+      const explain = li.querySelector('.quiz-q__explain');
+      if (explain) explain.hidden = true;
+      const input = li.querySelector('input');
+      if (input) {
+        input.checked = false;
+        input.disabled = false;
+      }
+    });
+    verdict.hidden = true;
+    verdict.classList.remove('is-correct', 'is-wrong');
+    check.disabled = false;
+    retry.hidden = true;
+    const firstInput = q.querySelector('input');
+    if (firstInput) firstInput.focus();
   }
 
   if (document.readyState === 'loading') {

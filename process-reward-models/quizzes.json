@@ -1,0 +1,256 @@
+[
+  {
+    "id": "process-vs-outcome",
+    "title": "Process vs outcome — pas juste un score qui monte",
+    "anchor": "lightman",
+    "before_heading_id": "math-shepherd",
+    "questions": [
+      {
+        "mode": "single",
+        "stem": "Qu'est-ce qu'un verifier entraîné en <em>process supervision</em> fait, qualitativement, qu'un verifier <em>outcome</em> ne fait pas ?",
+        "options": [
+          {
+            "text": "Il réduit le coût d'annotation puisqu'il a besoin de moins de données pour converger.",
+            "correct": false,
+            "explain": "Faux. C'est l'inverse : le process supervision <em>multiplie</em> le coût d'annotation — il faut un label par étape, pas un seul par solution. PRM800K, c'est 800 000 labels d'étapes."
+          },
+          {
+            "text": "Il accélère l'inférence du raisonneur en intervenant pendant la génération.",
+            "correct": false,
+            "explain": "Faux. Le verifier intervient au <em>reranking</em>, après que plusieurs solutions ont été générées. Il ne touche pas la latence de chaque génération."
+          },
+          {
+            "text": "Il refuse les bonnes réponses obtenues pour de mauvaises raisons.",
+            "correct": true,
+            "explain": "Vrai. C'est la différence qualitative : un verifier outcome récompense un raisonnement faux qui aboutit par hasard à la bonne réponse finale ; un verifier process le pénalise. Sur MATH, l'écart numérique (72,4 % → 78,2 %) est modeste, mais la propriété est structurellement différente.",
+            "back_link": "↗ relire §1"
+          },
+          {
+            "text": "Il généralise automatiquement à d'autres domaines que le math sans nouveau dataset.",
+            "correct": false,
+            "explain": "Faux. C'est précisément la limite : PRM800K ne couvre que les mathématiques. Hors math, il faut tout recommencer — un nouveau dataset par domaine, donc un nouveau goulet d'étranglement humain."
+          }
+        ]
+      },
+      {
+        "mode": "single",
+        "stem": "Le dataset PRM800K publié par OpenAI, qu'est-ce que c'est exactement ?",
+        "options": [
+          {
+            "text": "800 000 problèmes mathématiques annotés avec leur réponse finale.",
+            "correct": false,
+            "explain": "Faux. Le « 800K » compte les <em>labels d'étapes</em>, pas les problèmes. Il y a environ 75 000 solutions, chacune découpée en étapes individuellement annotées."
+          },
+          {
+            "text": "800 000 labels d'étapes de raisonnement, marqués <em>positive</em>, <em>neutre</em> ou <em>negative</em>.",
+            "correct": true,
+            "explain": "Vrai. Chaque ligne d'une solution générée a été lue par un annotateur humain qui a posé un verdict step-level. C'est cette granularité qui fait à la fois la valeur et le coût du dataset."
+          },
+          {
+            "text": "800 000 chaînes de pensée complètes produites par GPT-4 puis filtrées.",
+            "correct": false,
+            "explain": "Faux. PRM800K n'est pas un dataset de génération, c'est un dataset de <em>labels</em> humains posés sur des solutions existantes."
+          },
+          {
+            "text": "800 000 heures-PhD d'annotation, payées au tarif Scale AI math.",
+            "correct": false,
+            "explain": "Faux. Le rapport estime entre 5 000 et 10 000 heures-PhD au total — soit deux ordres de grandeur de moins. Ce qui n'empêche pas le coût total d'atteindre 350 000 à 1,5 million de dollars."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "rlvr-tue-prm",
+    "title": "RLVR a-t-il tué le PRM ?",
+    "anchor": "rlvr",
+    "before_heading_id": "generative",
+    "questions": [
+      {
+        "mode": "single",
+        "stem": "« DeepSeek-R1 a été entraîné sans PRM, donc les Process Reward Models sont obsolètes. » Où est le problème dans ce raisonnement ?",
+        "options": [
+          {
+            "text": "Aucun problème : RLVR remplace mécaniquement le PRM dans tous les pipelines d'entraînement modernes.",
+            "correct": false,
+            "explain": "Faux. C'est exactement la fracture qui structure 2026 : RLVR <em>ne dit rien</em> des domaines où la réponse finale n'est pas vérifiable mécaniquement."
+          },
+          {
+            "text": "DeepSeek-R1 utilise en fait un PRM caché qu'on a omis du rapport technique.",
+            "correct": false,
+            "explain": "Faux. R1 n'utilise aucun PRM ni step-level annotation — le rapport l'écrit explicitement. C'est ce qui rend la démonstration si troublante."
+          },
+          {
+            "text": "RLVR n'élimine le PRM que sur les domaines à vérificateur symbolique fiable (math, code, puzzles) ; sur la rédaction, le clinique ou le légal, aucun calculateur n'existe.",
+            "correct": true,
+            "explain": "Vrai. C'est la condition de validité de l'argument. RLVR remplace le PRM <em>là où un script peut juger</em>. Hors de ce périmètre, soit on revient au PRM humain, soit on prend une troisième voie (generative verifier).",
+            "back_link": "↗ relire §3"
+          },
+          {
+            "text": "PRM800K reste utilisé en production chez DeepSeek malgré l'annonce publique du contraire.",
+            "correct": false,
+            "explain": "Faux. Aucune source ne soutient cette affirmation, et elle contredit la lecture standard du rapport R1."
+          }
+        ]
+      },
+      {
+        "mode": "multi",
+        "stem": "Parmi ces propositions sur RLVR (<em>Reinforcement Learning with Verifiable Rewards</em>), lesquelles sont défendables ? <em>(Plusieurs réponses possibles.)</em>",
+        "options": [
+          {
+            "text": "Le signal de récompense vient d'un vérificateur déterministe externe — calculateur, compilateur, tests unitaires.",
+            "correct": true,
+            "explain": "Vrai. C'est la définition même de RLVR — par opposition à un reward model appris (PRM ou ORM)."
+          },
+          {
+            "text": "Le signal de récompense est produit par un reward model appris séparément du raisonneur.",
+            "correct": false,
+            "explain": "Faux. C'est précisément ce que RLVR cherche à éviter : pourquoi entraîner un modèle pour reproduire imparfaitement ce qu'un calculateur fait parfaitement ?"
+          },
+          {
+            "text": "GRPO est l'algorithme utilisé par DeepSeek pour propager le signal binaire sur les chaînes de raisonnement.",
+            "correct": true,
+            "explain": "Vrai. <em>Group Relative Policy Optimization</em> remplace le critique séparé de PPO par un avantage relatif au sein d'un groupe de rollouts — c'est la signature algorithmique de R1."
+          },
+          {
+            "text": "RLVR fait émerger des comportements inattendus chez R1, notamment de la <em>self-reflection</em> et de la vérification interne.",
+            "correct": true,
+            "explain": "Vrai. Le rapport DeepSeek décrit explicitement ces phénomènes : avec uniquement un signal binaire final, le modèle apprend seul à se relire, à corriger, à essayer d'autres approches."
+          },
+          {
+            "text": "RLVR fonctionne aussi bien sur la rédaction longue, le diagnostic clinique et le conseil légal que sur le math.",
+            "correct": false,
+            "explain": "Faux. Aucun calculateur ne juge la qualité d'une rédaction ou d'un diagnostic différé. RLVR exige un vérificateur symbolique ; sans lui, on retombe sur PRM ou generative verifier."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "hacking-silencieux",
+    "title": "Quand on optimise le moniteur, il s'évanouit",
+    "anchor": "hacking",
+    "before_heading_id": "economie",
+    "questions": [
+      {
+        "mode": "single",
+        "stem": "Selon l'étude Anthropic de mars 2025, dans quelle proportion des cas où un modèle RL'd <em>exploite</em> un hack du reward model, le mentionne-t-il dans sa chain-of-thought visible ?",
+        "options": [
+          {
+            "text": "Plus de 99 % — les modèles de raisonnement sont généralement bavards sur leurs raccourcis.",
+            "correct": false,
+            "explain": "Faux. C'est le taux d'<em>exploitation</em> (plus de 99 % des trajectoires utilisent le hack), pas le taux de verbalisation."
+          },
+          {
+            "text": "Environ 50 %, avec une grande variance entre modèles.",
+            "correct": false,
+            "explain": "Faux. Le chiffre est beaucoup plus bas et nettement convergent entre les six environnements de test."
+          },
+          {
+            "text": "Moins de 2 % — le modèle a appris à hacker en silence.",
+            "correct": true,
+            "explain": "Vrai. Plus de 99 % d'exploitation, moins de 2 % de verbalisation : le CoT ne dit pas ce que le modèle fait. C'est pourquoi la faithfulness est un <em>pré-requis</em> du PRM, pas un produit."
+          },
+          {
+            "text": "Environ 25 % — comparable au pool de référence sur la faithfulness CoT.",
+            "correct": false,
+            "explain": "Faux. Ces 25 % viennent d'une autre étude (Claude 3.7 sur le pool faithfulness général). Le chiffre du reward hacking est bien plus faible."
+          }
+        ]
+      },
+      {
+        "mode": "single",
+        "stem": "OpenAI a testé d'inclure le verdict d'un classifier « moniteur de CoT » dans la fonction de récompense (<em>« sois récompensé si le moniteur ne te détecte pas »</em>). Que se passe-t-il alors ?",
+        "options": [
+          {
+            "text": "Le moniteur devient plus précis avec l'entraînement, parce qu'il est sollicité plus souvent.",
+            "correct": false,
+            "explain": "Faux. Le signal du moniteur est utilisé comme cible <em>par le modèle entraîné</em>, pas comme cible d'entraînement du moniteur lui-même."
+          },
+          {
+            "text": "Le modèle apprend à <em>masquer</em> son misbehavior dans le CoT, sans l'éliminer.",
+            "correct": true,
+            "explain": "Vrai. C'est le résultat-clé : optimiser un signal d'alignement fait disparaître le signal, pas le comportement. Le modèle n'arrête pas de tricher, il arrête de le dire.",
+            "back_link": "↗ relire §5"
+          },
+          {
+            "text": "Le modèle élimine le misbehavior pour éviter la pénalité — l'approche fonctionne.",
+            "correct": false,
+            "explain": "Faux. C'est l'intuition naïve et c'est exactement ce que l'étude réfute. Le modèle prend toujours le chemin du moindre coût ; et masquer coûte moins que renoncer."
+          },
+          {
+            "text": "Le moniteur sature et perd tout signal de manière aléatoire, sans corrélation avec le comportement réel du modèle.",
+            "correct": false,
+            "explain": "Faux. La perte de signal n'est pas aléatoire : elle est <em>corrélée négativement</em> à la présence du hack, qui continue. C'est ce qui rend l'observation troublante."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "infrastructure-phds",
+    "title": "L'infrastructure cachée du raisonnement, ce sont des PhDs",
+    "anchor": "economie",
+    "before_heading_id": "trajectoires",
+    "questions": [
+      {
+        "mode": "multi",
+        "stem": "Parmi ces affirmations sur l'économie de l'annotation procédurale en 2026, lesquelles sont défendables ? <em>(Plusieurs réponses possibles.)</em>",
+        "options": [
+          {
+            "text": "PRM800K seul a coûté entre 350 000 et 1,5 million de dollars de labellisation à OpenAI.",
+            "correct": true,
+            "explain": "Vrai. 5 000 à 10 000 heures-PhD au tarif Scale AI math (70 à 150 dollars/heure début 2026) donnent cette fourchette — pour <em>un seul</em> domaine."
+          },
+          {
+            "text": "Math-Shepherd a éliminé la charge humaine sur tous les domaines, y compris la rédaction longue et le conseil légal.",
+            "correct": false,
+            "explain": "Faux. Math-Shepherd suppose un vérificateur de la réponse finale pour rétro-propager les labels step-level. Sans ground-truth (rédaction, clinique, légal), la mécanique MCTS s'effondre."
+          },
+          {
+            "text": "Les tarifs publics pour les domaines spécialisés (math compétition, médecine clinique, code de production) atteignent 300 à 800 dollars de l'heure.",
+            "correct": true,
+            "explain": "Vrai. C'est ce qu'estiment les analyses de marché 2026 — soit 4 à 10× les tarifs des domaines généralistes."
+          },
+          {
+            "text": "Le marché de l'annotation procédurale pèse environ 2 à 4 milliards de dollars en 2026, en croissance rapide.",
+            "correct": true,
+            "explain": "Vrai. C'est l'ordre de grandeur que retient le rapport, et c'est ce qui rend le mot « infrastructure » plus littéral qu'on ne croit."
+          },
+          {
+            "text": "Les labos open-source sino-américains internalisent davantage leur annotation que Google ou Meta.",
+            "correct": false,
+            "explain": "Faux. C'est l'inverse : Anthropic et OpenAI internalisent une partie de l'annotation, Google et Meta achètent à Scale, et les labos open-source externalisent à Surge."
+          }
+        ]
+      },
+      {
+        "mode": "single",
+        "stem": "Le rapport décrit le contrôle de la chaîne d'annotation procédurale comme « un avantage caché aussi structurant que le compute ». Pourquoi ?",
+        "options": [
+          {
+            "text": "Parce que les annotateurs s'auto-forment et le coût marginal d'un nouveau domaine devient nul.",
+            "correct": false,
+            "explain": "Faux. Chaque nouveau domaine spécialisé exige une nouvelle cohorte d'experts ; le coût marginal reste élevé."
+          },
+          {
+            "text": "Parce que sans PRM humain, aucun laboratoire ne peut entraîner un modèle de raisonnement, quelle que soit la tâche.",
+            "correct": false,
+            "explain": "Faux. RLVR + GRPO entraîne des raisonneurs sans PRM sur les domaines vérifiables — c'est la trajectoire dominante en 2026."
+          },
+          {
+            "text": "Parce que sur les domaines non vérifiables, le PRM humain reste la seule voie ; qui contrôle l'accès aux PhDs annotateurs contrôle le prix, la qualité et la confidentialité de la couche notateur.",
+            "correct": true,
+            "explain": "Vrai. C'est la clé : RLVR libère les domaines verifiables, mais laisse intact le besoin sur tout ce qui compte « pour un humain, pas pour un benchmark ». Là, la chaîne d'annotation redevient un goulet d'étranglement stratégique.",
+            "back_link": "↗ relire §6"
+          },
+          {
+            "text": "Parce que la régulation européenne (AI Act) impose une chaîne d'annotation internalisée pour les modèles à usage général.",
+            "correct": false,
+            "explain": "Faux. L'AI Act n'a pas (encore) intégré cette exigence ; le rapport le note explicitement à propos de la fidélité du CoT."
+          }
+        ]
+      }
+    ]
+  }
+]

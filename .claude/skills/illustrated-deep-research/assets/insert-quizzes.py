@@ -430,19 +430,30 @@ def render_quiz_card(quiz: dict) -> str:
 # ---------------------------------------------------------------------------
 
 def inject_css_iife_if_missing(html: str) -> tuple[str, bool]:
+    # Apps qui chargent /assets/dossier-app.js : la lib partagée fournit déjà
+    # setupQuizzes() et son CSS quiz est attendu dans assets/dossier-app.css.
+    # Ré-injecter ici provoquerait un double binding (chaque click déclencherait
+    # deux fois le toggle, l'état s'annule visuellement). On skip totalement.
+    if re.search(r'<script[^>]+src=["\'](?:\.\.\/)?\/?assets\/dossier-app\.js["\']', html):
+        return html, False
+
     if "setupQuizzes" in html:
         return html, False
     if "</style>" not in html:
         raise ValueError("No </style> in app HTML — cannot inject quiz CSS.")
-    if html.rfind("</script>") == -1:
-        raise ValueError("No </script> in app HTML — cannot inject quiz IIFE.")
+    if "</body>" not in html:
+        raise ValueError("No </body> in app HTML — cannot inject quiz IIFE.")
 
     # Inject CSS just before the FIRST </style> (the one that closes <head>'s style block).
     html = html.replace("</style>", QUIZ_CSS + "  </style>", 1)
 
-    # Inject IIFE just before the LAST </script>, which is the inline script at end of <body>.
-    last_script_close = html.rfind("</script>")
-    html = html[:last_script_close] + "\n" + QUIZ_IIFE + "  " + html[last_script_close:]
+    # Inject IIFE as its own inline <script> just before </body>. We must NOT
+    # merge it into an existing <script src="..."> — when a <script> carries a
+    # `src` attribute the browser silently ignores its inline text content
+    # (HTML spec). Wrapping in our own pair guarantees execution regardless of
+    # whichever scripts the host page already declares.
+    iife_block = "<script>\n" + QUIZ_IIFE + "</script>\n"
+    html = html.replace("</body>", iife_block + "</body>", 1)
     return html, True
 
 
