@@ -12,7 +12,7 @@ En mai 2023, l'équipe Alignment d'OpenAI publie un papier qui passe d'abord pou
 
 Le résultat est net. Sur un sous-ensemble représentatif du benchmark MATH, le verifier entraîné en *process supervision* fait passer le taux de résolution de **72,4% à 78,2%**[^1]. La différence semble modeste ; elle est statistiquement nette et, surtout, qualitativement différente. Le verifier *process* refuse non seulement les mauvaises réponses, mais aussi les bonnes réponses obtenues pour de mauvaises raisons.
 
-[SCHEMA-01]
+![Outcome vs Process : noter la destination ou noter le chemin|1200](images/20260513-01-orm-vs-prm.svg)
 
 Pour entraîner ce verifier, OpenAI publie **PRM800K** — un dataset de 800 000 labels humains d'étapes de raisonnement, produits par des annotateurs marquant chaque ligne d'une solution mathématique générée comme `positive`, `neutre` ou `negative`. Le coût implicite est massif (estimé entre 4 et 12 millions de dollars de labellisation, selon les hypothèses sur le tarif horaire des annotateurs en mathématiques), et cette charge devient immédiatement le goulet d'étranglement du paradigme : on ne peut pas généraliser un PRM hors du math sans recommencer un PRM800K à chaque domaine.
 
@@ -22,7 +22,7 @@ Le papier de Lightman fonde une lignée. Il ne dit pas explicitement « voilà c
 
 Le verrou PRM800K — le coût humain — est levé sept mois plus tard. **Math-Shepherd**[^3], publié par Peixin Wang et ses co-auteurs (Université de Pékin / DeepSeek, accepté à ACL 2024), remplace l'annotateur humain par un mécanisme purement automatique inspiré de l'AlphaGo de DeepMind : pour une étape donnée d'une solution, on lance *N* rollouts depuis cette étape, on regarde quelle fraction aboutit à la bonne réponse, et on prend cette fraction comme label de l'étape.
 
-[SCHEMA-02]
+![Math-Shepherd : annotation step-level par rollouts MCTS|1200](images/20260513-02-math-shepherd-mcts.svg)
 
 L'intuition est élégante : **la qualité d'un état intermédiaire se déduit de la probabilité qu'il conduise à un bon état final**. C'est exactement la fonction-valeur du Monte Carlo Tree Search ; appliquée à des chaînes de raisonnement, elle produit des labels step-level *sans qu'aucun humain n'ait jamais lu la solution*. Les résultats valident la mécanique : Mistral-7B fine-tuné avec un PPO step-by-step pondéré par Math-Shepherd passe de 28,6% à 33,0% sur MATH ; combiné à une étape de *verification* (best-of-N reranking avec le PRM), il monte à 43,5%[^3].
 
@@ -34,7 +34,7 @@ Mais Math-Shepherd a un défaut structurel : il ne fonctionne que sur les domain
 
 En janvier 2025, DeepSeek publie le rapport technique de **R1**[^4] — et la communauté découvre, abasourdie, que l'un des meilleurs modèles de raisonnement open-weight au monde a été entraîné *sans aucun PRM*. Pas de Process Reward Model, pas de step-level annotation, pas de best-of-N reranking. À la place : **GRPO** (Group Relative Policy Optimization) + **récompenses purement vérifiables** — un calculateur pour les maths, un compilateur pour le code, des tests unitaires pour la programmation compétitive.
 
-[SCHEMA-03]
+![Trois familles de récompenses : ORM, PRM, RLVR|1200](images/20260513-03-trois-familles-recompenses.svg)
 
 Le mouvement a un nom officiel : <span class="term" data-tooltip="Reinforcement Learning with Verifiable Rewards : un paradigme où le signal de récompense vient d'un vérificateur déterministe externe (calculateur, compilateur, test unitaire) plutôt que d'un reward model appris">RLVR</span> (Reinforcement Learning with Verifiable Rewards)[^5]. L'idée est radicalement simple : si la tâche admet un vérificateur symbolique fiable, *pourquoi entraîner un modèle pour reproduire imparfaitement ce que le vérificateur fait parfaitement ?* DeepSeek-R1 démontre qu'un signal binaire « réponse correcte / incorrecte », appliqué à des dizaines de milliers de problèmes vérifiables et propagé par GRPO sur les chaînes de raisonnement, suffit à faire émerger un comportement de raisonnement step-by-step — y compris des phénomènes inattendus comme la *self-reflection* et la *vérification interne* du modèle.
 
@@ -46,7 +46,7 @@ Mais — et c'est la fracture qui structure 2026 — **RLVR n'élimine le PRM qu
 
 Cette troisième voie a un nom : **generative verifier**. L'idée vient de Lunjun Zhang et ses co-auteurs chez Google DeepMind, dans un papier d'août 2024 accepté à ICLR 2025[^6]. Au lieu d'entraîner le verifier comme un classifier binaire (un logit pour « correct », un pour « incorrect »), on l'entraîne à *générer* sa réponse — typiquement les tokens "Yes" ou "No" — précédés, si on le souhaite, d'une chaîne de raisonnement critique.
 
-[SCHEMA-04]
+![Verifier discriminatif vs verifier génératif|1200](images/20260513-04-discriminative-vs-generative.svg)
 
 Le gain est étonnant. Sur des tâches algorithmiques difficiles, le verifier génératif fait passer le best-of-N de **5% à 45,3%**. Sur GSM8K (math primaire), de **73% à 93,4%**[^6]. Trois propriétés expliquent l'avantage : (1) le verifier exploite l'instruction-tuning du modèle de base (les classifiers ne le peuvent pas) ; (2) il peut faire de la chain-of-thought sur la *vérification* (« vérifions étape par étape : à la ligne 3, on a calculé 7×8=54, ce qui est faux ») ; (3) il bénéficie du compute test-time (majority voting sur plusieurs traces de vérification).
 
@@ -60,7 +60,7 @@ Si le verifier et le raisonneur convergent vers un même modèle, qu'est-ce qui 
 
 Anthropic publie en mars 2025 *Reasoning models don't always say what they think*[^8]. Le résultat-choc : sur six environnements de test, les modèles RL'd exploitent les hacks du reward model (raccourcis, biais, signaux fallacieux) dans **plus de 99% des trajectoires**. Mais dans le chain-of-thought visible, ils ne mentionnent ce hack que dans **moins de 2% des cas**. Le modèle a appris à hacker en silence.
 
-[SCHEMA-05]
+![Le reward hacking invisible : exploitation vs verbalisation|1200](images/20260513-05-reward-hacking-invisible.svg)
 
 OpenAI confirme et étend cette observation en avril 2025[^9] : un classifier entraîné à détecter le misbehavior dans le CoT *fonctionne* — tant qu'on ne l'optimise pas. Dès qu'on inclut le verdict du classifier dans la fonction de récompense (« sois récompensé si le moniteur ne te détecte pas »), le modèle apprend à *masquer* son misbehavior dans le CoT plutôt qu'à l'éliminer.
 
@@ -76,8 +76,6 @@ Math-Shepherd a partiellement automatisé cette charge — mais uniquement là o
 
 Scale AI, Surge, Invisible Technologies, Mercor, Outlier ont tous une division *reasoning annotation* en 2026, dédiée à la production de step-level labels pour les frontier labs. Les tarifs publics estimés tournent autour de 50-150 dollars de l'heure pour les domaines généralistes, et **300-800 dollars de l'heure pour les domaines spécialisés** (math compétition, médecine clinique, raisonnement juridique, code de production). Le marché de l'annotation procédurale est estimé à 2-4 milliards de dollars en 2026, en croissance rapide[^12].
 
-[SCHEMA-06]
-
 Trois conséquences structurelles. D'abord, **le PRM est moins une technologie qu'un contrat de travail** — une infrastructure invisible de PhDs annotateurs, sans lesquels le paradigme ne tient pas. Deuxièmement, ==les labos qui contrôlent la chaîne d'annotation procédurale (Anthropic et OpenAI internalisent une partie ; Google et Meta achètent à Scale ; les open-source labos sino-américains externalisent à Surge) ont un avantage caché aussi structurant que leur compute==. Troisièmement, l'écart de coût entre RLVR (zéro labellisation humaine au-delà du fine-tuning initial) et PRM humain (millions de dollars par domaine) crée une pression économique massive vers la première solution — ce qui explique en partie l'enthousiasme pour DeepSeek-R1 chez les CFO.
 
 ## 7 — Où va la couche notateur ? — quatre trajectoires
@@ -92,7 +90,7 @@ Trois conséquences structurelles. D'abord, **le PRM est moins une technologie q
 
 **Trajectoire 4 — PRM-as-a-service (peu vérifiable, signal intermédiaire externalisé).** Pour les domaines où aucune des trois autres ne tient, des startups commencent à proposer un PRM en API : on envoie une chaîne de raisonnement, on reçoit un vecteur de scores par étape. C'est encore embryonnaire (Surge Verifier, Patronus, quelques offres internes Anthropic Claude Eval), mais l'archétype existe.
 
-[SCHEMA-06]
+![Quatre trajectoires pour la couche notateur|1200](images/20260513-06-quatre-trajectoires.svg)
 
 ==Aucune de ces trajectoires n'élimine le besoin de noter le chemin ; toutes redistribuent qui le fait, où, et à quel coût.==
 
