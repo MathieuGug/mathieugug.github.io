@@ -11,14 +11,34 @@ per call. **Use it whenever you ship a quiz** — the inline-HTML pattern from
 `references/companion-app.md` § "Widgets quiz de compréhension" is now the
 fallback for one-off cases where Python isn't available.
 
+## Where does the JS live?
+
+**Apps qui chargent `/assets/dossier-app.js` (toutes les apps modernes du site
+`mathieugug.github.io`)** : `setupQuizzes()` est fourni par la lib partagée
+(défini dans `assets/dossier-app.js`, appelé par `init()` au DOMContentLoaded).
+Le CSS quiz reste inline dans l'app à date (pas encore migré dans
+`assets/dossier-app.css`). Dans ce cas le script `insert-quizzes.py` se contente
+d'insérer les `<aside class="quiz-card">` et **ne réinjecte ni l'IIFE ni le CSS**
+— il détecte la présence de `<script src=".../assets/dossier-app.js">` et skip.
+Double-injection produirait un double binding (toggle ouvert+fermé = invisible).
+
+**Apps standalone** (template `assets/app-template.html` brut, sans la lib
+partagée) : le script injecte le CSS + une IIFE inline `setupQuizzes()` dans
+son propre `<script>` juste avant `</body>`. **Ne jamais merger l'IIFE dans
+un `<script src="...">` existant** — la spec HTML stipule qu'un `<script>`
+porteur d'un attribut `src` ignore son contenu texte inline (donc l'IIFE ne
+s'exécute pas, et le bouton « Tester → » ne déclenche rien — bug observé en
+mai 2026 sur `process-reward-models` avant fix).
+
 ## When to use
 
 - Adding quizzes to a brand-new app : write `quizzes.json` next to the report,
-  run the script once. CSS + IIFE are injected automatically the first time.
+  run the script once. CSS + IIFE are injected automatically the first time
+  (standalone apps) or simply skipped (apps using `dossier-app.js`).
 - Adding quizzes to an already-shipped app (most common case — quizzes are
   often a follow-up pass after the report is read by humans) : same call,
   the CSS + IIFE injection step is skipped if `setupQuizzes` is already
-  present in the file.
+  present in the file, or if the app references `/assets/dossier-app.js`.
 - Editing a deployed quiz : edit the JSON, re-run the script. The matching
   `<aside class="quiz-card" data-quiz-id="q-{id}">` is replaced in place,
   everything else is untouched.

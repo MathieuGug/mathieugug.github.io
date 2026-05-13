@@ -430,6 +430,13 @@ def render_quiz_card(quiz: dict) -> str:
 # ---------------------------------------------------------------------------
 
 def inject_css_iife_if_missing(html: str) -> tuple[str, bool]:
+    # Apps qui chargent /assets/dossier-app.js : la lib partagée fournit déjà
+    # setupQuizzes() et son CSS quiz est attendu dans assets/dossier-app.css.
+    # Ré-injecter ici provoquerait un double binding (chaque click déclencherait
+    # deux fois le toggle, l'état s'annule visuellement). On skip totalement.
+    if re.search(r'<script[^>]+src=["\'](?:\.\.\/)?\/?assets\/dossier-app\.js["\']', html):
+        return html, False
+
     if "setupQuizzes" in html:
         return html, False
     if "</style>" not in html:
