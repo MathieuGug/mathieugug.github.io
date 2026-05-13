@@ -13,7 +13,6 @@ _Mis à jour par la routine `Illustrated deep research · mer + ven`._
 - mcp-plateforme : MCP en production enterprise — patterns d'isolation, audit log OTel, OAuth 2.0 + PKCE
 
 ## Sujets evergreen — backlog
-- Process Reward Models et verifier-as-a-service — le marché des « notateurs »
 - AlphaProof / Lean / formal math — la branche démonstrations formelles du raisonnement
 - Synthetic data et model collapse — Shumailov et al.
 - Souveraineté des semi-conducteurs (TSMC, ASML, Nvidia, AMD MI400)
@@ -31,6 +30,7 @@ _Mis à jour par la routine `Illustrated deep research · mer + ven`._
 - A2A (Google) — adoption cross-vendor ou absorption par MCP via sampling/subagents
 
 ## Déjà couverts (date · slug · angle)
+- 2026-05-13 · process-reward-models · deep dive sur `modeles-raisonnement` — anatomie de la couche notateur, de Lightman/PRM800K (2023) au pivot DeepSeek-R1 RLVR (2025), generative verifiers (GenRM/ThinkPRM), reward hacking invisible (99 %/2 %), économie de l'annotation procédurale, 4 trajectoires 2027-2028 (RLVR / generative integré / PRM spécialisé / PRM-as-a-service)
 - 2026-05-12 · coding-agents · Claude Code / Codex CLI / Copilot, anatomie + pyramide d'usage 4 étages (transverse / data quotidien / data expert / produit-décideurs), retex chiffrés vs benchmarks publics
 - 2026-05-08 · mcp-plateforme · effet de réseau, donation Linux Foundation, surface d'attaque tool-poisoning + cross-server, layering MCP / function calling / OpenAPI / A2A
 - 2026-05-06 · modeles-raisonnement · pivot o1, RLVR, second axe scaling, anatomie raisonneur, faithfulness, diffusion
