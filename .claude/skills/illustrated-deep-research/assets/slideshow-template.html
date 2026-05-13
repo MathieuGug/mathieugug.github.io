@@ -252,10 +252,9 @@ mark { background: linear-gradient(transparent 58%, rgba(178, 59, 27, 0.14) 58%)
 }
 #modal-root:not([hidden]) {
   transform: translateX(0);
-  pointer-events: auto;
 }
 .modal-backdrop { display: none; }
-.modal-card {
+.modal-card { pointer-events: auto;
   position: relative;
   background: var(--paper);
   width: 100%;
@@ -1033,8 +1032,15 @@ document.addEventListener('keydown', (e) => {
     }
   } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
     e.preventDefault();
-    if (isAnyOverlayOpen()) return;
-    retreat();
+    // Skip si Sources/Toc/Zoom overlay (qui ont leur propre handling)
+    if (!document.getElementById('toc-overlay').hidden) return;
+    if (!document.getElementById('sources-overlay').hidden) return;
+    if (!document.getElementById('zoom-overlay').hidden) return;
+    // Modal ouvert : close + retreat (symétrique à ArrowRight)
+    const modalOpenL = !document.getElementById('modal-root').hidden;
+    if (modalOpenL && __modalAutoActive) { closeModal(); retreat(); }
+    else if (modalOpenL) { closeModal(); }
+    else { retreat(); }
   } else if (e.key === 'ArrowDown') {
     e.preventDefault();
     if (isAnyOverlayOpen()) return;
