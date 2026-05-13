@@ -8,7 +8,7 @@ Dossier illustré sur l'empreinte environnementale de l'IA en 2026 : ce que vale
 
 - `20260513-ia-frugale-app.html` — rapport interactif (entrée principale ; à ouvrir dans un navigateur)
 - `20260513-ia-frugale-rapport.md` — texte source en Markdown (Obsidian-compatible)
-- `images/` — neuf schémas SVG éditoriaux
+- `images/` — onze schémas SVG éditoriaux
   - `01-fabrique-chiffres-viraux.svg` — timeline 2019-2025 des chiffres médiatiques et leur correction
   - `02-frameworks-mesure.svg` — matrice scope × phase + outils + normes
   - `03-arithmetique-requete.svg` — énergie par interaction (ordre croissant, log)
@@ -18,6 +18,9 @@ Dossier illustré sur l'empreinte environnementale de l'IA en 2026 : ce que vale
   - `07-leviers-structurels.svg` — cinq familles × gain potentiel (log)
   - `08-trajectoires-2030.svg` — trois trajectoires AIE (laissez-faire, efficience, plafond)
   - `09-facture-mondiale.svg` — IA dans la facture mondiale d'électricité (ordres de grandeur)
+  - `10-equipe-agentique.svg` — équipe 10 personnes × 220 jours (cas concret + comparaisons familières)
+  - `11-sankey-eau.svg` — Sankey évaporatif vs boucle fermée Microsoft 08/2024+
+- `quizzes.json` — sidecar pour 4 quiz de compréhension (charnières conceptuelles)
 - `index.html` — page hub du dossier
 
 ## Comment ouvrir

@@ -78,6 +78,12 @@ Hannah Ritchie résume[^9] : ==dix requêtes texte ChatGPT équivalent à dix se
 
 **Le débat de l'agrégat.** Ritchie note un point structurel : ==si l'on prend les estimations de consommation totale des datacenters IA et qu'on les divise par le trafic public d'inférence, le texte explique 2 % de la facture. Les 98 % restants sont distribués entre entraînement, image/vidéo, embeddings d'enterprise, search summaries, et tout ce qui n'est pas une conversation visible==. C'est là que le débat « combien de Wh par ChatGPT » bute : la métrique mesurable n'est pas la métrique qui pèse.
 
+**Et concrètement, une équipe ?** Prenons un profil 2026 type — un développeur en stack MCP + agents : 200 chats/jour, 50 turns de raisonnement, 80 appels d'outils via MCP, quelques images. ==~645 Wh/jour, soit ~142 kWh/an==. Une équipe de 10 personnes sur 220 jours ouvrés : ~1,4 MWh/an. Soit l'équivalent de 7 frigos modernes, 10 % d'une voiture essence moyenne, ou ~½ vol Paris-NY pour les 10 membres. Le débat « culpabilité du prompt » se déplace : à l'échelle d'une équipe complète, l'IA agentique est mesurable, pas dramatique.
+
+![Une équipe agentique en 2026 — bilan jour, mois, année|1200](images/20260513-10-equipe-agentique.svg)
+
+*Schéma 10 — Stack-up énergétique d'un développeur agentique 2026 (chat + reasoning + MCP + image), multiplié par 10 personnes × 220 jours, comparé à 5 usages familiers : frigo, climatiseur, vol, ménage, voiture.*
+
 ---
 
 ![Eau : trois scopes et trois sites locaux|1200](images/20260513-04-eau-scope-sites.svg)
@@ -109,6 +115,10 @@ Total : ~35 cL. Soit ==deux tiers d'un verre d'eau pour 50 requêtes==. Loin du 
 **Le vrai problème : la concentration locale.** Phoenix (Arizona), Las Vegas (Nevada), Atacama (Chili) sont les sites où l'industrie ouvre des datacenters géants — dans des bassins qui ont déjà des problèmes de stress hydrique. Le débat n'est pas le bilan global de l'eau IA (négligeable rapporté à l'irrigation agricole), c'est la **concentration spatiale sur des aquifères fragiles**. Dublin a déjà absorbé 79 % de l'électricité urbaine en datacenters, le moratoire local sur les nouvelles implantations a tenu en 2024 et 2025.
 
 **La réponse industrielle.** Microsoft a annoncé en décembre 2024[^12] que **tous ses nouveaux designs depuis août 2024 utilisent un cooling à boucle fermée à remplissage unique**. L'eau est versée à la construction, recircule entre les serveurs et des chillers mécaniques, ne s'évapore jamais. Économie : 125 millions de litres par DC par an. Coût : un PUE légèrement dégradé (besoin de chillers mécaniques en plus). Pilotes : Phoenix et Mt Pleasant en 2026. Google déploie du *direct-to-chip liquid cooling* sur ses TPU v6 ; Equinix généralise l'immersion à partir de 2027. ==En dix-huit mois, l'industrie a tranché : l'eau d'évaporation, c'est fini sur les nouveaux sites==. Le scandale court-circuite l'industrie qui l'a déjà résolu.
+
+![Sankey des flux d'eau — évaporatif vs boucle fermée|1200](images/20260513-11-sankey-eau.svg)
+
+*Schéma 11 — Sankey des flux d'eau pour un datacenter 1 MW : régime évaporatif historique (1 200 m³/MW/an, ==70 % perdus à l'atmosphère==) vs régime à boucle fermée Microsoft (10 m³/MW/an de makeup, 100 % recirculation). Facteur ×120 d'amélioration sur le WUE annuel.*
 
 ---
 
