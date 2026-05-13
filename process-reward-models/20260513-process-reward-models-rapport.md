@@ -94,7 +94,7 @@ Trois conséquences structurelles. D'abord, **le PRM est moins une technologie q
 
 ==Aucune de ces trajectoires n'élimine le besoin de noter le chemin ; toutes redistribuent qui le fait, où, et à quel coût.==
 
-## 8 — Coda : implications pour les builders d'agents
+## 8 — Pour les builders d'agents
 
 Pour un builder d'agent en 2026, la question opérationnelle n'est plus « PRM ou pas PRM ». C'est une séquence de trois questions :
 
@@ -102,9 +102,142 @@ Pour un builder d'agent en 2026, la question opérationnelle n'est plus « PRM o
 2. **Sinon, le signal final est-il suffisant pour entraîner mon agent ?** (réponse utilisateur thumbs-up/down, conversion business) → si oui, ORM classique avec attention au reward hacking. Pas de PRM.
 3. **Sinon, mes étapes intermédiaires ont-elles une valeur diagnostique distincte de la réponse finale ?** (debugger interactif, agent de support qui doit chaque étape être courtois, raisonneur médical où une mauvaise étape peut être grave même si la réponse finale est juste) → alors un PRM, idéalement génératif et intégré au raisonneur, vaut le coût d'entraînement.
 
-Cette heuristique élimine 80% des cas où un PRM aurait été le réflexe vers 2024. Elle laisse 20% de cas où la couche notateur reste indispensable — et ces cas sont précisément ceux où l'agent fait quelque chose d'important pour un humain, pas pour un benchmark.
+Cette heuristique élimine 80 % des cas où un PRM aurait été le réflexe vers 2024. Mais elle escamote une réalité que tout builder rencontre dès qu'un agent quitte le notebook : ==la couche notateur a une seconde vie, en production, comme infrastructure d'audit== — distincte de son usage en entraînement. C'est cette seconde vie qu'on déroule ici, sur un cas concret.
 
-Le PRM n'est pas mort. Il est devenu un outil parmi d'autres, exactement là où il doit être : non plus l'infrastructure générique du raisonnement, mais une couche spécialisée pour les domaines où la valeur du chemin est distincte de la valeur de la destination.
+### 8.1 — Étude de cas : un chatbot service client agentique
+
+Imaginons un chatbot e-commerce qui traite les plaintes utilisateurs (« mon colis est en retard », « je veux être remboursé »). L'agent est un raisonneur Claude 4.x avec extended thinking, branché sur quatre outils métier :
+
+- `lookup_order(order_id)` — interrogation de la base commande
+- `track_shipment(order_id)` — pull du tracker logistique
+- `issue_refund(order_id, amount, reason)` — remboursement automatique
+- `escalate_to_human(thread_id, context)` — passage de témoin
+
+À l'entraînement, le signal de récompense est binaire et postérieur : l'utilisateur clique 👍 ou 👎 à la fin de l'échange, et le NPS sept jours plus tard fournit un second signal différé. Sur l'arbre du §7, c'est la **trajectoire 1 ou 2** — RLVR (si on assimile thumbs-up à un vérificateur) ou ORM léger. Pas de PRM en entraînement. La question 3 de l'heuristique tranche : non, on n'a pas besoin de noter chaque étape.
+
+Pourtant, dès la mise en production, **trois angles morts** apparaissent :
+
+1. **Reward hacking silencieux.** L'agent peut apprendre à appeler `issue_refund` agressivement parce que ça produit des thumbs-up rapides — au détriment de la marge. Le §5 a montré que la chain-of-thought ne révèle ce hack que dans moins de 2 % des cas observés.
+2. **Étapes incorrectes, réponse acceptable.** L'agent invoque `lookup_order` avec un mauvais id (typo dans le parsing), reçoit une erreur, et improvise une réponse plausible mais factuellement fausse. Le 👍 utilisateur arrive quand même — il n'a pas vu l'erreur. La métrique d'entraînement ne saigne pas ; le service client, oui, dans deux mois.
+3. **Drift comportemental.** Sur la longue queue des conversations, l'agent peut glisser vers un ton de plus en plus condescendant ou défensif sur certains segments d'utilisateurs. Invisible aux métriques de conversion, lisible dans les traces.
+
+C'est dans ce trou — entre « réponse finale OK » et « raisonnement OK » — que la couche notateur reprend de la valeur. ==Pas pour entraîner. Pour auditer en production.==
+
+![Pipeline d'observabilité step-level d'un chatbot agentique|1200](images/20260513-07-observabilite-chatbot-agent.svg)
+
+*Schéma 7 — La boucle agentique à gauche, la couche d'audit out-of-band à droite. Trois sondes orthogonales (judge LLM, règles déterministes, sampling humain) consomment la même trace OTel.*
+
+### 8.2 — Patron de code : audit step-level d'un agent en production
+
+Le patron qu'on rencontre en production tient en trois disciplines : tracer dans l'ordre exact d'émission, auditer hors du chemin critique, combiner trois sondes complémentaires. Voici la forme courte côté Anthropic SDK.
+
+```python
+import json
+from dataclasses import dataclass, asdict
+from typing import Any, Iterable
+from anthropic import Anthropic
+
+client = Anthropic()
+
+TOOLS = [
+    {"name": "lookup_order",       "input_schema": {...}, "description": "..."},
+    {"name": "track_shipment",     "input_schema": {...}, "description": "..."},
+    {"name": "issue_refund",       "input_schema": {...}, "description": "..."},
+    {"name": "escalate_to_human",  "input_schema": {...}, "description": "..."},
+]
+
+@dataclass
+class Step:
+    kind: str           # "thinking" | "tool_use" | "tool_result" | "text"
+    payload: Any
+    ts_ms: int
+
+def run_agent(conversation_id: str, user_message: str) -> dict:
+    trace: list[Step] = []
+    messages: list[dict] = [{"role": "user", "content": user_message}]
+
+    while True:
+        resp = client.messages.create(
+            model="claude-opus-4-7",
+            max_tokens=4096,
+            thinking={"type": "enabled", "budget_tokens": 8000},
+            tools=TOOLS,
+            messages=messages,
+        )
+
+        tool_results = []
+        for block in resp.content:
+            if block.type == "thinking":
+                trace.append(Step("thinking", block.thinking, _now()))
+            elif block.type == "tool_use":
+                trace.append(Step("tool_use",
+                    {"id": block.id, "name": block.name, "input": block.input}, _now()))
+                result = execute_tool(block.name, block.input)
+                trace.append(Step("tool_result",
+                    {"id": block.id, "result": result}, _now()))
+                tool_results.append({"type": "tool_result",
+                                     "tool_use_id": block.id, "content": result})
+            elif block.type == "text":
+                trace.append(Step("text", block.text, _now()))
+
+        messages.append({"role": "assistant", "content": resp.content})
+        if resp.stop_reason != "tool_use":
+            break
+        messages.append({"role": "user", "content": tool_results})
+
+    persist_trace(conversation_id, trace)        # OTel-compatible sink
+    schedule_audit(conversation_id, trace)        # async, hors chemin critique
+    return final_response(trace)
+
+
+def schedule_audit(conversation_id: str, trace: list[Step]) -> None:
+    """3 sondes — judge LLM (large), règle déterministe (étroite), sampling humain."""
+    flags: list[dict] = []
+
+    # (a) Règle déterministe — précision maximale, couverture étroite.
+    flags += deterministic_rules(trace)
+    # Ex : refund > 200 € sans tool_use 'escalate_to_human' dans la trace.
+
+    # (b) Judge LLM step-level — couverture large, faux positifs élevés.
+    judge = client.messages.create(
+        model="claude-haiku-4-5-20251001",    # 10× moins cher, audit en masse
+        max_tokens=1024,
+        messages=[{"role": "user", "content": render_judge_prompt(trace)}],
+    )
+    flags += json.loads(judge.content[0].text)["flags"]
+
+    # (c) Sampling humain — 0,5 à 2 % des traces, ground-truth pour calibrer (a) et (b).
+    if should_sample_human(conversation_id):
+        enqueue_for_human_review(conversation_id, trace)
+
+    for f in flags:
+        if f["severity"] == "high":
+            alert_oncall(conversation_id, f)
+        emit_metric("agent.audit.flag", tags={"kind": f["kind"]})
+```
+
+Trois choix structurants sous le sucre syntaxique.
+
+D'abord, **tracer dans l'ordre exact d'émission** (`thinking → tool_use → tool_result → ...`). Une trace désordonnée perd la causalité, qui est le seul niveau d'analyse utile pour détecter les hacks. Le schéma OpenTelemetry `gen_ai.*` couvre déjà ces évènements en standard — voir [Observabilité des agents IA](../observabilite-agents-ia/) pour les six piliers de télémétrie et la cartographie outillage.
+
+Ensuite, **auditer hors du chemin critique**. Le judge LLM tourne en async, sur Haiku (10× moins cher qu'Opus), sans bloquer la réponse utilisateur. Un audit synchrone qui doublerait la latence force toujours l'arbitrage en faveur de la coupe : la fenêtre d'attention au design d'audit ferme dès la première semaine de prod.
+
+Enfin, **combiner trois sondes**, parce qu'aucune ne suffit : (a) une **règle déterministe** (précision maximale, couverture étroite — typiquement « refund > X € sans `escalate_to_human` »), (b) un **judge LLM step-level** (couverture large, faux positifs élevés), et (c) un **sampling humain** sur 0,5 à 2 % des traces, qui sert de ground-truth pour calibrer les deux autres. La taxonomie complète des graders et le playbook LLM-as-judge sont déroulés dans [Évaluer un agent](../evaluation-agentique/).
+
+### 8.3 — Caveats à porter dans la salle
+
+- **La faithfulness CoT est < 50 % (§5).** Auditer les `thinking` blocks revient à lire un brouillon, pas un journal. C'est utile pour détecter une dérive de ton ou une étape évidemment fausse — pas pour prouver l'absence d'un hack. Le rapport [Modèles de raisonnement](../modeles-raisonnement/) déroule la mécanique.
+- **Ne jamais réinjecter le verdict du judge dans la fonction de récompense** du raisonneur. Si on le fait (vers une boucle d'auto-amélioration), on retombe sur le résultat OpenAI 2025 du §5 : le modèle apprend à masquer son misbehavior dans le CoT, pas à l'éliminer. **Le judge sert à monitorer, pas à entraîner.**
+- **Le coût d'audit est non négligeable.** Audit synchrone sur 100 % des traces ≈ +60 % de latence, audit async sur 100 % ≈ +0,8× du coût modèle. Régime stationnaire : sampler à 5–10 %. Régime post-incident ou domaine sensible (santé, finance, légal) : 100 % async.
+- **Le PRM-dédié-domaine reste une option ouverte** pour un chatbot vertical (clinique, légal, finance) où une mauvaise étape vaut un litige. C'est la trajectoire 3 du §7 — coûteuse, mais à la valeur unitaire élevée.
+
+### 8.4 — Lire en parallèle
+
+- [Évaluer un agent](../evaluation-agentique/) — pass@k vs pass^k, taxonomie des graders, LLM-as-judge, simulation utilisateur, playbook en 8 étapes.
+- [Observabilité des agents IA](../observabilite-agents-ia/) — six piliers de télémétrie, OpenTelemetry GenAI, du monitoring au *cognitive audit trail*.
+- [Modèles de raisonnement](../modeles-raisonnement/) — anatomie du raisonneur en production, RLVR, faithfulness du CoT, économie unitaire.
+
+Le PRM n'est pas mort. Il est devenu un outil parmi d'autres, exactement là où il doit être : non plus l'infrastructure générique du raisonnement, mais une couche spécialisée pour les domaines où la valeur du chemin est distincte de la valeur de la destination — et, en production, **une infrastructure d'audit sans laquelle un agent qui agit dans le monde reste une boîte noire qu'on espère bien-traitante**.
 
 ---
 
