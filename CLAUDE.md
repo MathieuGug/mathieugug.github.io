@@ -227,6 +227,19 @@ Les rapports markdown (`*-rapport.md`) sont **masqués des hubs par défaut** : 
 - Chaque tuile porte un badge de typologie : `Dossier`, `Veille`, `Étude`. Le badge `Veille` utilise la couleur `--accent`, les autres le fond sombre.
 - Format de tag de date : `NN · jour mois année` quand la date est précise (ex. `03 · 27 avril 2026`), sinon `NN · Mois Année`. `NN` = numéro de publication, conservé même quand la grille est triée par date.
 
+## Routine « Illustrated deep research » — comment lire `BACKLOG.md`
+
+La routine `Illustrated deep research · mer + ven` produit un artefact illustré (rapport + app + schémas) par run. **Le choix du sujet se fait dans `BACKLOG.md` à la racine, dans cet ordre strict** — pas selon la hiérarchie de stratégies du prompt routine si elle entre en conflit :
+
+1. **`## En cours / prio haute`** — c'est la **tête de file**, pas un statut « déjà occupé par quelqu'un d'autre ». Si la section contient un item, **c'est lui qu'on traite ce jour-là**. Le brief multi-lignes après le slug n'est pas un signal « réservé » — c'est le cadrage que Mathieu a déjà rédigé pour faciliter le démarrage. Vider cette section est la mission principale.
+2. **`## Watchlist actu`** uniquement si une actu de la semaine rend un item de la watchlist temporellement critique (sortie de modèle qui change la lecture, verdict, vote AI Act, etc.) ET que `En cours / prio haute` est vide.
+3. **`## Deep dives candidats sur dossiers existants`** — seulement si les deux sections ci-dessus sont vides ou ne contiennent rien de mûr.
+4. **`## Sujets evergreen — backlog`** — fond de roulement quand rien d'autre ne presse.
+
+**À la fin de chaque run**, l'item traité bouge depuis sa section d'origine vers `## Déjà couverts (date · slug · angle)`. Si l'item venait de `En cours / prio haute`, **la section doit redevenir vide** (ou ne contenir que les items strictement non traités cette fois) — sinon le prochain run a le même biais de lecture.
+
+Cas vu le 2026-05-13 : `ia-frugale` était en `En cours / prio haute` depuis le 2026-05-11, le Claude de la routine a lu « En cours » comme « pris par un autre » et a piochée dans `Deep dives candidats` à la place. Ne pas reproduire — `En cours / prio haute` = file prioritaire à vider.
+
 ## Workflow
 
 - Faire les changements → commit → **vérifier le diff du commit avant de pousser**. Le user a explicitement demandé cette étape pour rattraper d'éventuelles erreurs ou contenus qui viendraient d'autres contextes.
