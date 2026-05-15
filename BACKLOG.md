@@ -2,6 +2,7 @@
 _Mis à jour par la routine `Illustrated deep research · mer + ven`._
 
 ## En cours / prio haute
+- [ ] benchmarks-contestes · deep dive sur `evaluation-agentique` — pourquoi SWE-bench, GAIA et OSWorld ne mesurent plus la capacité mais l'effort d'optimisation (en cours 2026-05-15)
 - [ ] 2026-05-11 · ia-frugale · frameworks d'analyse et de mesures (kWh/token, gCO₂eq, WUE/PUE, ML CO2 Impact, Green Algorithms, MLCO2, ISO/IEC 21031, méthodologie AIE 2026, Code of Conduct EU pour data centers) · histoire (de Strubell et al. 2019 au rapport AIE 2026, Frugal AI Challenge, distillation/quantification/MoE comme leviers structurels) · où on va (small language models, on-device, sparse MoE, hardware spécialisé, refroidissement liquide, mix énergétique, datacenters nucléarisés) · estimer l'impact (cycle de vie : training vs inference vs embodied carbon ; ratios par modalité texte/image/vidéo ; ordres de grandeur par requête vs recherche Google vs streaming) · debunk rationnel des croyances : eau (vraie consommation WUE par data center, scope 1 vs 2, où l'eau est réellement consommée et où elle est juste prêtée), électricité (TWh annualisés vs pic local sur le grid, cannibalisation des renouvelables, comparaison avec crypto/streaming/cloud non-IA), empreinte par requête (les ordres de grandeur réels vs les chiffres viraux), embodied carbon des GPU (souvent oublié), rebond Jevons
 
 ## Deep dives candidats sur dossiers existants
