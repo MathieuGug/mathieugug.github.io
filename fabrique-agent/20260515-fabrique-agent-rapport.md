@@ -392,7 +392,113 @@ La Production a tenu. Le Mature va apprendre.
 
 ## 4. Stade 4 · Mature multi-agents · « ça apprend »
 
-*Section à écrire dans T19.*
+### 4.1 — La scène
+
+L'atelier n'est plus reconnaissable. Quatre agents coopèrent en avant-scène : un *lead* qui planifie, deux *workers* spécialisés qui exécutent en parallèle, un *reviewer* qui valide les sorties avant qu'elles soient transmises. Entre eux, un memory pool partagé — la mémoire collective de l'équipe agentique, structurée et versionnée. En coulisses, les humains sont toujours là, mais leur rôle a basculé.
+
+![SCHÉMA 10 — L'atelier · Stade 4 (Mature multi-agents)|1300](images/10-atelier-mature.svg)
+
+Au stade Prototype, le builder écrivait le prompt. Au stade Pilote, il mesurait les résultats. Au stade Production, il tenait le SLA. Ici, quelque chose d'autre se passe. ==On n'écrit plus l'agent, on l'élève.== Les humains sont passés de praticiens à directeurs : ils conçoivent les conditions dans lesquelles les agents apprennent, ils auditent la mémoire partagée, ils arbitrent les mises à jour du modèle. La valeur ne vient plus du code qu'ils écrivent — elle vient de la qualité des artefacts qu'ils entretiennent et des rituels qu'ils honorent.
+
+Cette inversion est le thème de la section. Elle est difficile à voir de l'intérieur, parce qu'elle ressemble à une perte de contrôle. Ce n'en est pas une. C'est un changement de niveau : on quitte la maîtrise artisanale du geste pour exercer la maîtrise stratégique du système. L'équipe qui comprend ce basculement prospère. L'équipe qui résiste et continue d'écrire manuellement ce que les agents devraient apprendre automatiquement plafonne — et finit par réécrire les mêmes correctifs à chaque sprint.
+
+---
+
+### 4.2 — Artefacts qui fusionnent
+
+Au stade Mature, les artefacts ne naissent plus séparément. Ils forment un système : la mémoire informe l'éval, l'éval informe le modèle, le modèle informe la mémoire. Six sous-systèmes se consolident.
+
+#### 4.2.a — Mémoire CoALA complète
+
+Les quatre piliers <span class="term" data-term="coala">CoALA</span> sont maintenant tous actifs — et, pour la première fois, ils sont partagés entre agents.
+
+![SCHÉMA 11 — La mémoire CoALA en cycle|1300](images/11-coala-cycle.svg)
+
+Le cycle complet comporte six opérations. **Récupération** : au début de chaque boucle TAOR, l'agent interroge le memory pool pour charger ce qui est pertinent à la tâche en cours — fragments sémantiques, épisodes passés, règles procédurales. **Consolidation** : les apprentissages de la session sont stabilisés et intégrés dans le pool avant la fermeture du contexte. **Mise à jour** : une entrée mémoire existante est révisée quand une nouvelle interaction contredit ou affine ce qu'elle contenait. **Indexation** : la nouvelle entrée est vectorisée et rendue retrouvable par les agents qui n'ont pas participé à la session source. **Compression** : les entrées redondantes sont fusionnées, les détails de bas niveau sont résumés, le signal utile est préservé. **Oubli** : les entrées dont le TTL (*time-to-live*) est expiré ou dont le score qualité est insuffisant sont archivées ou supprimées.
+
+Le saut conceptuel du stade Mature, c'est que ce pool est partagé. Un worker peut lire ce qu'un autre worker a appris. Le lead agrège. Le reviewer lit les épisodes d'incidents passés avant de valider une sortie à risque. Cette mémoire collective est la principale source d'accélération — et la principale surface d'attaque.
+
+Un score qualité est attribué à chaque entrée mémoire : *qui peut écrire ?* (droits d'écriture par type d'agent et par niveau de confiance), *qui peut lire ?* (droits de lecture par sensibilité des données), *quel TTL ?* (durée de vie selon la volatilité de l'information). Sans ce scoring, la mémoire se remplit de bruit, et les agents lisent et amplifient des informations périmées ou incorrectes.
+
+C'est ici qu'entre en jeu le <span class="term" data-term="memory-poisoning">memory poisoning</span> (MITRE ATLAS AML.T0080) : la mémoire partagée est aussi une surface d'attaque. Un agent compromis peut écrire dans le pool des informations délibérément fausses ou biaisées, qui seront lues et amplifiées par les autres agents à chaque cycle suivant. Les patterns de mitigation sont indissociables de l'architecture : journalisation de chaque écriture avec l'identité de l'agent source, validation à l'écriture (un schéma de contenu + un score de plausibilité), et audit à la lecture (détection de patterns inhabituels dans les entrées récemment consultées).
+
+#### 4.2.b — Pipeline de mise à jour
+
+Le stade Mature distingue trois flux d'évolution qui étaient confondus aux stades précédents. Le **prompt update** est le plus rapide : une modification du prompt système peut être déployée en quelques heures, validée par un subset du golden dataset, et rollbackée en une opération de registre. C'est le flux daily. La **memory update** est continue et automatique : les consolidations, indexations et oublis tournent en permanence selon les règles du scoring qualité. Pas de déploiement humain — un pipeline. La **model update** est le flux le plus lent et le plus coûteux : mensuel ou trimestriel, il passe par un full eval gate — toutes les couches du gruyère suisse sur la version candidate avant que le routeur bascule le trafic. Une mise à jour de modèle sans full eval gate est le chemin le plus direct vers une régression silencieuse à grande échelle.
+
+Ces trois flux sont **versionnés séparément**. Le prompt a son propre hash dans le registre. La mémoire a un snapshot daté. Le modèle a un identifiant de version explicite dans chaque trace OTel. Cette séparation rend les post-mortems lisibles : quand un incident survient, on sait immédiatement lequel des trois flux a changé dans les 48 heures précédentes. L'A/B continu entre versions de prompt et de mémoire devient possible sans ambiguïté. Et quand le RGPD exige la suppression d'une donnée personnelle, le machine unlearning peut opérer sur la mémoire et le modèle fine-tuné indépendamment, sans dépublier le prompt.
+
+#### 4.2.c — Évaluation adverse intégrée
+
+Les tests adversariaux ne sont plus une activité ponctuelle de red team. Ils tournent en continu dans le pipeline d'éval.
+
+Trois catégories. Les **tasks adversarial deliberate** : jailbreaks intentionnels conçus pour forcer l'agent à ignorer ses guardrails, edge cases de politique (instructions contradictoires, permissions ambiguës), et contraintes contradictoires (deux règles du prompt système qui s'excluent mutuellement sur un cas limite). La **simulation user dual-control** (τ²-bench) : l'utilisateur simulé a lui aussi des outils et peut être stratégique — il peut tenter de manipuler l'agent sur plusieurs tours, d'exploiter une incohérence entre deux réponses successives, ou de pousser l'agent vers une décision que ses guardrails sont censés bloquer. La **simulation agent** : l'agent simulé fait face à un autre agent potentiellement adversarial — test des protocoles inter-agents dans un scénario de compromission partielle.
+
+Ces tests ne sont plus optionnels au stade Mature. Ils tournent sur chaque déploiement de modèle et sur chaque mise à jour majeure de prompt. Leur résultat est une colonne supplémentaire dans le tableau de bord d'éval : *taux de résistance adverse*. Un agent dont le taux de résistance descend sous 92 % sur les jailbreaks répertoriés ne passe pas le full eval gate.
+
+#### 4.2.d — Protocoles inter-agents
+
+Trois protocoles structurent la coopération au stade Mature. **MCP** — Model Context Protocol — est le side-channel pour l'accès aux ressources externes : un agent expose ses outils et son contexte via un serveur MCP, les autres agents le consultent sans coupling fort. **A2A** — Agent-to-Agent — est la négociation directe entre agents : un agent annonce ses capacités via son Agent Card descriptor, un autre agent l'interroge et route une tâche vers lui selon le meilleur match de compétences. **AG-UI** — Agent-to-UI — est le stream vers l'utilisateur : l'agent envoie des événements structurés au frontend, qui les rend progressivement sans attendre la fin du traitement.
+
+> [!builder] **Pour le builder** 🔧
+>
+> Convention file-based handoff : chaque agent lit/écrit un répertoire `state/` partagé avec des fichiers typés (`task.yaml`, `progress.jsonl`, `output.md`). MCP = side-channel pour ressources externes. A2A = négociation directe via Agent Card. AG-UI = stream vers l'utilisateur. Évitez de tout faire passer par MCP : le file-based handoff est plus robuste pour les multi-agents internes. Chaque échange via `state/` est journalisé automatiquement et typé — ce qui en fait un artefact d'audit natif, sans effort supplémentaire.
+
+L'Agent Card descriptor est le concept unificateur. Chaque agent du registre publie une carte qui décrit ses capacités (quelles tâches il sait traiter), ses contraintes (données auxquelles il peut accéder, actions qu'il peut déclencher), et ses interfaces (MCP, A2A, AG-UI). La capability discovery inter-agents devient une opération de lecture de registre, pas une connaissance encodée en dur dans le prompt. Chaque interaction inter-agents est typée, journalisée, auditable — les trois qualités qu'un système distribué doit apporter nativement pour que les post-mortems soient possibles.
+
+#### 4.2.e — Mode d'exécution à l'échelle
+
+Le stade Mature pose la question du runtime d'une façon que les stades précédents ne posaient pas. Au Prototype, on choisissait un modèle. En Production, on choisissait un provider. Au Mature, le choix se déplace : ce n'est plus *quel modèle ?* mais *quel runtime ?*
+
+Deux familles s'opposent. **Self-host** (PyTorch/vLLM sur vos propres GPU) : contrôle total, souveraineté des données, OPEX prévisibles, fine-tuning possible. En contrepartie : ops complexes — 24/7 GPU monitoring, garbage collection des contextes, dépendance à un binôme MLOps interne capable de maintenir la stack. **Managed** (Claude Managed Agents, AgentCore d'AWS, Vertex Agent Engine de Google, Azure Foundry Service) : déploiement rapide, SLA portés par le fournisseur, scaling automatique. En contrepartie : lock-in fournisseur, facture variable selon le trafic, moins de contrôle sur les mises à jour du modèle sous-jacent.
+
+> [!decideur] **Pour le décideur** 🧭
+>
+> Self-host (PyTorch/vLLM sur vos GPU) : contrôle total, souveraineté, OPEX prévisibles, mais ops complexes (24/7 GPU monitoring, garbage collection, dépendance à un binôme MLOps interne). Managed (Claude Managed Agents, AgentCore, etc.) : déploiement rapide, SLA portés, mais lock-in et facture variable. Le critère : si l'agent porte > 50 % de votre marge produit, self-host. En-dessous : managed. Pour creuser l'arbitrage TCO sur les différents providers, voir le dossier [*économie de l'inférence*](../economie-inference/).
+
+L'arbitrage se joue sur deux axes : la criticité de l'agent (quel est l'impact d'une indisponibilité de 4 heures ?) et la part de valeur qu'il génère (est-ce qu'il porte le flux de revenus principal ou un use case secondaire ?). Ces deux questions permettent de construire une matrice simple. Un agent non-critique sur un use case secondaire va naturellement en managed. Un agent critique qui porte le flux de revenus central mérite l'investissement self-host, avec toute la complexité opérationnelle que cela implique.
+
+#### 4.2.f — ROI cards mûres
+
+Au stade Prototype, le ROI était intuitif. Au stade Pilote, il était estimé. Au stade Production, il était mesuré. Au stade Mature, il est *structuré*.
+
+La grille de référence s'organise en 5 axes × 3 temporalités = **15 ROI cards**. Les cinq axes : **Coût** (réduction des coûts directs d'opération), **Bien-être** (charge cognitive réduite, tâches répétitives déléguées), **Vitesse** (time-to-output réduit), **Volume** (capacité de traitement augmentée), **Qualité** (taux d'erreur réduit, satisfaction client améliorée). Les trois temporalités : **Quick wins** (premier trimestre, impact mesurable sous 90 jours), **Medium** (deuxième trimestre, gains en croissance), **Strategic** (troisième trimestre et au-delà, avantage compétitif durable).
+
+Huit méthodes de calcul couvrent les cas : Cost Reduction (dépenses évitées), Cost Avoidance (coûts futurs prévenus), Productivity Gains (heures économisées × coût horaire), Revenue Increase (revenus additionnels attribuables), Time-to-Market (accélération du cycle produit), NPV (valeur actuelle nette sur 3 ans), Payback Period (temps de retour sur investissement), TEI (Total Economic Impact — méthode Forrester). La distinction centrale s'appelle <span class="term" data-term="hard-vs-soft-savings">Hard savings vs Soft savings</span> (Cigref) : les Hard savings sont les économies directement comptabilisables dans les comptes — une ligne de coût qui disparaît ou diminue. Les Soft savings sont les gains qui existent réellement mais ne descendent pas automatiquement dans les comptes — du temps économisé qui reste dans le même budget, une productivité améliorée dont le bénéfice n'est pas réalloué.
+
+**Une ROI card sans réallocation effective documentée n'est qu'un fichier Excel.** Pour creuser les 15 cards et les 8 méthodes de calcul, voir le dossier [*measure-roi*](../measure-roi/).
+
+---
+
+### 4.3 — Impact équipe
+
+Le passage au stade Mature cristallise une tension que les équipes préfèrent souvent ne pas regarder en face. Les agents font du travail. Ce travail était fait par des humains. Qu'est-ce qui change pour ces humains ?
+
+La <span class="term" data-term="reallocation-temps-gagne">réallocation du temps gagné</span> (Cigref) est la **condition sine qua non** pour que le ROI quitte le domaine des Soft savings. ==Le temps gagné qu'on ne réalloue pas est un temps perdu.== Concrètement : si l'agent économise 4 heures par semaine sur le traitement des tickets de support, ces 4 heures doivent être explicitement réaffectées — à de la formation continue, à de la discovery produit, à du coaching client, à de la revue de la mémoire agentique. Sans cette ligne dans le reporting, le gain existe en théorie, disparaît en pratique, et ne tient pas un audit Cigref.
+
+L'Anthropic Economic Index (2025) documente le split le plus précis disponible à date : 52 % des cas d'usage agentiques s'apparentent à de l'**augmentation** — l'humain garde le contrôle de la tâche, l'agent accélère ou améliore l'exécution. 45 % s'apparentent à de l'**automatisation** — l'agent prend en charge la tâche en autonomie, l'humain en supervise les sorties sans les produire. La proportion varie selon les secteurs et les fonctions ; la tendance générale va vers l'automatisation au fur et à mesure que les agents accumulent de la mémoire procédurale et que les workflows s'industrialisent.
+
+Ce que ce split ne dit pas, c'est *qui décide* de quelle catégorie relève chaque usage. L'impact réel dépend exactement de ça. Une équipe qui choisit délibérément de garder l'humain dans la boucle sur les décisions à fort enjeu — et de confier aux agents uniquement les tâches à faible enjeu et haute fréquence — extrait la valeur de l'augmentation sans exposer l'organisation aux risques de l'automatisation non gouvernée.
+
+La **pause d'Engels** est le scénario à éviter — non par fatalité, mais par choix. La révolution industrielle a produit une période de 50 à 70 ans pendant laquelle la productivité augmentait mais les salaires réels stagnaient, parce que les gains n'étaient pas distribués. Daron Acemoglu (MIT) propose six leviers pour éviter que l'IA reproduise ce scénario : redirection technologique vers des tâches complémentaires aux humains plutôt que substitutrices ; formation continue finançée par les employeurs ; sécurisation des transitions professionnelles ; partage des gains de productivité via les salaires et la fiscalité ; gouvernance des grandes plateformes IA ; revitalisation des territoires impactés. Ces six leviers ne sont pas des recommandations de politique publique lointaines — ils commencent dans les décisions de chaque équipe sur la réallocation du temps gagné. Pour les chiffres détaillés et les projections sectorielles, voir le dossier [*ia-et-travail*](../ia-et-travail/).
+
+> [!pm] **Pour le PM** 🎯
+>
+> Le temps que vous gagnez avec un agent n'a aucune valeur tant qu'il n'est pas réalloué. La réallocation est explicite : *« voici les 4h/semaine économisées sur le ticket de support · voici l'usage que l'équipe en fait : formation continue / discovery produit / coaching client »*. Sans cette ligne, votre gain est une *Soft saving* qui ne tient pas un audit Cigref.
+
+---
+
+### 4.4 — Antipattern signature
+
+> [!antipattern] **« Les agents écrivent leur mémoire mais ne la lisent jamais »**
+>
+> Le memory pool se remplit. Les consolidations tournent. Les entrées sont indexées, scorées, archivées selon les règles. Tout fonctionne côté écriture.
+>
+> Et pourtant, les agents continuent de répéter les mêmes erreurs. La même confusion sur un cas limite documenté depuis trois semaines dans la mémoire sémantique. La même mauvaise interprétation d'un format d'entrée que la mémoire épisodique a enregistrée neuf fois. Le memory pool grossit ; les comportements ne changent pas.
+>
+> La cause est architecturale : la **lecture mémoire n'est pas dans la boucle TAOR par défaut**. Elle est conditionnelle — déclenchée uniquement si la tâche dépasse un score de complexité, ou uniquement pour certains types d'agents, ou uniquement si le champ `memory_lookup` du task.yaml est à `true`. Cette conditionnalité semblait raisonnable à la conception : éviter le surcoût de latence d'un retrieval systématique. En pratique, elle produit un memory pool mort — un entrepôt auquel personne ne rend visite.
+>
+> Le remède est simple et non négociable : un **retrieval automatique en début de chaque cycle TAOR**, sans condition. La latence supplémentaire est absorbable (50 à 200 ms sur un retrieval vectoriel bien dimensionné) ; le gain comportemental est immédiat. En parallèle, le `memory_hit_rate` — proportion des tours de boucle où au moins une entrée mémoire a influencé la réponse — devient un **KPI N3 obligatoire** dans le tableau de bord d'observabilité. Un `memory_hit_rate` < 20 % sur un agent mature est le signal que la lecture mémoire est cassée ou conditionnelle. Il ne se corrige pas en itérant sur le contenu du pool — il se corrige en ouvrant le code de la boucle.
 
 ## 5. Clôture
 
