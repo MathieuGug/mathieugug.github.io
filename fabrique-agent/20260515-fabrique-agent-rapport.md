@@ -564,15 +564,86 @@ Tenir cette boucle ouverte, faire que les dix artefacts de la fabrique soient au
 
 ## Annexe A — Glossaire
 
-*À écrire dans T22.*
+**Approval gate** — Pattern <span class="term" data-term="hitl">HITL</span> ciblé sur le flux sortant : tout output traverse une queue d'approbation avant publication. Cas particulier dans la famille HITL — 100 % pour les flux critiques, échantillonné pour les autres. Le niveau d'échantillonnage est défini dans la charte de risques et réévalué à chaque stade. *Voir aussi :* dossier `harness-agentique`, dossier `gouvernance`.
+
+**Boucle TAOR** — Think · Act · Observe · Repeat. Primitive cardiaque de l'agent : un `while not stop_reason : do(think → act → observe)`. Implémentée dans le harness ; le modèle se contente de proposer des actions — c'est la couche d'orchestration qui exécute et renvoie l'observation. Au stade Prototype, un `stop_reason` mal géré suffit à produire une boucle infinie. *Voir aussi :* dossier `anatomie`, dossier `harness-agentique`.
+
+**Capability evals vs régression evals** — Capability : « que sait faire l'agent ? » (part basse, < 50 % des cas, progresse avec le modèle et les itérations de prompt). Régression : « gère-t-il toujours les cas maîtrisés ? » (stationne à ~100 %). Une capability eval qui sature *gradue* en régression, libérant le budget eval pour des cas plus difficiles et plus discriminants. *Voir aussi :* dossier `evaluation-agentique`.
+
+**CLEAR** — Cost · Latency · Efficacy · Assurance · Reliability. Cadre multi-critères d'évaluation d'un agent en production (Anthropic 2026). Corrèle à 0,83 avec le succès production, contre 0,41 pour l'accuracy seule. Optimiser uniquement l'accuracy produit des agents 4 à 10× plus chers que des alternatives cost-aware sur les mêmes tâches. *Voir aussi :* dossier `evaluation-agentique`.
+
+**CoALA** — Cognitive Architectures for Language Agents. Taxonomie de mémoire (Princeton TMLR 2024) à quatre piliers : mémoire de **travail** (bloc-notes éphémère, in-context), **sémantique** (encyclopédie, external vectorielle), **épisodique** (journal de bord des interactions passées), **procédurale** (savoir-faire, poids du modèle ou few-shots). Couvre 95 % des cas d'usage agentiques en 2026. *Voir aussi :* dossier `memoire-agentique`.
+
+**Context engineering** — Discipline (Karpathy) de remplir la fenêtre de contexte avec *juste la bonne information* à chaque étape de la boucle TAOR. Distinct du prompt engineering : il opère sur l'orchestration mémoire/RAG/compaction, pas sur le texte du prompt système. En pratique, c'est l'art de choisir ce qu'on jette — quel passé, quel tool output, quel résumé injecter — pour maximiser la pertinence du raisonnement sans saturer la fenêtre.
+
+**DoD adaptée aux agents** — Definition of Done revisitée pour produit probabiliste. Un seuil sur une distribution (« succès ≥ 90 % sur le golden de 50 cas ») remplace le boolean de la DoD classique. Tient sur deux lignes ; toute la complexité est dans la statistique sous-jacente : choix du seuil, taille du golden, nature des métriques (outcome ou process).
+
+**Golden dataset** — Suite de tâches de référence pour évaluer un agent de façon reproductible. Démarre à 20-50 cas tirés du manuel (étape 1 du playbook Anthropic) ; alimentée ensuite par les bugs du tracker, les transcripts de production, les cas adverses découverts en pentest. Évolue par cycle capability → régression (graduate). Versionné en parallèle du code agent. *Voir aussi :* dossier `evaluation-agentique`.
+
+**Gruyère suisse** — Modèle d'empilement d'évals (Anthropic) à cinq couches : auto evals · monitoring production · A/B test · revue manuelle · études humaines. Chaque couche est imparfaite — comme les trous du gruyère. Leur superposition produit la défense effective : un bug qui passe à travers une couche est rattrapé par la suivante. *« Aucune méthode unique ne suffit. »* *Voir aussi :* dossier `evaluation-agentique`.
+
+**Hard savings vs Soft savings** — Cigref. Hard savings : gains comptabilisables lors d'un audit (FTE économisé non remplacé, coût opérationnel évité et documenté, délai raccourci valorisé). Soft savings : gains diffus et difficiles à instrumenter (vitesse perçue, qualité de vie au travail, satisfaction client). Un audit Cigref ne valide que les Hard ; les Soft alimentent le narratif mais pas le ROI justificatif d'un investissement. *Voir aussi :* dossier `measure-roi`.
+
+**Harness** — Couche d'orchestration qui transforme un LLM en agent productif. Système à sept couches (modèle, boucle de contrôle, contexte, outils & sandbox, mémoire, observabilité, gouvernance). Schluntz & Zhang documentent qu'un même modèle oscille de 22 points selon le scaffold sur SWE-Bench Pro — la performance n'est pas une propriété du modèle mais de l'ensemble harness + modèle. *Voir aussi :* dossier `harness-agentique`.
+
+**HITL** — Human-in-the-Loop. Sur-ensemble des patterns qui placent un humain dans la boucle de décision d'un agent, quelle que soit la modalité. L'approval gate (validation du flux sortant) en est un cas particulier. Le HITL peut aussi être *inline* (humain choisit entre plusieurs options proposées par l'agent) ou *post-hoc* (revue d'un batch après publication). Le niveau de HITL est défini dans la charte de risques et revu à chaque stade.
+
+**Least agency** — OWASP Agentic Security Initiative 2026. Principe : ne jamais donner à un agent plus d'autonomie que la tâche ne l'exige strictement. Application concrète : un tools registry où chaque agent ne voit que les outils strictement nécessaires à son scope, avec politique de révocation explicite et auditée. Miroir du principe de moindre privilège des systèmes classiques, appliqué aux identités et aux capacités agentiques. *Voir aussi :* dossier `gouvernance`, dossier `harness-agentique`.
+
+**LLM-as-a-judge** — Pattern d'évaluation où un second LLM note la sortie d'un premier. Quatre modes : pointwise (score absolu), reference-based (comparaison à une référence), pairwise (A vs B), listwise (classement de N sorties). Cinq biais documentés : position, verbosity, self-enhancement, authority, format — avec cinq correctifs standards (rotation, calibration, panel multi-juges, CoT forcé, score d'accord inter-juges). *Voir aussi :* dossier `evaluation-agentique`.
+
+**Memory poisoning** — MITRE ATLAS AML.T0080. Injection d'instructions malveillantes dans la mémoire persistante d'un agent, souvent via un document ou une page web traitée par l'agent. Surface d'attaque qui apparaît dès qu'on met en place un memory pool partagé ou un RAG ouvert. Mitigations : journalisation à l'écriture, validation typée des entrées mémoire, audit à la lecture avec détection d'anomalies. *Voir aussi :* dossier `memoire-agentique`.
+
+**OBO vs Régime autonome** — Deux régimes d'identité agent. OBO (On-Behalf-Of) : l'agent agit avec un token utilisateur délégué — risque borné à ce que l'utilisateur peut faire, gouvernance représentant environ 17 % du projet. Autonome : l'agent dispose d'une identité propre et agit sans humain dans la boucle — risque systémique, gouvernance représentant 30 à 40 % du projet. Ce choix est structurant et se prend au stade Production, pas au stade Pilote. *Voir aussi :* dossier `gouvernance`.
+
+**OTel GenAI** — Semantic conventions OpenTelemetry pour applications IA générative (v1.37+, statut expérimental, stabilisation prévue S2 2026). Quatre spans canoniques : `invoke_agent` · `chat` · `execute_tool` · `gen_ai.evaluation.result`. Standard anti-lock-in : un seul instrument, N backends observabilité (Honeycomb, Datadog, Grafana, etc.). *Voir aussi :* dossier `observabilite-agents-ia`.
+
+**Pass@k vs Pass^k** — Deux mesures de succès sur k tentatives indépendantes. Pass@k : *au moins une* réussite sur k — métrique permissive, décroît vers 0 quand k → ∞ si le taux de réussite par tentative est inférieur à 1. Pass^k : *toutes les* k tentatives réussissent — métrique stricte, adaptée aux agents client-facing. Un agent à 75 % de succès par tentative n'a que 42 % de chances de réussir trois interactions consécutives — c'est le calcul qui justifie d'investir dans la réduction de variance avant l'augmentation du taux moyen.
+
+**Réallocation du temps gagné** — Cigref. Condition sine qua non d'un gain de productivité agentique auditable. Le temps économisé par un agent n'a aucune valeur ROI tant qu'il n'est pas réalloué *explicitement* : formation, discovery, coaching client, prospection, conception. Sans cette ligne documentée dans le ROI card, le gain reste une Soft saving qui ne tient pas un audit. Exige un rituel de mesure et une décision managériale explicite sur l'affectation. *Voir aussi :* dossier `measure-roi`, dossier `ia-et-travail`.
+
+**TestCase = (Persona × Quest × Environment) → Expected Outcome** — Formule canonique d'évaluation agentique. Persona = qui interroge (role, niveau de connaissance, état émotionnel). Quest = quel est le but (goal, contrainte cachée, critère de succès). Environment = dans quel contexte (happy path, chaos, adversarial). Expected Outcome = métriques déterministes sur les étapes de raisonnement + suite de juges LLM single-responsibility sur la sortie finale. *Voir aussi :* dossier `evaluation-agentique`.
 
 ## Annexe B — Voir aussi
 
-*À écrire dans T22.*
+| Pour creuser | Aller voir |
+|---|---|
+| Anatomie d'un agent (10 couches · boucle ReAct · domestiquer la variance) | [`anatomie`](../anatomie/) |
+| Le harness en profondeur (7 couches · pattern GAN · wide tools · file-based handoff) | [`harness-agentique`](../harness-agentique/) |
+| OTel GenAI · 6 piliers · N1→N5 · cognitive audit trail | [`observabilite-agents-ia`](../observabilite-agents-ia/) |
+| TestCase · gruyère suisse · LLM-as-judge biais · CLEAR · 8 étapes playbook | [`evaluation-agentique`](../evaluation-agentique/) |
+| CoALA · cycle 6 opérations · 5 frameworks · memory poisoning | [`memoire-agentique`](../memoire-agentique/) |
+| 14 piliers · 3 lignes de défense · OBO vs Autonome · Entra Agent ID | [`gouvernance`](../gouvernance/) |
+| 5 axes ROI · 8 méthodes de calcul · 15 ROI cards | [`measure-roi`](../measure-roi/) |
+| Augmentation vs automatisation · pause d'Engels · reverse skill bias · 6 leviers Acemoglu | [`ia-et-travail`](../ia-et-travail/) |
+| Coût d'inférence · routing économique · TCO self-host vs managed | [`economie-inference`](../economie-inference/) |
 
 ## Annexe C — Sources
 
-*À écrire dans T22.*
+1. Anthropic — *Building Effective Agents*, 2024-2026. Guide de référence pour la conception de systèmes agentiques robustes.
+2. Anthropic — *Eval Playbook* (8 étapes), 2025. Méthode de construction d'un pipeline d'évaluation agentique de bout en bout.
+3. Anthropic — *Economic Index — How Workers Use Claude*, février 2026. Analyse de 1 million d'interactions anonymisées pour cartographier les usages réels en entreprise.
+4. Anthropic — *Swiss Cheese Model for AI Evaluation*, 2025. Formalisation du modèle d'empilement de couches d'évaluation.
+5. Anthropic — *CLEAR Framework for Cost-Aware Evaluation*, 2026. Cadre multi-critères Cost · Latency · Efficacy · Assurance · Reliability.
+6. Schluntz & Zhang — *Harness design and performance variance on SWE-Bench Pro*, 2025. Étude documentant un écart de 22 points entre configurations scaffold sur un même modèle de base.
+7. MIT NANDA (Network for AI Deployment and Adoption) — *State of Agent Deployment*, 2026. Rapport sur l'adoption des systèmes agentiques en entreprise, incluant le chiffre des 95 % de pilotes au point mort.
+8. Cigref — *ROI des projets IA générative et agentique*, 2025. Cadre d'audit des gains Hard vs Soft, méthode de calcul du ROI agentique.
+9. Cigref — *Réallocation du temps gagné — note pratique*, 2025. Conditions d'un gain de productivité auditable : sans réallocation explicite, le gain reste un Soft saving.
+10. Karpathy, A. — *Context Engineering*, tweet thread et conférence Stanford, 2025. Formalisation de la discipline de remplissage de la fenêtre de contexte.
+11. Acemoglu, D., Johnson, S. — *Power and Progress: Our Thousand-Year Struggle Over Technology and Prosperity*, Basic Books, 2023. Critique du techno-optimisme ; cadre des six leviers pour orienter la technologie vers l'augmentation.
+12. Brynjolfsson, E., McAfee, A. — *The Productivity J-Curve Hypothesis*, NBER, 2022. Formalisation du décalage entre adoption technologique et gains de productivité mesurables.
+13. OWASP — *Agentic Security Initiative 2026 (ASI)*, 2026. Top 10 des risques des systèmes agentiques, dont le principe de *least agency*.
+14. MITRE — *ATLAS AML.T0080 — LLM Memory Poisoning*, 2025. Description de l'attaque d'injection dans la mémoire persistante d'un agent.
+15. Zhu, S. et al. (Princeton) — *CoALA: Cognitive Architectures for Language Agents*, TMLR, 2024. Taxonomie à quatre piliers : mémoire de travail, sémantique, épisodique, procédurale.
+16. OpenTelemetry — *Semantic Conventions for Generative AI Systems v1.37*, 2026. Standard de spans canoniques pour l'instrumentation des applications LLM et agentiques.
+17. τ²-bench team — *Dual-Control User-Simulator Benchmark for Agentic Systems*, 2025. Protocole d'évaluation avec simulateur utilisateur contrôlé et environnement chaotique.
+18. Braintrust — *Convert Production Traces to Test Cases*, 2025. Pattern de recyclage des traces de production en cas de test pour enrichir le golden dataset.
+19. Bresnahan, T., Trajtenberg, M. — *General Purpose Technologies: "Engines of Growth"*, Journal of Econometrics, 1995. Cadre théorique des technologies générales (GPT) et de leurs effets différés sur la croissance.
+20. Allen, R.C. — *Engels' Pause: Technical Change, Capital Accumulation, and Inequality in the British Industrial Revolution*, Explorations in Economic History, 2009. Documentation empirique de la décennie de stagnation salariale malgré la croissance industrielle.
+21. Federal Reserve — *Supervisory Letter SR 11-7: Guidance on Model Risk Management*, 2011. Référence réglementaire pour la validation des modèles en entreprise ; étendu aux agents IA par les directions des risques.
+22. Reason, J. — *Human Error*, Cambridge University Press, 1990. Origine du modèle du gruyère suisse (Swiss Cheese Model) appliqué à la gestion des risques systémiques.
+23. Microsoft — *Entra Agent ID for AI Workloads*, documentation technique, 2026. Spécification du système d'identité pour agents IA dans l'écosystème Azure / Entra.
+24. ANSSI / CNIL — *Lignes directrices pour les systèmes d'agents IA*, 2025. Cadre réglementaire français sur la gouvernance, la traçabilité et la responsabilité des agents IA en production.
 
 ---
 
