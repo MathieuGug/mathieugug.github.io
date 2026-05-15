@@ -15,26 +15,27 @@ PATH = Path("/home/user/mathieugug.github.io/proces-musk-altman/journal.html")
 # (day_str, x_center, p_musk%, short_label_for_badge)
 DATA = [
     ("01", 80,  35, "ven 1 mai"),
-    ("02", 151, 22, "sam 2 mai"),
-    ("03", 222, 20, "dim 3 mai"),
-    ("04", 292, 23, "lun 4 mai"),
-    ("05", 363, 28, "mar 5 mai"),
-    ("06", 434, 24, "mer 6 mai"),
-    ("07", 505, 32, "jeu 7 mai"),
-    ("08", 575, 40, "ven 8 mai"),
-    ("09", 646, 42, "sam 9 mai"),
-    # ("10", 717, None, "dim 10 mai"),  # pas d'audience — colonne laissée vide
-    ("11", 788, 50, "lun 11 mai"),
-    ("12", 858, 38, "mar 12 mai"),
-    ("13", 929, 28, "mer 13 mai"),
-    ("14", 1000, 20, "jeu 14 mai"),
+    ("02", 146, 22, "sam 2 mai"),
+    ("03", 212, 20, "dim 3 mai"),
+    ("04", 278, 23, "lun 4 mai"),
+    ("05", 344, 28, "mar 5 mai"),
+    ("06", 410, 24, "mer 6 mai"),
+    ("07", 476, 32, "jeu 7 mai"),
+    ("08", 542, 40, "ven 8 mai"),
+    ("09", 608, 42, "sam 9 mai"),
+    # ("10", 674, None, "dim 10 mai"),  # pas d'audience — colonne laissée vide
+    ("11", 740, 50, "lun 11 mai"),
+    ("12", 806, 38, "mar 12 mai"),
+    ("13", 872, 28, "mer 13 mai"),
+    ("14", 938, 20, "jeu 14 mai"),
+    ("15", 1004, 18, "ven 15 mai"),
 ]
 
-# All 14 day positions for the X axis (the dim 10 mai stays labeled even with no bar)
+# All 15 day positions for the X axis (the dim 10 mai stays labeled even with no bar)
 DAY_X = [
-    ("01", 80), ("02", 151), ("03", 222), ("04", 292), ("05", 363), ("06", 434),
-    ("07", 505), ("08", 575), ("09", 646), ("10", 717), ("11", 788), ("12", 858),
-    ("13", 929), ("14", 1000),
+    ("01", 80), ("02", 146), ("03", 212), ("04", 278), ("05", 344), ("06", 410),
+    ("07", 476), ("08", 542), ("09", 608), ("10", 674), ("11", 740), ("12", 806),
+    ("13", 872), ("14", 938), ("15", 1004),
 ]
 
 PLOT_TOP = 92        # y at 100 %
