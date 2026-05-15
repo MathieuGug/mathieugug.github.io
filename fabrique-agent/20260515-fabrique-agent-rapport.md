@@ -502,7 +502,65 @@ La **pause d'Engels** est le scénario à éviter — non par fatalité, mais pa
 
 ## 5. Clôture
 
-*Section à écrire dans T21.*
+### 5.1 — Récapitulatif : dix artefacts × quatre stades
+
+![SCHÉMA 12 — Récap · 10 artefacts × 4 stades|1300](images/12-recap-10x4.svg)
+
+Le tableau rejoue tout le rapport en une page. Chaque colonne est un moment — Prototype, Pilote, Production, Mature —, chaque ligne est une voix. La lecture fonctionne comme une partition : on lit la trajectoire d'une équipe en regardant où elle sature chaque colonne.
+
+Cinq cellules sont surlignées en carmine : les ==cellules-pivots==, points de basculement qu'une équipe rate le plus souvent parce qu'ils sont à la frontière entre deux stades.
+
+**Entra Agent ID** : l'identité machine rend un agent auditable, révocable, traçable. Tant qu'un agent tourne sous les credentials d'un utilisateur humain, il n'y a pas de gouvernance possible — seulement de l'illusion. **Memory pool** : sa présence dans le registre ne garantit rien ; ce qui compte, c'est le `memory_hit_rate` — si la lecture mémoire est conditionnelle, le pool est mort. **Pass^k** : la métrique qui bascule l'évaluation du qualitatif au quantitatif ; sans elle, on navigue à l'instinct. **OBO vs. Autonome** : un choix de régime d'autorisation qui n'est pas réversible à bas coût — une décision d'architecture de gouvernance, pas une case à cocher. **Réallocation** : l'artefact final, non technique — RH, organisationnel, politique. Son absence dans une fabrique mature signifie que l'équipe a livré des agents sans traiter ce qui change pour les humains autour.
+
+---
+
+### 5.2 — Trois questions à se poser
+
+#### Pour le PM
+
+> *« Quel est le signal de bascule qui me dit que je suis prêt pour le stade suivant ? »*
+
+Si vous attendez que « tout le monde soit d'accord », vous resterez bloqué. Le signal de bascule est externe, pas interne : un SLA promis, un audit demandé par le RSSI, un deuxième agent à intégrer dans la plateforme. Ces événements extérieurs créent une contrainte dure — le genre qui force un saut de stade que la bonne volonté interne n'aurait pas produit.
+
+Si vous ne savez pas répondre à cette question, vous n'êtes pas à un stade — vous êtes entre deux. L'entre-deux est le lieu où les pilotes meurent.
+
+---
+
+#### Pour le builder
+
+> *« Quel est l'artefact load-bearing que je n'ai pas encore, et qui me fait perdre des heures ? »*
+
+Load-bearing : sans lui, le harness vacille. Un golden dataset qui ne couvre pas vos edge cases n'est pas load-bearing — c'est un gadget rassurant. Un registre d'agents non synchronisé avec le pipeline de déploiement n'est pas load-bearing — c'est une documentation qui ment.
+
+==Le signal opérationnel : si vous passez quatre heures par semaine à débugger le même type de problème, l'artefact qui l'aurait détecté en trente secondes n'est pas encore là.== Identifiez-le. Construisez-le la semaine suivante — pas une nouvelle feature. L'artefact load-bearing manquant.
+
+---
+
+#### Pour le décideur
+
+> *« Si je choisis le régime OBO maintenant, quand devrai-je migrer vers Autonome — et à quel coût ? »*
+
+Migration OBO → Autonome n'est pas un upgrade de subscription. C'est un re-design de gouvernance : nouvelles identités machine, nouveaux périmètres de permissions, validation sécurité complète. Le surcoût est de 13 à 23 points de budget projet, sur six à douze mois de plomberie.
+
+Deux positions cohérentes existent. Si vous savez que votre cas d'usage ira en Autonome dans dix-huit mois, OBO peut être une perte de temps — construisez l'architecture cible directement. Si vous savez que vous n'y arriverez jamais, OBO est l'optimum. ==Ce qui est inacceptable, c'est de choisir OBO par défaut sans avoir posé la question.==
+
+---
+
+### 5.3 — Coda
+
+« Le travail n'est pas un destin technologique. » La phrase est d'Acemoglu et Johnson, dans *Power and Progress* : la direction que prend une vague technologique dépend de choix politiques, fiscaux, institutionnels — pas de la technologie elle-même.
+
+La fabrique d'un agent n'est pas qu'un atelier technique. C'est une fabrique d'équipe, et donc une fabrique de société. La pause d'Engels — ce demi-siècle entre 1790 et 1840 où la productivité industrielle montait sans que les salaires suivent — n'était pas une fatalité. C'était le résultat de choix qui n'avaient pas encore été contestés.
+
+Nous sommes au début d'une pause analogue. Les agents augmentent la productivité des équipes qui savent les construire. La question de la distribution de ce gain — vers qui vont les heures libérées, qui décide de l'artefact de réallocation — n'est pas technique. C'est une conquête institutionnelle, au sens exact d'Acemoglu.
+
+Tenir cette boucle ouverte, faire que les dix artefacts de la fabrique soient aussi ceux d'une distribution juste : c'est notre vrai chantier des trois à cinq ans qui viennent.
+
+==Quatre stades. Dix artefacts. Une équipe qui apprend. Le reste — c'est de la politique.==
+
+---
+
+*Format co-écrit avec l'aide d'une IA.*
 
 ## Annexe A — Glossaire
 
