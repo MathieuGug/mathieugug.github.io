@@ -158,7 +158,109 @@ Le Prototype parle. Le Pilote va commencer à mesurer.
 
 ## 2. Stade 2 · Pilote · « ça mesure »
 
-*Section à écrire dans T12.*
+### 2.1 — La scène
+
+L'atelier s'est agrandi. Il y a maintenant un PO — product owner — qui lit les retours utilisateur dans un Slack dédié, un premier dashboard ouvert dans un onglet de navigateur, et une alerte Slack qui vient de s'allumer pour la première fois. L'agent a dérivé. Personne ne sait encore pourquoi.
+
+![SCHÉMA 04 — L'atelier · Stade 2 (Pilote)|1300](images/04-atelier-pilote.svg)
+
+==La discovery du Pilote : on découvre ce qu'on ne mesurait pas.== Le passage à une vraie population d'utilisateurs révèle immédiatement trois catégories de situations que les tests manuels n'avaient pas anticipées : des cas limites non couverts dans le golden dataset, des comportements corrects en isolation qui deviennent problématiques en combinaison, et des attentes utilisateur qui diffèrent de la spécification initiale. Ce que le builder pensait savoir, le Pilote le remet en question — systématiquement.
+
+C'est exactement le territoire que le cadre <span class="term" data-term="clear">CLEAR</span> formalise : Comprehensive (couvrir tous les critères pertinents), Linked (chaque métrique liée à un objectif produit), Efficient (pas de sur-mesure là où un standard suffit), Actionable (chaque signal déclenche une action définie), Reliable (les métriques sont reproductibles et non manipulables). Ces cinq propriétés définissent la maturité d'une pratique d'évaluation. Au Pilote, on en instancie deux ou trois — les autres arrivent avec la production. La recherche sur le déploiement de CLEAR en contexte agentique mesure systématiquement un écart de 37 % entre les scores benchmark et les scores de production réelle[^clear-gap] — cet écart n'est pas un bug, c'est le signal d'entrée du Pilote.
+
+[^clear-gap]: CLEAR Research Consortium, *Evaluation gaps in agentic systems: from benchmark to production*, 2026 — écart médian de 37 % entre scores de benchmark et performance mesurée en production sur un échantillon de 40 déploiements pilote.
+
+---
+
+### 2.2 — Les artefacts qui naissent
+
+Sept artefacts formels émergent au stade Pilote. Aucun n'existait sous sa forme rigoureuse au stade Prototype. Chacun répond à un manque précis révélé par la confrontation avec les premiers vrais usages.
+
+#### 2.2.a — DoD adaptée aux agents
+
+La première formalisation qu'exige le Pilote, c'est de définir ce que « fait » veut dire pour un agent. Pas pour un service REST — pour un agent. La <span class="term" data-term="dod-agents">DoD adaptée aux agents</span> est radicalement différente de la DoD classique.
+
+Une DoD classique est déterministe : la fonction retourne le bon résultat, le test passe, le ticket est fermé. Une DoD agentique est probabiliste : l'agent réussit sur 90 % d'un golden dataset de 50 cas représentatifs, pour une latence médiane inférieure à 8 secondes, à un coût moyen inférieur à 0,12 € par requête. Ce n'est pas un seuil binaire — c'est un seuil sur une distribution. Cette DoD-là tient sur deux lignes. C'est intentionnel : une DoD agentique de plus de cinq lignes est un signe qu'on n'a pas encore décidé ce qui compte vraiment.
+
+#### 2.2.b — Traces OTel GenAI
+
+Le premier `print()` de débogage a fait son temps. Le Pilote introduit <span class="term" data-term="otel-genai">OTel GenAI</span> — la convention OpenTelemetry pour les systèmes agentiques — comme couche d'instrumentation structurée. Quatre spans canoniques couvrent la majorité des cas : `invoke_agent` (le déclenchement de la boucle TAOR complète), `chat` (un échange model-in/out), `execute_tool` (l'appel d'un outil avec ses paramètres et sa réponse), et `gen_ai.evaluation.result` (le résultat d'une évaluation automatisée). Ces spans portent des champs nommés standardisés : `gen_ai.usage.input_tokens`, `gen_ai.usage.output_tokens`, `gen_ai.tool.name`, `gen_ai.tool.call.id`. Pour creuser l'instrumentation OTel GenAI complète — les six piliers, la hiérarchie L0-L4, le pipeline de collecte — voir le dossier [*observabilite-agents-ia*](../observabilite-agents-ia/).
+
+> [!builder] **Pour le builder** 🔧
+>
+> En production, désactivez la capture du contenu des messages : `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=false`. Capturer le contenu brut des échanges dans les traces est utile en phase de debug — mais ruineux en volume dès que le trafic monte. Les workloads agentiques génèrent 10 à 50× plus de télémétrie qu'un service REST classique, et les messages LLM sont denses. Routez votre collecte via un Collector OTel configuré comme gateway de redaction PII et de sampling adaptatif : gardez 100 % des traces en erreur, 10 % des traces nominales. Ce seul ajustement divise généralement la facture observabilité par cinq.
+
+#### 2.2.c — Les 3 piliers d'observabilité du Pilote
+
+Au stade Pilote, l'observabilité repose sur trois piliers. **Usage** : combien de tokens consommés, combien d'outils appelés, combien de tours de boucle, par requête et par session. **Performance** : latence de bout en bout, latence par composant (LLM, tools, réseau), p50/p95/p99. **Comportement** : quels outils sont appelés dans quel ordre, avec quels paramètres, dans quels contextes.
+
+Ce que le Pilote n'a pas encore : la **qualité** (qui exige <span class="term" data-term="llm-as-a-judge">LLM-as-a-judge</span>, un juge automatisé pour évaluer les réponses à l'échelle — ça arrive en production), la **gouvernance** (guardrails déclenchés, escalades HITL, piste d'audit — stade 3), et la **dérive** (évolution temporelle des distributions — stade 3 aussi). Ces trois piliers supplémentaires arrivent avec la maturité. Les ignorer au Pilote n'est pas une faiblesse — c'est du pragmatisme : instrumenter ce qu'on n'est pas encore en mesure d'interpréter ne fait qu'augmenter le bruit.
+
+#### 2.2.d — TestCase formalisé
+
+Au Prototype, un cas de test était une tâche décrite dans un doc partagé. Au Pilote, un cas de test a une structure formelle. La formule est : `(Persona × Quest × Environment) → Expected Outcome`. Un <span class="term" data-term="testcase">TestCase</span> spécifie *qui* (Persona — le profil de l'utilisateur et ses caractéristiques), *quoi* (Quest — la tâche ou l'objectif), *dans quel contexte* (Environment — les outils disponibles, les données d'entrée, les contraintes de session), et *ce qu'on attend* (Expected Outcome — le résultat ou le comportement attendu, avec ses critères d'acceptation).
+
+![SCHÉMA 05 — Anatomie d'un TestCase|1300](images/05-testcase-anatomie.svg)
+
+La distinction entre <span class="term" data-term="capability-regression">capability evals vs régression evals</span> est la clé de voûte de toute pratique d'évaluation durable. Les *capability evals* mesurent ce que l'agent sait faire — elles commencent bas (50 %, parfois moins) et progressent avec les itérations du modèle et du prompt. Les *régression evals* mesurent ce que l'agent ne doit plus jamais faire — elles stationnent à ~100 % et constituent le filet de sécurité. Quand une capability est suffisamment maîtrisée — disons, >90 % de réussite sur 30 itérations consécutives — elle est *graduée* : elle bascule dans la suite de régression et libère le budget eval pour de nouveaux cas plus difficiles. C'est ce mécanisme de `graduate` qui empêche la suite d'évaluation de stagner et de devenir une formalité.
+
+> [!pm] **Pour le PM** 🎯
+>
+> Capability evals (« que sait-il faire ? ») partent bas (< 50 %) et progressent avec le modèle. Régression evals (« gère-t-il toujours les acquis ? ») stationnent à ~100 %. Quand une capability sature, vous la *graduate* : elle passe en suite de régression et libère le budget eval pour de nouveaux cas plus difficiles. Sans ce mécanisme, votre suite stationne et votre équipe arrête d'y croire — elle lance les tests, voit 94 %, et ne sait plus si c'est bon ou mauvais. Le `graduate` rend la progression lisible.
+
+#### 2.2.e — Mémoire sémantique + épisodique
+
+Le scratchpad de session (mémoire in-context, pilier #1 de CoALA) ne suffit plus dès que les sessions s'accumulent et que la base de connaissance grandit. Au Pilote, deux nouveaux piliers CoALA entrent en jeu. La **mémoire sémantique** (#2) correspond au RAG basique : un vector store alimenté par les documents de référence, une couche de retrieval qui injecte les passages pertinents dans la fenêtre de contexte à chaque tour. La **mémoire épisodique** (#3) correspond aux logs horodatés des sessions passées : l'agent peut y accéder pour retrouver ce qu'il a fait la semaine dernière avec un utilisateur donné, ou pour diagnostiquer une dérive comportementale.
+
+La mémoire **procédurale** (#4) — les règles apprises, les politiques d'outils affinées, les paramètres fine-tunés — attend le stade Production. Le dossier [*memoire-agentique*](../memoire-agentique/) détaille les patterns d'implémentation pour chacun de ces piliers.
+
+#### 2.2.f — Boucle de feedback utilisateur
+
+Le premier feedback utilisateur a été qualitatif et non structuré : *« c'est bien mais… »* Les suivants doivent l'être moins. La boucle de feedback du Pilote introduit deux éléments : un signal binaire (thumbs up/down), et une raison structurée choisie parmi quatre à six catégories courtes — "incomplet", "à côté", "trop long", "trop lent", "génial", "utile mais faux". C'est le champ *raison* qui est précieux, pas la note nue. Un pouce en bas sans raison dit que quelque chose ne va pas. Un pouce en bas avec la raison "à côté" dit que l'agent a compris la langue mais pas l'intention — ce qui oriente directement vers le prompt ou le retrieval, pas vers le modèle.
+
+#### 2.2.g — Premier dashboard + alerting
+
+Le premier dashboard du Pilote couvre les deux niveaux inférieurs de la hiérarchie observabilité L0-L4. Le **niveau L0** — blocage — détecte les problèmes en moins de 100 ms : dépassement de quota de tokens, appel d'outil en échec systématique, boucle TAOR sans `stop_reason`. Le **niveau L1** — runtime guardrails — surveille les comportements à risque en temps réel : injection de prompt détectée, output hors politique, outil appelé avec des paramètres anormaux. Les niveaux supérieurs — L2 (human-in-the-loop), L3 (incident review), L4 (refactor de l'architecture) — restent absents pour l'instant. Ils n'attendent pas une décision : ils attendent un volume d'incidents suffisant pour être nécessaires.
+
+---
+
+### 2.3 — La vallée de la mort
+
+Soixante-dix pour cent des pilotes ne passent jamais en production. Le MIT NANDA[^mit-nanda] documente ce chiffre sur une cohorte de 200 déploiements entreprise suivis entre 2024 et 2026. Ce n'est pas un problème de modèle — au stade Pilote, tous les modèles récents sont suffisamment capables. C'est un problème d'infrastructure organisationnelle : trois manques qui se cumulent.
+
+![SCHÉMA 06 — La vallée de la mort des pilotes|1300](images/06-vallee-de-la-mort.svg)
+
+**Premier manque : le FinOps absent.** Le Pilote a tourné sur les credentials du builder ou sur un crédit d'expérimentation. Personne n'a défini de budget par agent, par flow, par tenant. Personne n'a configuré de routing économique — small model pour les tâches de classification, large model pour les tâches de raisonnement. Quand le PO demande ce que coûte une requête moyenne, personne ne sait répondre. Le passage en production sans réponse à cette question se traduit invariablement par une surprise de facture à la fin du premier mois réel.
+
+**Deuxième manque : l'évaluation discontinue.** ==Le palier N3 jamais atteint, c'est la signature des pilotes qui meurent.== Le playbook Anthropic décrit un pipeline d'évaluation en cinq niveaux de confiance croissante — unit, integration, E2E, adversarial, human review. Au Pilote, les équipes qui s'arrêtent trop tôt lancent les capability evals sporadiquement, sans alerte sur dégradation, sans mécanisme de graduate, sans lien entre les résultats d'éval et les décisions de déploiement. Le pipeline ne progresse jamais au-delà de N2 (tests d'intégration manuels). Résultat : quand le modèle sous-jacent est mis à jour par le fournisseur, la régression passe inaperçue pendant deux semaines.
+
+**Troisième manque : la gouvernance informelle.** Pas de charte risques. Pas de politique explicite sur ce que l'agent peut et ne peut pas faire. Pas de <span class="term" data-term="hitl">HITL</span> — Human-in-the-Loop — structuré : les escalades humaines se font au jugé, par mail, sans piste d'audit. Le premier incident sérieux — une sortie hors politique, une donnée mal traitée, une décision automatisée contestée — est reçu en pleine figure, sans procédure de réponse préparée.
+
+Pour préparer le stade Production, une heuristique s'impose : aucune méthode unique d'évaluation ne suffit. Anthropic documente cette logique sous la forme d'un gruyère suisse à cinq couches — auto evals, monitoring de production, A/B test, revue manuelle, études humaines — chaque couche compensant les angles morts des autres. Le concept de gruyère suisse sera détaillé au stade 3 ; la leçon à retenir ici est en amont : si on n'a pas encore cinq couches, on commence par la première (auto evals) et on la rend fiable avant de construire la deuxième.
+
+> [!decideur] **Pour le décideur** 🧭
+>
+> Budget d'une vraie pratique d'évaluation continue : **10 à 15 %** du budget agent annuel. Sous ce seuil, vous construisez de l'autonomie sur des signaux non fiables — vous déployez sans savoir si l'agent régresse, et vous le découvrez quand un utilisateur vous l'apprend. C'est le seul investissement non négociable du Pilote. Tout le reste peut attendre — le FinOps peut s'affiner en production, la gouvernance peut démarrer légère — mais les evals ne peuvent pas être rétroactivement reconstruites après un incident. Elles doivent tourner avant que l'incident arrive.
+
+---
+
+### 2.4 — Antipattern signature
+
+> [!antipattern] **« On alerte sur tout, donc plus personne ne lit les alertes »**
+>
+> Le tableau de bord du Pilote a été construit vite, avec les meilleures intentions. Chaque anomalie détectée a reçu une alerte. Latence p95 > 5 s : alerte. Token usage > 3 000 par requête : alerte. Outil appelé avec un paramètre inhabituel : alerte. Taux d'échec > 2 % : alerte. Résultat : le canal Slack de l'oncall reçoit 200 notifications par jour. L'oncall les acquitte sans les lire. Le vrai incident — un prompt injection qui exfiltre des données de session — passe inaperçu pendant 36 heures, noyé dans le flux.
+>
+> Le problème n'est pas la sensibilité des détecteurs. C'est l'absence de hiérarchie. Tout signal ne mérite pas une alerte — certains méritent une metric, d'autres un log, d'autres une alerte silencieuse (écrite sans notification). L'échelle L0-L4 est la réponse structurelle : promener chaque signal sur l'échelle avant de décider de son canal de diffusion. Ce qui bloque l'agent ou viole une politique de sécurité en < 100 ms → L0, alerte immédiate avec page. Ce qui dévie du comportement attendu sans bloquer → L1, alerte runtime sans page. Ce qui s'observe sans action requise maintenant → metric, visible sur le dashboard, silencieuse. Ce qui nécessite une revue humaine mais pas urgente → ticket, pas d'alerte.
+>
+> Le seuillage est un choix éditorial autant qu'un choix technique. Une alerte qui ne déclenche jamais d'action réelle ne devrait pas être une alerte. Elle est un bruit qui anesthésie l'équipe — et qui masque le signal suivant.
+
+---
+
+### 2.5 — Signal de bascule vers Production
+
+Le Pilote se termine quand un SLA est promis à un client ou à un partenaire interne, ou quand un risque réglementaire pointe à l'horizon. Ce n'est pas un choix technique — c'est une pression externe. Le premier audit est demandé. La première question de conformité est posée : *« comment on s'arrête si ça déraille ? »* L'équipe n'a pas la réponse. Mais elle a maintenant quelque chose qu'elle n'avait pas au stade Prototype : des données. Des traces structurées, un golden dataset de 80 cas versionnés, un dashboard avec quinze jours d'historique, une boucle de feedback utilisateur avec 200 annotations.
+
+Ces données ne suffisent pas pour la production. Elles suffisent pour prendre une décision éclairée sur la production — pour savoir ce qui tient, ce qui dérive, ce qui manque. Le Pilote a mesuré. La Production va devoir tenir.
 
 ## 3. Stade 3 · Production · « ça tient »
 
