@@ -264,7 +264,131 @@ Ces données ne suffisent pas pour la production. Elles suffisent pour prendre u
 
 ## 3. Stade 3 · Production · « ça tient »
 
-*Section à écrire dans T16.*
+### 3.1 — La scène
+
+L'atelier ne ressemble plus à l'atelier du Pilote. Quatre personnes désormais : un DEV qui pousse les itérations, un PO qui arbitre la roadmap, un SRE qui surveille les SLA, un AUDIT qui vérifie que les traces sont exploitables à la demande. Les six piliers d'observabilité sont tous allumés. Au centre de l'atelier : un coffre-fort — le registre des agents et des outils, la seule source de vérité sur ce qui est autorisé à tourner. Sur le sol, un cordon rouge : l'*approval gate*. Sur le mur du fond, deux cadrans : l'horloge SLA et le compteur FinOps.
+
+![SCHÉMA 07 — L'atelier · Stade 3 (Production)|1300](images/07-atelier-production.svg)
+
+Le premier incident est arrivé. Le premier post-mortem aussi. Ce n'est pas un signe d'échec — c'est le signe que le système est assez vivant pour apprendre. La différence entre une équipe qui tient et une équipe qui dérive ne se lit pas dans les métriques. Elle se lit dans la qualité de la réponse à l'incident : la trace était-elle assez riche pour reconstituer ce qui s'est passé ? Le runbook a-t-il été suivi ou improvisé ?
+
+==L'arbitrage coût × latence × qualité doit être tenu par une équipe, pas par un fichier de config.== C'est la phrase-clé du stade Production. Le fichier de config dit ce qu'on a décidé hier. L'équipe décide ce qu'on fait aujourd'hui, quand le contexte a changé, quand le budget est presque épuisé, quand la latence a doublé sans raison apparente. Un système agentique en production n'est pas un service statique qu'on déploie et qu'on oublie. C'est un processus vivant qui demande une équipe capable de tenir l'arbitrage à la main, en temps réel, sous pression.
+
+---
+
+### 3.2 — Artefacts qui montent en grade
+
+Neuf artefacts basculent en mode production. Chacun franchit un seuil — de l'informel au formel, du ponctuel au continu, du best-effort au contractualisé.
+
+#### 3.2.a — Epics produit & roadmap
+
+Le backlog du Pilote était une liste d'intentions. En production, il devient une roadmap structurée : *epics* avec périmètre défini, *milestones* datés, dépendances explicites. La différence n'est pas esthétique. Une roadmap structurée impose une question que le PO doit pouvoir répondre à tout moment : *pourquoi cet epic maintenant ?* Ce n'est pas un mantra agile — c'est une discipline de produit qui protège l'équipe des réordonnancements impulsifs et préserve la continuité de l'évaluation.
+
+#### 3.2.b — Tools registry & policy
+
+La liste des outils codés en dur dans le scaffold du Prototype a vécu. En production, elle devient un registre formel assorti d'une politique explicite. Le principe structurant s'appelle <span class="term" data-term="least-agency">least agency</span> — le principe de moindre autonomie, formulé dans le référentiel OWASP Agentic Security Initiative 2026 : ne jamais donner à un agent plus d'autonomie qu'il n'en faut pour accomplir la tâche. En pratique, cela prend la forme d'une table qui liste *qui peut faire quoi, sous quelle condition d'activation, avec quelle politique de révocation*. Chaque outil porte : son niveau d'autonomie maximal autorisé (lecture seule, écriture bornée, exécution confirmée), sa portée (données personnelles ? données financières ? actions irréversibles ?), et ses conditions d'activation (toujours disponible ? uniquement si l'utilisateur a consenti explicitement ? uniquement en mode supervisé ?).
+
+Le bénéfice immédiat : en cas d'incident, révoquer un outil est une opération de registre, pas un déploiement de code d'urgence. Le bénéfice à long terme : le registre est la preuve documentée que l'équipe a intentionnellement calibré l'autonomie de son agent.
+
+#### 3.2.c — Agent registry
+
+Un agent en production a une identité. Pas un nom de variable dans un fichier de config — une identité formelle, gérée par le système d'identité de l'organisation. Le modèle de référence en écosystème Microsoft est l'Entra Agent ID : l'agent est enregistré comme principal dans Entra ID, avec des permissions Purview pour l'accès aux données et des policies Defender pour la détection comportementale. Chaque agent porte un *ownership* clair : une personne humaine identifiée est responsable de cet agent, de ses comportements, de ses incidents.
+
+Cette exigence n'est pas bureaucratique. Elle répond à la question que tout incident finit par poser : *qui appelle-t-on à 3h du matin si l'agent déraille ?* La chaîne de responsabilité s'instruite avant l'incident, pas reconstituée après. Voir le dossier [*Gouvernance des agents*](../gouvernance/) pour les architectures d'identité multi-agents.
+
+#### 3.2.d — Budget FinOps
+
+Le FinOps du Pilote était une approximation : on regardait la facture en fin de mois et on ajustait. En production, le budget est structuré par agent, par flow, et par tenant. Les règles de routing sont explicites : Sonnet pour les workers qui traitent des tâches de classification et de reformulation, Opus pour le lead qui synthétise et décide, modèle *low-cost* en fallback automatique si le budget du mois est épuisé à plus de 80 %. L'alerting suit la même logique : non pas sur le montant absolu (qui varie selon le volume de trafic), mais sur le pourcentage du quota mensuel — une alerte à 50 %, une alerte à 80 %, une procédure de dégradation à 95 %.
+
+La structure est universelle même si les seuils varient : les décisions de routing ne peuvent pas rester implicites en production. Un changement de prix provider, un pic de trafic, une migration de modèle — ces événements ont des conséquences budgétaires qui doivent être absorbées par des règles explicites, pas par l'improvisation de l'oncall.
+
+#### 3.2.e — Runbook & politique HITL
+
+Le HITL — Human-in-the-Loop — est un sur-ensemble. Il désigne, au sens large, toutes les situations où un humain intervient dans le flux agentique : validation d'une sortie, correction d'une déviation, choix d'une branche d'escalade. L'<span class="term" data-term="approval-gate">approval gate</span> est un cas particulier du HITL : la situation où un humain doit valider explicitement la sortie de l'agent *avant* qu'elle soit transmise au destinataire final. La distinction est importante parce qu'elle conduit à des implémentations radicalement différentes.
+
+Le runbook formalise trois niveaux d'escalade au-dessus du L1 introduit au Pilote. L2 : le SRE qualifie l'incident en 15 minutes, décide si le flux est suspendu ou maintenu en mode dégradé. L3 : incident déclaré, revue post-hoc déclenchée dans les 48 heures, fallback humain. L4 : refactor stratégique, agent en maintenance, post-mortem produisant des modifications d'architecture. Les modes dégradés sont eux aussi documentés : refus poli orientant vers un canal humain, mode read-only (l'agent répond mais ne déclenche plus d'actions), suspension complète avec notification automatique.
+
+> [!builder] **Pour le builder** 🔧
+>
+> Implémentation typique d'un approval gate : tout output `gen_ai.response` traverse une queue d'approbation avant publication. Pour les flows à haute volumétrie, ne pas approuver chaque message mais des batches échantillonnés avec confidence scoring (LLM-as-judge sur sample 10 %). Pour les flows critiques (médical, juridique, financier), 100 % d'approval gate humain sans exception. Escalation L2 = SRE manuellement sollicité, L3 = incident review post-hoc, L4 = refactor stratégique.
+
+#### 3.2.f — Charte de risques & 3 lignes de défense
+
+Le modèle des trois lignes de défense est d'origine bancaire — SR 11-7, la directive de la Fed Reserve sur les modèles de risque. Il s'applique directement aux agents. Première ligne : les équipes produit et engineering qui opèrent l'agent. Deuxième ligne : la fonction risque et conformité qui audite les politiques. Troisième ligne : l'audit interne qui évalue le dispositif périodiquement. En parallèle, la charte de risques couvre quatorze piliers de gouvernance : identité et ownership, politique des outils et des données, gestion des incidents, piste d'audit, continuité de service, fournisseurs LLM, conformité réglementaire, gestion des accès, tests de pénétration, politique de mise à jour des modèles, révocation, formation, et communication de crise.
+
+C'est à ce stade que s'opère le choix le plus déterminant de la vie d'un projet : <span class="term" data-term="obo-vs-autonome">OBO vs Régime autonome</span>. OBO — *On Behalf Of* — l'agent agit sous l'identité d'un humain, dont il hérite les permissions. Régime autonome — l'agent dispose de ses propres credentials dans le système d'identité. Ce choix engage tout le projet sur des trajectoires de gouvernance radicalement différentes.
+
+![SCHÉMA 09 — OBO vs Régime autonome — la facture cachée|1300](images/09-obo-vs-autonome.svg)
+
+> [!decideur] **Pour le décideur** 🧭
+>
+> Le choix OBO vs Régime autonome se prend une fois et engage tout le projet. OBO ≈ 17 % du budget projet en gouvernance (Registry + Defender + comité + formation + tracking). Régime autonome ≈ 30-40 % (double provisioning + compliance renforcée + incident response 24/7 + plan remédiation + support juridique + audit). Si la valeur métier de l'agent est < 2× le coût de gouvernance autonome, restez OBO. Si la valeur justifie l'autonomie, budgétez les 30-40 % sans illusion.
+
+#### 3.2.g — Pipeline d'évaluation continue
+
+Au Pilote, le pipeline d'évaluation avait deux ou trois couches actives. En production, les cinq couches du <span class="term" data-term="gruyere-suisse">gruyère suisse</span> sont toutes opérationnelles. Le concept vient d'Anthropic : aucune méthode unique ne protège contre tous les modes d'échec d'un agent. Chaque couche est un fromage percé de trous différents. C'est l'empilement qui produit la défense.
+
+![SCHÉMA 08 — Le gruyère suisse de l'évaluation|1300](images/08-gruyere-suisse.svg)
+
+Les cinq couches : **auto evals** (capability et régression evals en continu sur chaque déploiement), **monitoring de production** (les six piliers OTel GenAI en temps réel), **A/B testing** (deux versions comparées sur un segment contrôlé), **revue manuelle** (sampling hebdomadaire pour audit humain), et **études utilisateur** (entretiens périodiques pour détecter les dérives d'usage hors métriques).
+
+Le mécanisme de `graduate` introduit au Pilote s'affine en production : un cas de test passe de capability eval à régression eval dès 90 % de réussite sur 30 itérations consécutives. Ici entre également en jeu la distinction <span class="term" data-term="pass-at-k-vs-pass-to-k">pass@k vs pass^k</span> : pass@k mesure si l'agent réussit *au moins une fois* sur *k* tentatives — utile pour les tâches créatives où une seule bonne réponse suffit. Pass^k mesure si l'agent réussit *k* fois de suite — la métrique qui compte pour les flux client-facing où la consistance est le critère produit. Les confondre conduit à des engagements intenables.
+
+==Le palier N3 franchi, c'est ce qui sauve de la vallée de la mort.== Le palier N3 correspond à l'évaluation continue automatisée — le moment où les capability evals et les régression evals tournent sans intervention humaine sur chaque déploiement, avec alerting automatique sur dégradation. C'est exactement ce que les 70 % de pilotes n'atteignent pas. Le franchir en production, c'est sortir de la zone de risque où une mise à jour silencieuse du modèle provider peut dégrader silencieusement les comportements pendant deux semaines.
+
+#### 3.2.h — Cognitive audit trail
+
+La piste d'audit cognitive n'est plus un log de debug. C'est un enregistrement enrichi : version du modèle, version du prompt, politique d'accès active, score LLM-as-judge si applicable. Le RBAC protège l'accès à ces traces, et chaque consultation est elle-même tracée.
+
+Le pattern Braintrust s'applique : toute trace impliquée dans un incident devient un test case permanent, versionnée dans le golden dataset avec son contexte et la correction apportée. La trace fautive devient une régression eval — garantie que l'agent ne reproduira pas l'erreur.
+
+#### 3.2.i — 6 piliers d'observabilité activés
+
+Les six piliers sont tous actifs. **Usage** : tokens, outils, tours de boucle, coûts par session, flow, tenant. **Performance** : latence de bout en bout, p50/p95/p99, SLA compliance temps réel. **Comportement** : séquences d'outils, déviation par rapport aux patterns de référence. **Qualité** : LLM-as-judge en continu, taux de succès evals. **Gouvernance** : guardrails déclenchés, HITL exercés, approval gates activés. **Drift** : évolution temporelle des distributions — le signal faible qui précède la dérive.
+
+L'échelle N1→N5 définit le palier atteint par pilier : N1 instrumentation de base, N2 signaux structurés et alerting, N3 évaluation continue automatisée, N4 corrélation multi-piliers, N5 auto-remédiation. Le stade Production vise N3 sur tous les piliers — c'est la ligne Plimsoll du système. En dessous, on navigue à vue.
+
+---
+
+### 3.3 — La boucle agentique sous tension
+
+Le premier incident sérieux est arrivé. Ce n'était pas une question de si — seulement de quand. La question opérationnelle est : comment dégrade-t-on proprement ?
+
+La première règle de la dégradation propre est d'avoir décidé les modes de repli en avance. Latence SLA dépassée : cache hit, réponses déjà générées retournées sans appel LLM. Budget à 80 % : routing automatique vers le modèle *low-cost* pour les flows non critiques. Guardrail répété : mode read-only, l'agent répond mais ne déclenche plus d'actions. Rien d'autre ne fonctionne : refus poli avec orientation vers un canal humain identifié.
+
+Ces quatre niveaux doivent être testés avant qu'un incident réel les déclenche. Un drill trimestriel — coupure de modèle simulée, dépassement budgétaire simulé — est la seule façon de vérifier que le runbook tient sous pression.
+
+La discipline du **pass^k** prend tout son sens dans ce contexte. Un agent à 75 % de succès sur une interaction isolée n'a que 42 % de chances de réussir trois interactions consécutives. Si l'agent sert un flux client-facing — une conversation de support, un onboarding, une séquence de prise de décision — la consistance sur la séquence est le critère qui compte, pas la moyenne sur les cas isolés.
+
+> [!pm] **Pour le PM** 🎯
+>
+> Un agent à 75 % de succès n'a que 42 % de chances de réussir 3 interactions consécutives. C'est pass^k, et c'est la métrique qui compte pour un agent client-facing — pas la moyenne. Visez pass^k > 90 % sur k=3 ; si vous n'y êtes pas, refusez de promettre la consistency. La consistency est un choix produit, pas une émergence.
+
+La philosophie Anthropic s'applique ici intégralement : *aucune méthode unique ne suffit, l'empilement seul produit la défense*. Les incidents sérieux naissent dans les angles morts que personne n'a instrumenté.
+
+---
+
+### 3.4 — Antipattern signature
+
+> [!antipattern] **« ==Le runbook est à jour mais personne ne l'a lu »==**
+>
+> L'équipe a fait les choses bien. Le runbook existe. Il est sur Confluence. Il a été mis à jour il y a trois semaines suite au dernier post-mortem. Il couvre les cas L2, L3, L4, les modes dégradés, les contacts d'escalade, la procédure de communication de crise.
+>
+> L'incident arrive à 23h40. L'oncall ouvre Slack, cherche le runbook, ne retrouve pas le lien, improvise. Il relance le flux au lieu de passer en mode read-only — et aggrave l'incident pendant 40 minutes. Le post-mortem révèle que l'oncall n'avait jamais lu le runbook complet, que le lien Confluence n'était pas dans les bookmarks de l'équipe, et que la dernière mise à jour avait modifié la procédure L3 sans notification vers la rotation.
+>
+> Le problème n'est pas la qualité du runbook. C'est l'absence de pratique. Un runbook qu'on ne lit pas en dehors des incidents ne sera pas lu pendant un incident. La solution est structurelle : **exercises tabletop trimestriels** — l'équipe simule un incident en salle, lit le runbook à voix haute, identifie les étapes ambiguës. **Drills d'incident simulé** — une coupure provoquée en recette teste si les procédures de dégradation se déclenchent comme prévu. **Propriétaire identifié du runbook** avec revue mensuelle et notification vers l'oncall rotation à chaque mise à jour. La pratique fait la différence, pas le document.
+
+---
+
+### 3.5 — Signal de bascule vers Mature
+
+La Production tient. SLA respecté depuis deux mois, budget sous contrôle, incidents gérés avec le runbook. C'est le moment où deux événements se produisent simultanément — ou se profilent à l'horizon.
+
+Un deuxième agent rejoint le premier. Immédiatement, une question surgit : comment communiquent-ils ? La réponse ad hoc — une queue partagée, un endpoint REST — ne tient pas dès que le volume monte. Le premier protocole inter-agents est mis à l'ordre du jour : MCP pour le partage de contexte et d'outils, A2A (Google DeepMind 2025) pour les appels d'agent à agent structurés.
+
+En parallèle, on veut que l'agent *apprenne* — au sens de la mémoire procédurale, le quatrième pilier CoALA. Le mémo épisodique individuel ne suffit plus : deux agents ont besoin d'accéder aux mêmes patterns d'apprentissage. Un *memory pool* partagé est envisagé.
+
+La Production a tenu. Le Mature va apprendre.
 
 ## 4. Stade 4 · Mature multi-agents · « ça apprend »
 
