@@ -30,6 +30,7 @@ _Mis à jour par la routine `Illustrated deep research · mer + ven`._
 - A2A (Google) — adoption cross-vendor ou absorption par MCP via sampling/subagents
 
 ## Déjà couverts (date · slug · angle)
+- 2026-05-15 · benchmarks-contestes · deep dive sur `evaluation-agentique` — SWE-bench, GAIA, OSWorld, τ-bench : quatre vecteurs de contamination (chevauchement temporel, version-tag, harness gaming, prompt leakage), industrialisation des « benchmark teams » dédiées, contre-mouvement vivant (SWE-bench Live, SWE-Lancer, MLE-bench, ARC-AGI 2), framework décision 2×2 contrôlé × ponctuel pour acheteurs
 - 2026-05-13 · process-reward-models · deep dive sur `modeles-raisonnement` — anatomie de la couche notateur, de Lightman/PRM800K (2023) au pivot DeepSeek-R1 RLVR (2025), generative verifiers (GenRM/ThinkPRM), reward hacking invisible (99 %/2 %), économie de l'annotation procédurale, 4 trajectoires 2027-2028 (RLVR / generative integré / PRM spécialisé / PRM-as-a-service)
 - 2026-05-12 · coding-agents · Claude Code / Codex CLI / Copilot, anatomie + pyramide d'usage 4 étages (transverse / data quotidien / data expert / produit-décideurs), retex chiffrés vs benchmarks publics
 - 2026-05-08 · mcp-plateforme · effet de réseau, donation Linux Foundation, surface d'attaque tool-poisoning + cross-server, layering MCP / function calling / OpenAPI / A2A
