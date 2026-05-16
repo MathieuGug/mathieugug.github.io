@@ -23,10 +23,7 @@ def _validate_source(s: dict) -> None:
     for sel in REQUIRED_SELECTORS:
         if sel not in s["selectors"]:
             raise SourceConfigError(f"source {s['slug']} 'selectors.{sel}' is required")
-    if s.get("paywall") and not s.get("storage_state"):
-        raise SourceConfigError(
-            f"source {s['slug']} is paywalled but has no storage_state path"
-        )
+
 
 
 def load_sources(path: Path) -> list[dict]:

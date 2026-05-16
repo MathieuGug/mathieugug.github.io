@@ -64,5 +64,15 @@ class TestDiffState(unittest.TestCase):
             self.assertEqual(srcmod.load_state(Path(td) / "missing.json"), {})
 
 
+class TestRealSourcesYml(unittest.TestCase):
+    def test_real_sources_yml_loads(self):
+        from tools.veille_presse.paths import SOURCES_YML
+        sources = srcmod.load_sources(SOURCES_YML)
+        self.assertGreaterEqual(len(sources), 25)
+        slugs = [s["slug"] for s in sources]
+        for required in ["nyt", "wapo", "bloomberg", "reuters", "lemonde", "pudding"]:
+            self.assertIn(required, slugs)
+
+
 if __name__ == "__main__":
     unittest.main()
