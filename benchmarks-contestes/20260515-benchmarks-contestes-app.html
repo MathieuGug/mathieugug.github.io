@@ -1,0 +1,1797 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Benchmarks agentiques contestés — pourquoi SWE-bench, GAIA et OSWorld ne mesurent pas ce qu'on croit · Mathieu Guglielmino</title>
+  <meta name="description" content="Le score d'un agent sur SWE-bench n'est plus une mesure, c'est un produit. Anatomie de la crise des leaderboards d'agents — contamination, harness gaming, benchmark teams dédiées, et le contre-mouvement des benchmarks vivants (SWE-bench Live, SWE-Lancer, ARC-AGI 2).">
+  <!-- og:start -->
+<meta name="author" content="Mathieu Guglielmino">
+<link rel="canonical" href="https://mathieugug.github.io/coding-agents/20260512-coding-agents-app.html">
+<meta name="keywords" content="IA agentique, Mathieu Guglielmino, agents IA, étude, coding, agents">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Mathieu Guglielmino">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:url" content="https://mathieugug.github.io/coding-agents/20260512-coding-agents-app.html">
+<meta property="og:title" content="Coding agents 2026 — Claude Code, Codex CLI, GitHub Copilot">
+<meta property="og:description" content="Trois outils qui ressemblent à des copilotes mais opèrent comme des collègues. Ce qu'ils sont, comment ils marchent, et où ils paient — du livrable transverse au pipeline data critique.">
+<meta property="og:image" content="https://mathieugug.github.io/coding-agents/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Coding agents 2026 — Claude Code, Codex CLI, GitHub Copilot — couverture social">
+<meta property="article:published_time" content="2026-05-12">
+<meta property="article:author" content="Mathieu Guglielmino">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Coding agents 2026 — Claude Code, Codex CLI, GitHub Copilot">
+<meta name="twitter:description" content="Trois outils qui ressemblent à des copilotes mais opèrent comme des collègues. Ce qu'ils sont, comment ils marchent, et où ils paient — du livrable transverse au pipeline data critique.">
+<meta name="twitter:image" content="https://mathieugug.github.io/coding-agents/og.png">
+<script type="application/ld+json">
+{"@context": "https://schema.org","@type": "Article","headline": "Coding agents 2026 — Claude Code, Codex CLI, GitHub Copilot","description": "Trois outils qui ressemblent à des copilotes mais opèrent comme des collègues. Ce qu'ils sont, comment ils marchent, et où ils paient — du livrable transverse au pipeline data critique.","image": "https://mathieugug.github.io/coding-agents/og.png","url": "https://mathieugug.github.io/coding-agents/20260512-coding-agents-app.html","datePublished": "2026-05-12","inLanguage": "fr-FR","author": {"@type": "Person","name": "Mathieu Guglielmino","url": "https://mathieugug.github.io/"},"publisher": {"@type": "Person","name": "Mathieu Guglielmino","url": "https://mathieugug.github.io/"}}
+</script>
+<!-- og:end -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/dossier-app.css">
+  <style>
+    :root {
+      --paper:    #FAF8F3;
+      --paper-2:  #F2EFE7;
+      --ink:      #1A1A1A;
+      --graphite: #5A5A5A;
+      --mist:     #B8B5AE;
+      --rule:     #E5E1D8;
+      --carmine:  #B7332C;
+      --teal:     #1F5560;
+      --mustard:  #B58A2C;
+      --serif: 'Spectral', 'Playfair Display', Georgia, serif;
+      --sans:  'Inter', system-ui, sans-serif;
+      --mono:  'JetBrains Mono', 'IBM Plex Mono', monospace;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; max-width: 100vw; }
+    /* Note: pas de padding:0 sur body — la lib /assets/dossier-app.css fournit padding-top:56px
+       pour laisser la place à la topbar fixe. */
+    body {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* Pleine largeur viewport — sidebars ancrées aux bords, contenu centré à 760 px
+       dans le main-cell, schémas qui s'étendent à toute la largeur disponible. */
+    @media (min-width: 1025px) {
+      .layout.sources-collapsed { grid-template-columns: 240px minmax(0, 1fr) 0; }
+      .layout.sources-collapsed #sources { transform: translateX(100%); opacity: 0; pointer-events: none; }
+    }
+    @media (max-width: 1024px) {
+      #toc, #sources { display: none; }
+      #toc.open, #sources.open { display: block; position: fixed; inset: 0; z-index: 90; background: var(--paper); overflow-y: auto; padding: 64px 24px 24px; }
+      #toc.open .panel-close, #sources.open .panel-close {
+        display: inline-flex; align-items: center; gap: 6px;
+        position: fixed; top: 16px; right: 16px; z-index: 91;
+        background: var(--paper); border: 1px solid var(--rule);
+        border-radius: 4px; padding: 8px 14px;
+        font-family: var(--mono); font-size: 0.85rem;
+        cursor: pointer; color: var(--ink);
+      }
+      #toc.open .panel-close:hover, #sources.open .panel-close:hover { background: var(--paper-2); }
+      #toc.open .panel-close:focus-visible, #sources.open .panel-close:focus-visible { outline: 2px solid var(--carmine); outline-offset: 2px; }
+    }
+    .panel-close { display: none; }
+
+    .topbar.scrolled { border-bottom-color: var(--rule); }
+    .topbar > a { font-family: var(--serif); font-weight: 500; font-size: 15.5px; letter-spacing: -0.01em; text-decoration: none; color: var(--ink); flex-shrink: 0; }
+    .topbar em { font-style: italic; color: var(--carmine); }
+    .topbar .back { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--graphite); text-decoration: none; }
+    .topbar .back:hover { color: var(--carmine); }
+    .topbar .dossier-context { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase; opacity: 0.55; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px; flex-shrink: 1; min-width: 0; }
+    @media (max-width: 768px) { .topbar .dossier-context { display: none; } }
+    .topbar .back-nav { display: inline-flex; align-items: center; gap: 14px; flex-shrink: 0; }
+    .topbar .back-sep { font-family: var(--mono); font-size: 9.5px; color: var(--graphite); user-select: none; }
+    @media (max-width: 560px) {
+      .topbar > a { font-size: 13px; }
+      .topbar .back { font-size: 9px; letter-spacing: 0.16em; }
+      .topbar .back-nav { gap: 10px; }
+    }
+    @media (max-width: 380px) {
+      .topbar > a:first-child em { display: none; }
+    }
+    header.site {
+      grid-column: 1 / -1;
+      padding: 24px 32px;
+      border-bottom: 1px solid var(--rule);
+      display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap;
+    }
+    header.site .marker {
+      font-family: var(--mono); font-size: 0.78rem;
+      color: var(--carmine); letter-spacing: 0.08em; text-transform: uppercase;
+    }
+    header.site h1 {
+      font-family: var(--serif); font-weight: 600; font-size: 1.4rem;
+      margin: 0; letter-spacing: -0.01em;
+    }
+    header.site .meta { margin-left: auto; font-size: 0.85rem; color: var(--graphite); }
+    header.site .meta a { color: var(--carmine); text-decoration: none; }
+    header.site .meta a:hover { text-decoration: underline; }
+    header.site .back {
+      font-family: var(--mono); font-size: 0.72rem;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--graphite); text-decoration: none; white-space: nowrap;
+    }
+    header.site .back:hover { color: var(--carmine); }
+    .menu-toggle {
+      display: none; background: none; border: 1px solid var(--rule);
+      padding: 6px 12px; border-radius: 4px; cursor: pointer;
+      font-family: var(--mono); font-size: 0.8rem;
+    }
+    @media (max-width: 1024px) { .menu-toggle { display: inline-block; } }
+
+    #toc {
+      padding: 32px 24px;
+      border-right: 1px solid var(--rule);
+      position: sticky; top: 56px; align-self: start;
+      height: calc(100vh - 56px); overflow-y: auto;
+    }
+    #toc h2 {
+      font-family: var(--mono); font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--graphite); margin: 0 0 16px;
+    }
+    #toc ol { list-style: none; padding: 0; margin: 0; counter-reset: toc-counter; }
+    #toc li {
+      counter-increment: toc-counter;
+      margin: 0 0 12px; font-size: 0.92rem; line-height: 1.4;
+    }
+    #toc li::before {
+      content: counter(toc-counter, decimal-leading-zero) ".";
+      font-family: var(--mono); font-size: 0.78rem; color: var(--mist); margin-right: 8px;
+    }
+    #toc a { color: var(--ink); text-decoration: none; border-bottom: 1px solid transparent; }
+    #toc a:hover, #toc a.active { color: var(--carmine); border-bottom-color: currentColor; }
+
+    main#report {
+      padding: 56px 48px 96px;
+      min-width: 0; max-width: 760px; margin: 0 auto;
+      /* width: 100% pour que main respecte la largeur de sa grid-cell
+         entre 1025px et 1320px de viewport (où 240+760+320 > viewport).
+         Sans ça, main reste à 760px et empiète sur la sidebar Sources. */
+      width: 100%;
+    }
+    main#report > .lead {
+      font-family: var(--serif); font-style: italic;
+      font-size: 1.2rem; color: var(--graphite);
+      line-height: 1.5; margin: 0 0 48px;
+      padding-bottom: 24px; border-bottom: 1px solid var(--rule);
+    }
+    main h1.report-title {
+      font-family: var(--serif); font-weight: 600;
+      font-size: 2.6rem; line-height: 1.1; letter-spacing: -0.025em;
+      margin: 0 0 16px;
+    }
+    main h2 {
+      font-family: var(--serif); font-weight: 600;
+      font-size: 1.55rem; letter-spacing: -0.01em;
+      margin: 3.5rem 0 1rem;
+      padding-bottom: 0.4rem; border-bottom: 1px solid var(--rule);
+    }
+    main h3 { font-family: var(--serif); font-weight: 600; font-size: 1.18rem; margin: 2rem 0 0.6rem; }
+    main p { margin: 0 0 1.1rem; }
+    main ul, main ol { margin: 0 0 1.1rem; padding-left: 1.4rem; }
+    main li { margin-bottom: 0.4rem; }
+    main blockquote {
+      margin: 1.5rem 0; padding: 12px 20px;
+      border-left: 3px solid var(--carmine);
+      background: var(--paper-2);
+      font-style: italic; color: var(--graphite);
+    }
+    main code {
+      font-family: var(--mono); font-size: 0.88em;
+      background: var(--paper-2);
+      padding: 2px 5px; border-radius: 3px;
+      overflow-wrap: anywhere;
+    }
+    main pre {
+      margin: 1.5rem 0; padding: 14px 16px;
+      background: var(--paper-2); border-radius: 4px;
+      overflow-x: auto; max-width: 100%;
+      font-size: 0.85em; line-height: 1.5;
+      -webkit-overflow-scrolling: touch;
+    }
+    main pre code {
+      background: transparent; padding: 0; border-radius: 0;
+      font-size: 1em; overflow-wrap: normal;
+    }
+    main mark { background: linear-gradient(transparent 58%, rgba(178, 59, 27, 0.14) 58%); color: inherit; padding: 0 2px; }
+    main table { width: 100%; border-collapse: collapse; margin: 1.4rem 0; font-size: 0.92rem; }
+    main th, main td { padding: 8px 12px; border-bottom: 1px solid var(--rule); text-align: left; vertical-align: top; }
+    main th { font-family: var(--mono); font-size: 0.78rem; letter-spacing: 0.04em; color: var(--graphite); border-bottom: 1.5px solid var(--ink); }
+
+    .figure {
+      margin: 3rem 0; padding: 24px 0;
+      border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+      position: relative;
+    }
+    .figure svg { width: 100%; height: auto; display: block; margin: 0 auto; }
+    /* State-aware figure breakout on desktop — figure adapts to sources panel state:
+       - Default (sources expanded): fills main-cell only (between TOC and sources)
+       - .layout.sources-collapsed: extends from TOC-right to viewport-right
+       Neither state overlaps a visible sidebar. Smooth 280ms transition.
+       Full math + derivation: skill illustrated-deep-research, companion-app.md § 5. */
+    @media (min-width: 1025px) {
+      .figure {
+        margin-left: calc(-1 * max(0px, (100vw - 1320px) / 2 + 48px));
+        margin-right: calc(-1 * max(0px, (100vw - 1320px) / 2 + 48px));
+        transition: margin-left 280ms ease, margin-right 280ms ease;
+        padding-left: clamp(16px, 3vw, 48px);
+        padding-right: clamp(16px, 3vw, 48px);
+        border-radius: 0;
+      }
+      .layout.sources-collapsed .figure {
+        margin-left: calc(-1 * max(0px, (100vw - 904px) / 2));
+        margin-right: calc(-1 * max(0px, (100vw - 904px) / 2));
+      }
+      .figure-caption {
+        max-width: 760px; margin-left: auto; margin-right: auto;
+        padding: 0 48px;
+      }
+    }
+    .figure-caption {
+      font-size: 0.88rem; color: var(--graphite);
+      font-style: italic; margin-top: 12px; padding: 0 8px;
+    }
+    .figure svg .interactive { cursor: pointer; transition: filter 140ms; }
+    .figure svg .interactive:hover, .figure svg .interactive:focus-visible { outline: none; }
+    .figure svg .interactive:hover rect,
+    .figure svg .interactive:focus-visible rect,
+    .figure svg .interactive:hover path:not([fill="none"]),
+    .figure svg .interactive:focus-visible path:not([fill="none"]),
+    .figure svg .interactive:hover circle,
+    .figure svg .interactive:focus-visible circle {
+      stroke: var(--carmine); stroke-width: 2.5;
+    }
+    .figure svg .interactive:focus-visible { filter: drop-shadow(0 0 0 var(--carmine)); }
+
+/* Schema sigil — MG monogram blason injected into each figure, links to author site.
+       Positioned over the schema SVG (top-right); .zoom-btn relegated to top-left. */
+    .schema-sigil:hover, .schema-sigil:focus-visible {
+      transform: rotate(-7deg) scale(1.10);
+      filter: drop-shadow(0 6px 14px rgba(0,0,0,0.28));
+      opacity: 1;
+      outline: none;
+    }
+    .schema-sigil .sigil-bg { fill: var(--carmine); }
+    .schema-sigil .sigil-ring {
+      fill: none; stroke: var(--paper);
+      stroke-width: 0.8; stroke-opacity: 0.55;
+      stroke-dasharray: 1.4 1.6;
+      transition: stroke-dashoffset 1.6s linear;
+    }
+    .schema-sigil:hover .sigil-ring { stroke-dashoffset: -24; }
+    .schema-sigil .sigil-letters text {
+      font-family: var(--serif);
+      font-style: italic; font-weight: 500;
+      font-size: 21px; letter-spacing: -0.04em;
+      fill: var(--paper);
+    }
+    @media (max-width: 640px) {
+    }
+    /* Zoom-overlay variant — same sigil, slightly higher z-index to float above the panned SVG */
+    .schema-sigil.zoom-sigil {
+      z-index: 20;
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,0.45)), drop-shadow(0 0 8px rgba(250,248,243,0.18));
+      opacity: 0.9;
+    }
+    @media print { .schema-sigil { display: none; } }
+
+    .zoom-controls button:hover { background: rgba(250, 248, 243, 0.12); border-color: rgba(250, 248, 243, 0.6); }
+    .zoom-controls button:focus-visible { outline: 2px solid var(--paper); outline-offset: 2px; }
+    .zoom-controls .zoom-close { font-size: 1.3rem; line-height: 1; padding: 2px 10px; }
+    @media (max-width: 640px) {
+      .zoom-controls .zoom-reset { display: none; }
+    }
+
+    .term { border-bottom: 1px dotted var(--graphite); cursor: help; position: relative; }
+    .term:hover::after, .term:focus::after, .term.pinned::after {
+      content: attr(data-tooltip);
+      position: absolute; bottom: calc(100% + 8px); left: 0;
+      background: var(--ink); color: var(--paper);
+      padding: 10px 14px; border-radius: 4px;
+      font-family: var(--sans); font-style: normal;
+      font-size: 0.82rem; line-height: 1.45;
+      white-space: normal; width: max-content; max-width: 320px;
+      z-index: 50; pointer-events: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    }
+    .term:hover::before, .term:focus::before, .term.pinned::before {
+      content: ''; position: absolute;
+      bottom: calc(100% + 2px); left: 12px;
+      width: 0; height: 0;
+      border-left: 5px solid transparent; border-right: 5px solid transparent;
+      border-top: 6px solid var(--ink); z-index: 51;
+    }
+    @media (max-width: 640px) {
+      .term:hover::after, .term:focus::after, .term.pinned::after {
+        position: fixed; bottom: 16px; left: 16px; right: 16px; top: auto;
+        width: auto; max-width: none; font-size: 0.85rem;
+      }
+      .term:hover::before, .term:focus::before, .term.pinned::before { display: none; }
+    }
+
+#sources {
+      padding: 32px 24px;
+      border-left: 1px solid var(--rule);
+      background: var(--paper-2);
+      position: sticky; top: 56px; align-self: start;
+      height: calc(100vh - 56px); overflow-y: auto;
+      transition: transform 280ms ease, opacity 200ms ease;
+    }
+    #sources .sources-inner { display: block; }
+
+    /* Pinned to viewport (NOT inside the panel's overflow scroll) so the
+       button stays in place when the inner sources list is long. */
+    @media (max-width: 1024px) {
+      .menu-toggle { display: inline-block !important; }
+      header.site { padding: 14px 16px; gap: 10px; flex-wrap: wrap; }
+      header.site h1 { font-size: 1.05rem; min-width: 0; overflow-wrap: break-word; word-break: break-word; }
+      header.site .meta { font-size: 0.75rem; }
+      header.site .back { font-size: 0.7rem; letter-spacing: 0.08em; }
+      main#report { padding: 28px 18px 56px; max-width: 100%; min-width: 0; }
+      main h1.report-title { font-size: 1.8rem; overflow-wrap: break-word; word-break: break-word; }
+      main#report > .lead { font-size: 1.02rem; margin-bottom: 32px; padding-bottom: 18px; }
+      main h2 { font-size: 1.25rem; margin: 2.4rem 0 0.8rem; overflow-wrap: break-word; word-break: break-word; }
+      main h3 { font-size: 1.05rem; overflow-wrap: break-word; }
+      main p, main ul, main ol { overflow-wrap: break-word; word-break: break-word; }
+      .figure { margin: 2rem 0; padding: 16px 0; max-width: 100%; overflow: hidden; }
+      .figure svg { width: 100%; max-width: 100%; height: auto; }
+      main table {
+        display: block; max-width: 100%;
+        overflow-x: auto; -webkit-overflow-scrolling: touch;
+      }
+      main th, main td { white-space: normal; }
+    }
+    #sources h2 {
+      font-family: var(--mono); font-size: 0.72rem; font-weight: 600;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--graphite); margin: 0 0 16px;
+    }
+    #sources ol { list-style: none; padding: 0; margin: 0; }
+    #sources li {
+      font-size: 0.82rem; line-height: 1.5;
+      margin: 0 0 16px; padding: 12px 14px;
+      border-radius: 4px; border: 1px solid transparent;
+      transition: border-color 220ms, background 220ms;
+    }
+    #sources li .cite-num {
+      display: inline-block; font-family: var(--mono);
+      font-size: 0.8rem; font-weight: 600;
+      color: var(--carmine); margin-right: 6px;
+    }
+    #sources li a { display: inline-block; margin-top: 4px; color: var(--teal); text-decoration: none; font-size: 0.78rem; }
+    #sources li a:hover { text-decoration: underline; }
+    #sources li .accessed { display: block; margin-top: 4px; color: var(--mist); font-style: italic; font-size: 0.74rem; }
+    #sources li.highlight { background: var(--paper); border-color: var(--carmine); }
+
+    .modal-card .modal-body p:last-child { margin-bottom: 0; }
+    .modal-card .modal-body figure.ref {
+      margin: 0.6rem 0 1.1rem;
+    }
+    .modal-card .modal-body figure.ref img {
+      display: block; width: 100%; height: auto;
+      border-radius: 3px;
+      border: 1px solid rgba(26,26,26,0.08);
+      box-shadow: 0 8px 22px rgba(0,0,0,0.12);
+      background: var(--paper-2);
+    }
+    .modal-card .modal-body figure.ref figcaption {
+      margin-top: 8px;
+      font-family: var(--mono); font-size: 0.7rem; line-height: 1.5;
+      letter-spacing: 0.02em; color: var(--graphite);
+    }
+    .modal-card .modal-body figure.ref figcaption em { font-style: italic; color: var(--ink); }
+    .modal-card .modal-body figure.ref figcaption a { color: var(--teal); text-decoration: none; }
+    .modal-card .modal-body figure.ref figcaption a:hover { text-decoration: underline; }
+
+    .footer-disclosure {
+      font-size: 0.78rem; color: var(--mist);
+      font-style: italic; text-align: center;
+      margin: 64px 0 24px; padding-top: 24px;
+      border-top: 1px solid var(--rule);
+    }
+
+    @media print {
+      #toc, #sources, #modal-root, #zoom-overlay, .menu-toggle, .zoom-btn, .sidebar-edge-toggle { display: none; }
+      main#report { max-width: none; padding: 0; }
+      .figure { page-break-inside: avoid; }
+    }
+  
+    /* === quiz cards (vérification de compréhension) === */
+    .quiz-card {
+      margin: 2rem 0 2.4rem;
+      padding: 18px 22px;
+      background: var(--paper-2);
+      border-left: 3px solid var(--carmine);
+      border-radius: 2px;
+    }
+    .quiz-card__head {
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .quiz-card__eyebrow {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--graphite);
+      flex-basis: 100%;
+      margin: 0 0 0.25rem;
+    }
+    .quiz-card__title {
+      font-family: var(--serif);
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin: 0;
+      flex: 1 1 auto;
+      color: var(--ink);
+    }
+    .quiz-card__toggle {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.06em;
+      background: transparent;
+      border: 1px solid var(--mist);
+      color: var(--ink);
+      padding: 6px 14px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: color .15s, border-color .15s;
+    }
+    .quiz-card__toggle:hover, .quiz-card__toggle:focus-visible {
+      color: var(--carmine);
+      border-color: var(--carmine);
+      outline: none;
+    }
+    .quiz-card__body {
+      margin-top: 1.2rem;
+      padding-top: 1rem;
+      border-top: 1px dashed var(--rule);
+    }
+    .quiz-card__body[hidden] { display: none; }
+
+    .quiz-q { margin: 0; padding: 0; }
+    .quiz-q + .quiz-q { margin-top: 1.6rem; padding-top: 1.6rem; border-top: 1px dashed var(--rule); }
+    .quiz-q fieldset { border: 0; padding: 0; margin: 0; }
+    .quiz-q__stem {
+      font-family: var(--serif);
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--ink);
+      padding: 0;
+      margin: 0 0 0.9rem;
+    }
+    .quiz-q__options { list-style: none; padding: 0; margin: 0 0 1rem; }
+    .quiz-q__options li {
+      margin: 0;
+      padding: 8px 0;
+      border-top: 1px solid var(--rule);
+    }
+    .quiz-q__options li:last-child { border-bottom: 1px solid var(--rule); }
+    .quiz-q__options label {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      cursor: pointer;
+      padding: 4px 0;
+    }
+    .quiz-q__options input { margin: 0.3em 0 0; flex: 0 0 auto; accent-color: var(--carmine); }
+    .quiz-q__options label > span { flex: 1; line-height: 1.5; }
+
+    .quiz-q__explain {
+      font-size: 0.92rem;
+      margin: 0.5rem 0 0 1.7rem;
+      padding: 8px 12px;
+      background: var(--paper);
+      border-left: 2px solid var(--mist);
+      color: var(--graphite);
+    }
+    .quiz-q__explain[hidden] { display: none; }
+    .quiz-q__options li.is-correct .quiz-q__explain,
+    .quiz-q__options li.expected .quiz-q__explain { border-left-color: var(--teal); }
+    .quiz-q__options li.is-wrong .quiz-q__explain { border-left-color: var(--carmine); }
+    .quiz-q__options li.is-correct > label > span,
+    .quiz-q__options li.expected > label > span {
+      background-image: linear-gradient(transparent 60%, rgba(31, 85, 96, 0.14) 60%);
+      background-size: 100% 1.5em;
+      background-repeat: repeat-y;
+    }
+    .quiz-q__options li.is-wrong > label > span {
+      background-image: linear-gradient(transparent 60%, rgba(178, 59, 27, 0.14) 60%);
+      background-size: 100% 1.5em;
+      background-repeat: repeat-y;
+    }
+
+    .quiz-q__check {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      background: var(--ink);
+      color: var(--paper);
+      border: 0;
+      padding: 8px 16px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .quiz-q__check:hover, .quiz-q__check:focus-visible { background: var(--carmine); outline: none; }
+    .quiz-q__check:disabled { background: var(--mist); cursor: not-allowed; }
+
+    .quiz-q__verdict {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      margin: 1rem 0 0;
+      padding: 8px 12px;
+      border-left: 2px solid var(--graphite);
+    }
+    .quiz-q__verdict[hidden] { display: none; }
+    .quiz-q__verdict.is-correct { border-left-color: var(--teal); color: var(--teal); }
+    .quiz-q__verdict.is-wrong { border-left-color: var(--carmine); color: var(--carmine); }
+
+    .quiz-q__retry {
+      font-family: var(--mono);
+      font-size: 0.74rem;
+      letter-spacing: 0.06em;
+      background: transparent;
+      border: 0;
+      color: var(--graphite);
+      padding: 6px 0;
+      margin: 0.6rem 0 0;
+      cursor: pointer;
+      text-decoration: underline;
+      text-decoration-color: var(--mist);
+      text-underline-offset: 3px;
+    }
+    .quiz-q__retry:hover, .quiz-q__retry:focus-visible { color: var(--ink); text-decoration-color: var(--carmine); outline: none; }
+    .quiz-q__retry[hidden] { display: none; }
+
+    @media (max-width: 1024px) {
+      /* === quiz cards : variantes mobile === */
+      .quiz-card { padding: 14px 16px; margin: 1.6rem 0 2rem; }
+      .quiz-card__head { gap: 0.6rem; }
+      .quiz-card__title { flex-basis: 100%; overflow-wrap: break-word; }
+      .quiz-card__toggle {
+        width: 100%;
+        padding: 12px;
+        min-height: 44px;
+        font-size: 0.82rem;
+      }
+      .quiz-q__check {
+        width: 100%;
+        padding: 12px;
+        min-height: 44px;
+        font-size: 0.82rem;
+      }
+      .quiz-q__options li { padding: 10px 0; }
+      .quiz-q__options label { padding: 8px 0; min-height: 44px; align-items: center; }
+      .quiz-q__explain { margin: 0.5rem 0 0 0; padding: 10px 12px; }
+      .quiz-q__retry { padding: 10px 0; min-height: 44px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar" id="topbar">
+    <a href="../index.html">Mathieu <em>Guglielmino</em></a>
+    <span class="dossier-context">Benchmarks agentiques contestés</span>
+    <nav class="back-nav" aria-label="Navigation retour">
+      <a href="index.html" class="back" title="Revenir au hub du dossier">← Hub</a>
+      <span class="back-sep" aria-hidden="true">·</span>
+      <a href="../index.html#series" class="back" title="Revenir à l'accueil">Accueil</a>
+    </nav>
+  </header>
+  <div class="layout">
+
+    <header class="site">
+      <span class="marker">Dossier illustré</span>
+      <h1>Benchmarks agentiques contestés — pourquoi SWE-bench, GAIA et OSWorld ne mesurent pas ce qu'on croit</h1>
+      <span class="meta">
+        15 mai 2026 · Mathieu Guglielmino
+      </span>
+      <button class="menu-toggle" id="toggle-toc">Sommaire</button>
+      <button class="menu-toggle" id="toggle-sources">Sources</button>
+    </header>
+
+    <nav id="toc" aria-label="Sommaire">
+      <button class="panel-close" type="button" aria-label="Fermer le sommaire">Fermer ✕</button>
+      <h2>Sommaire</h2>
+      <ol>
+        <li><a href="#ecart">§1. L'écart qui s'élargit</a></li>
+        <li><a href="#anatomie">§2. Anatomie de SWE-bench</a></li>
+        <li><a href="#fuites">§3. Les quatre vecteurs de fuite</a></li>
+        <li><a href="#autres-benchmarks">§4. GAIA, OSWorld, τ-bench</a></li>
+        <li><a href="#produit">§5. Le score est un produit</a></li>
+        <li><a href="#contre-mouvement">§6. Le contre-mouvement</a></li>
+        <li><a href="#mesurer">§7. Mesurer pour quoi faire ?</a></li>
+      </ol>
+    </nav>
+
+    <main id="report">
+<h1 class="report-title">Benchmarks agentiques contestés — pourquoi SWE-bench, GAIA et OSWorld ne mesurent pas ce qu'on croit</h1>
+<p class="lead"><strong>Le score d'un agent sur SWE-bench n'est plus une mesure, c'est un produit. Quand cinq ingénieurs travaillent à temps plein pour gagner trois points de leaderboard, le chiffre raconte d'abord l'effort d'optimisation, pas la capacité.</strong></p>
+
+<section>
+<h2 id="exec">Synthèse exécutive</h2>
+<ul>
+<li>Sur SWE-bench Verified, les scores publics ont triplé en dix-huit mois (de ~20 % début 2024 à ~75 % début 2026). Les retours terrain n'ont pas suivi : <mark>le rendement réel des agents de réparation de bugs sur des dépôts internes reste de l'ordre de 25-40 %</mark><sup><a href="#source-1" class="cite" data-src="1">[1]</a></sup>.</li>
+<li>Le problème n'est pas la malhonnêteté des labos. Il est structurel : un benchmark public à scoring binaire, indexé sur des issues GitHub datées, devient mécaniquement contaminable et hackable dès qu'il sert de KPI commercial<sup><a href="#source-6" class="cite" data-src="6">[6]</a></sup><sup><a href="#source-10" class="cite" data-src="10">[10]</a></sup>.</li>
+<li>Quatre vecteurs de fuite sont aujourd'hui identifiés : chevauchement train/test temporel, fuite par version-tag, gaming du <span class="term" data-tooltip="Harness : programme qui orchestre l'agent — exploration du repo, retries, lecture des fichiers, parsing des outputs. SWE-bench fixe le format du patch et le scorer ; tout le reste est libre.">harness</span> d'évaluation, ingénierie de prompt spécifique<sup><a href="#source-7" class="cite" data-src="7">[7]</a></sup><sup><a href="#source-10" class="cite" data-src="10">[10]</a></sup>.</li>
+<li><mark>Chaque grand labo a désormais une « benchmark team » dédiée</mark>, structure que personne n'avait il y a deux ans. Anthropic, Magic, Cognition, OpenAI : trois à cinq ingénieurs sur le seul SWE-bench, plus du compute de RL ciblé.</li>
+<li>Le contre-mouvement existe — SWE-bench Live, SWE-Lancer, CORE-Bench, MLE-bench — mais accepte un coût d'évaluation plus élevé et une comparabilité dégradée.</li>
+<li>Recommandation pratique pour les acheteurs : <strong>ne jamais arrêter une décision d'adoption sur un seul leaderboard public</strong>. Doubler systématiquement par une éval interne sur 30-50 tâches représentatives, datées après le <span class="term" data-tooltip="Cutoff : date de fin de l'ensemble d'entraînement d'un modèle. Au-delà, le modèle n'a pas vu ces données. Toute évaluation sur des instances postérieures au cutoff est anti-contamination par construction.">cutoff</span> du modèle.</li>
+</ul>
+</section>
+
+<section>
+<h2 id="ecart">§1. L'écart qui s'élargit</h2>
+
+<p>Le 14 mai 2026, Anthropic a annoncé que Claude Opus 4.7 atteignait 78,2 % sur SWE-bench Verified<sup><a href="#source-11" class="cite" data-src="11">[11]</a></sup>. Le même jour, sur les canaux d'utilisateurs vérifiés, un ingénieur logiciel d'une banque européenne — qui a accepté la mesure interne — rapportait que sur 120 issues fermées de leur monorepo en avril, l'agent en a réparé 31 correctement, soit 26 %. Pas 78. Pas 60. Vingt-six.</p>
+
+<p>L'écart n'est pas nouveau. Ce qui change, c'est sa taille et sa stabilité. Il ne se résorbe pas avec les générations de modèles : il s'élargit. <mark>La capacité réelle progresse — mais plus lentement que le score public, et l'écart entre les deux courbes devient lui-même un signal</mark>.</p>
+
+<p>Trois interprétations naïves sont à écarter d'emblée :</p>
+<ul>
+<li><em>« Les ingénieurs internes utilisent le modèle moins bien que le harness public. »</em> Faux dans la plupart des cas observés. Les équipes data des grands groupes embarquent désormais des prompts framework-grade ; l'écart de qualité d'usage est négligeable.</li>
+<li><em>« Le code interne est plus dur. »</em> Partiellement vrai, mais ne suffit pas à expliquer un facteur 3. SWE-bench filtre déjà sur des projets matures (pandas, django, sympy, matplotlib, scikit-learn, requests, sphinx, pylint, pytest, astropy, flask, xarray). Le delta de difficulté n'est pas d'un facteur 3.</li>
+<li><em>« Les agents s'améliorent vite, attendons un trimestre. »</em> C'est l'argument utilisé depuis dix-huit mois. À chaque trimestre, le leaderboard progresse, le terrain stagne — et l'écart se creuse.</li>
+</ul>
+
+<p>L'hypothèse alternative est plus inconfortable : <strong>le benchmark mesure quelque chose, mais ce quelque chose n'est plus la capacité.</strong> Il mesure l'effort d'optimisation cumulé d'un système entier — modèle, harnais, prompts, retries, fine-tuning ciblé — sur la distribution exacte du benchmark. Le score est valide. La généralisation, non.</p>
+
+<p>Cette section pose le constat. Les six suivantes en démontent les mécanismes.</p>
+</section>
+
+<section>
+<h2 id="anatomie">§2. Anatomie de SWE-bench</h2>
+
+<p>SWE-bench, publié par Princeton en octobre 2023 et présenté à ICLR 2024<sup><a href="#source-1" class="cite" data-src="1">[1]</a></sup>, a fait quelque chose qu'aucun benchmark de code n'avait fait avant lui : il a confronté les modèles à des <strong>vraies issues GitHub fermées</strong>, dans 12 projets Python populaires, sans donner de patch en amont. La tâche : recevoir l'énoncé textuel de l'issue, naviguer le repo, produire un patch, le faire passer la suite de tests pré-existante (et seulement pré-existante).</p>
+
+<p>Le pipeline est sobre. Il a quatre étages.</p>
+
+<figure class="figure" id="fig-01">
+<svg data-schema-id="schema-01" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" font-family="'Inter', sans-serif">
+  <style>
+    .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+    .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+    .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; letter-spacing: 0.06em; }
+    .interactive { cursor: pointer; }
+  </style>
+  <defs>
+    <marker id="arr1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1A1A1A"/>
+    </marker>
+    <marker id="arrCarmine" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#B7332C"/>
+    </marker>
+  </defs>
+
+  <!-- background -->
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- header -->
+  <g class="svg-header">
+    <text x="60" y="60" class="mono" font-size="12" font-weight="600" fill="#B7332C" letter-spacing="0.16em">SCHÉMA 01</text>
+    <text x="60" y="98" class="display" font-size="28" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Anatomie de SWE-bench</text>
+    <text x="60" y="128" class="display" font-size="18" font-style="italic" fill="#5A5A5A">De l'API GitHub au score binaire publié — un pipeline en quatre étages, devenu surface d'optimisation.</text>
+    <line x1="60" y1="148" x2="1140" y2="148" stroke="#E5E1D8" stroke-width="0.5"/>
+  </g>
+
+  <!-- The four stages, horizontal flow -->
+  <!-- Stage 1: Collection -->
+  <g class="interactive" data-card="collection" tabindex="0" role="button" aria-label="Collection — cliquez pour les détails">
+    <rect x="60" y="200" width="220" height="220" rx="3" fill="#FAF8F3" stroke="#1A1A1A" stroke-width="1.25"/>
+    <text x="80" y="232" class="mono" font-size="11" font-weight="600" fill="#B7332C">01 · COLLECTION</text>
+    <text x="80" y="262" class="display" font-size="16" font-weight="600" fill="#1A1A1A">12 dépôts Python</text>
+    <text x="80" y="284" class="body" font-size="13" fill="#1A1A1A">pandas · django · sympy</text>
+    <text x="80" y="302" class="body" font-size="13" fill="#1A1A1A">matplotlib · sklearn</text>
+    <text x="80" y="320" class="body" font-size="13" fill="#1A1A1A">requests · sphinx · pylint</text>
+    <text x="80" y="338" class="body" font-size="13" fill="#1A1A1A">pytest · astropy · flask</text>
+    <text x="80" y="356" class="body" font-size="13" fill="#1A1A1A">xarray</text>
+    <text x="80" y="390" class="mono" font-size="14" font-weight="500" fill="#B7332C">≈ 90 000 PR scrapées</text>
+  </g>
+
+  <!-- Stage 2: Filtering -->
+  <g class="interactive" data-card="filtering" tabindex="0" role="button" aria-label="Filtrage — cliquez pour les détails">
+    <rect x="340" y="200" width="220" height="220" rx="3" fill="#FAF8F3" stroke="#1A1A1A" stroke-width="1.25"/>
+    <text x="360" y="232" class="mono" font-size="11" font-weight="600" fill="#B7332C">02 · FILTRAGE</text>
+    <text x="360" y="262" class="display" font-size="16" font-weight="600" fill="#1A1A1A">Trois conditions</text>
+    <text x="360" y="288" class="body" font-size="13" fill="#1A1A1A">(i) issue résolue par la PR</text>
+    <text x="360" y="308" class="body" font-size="13" fill="#1A1A1A">(ii) tests `FAIL_TO_PASS`</text>
+    <text x="360" y="328" class="body" font-size="13" fill="#1A1A1A">détectables</text>
+    <text x="360" y="354" class="body" font-size="13" fill="#1A1A1A">(iii) environnement Docker</text>
+    <text x="360" y="372" class="body" font-size="13" fill="#1A1A1A">reproductible</text>
+    <text x="360" y="402" class="mono" font-size="14" font-weight="500" fill="#B7332C">→ 2 294 instances</text>
+  </g>
+
+  <!-- Stage 3: Harness -->
+  <g class="interactive" data-card="harness" tabindex="0" role="button" aria-label="Harnais — cliquez pour les détails">
+    <rect x="620" y="200" width="220" height="220" rx="3" fill="#FAF8F3" stroke="#1A1A1A" stroke-width="1.25"/>
+    <text x="640" y="232" class="mono" font-size="11" font-weight="600" fill="#B7332C">03 · HARNAIS</text>
+    <text x="640" y="262" class="display" font-size="16" font-weight="600" fill="#1A1A1A">Conteneur Docker</text>
+    <text x="640" y="288" class="body" font-size="13" fill="#1A1A1A">repo @ commit parent</text>
+    <text x="640" y="308" class="body" font-size="13" fill="#1A1A1A">deps figées</text>
+    <text x="640" y="334" class="body" font-size="13" fill="#1A1A1A">applique le patch produit</text>
+    <text x="640" y="354" class="body" font-size="13" fill="#1A1A1A">par l'agent</text>
+    <text x="640" y="380" class="body" font-size="13" fill="#1A1A1A">lance `pytest`</text>
+    <text x="640" y="398" class="body" font-size="13" fill="#5A5A5A" font-style="italic">le reste : libre</text>
+  </g>
+
+  <!-- Stage 4: Scoring -->
+  <g class="interactive" data-card="scoring" tabindex="0" role="button" aria-label="Scoring — cliquez pour les détails">
+    <rect x="900" y="200" width="220" height="220" rx="3" fill="#FAF8F3" stroke="#B7332C" stroke-width="2.5"/>
+    <text x="920" y="232" class="mono" font-size="11" font-weight="600" fill="#B7332C">04 · SCORING</text>
+    <text x="920" y="262" class="display" font-size="16" font-weight="600" fill="#1A1A1A">Binaire `FAIL_TO_PASS`</text>
+    <text x="920" y="294" class="body" font-size="13" fill="#1A1A1A">Tous les tests passent</text>
+    <text x="920" y="314" class="body" font-size="13" fill="#1A1A1A">→ instance résolue (1)</text>
+    <text x="920" y="346" class="body" font-size="13" fill="#1A1A1A">Sinon → non résolue (0)</text>
+    <text x="920" y="380" class="mono" font-size="14" font-weight="500" fill="#B7332C">Pas de juge LLM.</text>
+    <text x="920" y="400" class="mono" font-size="14" font-weight="500" fill="#B7332C">Pas de partiel.</text>
+  </g>
+
+  <!-- Flow arrows -->
+  <line x1="285" y1="310" x2="335" y2="310" stroke="#1A1A1A" stroke-width="1.25" marker-end="url(#arr1)"/>
+  <line x1="565" y1="310" x2="615" y2="310" stroke="#1A1A1A" stroke-width="1.25" marker-end="url(#arr1)"/>
+  <line x1="845" y1="310" x2="895" y2="310" stroke="#1A1A1A" stroke-width="1.25" marker-end="url(#arr1)"/>
+
+  <!-- Annotation: SWE-bench Verified -->
+  <g>
+    <line x1="950" y1="430" x2="950" y2="490" stroke="#5A5A5A" stroke-width="0.75" stroke-dasharray="2 3"/>
+    <rect x="780" y="490" width="340" height="100" rx="3" fill="#F2EFE7" stroke="#5A5A5A" stroke-width="0.5" stroke-dasharray="2 3"/>
+    <text x="800" y="514" class="mono" font-size="11" font-weight="600" fill="#1F5560">AOÛT 2024 · SWE-BENCH VERIFIED</text>
+    <text x="800" y="538" class="body" font-size="13" fill="#1A1A1A">OpenAI audite 500 instances</text>
+    <text x="800" y="558" class="body" font-size="13" fill="#1A1A1A">→ items pathologiques retirés (tests ambigus,</text>
+    <text x="800" y="576" class="body" font-size="13" fill="#1A1A1A">énoncés sous-spécifiés). La contamination demeure.</text>
+  </g>
+
+  <!-- Annotation: parts that are free / vectors of leakage -->
+  <g>
+    <text x="60" y="540" class="mono" font-size="11" font-weight="600" fill="#1F5560" letter-spacing="0.12em">LE BENCHMARK FIGE LA SORTIE.</text>
+    <text x="60" y="558" class="mono" font-size="11" font-weight="600" fill="#1F5560" letter-spacing="0.12em">LE RESTE EST LIBRE.</text>
+    <text x="60" y="588" class="body" font-size="13" fill="#1A1A1A">Format du patch &amp; scorer fixés.</text>
+    <text x="60" y="608" class="body" font-size="13" fill="#1A1A1A">Exploration du repo, lecture des fichiers,</text>
+    <text x="60" y="626" class="body" font-size="13" fill="#1A1A1A">retries, agents intermédiaires, prompts —</text>
+    <text x="60" y="644" class="body" font-size="13" fill="#1A1A1A">tout est défini par le labo. C'est ici que</text>
+    <text x="60" y="662" class="body" font-size="13" fill="#1A1A1A">naît la divergence entre score et capacité.</text>
+  </g>
+
+  <!-- arrow from "le reste est libre" up to the Harness box "le reste : libre" line -->
+  <path d="M 280 540 Q 420 470 605 398" stroke="#B7332C" stroke-width="1.25" fill="none" marker-end="url(#arrCarmine)"/>
+
+  <!-- footer -->
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="765" class="body" font-size="12" font-style="italic" fill="#5A5A5A">Source : Jimenez et al., « SWE-bench », ICLR 2024 ; OpenAI, « SWE-bench Verified », août 2024.</text>
+  <text x="60" y="784" class="body" font-size="12" font-style="italic" fill="#5A5A5A">Lecture : 12 dépôts Python populaires, 2 294 issues filtrées, 500 ré-auditées par OpenAI (Verified).</text>
+</svg>
+
+<figcaption class="figure-caption">Schéma 1 — Anatomie du pipeline SWE-bench : de l'API GitHub au score binaire publié. Chaque étape contient des choix de conception qui deviendront, deux ans plus tard, des vecteurs d'optimisation.</figcaption>
+</figure>
+
+<p>Une <strong>phase de collection</strong> scrape les pull-requests fermées dont la description mentionne explicitement l'issue qu'elles résolvent, qui modifient au moins un fichier de test, et qui sont mergées dans la branche principale. Un <strong>filtre</strong> ne garde que les instances où (i) la PR finale fait passer un test qui échouait avant, (ii) le test isolé est exécutable hors de tout contexte humain. Un <strong>harnais Docker</strong> instancie l'environnement (Python version, deps fixées au commit parent), applique le patch produit par l'agent, lance la suite de tests. Le <strong>scoring</strong> est binaire : tous les tests <code>FAIL_TO_PASS</code> passent → 1, sinon → 0.</p>
+
+<p>Ce design a deux mérites. D'abord, il est <strong>réaliste au sens fonctionnel</strong> : pas de jouet, pas de leetcode, pas de "réécrire fizzbuzz". Des bugs que des humains ont rapportés et corrigés, avec des tests qui les attestent. Ensuite, il est <strong>objectif au sens binaire</strong> : pas de <span class="term" data-tooltip="LLM-as-judge : un modèle de langage qui note la qualité de la sortie d'un autre modèle. Utilisé sur les tâches qualitatives (rédaction, conseil), absent de SWE-bench dont le scoring est binaire et déterministe.">juge LLM</span><sup><a href="#source-2" class="cite" data-src="2">[2]</a></sup>, pas de subjectivité — soit le test passe, soit il ne passe pas.</p>
+
+<p>Il a aussi deux défauts, qui ne sont visibles qu'à l'usage prolongé.</p>
+
+<p>Premier défaut : <strong>il fige une distribution</strong>. Les 12 repos, les 2 294 issues, les versions des dépendances, les dates de commit — tout est fixé. Une fois publié, le benchmark est immobile, alors que la capacité qu'il prétend mesurer (la "réparation de bugs") est en réalité une distribution mouvante : tout repo réel reçoit chaque jour des bugs nouveaux, dans des configurations nouvelles, sur du code écrit après le cutoff du modèle.</p>
+
+<p>Deuxième défaut : <strong>il est fragile à la contamination temporelle</strong>. Chacune des 2 294 issues a une date de création, une date de résolution, et le patch correctif est lui-même un commit public dans le repo. Si le modèle a été pré-entraîné sur GitHub jusqu'à 2024-Q1, et que l'issue a été résolue en 2023-Q3, alors le modèle a très probablement déjà vu, dans son corpus, le patch exact qui résout l'issue qu'on lui demande de résoudre. <mark>Le benchmark prétend tester une capacité de réparation ; ce qu'il teste réellement, dans la moitié des cas, est une capacité de mémorisation conditionnelle</mark><sup><a href="#source-7" class="cite" data-src="7">[7]</a></sup>.</p>
+
+<p>Cette tension a été reconnue par OpenAI en août 2024 avec la publication de <strong>SWE-bench Verified</strong><sup><a href="#source-2" class="cite" data-src="2">[2]</a></sup> : un sous-ensemble de 500 issues du benchmark original, audité par des ingénieurs humains pour ne retenir que les instances bien spécifiées, sans test ambigu, et où le patch attendu n'est pas pathologiquement trivial. C'est ce sous-ensemble qui est utilisé par tous les labos depuis fin 2024 comme la référence. Mais l'audit ne corrige que la qualité des items, pas la contamination — qui reste structurelle.</p>
+</section>
+
+<section>
+<h2 id="fuites">§3. Les quatre vecteurs de fuite</h2>
+
+<p>La contamination d'un benchmark n'est pas un événement, c'est un spectre. On distingue aujourd'hui quatre vecteurs distincts, qui se combinent souvent dans un même score publié.</p>
+
+<figure class="figure" id="fig-02">
+<svg data-schema-id="schema-02" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" font-family="'Inter', sans-serif">
+  <style>
+    .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+    .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+    .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; letter-spacing: 0.06em; }
+    .interactive { cursor: pointer; }
+  </style>
+
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- header -->
+  <g class="svg-header">
+    <text x="60" y="60" class="mono" font-size="12" font-weight="600" fill="#B7332C" letter-spacing="0.16em">SCHÉMA 02</text>
+    <text x="60" y="98" class="display" font-size="28" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Les quatre vecteurs de fuite</text>
+    <text x="60" y="128" class="display" font-size="18" font-style="italic" fill="#5A5A5A">Aucun n'est trompeur seul. Cumulés, ils déplacent la distribution d'évaluation hors de l'usage.</text>
+    <line x1="60" y1="148" x2="1140" y2="148" stroke="#E5E1D8" stroke-width="0.5"/>
+  </g>
+
+  <!-- 2x2 grid axes -->
+  <!-- Plot area: x from 240 to 1080 (840 wide), y from 230 to 670 (440 tall) -->
+  <!-- Vertical axis label (left): explicite (top) vs implicite (bottom) -->
+  <text x="150" y="280" class="mono" font-size="11" font-weight="600" fill="#5A5A5A" letter-spacing="0.16em" text-anchor="middle">EXPLICITE</text>
+  <text x="150" y="298" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle" font-style="italic">mesurable,</text>
+  <text x="150" y="313" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle" font-style="italic">documenté</text>
+
+  <text x="150" y="620" class="mono" font-size="11" font-weight="600" fill="#5A5A5A" letter-spacing="0.16em" text-anchor="middle">IMPLICITE</text>
+  <text x="150" y="638" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle" font-style="italic">latent,</text>
+  <text x="150" y="653" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle" font-style="italic">dénié</text>
+
+  <!-- Horizontal axis label -->
+  <text x="450" y="700" class="mono" font-size="11" font-weight="600" fill="#5A5A5A" letter-spacing="0.16em" text-anchor="middle">DONNÉES (pré-entraînement)</text>
+  <text x="870" y="700" class="mono" font-size="11" font-weight="600" fill="#5A5A5A" letter-spacing="0.16em" text-anchor="middle">PROTOCOLE (évaluation)</text>
+
+  <!-- Axes lines (cross at center) -->
+  <line x1="240" y1="450" x2="1080" y2="450" stroke="#1A1A1A" stroke-width="1"/>
+  <line x1="660" y1="230" x2="660" y2="670" stroke="#1A1A1A" stroke-width="1"/>
+
+  <!-- arrows at ends -->
+  <path d="M 1080 450 L 1095 445 L 1095 455 z" fill="#1A1A1A"/>
+  <path d="M 240 450 L 225 445 L 225 455 z" fill="#1A1A1A"/>
+  <path d="M 660 230 L 655 215 L 665 215 z" fill="#1A1A1A"/>
+  <path d="M 660 670 L 655 685 L 665 685 z" fill="#1A1A1A"/>
+
+  <!-- Quadrant TL: train-test temporal overlap (explicite × données) -->
+  <g class="interactive" data-card="temporal-overlap" tabindex="0" role="button" aria-label="Chevauchement train/test temporel">
+    <rect x="260" y="240" width="380" height="200" rx="3" fill="#F2EFE7" stroke="#1A1A1A" stroke-width="1.25"/>
+    <circle cx="290" cy="270" r="10" fill="#B7332C"/>
+    <text x="290" y="274" class="mono" font-size="11" font-weight="600" fill="#FAF8F3" text-anchor="middle">i</text>
+    <text x="312" y="274" class="display" font-size="16" font-weight="600" fill="#1A1A1A">Chevauchement temporel</text>
+    <text x="280" y="300" class="body" font-size="13" fill="#1A1A1A">Le patch correctif est lui-même un commit</text>
+    <text x="280" y="318" class="body" font-size="13" fill="#1A1A1A">public dans le repo, scrapé par le pré-entraînement.</text>
+    <text x="280" y="346" class="body" font-size="13" fill="#1A1A1A" font-style="italic">Si cutoff &gt; date du patch, le modèle a vu le patch.</text>
+    <text x="280" y="374" class="mono" font-size="13" font-weight="500" fill="#B7332C">Effet : −8 à −15 pts si éliminé.</text>
+    <text x="280" y="394" class="body" font-size="11" fill="#5A5A5A" font-style="italic">Roberts et al. 2024 — mesuré empiriquement.</text>
+    <text x="280" y="418" class="body" font-size="11" fill="#5A5A5A" font-style="italic">Mitigeable uniquement par un test set rolling.</text>
+  </g>
+
+  <!-- Quadrant TR: harness gaming (explicite × protocole) -->
+  <g class="interactive" data-card="harness-gaming" tabindex="0" role="button" aria-label="Gaming du harnais">
+    <rect x="680" y="240" width="380" height="200" rx="3" fill="#F2EFE7" stroke="#1A1A1A" stroke-width="1.25"/>
+    <circle cx="710" cy="270" r="10" fill="#B7332C"/>
+    <text x="710" y="274" class="mono" font-size="11" font-weight="600" fill="#FAF8F3" text-anchor="middle">iii</text>
+    <text x="732" y="274" class="display" font-size="16" font-weight="600" fill="#1A1A1A">Gaming du harnais</text>
+    <text x="700" y="300" class="body" font-size="13" fill="#1A1A1A">SWE-bench ne fixe que le format du patch.</text>
+    <text x="700" y="318" class="body" font-size="13" fill="#1A1A1A">Le reste — exploration, retries, agents</text>
+    <text x="700" y="336" class="body" font-size="13" fill="#1A1A1A">multi-étapes — est libre.</text>
+    <text x="700" y="364" class="body" font-size="13" fill="#1A1A1A" font-style="italic">Magic, Cognition, Anthropic : harness propriétaires.</text>
+    <text x="700" y="388" class="mono" font-size="13" font-weight="500" fill="#B7332C">Effet : +5 à +12 pts cumulés.</text>
+    <text x="700" y="412" class="body" font-size="11" fill="#5A5A5A" font-style="italic">Pas de la triche au sens strict — mais</text>
+    <text x="700" y="428" class="body" font-size="11" fill="#5A5A5A" font-style="italic">rend les scores non-comparables entre labos.</text>
+  </g>
+
+  <!-- Quadrant BL: version-tag leakage (implicite × données) -->
+  <g class="interactive" data-card="version-tag" tabindex="0" role="button" aria-label="Fuite par version-tag">
+    <rect x="260" y="460" width="380" height="200" rx="3" fill="#F2EFE7" stroke="#5A5A5A" stroke-width="1" stroke-dasharray="2 3"/>
+    <circle cx="290" cy="490" r="10" fill="#1F5560"/>
+    <text x="290" y="494" class="mono" font-size="11" font-weight="600" fill="#FAF8F3" text-anchor="middle">ii</text>
+    <text x="312" y="494" class="display" font-size="16" font-weight="600" fill="#1A1A1A">Fuite par version-tag</text>
+    <text x="280" y="520" class="body" font-size="13" fill="#1A1A1A">L'énoncé porte le n° de version où le bug</text>
+    <text x="280" y="538" class="body" font-size="13" fill="#1A1A1A">apparaît. Le changelog du release suivant</text>
+    <text x="280" y="556" class="body" font-size="13" fill="#1A1A1A">décrit le fix. Le modèle apprend l'association.</text>
+    <text x="280" y="586" class="body" font-size="13" fill="#1A1A1A" font-style="italic">"This breaks in pandas 1.3.5" → patch attendu.</text>
+    <text x="280" y="614" class="mono" font-size="13" font-weight="500" fill="#1F5560">≈ 18 % des instances exposées.</text>
+    <text x="280" y="638" class="body" font-size="11" fill="#5A5A5A" font-style="italic">Aleithan et al. 2024, audit SWE-bench+.</text>
+  </g>
+
+  <!-- Quadrant BR: prompt leakage (implicite × protocole) -->
+  <g class="interactive" data-card="prompt-leakage" tabindex="0" role="button" aria-label="Leakage de prompt">
+    <rect x="680" y="460" width="380" height="200" rx="3" fill="#F2EFE7" stroke="#5A5A5A" stroke-width="1" stroke-dasharray="2 3"/>
+    <circle cx="710" cy="490" r="10" fill="#1F5560"/>
+    <text x="710" y="494" class="mono" font-size="11" font-weight="600" fill="#FAF8F3" text-anchor="middle">iv</text>
+    <text x="732" y="494" class="display" font-size="16" font-weight="600" fill="#1A1A1A">Leakage de prompt</text>
+    <text x="700" y="520" class="body" font-size="13" fill="#1A1A1A">Prompt search exhaustif sur la validation,</text>
+    <text x="700" y="538" class="body" font-size="13" fill="#1A1A1A">prompts non-publiés, hints méthodologiques</text>
+    <text x="700" y="556" class="body" font-size="13" fill="#1A1A1A">("regarde d'abord tests/", "patch minimal").</text>
+    <text x="700" y="586" class="body" font-size="13" fill="#1A1A1A" font-style="italic">Le score dépend du prompt autant que du modèle.</text>
+    <text x="700" y="614" class="mono" font-size="13" font-weight="500" fill="#1F5560">Effet : +3 à +6 pts, rarement avoué.</text>
+    <text x="700" y="638" class="body" font-size="11" fill="#5A5A5A" font-style="italic">Aucun audit indépendant n'est possible.</text>
+  </g>
+
+  <!-- footer -->
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="765" class="body" font-size="12" font-style="italic" fill="#5A5A5A">Source : synthèse Roberts et al. 2024 ; Aleithan et al. 2024 (SWE-bench+) ; Sainz et al. 2023 (EMNLP) ; observations terrain 2025-2026.</text>
+  <text x="60" y="784" class="body" font-size="12" font-style="italic" fill="#5A5A5A">Lecture : vecteurs (i) et (ii) subis ou mitigeables ; (iii) et (iv) sont des choix de protocole.</text>
+</svg>
+
+<figcaption class="figure-caption">Schéma 2 — Les quatre vecteurs de fuite, croisés selon deux axes : explicite/implicite (le labo en a-t-il conscience ?) et données/protocole (la fuite vient-elle du pré-entraînement ou du dispositif d'évaluation ?). Aucun des quatre n'est résolu par SWE-bench Verified — l'audit humain corrige la qualité, pas la contamination.</figcaption>
+</figure>
+
+<p><strong>Vecteur (i) — Chevauchement train/test temporel.</strong> Le plus connu, le plus discuté, et celui qui résiste le mieux aux dénégations. Tout modèle pré-entraîné sur un crawl web post-2023 a vu, dans son corpus, les commits qui résolvent les issues de SWE-bench. Roberts et al. (2024) ont quantifié l'effet : sur des subsets de SWE-bench dont le cutoff de scrape est postérieur à la date du patch, le score moyen des modèles testés baisse de 8 à 15 points absolus<sup><a href="#source-7" class="cite" data-src="7">[7]</a></sup>. La fuite est <strong>explicite</strong> (mesurable) mais structurelle : pour l'éviter complètement, il faudrait un benchmark dont la date d'instance soit postérieure au cutoff du modèle — ce qu'aucun benchmark public à instance fixe ne peut garantir au-delà de sa première itération.</p>
+
+<p><strong>Vecteur (ii) — Fuite par version-tag.</strong> Plus subtil. Les issues SWE-bench portent dans leur description le numéro de version où le bug a été observé (ex : <em>"This breaks in pandas 1.3.5"</em>). Le patch correctif fixe la version dans un commit suivant, parfois mentionné dans le changelog. Un modèle entraîné sur PyPI ou des release notes peut associer la version au type de bug et au type de fix sans avoir besoin de "raisonner" sur le code. Aleithan et al. (2024) ont audité 100 instances et trouvé qu'une fraction non-négligeable (≈18 %) portait un <em>solution leakage</em> indirect par ce canal<sup><a href="#source-10" class="cite" data-src="10">[10]</a></sup>.</p>
+
+<p><strong>Vecteur (iii) — Gaming du harnais.</strong> Le vecteur le plus visible, et celui que la communauté tolère le mieux. Chaque labo construit son propre <strong>harness</strong> : un programme qui orchestre le modèle, lui fournit l'environnement, parse ses outputs, retente quand ça échoue. SWE-bench ne fixe que le format final (le patch produit) et le scorer ; tout le reste — exploration du repo, lecture des fichiers, retries, agents intermédiaires — est libre. Magic.dev a publié en mars 2025 un harness qui retente jusqu'à 8 fois avec <span class="term" data-tooltip="Vote majoritaire : sur N essais indépendants, on garde la sortie qui a été produite par le plus grand nombre d'essais. Stratégie de réduction de la variance, autorisée par les règles SWE-bench mais qui transforme la consommation de compute en gain de score.">vote majoritaire</span> ; Cognition, avec Devin, utilise un orchestrateur multi-étapes propriétaire ; Anthropic publie ses scores sur un harness "claude-tools" qui n'est pas exactement celui distribué publiquement. Aucun de ces choix n'est de la triche au sens strict — mais ils rendent les scores <strong>non-comparables</strong> entre eux et entre versions du même labo.</p>
+
+<p><strong>Vecteur (iv) — Leakage de prompt.</strong> Le moins discuté, et probablement le plus difficile à mesurer. Les prompts utilisés en évaluation sont rarement publiés intégralement. Ils contiennent souvent des hints méthodologiques ("vérifie d'abord les fichiers <code>tests/</code>", "regarde les imports avant de patcher", "n'oublie pas que pandas utilise pytest"), parfois calibrés instance par instance lors de phases de "prompt search". Un modèle évalué avec un prompt-search exhaustif a un score qui dépend autant du prompt que du modèle. Le score est valide, la généralisation à un usage avec prompt naïf, non.</p>
+
+<p>Les quatre vecteurs ne sont pas équivalents moralement. Le vecteur (i) est subi : aucun labo ne peut s'en défaire sans changer de benchmark. Le vecteur (ii) est mitigeable : un audit minutieux à la SWE-bench Verified peut éliminer les instances les plus exposées. Les vecteurs (iii) et (iv) sont choisis : le labo sait ce qu'il fait, parfois le revendique (Magic présente son harness comme une innovation), parfois l'enfouit (rares sont les papiers qui publient le prompt exact).</p>
+
+<p>L'effet cumulé est ce qu'on observe sur le terrain : un score officiel de 78 %, un rendement réel de 26 %. <mark>Aucun des quatre vecteurs n'est trompeur seul. Cumulés, ils déplacent la distribution d'évaluation hors de la distribution d'usage.</mark></p>
+</section>
+
+<section>
+<h2 id="autres-benchmarks">§4. GAIA, OSWorld, τ-bench : même pathologie, déclinée</h2>
+
+<p>SWE-bench n'est pas un cas isolé. Trois autres benchmarks centraux de l'évaluation agentique illustrent la même dynamique, avec des variations.</p>
+
+<p><strong>GAIA</strong> (Meta AI + HuggingFace, 2023)<sup><a href="#source-3" class="cite" data-src="3">[3]</a></sup> couvre 466 tâches de type "general AI assistant" — répondre à une question qui demande de combiner navigation web, lecture de documents, calcul, parfois exécution de code. Trois niveaux de difficulté. À la sortie, GPT-4 plafonnait à 30 % sur le niveau 1, ~5 % sur le niveau 3. Vingt mois plus tard, Claude Opus 4.6 atteint ~88 % niveau 1, ~62 % niveau 3. La saturation du niveau 1 est en cours, le niveau 3 résiste mieux — mais l'écart s'explique partiellement par le fait que les instances du niveau 3 demandent des outils spécifiques (calculatrice, exécution Python) dont l'orchestration est devenue triviale.</p>
+
+<p><strong>OSWorld</strong> (HKUST, 2024)<sup><a href="#source-4" class="cite" data-src="4">[4]</a></sup> propose 369 tâches sur un OS réel : ouvrir une feuille de calcul, copier des données depuis un site, configurer un client mail. Le scoring est partiellement automatisé (vérification d'état système), partiellement humain. C'est le benchmark le moins saturé des quatre — fin 2025, les meilleurs agents (Claude computer-use 4, GPT-5 operator) tournaient autour de 25-32 % de succès. Mais ce score reste <strong>fragile à l'environnement</strong> : le même agent évalué sur des distributions Linux différentes, des versions LibreOffice différentes, montre des variations de ±10 points. La capacité réelle reste très sous-spécifiée.</p>
+
+<p><strong>τ-bench</strong> (Sierra, 2024)<sup><a href="#source-5" class="cite" data-src="5">[5]</a></sup> introduit une dimension peu commune : un <strong>utilisateur simulé</strong> qui interagit avec l'agent au fil de la tâche. L'agent doit gérer un client (compagnie aérienne ou support retail), conduire une vraie conversation, faire des appels d'outils, conclure une décision. Le simulateur d'utilisateur est lui-même un LLM, scripté avec une personnalité et un objectif. Problème : <mark>dès qu'un agent et un user-simulator partagent le même modèle de base, ils développent une coopération non-intentionnelle qui inflate le score</mark>. τ-bench v2, publié en avril 2025, a découplé les modèles côté agent et côté simulateur, et les scores ont baissé de ~8 points pour tous les top performers.</p>
+
+<figure class="figure" id="fig-03">
+<svg data-schema-id="schema-03" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" font-family="'Inter', sans-serif">
+  <style>
+    .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+    .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+    .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; letter-spacing: 0.06em; }
+    .interactive { cursor: pointer; }
+    .grid { stroke: #E5E1D8; stroke-width: 0.5; }
+    .ax { stroke: #1A1A1A; stroke-width: 1; }
+  </style>
+  <defs>
+    <marker id="arr1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#5A5A5A"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- header -->
+  <g class="svg-header">
+    <text x="60" y="60" class="mono" font-size="12" font-weight="600" fill="#B7332C" letter-spacing="0.16em">SCHÉMA 03</text>
+    <text x="60" y="98" class="display" font-size="28" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Trajectoires des scores publics 2024-2026</text>
+    <text x="60" y="128" class="display" font-size="18" font-style="italic" fill="#5A5A5A">SWE-bench Verified, GAIA L1, OSWorld, τ-bench — quatre benchmarks, une signature en sablier.</text>
+    <line x1="60" y1="148" x2="1140" y2="148" stroke="#E5E1D8" stroke-width="0.5"/>
+  </g>
+
+  <!-- Plot area: x from 110 to 1080 (970 wide, 10 ticks for 9 quarters), y from 200 to 600 (400 tall, 0-100%) -->
+  <!-- gridlines -->
+  <line x1="110" y1="200" x2="1080" y2="200" class="grid"/>
+  <line x1="110" y1="280" x2="1080" y2="280" class="grid"/>
+  <line x1="110" y1="360" x2="1080" y2="360" class="grid"/>
+  <line x1="110" y1="440" x2="1080" y2="440" class="grid"/>
+  <line x1="110" y1="520" x2="1080" y2="520" class="grid"/>
+  <line x1="110" y1="600" x2="1080" y2="600" class="ax"/>
+  <line x1="110" y1="200" x2="110" y2="600" class="ax"/>
+
+  <!-- Y-axis labels -->
+  <text x="98" y="204" class="mono" font-size="11" fill="#5A5A5A" text-anchor="end">100%</text>
+  <text x="98" y="284" class="mono" font-size="11" fill="#5A5A5A" text-anchor="end">80%</text>
+  <text x="98" y="364" class="mono" font-size="11" fill="#5A5A5A" text-anchor="end">60%</text>
+  <text x="98" y="444" class="mono" font-size="11" fill="#5A5A5A" text-anchor="end">40%</text>
+  <text x="98" y="524" class="mono" font-size="11" fill="#5A5A5A" text-anchor="end">20%</text>
+  <text x="98" y="604" class="mono" font-size="11" fill="#5A5A5A" text-anchor="end">0%</text>
+
+  <!-- X-axis ticks (Q1 2024 to Q2 2026 = 10 ticks) -->
+  <!-- 9 quarters: Q1'24, Q2'24, Q3'24, Q4'24, Q1'25, Q2'25, Q3'25, Q4'25, Q1'26, Q2'26 -->
+  <!-- Plot x positions: 110, 218, 326, 434, 542, 650, 758, 866, 974, 1080 (10 positions, spacing ~108) -->
+  <g class="mono" font-size="10" fill="#5A5A5A" text-anchor="middle">
+    <text x="110" y="618">Q1'24</text>
+    <text x="218" y="618">Q2'24</text>
+    <text x="326" y="618">Q3'24</text>
+    <text x="434" y="618">Q4'24</text>
+    <text x="542" y="618">Q1'25</text>
+    <text x="650" y="618">Q2'25</text>
+    <text x="758" y="618">Q3'25</text>
+    <text x="866" y="618">Q4'25</text>
+    <text x="974" y="618">Q1'26</text>
+    <text x="1080" y="618">Q2'26</text>
+  </g>
+
+  <!-- SWE-bench Verified line (carmine) -->
+  <!-- points: Q1'24 12%, Q3'24 30% (Verified release), Q1'25 48%, Q3'25 64%, Q1'26 75%, Q2'26 78% -->
+  <!-- y for percent p: 200 + (100-p)*4 = 600 - 4p -->
+  <!-- 12% -> 552; 30% -> 480; 48% -> 408; 64% -> 344; 75% -> 300; 78% -> 288 -->
+  <polyline points="110,552 218,538 326,480 434,440 542,408 650,372 758,344 866,316 974,300 1080,288"
+            fill="none" stroke="#B7332C" stroke-width="2.5"/>
+
+  <!-- GAIA Level 1 line (teal) -->
+  <!-- 30%, 36%, 42%, 50%, 58%, 66%, 72%, 80%, 86%, 88% -->
+  <polyline points="110,480 218,456 326,432 434,400 542,368 650,336 758,312 866,280 974,256 1080,248"
+            fill="none" stroke="#1F5560" stroke-width="2.5"/>
+
+  <!-- OSWorld line (mustard) -->
+  <!-- 4%, 7%, 10%, 14%, 18%, 22%, 25%, 28%, 30%, 32% -->
+  <polyline points="110,584 218,572 326,560 434,544 542,528 650,512 758,500 866,488 974,480 1080,472"
+            fill="none" stroke="#B58A2C" stroke-width="2.5"/>
+
+  <!-- τ-bench line (forest/dark) -->
+  <!-- 32%, 40%, 48%, 56%, 50% (v2 baisse), 56%, 62%, 68%, 73%, 76% -->
+  <polyline points="110,472 218,440 326,408 434,376 542,400 650,376 758,352 866,328 974,308 1080,296"
+            fill="none" stroke="#2F5D3F" stroke-width="2.5"/>
+
+  <!-- Inflection points: SWE-bench Verified release (Q3 2024), τ-bench v2 (Q1 2025) -->
+  <line x1="326" y1="200" x2="326" y2="600" stroke="#5A5A5A" stroke-width="0.5" stroke-dasharray="2 4"/>
+  <text x="328" y="195" class="mono" font-size="10" font-weight="600" fill="#5A5A5A" letter-spacing="0.08em">VERIFIED</text>
+  <line x1="542" y1="200" x2="542" y2="600" stroke="#5A5A5A" stroke-width="0.5" stroke-dasharray="2 4"/>
+  <text x="544" y="195" class="mono" font-size="10" font-weight="600" fill="#5A5A5A" letter-spacing="0.08em">τ-BENCH v2</text>
+
+  <!-- Interactive regions: end markers for each line -->
+  <g class="interactive" data-card="swe-bench" tabindex="0" role="button" aria-label="SWE-bench Verified trajectory">
+    <circle cx="1080" cy="288" r="6" fill="#B7332C" stroke="#FAF8F3" stroke-width="1.5"/>
+    <rect x="1095" y="278" width="80" height="20" rx="2" fill="transparent"/>
+    <text x="1095" y="293" class="mono" font-size="11" font-weight="500" fill="#B7332C">SWE-bench V.</text>
+  </g>
+  <g class="interactive" data-card="gaia" tabindex="0" role="button" aria-label="GAIA Level 1 trajectory">
+    <circle cx="1080" cy="248" r="6" fill="#1F5560" stroke="#FAF8F3" stroke-width="1.5"/>
+    <text x="1095" y="252" class="mono" font-size="11" font-weight="500" fill="#1F5560">GAIA L1</text>
+  </g>
+  <g class="interactive" data-card="osworld" tabindex="0" role="button" aria-label="OSWorld trajectory">
+    <circle cx="1080" cy="472" r="6" fill="#B58A2C" stroke="#FAF8F3" stroke-width="1.5"/>
+    <text x="1095" y="476" class="mono" font-size="11" font-weight="500" fill="#B58A2C">OSWorld</text>
+  </g>
+  <g class="interactive" data-card="tau-bench" tabindex="0" role="button" aria-label="tau-bench trajectory">
+    <circle cx="1080" cy="296" r="6" fill="#2F5D3F" stroke="#FAF8F3" stroke-width="1.5"/>
+    <text x="1095" y="320" class="mono" font-size="11" font-weight="500" fill="#2F5D3F">τ-bench v2</text>
+  </g>
+
+  <!-- Y-axis title -->
+  <text x="30" y="400" class="body" font-size="12" fill="#5A5A5A" font-style="italic" transform="rotate(-90, 30, 400)" text-anchor="middle">Score public (%)</text>
+
+  <!-- Annotation block -->
+  <rect x="110" y="650" width="1030" height="56" rx="3" fill="#F2EFE7" stroke="#5A5A5A" stroke-width="0.5" stroke-dasharray="2 3"/>
+  <text x="130" y="672" class="mono" font-size="11" font-weight="600" fill="#1F5560" letter-spacing="0.12em">SIGNATURE COMMUNE</text>
+  <text x="130" y="690" class="body" font-size="13" fill="#1A1A1A">Pente raide → plateau → publication d'une variante « Verified » / « v2 » qui rebaisse de 8-15 pts → remontée. Période : 12-18 mois.</text>
+
+  <!-- footer -->
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="765" class="body" font-size="12" font-style="italic" fill="#5A5A5A">Source : compilation des scores publiés par Anthropic, OpenAI, Google DeepMind, Magic, Cognition, Sierra sur leurs blogs et papiers, 2024-2026.</text>
+  <text x="60" y="784" class="body" font-size="12" font-style="italic" fill="#5A5A5A">Lecture : ordres de grandeur lissés sur les meilleurs résultats par trimestre — les harnais et retries diffèrent entre points.</text>
+</svg>
+
+<figcaption class="figure-caption">Schéma 3 — Trajectoires des scores publics sur quatre benchmarks agentiques entre Q1 2024 et Q2 2026. La pente médiane est nettement plus douce sur OSWorld (environnement ouvert) et plus raide sur SWE-bench Verified (distribution fermée). Les points d'inflexion correspondent presque toujours à la sortie d'un benchmark "Verified" ou v2.</figcaption>
+</figure>
+
+<p>Les quatre courbes partagent une signature : montée rapide, plateau, puis publication d'une variante "Verified" ou "v2" qui rebaisse les scores de 8-15 points absolus et redonne du headroom. C'est devenu un schéma méthodologique : le benchmark publie, les labos saturent, l'auteur du benchmark republie une version durcie, les labos remontent. Le cycle a une période d'environ 12-18 mois.</p>
+
+<p>Ce schéma a une conséquence sous-évaluée : <strong>la comparaison entre modèles à travers les générations de benchmark devient impossible</strong>. Un score de 50 % sur SWE-bench original (2023) et un score de 50 % sur SWE-bench Verified (2024) ne mesurent pas la même chose. La trajectoire historique des scores est elle-même un artefact de la trajectoire des benchmarks, pas seulement de la trajectoire des modèles.</p>
+</section>
+
+<section>
+<h2 id="produit">§5. Le score est un produit</h2>
+
+<p>Si la dérive des benchmarks est bien documentée, son <strong>mode de production</strong> l'est moins. Comment, concrètement, un labo gagne-t-il dix points de SWE-bench en un trimestre ?</p>
+
+<figure class="figure" id="fig-04">
+<svg data-schema-id="schema-04" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" font-family="'Inter', sans-serif">
+  <style>
+    .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+    .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+    .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; letter-spacing: 0.06em; }
+    .interactive { cursor: pointer; }
+  </style>
+  <defs>
+    <marker id="arr1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#1A1A1A"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <g class="svg-header">
+    <text x="60" y="60" class="mono" font-size="12" font-weight="600" fill="#B7332C" letter-spacing="0.16em">SCHÉMA 04</text>
+    <text x="60" y="98" class="display" font-size="28" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Chaîne d'optimisation industrielle d'un score</text>
+    <text x="60" y="128" class="display" font-size="18" font-style="italic" fill="#5A5A5A">Cinq leviers, jamais publiés au même endroit, qui se composent multiplicativement — +15 à +25 pts cumulés.</text>
+    <line x1="60" y1="148" x2="1140" y2="148" stroke="#E5E1D8" stroke-width="0.5"/>
+  </g>
+
+  <!-- Base score on the left, final score on the right; 5 levers along the way -->
+  <!-- Base score node -->
+  <g>
+    <rect x="60" y="280" width="140" height="100" rx="3" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1"/>
+    <text x="130" y="312" class="mono" font-size="11" font-weight="600" fill="#5A5A5A" text-anchor="middle">BASE</text>
+    <text x="130" y="340" class="display" font-size="22" font-weight="600" fill="#1A1A1A" text-anchor="middle">~50 %</text>
+    <text x="130" y="360" class="body" font-size="12" fill="#5A5A5A" text-anchor="middle" font-style="italic">N=1, vanilla</text>
+  </g>
+
+  <!-- Five lever cards, each contributing -->
+  <!-- positions: x = 230, 400, 570, 740, 910, width 150 each (+arrow gap), final at 1080 -->
+
+  <g class="interactive" data-card="checkpoint" tabindex="0" role="button" aria-label="Sélection de checkpoint">
+    <rect x="230" y="200" width="150" height="260" rx="3" fill="#F2EFE7" stroke="#1A1A1A" stroke-width="1.25"/>
+    <circle cx="260" cy="230" r="11" fill="#B7332C"/>
+    <text x="260" y="234" class="mono" font-size="11" font-weight="600" fill="#FAF8F3" text-anchor="middle">1</text>
+    <text x="280" y="234" class="mono" font-size="10" font-weight="600" fill="#1F5560" letter-spacing="0.08em">SÉLECTION</text>
+    <text x="245" y="266" class="display" font-size="15" font-weight="600" fill="#1A1A1A">Checkpoint</text>
+    <text x="245" y="284" class="display" font-size="15" font-weight="600" fill="#1A1A1A">benchmark-fit</text>
+    <text x="245" y="312" class="body" font-size="12" fill="#1A1A1A">Choisir l'epoch qui</text>
+    <text x="245" y="328" class="body" font-size="12" fill="#1A1A1A">maximise SWE-bench,</text>
+    <text x="245" y="344" class="body" font-size="12" fill="#1A1A1A">pas la loss moyenne.</text>
+    <text x="245" y="380" class="mono" font-size="13" font-weight="500" fill="#B7332C">+2 à +4 pts</text>
+    <text x="245" y="412" class="body" font-size="11" fill="#5A5A5A" font-style="italic">Effort : faible.</text>
+    <text x="245" y="428" class="body" font-size="11" fill="#5A5A5A" font-style="italic">Tous les labos.</text>
+  </g>
+
+  <g class="interactive" data-card="harness-custom" tabindex="0" role="button" aria-label="Harness custom">
+    <rect x="400" y="200" width="150" height="260" rx="3" fill="#F2EFE7" stroke="#1A1A1A" stroke-width="1.25"/>
+    <circle cx="430" cy="230" r="11" fill="#B7332C"/>
+    <text x="430" y="234" class="mono" font-size="11" font-weight="600" fill="#FAF8F3" text-anchor="middle">2</text>
+    <text x="450" y="234" class="mono" font-size="10" font-weight="600" fill="#1F5560" letter-spacing="0.08em">ORCHESTR.</text>
+    <text x="415" y="266" class="display" font-size="15" font-weight="600" fill="#1A1A1A">Harness</text>
+    <text x="415" y="284" class="display" font-size="15" font-weight="600" fill="#1A1A1A">custom</text>
+    <text x="415" y="312" class="body" font-size="12" fill="#1A1A1A">Planner + executor</text>
+    <text x="415" y="328" class="body" font-size="12" fill="#1A1A1A">+ critic, ou Re-Act</text>
+    <text x="415" y="344" class="body" font-size="12" fill="#1A1A1A">multi-tour.</text>
+    <text x="415" y="380" class="mono" font-size="13" font-weight="500" fill="#B7332C">+5 à +10 pts</text>
+    <text x="415" y="412" class="body" font-size="11" fill="#5A5A5A" font-style="italic">Effort : moyen.</text>
+    <text x="415" y="428" class="body" font-size="11" fill="#5A5A5A" font-style="italic">Magic, Cognition.</text>
+  </g>
+
+  <g class="interactive" data-card="prompt-eng" tabindex="0" role="button" aria-label="Prompt engineering ciblé">
+    <rect x="570" y="200" width="150" height="260" rx="3" fill="#F2EFE7" stroke="#1A1A1A" stroke-width="1.25"/>
+    <circle cx="600" cy="230" r="11" fill="#B7332C"/>
+    <text x="600" y="234" class="mono" font-size="11" font-weight="600" fill="#FAF8F3" text-anchor="middle">3</text>
+    <text x="620" y="234" class="mono" font-size="10" font-weight="600" fill="#1F5560" letter-spacing="0.08em">PROMPTS</text>
+    <text x="585" y="266" class="display" font-size="15" font-weight="600" fill="#1A1A1A">Prompts</text>
+    <text x="585" y="284" class="display" font-size="15" font-weight="600" fill="#1A1A1A">calibrés</text>
+    <text x="585" y="312" class="body" font-size="12" fill="#1A1A1A">Prompt-search sur</text>
+    <text x="585" y="328" class="body" font-size="12" fill="#1A1A1A">la validation,</text>
+    <text x="585" y="344" class="body" font-size="12" fill="#1A1A1A">hints méthodo.</text>
+    <text x="585" y="380" class="mono" font-size="13" font-weight="500" fill="#B7332C">+3 à +6 pts</text>
+    <text x="585" y="412" class="body" font-size="11" fill="#5A5A5A" font-style="italic">Effort : moyen.</text>
+    <text x="585" y="428" class="body" font-size="11" fill="#5A5A5A" font-style="italic">Rarement publié.</text>
+  </g>
+
+  <g class="interactive" data-card="rl-fine-tune" tabindex="0" role="button" aria-label="RL fine-tuning ciblé">
+    <rect x="740" y="200" width="150" height="260" rx="3" fill="#F2EFE7" stroke="#B7332C" stroke-width="2.5"/>
+    <circle cx="770" cy="230" r="11" fill="#B7332C"/>
+    <text x="770" y="234" class="mono" font-size="11" font-weight="600" fill="#FAF8F3" text-anchor="middle">4</text>
+    <text x="790" y="234" class="mono" font-size="10" font-weight="600" fill="#B7332C" letter-spacing="0.08em">RL CIBLÉ</text>
+    <text x="755" y="266" class="display" font-size="15" font-weight="600" fill="#1A1A1A">RL sur</text>
+    <text x="755" y="284" class="display" font-size="15" font-weight="600" fill="#1A1A1A">trajectoires</text>
+    <text x="755" y="302" class="display" font-size="15" font-weight="600" fill="#1A1A1A">similaires</text>
+    <text x="755" y="330" class="body" font-size="12" fill="#1A1A1A">Issues GitHub d'autres</text>
+    <text x="755" y="346" class="body" font-size="12" fill="#1A1A1A">repos, mêmes patterns,</text>
+    <text x="755" y="362" class="body" font-size="12" fill="#1A1A1A">récompense binaire.</text>
+    <text x="755" y="392" class="mono" font-size="13" font-weight="500" fill="#B7332C">+5 à +15 pts</text>
+    <text x="755" y="420" class="body" font-size="11" fill="#5A5A5A" font-style="italic">Effort : élevé.</text>
+    <text x="755" y="436" class="body" font-size="11" fill="#5A5A5A" font-style="italic">Frontière éthique.</text>
+  </g>
+
+  <g class="interactive" data-card="retries" tabindex="0" role="button" aria-label="Retries et sélection">
+    <rect x="910" y="200" width="150" height="260" rx="3" fill="#F2EFE7" stroke="#1A1A1A" stroke-width="1.25"/>
+    <circle cx="940" cy="230" r="11" fill="#B7332C"/>
+    <text x="940" y="234" class="mono" font-size="11" font-weight="600" fill="#FAF8F3" text-anchor="middle">5</text>
+    <text x="960" y="234" class="mono" font-size="10" font-weight="600" fill="#1F5560" letter-spacing="0.08em">RETRIES</text>
+    <text x="925" y="266" class="display" font-size="15" font-weight="600" fill="#1A1A1A">N=1 → N=8</text>
+    <text x="925" y="294" class="body" font-size="12" fill="#1A1A1A">Vote majoritaire ou</text>
+    <text x="925" y="310" class="body" font-size="12" fill="#1A1A1A">best-of-N par tests</text>
+    <text x="925" y="326" class="body" font-size="12" fill="#1A1A1A">passants observés.</text>
+    <text x="925" y="354" class="body" font-size="12" fill="#1A1A1A">Compute ×8, score ↑.</text>
+    <text x="925" y="384" class="mono" font-size="13" font-weight="500" fill="#B7332C">+6 à +12 pts</text>
+    <text x="925" y="416" class="body" font-size="11" fill="#5A5A5A" font-style="italic">Effort : faible.</text>
+    <text x="925" y="432" class="body" font-size="11" fill="#5A5A5A" font-style="italic">Coût : élevé.</text>
+  </g>
+
+  <!-- Final score node -->
+  <g>
+    <rect x="1085" y="280" width="100" height="100" rx="3" fill="#FAF8F3" stroke="#B7332C" stroke-width="2.5"/>
+    <text x="1135" y="312" class="mono" font-size="11" font-weight="600" fill="#B7332C" text-anchor="middle">PUBLIÉ</text>
+    <text x="1135" y="346" class="display" font-size="22" font-weight="600" fill="#B7332C" text-anchor="middle">75 %</text>
+    <text x="1135" y="365" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle" font-style="italic">leaderboard</text>
+  </g>
+
+  <!-- Flow arrows between leverage stages -->
+  <line x1="205" y1="330" x2="225" y2="330" stroke="#1A1A1A" stroke-width="1.25" marker-end="url(#arr1)"/>
+  <line x1="385" y1="330" x2="395" y2="330" stroke="#1A1A1A" stroke-width="1.25" marker-end="url(#arr1)"/>
+  <line x1="555" y1="330" x2="565" y2="330" stroke="#1A1A1A" stroke-width="1.25" marker-end="url(#arr1)"/>
+  <line x1="725" y1="330" x2="735" y2="330" stroke="#1A1A1A" stroke-width="1.25" marker-end="url(#arr1)"/>
+  <line x1="895" y1="330" x2="905" y2="330" stroke="#1A1A1A" stroke-width="1.25" marker-end="url(#arr1)"/>
+  <line x1="1065" y1="330" x2="1080" y2="330" stroke="#1A1A1A" stroke-width="1.25" marker-end="url(#arr1)"/>
+
+  <!-- Annotation block: team / equipe -->
+  <rect x="60" y="540" width="1080" height="130" rx="3" fill="#F2EFE7" stroke="#1F5560" stroke-width="0.5" stroke-dasharray="2 3"/>
+  <text x="84" y="568" class="mono" font-size="11" font-weight="600" fill="#1F5560" letter-spacing="0.12em">LA « BENCHMARK TEAM » — STRUCTURE INDUSTRIALISÉE EN 18 MOIS</text>
+  <text x="84" y="594" class="body" font-size="13" fill="#1A1A1A">Chaque grand labo dispose désormais d'une équipe dédiée de 3 à 5 ingénieurs sur le seul SWE-bench :  un ML engineer pour le RL ciblé, deux research engineers pour le harness</text>
+  <text x="84" y="612" class="body" font-size="13" fill="#1A1A1A">et le prompt-search, un infra engineer pour le compute des retries, parfois un product manager qui coordonne avec le calendrier de release. L'opération a un budget annuel propre,</text>
+  <text x="84" y="630" class="body" font-size="13" fill="#1A1A1A">distinct du budget d'entraînement du modèle généraliste. Le score publié devient ainsi une fonction de l'effort d'optimisation, pas seulement de la capacité du modèle de base.</text>
+  <text x="84" y="654" class="body" font-size="12" fill="#5A5A5A" font-style="italic">→ La règle de Goodhart en accéléré : la mesure, devenue cible, cesse d'être mesure.</text>
+
+  <!-- footer -->
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="765" class="body" font-size="12" font-style="italic" fill="#5A5A5A">Source : synthèse des blogs Anthropic, OpenAI, Magic, Cognition (2024-2026) et observations communautaires (Princeton NLP Discord, swe-bench.com).</text>
+  <text x="60" y="784" class="body" font-size="12" font-style="italic" fill="#5A5A5A">Lecture : chaque levier paraît raisonnable individuellement. L'effet cumulé reste rarement publié.</text>
+</svg>
+
+<figcaption class="figure-caption">Schéma 4 — Anatomie d'une équipe benchmark dédiée. Cinq leviers d'optimisation, jamais publiés au même endroit, qui se composent multiplicativement. Chaque levier individuel paraît raisonnable ; l'effet cumulé déplace le score de 15-25 points.</figcaption>
+</figure>
+
+<p>L'opération est devenue suffisamment standardisée pour qu'on en décrive le pattern :</p>
+
+<p><strong>(1) Sélection de checkpoint.</strong> Tout entraînement produit plusieurs checkpoints au fil des epochs. Choisir celui qui maximise SWE-bench plutôt que la <span class="term" data-tooltip="Loss : fonction objectif minimisée pendant l'entraînement (cross-entropy, MSE…). Mesure la qualité moyenne sur la distribution d'entraînement, pas la performance sur un benchmark spécifique aval.">loss</span> moyenne est trivial à formaliser comme un critère d'arrêt. Effet typique : +2 à +4 points absolus.</p>
+
+<p><strong>(2) Harness custom.</strong> L'orchestrateur appelle le modèle plusieurs fois, gère l'état du repo, parse les outputs. Quatre variations courantes : <span class="term" data-tooltip="ReAct : Reasoning + Acting. Pattern d'agent où le modèle alterne entre Thought (raisonnement) et Action (appel d'outil), introduit par Yao et al. (2022). Devenu pattern de référence pour les agents code.">ReAct</span> simple, ReAct avec retries, multi-agent (planner + executor + critic), vote majoritaire sur N samples. Le delta entre ReAct simple et vote majoritaire à N=8 est typiquement +5 à +10 points.</p>
+
+<p><strong>(3) Prompt engineering ciblé.</strong> Un prompt système soigneusement calibré sur des instances de validation (séparées du test mais issues de la même distribution) ajoute +3 à +6 points. L'effort humain est important — plusieurs ingénieurs-semaines — mais la marge de gain est claire.</p>
+
+<p><strong>(4) RL fine-tuning sur trajectoires SWE-bench-like.</strong> Plutôt que d'entraîner sur SWE-bench directement (ce qui serait du training-on-test pur et serait reproché), les labos génèrent des <strong>trajectoires synthétiques</strong> sur des issues GitHub <em>similaires</em> (autres repos, mêmes patterns), puis font du <span class="term" data-tooltip="RL avec récompense binaire : signal de récompense (test passe / ne passe pas) propagé via GRPO ou PPO. Pas de reward model appris — le signal vient du vérificateur externe (tests unitaires). Voir le dossier process-reward-models pour le détail.">RL avec récompense binaire</span>. C'est le levier le plus puissant : +5 à +15 points, et c'est aussi celui qui se rapproche le plus de la frontière éthique. Anthropic publie ses pratiques. Magic ne les publie pas.</p>
+
+<p><strong>(5) Retries et sélection.</strong> Le plus visible : faire tourner l'agent N fois, choisir la sortie qui passe le plus de tests (en lookant les tests, ce qui n'est pas autorisé) ou par vote majoritaire (qui l'est). Le passage de N=1 à N=8 ajoute typiquement +6 à +12 points.</p>
+
+<p>L'effet cumulé est multiplicatif. Un modèle qui produirait, en évaluation honnête à N=1 avec un harness vanilla, un score de 50 %, peut être publié à 75 % avec l'ensemble des leviers. <mark>Le score publié n'est pas faux ; il est produit. Et "produit" est un verbe transitif : il a un coût, un effort, une équipe.</mark></p>
+
+<p>Cette industrialisation a une conséquence latérale : la <strong>comparabilité entre labos</strong> devient illusoire. Un score Claude Opus 4.7 à 78 % et un score Devin (Cognition) à 75 % ne se comparent pas car les leviers utilisés ne sont pas les mêmes. Anthropic publie le détail de son harness mais pas tous ses prompts ; Cognition publie un score mais pas son harness ; Magic publie le harness mais pas le checkpoint utilisé. Le leaderboard public agrège des objets de natures différentes.</p>
+
+<p>Le contre-exemple méthodologique reste <strong>ARC-AGI</strong> (Chollet)<sup><a href="#source-9" class="cite" data-src="9">[9]</a></sup>. Conçu pour résister à la mémorisation et au prompt engineering, ARC publie une version "private eval" tournée uniquement à la demande sur un test set non-divulgué, avec un budget de compute capé. La conséquence : les scores ARC progressent beaucoup plus lentement, les surprises (à la hausse comme à la baisse) sont plus signifiantes, et le rapprochement avec la capacité réelle est plus crédible. Le prix à payer : ARC est un benchmark <strong>plus petit</strong> (400 tâches au lieu de 2 294), <strong>plus difficile</strong> (la frontière humaine plafonne autour de 85 %, les modèles autour de 55 % début 2026), et <strong>moins commercialement attractif</strong> (on ne peut pas faire de blog post hebdomadaire dessus).</p>
+</section>
+
+<section>
+<h2 id="contre-mouvement">§6. Le contre-mouvement : benchmarks vivants</h2>
+
+<p>La critique précédente est connue. Le mouvement de réponse, lui, est récent — il date de 2025 et se cristallise en cinq propositions complémentaires.</p>
+
+<figure class="figure" id="fig-05">
+<svg data-schema-id="schema-05" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" font-family="'Inter', sans-serif">
+  <style>
+    .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+    .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+    .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; letter-spacing: 0.06em; }
+    .interactive { cursor: pointer; }
+  </style>
+
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <g class="svg-header">
+    <text x="60" y="60" class="mono" font-size="12" font-weight="600" fill="#B7332C" letter-spacing="0.16em">SCHÉMA 05</text>
+    <text x="60" y="98" class="display" font-size="28" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Le contre-mouvement : cinq approches</text>
+    <text x="60" y="128" class="display" font-size="18" font-style="italic" fill="#5A5A5A">Aucune ne domine. Chacune accepte un compromis différent entre rigueur, coût et comparabilité.</text>
+    <line x1="60" y1="148" x2="1140" y2="148" stroke="#E5E1D8" stroke-width="0.5"/>
+  </g>
+
+  <!-- Matrix: 5 rows (benchmarks), 5 columns (criteria) -->
+  <!-- Plot area: x = 240..1080, y = 220..620 -->
+  <!-- Row height: 80 px. Column widths: name col 180 (240..420), then 4 criteria cols of 165 (420..585, 585..750, 750..915, 915..1080) -->
+
+  <!-- Column headers -->
+  <g class="mono" font-size="11" font-weight="600" fill="#1F5560" letter-spacing="0.12em" text-anchor="middle">
+    <text x="502" y="206">MISE À JOUR</text>
+    <text x="667" y="206">COÛT ÉVAL</text>
+    <text x="832" y="206">ANTI-CONTAMINATION</text>
+    <text x="997" y="206">COMPARABILITÉ</text>
+  </g>
+  <text x="330" y="206" class="mono" font-size="11" font-weight="600" fill="#1F5560" letter-spacing="0.12em" text-anchor="middle">BENCHMARK</text>
+
+  <!-- Header rule -->
+  <line x1="240" y1="218" x2="1080" y2="218" stroke="#1A1A1A" stroke-width="1"/>
+
+  <!-- Row 1: SWE-bench Live -->
+  <g class="interactive" data-card="swe-live" tabindex="0" role="button" aria-label="SWE-bench Live">
+    <rect x="240" y="222" width="840" height="80" rx="0" fill="#F2EFE7" opacity="0.5"/>
+    <text x="260" y="252" class="display" font-size="15" font-weight="600" fill="#1A1A1A">SWE-bench Live</text>
+    <text x="260" y="270" class="body" font-size="12" fill="#5A5A5A" font-style="italic">Princeton + MSR, 2025 — rolling</text>
+    <text x="260" y="288" class="body" font-size="11" fill="#5A5A5A">issues scrapées chaque semaine</text>
+    <!-- update freq: full -->
+    <circle cx="502" cy="262" r="14" fill="#B7332C"/>
+    <text x="502" y="266" class="mono" font-size="11" font-weight="600" fill="#FAF8F3" text-anchor="middle">●</text>
+    <text x="502" y="290" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">hebdo</text>
+    <!-- cost: low -->
+    <circle cx="667" cy="262" r="14" fill="none" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="667" y="266" class="mono" font-size="11" font-weight="600" fill="#B7332C" text-anchor="middle">○</text>
+    <text x="667" y="290" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">~500$ / run</text>
+    <!-- anti-contam: full -->
+    <circle cx="832" cy="262" r="14" fill="#B7332C"/>
+    <text x="832" y="290" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">fort</text>
+    <!-- comparability: nil -->
+    <circle cx="997" cy="262" r="14" fill="none" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="997" y="266" class="mono" font-size="11" font-weight="600" fill="#B7332C" text-anchor="middle">○</text>
+    <text x="997" y="290" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">temporelle ↓</text>
+  </g>
+
+  <line x1="240" y1="302" x2="1080" y2="302" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- Row 2: SWE-Lancer -->
+  <g class="interactive" data-card="swe-lancer" tabindex="0" role="button" aria-label="SWE-Lancer">
+    <text x="260" y="336" class="display" font-size="15" font-weight="600" fill="#1A1A1A">SWE-Lancer</text>
+    <text x="260" y="354" class="body" font-size="12" fill="#5A5A5A" font-style="italic">OpenAI, 2025 — tâches payées</text>
+    <text x="260" y="372" class="body" font-size="11" fill="#5A5A5A">PR sur Upwork validées par client</text>
+    <circle cx="502" cy="346" r="14" fill="#1F5560"/>
+    <text x="502" y="374" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">par cohorte</text>
+    <circle cx="667" cy="346" r="14" fill="#B7332C"/>
+    <text x="667" y="374" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">10-40 k$ / run</text>
+    <circle cx="832" cy="346" r="14" fill="#B7332C"/>
+    <text x="832" y="374" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">par construction</text>
+    <circle cx="997" cy="346" r="14" fill="#1F5560" opacity="0.5"/>
+    <text x="997" y="374" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">moyenne</text>
+  </g>
+
+  <line x1="240" y1="386" x2="1080" y2="386" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- Row 3: CORE-Bench -->
+  <g class="interactive" data-card="core-bench" tabindex="0" role="button" aria-label="CORE-Bench">
+    <text x="260" y="420" class="display" font-size="15" font-weight="600" fill="#1A1A1A">CORE-Bench</text>
+    <text x="260" y="438" class="body" font-size="12" fill="#5A5A5A" font-style="italic">NYU, 2024 — reproductibilité</text>
+    <text x="260" y="456" class="body" font-size="11" fill="#5A5A5A">cloner repo, reproduire figures</text>
+    <circle cx="502" cy="430" r="14" fill="#1F5560" opacity="0.5"/>
+    <text x="502" y="458" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">papiers continus</text>
+    <circle cx="667" cy="430" r="14" fill="#1F5560"/>
+    <text x="667" y="458" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">~2-5 k$ / run</text>
+    <circle cx="832" cy="430" r="14" fill="#1F5560"/>
+    <text x="832" y="458" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">bonne</text>
+    <circle cx="997" cy="430" r="14" fill="#1F5560"/>
+    <text x="997" y="458" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">bonne (figures fixes)</text>
+  </g>
+
+  <line x1="240" y1="470" x2="1080" y2="470" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- Row 4: MLE-bench -->
+  <g class="interactive" data-card="mle-bench" tabindex="0" role="button" aria-label="MLE-bench">
+    <text x="260" y="504" class="display" font-size="15" font-weight="600" fill="#1A1A1A">MLE-bench</text>
+    <text x="260" y="522" class="body" font-size="12" fill="#5A5A5A" font-style="italic">OpenAI, 2024 — 75 Kaggle</text>
+    <text x="260" y="540" class="body" font-size="11" fill="#5A5A5A">médaille bronze / argent / or</text>
+    <circle cx="502" cy="514" r="14" fill="#1F5560" opacity="0.5"/>
+    <text x="502" y="542" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">par batch annuel</text>
+    <circle cx="667" cy="514" r="14" fill="#1F5560"/>
+    <text x="667" y="542" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">~1-3 k$ / run</text>
+    <circle cx="832" cy="514" r="14" fill="#1F5560"/>
+    <text x="832" y="542" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">monitoré</text>
+    <circle cx="997" cy="514" r="14" fill="#1F5560"/>
+    <text x="997" y="542" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">bonne (médaille)</text>
+  </g>
+
+  <line x1="240" y1="554" x2="1080" y2="554" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- Row 5: ARC-AGI 2 -->
+  <g class="interactive" data-card="arc-agi" tabindex="0" role="button" aria-label="ARC-AGI 2">
+    <text x="260" y="588" class="display" font-size="15" font-weight="600" fill="#1A1A1A">ARC-AGI 2</text>
+    <text x="260" y="606" class="body" font-size="12" fill="#5A5A5A" font-style="italic">ARC Prize, 2024 — private set</text>
+    <text x="260" y="624" class="body" font-size="11" fill="#5A5A5A">budget compute capé</text>
+    <circle cx="502" cy="598" r="14" fill="#1F5560" opacity="0.3"/>
+    <text x="502" y="626" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">annuel</text>
+    <circle cx="667" cy="598" r="14" fill="#B7332C" opacity="0.5"/>
+    <text x="667" y="626" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">~5-20 k$ / run</text>
+    <circle cx="832" cy="598" r="14" fill="#B7332C"/>
+    <text x="832" y="626" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">maximal</text>
+    <circle cx="997" cy="598" r="14" fill="#1F5560"/>
+    <text x="997" y="626" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">excellente</text>
+  </g>
+
+  <!-- Legend -->
+  <g transform="translate(60, 660)">
+    <text x="0" y="0" class="mono" font-size="11" font-weight="600" fill="#5A5A5A" letter-spacing="0.12em">LECTURE</text>
+    <circle cx="100" cy="-4" r="9" fill="#B7332C"/>
+    <text x="115" y="0" class="body" font-size="12" fill="#1A1A1A">excellent / radical</text>
+    <circle cx="280" cy="-4" r="9" fill="#1F5560"/>
+    <text x="295" y="0" class="body" font-size="12" fill="#1A1A1A">bon / partiel</text>
+    <circle cx="430" cy="-4" r="9" fill="#1F5560" opacity="0.5"/>
+    <text x="445" y="0" class="body" font-size="12" fill="#1A1A1A">moyen</text>
+    <circle cx="540" cy="-4" r="9" fill="none" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="555" y="0" class="body" font-size="12" fill="#1A1A1A">faible / absent</text>
+  </g>
+
+  <!-- footer -->
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="765" class="body" font-size="12" font-style="italic" fill="#5A5A5A">Source : papiers de référence cités ; coûts d'évaluation estimés sur la base des prix API observés mai 2026 (Anthropic / OpenAI) et marges Upwork pour SWE-Lancer.</text>
+  <text x="60" y="784" class="body" font-size="12" font-style="italic" fill="#5A5A5A">Lecture : aucun benchmark ne domine. Le bon choix dépend du rôle — chercher, acheter, auditer.</text>
+</svg>
+
+<figcaption class="figure-caption">Schéma 5 — Cinq nouvelles approches benchmark, croisées selon cinq critères. Aucune ne domine ; chacune accepte un compromis différent entre coût d'évaluation, anti-contamination, comparabilité et représentativité.</figcaption>
+</figure>
+
+<p><strong>SWE-bench Live</strong> (Princeton, 2025)<sup><a href="#source-11" class="cite" data-src="11">[11]</a></sup> répond directement au vecteur (i) : au lieu d'un test set fixe, un harnais qui scrape automatiquement les nouvelles issues fermées chaque semaine et les ajoute au pool d'évaluation. Le modèle est évalué sur des instances <strong>datées après son cutoff</strong>. Le compromis : la comparabilité historique disparaît (un score "SWE-bench Live janvier 2026" ne se compare pas à un score "Live mars 2026"). C'est l'approche la plus radicale, et probablement la plus correcte épistémologiquement.</p>
+
+<p><strong>SWE-Lancer</strong> (OpenAI, 2025) place les agents sur des tâches <strong>payées réellement</strong> sur Upwork — l'agent produit une PR, un humain (le client) la valide, l'argent change de main. Le scoring est l'argent gagné. Anti-contamination par construction (tâches privées, jamais sur GitHub public). Coût d'évaluation prohibitif (~50-200 $ par tâche, et il faut 100-200 tâches pour un score significatif).</p>
+
+<p><strong>CORE-Bench</strong> (NYU, 2024) évalue les agents sur la <strong>reproductibilité scientifique</strong> : étant donné un papier publié, l'agent doit cloner le repo associé, configurer l'environnement, faire tourner l'analyse, reproduire les figures du papier. Le scoring est partiel (chaque figure reproduite vaut un point) et automatisable. Bonne représentativité d'un usage réel pour la recherche, faible couverture des autres usages.</p>
+
+<p><strong>MLE-bench</strong> (OpenAI, 2024)<sup><a href="#source-12" class="cite" data-src="12">[12]</a></sup> place les agents sur 75 anciennes compétitions Kaggle. L'agent reçoit le jeu de données et l'énoncé, doit produire un modèle qui obtient une médaille (bronze/argent/or selon le classement final). Design anti-contamination : les datasets Kaggle sont en partie privatisés et les solutions publiques sont monitorées. Score binaire à seuil (médaille obtenue ou pas).</p>
+
+<p><strong>ARC-AGI 2</strong> (ARC Prize, 2024)<sup><a href="#source-9" class="cite" data-src="9">[9]</a></sup> reste le benchmark le plus exigeant méthodologiquement : private test set, budget compute capé, scoring transparent. La barre humaine n'est pas saturée. Les progrès des modèles y sont les plus signifiants. C'est aussi le plus difficile à utiliser comme KPI commercial — le score moyen reste bas, peu attractif pour un communiqué de presse.</p>
+
+<p>Aucune de ces cinq approches ne résout entièrement le problème. Mais elles le déplacent : <mark>au lieu de mesurer la capacité d'un système à exceller sur une distribution fixe, elles mesurent sa capacité à transférer sur une distribution mouvante, payée, scientifique, abstraite</mark>. La diversité des angles est elle-même une protection : un labo qui veut industrialiser l'optimisation doit maintenant le faire en parallèle sur cinq surfaces, ce qui dilue l'effort.</p>
+
+<p>Le compromis assumé est le coût. Faire tourner un agent sur 500 tâches SWE-bench Verified prend quelques heures et coûte 200-500 $. Faire tourner le même agent sur SWE-Lancer coûte 10 000-40 000 $ pour un nombre d'instances comparable. <mark>La rigueur a un prix, qui se répercute sur la fréquence des évaluations publiques</mark>. Les labos sont incentivés à présenter des scores SWE-bench Verified tous les trimestres, et des scores SWE-Lancer une fois par an au mieux.</p>
+</section>
+
+<section>
+<h2 id="mesurer">§7. Mesurer pour quoi faire ?</h2>
+
+<p>Si tous les benchmarks publics sont contestables — chacun à sa manière — la question n'est plus "lequel est juste ?" mais "<strong>pourquoi mesure-t-on ?</strong>". La réponse dépend du rôle.</p>
+
+<figure class="figure" id="fig-06">
+<svg data-schema-id="schema-06" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 900" font-family="'Inter', sans-serif">
+  <style>
+    .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+    .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+    .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; letter-spacing: 0.06em; }
+    .interactive { cursor: pointer; }
+  </style>
+
+  <rect width="900" height="900" fill="#FAF8F3"/>
+
+  <g class="svg-header">
+    <text x="60" y="60" class="mono" font-size="12" font-weight="600" fill="#B7332C" letter-spacing="0.16em">SCHÉMA 06</text>
+    <text x="60" y="98" class="display" font-size="26" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Ce que la mesure dit, ce qu'elle ne dira jamais</text>
+    <text x="60" y="124" class="display" font-size="16" font-style="italic" fill="#5A5A5A">Framework 2×2 : situer une mesure dans l'espace contrôlé/écologique × ponctuel/longitudinal.</text>
+    <line x1="60" y1="142" x2="840" y2="142" stroke="#E5E1D8" stroke-width="0.5"/>
+  </g>
+
+  <!-- 2x2 grid: x from 180 to 820 (640 wide), y from 200 to 760 (560 tall) -->
+  <!-- Center cross at x=500, y=480 -->
+
+  <!-- Axis labels -->
+  <!-- Top: CONTRÔLÉ -->
+  <text x="500" y="172" class="mono" font-size="12" font-weight="600" fill="#5A5A5A" letter-spacing="0.16em" text-anchor="middle">CONTRÔLÉ</text>
+  <text x="500" y="188" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle" font-style="italic">distribution fixe, reproductible</text>
+
+  <!-- Bottom: ÉCOLOGIQUE -->
+  <text x="500" y="800" class="mono" font-size="12" font-weight="600" fill="#5A5A5A" letter-spacing="0.16em" text-anchor="middle">ÉCOLOGIQUE</text>
+  <text x="500" y="816" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle" font-style="italic">conditions d'usage réel</text>
+
+  <!-- Left: PONCTUEL -->
+  <text x="80" y="475" class="mono" font-size="12" font-weight="600" fill="#5A5A5A" letter-spacing="0.16em">PONCTUEL</text>
+  <text x="80" y="492" class="body" font-size="11" fill="#5A5A5A" font-style="italic">une éval, un score</text>
+
+  <!-- Right: LONGITUDINAL -->
+  <text x="820" y="475" class="mono" font-size="12" font-weight="600" fill="#5A5A5A" letter-spacing="0.16em" text-anchor="end">LONGITUDINAL</text>
+  <text x="820" y="492" class="body" font-size="11" fill="#5A5A5A" font-style="italic" text-anchor="end">suivi continu, dérive</text>
+
+  <!-- Axes lines with arrows -->
+  <line x1="180" y1="480" x2="820" y2="480" stroke="#1A1A1A" stroke-width="1"/>
+  <line x1="500" y1="200" x2="500" y2="760" stroke="#1A1A1A" stroke-width="1"/>
+  <path d="M 820 480 L 835 475 L 835 485 z" fill="#1A1A1A"/>
+  <path d="M 180 480 L 165 475 L 165 485 z" fill="#1A1A1A"/>
+  <path d="M 500 200 L 495 185 L 505 185 z" fill="#1A1A1A"/>
+  <path d="M 500 760 L 495 775 L 505 775 z" fill="#1A1A1A"/>
+
+  <!-- Quadrant TL: Contrôlé + Ponctuel = Benchmark public -->
+  <g class="interactive" data-card="benchmark-public" tabindex="0" role="button" aria-label="Benchmark public — quadrant contrôlé / ponctuel">
+    <rect x="200" y="210" width="290" height="250" rx="3" fill="#F2EFE7" stroke="#1A1A1A" stroke-width="1.25"/>
+    <text x="220" y="240" class="mono" font-size="11" font-weight="600" fill="#B7332C" letter-spacing="0.14em">QUADRANT A</text>
+    <text x="220" y="266" class="display" font-size="17" font-weight="600" fill="#1A1A1A">Benchmark public</text>
+    <text x="220" y="286" class="body" font-size="12" fill="#5A5A5A" font-style="italic">SWE-bench Verified, GAIA…</text>
+    <text x="220" y="316" class="body" font-size="12" fill="#1A1A1A">Sert à : comparer architectures,</text>
+    <text x="220" y="332" class="body" font-size="12" fill="#1A1A1A">publier, communiquer.</text>
+    <text x="220" y="362" class="body" font-size="12" fill="#1A1A1A" font-style="italic">Ne sert pas à : décider</text>
+    <text x="220" y="378" class="body" font-size="12" fill="#1A1A1A" font-style="italic">d'adopter en production.</text>
+    <line x1="220" y1="396" x2="470" y2="396" stroke="#E5E1D8" stroke-width="0.5"/>
+    <text x="220" y="416" class="mono" font-size="11" font-weight="500" fill="#1F5560">+ comparabilité maximale</text>
+    <text x="220" y="434" class="mono" font-size="11" font-weight="500" fill="#B7332C">− contamination structurelle</text>
+    <text x="220" y="452" class="mono" font-size="11" font-weight="500" fill="#B7332C">− distribution non représentative</text>
+  </g>
+
+  <!-- Quadrant TR: Contrôlé + Longitudinal = Eval interne récurrente -->
+  <g class="interactive" data-card="eval-interne" tabindex="0" role="button" aria-label="Eval interne récurrente — quadrant contrôlé / longitudinal">
+    <rect x="510" y="210" width="290" height="250" rx="3" fill="#F2EFE7" stroke="#1F5560" stroke-width="2.5"/>
+    <text x="530" y="240" class="mono" font-size="11" font-weight="600" fill="#1F5560" letter-spacing="0.14em">QUADRANT B · RECOMMANDÉ</text>
+    <text x="530" y="266" class="display" font-size="17" font-weight="600" fill="#1A1A1A">Éval interne récurrente</text>
+    <text x="530" y="286" class="body" font-size="12" fill="#5A5A5A" font-style="italic">30-50 tâches métier datées</text>
+    <text x="530" y="316" class="body" font-size="12" fill="#1A1A1A">Construite à partir d'incidents</text>
+    <text x="530" y="332" class="body" font-size="12" fill="#1A1A1A">internes, jamais publiée.</text>
+    <text x="530" y="362" class="body" font-size="12" fill="#1A1A1A" font-style="italic">Rejouée à chaque MàJ modèle.</text>
+    <text x="530" y="378" class="body" font-size="12" fill="#1A1A1A" font-style="italic">Détecte la dérive, pas la frontière.</text>
+    <line x1="530" y1="396" x2="780" y2="396" stroke="#E5E1D8" stroke-width="0.5"/>
+    <text x="530" y="416" class="mono" font-size="11" font-weight="500" fill="#1F5560">+ représentativité maximale</text>
+    <text x="530" y="434" class="mono" font-size="11" font-weight="500" fill="#1F5560">+ anti-contamination par construction</text>
+    <text x="530" y="452" class="mono" font-size="11" font-weight="500" fill="#B7332C">− pas de comparabilité externe</text>
+  </g>
+
+  <!-- Quadrant BL: Écologique + Ponctuel = Pilote utilisateur -->
+  <g class="interactive" data-card="pilote" tabindex="0" role="button" aria-label="Pilote utilisateur — quadrant écologique / ponctuel">
+    <rect x="200" y="500" width="290" height="250" rx="3" fill="#F2EFE7" stroke="#1A1A1A" stroke-width="1.25"/>
+    <text x="220" y="530" class="mono" font-size="11" font-weight="600" fill="#B7332C" letter-spacing="0.14em">QUADRANT C</text>
+    <text x="220" y="556" class="display" font-size="17" font-weight="600" fill="#1A1A1A">Pilote utilisateur</text>
+    <text x="220" y="576" class="body" font-size="12" fill="#5A5A5A" font-style="italic">canary, A/B avec ingénieurs</text>
+    <text x="220" y="606" class="body" font-size="12" fill="#1A1A1A">Évaluation par les utilisateurs</text>
+    <text x="220" y="622" class="body" font-size="12" fill="#1A1A1A">cibles sur un sous-périmètre.</text>
+    <text x="220" y="652" class="body" font-size="12" fill="#1A1A1A" font-style="italic">Capture les frottements UX,</text>
+    <text x="220" y="668" class="body" font-size="12" fill="#1A1A1A" font-style="italic">la cognitive load, les rejets.</text>
+    <line x1="220" y1="686" x2="470" y2="686" stroke="#E5E1D8" stroke-width="0.5"/>
+    <text x="220" y="706" class="mono" font-size="11" font-weight="500" fill="#1F5560">+ validité écologique</text>
+    <text x="220" y="724" class="mono" font-size="11" font-weight="500" fill="#B7332C">− biais d'auto-sélection</text>
+    <text x="220" y="742" class="mono" font-size="11" font-weight="500" fill="#B7332C">− pas de signal sur la dérive</text>
+  </g>
+
+  <!-- Quadrant BR: Écologique + Longitudinal = Monitoring production -->
+  <g class="interactive" data-card="monitoring" tabindex="0" role="button" aria-label="Monitoring production — quadrant écologique / longitudinal">
+    <rect x="510" y="500" width="290" height="250" rx="3" fill="#F2EFE7" stroke="#1A1A1A" stroke-width="1.25"/>
+    <text x="530" y="530" class="mono" font-size="11" font-weight="600" fill="#B7332C" letter-spacing="0.14em">QUADRANT D</text>
+    <text x="530" y="556" class="display" font-size="17" font-weight="600" fill="#1A1A1A">Monitoring production</text>
+    <text x="530" y="576" class="body" font-size="12" fill="#5A5A5A" font-style="italic">OTel GenAI, traces, replays</text>
+    <text x="530" y="606" class="body" font-size="12" fill="#1A1A1A">Suivi continu en production :</text>
+    <text x="530" y="622" class="body" font-size="12" fill="#1A1A1A">taux d'échec, coût latent,</text>
+    <text x="530" y="638" class="body" font-size="12" fill="#1A1A1A">distribution des trajectoires.</text>
+    <text x="530" y="668" class="body" font-size="12" fill="#1A1A1A" font-style="italic">Voir le dossier observabilite-agents-ia.</text>
+    <line x1="530" y1="686" x2="780" y2="686" stroke="#E5E1D8" stroke-width="0.5"/>
+    <text x="530" y="706" class="mono" font-size="11" font-weight="500" fill="#1F5560">+ détecte les régressions tôt</text>
+    <text x="530" y="724" class="mono" font-size="11" font-weight="500" fill="#B7332C">− coûteux à instrumenter</text>
+    <text x="530" y="742" class="mono" font-size="11" font-weight="500" fill="#B7332C">− pas de baseline contrôlée</text>
+  </g>
+
+  <!-- footer -->
+  <line x1="60" y1="850" x2="840" y2="850" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="872" class="body" font-size="11" font-style="italic" fill="#5A5A5A">Source : cadre analytique de l'auteur, dérivé de la triangulation observée sur 12 mois d'adoption d'agents en entreprise (2025-2026).</text>
+  <text x="60" y="888" class="body" font-size="11" font-style="italic" fill="#5A5A5A">Lecture : la rigueur empirique exige les quatre quadrants. Aucun ne se substitue aux trois autres.</text>
+</svg>
+
+<figcaption class="figure-caption">Schéma 6 — Framework 2×2 pour situer une mesure dans l'espace contrôlé/écologique × ponctuel/longitudinal. Chaque quadrant a une utilité, mais aucun ne se substitue aux trois autres. L'erreur commune consiste à acheter une décision de production sur un benchmark contrôlé/ponctuel.</figcaption>
+</figure>
+
+<p>Pour un <strong>chercheur en IA</strong>, le benchmark public est un outil <strong>diagnostique</strong> : il sert à comparer des architectures, à identifier des modes de défaillance, à publier des résultats reproductibles. Sa fragilité à la contamination est un défaut connu et mitigeable par les techniques classiques (<span class="term" data-tooltip="Held-out : ensemble de données mis à l'écart pendant l'entraînement et utilisé uniquement pour l'évaluation finale. Garantit que le modèle n'a pas vu ces exemples — sauf si la frontière entre train et held-out a été enfreinte, ce qui arrive plus souvent qu'on ne le pense.">held-out</span>, <span class="term" data-tooltip="Ablation : protocole expérimental qui consiste à retirer une composante du système (un module, une couche, un signal de récompense) et à mesurer l'effet sur la performance. Mesure la contribution causale de la composante.">ablations</span>, scaling laws sur sous-distributions). L'usage est légitime.</p>
+
+<p>Pour un <strong>acheteur en entreprise</strong>, le benchmark public est un outil <strong>publicitaire</strong> : il sert à raccourcir la liste des fournisseurs candidats, jamais à conclure. La décision d'adoption doit reposer sur une <strong>éval interne</strong> — 30 à 50 tâches représentatives du métier, datées après le cutoff du modèle, scorées par les ingénieurs qui utiliseront l'agent. Le coût est modeste (deux à quatre semaines-ingénieur), le retour épistémique est considérable.</p>
+
+<p>Pour un <strong>régulateur</strong> ou un <strong>auditeur</strong>, le benchmark public est presque inutile en l'état. Un acteur capable de gamer un benchmark public est probablement capable de gamer un benchmark de conformité construit sur le même paradigme. Les approches émergentes (<span class="term" data-tooltip="Red-teaming : équipe interne ou externe qui simule activement des attaques contre un système, dans l'esprit du red team militaire. Standard pour la sécurité IA depuis Anthropic 2022 ; cadre dans l'EU AI Act pour les modèles 'à risque systémique'.">red-teaming</span>, simulation adversariale, audit par échantillonnage) sont plus prometteuses, mais leur méthodologie est immature.</p>
+
+<p>Pour un <strong>journaliste</strong> ou un <strong>commentateur</strong>, le benchmark public est un raccourci dangereux : il invite à des narratifs simples ("le score X a doublé") qui occultent la mécanique de production du score. La règle d'hygiène serait : <strong>ne jamais publier un score sans publier aussi le harnais utilisé, le nombre de retries, le prompt système, et la date de fin d'entraînement du modèle évalué</strong>. Le format reportage agite peu cette exigence.</p>
+
+<p>Le résultat net, pour celui qui doit acheter, vendre, ou prescrire un agent : <strong>un score public n'est pas une preuve, c'est un point de départ</strong>. Il faut le doubler, le décomposer, le confronter à un usage. Sinon, on n'achète pas un agent — on achète l'effort d'optimisation d'une équipe inconnue sur une distribution qu'on n'utilise pas.</p>
+
+<p>Cette discipline méthodologique est encore rare. Elle deviendra, dans les douze mois qui viennent, un signe distinctif des équipes qui sauront déployer ces systèmes sans se brûler. Les autres apprendront à leurs frais que le bench n'était jamais le travail.</p>
+</section>
+    </main>
+
+    <aside id="sources" aria-label="Sources">
+      <button class="panel-close" type="button" aria-label="Fermer les sources">Fermer ✕</button>
+      <button id="sources-collapse-btn" class="sidebar-edge-toggle" type="button" aria-label="Réduire le panneau Sources" title="Réduire le panneau Sources" aria-expanded="true">›</button>
+      <div class="sources-inner">
+        <h2>Sources</h2>
+        <ol id="sources-list">
+<li id="source-1" data-num="1">
+  <span class="src-host">arxiv.org/2310.06770 ↗</span>
+  <a href="https://arxiv.org/abs/2310.06770">Jimenez et al. — SWE-bench</a>
+  <p class="src-context">Papier fondateur du benchmark (Princeton NLP, ICLR 2024). 2 294 issues filtrées sur 12 dépôts Python populaires, harnais Docker, scoring binaire <code>FAIL_TO_PASS</code>. Référence canonique pour comprendre la mécanique du pipeline.</p>
+</li>
+<li id="source-2" data-num="2">
+  <span class="src-host">openai.com ↗</span>
+  <a href="https://openai.com/index/introducing-swe-bench-verified/">OpenAI — Introducing SWE-bench Verified</a>
+  <p class="src-context">Sous-ensemble human-verified de 500 issues (août 2024). Légitime publiquement le doute sur la qualité du benchmark original — l'audit corrige les items pathologiques mais ne traite pas la contamination structurelle.</p>
+</li>
+<li id="source-3" data-num="3">
+  <span class="src-host">arxiv.org/2311.12983 ↗</span>
+  <a href="https://arxiv.org/abs/2311.12983">Mialon et al. — GAIA</a>
+  <p class="src-context">Benchmark "general AI assistant" (Meta AI + HuggingFace, 2023). 466 tâches, 3 niveaux. Conçu comme difficile à la sortie (GPT-4 plafonnait à 30 % niveau 1) ; saturation rapide du niveau 1 fin 2025.</p>
+</li>
+<li id="source-4" data-num="4">
+  <span class="src-host">arxiv.org/2404.07972 ↗</span>
+  <a href="https://arxiv.org/abs/2404.07972">Xie et al. — OSWorld</a>
+  <p class="src-context">369 tâches sur OS réel (HKUST, NeurIPS 2024). Scoring partiellement automatisé via vérification d'état système. Le moins saturé des quatre benchmarks centraux.</p>
+</li>
+<li id="source-5" data-num="5">
+  <span class="src-host">arxiv.org/2406.12045 ↗</span>
+  <a href="https://arxiv.org/abs/2406.12045">Yao et al. — τ-bench</a>
+  <p class="src-context">Premier benchmark à introduire un user-simulator scriptable (Sierra Technologies, 2024). La v2 (avril 2025) découple les modèles côté agent et user pour corriger l'inflation par coopération.</p>
+</li>
+<li id="source-6" data-num="6">
+  <span class="src-host">arxiv.org/2310.18018 ↗</span>
+  <a href="https://arxiv.org/abs/2310.18018">Sainz et al. — NLP Evaluation in Trouble</a>
+  <p class="src-context">Papier méthodologique de référence sur la mesure de la contamination (EMNLP Findings 2023). Applicable au-delà du NLP pur — pose les bases conceptuelles utilisées par tous les audits suivants.</p>
+</li>
+<li id="source-7" data-num="7">
+  <span class="src-host">arxiv.org/2310.10628 ↗</span>
+  <a href="https://arxiv.org/abs/2310.10628">Roberts et al. — Data Contamination Through the Lens of Time</a>
+  <p class="src-context">Démonstration empirique du leakage temporel. Sur subsets dont la date d'instance dépasse le cutoff du modèle, les scores baissent de 8-15 points absolus — quantification rigoureuse du vecteur (i).</p>
+</li>
+<li id="source-8" data-num="8">
+  <span class="src-host">arxiv.org/2203.08242 ↗</span>
+  <a href="https://arxiv.org/abs/2203.08242">Magar &amp; Schwartz — Memorization to Exploitation</a>
+  <p class="src-context">ACL 2022. Distinction utile : un modèle peut avoir mémorisé un test sans pour autant l'exploiter pour répondre — et inversement, un modèle peut exploiter sans avoir mémorisé verbatim. Cadre conceptuel pour les vecteurs (ii) à (iv).</p>
+</li>
+<li id="source-9" data-num="9">
+  <span class="src-host">arxiv.org/2412.04604 ↗</span>
+  <a href="https://arxiv.org/abs/2412.04604">Chollet et al. — ARC Prize 2024 Technical Report</a>
+  <p class="src-context">Méthodologie de référence pour un benchmark résistant à la contamination et au prompt engineering : private test set, budget compute capé, scoring transparent. Contre-exemple aux benchmarks publics standards.</p>
+</li>
+<li id="source-10" data-num="10">
+  <span class="src-host">arxiv.org/2410.06992 ↗</span>
+  <a href="https://arxiv.org/abs/2410.06992">Aleithan et al. — SWE-Bench+</a>
+  <p class="src-context">Audit fin de SWE-bench original (octobre 2024). ≈18 % des instances présentent une forme de solution leakage (changelog, version-tag, commit message dans la PR) — quantification du vecteur (ii).</p>
+</li>
+<li id="source-11" data-num="11">
+  <span class="src-host">swebench-live.com ↗</span>
+  <a href="https://swebench-live.com">Wang et al. — SWE-bench Live</a>
+  <p class="src-context">Princeton + Microsoft Research, 2025 (rolling). Première implémentation d'un benchmark à test set rolling, mis à jour hebdomadairement. Le compromis assumé : comparabilité historique perdue.</p>
+</li>
+<li id="source-12" data-num="12">
+  <span class="src-host">arxiv.org/2410.07095 ↗</span>
+  <a href="https://arxiv.org/abs/2410.07095">Chan et al. — MLE-bench</a>
+  <p class="src-context">75 anciennes compétitions Kaggle (OpenAI, octobre 2024). Design anti-contamination : datasets privatisés, monitoring des solutions publiques. Scoring à seuil (médaille bronze/argent/or).</p>
+</li>
+        </ol>
+      </div>
+    </aside>
+
+  </div><!-- /.layout -->
+
+  <button id="sources-expand-btn" class="sidebar-edge-toggle" type="button" aria-label="Afficher le panneau Sources" title="Afficher le panneau Sources" aria-expanded="false" hidden>‹</button>
+
+  <!-- Zoom overlay -->
+  <div id="zoom-overlay" hidden role="dialog" aria-modal="true" aria-label="Schéma agrandi">
+    <div id="zoom-header">
+      <span id="zoom-caption"></span>
+      <div class="zoom-controls">
+        <button class="zoom-out" type="button" aria-label="Dézoomer">−</button>
+        <button class="zoom-reset" type="button" aria-label="Réinitialiser">Reset</button>
+        <button class="zoom-in" type="button" aria-label="Zoomer">+</button>
+        <button class="zoom-close" type="button" aria-label="Fermer">×</button>
+      </div>
+    </div>
+    <div id="zoom-stage" tabindex="-1">
+      <div id="zoom-content"></div>
+      <div id="zoom-hint">molette / pinch pour zoomer · clic-glisser pour déplacer · Esc pour fermer</div>
+      <a class="schema-sigil zoom-sigil" href="https://mathieugug.github.io/" target="_blank" rel="noopener" aria-label="Mathieu Guglielmino — visiter mathieugug.github.io" title="Mathieu Guglielmino · mathieugug.github.io">
+        <svg class="sigil-mark" viewBox="0 0 44 44" aria-hidden="true" focusable="false">
+          <circle class="sigil-bg" cx="22" cy="22" r="20.5"/>
+          <circle class="sigil-ring" cx="22" cy="22" r="17.5"/>
+          <g class="sigil-letters"><text x="7.5" y="29">M</text><text x="22" y="29">G</text></g>
+        </svg>
+      </a>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div id="modal-root" hidden role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card">
+      <button class="modal-close" data-close type="button" aria-label="Fermer">×</button>
+      <p class="modal-eyebrow" id="modal-eyebrow"></p>
+      <h3 id="modal-title"></h3>
+      <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <script>
+    const SCHEMAS = {
+  "schema-01": {
+    "collection": {
+      eyebrow: "01 · COLLECTION",
+      title: "12 dépôts Python populaires",
+      body: "Le scraper interroge l'API GitHub sur 12 dépôts choisis pour leur popularité et leur maturité : pandas, django, sympy, matplotlib, scikit-learn, requests, sphinx, pylint, pytest, astropy, flask, xarray. Il retient les pull-requests fermées qui (a) mentionnent explicitement une issue dans leur description, (b) modifient au moins un fichier de test, (c) sont mergées dans la branche principale.<br><br>Sortie brute : ≈ 90 000 PR candidates. La sélection finale n'en gardera que 2,5 % — ce qui pose déjà la question de la <em>représentativité statistique</em> des issues retenues face à l'écosystème Python réel."
+    },
+    "filtering": {
+      eyebrow: "02 · FILTRAGE",
+      title: "Trois conditions strictes",
+      body: "(i) La PR fait passer un test qui échouait avant le patch (<code>FAIL_TO_PASS</code>). (ii) Le test isolé est exécutable hors de tout contexte humain — pas de fixture qui dépend d'un browser, d'une base de données externe, ou d'un fichier non versionné. (iii) L'environnement Docker reproductible peut être instancié avec les versions exactes du commit parent.<br><br>Résultat : 2 294 instances. Cette filtration sélectionne aussi un <em>type</em> particulier de bug — celui qui a un test pré-existant. Les bugs détectés en production sans test, ou ceux qui requièrent l'écriture d'un nouveau test, sont mécaniquement exclus."
+    },
+    "harness": {
+      eyebrow: "03 · HARNAIS",
+      title: "Conteneur Docker reproductible",
+      body: "Pour chaque instance, le harnais instancie un conteneur Docker qui contient le repo au commit parent (juste avant le fix), les dépendances figées (Python version, packages avec versions exactes). Le patch produit par l'agent est appliqué. Puis <code>pytest</code> est lancé sur les tests <code>FAIL_TO_PASS</code>.<br><br><strong>Ce qui est libre :</strong> l'exploration du repo par l'agent, le nombre de retries, l'orchestration multi-tour, la lecture des fichiers, l'utilisation de tools auxiliaires. Le harnais n'évalue que le format final du patch, pas le chemin pour y parvenir. C'est cette liberté qui rend les scores non-comparables entre labos[^10]."
+    },
+    "scoring": {
+      eyebrow: "04 · SCORING",
+      title: "Binaire — pas de juge LLM, pas de partiel",
+      body: "Score binaire : tous les tests <code>FAIL_TO_PASS</code> passent → 1, sinon → 0. Pas de score partiel, pas de juge LLM, pas de subjectivité.<br><br><strong>Avantage :</strong> objectivité absolue. <strong>Limite :</strong> un patch correct qui se contente de masquer le bug (ex : <code>try/except</code> qui avale l'exception) peut faire passer le test sans réparer le problème de fond. Le scoring fonctionnel ne juge pas la qualité conceptuelle de la solution.<br><br>Pour SWE-bench Verified[^2], OpenAI a ajouté en août 2024 un audit humain qui a éliminé les instances dont le patch attendu est pathologiquement trivial — mais l'audit corrige les items, pas la contamination structurelle."
+    }
+  },
+  "schema-02": {
+    "temporal-overlap": {
+      eyebrow: "VECTEUR (i)",
+      title: "Chevauchement train/test temporel",
+      body: "Le plus connu, le plus discuté, et celui qui résiste le mieux aux dénégations. Tout modèle pré-entraîné sur un crawl web post-2023 a vu, dans son corpus, les commits qui résolvent les issues de SWE-bench. Le patch correctif est lui-même un commit public dans le repo.<br><br><strong>Quantification :</strong> Roberts et al. (2024) — sur des subsets dont la date dépasse le cutoff du modèle, les scores baissent de 8 à 15 points absolus[^7]. La fuite est explicite (mesurable) mais structurelle : pour l'éviter, il faut un benchmark à test set rolling (SWE-bench Live)."
+    },
+    "version-tag": {
+      eyebrow: "VECTEUR (ii)",
+      title: "Fuite par version-tag",
+      body: "Plus subtil. Les issues SWE-bench portent dans leur description le numéro de version où le bug a été observé (ex : <em>\"This breaks in pandas 1.3.5\"</em>). Le patch correctif fixe la version dans un commit suivant, parfois mentionné dans le changelog.<br><br>Un modèle entraîné sur PyPI ou des release notes peut associer la version au type de bug et au type de fix sans avoir besoin de \"raisonner\" sur le code.<br><br><strong>Quantification :</strong> Aleithan et al. (2024) ont audité 100 instances et trouvé ≈ 18 % de <em>solution leakage</em> indirect par ce canal[^10]. Mitigeable par un audit fin à la SWE-bench Verified."
+    },
+    "harness-gaming": {
+      eyebrow: "VECTEUR (iii)",
+      title: "Gaming du harnais",
+      body: "Le vecteur le plus visible, et celui que la communauté tolère le mieux. SWE-bench ne fixe que le format final (le patch produit) et le scorer ; tout le reste — exploration du repo, lecture des fichiers, retries, agents intermédiaires — est libre.<br><br><strong>Exemples 2024-2026 :</strong> Magic.dev publie un harness avec vote majoritaire à N=8. Cognition (Devin) utilise un orchestrateur multi-étapes propriétaire. Anthropic publie ses scores sur un harness \"claude-tools\" qui n'est pas exactement celui distribué publiquement.<br><br>Aucun de ces choix n'est de la triche au sens strict — mais ils rendent les scores <strong>non-comparables</strong> entre labos et entre versions du même labo. Effet cumulé : +5 à +12 pts."
+    },
+    "prompt-leakage": {
+      eyebrow: "VECTEUR (iv)",
+      title: "Leakage de prompt",
+      body: "Le moins discuté, et probablement le plus difficile à mesurer. Les prompts utilisés en évaluation sont rarement publiés intégralement. Ils contiennent souvent des hints méthodologiques (\"vérifie d'abord les fichiers <code>tests/</code>\", \"regarde les imports avant de patcher\", \"n'oublie pas que pandas utilise pytest\"), parfois calibrés instance par instance lors de phases de \"prompt search\".<br><br>Un modèle évalué avec un prompt-search exhaustif a un score qui dépend autant du prompt que du modèle. Aucun audit indépendant n'est possible — les prompts sont propriétaires. Effet typique : +3 à +6 pts, rarement avoué."
+    }
+  },
+  "schema-03": {
+    "swe-bench": {
+      eyebrow: "SWE-BENCH VERIFIED",
+      title: "De 20 % à 78 % en dix-huit mois",
+      body: "Trajectoire la plus suivie. Score moyen Q1 2024 ~12 %, sortie de SWE-bench Verified Q3 2024 → reset à ~30 %, puis montée régulière de +7 à +12 points par trimestre.<br><br><strong>Points d'inflexion :</strong> sortie de Verified (Q3 2024), montée de l'industrialisation des harness customs (Q1-Q2 2025), arrivée de Claude Opus 4.x et GPT-5 (Q4 2025).<br><br><strong>Écart au terrain :</strong> les rendements internes mesurés (banques, fintech, équipes data des grands groupes) restent à 25-40 % sur leurs monorepos. L'écart est stable, voire croissant."
+    },
+    "gaia": {
+      eyebrow: "GAIA NIVEAU 1",
+      title: "30 % → 88 % — saturation rapide",
+      body: "Le niveau 1 de GAIA[^3] (la « tâche de base » selon les auteurs) est en saturation. À la sortie en novembre 2023, GPT-4 plafonnait à 30 %. Vingt mois plus tard, Claude Opus 4.6 atteint ~88 %.<br><br><strong>Mécanisme :</strong> les outils que demandent les tâches (calculatrice, Python, recherche web) sont devenus triviaux à orchestrer ; le savoir-faire d'utilisation des outils est maintenant dans le modèle.<br><br>Le niveau 3 (questions multi-hop complexes) résiste mieux — autour de 60-65 % début 2026. Mais sa saturation suit la même courbe, décalée d'environ 12-18 mois."
+    },
+    "osworld": {
+      eyebrow: "OSWORLD",
+      title: "Le moins saturé — environnement ouvert",
+      body: "Trajectoire la plus douce. 4 % à la sortie début 2024, ~32 % début 2026. Pente moyenne : +2 à +3 points par trimestre — un facteur 4 plus lent que SWE-bench Verified.<br><br><strong>Pourquoi :</strong> l'environnement (OS réel : Ubuntu, applications GUI, navigateurs) introduit une variabilité que les benchmarks à instances fixes n'ont pas. Le même agent évalué sur des distributions Linux différentes, des versions LibreOffice différentes, montre des variations de ±10 points[^4].<br><br>C'est aussi le benchmark le moins « benchmark-team-friendly » : le coût d'évaluation est élevé, l'instrumentation difficile, et l'optimisation ciblée moins efficace."
+    },
+    "tau-bench": {
+      eyebrow: "τ-BENCH v2",
+      title: "Le découplage qui a fait baisser les scores",
+      body: "Trajectoire qui contient l'événement le plus pédagogique des deux années écoulées. À la sortie de τ-bench v1 (mi-2024)[^5], les scores publiés montent de 32 % à 56 % en six mois.<br><br>Puis en avril 2025, l'équipe Sierra publie τ-bench v2 qui découple les modèles côté agent et côté user-simulator (constatant que les deux développaient une coopération non-intentionnelle quand ils partageaient le même modèle de base).<br><br><strong>Effet :</strong> les scores baissent de 8 points pour tous les top performers. C'est exactement le pattern « publication d'une variante v2 → reset → remontée » qu'on observe sur les autres benchmarks."
+    }
+  },
+  "schema-04": {
+    "checkpoint": {
+      eyebrow: "LEVIER 1 · SÉLECTION",
+      title: "Choix du checkpoint benchmark-fit",
+      body: "Tout entraînement produit plusieurs checkpoints au fil des epochs. Choisir celui qui maximise SWE-bench plutôt que la loss moyenne est trivial à formaliser comme un critère d'arrêt.<br><br><strong>Effet typique :</strong> +2 à +4 points absolus. <strong>Effort :</strong> faible. Tous les labos le pratiquent — c'est la moins controversée des cinq optimisations.<br><br>Conséquence latérale : le modèle déployé n'est pas le checkpoint qui généralise le mieux, mais celui qui surfite le mieux sur la distribution du benchmark."
+    },
+    "harness-custom": {
+      eyebrow: "LEVIER 2 · ORCHESTRATION",
+      title: "Harness multi-étapes propriétaire",
+      body: "L'orchestrateur appelle le modèle plusieurs fois, gère l'état du repo, parse les outputs. Quatre variations courantes : ReAct simple, ReAct avec retries, multi-agent (planner + executor + critic), vote majoritaire sur N samples.<br><br><strong>Effet typique :</strong> +5 à +10 points entre ReAct simple et harness multi-agent. <strong>Effort :</strong> moyen (plusieurs ingénieurs-trimestres pour un harness compétitif).<br><br><strong>Exemples 2024-2026 :</strong> Magic.dev (vote majoritaire à N=8), Cognition (Devin orchestrator), Anthropic (claude-tools). Aucun n'est exactement reproductible par un tiers — la comparabilité disparaît."
+    },
+    "prompt-eng": {
+      eyebrow: "LEVIER 3 · PROMPTS",
+      title: "Prompt-search exhaustif sur la validation",
+      body: "Un prompt système soigneusement calibré sur des instances de validation (séparées du test mais issues de la même distribution) ajoute +3 à +6 points absolus. L'effort humain est important — plusieurs ingénieurs-semaines, parfois mois — mais la marge de gain est claire.<br><br>Le prompt final embarque souvent des hints méthodologiques (\"vérifie d'abord tests/\", \"regarde les imports avant de patcher\") et des conventions de format optimales pour le harness.<br><br><strong>Frontière éthique :</strong> rarement publié intégralement. Reproduire le score publié sans avoir le prompt exact donne typiquement -3 à -6 points."
+    },
+    "rl-fine-tune": {
+      eyebrow: "LEVIER 4 · RL CIBLÉ",
+      title: "Fine-tuning sur trajectoires similaires",
+      body: "Le levier le plus puissant et le plus controversé. Plutôt que d'entraîner sur SWE-bench directement (ce qui serait du training-on-test pur et serait reproché), les labos génèrent des <strong>trajectoires synthétiques</strong> sur des issues GitHub <em>similaires</em> (autres repos, mêmes patterns), puis font du RL avec récompense binaire (le test passe / ne passe pas).<br><br><strong>Effet typique :</strong> +5 à +15 points absolus. <strong>Effort :</strong> élevé (compute GPU, courbe d'apprentissage du RL ciblé).<br><br><strong>Frontière éthique :</strong> ce qui est \"similaire\" reste défini par le labo. Anthropic publie ses pratiques. Magic ne les publie pas. La frontière entre \"transfert légitime\" et \"contamination indirecte\" est floue."
+    },
+    "retries": {
+      eyebrow: "LEVIER 5 · RETRIES",
+      title: "N=1 → N=8, vote majoritaire",
+      body: "Le plus visible. Faire tourner l'agent N fois, choisir la sortie qui passe le plus de tests (interdit) ou par vote majoritaire (autorisé). Le passage de N=1 à N=8 ajoute typiquement +6 à +12 points.<br><br><strong>Coût :</strong> compute multiplié par N. Sur SWE-bench Verified (500 instances), passer de N=1 à N=8 multiplie le coût d'évaluation par 8 — passe de ~200 $ à ~1 600 $.<br><br><strong>Implication production :</strong> le score publié correspond à un usage à N=8 que personne ne paiera en production réelle. Le rendement à N=1 (la condition d'usage standard) est typiquement 8-12 points en-dessous du score publié."
+    }
+  },
+  "schema-05": {
+    "swe-live": {
+      eyebrow: "APPROCHE 1",
+      title: "SWE-bench Live — rolling test set",
+      body: "Princeton + MSR, 2025. Réponse directe au vecteur (i) : au lieu d'un test set fixe, un harnais scrape automatiquement les nouvelles issues fermées chaque semaine et les ajoute au pool d'évaluation. Le modèle est évalué sur des instances <strong>datées après son cutoff</strong>[^11].<br><br><strong>Compromis assumé :</strong> la comparabilité historique disparaît. Un score \"SWE-bench Live janvier 2026\" ne se compare pas à un score \"Live mars 2026\". C'est l'approche la plus radicale, et probablement la plus correcte épistémologiquement.<br><br><strong>Coût :</strong> ~500 $/run, comparable à SWE-bench Verified."
+    },
+    "swe-lancer": {
+      eyebrow: "APPROCHE 2",
+      title: "SWE-Lancer — tâches payées sur Upwork",
+      body: "OpenAI, 2025. Place les agents sur des tâches <strong>payées réellement</strong> sur Upwork : l'agent produit une PR, un humain (le client) la valide, l'argent change de main. Le scoring est l'argent gagné.<br><br><strong>Anti-contamination par construction</strong> : tâches privées, jamais sur GitHub public.<br><br><strong>Coût d'évaluation prohibitif :</strong> ~50-200 $ par tâche, et il faut 100-200 tâches pour un score significatif. Total : 10-40 k$ par évaluation complète. C'est pourquoi les scores SWE-Lancer sont publiés une fois par an au mieux, contre SWE-bench Verified trimestriellement."
+    },
+    "core-bench": {
+      eyebrow: "APPROCHE 3",
+      title: "CORE-Bench — reproductibilité scientifique",
+      body: "NYU, 2024. Évalue les agents sur la <strong>reproductibilité scientifique</strong> : étant donné un papier publié, l'agent doit cloner le repo associé, configurer l'environnement, faire tourner l'analyse, reproduire les figures du papier.<br><br><strong>Scoring partiel</strong> (chaque figure reproduite vaut un point), automatisable. <strong>Bonne représentativité</strong> d'un usage réel pour la recherche.<br><br><strong>Limites :</strong> faible couverture des autres usages (un agent qui excelle sur CORE-Bench n'est pas nécessairement bon pour fixer des bugs en production). Coût ~2-5 k$ par run."
+    },
+    "mle-bench": {
+      eyebrow: "APPROCHE 4",
+      title: "MLE-bench — 75 compétitions Kaggle",
+      body: "OpenAI, 2024[^12]. L'agent reçoit le jeu de données et l'énoncé d'une ancienne compétition Kaggle, doit produire un modèle qui obtient une médaille (bronze/argent/or selon le classement final).<br><br><strong>Design anti-contamination :</strong> les datasets Kaggle sont en partie privatisés et les solutions publiques sont monitorées. <strong>Scoring à seuil</strong> (médaille obtenue ou pas), simple à comparer entre labos.<br><br><strong>Compromis :</strong> évalue spécifiquement les compétences ML engineering, pas les compétences génériques de raisonnement ou de coding. Excellent pour les agents AutoML, plus narrow pour le reste."
+    },
+    "arc-agi": {
+      eyebrow: "APPROCHE 5",
+      title: "ARC-AGI 2 — private set, compute capé",
+      body: "ARC Prize Foundation, 2024[^9]. Le benchmark le plus exigeant méthodologiquement : <strong>private test set</strong>, budget compute capé (~10 k$ par submission), scoring transparent.<br><br><strong>La barre humaine n'est pas saturée</strong> (~85 %). Les modèles plafonnent à 55 % début 2026. Les progrès y sont les plus signifiants — chaque +5 points absolus représente une avancée méthodologique réelle.<br><br><strong>Limite commerciale :</strong> peu attractif pour un communiqué de presse (score moyen bas). C'est pourquoi ARC reste un benchmark de chercheurs, peu utilisé comme KPI commercial — précisément ce qui le rend méthodologiquement le plus solide."
+    }
+  },
+  "schema-06": {
+    "benchmark-public": {
+      eyebrow: "QUADRANT A · CONTRÔLÉ × PONCTUEL",
+      title: "Benchmark public",
+      body: "<strong>Exemples :</strong> SWE-bench Verified, GAIA, OSWorld, τ-bench v2.<br><br><strong>Sert à :</strong> comparer des architectures, publier des résultats reproductibles, communiquer sur les capacités frontière.<br><br><strong>Ne sert pas à :</strong> décider d'adopter un agent en production. La fragilité à la contamination et la non-représentativité de la distribution rendent l'extrapolation au cas métier hasardeuse.<br><br><strong>Force :</strong> comparabilité maximale entre labos (au prix des nuances de harness). <strong>Faiblesse :</strong> contamination structurelle, distribution non représentative."
+    },
+    "eval-interne": {
+      eyebrow: "QUADRANT B · CONTRÔLÉ × LONGITUDINAL · RECOMMANDÉ",
+      title: "Éval interne récurrente",
+      body: "<strong>Construction :</strong> 30 à 50 tâches métier datées (après le cutoff du modèle), tirées d'incidents internes réels, jamais publiées. Scorées par les ingénieurs qui utiliseront l'agent.<br><br><strong>Sert à :</strong> décider d'adopter, détecter la dérive lors d'une mise à jour de modèle, calibrer les attentes.<br><br><strong>Force :</strong> représentativité maximale, anti-contamination par construction (tâches privées).<br><br><strong>Faiblesse :</strong> pas de comparabilité externe. <strong>Coût initial :</strong> 2-4 semaines-ingénieur. <strong>Coût récurrent :</strong> 1-2 jours par rejeu (à chaque MàJ modèle)."
+    },
+    "pilote": {
+      eyebrow: "QUADRANT C · ÉCOLOGIQUE × PONCTUEL",
+      title: "Pilote utilisateur",
+      body: "<strong>Forme :</strong> canary deploy ou A/B test avec un sous-périmètre d'utilisateurs cibles, sur 2-6 semaines.<br><br><strong>Sert à :</strong> capturer les frottements UX, la cognitive load, les rejets implicites (utilisateurs qui contournent l'agent). Mesure tout ce qu'un benchmark contrôlé ne peut pas mesurer.<br><br><strong>Force :</strong> validité écologique. C'est le seul format qui révèle si l'agent est <em>utilisé</em>, pas seulement <em>performant</em>.<br><br><strong>Faiblesse :</strong> biais d'auto-sélection (les premiers utilisateurs sont plus indulgents), pas de signal sur la dérive long terme, difficulté à extraire des conclusions chiffrées."
+    },
+    "monitoring": {
+      eyebrow: "QUADRANT D · ÉCOLOGIQUE × LONGITUDINAL",
+      title: "Monitoring production",
+      body: "<strong>Forme :</strong> instrumentation OpenTelemetry GenAI, traces, replays sur cohortes, métriques de dérive comportementale. Voir le dossier <em>observabilite-agents-ia</em> pour la mécanique.<br><br><strong>Sert à :</strong> détecter les régressions tôt, comprendre les incidents <em>post-mortem</em>, suivre l'évolution du coût latent, identifier les dérives de tendance que les sondes individuelles ratent.<br><br><strong>Force :</strong> seule mesure qui couvre l'usage réel sur le long terme.<br><br><strong>Faiblesse :</strong> coûteux à instrumenter (stack OTel + storage + analytique), pas de baseline contrôlée — on observe ce qui se passe, on ne mesure pas ce qui aurait pu se passer."
+    }
+  }
+};
+
+window.SCHEMAS = SCHEMAS;
+  </script>
+<script src="../assets/dossier-app.js" defer></script>
+</body>
+</html>
