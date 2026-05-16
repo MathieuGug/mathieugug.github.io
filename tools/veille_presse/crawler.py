@@ -1,12 +1,12 @@
 """Playwright-driven crawler: landing scrape + per-article fetch + scoring."""
 import asyncio
 import re
-from datetime import datetime, timezone
+import sys
 from pathlib import Path
 from typing import Optional
 from urllib.parse import urljoin, urldefrag
 
-from playwright.async_api import async_playwright, BrowserContext, TimeoutError as PWTimeout
+from playwright.async_api import async_playwright, Page, TimeoutError as PWTimeout
 
 
 def extract_urls_from_html(html: str, selector: str, base: str) -> list[str]:
@@ -81,7 +81,6 @@ async def crawl_source(source: dict, state: dict, storage_state_path: Optional[P
             await browser.close()
             return []
 
-        landing_html = await page.content()
         urls = await _extract_urls_from_landing(page, source)
         new_urls = diff_new_urls(state, source["slug"], urls)
 
@@ -98,7 +97,7 @@ async def crawl_source(source: dict, state: dict, storage_state_path: Optional[P
     return items
 
 
-async def _extract_urls_from_landing(page, source: dict) -> list[str]:
+async def _extract_urls_from_landing(page: Page, source: dict) -> list[str]:
     """Extract URLs using source.selectors.item, return absolute deduplicated list."""
     hrefs = await page.eval_on_selector_all(
         source["selectors"]["item"],
@@ -122,14 +121,15 @@ async def crawl_all(sources: list[dict], state: dict, max_parallel: int = 5) -> 
         async with sem:
             storage = None
             if s.get("storage_state"):
-                from tools.veille_presse.paths import REPO
-                storage = REPO / ".claude" / "skills" / "veille-presse-visuelle" / s["storage_state"]
+                from tools.veille_presse.paths import SKILL_DIR
+                storage = SKILL_DIR / s["storage_state"]
             return s["slug"], await crawl_source(s, state, storage)
 
     results = await asyncio.gather(*[_one(s) for s in sources], return_exceptions=True)
     out = {}
     for r in results:
         if isinstance(r, Exception):
+            print(f"[crawler] source crawl failed: {r!r}", file=sys.stderr)
             continue
         slug, items = r
         out[slug] = items
