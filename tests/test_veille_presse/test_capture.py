@@ -36,5 +36,22 @@ class TestScreenshots(unittest.TestCase):
                 self.assertTrue(p.exists())
 
 
+class TestGifCapture(unittest.TestCase):
+    def test_gif_capture_produces_file(self):
+        scroll_html = """
+        <!DOCTYPE html><html><body style="margin:0">
+        <div style="height: 3000px; background: linear-gradient(red, blue);"></div>
+        </body></html>
+        """
+        with TemporaryDirectory() as td:
+            out = Path(td) / "scroll.gif"
+            result = capture.capture_interaction_gif_from_html(
+                scroll_html, out, duration_s=2, fps=5
+            )
+            self.assertEqual(result["format"], "gif")
+            self.assertTrue(out.exists())
+            self.assertLess(out.stat().st_size, capture.GIF_CAP_BYTES)
+
+
 if __name__ == "__main__":
     unittest.main()
