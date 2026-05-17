@@ -28,7 +28,8 @@ REDDIT_SOURCES = {
     "nyt": {
         "query": "nytimes.com unlocked_article_code",
         "gift_url_pattern": re.compile(
-            r"https?://(?:www\.)?nytimes\.com/[^\s)\]]+?unlocked_article_code=[^\s)\]]+",
+            # Stop at whitespace, quote, angle bracket, paren/bracket close, backslash
+            r"https?://(?:www\.)?nytimes\.com/[^\s\"'<>)\]\\]+?unlocked_article_code=[^\s\"'<>)\]\\]+",
             re.IGNORECASE,
         ),
         "domain": "nytimes.com",
@@ -36,12 +37,28 @@ REDDIT_SOURCES = {
     "wapo": {
         "query": "washingtonpost.com gift=",
         "gift_url_pattern": re.compile(
-            r"https?://(?:www\.)?washingtonpost\.com/[^\s)\]]+?[?&]gift=[^\s)\]]+",
+            r"https?://(?:www\.)?washingtonpost\.com/[^\s\"'<>)\]\\]+?[?&]gift=[^\s\"'<>)\]\\]+",
             re.IGNORECASE,
         ),
         "domain": "washingtonpost.com",
     },
 }
+
+
+# Curated dataviz RSS feeds — same regex extraction as Reddit, but higher signal
+# (the feed authors hand-pick the articles they reference).
+EXTERNAL_RSS_FEEDS = [
+    "https://flowingdata.com/feed/",
+]
+
+
+def _decode_entities(s: str) -> str:
+    """Replace common HTML/XML entities that appear in RSS-encoded gift URLs."""
+    return (s.replace("&#038;", "&")
+             .replace("&amp;", "&")
+             .replace("&#x26;", "&")
+             .replace("&quot;", "")
+             .replace("&#39;", "'"))
 
 
 def _canonicalize(url: str) -> str:
@@ -94,9 +111,50 @@ def discover_gift_links_for_source(slug: str) -> dict[str, str]:
     return found
 
 
+def discover_from_rss_feeds(slugs: Optional[list[str]] = None) -> dict[str, str]:
+    """Scrape curated dataviz RSS feeds (FlowingData, etc.) for gift URLs.
+
+    Higher signal than Reddit (feed authors hand-pick the articles), lower
+    volume. Filters by `slugs` if provided (e.g. only ['nyt']).
+    Returns {canonical_url: gift_url} same shape as Reddit discovery.
+    """
+    found: dict[str, str] = {}
+    slugs_set = set(slugs) if slugs else set(REDDIT_SOURCES.keys())
+    for feed_url in EXTERNAL_RSS_FEEDS:
+        body = _fetch_text(feed_url)
+        if not body:
+            continue
+        body = _decode_entities(body)
+        for slug, cfg in REDDIT_SOURCES.items():
+            if slug not in slugs_set:
+                continue
+            for match in cfg["gift_url_pattern"].findall(body):
+                canonical = _canonicalize(match)
+                if canonical not in found:
+                    found[canonical] = match
+    return found
+
+
+def _fetch_text(url: str, timeout: int = 15) -> Optional[str]:
+    """GET URL, return body as text, None on error."""
+    try:
+        req = Request(url, headers={"User-Agent": USER_AGENT})
+        with urlopen(req, timeout=timeout) as resp:
+            return resp.read().decode("utf-8", errors="replace")
+    except (URLError, HTTPError, TimeoutError):
+        return None
+
+
 def discover_gift_links(slugs: list[str]) -> dict[str, str]:
-    """Aggregate gift links across all requested slugs."""
+    """Aggregate gift links across all requested slugs.
+
+    Combines Reddit global search + curated RSS feeds (FlowingData, etc.).
+    Reddit-discovered URLs win duplicates (more recent).
+    """
     all_links: dict[str, str] = {}
+    # 1. Curated RSS first (high signal, hand-picked)
+    all_links.update(discover_from_rss_feeds(slugs))
+    # 2. Reddit overlays (overwrites duplicates with most-recent Reddit version)
     for slug in slugs:
         all_links.update(discover_gift_links_for_source(slug))
     return all_links
