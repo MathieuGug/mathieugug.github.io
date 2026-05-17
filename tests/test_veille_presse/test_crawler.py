@@ -51,5 +51,39 @@ class TestInteractivityDetection(unittest.TestCase):
         self.assertFalse(crawler.is_interactive(html, ["d3", "scrollama"]))
 
 
+class TestPaywallHeuristic(unittest.TestCase):
+    def test_short_page_with_sentinel_is_paywall(self):
+        html = "<html><body>" + "<p>foo</p>" * 50 + "<div>Subscribe to continue</div></body></html>"
+        # ~ a few hundred chars, definitely < 30_000
+        self.assertTrue(crawler._looks_paywalled(html))
+
+    def test_full_length_page_not_paywall_even_with_sentinel(self):
+        # full article page that happens to mention "subscribe" in nav
+        html = "<html><body>" + ("<p>real article content " * 1300) + "subscribe to continue</body></html>"
+        # > 30_000 chars
+        assert len(html) >= 30_000, f"fixture too short: {len(html)}"
+        self.assertFalse(crawler._looks_paywalled(html))
+
+    def test_short_page_no_sentinel_not_paywall(self):
+        html = "<html><body><h1>Title</h1><p>tiny</p></body></html>"
+        self.assertFalse(crawler._looks_paywalled(html))
+
+
+class TestArchiveUrls(unittest.TestCase):
+    def test_archive_ph_url(self):
+        url = "https://www.nytimes.com/interactive/2026/05/15/foo.html"
+        self.assertEqual(
+            crawler._archive_ph_url(url),
+            "https://archive.ph/newest/https://www.nytimes.com/interactive/2026/05/15/foo.html",
+        )
+
+    def test_wayback_api_url(self):
+        url = "https://www.nytimes.com/interactive/2026/05/15/foo.html"
+        self.assertEqual(
+            crawler._wayback_api_url(url),
+            "http://archive.org/wayback/available?url=https://www.nytimes.com/interactive/2026/05/15/foo.html",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

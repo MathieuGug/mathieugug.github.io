@@ -1,5 +1,6 @@
 """Playwright-driven crawler: landing scrape + per-article fetch + scoring."""
 import asyncio
+import json
 import re
 import sys
 from pathlib import Path
@@ -7,6 +8,111 @@ from typing import Optional
 from urllib.parse import urljoin, urldefrag
 
 from playwright.async_api import async_playwright, Page, TimeoutError as PWTimeout
+
+# ---------------------------------------------------------------------------
+# Paywall bypass — archive chain helpers
+# ---------------------------------------------------------------------------
+
+PAYWALL_SENTINELS = (
+    "subscribe to continue", "subscribe now", "subscribe to read",
+    "create an account to continue", "abonnez-vous", "réservé aux abonnés",
+    "this article is for subscribers", "subscriber-only content",
+    "to continue reading", "exclusivement réservé",
+)
+
+
+def _looks_paywalled(html: str, min_full_length: int = 30_000) -> bool:
+    """Heuristic: short HTML page containing a paywall sentinel = paywall hit."""
+    if len(html) >= min_full_length:
+        return False  # full-length article, no paywall
+    lower = html.lower()
+    return any(s in lower for s in PAYWALL_SENTINELS)
+
+
+def _archive_ph_url(article_url: str) -> str:
+    """Build archive.ph URL for the most recent snapshot."""
+    return f"https://archive.ph/newest/{article_url}"
+
+
+def _wayback_api_url(article_url: str) -> str:
+    """Build Wayback Machine availability API URL."""
+    return f"http://archive.org/wayback/available?url={article_url}"
+
+
+async def _fetch_via_archive_ph(page, article_url: str) -> Optional[str]:
+    """Try archive.ph/newest. Returns snapshot HTML or None."""
+    try:
+        await page.goto(_archive_ph_url(article_url), timeout=60_000,
+                        wait_until="domcontentloaded")
+        html = await page.content()
+        # archive.ph returns a search/empty page when no snapshot exists
+        if "have not found any matches" in html.lower():
+            return None
+        if "no captures" in html.lower():
+            return None
+        # If we landed on the search page (URL didn't redirect to a snapshot),
+        # the title still contains "archive.ph" → likely no usable snapshot
+        title = await page.title()
+        if title.strip().lower() in ("archive.today", "archive.ph"):
+            return None
+        return html
+    except PWTimeout:
+        return None
+    except Exception:
+        return None
+
+
+async def _fetch_via_wayback(page, article_url: str) -> Optional[str]:
+    """Try Wayback Machine. Returns snapshot HTML or None."""
+    try:
+        # 1) Query the availability API
+        await page.goto(_wayback_api_url(article_url), timeout=30_000,
+                        wait_until="domcontentloaded")
+        body = await page.evaluate("document.body.innerText")
+        data = json.loads(body)
+        closest = data.get("archived_snapshots", {}).get("closest", {})
+        if not closest.get("available") or not closest.get("url"):
+            return None
+        # 2) Fetch the snapshot
+        await page.goto(closest["url"], timeout=60_000, wait_until="domcontentloaded")
+        return await page.content()
+    except PWTimeout:
+        return None
+    except Exception:
+        return None
+
+
+async def _fetch_article_with_fallback(
+    page, article_url: str, source: dict, has_storage_state: bool
+) -> Optional[str]:
+    """Fetch the article HTML. Use archive fallback chain for paywalled sources."""
+    is_paywall = source.get("paywall", False)
+
+    # For paywall sources without a valid storage_state, skip direct fetch
+    # and go straight to the archive chain (it'll be blocked anyway).
+    if is_paywall and not has_storage_state:
+        for fetcher in (_fetch_via_archive_ph, _fetch_via_wayback):
+            html = await fetcher(page, article_url)
+            if html:
+                return html
+        return None
+
+    # Try direct fetch
+    try:
+        await page.goto(article_url, timeout=30_000, wait_until="domcontentloaded")
+        html = await page.content()
+    except PWTimeout:
+        html = None
+
+    # If direct fetch landed on a paywall, try archive chain
+    if is_paywall and (html is None or _looks_paywalled(html)):
+        for fetcher in (_fetch_via_archive_ph, _fetch_via_wayback):
+            archived = await fetcher(page, article_url)
+            if archived:
+                return archived
+        return html  # fall back to the (partial) paywall page if no archive
+
+    return html
 
 
 def extract_urls_from_html(html: str, selector: str, base: str) -> list[str]:
@@ -84,14 +190,13 @@ async def crawl_source(source: dict, state: dict, storage_state_path: Optional[P
         urls = await _extract_urls_from_landing(page, source)
         new_urls = diff_new_urls(state, source["slug"], urls)
 
+        has_storage = storage_state_path is not None and storage_state_path.exists()
         for url in new_urls:
-            try:
-                await page.goto(url, timeout=30_000, wait_until="domcontentloaded")
-                html = await page.content()
-                interactive = is_interactive(html, source.get("interactivity_signals", []))
-                items.append({"url": url, "html": html, "is_interactive": interactive})
-            except PWTimeout:
+            html = await _fetch_article_with_fallback(page, url, source, has_storage)
+            if html is None:
                 continue
+            interactive = is_interactive(html, source.get("interactivity_signals", []))
+            items.append({"url": url, "html": html, "is_interactive": interactive})
 
         await browser.close()
     return items
