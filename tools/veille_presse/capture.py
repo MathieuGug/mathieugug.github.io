@@ -34,19 +34,29 @@ def _slugify(text: str) -> str:
 
 
 def screenshot_full_page_from_html(html: str, out_path: Path) -> None:
-    """Sync wrapper: render HTML, save full-page screenshot."""
+    """Sync wrapper: render HTML, save full-page screenshot.
+
+    Encoding chosen by extension : .jpg/.jpeg → JPEG quality 80 (small, web-friendly).
+    .png → PNG (lossless, larger). Default is JPEG for full-page captures because they
+    routinely run to 5-20 Mo as PNG and are essentially photographic content.
+    """
     asyncio.run(_screenshot_full_page_async(html, out_path))
 
 
 async def _screenshot_full_page_async(html: str, out_path: Path) -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
+    ext = out_path.suffix.lower()
+    kwargs = {"path": str(out_path), "full_page": True}
+    if ext in (".jpg", ".jpeg"):
+        kwargs["type"] = "jpeg"
+        kwargs["quality"] = 80
     async with async_playwright() as p:
         browser = await p.chromium.launch()
         try:
             ctx = await browser.new_context(viewport={"width": 1200, "height": 800})
             page = await ctx.new_page()
             await page.set_content(html, wait_until="load")
-            await page.screenshot(path=str(out_path), full_page=True)
+            await page.screenshot(**kwargs)
         finally:
             await browser.close()
 

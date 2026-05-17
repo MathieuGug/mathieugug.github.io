@@ -106,8 +106,8 @@ def cmd_run(args: argparse.Namespace) -> int:
             tags.append("scrollytelling")
 
         try:
-            # Full-page screenshot
-            fp = images_dir / f"{prefix}-fullpage.png"
+            # Full-page screenshot (JPEG to keep size reasonable — fullpages run 5-20 Mo as PNG)
+            fp = images_dir / f"{prefix}-fullpage.jpg"
             capture.screenshot_full_page_from_html(item["html"], fp)
             # Section screenshots
             sec_paths = capture.screenshot_sections_from_html(
