@@ -15,28 +15,29 @@ PATH = Path("/home/user/mathieugug.github.io/proces-musk-altman/journal.html")
 # (day_str, x_center, p_musk%, short_label_for_badge)
 DATA = [
     ("01", 80,  35, "ven 1 mai"),
-    ("02", 140, 22, "sam 2 mai"),
-    ("03", 200, 20, "dim 3 mai"),
-    ("04", 260, 23, "lun 4 mai"),
-    ("05", 320, 28, "mar 5 mai"),
-    ("06", 380, 24, "mer 6 mai"),
-    ("07", 440, 32, "jeu 7 mai"),
-    ("08", 500, 40, "ven 8 mai"),
-    ("09", 560, 42, "sam 9 mai"),
-    # ("10", 620, None, "dim 10 mai"),  # pas d'audience — colonne laissée vide
-    ("11", 680, 50, "lun 11 mai"),
-    ("12", 740, 38, "mar 12 mai"),
-    ("13", 800, 28, "mer 13 mai"),
-    ("14", 860, 20, "jeu 14 mai"),
-    ("15", 920, 18, "ven 15 mai"),
-    ("16", 980, 16, "sam 16 mai"),
+    ("02", 130, 22, "sam 2 mai"),
+    ("03", 180, 20, "dim 3 mai"),
+    ("04", 230, 23, "lun 4 mai"),
+    ("05", 280, 28, "mar 5 mai"),
+    ("06", 330, 24, "mer 6 mai"),
+    ("07", 380, 32, "jeu 7 mai"),
+    ("08", 430, 40, "ven 8 mai"),
+    ("09", 480, 42, "sam 9 mai"),
+    # ("10", 530, None, "dim 10 mai"),  # pas d'audience — colonne laissée vide
+    ("11", 580, 50, "lun 11 mai"),
+    ("12", 630, 38, "mar 12 mai"),
+    ("13", 680, 28, "mer 13 mai"),
+    ("14", 730, 20, "jeu 14 mai"),
+    ("15", 780, 18, "ven 15 mai"),
+    ("16", 830, 16, "sam 16 mai"),
+    ("17", 880, 15, "dim 17 mai"),
 ]
 
-# All 16 day positions for the X axis (the dim 10 mai stays labeled even with no bar)
+# All 17 day positions for the X axis (the dim 10 mai stays labeled even with no bar)
 DAY_X = [
-    ("01", 80), ("02", 140), ("03", 200), ("04", 260), ("05", 320), ("06", 380),
-    ("07", 440), ("08", 500), ("09", 560), ("10", 620), ("11", 680), ("12", 740),
-    ("13", 800), ("14", 860), ("15", 920), ("16", 980),
+    ("01", 80), ("02", 130), ("03", 180), ("04", 230), ("05", 280), ("06", 330),
+    ("07", 380), ("08", 430), ("09", 480), ("10", 530), ("11", 580), ("12", 630),
+    ("13", 680), ("14", 730), ("15", 780), ("16", 830), ("17", 880),
 ]
 
 PLOT_TOP = 92        # y at 100 %
