@@ -83,13 +83,27 @@ async def _fetch_via_wayback(page, article_url: str) -> Optional[str]:
 
 
 async def _fetch_article_with_fallback(
-    page, article_url: str, source: dict, has_storage_state: bool
+    page, article_url: str, source: dict, has_storage_state: bool,
+    gift_links_cache: Optional[dict] = None,
 ) -> Optional[str]:
-    """Fetch the article HTML. Use archive fallback chain for paywalled sources."""
+    """Fetch the article HTML. Fallback chain: gift link → direct → archive.ph → Wayback."""
+    from tools.veille_presse import gift_links as gl
+
     is_paywall = source.get("paywall", False)
 
-    # For paywall sources without a valid storage_state, skip direct fetch
-    # and go straight to the archive chain (it'll be blocked anyway).
+    # 1. Gift link lookup (paywall sources only — others don't need it)
+    if is_paywall and gift_links_cache:
+        gift_url = gl.lookup_gift_url(article_url, gift_links_cache)
+        if gift_url:
+            try:
+                await page.goto(gift_url, timeout=30_000, wait_until="domcontentloaded")
+                html = await page.content()
+                if not _looks_paywalled(html):
+                    return html
+            except PWTimeout:
+                pass
+
+    # 2. For paywall + no storage, skip direct fetch → archive chain
     if is_paywall and not has_storage_state:
         for fetcher in (_fetch_via_archive_ph, _fetch_via_wayback):
             html = await fetcher(page, article_url)
@@ -97,14 +111,14 @@ async def _fetch_article_with_fallback(
                 return html
         return None
 
-    # Try direct fetch
+    # 3. Direct fetch (with storage_state for paywall sources that have one)
     try:
         await page.goto(article_url, timeout=30_000, wait_until="domcontentloaded")
         html = await page.content()
     except PWTimeout:
         html = None
 
-    # If direct fetch landed on a paywall, try archive chain
+    # 4. If direct fetch hit paywall, try archive chain
     if is_paywall and (html is None or _looks_paywalled(html)):
         for fetcher in (_fetch_via_archive_ph, _fetch_via_wayback):
             archived = await fetcher(page, article_url)
@@ -165,7 +179,8 @@ def build_shortlist(items: list[dict], cap: int = 15) -> list[dict]:
     return sorted(items, key=lambda i: i.get("score", 0), reverse=True)[:cap]
 
 
-async def crawl_source(source: dict, state: dict, storage_state_path: Optional[Path] = None) -> list[dict]:
+async def crawl_source(source: dict, state: dict, storage_state_path: Optional[Path] = None,
+                       gift_links_cache: Optional[dict] = None) -> list[dict]:
     """Crawl one source's landing page, return list of {url, is_interactive, html} for NEW items only.
 
     Caller is responsible for state.update_state() and metadata extraction.
@@ -192,7 +207,8 @@ async def crawl_source(source: dict, state: dict, storage_state_path: Optional[P
 
         has_storage = storage_state_path is not None and storage_state_path.exists()
         for url in new_urls:
-            html = await _fetch_article_with_fallback(page, url, source, has_storage)
+            html = await _fetch_article_with_fallback(page, url, source, has_storage,
+                                                      gift_links_cache=gift_links_cache)
             if html is None:
                 continue
             interactive = is_interactive(html, source.get("interactivity_signals", []))
@@ -220,6 +236,10 @@ async def _extract_urls_from_landing(page: Page, source: dict) -> list[str]:
 
 async def crawl_all(sources: list[dict], state: dict, max_parallel: int = 5) -> dict[str, list[dict]]:
     """Crawl all sources in parallel batches. Returns {slug: [items]}."""
+    from tools.veille_presse import gift_links as gl
+    from tools.veille_presse.paths import STATE_DIR
+    gift_cache = gl.load_cache(STATE_DIR / "gift-links-cache.json")
+
     sem = asyncio.Semaphore(max_parallel)
 
     async def _one(s):
@@ -228,7 +248,7 @@ async def crawl_all(sources: list[dict], state: dict, max_parallel: int = 5) -> 
             if s.get("storage_state"):
                 from tools.veille_presse.paths import SKILL_DIR
                 storage = SKILL_DIR / s["storage_state"]
-            return s["slug"], await crawl_source(s, state, storage)
+            return s["slug"], await crawl_source(s, state, storage, gift_cache)
 
     results = await asyncio.gather(*[_one(s) for s in sources], return_exceptions=True)
     out = {}

@@ -1,0 +1,140 @@
+"""Discover gift links shared on Reddit for paywalled press articles.
+
+Uses Reddit's unauthenticated JSON search API. Rate-limited but adequate
+for a weekly cycle (~30 sources × 1 search = 30 requests, well under
+60 req/min limit).
+
+Cache lives at state/gift-links-cache.json — keyed by canonical article URL,
+holds the most recently discovered gift URL. TTL is the gift link's natural
+validity (14 days for NYT/WaPo).
+"""
+import json
+import re
+import time
+from pathlib import Path
+from typing import Optional
+from urllib.parse import urlparse, urlunparse
+from urllib.request import Request, urlopen
+from urllib.error import URLError, HTTPError
+
+
+USER_AGENT = "mathieugug-veille-presse/1.0 (https://mathieugug.github.io)"
+
+# Per-source subreddit + URL-pattern config.
+# `gift_url_pattern` is a regex that captures gift URLs in Reddit post bodies.
+REDDIT_SOURCES = {
+    "nyt": {
+        "subreddits": ["nytimes", "nytimesgiftarticles"],
+        "query": "unlocked_article_code",
+        "gift_url_pattern": re.compile(
+            r"https?://(?:www\.)?nytimes\.com/[^\s)\]]+?unlocked_article_code=[^\s)\]]+",
+            re.IGNORECASE,
+        ),
+        "domain": "nytimes.com",
+    },
+    "wapo": {
+        "subreddits": ["WaPoGiftLinks"],
+        "query": "gift",
+        "gift_url_pattern": re.compile(
+            r"https?://(?:www\.)?washingtonpost\.com/[^\s)\]]+?[?&]gift=[^\s)\]]+",
+            re.IGNORECASE,
+        ),
+        "domain": "washingtonpost.com",
+    },
+}
+
+
+def _canonicalize(url: str) -> str:
+    """Strip query string + fragment + trailing slash for matching gift link to article."""
+    p = urlparse(url)
+    return urlunparse((p.scheme, p.netloc, p.path.rstrip("/"), "", "", ""))
+
+
+def _fetch_json(url: str, timeout: int = 15) -> Optional[dict]:
+    """GET URL with our user agent, parse JSON. Returns None on any error."""
+    try:
+        req = Request(url, headers={"User-Agent": USER_AGENT, "Accept": "application/json"})
+        with urlopen(req, timeout=timeout) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except (URLError, HTTPError, json.JSONDecodeError, TimeoutError):
+        return None
+
+
+def _search_subreddit(subreddit: str, query: str, limit: int = 50) -> list[dict]:
+    """Search a subreddit's posts via the JSON API. Returns list of post 'data' dicts."""
+    url = (f"https://www.reddit.com/r/{subreddit}/search.json"
+           f"?q={query}&restrict_sr=on&sort=new&t=week&limit={limit}&raw_json=1")
+    data = _fetch_json(url)
+    if not data:
+        return []
+    return [child["data"] for child in data.get("data", {}).get("children", [])]
+
+
+def discover_gift_links_for_source(slug: str) -> dict[str, str]:
+    """Search Reddit for gift links for the given source slug. Returns {canonical_url: gift_url}."""
+    cfg = REDDIT_SOURCES.get(slug)
+    if not cfg:
+        return {}
+    found: dict[str, str] = {}
+    for sub in cfg["subreddits"]:
+        posts = _search_subreddit(sub, cfg["query"])
+        for post in posts:
+            # Scan both the URL field (link posts) and the selftext (text posts)
+            blobs = []
+            if post.get("url"):
+                blobs.append(post["url"])
+            if post.get("selftext"):
+                blobs.append(post["selftext"])
+            for blob in blobs:
+                for match in cfg["gift_url_pattern"].findall(blob):
+                    canonical = _canonicalize(match)
+                    # Prefer first-seen (Reddit returns sorted by new, so most recent wins)
+                    if canonical not in found:
+                        found[canonical] = match
+        time.sleep(1)  # polite rate limit between subreddits
+    return found
+
+
+def discover_gift_links(slugs: list[str]) -> dict[str, str]:
+    """Aggregate gift links across all requested slugs."""
+    all_links: dict[str, str] = {}
+    for slug in slugs:
+        all_links.update(discover_gift_links_for_source(slug))
+    return all_links
+
+
+def load_cache(cache_path: Path) -> dict:
+    """Load gift-links cache. Returns {} if missing."""
+    if not cache_path.exists():
+        return {}
+    try:
+        return json.loads(cache_path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return {}
+
+
+def save_cache(cache_path: Path, links: dict[str, str], ttl_seconds: int = 14 * 24 * 3600) -> None:
+    """Save gift-links cache with embedded timestamp + TTL marker per entry."""
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    now = int(time.time())
+    payload = {
+        url: {"gift_url": gift, "fetched_at": now, "expires_at": now + ttl_seconds}
+        for url, gift in links.items()
+    }
+    # Merge with existing cache, drop expired entries
+    existing = load_cache(cache_path)
+    for url, entry in existing.items():
+        if entry.get("expires_at", 0) > now and url not in payload:
+            payload[url] = entry
+    cache_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def lookup_gift_url(article_url: str, cache: dict) -> Optional[str]:
+    """Find a non-expired gift URL matching `article_url` in the cache."""
+    canonical = _canonicalize(article_url)
+    entry = cache.get(canonical)
+    if not entry:
+        return None
+    if entry.get("expires_at", 0) < int(time.time()):
+        return None
+    return entry.get("gift_url")

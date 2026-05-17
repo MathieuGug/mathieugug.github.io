@@ -45,6 +45,18 @@ def cmd_run(args: argparse.Namespace) -> int:
     date_str = args.date or _edition_date_for_today()
     print(f"[veille] cycle for {date_str}")
 
+    # 0. Refresh gift links (before crawling)
+    if not args.skip_gift_links:
+        from tools.veille_presse import gift_links as gl
+        paywall_slugs = [s["slug"] for s in srcmod.load_sources(SOURCES_YML) if s.get("paywall")]
+        print(f"[veille] refreshing gift links for {len(paywall_slugs)} paywall sources...")
+        try:
+            links = gl.discover_gift_links(paywall_slugs)
+            gl.save_cache(STATE_DIR / "gift-links-cache.json", links)
+            print(f"[veille] found {len(links)} gift links")
+        except Exception as e:
+            print(f"[veille] gift link discovery failed (continuing): {e}")
+
     # 1. Load config + state
     sources = srcmod.load_sources(SOURCES_YML)
     state = srcmod.load_state(LAST_CRAWL_JSON)
@@ -250,6 +262,24 @@ def _run_og_card(date_str: str, title: str) -> None:
     ], check=False)
 
 
+def cmd_refresh_gift_links(args: argparse.Namespace) -> int:
+    """Crawl Reddit for gift links across all paywall sources, update cache."""
+    from tools.veille_presse import gift_links as gl
+    sources = srcmod.load_sources(SOURCES_YML)
+    paywall_slugs = [s["slug"] for s in sources if s.get("paywall")]
+    print(f"[veille] searching gift links for {len(paywall_slugs)} paywall sources...")
+    links = gl.discover_gift_links(paywall_slugs)
+    print(f"[veille] found {len(links)} gift links")
+    cache_path = STATE_DIR / "gift-links-cache.json"
+    gl.save_cache(cache_path, links)
+    print(f"[veille] cache saved → {cache_path}")
+    if args.verbose:
+        for url, gift in links.items():
+            print(f"  {url}")
+            print(f"    → {gift}")
+    return 0
+
+
 def cmd_build_storage_state(args: argparse.Namespace) -> int:
     """Open Playwright (headed) on a source's login page, save storageState on exit."""
     sources = srcmod.load_sources(SOURCES_YML)
@@ -311,7 +341,14 @@ def main(argv: list[str] = None) -> int:
     p_run.add_argument("--date", help="override edition date (YYYY-MM-DD)")
     p_run.add_argument("--no-push", action="store_true",
                        help="stop before push/PR (commit local only)")
+    p_run.add_argument("--skip-gift-links", action="store_true",
+                       help="skip the Reddit gift-link refresh at cycle start")
     p_run.set_defaults(func=cmd_run)
+
+    p_gl = sub.add_parser("refresh-gift-links",
+                          help="search Reddit for gift links and update cache")
+    p_gl.add_argument("--verbose", action="store_true")
+    p_gl.set_defaults(func=cmd_refresh_gift_links)
 
     p_bss = sub.add_parser("build-storage-state",
                            help="rebuild Playwright session for a source")
