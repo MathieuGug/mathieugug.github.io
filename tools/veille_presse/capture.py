@@ -109,7 +109,8 @@ async def _screenshot_sections_async(
 
 
 def capture_interaction_gif_from_html(
-    html: str, out_path: Path, duration_s: int = 8, fps: int = 10, width: int = 1000
+    html: str, out_path: Path, duration_s: int = 8, fps: int = 10, width: int = 1000,
+    adaptive_duration: bool = True, max_duration_s: int = 24,
 ) -> dict:
     """Capture frames via Playwright scroll, encode GIF via ffmpeg.
 
@@ -120,10 +121,15 @@ def capture_interaction_gif_from_html(
       2. Re-encode at width=800 → if <= GIF_CAP_BYTES, return GIF.
       3. Encode MP4 H.264 → if <= MP4_CAP_BYTES, return MP4.
       4. Otherwise, delete output and return {"format": "skipped"}.
+
+    When `adaptive_duration` is True (default), the scroll duration scales with
+    the document's scrollHeight so long-form articles get a proportionally
+    longer scroll. Capped at `max_duration_s` to keep encode time bounded.
     """
     out_path.parent.mkdir(parents=True, exist_ok=True)
     frames_dir = out_path.parent / f"_frames_{out_path.stem}"
-    asyncio.run(_capture_frames_async(html, frames_dir, duration_s, fps, width))
+    asyncio.run(_capture_frames_async(html, frames_dir, duration_s, fps, width,
+                                      adaptive_duration, max_duration_s))
 
     # Try GIF at requested width
     _encode_gif(frames_dir, out_path, fps, width)
@@ -153,10 +159,10 @@ def capture_interaction_gif_from_html(
 
 
 async def _capture_frames_async(
-    html: str, frames_dir: Path, duration_s: int, fps: int, width: int
+    html: str, frames_dir: Path, duration_s: int, fps: int, width: int,
+    adaptive_duration: bool = True, max_duration_s: int = 24,
 ) -> None:
     frames_dir.mkdir(parents=True, exist_ok=True)
-    n_frames = duration_s * fps
 
     async with async_playwright() as p:
         browser = await p.chromium.launch()
@@ -167,6 +173,13 @@ async def _capture_frames_async(
             scroll_height = await page.evaluate("document.body.scrollHeight")
             viewport_height = 700
             max_scroll = max(0, scroll_height - viewport_height)
+
+            # Adaptive duration: scale ~ 1s per 800px of scroll, clamped [duration_s, max_duration_s]
+            if adaptive_duration:
+                inferred = max(duration_s, min(max_duration_s, int(max_scroll / 800) + duration_s))
+                duration_s = inferred
+
+            n_frames = duration_s * fps
 
             for i in range(n_frames):
                 y = int((i / max(1, n_frames - 1)) * max_scroll)

@@ -211,6 +211,40 @@ def _gift_urls_for_source(source: dict, gift_links_cache: Optional[dict]) -> lis
     return out
 
 
+def _filter_urls_by_path(urls: list[str], source: dict) -> list[str]:
+    """Drop URLs that don't look like real dataviz/graphics articles for this source.
+
+    Filters applied :
+      - skip URLs equal to (or prefix-of) source.graphics_url itself (landing page self-link)
+      - if source.url_paths is set, require URL.path to start with one of the listed prefixes
+        AND have at least one path segment beyond it (i.e. not a section nav like /infographics/hong-kong)
+    """
+    if not urls:
+        return urls
+    landing = urlparse(source["graphics_url"])
+    landing_path = landing.path.rstrip("/")
+    required_paths = source.get("url_paths")  # list[str] or None
+    out: list[str] = []
+    for u in urls:
+        p = urlparse(u)
+        url_path = p.path.rstrip("/")
+        # 1. Skip the landing self-link and any URL whose path equals or is a prefix of the landing
+        #    (covers ?query-string variants of the landing page itself).
+        if url_path == landing_path:
+            continue
+        # 2. If url_paths is configured, require a deeper match
+        if required_paths:
+            match = next((rp for rp in required_paths if url_path.startswith(rp.rstrip("/"))), None)
+            if match is None:
+                continue
+            # require at least one path segment beyond the required prefix
+            beyond = url_path[len(match.rstrip("/")):].strip("/")
+            if not beyond:
+                continue
+        out.append(u)
+    return out
+
+
 async def crawl_source(source: dict, state: dict, storage_state_path: Optional[Path] = None,
                        gift_links_cache: Optional[dict] = None) -> list[dict]:
     """Crawl one source's landing page (+ gift-link cache for paywalled sources).
@@ -250,6 +284,9 @@ async def crawl_source(source: dict, state: dict, storage_state_path: Optional[P
             all_urls = combined
         else:
             all_urls = landing_urls
+
+        # 3. Filter URLs: skip landing self-link + require source.url_paths match
+        all_urls = _filter_urls_by_path(all_urls, source)
 
         new_urls = diff_new_urls(state, source["slug"], all_urls)
 
