@@ -33,11 +33,23 @@ class TestScoring(unittest.TestCase):
 
 class TestShortlist(unittest.TestCase):
     def test_shortlist_caps_and_sorts(self):
-        items = [{"url": f"u{i}", "score": i} for i in range(30)]
+        # Give each item a distinct source so the diversity cap doesn't apply
+        items = [{"url": f"u{i}", "score": i, "source": f"src-{i}"} for i in range(30)]
         shortlist = crawler.build_shortlist(items, cap=15)
         self.assertEqual(len(shortlist), 15)
         self.assertEqual(shortlist[0]["url"], "u29")  # highest score first
         self.assertEqual(shortlist[-1]["url"], "u15")
+
+    def test_shortlist_enforces_per_source_cap(self):
+        # 10 items from same source, all high score — only 3 should survive
+        items = [{"url": f"u{i}", "score": 100 - i, "source": "ProPublica"} for i in range(10)]
+        # Plus 5 items from other sources at lower scores
+        items += [{"url": f"v{i}", "score": 50 - i, "source": f"other-{i}"} for i in range(5)]
+        shortlist = crawler.build_shortlist(items, cap=15, max_per_source=3)
+        # Should be 3 ProPublica + 5 others = 8 total (not 15 because no more candidates)
+        self.assertEqual(len(shortlist), 8)
+        propublica_count = sum(1 for it in shortlist if it["source"] == "ProPublica")
+        self.assertEqual(propublica_count, 3)
 
 
 class TestInteractivityDetection(unittest.TestCase):

@@ -13,19 +13,20 @@ import re
 import time
 from pathlib import Path
 from typing import Optional
-from urllib.parse import urlparse, urlunparse
+from urllib.parse import urlparse, urlunparse, quote
 from urllib.request import Request, urlopen
 from urllib.error import URLError, HTTPError
 
 
 USER_AGENT = "mathieugug-veille-presse/1.0 (https://mathieugug.github.io)"
 
-# Per-source subreddit + URL-pattern config.
-# `gift_url_pattern` is a regex that captures gift URLs in Reddit post bodies.
+# Per-source query + URL-pattern config.
+# Gift links are scattered across many subreddits (r/steelers, r/Documentaries,
+# r/hockey, etc.), not centralized in dedicated subs. We use Reddit's GLOBAL
+# search (no subreddit restriction) to surface them.
 REDDIT_SOURCES = {
     "nyt": {
-        "subreddits": ["nytimes", "nytimesgiftarticles"],
-        "query": "unlocked_article_code",
+        "query": "nytimes.com unlocked_article_code",
         "gift_url_pattern": re.compile(
             r"https?://(?:www\.)?nytimes\.com/[^\s)\]]+?unlocked_article_code=[^\s)\]]+",
             re.IGNORECASE,
@@ -33,8 +34,7 @@ REDDIT_SOURCES = {
         "domain": "nytimes.com",
     },
     "wapo": {
-        "subreddits": ["WaPoGiftLinks"],
-        "query": "gift",
+        "query": "washingtonpost.com gift=",
         "gift_url_pattern": re.compile(
             r"https?://(?:www\.)?washingtonpost\.com/[^\s)\]]+?[?&]gift=[^\s)\]]+",
             re.IGNORECASE,
@@ -60,10 +60,10 @@ def _fetch_json(url: str, timeout: int = 15) -> Optional[dict]:
         return None
 
 
-def _search_subreddit(subreddit: str, query: str, limit: int = 50) -> list[dict]:
-    """Search a subreddit's posts via the JSON API. Returns list of post 'data' dicts."""
-    url = (f"https://www.reddit.com/r/{subreddit}/search.json"
-           f"?q={query}&restrict_sr=on&sort=new&t=week&limit={limit}&raw_json=1")
+def _search_reddit_global(query: str, limit: int = 100) -> list[dict]:
+    """Global Reddit search via JSON API. Returns list of post 'data' dicts."""
+    url = (f"https://www.reddit.com/search.json"
+           f"?q={quote(query)}&sort=new&t=week&limit={limit}&raw_json=1")
     data = _fetch_json(url)
     if not data:
         return []
@@ -76,22 +76,21 @@ def discover_gift_links_for_source(slug: str) -> dict[str, str]:
     if not cfg:
         return {}
     found: dict[str, str] = {}
-    for sub in cfg["subreddits"]:
-        posts = _search_subreddit(sub, cfg["query"])
-        for post in posts:
-            # Scan both the URL field (link posts) and the selftext (text posts)
-            blobs = []
-            if post.get("url"):
-                blobs.append(post["url"])
-            if post.get("selftext"):
-                blobs.append(post["selftext"])
-            for blob in blobs:
-                for match in cfg["gift_url_pattern"].findall(blob):
-                    canonical = _canonicalize(match)
-                    # Prefer first-seen (Reddit returns sorted by new, so most recent wins)
-                    if canonical not in found:
-                        found[canonical] = match
-        time.sleep(1)  # polite rate limit between subreddits
+    posts = _search_reddit_global(cfg["query"])
+    for post in posts:
+        # Scan both the URL field (link posts) and the selftext (text posts)
+        blobs = []
+        if post.get("url"):
+            blobs.append(post["url"])
+        if post.get("selftext"):
+            blobs.append(post["selftext"])
+        for blob in blobs:
+            for match in cfg["gift_url_pattern"].findall(blob):
+                canonical = _canonicalize(match)
+                # Prefer first-seen (Reddit returns sorted by new, so most recent wins)
+                if canonical not in found:
+                    found[canonical] = match
+    time.sleep(1)  # polite rate limit between source queries
     return found
 
 

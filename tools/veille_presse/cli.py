@@ -7,9 +7,15 @@ Subcommands:
 """
 import argparse
 import asyncio
+import io
 import sys
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
+
+# Force stdout/stderr to UTF-8 on Windows (default cp1252 chokes on → · etc.)
+if sys.platform == "win32":
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace", line_buffering=True)
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace", line_buffering=True)
 
 from tools.veille_presse import (
     sources as srcmod,

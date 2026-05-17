@@ -5,7 +5,7 @@ import re
 import sys
 from pathlib import Path
 from typing import Optional
-from urllib.parse import urljoin, urldefrag
+from urllib.parse import urljoin, urldefrag, urlparse
 
 from playwright.async_api import async_playwright, Page, TimeoutError as PWTimeout
 
@@ -174,15 +174,48 @@ def score_item(item: dict, source: dict) -> float:
     return base * (1.0 + bonus)
 
 
-def build_shortlist(items: list[dict], cap: int = 15) -> list[dict]:
-    """Sort items by 'score' descending, cap to N."""
-    return sorted(items, key=lambda i: i.get("score", 0), reverse=True)[:cap]
+def build_shortlist(items: list[dict], cap: int = 15, max_per_source: int = 3) -> list[dict]:
+    """Sort by score desc, cap total to `cap`, with a per-source diversity cap.
+
+    The per-source cap prevents a single prolific source (e.g. ProPublica) from
+    flooding the shortlist. Items beyond the per-source limit are dropped.
+    """
+    by_score = sorted(items, key=lambda i: i.get("score", 0), reverse=True)
+    out: list[dict] = []
+    counts: dict[str, int] = {}
+    for it in by_score:
+        if len(out) >= cap:
+            break
+        src = it.get("source") or it.get("source_slug") or "?"
+        if counts.get(src, 0) >= max_per_source:
+            continue
+        out.append(it)
+        counts[src] = counts.get(src, 0) + 1
+    return out
+
+
+def _gift_urls_for_source(source: dict, gift_links_cache: Optional[dict]) -> list[str]:
+    """Return canonical article URLs from the gift-links cache matching this source's domain."""
+    if not gift_links_cache:
+        return []
+    # Match by domain. sources.yml graphics_url tells us the canonical host.
+    host = urlparse(source["graphics_url"]).netloc.replace("www.", "")
+    out = []
+    for canonical_url, entry in gift_links_cache.items():
+        if not isinstance(entry, dict):
+            continue
+        if entry.get("expires_at", 0) < int(__import__("time").time()):
+            continue
+        if host in canonical_url:
+            out.append(canonical_url)
+    return out
 
 
 async def crawl_source(source: dict, state: dict, storage_state_path: Optional[Path] = None,
                        gift_links_cache: Optional[dict] = None) -> list[dict]:
-    """Crawl one source's landing page, return list of {url, is_interactive, html} for NEW items only.
+    """Crawl one source's landing page (+ gift-link cache for paywalled sources).
 
+    Returns list of {url, is_interactive, html} for NEW items only.
     Caller is responsible for state.update_state() and metadata extraction.
     """
     from tools.veille_presse.sources import diff_new_urls
@@ -196,14 +229,29 @@ async def crawl_source(source: dict, state: dict, storage_state_path: Optional[P
         context = await browser.new_context(**ctx_args)
         page = await context.new_page()
 
+        # 1. Landing crawl (may yield 0 URLs for paywalled sources whose landing is blocked)
+        landing_urls: list[str] = []
         try:
             await page.goto(source["graphics_url"], timeout=30_000, wait_until="domcontentloaded")
+            landing_urls = await _extract_urls_from_landing(page, source)
         except PWTimeout:
-            await browser.close()
-            return []
+            pass
 
-        urls = await _extract_urls_from_landing(page, source)
-        new_urls = diff_new_urls(state, source["slug"], urls)
+        # 2. Gift link injection for paywalled sources
+        if source.get("paywall"):
+            gift_urls = _gift_urls_for_source(source, gift_links_cache)
+            # Merge: gift URLs first (most likely to actually unlock), dedup
+            seen = set(landing_urls)
+            combined: list[str] = list(landing_urls)
+            for u in gift_urls:
+                if u not in seen:
+                    combined.append(u)
+                    seen.add(u)
+            all_urls = combined
+        else:
+            all_urls = landing_urls
+
+        new_urls = diff_new_urls(state, source["slug"], all_urls)
 
         has_storage = storage_state_path is not None and storage_state_path.exists()
         for url in new_urls:
