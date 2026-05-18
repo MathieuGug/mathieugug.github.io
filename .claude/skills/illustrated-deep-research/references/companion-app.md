@@ -343,24 +343,68 @@ Symptom when this rule is present: on desktop the sidebar disappears as soon as 
 
 ### Static HTML for sources, not JS-generated
 
-The `<ol id="sources-list">` block must be **populated as static HTML** (one `<li id="source-N">` per source, written directly in the body), not generated at runtime by an IIFE that injects `innerHTML`. Two reasons:
+The `<ol id="sources-list">` block must be **populated as static HTML** (one `<li id="source-N">` per source, written directly in the body), not generated at runtime by an IIFE that injects `innerHTML`. The citation click handler depends on `document.getElementById('source-N')` resolving immediately — with JS-generated sources, a click that arrives before the IIFE has run silently does nothing.
 
-1. The citation click handler depends on `document.getElementById('source-N')` resolving immediately. With JS-generated sources, a click that arrives before the IIFE has run (or in a race with rendering) silently does nothing.
-2. The link inside each `<li>` must use a **short host label** like `nber.org ↗` or `arxiv.org/2301.04104 ↗`, not the full URL. Long URLs in a 320 px sidebar wrap badly even with `overflow-wrap: anywhere`, and produce ragged text that looks broken. The short label keeps the typography clean and tells the reader where they're going.
+### Source entry pattern — `[N]` brackets + full URL displayed
 
-Pattern (matches `ia-et-travail/20260504-...-app.html` and other recent reports):
+Each `<li>` follows this convention (canonical reference: `llm-jailbreaking/20260428-…-app.html`):
 
 ```html
 <li id="source-1">
-  <span class="cite-num">1</span>Briggs, Joseph et Devesh Kodnani.
-  <em>The Potentially Large Effects of Artificial Intelligence on Economic Growth</em>.
-  Goldman Sachs Global Economics Analyst, 26 mars 2023.
-  <a href="https://www.gspublishing.com/content/research/en/reports/2023/03/27/d64e052b-0f6e-45d7-967b-d7be35fabd16.html" target="_blank" rel="noopener">gspublishing.com ↗</a>
-  <span class="accessed">consulté le 4 mai 2026</span>
+  <span class="cite-num">[1]</span>OWASP Foundation, "OWASP Top 10 for LLM Applications 2025", v4.2.0a, 14 November 2024
+  <br><a href="https://owasp.org/www-project-top-10-for-large-language-model-applications/assets/PDF/OWASP-Top-10-for-LLMs-v2025.pdf" target="_blank" rel="noopener">https://owasp.org/www-project-top-10-for-large-language-model-applications/assets/PDF/OWASP-Top-10-for-LLMs-v2025.pdf</a><span class="accessed">Accessed 2026-04-28</span>
 </li>
 ```
 
-`cite-num` has **no brackets** in the source text — the bracket styling comes from the `.cite::before { content: '['; }` / `::after { content: ']'; }` rule on in-text citations only.
+Three load-bearing details:
+
+1. **`[N]` with literal brackets directly in `cite-num`** (not generated via `::before/::after`). The carmine bracketed number is what readers scan for when they follow a citation from the report body, so it must read identically in source HTML and rendered output.
+2. **Full URL is the link text, not a short host label.** A short label like `arxiv.org ↗` hides the actual destination — readers can no longer eyeball whether the link points to an arXiv abstract, a PDF, an HTML version, a specific section, or somebody else's mirror. The full URL is the truth. Modern browsers break URLs cleanly at `/` boundaries, and the canonical CSS adds `overflow-wrap: anywhere` as a safety net so even URLs without separators don't push the sidebar wider than 320 px.
+3. **`<br>` before the URL anchor** forces the link onto its own line, separating it visually from the citation prose so the eye lands on it immediately.
+
+Required CSS (one off-the-shelf block, matching the jailbreaking app):
+
+```css
+#sources li {
+  font-size: 0.82rem;
+  line-height: 1.5;
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  transition: border-color 220ms, background 220ms;
+}
+#sources li .cite-num {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--carmine);
+  margin-right: 6px;
+}
+#sources li a {
+  display: inline-block;
+  margin-top: 4px;
+  color: var(--teal);
+  text-decoration: none;
+  font-size: 0.78rem;
+  overflow-wrap: anywhere;       /* break long URLs cleanly inside the 320 px sidebar */
+}
+#sources li a:hover { text-decoration: underline; }
+#sources li .accessed {
+  display: block;
+  margin-top: 4px;
+  color: var(--mist);
+  font-style: italic;
+  font-size: 0.74rem;
+}
+#sources li.highlight {
+  background: var(--paper);
+  border-color: var(--carmine);
+}
+```
+
+Older apps may still use the previous `arxiv.org ↗` short-host convention with no-bracket `cite-num`; treat that as legacy — when touching an app's sources for any reason, migrate it to the bracketed `[N]` + full-URL pattern above.
 
 ---
 
