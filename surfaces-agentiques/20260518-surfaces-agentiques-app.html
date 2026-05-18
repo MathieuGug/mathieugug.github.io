@@ -55,6 +55,15 @@
     html, body { margin: 0; max-width: 100vw; overflow-x: clip; }
     body { background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 1.65; -webkit-font-smoothing: antialiased; }
 
+    /* Interactive SVG regions (modals) */
+    .figure svg .interactive { cursor: pointer; transition: filter 140ms; }
+    .figure svg .interactive:focus { outline: none; }
+    .figure svg .interactive:hover rect, .figure svg .interactive:focus-visible rect,
+    .figure svg .interactive:hover circle, .figure svg .interactive:focus-visible circle {
+      stroke: var(--carmine); stroke-width: 2.5;
+    }
+    .figure svg .interactive:focus-visible { filter: drop-shadow(0 0 2px var(--carmine)); }
+
     /* Topbar */
     .topbar.scrolled { border-bottom-color: var(--rule); }
     .topbar > a { font-family: var(--serif); font-weight: 500; font-size: 15.5px; letter-spacing: -0.01em; text-decoration: none; color: var(--ink); flex-shrink: 0; }
@@ -77,6 +86,16 @@
       #toc, #sources { display: none; }
       #toc.open, #sources.open { display: block; position: fixed; inset: 0; z-index: 90; background: var(--paper); overflow-y: auto; padding: 64px 24px 24px; }
       #toc.open .panel-close, #sources.open .panel-close { display: inline-flex; align-items: center; gap: 6px; position: fixed; top: 16px; right: 16px; z-index: 91; background: var(--paper); border: 1px solid var(--rule); border-radius: 4px; padding: 8px 14px; font-family: var(--mono); font-size: 0.85rem; cursor: pointer; color: var(--ink); }
+      .quiz-card { padding: 14px 16px; margin: 1.6rem 0 2rem; }
+      .quiz-card__head { gap: 0.6rem; }
+      .quiz-card__title { flex-basis: 100%; overflow-wrap: break-word; }
+      .quiz-card__toggle { width: 100%; padding: 12px; min-height: 44px; font-size: 0.82rem; }
+      .quiz-q__check { width: 100%; padding: 12px; min-height: 44px; font-size: 0.82rem; }
+      .quiz-q__options li { padding: 10px 0; }
+      .quiz-q__options label { padding: 8px 0; min-height: 44px; align-items: center; }
+      .quiz-q__explain { margin: 0.5rem 0 0 0; padding: 10px 12px; }
+      .quiz-q__retry { padding: 10px 0; min-height: 44px; }
+
     }
     .panel-close { display: none; }
 
@@ -168,6 +187,42 @@
       html, body { max-width: 100vw; }
     }
     @media print { #toc, #sources, #modal-root, #zoom-overlay, .menu-toggle { display: none; } main#report { max-width: none; padding: 0; } .figure { page-break-inside: avoid; } }
+  
+    /* === quiz cards (vérification de compréhension) === */
+    .quiz-card { margin: 2rem 0 2.4rem; padding: 18px 22px; background: var(--paper-2); border-left: 3px solid var(--carmine); border-radius: 2px; }
+    .quiz-card__head { display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap; }
+    .quiz-card__eyebrow { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--graphite); flex-basis: 100%; margin: 0 0 0.25rem; }
+    .quiz-card__title { font-family: var(--serif); font-size: 1.05rem; font-weight: 600; margin: 0; flex: 1 1 auto; color: var(--ink); }
+    .quiz-card__toggle { font-family: var(--mono); font-size: 0.78rem; letter-spacing: 0.06em; background: transparent; border: 1px solid var(--mist); color: var(--ink); padding: 6px 14px; border-radius: 2px; cursor: pointer; transition: color .15s, border-color .15s; }
+    .quiz-card__toggle:hover, .quiz-card__toggle:focus-visible { color: var(--carmine); border-color: var(--carmine); outline: none; }
+    .quiz-card__body { margin-top: 1.2rem; padding-top: 1rem; border-top: 1px dashed var(--rule); }
+    .quiz-card__body[hidden] { display: none; }
+    .quiz-q { margin: 0; padding: 0; }
+    .quiz-q + .quiz-q { margin-top: 1.6rem; padding-top: 1.6rem; border-top: 1px dashed var(--rule); }
+    .quiz-q fieldset { border: 0; padding: 0; margin: 0; }
+    .quiz-q__stem { font-family: var(--serif); font-size: 1rem; font-weight: 600; color: var(--ink); padding: 0; margin: 0 0 0.9rem; }
+    .quiz-q__options { list-style: none; padding: 0; margin: 0 0 1rem; }
+    .quiz-q__options li { margin: 0; padding: 8px 0; border-top: 1px solid var(--rule); }
+    .quiz-q__options li:last-child { border-bottom: 1px solid var(--rule); }
+    .quiz-q__options label { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; padding: 4px 0; }
+    .quiz-q__options input { margin: 0.3em 0 0; flex: 0 0 auto; accent-color: var(--carmine); }
+    .quiz-q__options label > span { flex: 1; line-height: 1.5; }
+    .quiz-q__explain { font-size: 0.92rem; margin: 0.5rem 0 0 1.7rem; padding: 8px 12px; background: var(--paper); border-left: 2px solid var(--mist); color: var(--graphite); }
+    .quiz-q__explain[hidden] { display: none; }
+    .quiz-q__options li.is-correct .quiz-q__explain, .quiz-q__options li.expected .quiz-q__explain { border-left-color: var(--teal); }
+    .quiz-q__options li.is-wrong .quiz-q__explain { border-left-color: var(--carmine); }
+    .quiz-q__options li.is-correct > label > span, .quiz-q__options li.expected > label > span { background-image: linear-gradient(transparent 60%, rgba(31, 85, 96, 0.14) 60%); background-size: 100% 1.5em; background-repeat: repeat-y; }
+    .quiz-q__options li.is-wrong > label > span { background-image: linear-gradient(transparent 60%, rgba(178, 59, 27, 0.14) 60%); background-size: 100% 1.5em; background-repeat: repeat-y; }
+    .quiz-q__check { font-family: var(--mono); font-size: 0.78rem; letter-spacing: 0.04em; background: var(--ink); color: var(--paper); border: 0; padding: 8px 16px; border-radius: 2px; cursor: pointer; transition: background .15s; }
+    .quiz-q__check:hover, .quiz-q__check:focus-visible { background: var(--carmine); outline: none; }
+    .quiz-q__check:disabled { background: var(--mist); cursor: not-allowed; }
+    .quiz-q__verdict { font-family: var(--mono); font-size: 0.78rem; letter-spacing: 0.04em; margin: 1rem 0 0; padding: 8px 12px; border-left: 2px solid var(--graphite); }
+    .quiz-q__verdict[hidden] { display: none; }
+    .quiz-q__verdict.is-correct { border-left-color: var(--teal); color: var(--teal); }
+    .quiz-q__verdict.is-wrong { border-left-color: var(--carmine); color: var(--carmine); }
+    .quiz-q__retry { font-family: var(--mono); font-size: 0.74rem; letter-spacing: 0.06em; background: transparent; border: 0; color: var(--graphite); padding: 6px 0; margin: 0.6rem 0 0; cursor: pointer; text-decoration: underline; text-decoration-color: var(--mist); text-underline-offset: 3px; }
+    .quiz-q__retry:hover, .quiz-q__retry:focus-visible { color: var(--ink); text-decoration-color: var(--carmine); outline: none; }
+    .quiz-q__retry[hidden] { display: none; }
   </style>
 </head>
 <body>
@@ -326,6 +381,12 @@
   <text x="120" y="715" class="caption">Lecture : à chaque régime, l'utilisateur abandonne une part du contrôle de bas niveau et gagne en délégation.</text>
   <text x="120" y="732" class="caption">Les bons produits 2026 (Cursor, M365 Copilot, Sierra) combinent plusieurs régimes plutôt que d'en imposer un seul.</text>
   <text x="120" y="755" class="caption">Sources — Anthropic Framework for Trustworthy Agents (2026), Knight Institute Levels of Autonomy (2025), NN/G AI Paradigm.</text>
+
+  <!-- Interactive overlays -->
+  <rect class="interactive" data-card="card-chat" x="120" y="155" width="840" height="115" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="Régime 1 — Chat : fenêtre vide, tour de parole, réponse markdown."/>
+  <rect class="interactive" data-card="card-inline" x="120" y="285" width="840" height="115" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="Régime 2 — Copilote inline : ghost text, sidebar, agent mode dans l'outil."/>
+  <rect class="interactive" data-card="card-canvas" x="120" y="415" width="840" height="115" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="Régime 3 — Canvas et narratif : l'IA émet une surface pour la tâche."/>
+  <rect class="interactive" data-card="card-onbehalfof" x="120" y="545" width="840" height="125" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="Régime 4 — On-behalf-of : l'agent agit pour vous."/>
 </svg>
 
 
@@ -463,10 +524,71 @@
 
   <text x="80" y="685" class="caption">Le verdict synthétique : le chat est la prise minimale, pas la bonne forme. Il survit comme USB universel.</text>
   <text x="80" y="703" class="caption">Sources — Wattenberger 2023, Appleton 2023, Lee, Litt, Saarinen 2025, Pike 2025, Nielsen Norman Group 2024.</text>
+
+  <!-- Interactive overlays -->
+  <rect class="interactive" data-card="card-affordance" x="80" y="140" width="300" height="370" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="Grief I — Affordance : le champ chat ne dit pas ce qu'on peut y faire (Wattenberger)."/>
+  <rect class="interactive" data-card="card-flow" x="410" y="140" width="300" height="370" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="Grief II — Flow : l'aller-retour casse le rythme."/>
+  <rect class="interactive" data-card="card-articulation" x="740" y="140" width="300" height="370" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="Grief III — Articulation : tout doit être verbalisé à l'avance (NN/G)."/>
+  <rect class="interactive" data-card="card-survit" x="80" y="540" width="960" height="120" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="Ce qui survit du chat : découverte, expression de l'imprécis, fallback universel."/>
 </svg>
 
             <figcaption class="figure-caption">Schéma 2 — Trois griefs convergents et trois usages qui restent légitimes. Le chat survit comme port universel ; il cesse d'être la surface de référence.</figcaption>
           </figure>
+          <aside class="quiz-card" data-quiz-id="regimes" data-anchor="section-2" role="region" aria-labelledby="quiz-regimes-title">
+            <header class="quiz-card__head">
+              <p class="quiz-card__eyebrow">Vérification de compréhension · § 2</p>
+              <h3 id="quiz-regimes-title" class="quiz-card__title">Quel régime pour quel cas ?</h3>
+              <button class="quiz-card__toggle" type="button" aria-expanded="false">Tester →</button>
+            </header>
+            <div class="quiz-card__body" hidden>
+              <article class="quiz-q" data-mode="single">
+                <fieldset>
+                  <legend class="quiz-q__stem">Une équipe veut intégrer un assistant IA dans Excel pour aider à construire des tableaux croisés dynamiques. Quel régime privilégier ?</legend>
+                  <ul class="quiz-q__options">
+                    <li><label><input type="radio" name="q1-excel"><span>Chat dédié dans une sidebar — l'utilisateur tape sa question, l'IA répond en texte.</span></label>
+                      <p class="quiz-q__explain" data-correct="false" hidden>C'est le réflexe par défaut, mais le procès du chatbot s'applique : pas d'affordance, articulation forcée, flow cassé. L'utilisateur travaille déjà <em>dans</em> Excel — l'inline est mieux placé. <a href="#section-3">↗ relire §&nbsp;3</a></p>
+                    </li>
+                    <li><label><input type="radio" name="q1-excel"><span>Copilote inline : suggestions de formules dans la cellule + agent mode pour pivoter automatiquement la sélection.</span></label>
+                      <p class="quiz-q__explain" data-correct="true" hidden>Exact. Microsoft 365 Copilot a basculé en avril 2026 vers l'<em>agent mode app-native</em> dans Excel : engagement +67 %, satisfaction +65 %. L'IA agit dans le document, pas à côté.</p>
+                    </li>
+                    <li><label><input type="radio" name="q1-excel"><span>Canvas génératif où l'IA produit une mini-app Excel customisée par session.</span></label>
+                      <p class="quiz-q__explain" data-correct="false" hidden>Le canvas est bon pour <em>produire un objet</em> nouveau (slide, app), pas pour augmenter un outil existant que l'utilisateur connaît déjà.</p>
+                    </li>
+                    <li><label><input type="radio" name="q1-excel"><span>Agent on-behalf-of qui prend le contrôle de l'Excel en arrière-plan.</span></label>
+                      <p class="quiz-q__explain" data-correct="false" hidden>Surdimensionné pour une tâche routinière où l'utilisateur reste aux commandes. Le on-behalf-of est pour les actions qui ont un <em>résultat dans le monde</em> (envoi, paiement, refactor production).</p>
+                    </li>
+                  </ul>
+                  <button class="quiz-q__check" type="button">Valider</button>
+                  <div class="quiz-q__verdict" role="status" aria-live="polite" hidden></div>
+                  <button class="quiz-q__retry" type="button" hidden>Recommencer</button>
+                </fieldset>
+              </article>
+
+              <article class="quiz-q" data-mode="multi">
+                <fieldset>
+                  <legend class="quiz-q__stem">Quelles affirmations sur le chat comme surface IA sont <strong>vraies</strong> ? (plusieurs réponses possibles)</legend>
+                  <ul class="quiz-q__options">
+                    <li><label><input type="checkbox" name="q2-chat-a"><span>Le chat reste la meilleure surface pour la découverte d'usage initial.</span></label>
+                      <p class="quiz-q__explain" data-correct="true" hidden>Oui — c'est le port USB universel. Quand l'utilisateur ne sait pas ce qu'il cherche, le langage naturel est la barrière la plus basse.</p>
+                    </li>
+                    <li><label><input type="checkbox" name="q2-chat-b"><span>Le chat est la surface optimale pour l'usage routinier d'un agent en production.</span></label>
+                      <p class="quiz-q__explain" data-correct="false" hidden>Faux. Pike, Saarinen, Wattenberger convergent : pour l'usage routinier, inline ou canvas battent le chat. Le chat est un <em>debug interface</em>, pas un mode quotidien.</p>
+                    </li>
+                    <li><label><input type="checkbox" name="q2-chat-c"><span>L'<em>articulation barrier</em> (NN/G) explique pourquoi le chat fatigue : il force à verbaliser tout ce qu'on pense en demi-phrases.</span></label>
+                      <p class="quiz-q__explain" data-correct="true" hidden>Exact. C'est la formalisation NN/G de 2024 — articuler verbalement chaque demande est une charge cognitive lourde.</p>
+                    </li>
+                    <li><label><input type="checkbox" name="q2-chat-d"><span>Le chat doit toujours être présent comme <em>fallback</em> dans tous les produits agentic.</span></label>
+                      <p class="quiz-q__explain" data-correct="true" hidden>Oui — quand l'UI structurée échoue, le chat est l'échappatoire. À garder comme dernier recours, pas premier choix.</p>
+                    </li>
+                  </ul>
+                  <button class="quiz-q__check" type="button">Valider</button>
+                  <div class="quiz-q__verdict" role="status" aria-live="polite" hidden></div>
+                  <button class="quiz-q__retry" type="button" hidden>Recommencer</button>
+                </fieldset>
+              </article>
+            </div>
+          </aside>
+
         </section>
 
         <section id="section-3">
@@ -650,6 +772,11 @@
   <text x="80" y="660" class="caption">Lecture : les trois sub-modes répondent à trois niveaux d'investissement utilisateur — frappe / sélection / prompt.</text>
   <text x="80" y="678" class="caption">Cursor Tab v2 (RL-trained) prédit l'action suivante, pas le caractère suivant : matérialisation d'une intention, pas d'un complètement.</text>
   <text x="80" y="700" class="caption">Sources — VS Code Docs, GitHub Changelog 2026, InfoQ Cursor 3 (avril 2026), Windsurf Changelog, Notion Help.</text>
+
+  <!-- Interactive overlays -->
+  <rect class="interactive" data-card="card-ghost" x="80" y="140" width="305" height="490" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="Sub-mode A — Ghost text : Tab/Esc, zéro friction, pas de négociation."/>
+  <rect class="interactive" data-card="card-sidebar" x="408" y="140" width="305" height="490" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="Sub-mode B — Sidebar chat : contextualisé, négociation possible, articulation requise."/>
+  <rect class="interactive" data-card="card-agent" x="736" y="140" width="305" height="490" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="Sub-mode C — Agent mode : l'IA prend la main, productivité x3-5 sur multi-fichiers."/>
 </svg>
 
             <figcaption class="figure-caption">Schéma 3 — Les trois sub-modes du copilote inline. Ils ne se canniba­lisent pas — ils s'empilent, et les bons produits 2026 basculent entre eux sans rupture cognitive.</figcaption>
@@ -787,6 +914,12 @@
   <text x="80" y="710" class="caption">Lecture — les régimes 1 et 4 (contraints) sont stables et auditables ; le régime 3 (open-ended) est expressif mais risqué.</text>
   <text x="80" y="728" class="caption">Le régime 2 (declarative) émerge en 2026 comme compromis : flexible côté agent, sécurisé côté rendu.</text>
   <text x="80" y="748" class="caption">Sources — CopilotKit *Three Kinds of Generative UI*, A2UI spec, Vercel AI SDK 3.0, MCP Apps Jan 2026, NN/G Generative UI.</text>
+
+  <!-- Interactive overlays -->
+  <rect class="interactive" data-card="card-controlled" x="180" y="155" width="395" height="240" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="Controlled : tool-call vers composant React pré-existant. Couplage fort, prévisible."/>
+  <rect class="interactive" data-card="card-declarative" x="605" y="155" width="395" height="240" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="Declarative : schéma JSON vers catalogue UI. A2UI de Google, json-render Vercel."/>
+  <rect class="interactive" data-card="card-openended" x="605" y="410" width="395" height="240" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="Open-ended : HTML brut vers sandbox iframe. Claude Artifacts, Canvas, v0."/>
+  <rect class="interactive" data-card="card-dynamic" x="180" y="410" width="395" height="240" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="Dynamic data-driven : NL vers SQL vers visualisation contrainte. BI conversationnelle."/>
 </svg>
 
             <figcaption class="figure-caption">Schéma 4 — Quatre régimes de generative UI, du plus contraint au plus libre. Choisir le régime est une décision d'architecture, pas un détail d'implémentation.</figcaption>
@@ -928,6 +1061,14 @@
   <text x="780" y="697" class="q-prod" text-anchor="end">Salesforce Agentic Patterns</text>
 
   <text x="80" y="740" class="caption">Sources — Manus AI blog, Cognition Devin docs, OpenAI Operator help, Anthropic Framework for Trustworthy Agents, Salesforce Architects Agentic Patterns, WaitGPT (UIST 2024).</text>
+
+  <!-- Interactive overlays -->
+  <rect class="interactive" data-card="card-q1" x="80" y="155" width="360" height="120" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="Question 1 — Qu'est-ce qu'il fait là ? Pattern : activity panel, screen mirroring (Manus, Devin, Operator)."/>
+  <rect class="interactive" data-card="card-q2" x="680" y="155" width="360" height="120" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="Question 2 — Comment j'interromps ? Pattern : plan visible, take-over instantané (Claude Code Plan Mode)."/>
+  <rect class="interactive" data-card="card-q3" x="80" y="500" width="360" height="125" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="Question 3 — Comment je valide le destructif ? Pattern : escalade contextuelle (Operator confirmations)."/>
+  <rect class="interactive" data-card="card-q4" x="680" y="500" width="360" height="125" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="Question 4 — Pourquoi a-t-il fait ça ? Pattern : extended thinking visible (Claude, o1/o3, WaitGPT UIST'24)."/>
+  <rect class="interactive" data-card="card-computer" x="380" y="290" width="360" height="200" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="L'ordinateur de l'agent — pattern radical de Manus : panneau qui mirroir l'écran de l'agent en permanence."/>
+  <rect class="interactive" data-card="card-handoff" x="80" y="645" width="960" height="70" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="Warm handoff to human : l'agent identifie les scenarios sensibles et passe la main, contexte préservé."/>
 </svg>
 
             <figcaption class="figure-caption">Schéma 5 — Les quatre questions UX critiques pour un agent on-behalf-of et leurs patterns dominants.</figcaption>
@@ -1049,6 +1190,12 @@
 
   <!-- Caption -->
   <text x="80" y="710" class="caption">Sources — CopilotKit blog (lancement AG-UI mai 2025), MCP Apps Jan 2026, Microsoft Agent Framework, Google ADK, AWS Strands Agents.</text>
+
+  <!-- Interactive overlays -->
+  <rect class="interactive" data-card="card-mcp" x="80" y="200" width="225" height="280" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="MCP — Agent vers Tools / Data. Standard ouvert pour connecter aux outils externes."/>
+  <rect class="interactive" data-card="card-agui" x="815" y="200" width="225" height="280" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="AG-UI — Agent vers Utilisateur. Protocole 17 events bi-directionnel."/>
+  <rect class="interactive" data-card="card-a2a" x="447" y="555" width="225" height="140" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="A2A — Agent vers Agent. Coordination multi-agents distribués."/>
+  <rect class="interactive" data-card="card-agent" x="480" y="330" width="160" height="80" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="Agent : harness + model + loop. Le moteur connecté par les trois protocoles."/>
 </svg>
 
             <figcaption class="figure-caption">Schéma 6 — Les trois standards qui structurent la stack agentique 2026. MCP côté tools, A2A entre agents, AG-UI côté utilisateur.</figcaption>
@@ -1234,6 +1381,13 @@ RunFinishedEvent(...)</code></pre>
   <!-- Caption colored legend -->
   <text x="80" y="710" class="caption">Légende — lifecycle (gris) · text message (orange) · tool call (sarcelle) · state delta (carmine). 17 events core + extensions draft.</text>
   <text x="80" y="728" class="caption">Sources — AG-UI Docs (docs.ag-ui.com/concepts/events), CopilotKit blog *Master the 17 AG-UI Event Types*, JSON Patch RFC 6902.</text>
+
+  <!-- Interactive overlays -->
+  <rect class="interactive" data-card="card-lifecycle" x="110" y="200" width="110" height="370" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="Lifecycle (5 events) : RunStarted, RunFinished, RunError, StepStarted, StepFinished."/>
+  <rect class="interactive" data-card="card-text" x="225" y="200" width="195" height="370" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="Text message (3+1) : Start, Content delta streamé, End, Chunk wrapper."/>
+  <rect class="interactive" data-card="card-toolcall" x="420" y="200" width="235" height="370" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="Tool call (4+1) : Start, Args delta, End, Result, Chunk. Audit-friendly."/>
+  <rect class="interactive" data-card="card-state" x="655" y="200" width="205" height="370" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="State (3) : Snapshot, Delta (JSON Patch RFC 6902), MessagesSnapshot."/>
+  <rect class="interactive" data-card="card-completion" x="860" y="200" width="130" height="370" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="Run finished : input ré-activé, spinner off."/>
 </svg>
 
             <figcaption class="figure-caption">Schéma 7 — Une session AG-UI lue comme une partition. À gauche, l'agent émet la séquence d'événements ; à droite, le frontend rend chaque événement.</figcaption>
@@ -1254,6 +1408,58 @@ RunFinishedEvent(...)</code></pre>
             </tbody>
           </table>
           <p><strong>Question de maturité à flagger</strong> : AG-UI est un standard d'un an. L'intégration Vercel AI SDK est annoncée mais non publiée sur npm au 18 mai 2026<a class="cite" href="#source-51" data-cite="51">51</a>. L'OpenAI Agent SDK est en <em>in progress</em>. <mark>Adopter AG-UI en mai 2026 = parier sur un standard émergent largement adopté mais pas encore stabilisé sur toutes ses extensions.</mark></p>
+          <aside class="quiz-card" data-quiz-id="agui" data-anchor="section-7" role="region" aria-labelledby="quiz-agui-title">
+            <header class="quiz-card__head">
+              <p class="quiz-card__eyebrow">Vérification de compréhension · § 7</p>
+              <h3 id="quiz-agui-title" class="quiz-card__title">AG-UI vs alternatives — testez votre intuition</h3>
+              <button class="quiz-card__toggle" type="button" aria-expanded="false">Tester →</button>
+            </header>
+            <div class="quiz-card__body" hidden>
+              <article class="quiz-q" data-mode="single">
+                <fieldset>
+                  <legend class="quiz-q__stem">Vous construisez un chat assistant simple full-stack Next.js (mono-équipe, OpenAI uniquement, pas de state partagé). Vous partez sur :</legend>
+                  <ul class="quiz-q__options">
+                    <li><label><input type="radio" name="q1-agui"><span>AG-UI avec adapter Vercel AI SDK.</span></label>
+                      <p class="quiz-q__explain" data-correct="false" hidden>Overkill. AG-UI brille quand vous découplez framework agentic et framework frontend, ou voulez survivre à un changement de runtime. Pour un chat mono-stack, c'est ajouter une dépendance à un standard naissant pour rien. <a href="#section-7">↗ relire §&nbsp;7</a></p>
+                    </li>
+                    <li><label><input type="radio" name="q1-agui"><span>Vercel AI SDK UI directement (depuis le pivot post-RSC).</span></label>
+                      <p class="quiz-q__explain" data-correct="true" hidden>Exact. Pour ce cas mono-stack simple, AI SDK UI est plus rapide à mettre en place. Note : le développement de <code>streamUI</code> (AI SDK RSC) est officiellement pausé — migration recommandée vers AI SDK UI.</p>
+                    </li>
+                    <li><label><input type="radio" name="q1-agui"><span>WebSocket maison de 200 lignes pour streamer les tokens.</span></label>
+                      <p class="quiz-q__explain" data-correct="false" hidden>Possible mais inutile : vous réinventez ce que AI SDK UI fait déjà gratuitement. À réserver aux cas vraiment custom.</p>
+                    </li>
+                  </ul>
+                  <button class="quiz-q__check" type="button">Valider</button>
+                  <div class="quiz-q__verdict" role="status" aria-live="polite" hidden></div>
+                  <button class="quiz-q__retry" type="button" hidden>Recommencer</button>
+                </fieldset>
+              </article>
+
+              <article class="quiz-q" data-mode="multi">
+                <fieldset>
+                  <legend class="quiz-q__stem">Quelles affirmations sur la <strong>distinction shared state vs generative UI</strong> dans AG-UI sont vraies ?</legend>
+                  <ul class="quiz-q__options">
+                    <li><label><input type="checkbox" name="q2-agui-a"><span><strong>Shared state</strong> = un dictionnaire d'état structuré, bi-directionnel, synchronisé via <code>StateSnapshot</code> + <code>StateDelta</code>.</span></label>
+                      <p class="quiz-q__explain" data-correct="true" hidden>Exact. C'est de la donnée — JSON Patch RFC 6902, mécanique snapshot+delta classique.</p>
+                    </li>
+                    <li><label><input type="checkbox" name="q2-agui-b"><span><strong>Generative UI</strong> = l'agent émet directement des fragments d'interface (composant React, schéma JSON, HTML sandboxé).</span></label>
+                      <p class="quiz-q__explain" data-correct="true" hidden>Exact. C'est de l'interface — orthogonal au shared state.</p>
+                    </li>
+                    <li><label><input type="checkbox" name="q2-agui-c"><span>Les deux sont la même chose : l'agent envoie un état JSON qui est rendu comme une UI.</span></label>
+                      <p class="quiz-q__explain" data-correct="false" hidden>Faux. AG-UI transporte les deux mais ce sont des patterns architecturaux orthogonaux. <em>Shared state</em> = ce que l'agent <strong>sait</strong>. <em>Generative UI</em> = ce que l'agent <strong>montre</strong>. La presse les confond souvent.</p>
+                    </li>
+                    <li><label><input type="checkbox" name="q2-agui-d"><span>Pour un dashboard où l'agent met à jour des KPI pendant que l'utilisateur édite des filtres : c'est du shared state, pas de la generative UI.</span></label>
+                      <p class="quiz-q__explain" data-correct="true" hidden>Exact. Le dashboard existe déjà (l'UI est codée). Seules les <em>données</em> circulent dans les deux sens via StateSnapshot/StateDelta.</p>
+                    </li>
+                  </ul>
+                  <button class="quiz-q__check" type="button">Valider</button>
+                  <div class="quiz-q__verdict" role="status" aria-live="polite" hidden></div>
+                  <button class="quiz-q__retry" type="button" hidden>Recommencer</button>
+                </fieldset>
+              </article>
+            </div>
+          </aside>
+
         </section>
 
         <section id="section-8">
@@ -1403,6 +1609,14 @@ RunFinishedEvent(...)</code></pre>
   <text x="100" y="650" class="attrib">YONADAV SHAVIT ET AL. · LEVELS OF AUTONOMY FOR AI AGENTS · KNIGHT INSTITUTE · JUILLET 2025</text>
 
   <text x="80" y="700" class="caption">Sources — Knight First Amendment Institute (Columbia), juillet 2025 ; arXiv 2506.12469. Voir aussi Anthropic *Graduated Trust* (2026), Karpathy *autonomy slider* (Sequoia AI Ascent 2026).</text>
+
+  <!-- Interactive overlays -->
+  <rect class="interactive" data-card="card-operator" x="80" y="160" width="180" height="310" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="Operator (niveau 1) : l'utilisateur décide, l'agent suggère. Copilot autocomplete."/>
+  <rect class="interactive" data-card="card-collaborator" x="276" y="160" width="180" height="310" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="Collaborator (niveau 2) : utilisateur et agent à parts égales. Cursor Composer."/>
+  <rect class="interactive" data-card="card-consultant" x="472" y="160" width="180" height="310" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="Consultant (niveau 3) : l'utilisateur décide après consultation. Deep Research."/>
+  <rect class="interactive" data-card="card-approver" x="668" y="160" width="180" height="310" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="Approver (niveau 4) : l'agent décide, l'utilisateur approuve. Claude Code Plan Mode."/>
+  <rect class="interactive" data-card="card-observer" x="864" y="160" width="180" height="310" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="Observer (niveau 5) : l'agent décide et exécute seul. Devin, Manus, Sierra."/>
+  <rect class="interactive" data-card="card-shavit" x="80" y="560" width="960" height="100" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="Citation Yonadav Shavit (Knight Institute, 2025) : l'autonomie est une décision de design."/>
 </svg>
 
             <figcaption class="figure-caption">Schéma 8 — L'échelle d'autonomie du Knight First Amendment Institute. À chaque niveau correspond un pattern UX distinct.</figcaption>
@@ -1543,6 +1757,13 @@ RunFinishedEvent(...)</code></pre>
 
   <text x="80" y="730" class="caption">Lecture — chaque couche est remplaçable indépendamment. La séparation couche 2 / couche 3 est ce qui permet la portabilité entre frameworks.</text>
   <text x="80" y="748" class="caption">Sources — CopilotKit (couches 2-3), Anthropic Trust Framework (couche 5), Vercel + shadcn (couche 4), Agent SDK Anthropic (couche 1).</text>
+
+  <!-- Interactive overlays -->
+  <rect class="interactive" data-card="card-layer1" x="100" y="150" width="940" height="105" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="Couche 1 — Agent backend : le moteur. Harness, model, tools, skills, hooks, filesystem."/>
+  <rect class="interactive" data-card="card-layer2" x="100" y="270" width="940" height="90" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="Couche 2 — Pipe AG-UI : transport bi-directionnel d'événements."/>
+  <rect class="interactive" data-card="card-layer3" x="100" y="375" width="940" height="90" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="Couche 3 — Frontend runtime : hooks useAgent, useCoAgent. CopilotKit React/Angular."/>
+  <rect class="interactive" data-card="card-layer4" x="100" y="480" width="940" height="110" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="Couche 4 — Generative UI surface : ce que l'agent peut montrer."/>
+  <rect class="interactive" data-card="card-layer5" x="100" y="605" width="940" height="95" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="Couche 5 — Guardrails et observability : hooks, permissions, audit log."/>
 </svg>
 
             <figcaption class="figure-caption">Schéma 9 — L'architecture canonique d'une surface agentique en cinq couches. La séparation AG-UI / frontend runtime est ce qui permet la portabilité entre frameworks.</figcaption>
@@ -1702,6 +1923,12 @@ RunFinishedEvent(...)</code></pre>
 
   <text x="80" y="735" class="caption">Lecture — un cas ne tombe jamais dans un seul quadrant. Les meilleurs produits 2026 combinent plusieurs régimes selon le cran d'usage.</text>
   <text x="80" y="752" class="caption">Sources — synthèse éditoriale auteur, croisée avec Anthropic Framework for Trustworthy Agents, Knight Institute, Salesforce Architects Agentic Patterns.</text>
+
+  <!-- Interactive overlays -->
+  <rect class="interactive" data-card="card-rr" x="190" y="155" width="395" height="245" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="Routinier · réversible — Régime inline copilot. Édition code, document, triage."/>
+  <rect class="interactive" data-card="card-ri" x="605" y="155" width="395" height="245" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="Routinier · irréversible — On-behalf-of + guardrails. Sierra, Devin, Vapi."/>
+  <rect class="interactive" data-card="card-vr" x="190" y="415" width="395" height="245" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="Rare · réversible — Chat + Canvas. Découverte, génération d'objets one-shot."/>
+  <rect class="interactive" data-card="card-vi" x="605" y="415" width="395" height="245" fill="transparent" stroke="transparent" tabindex="0" role="button" aria-label="Rare · irréversible — Narratif + escalade. Brief éditorial + confirmation humaine."/>
 </svg>
 
             <figcaption class="figure-caption">Schéma 10 — Quatre quadrants de décision et douze cas d'usage placés sur la matrice fréquence × enjeu.</figcaption>
@@ -1867,7 +2094,253 @@ RunFinishedEvent(...)</code></pre>
   </div>
 
   <script>
-  const SCHEMAS = {};
+  const SCHEMAS = {
+    "schema-01": {
+      "card-chat": {
+        eyebrow: "Régime 1 · 2022—",
+        title: "Chat conversationnel",
+        body: "<p>Fenêtre vide, tour de parole, réponse markdown. Universel pour la <strong>découverte</strong>, rarement la bonne surface d'usage continu. <code>ChatGPT</code>, <code>Claude.ai</code>, <code>Gemini</code>, <code>Mistral Le Chat</code>, <code>Perplexity</code>.</p>"
+      },
+      "card-inline": {
+        eyebrow: "Régime 2 · 2023—",
+        title: "Copilote inline",
+        body: "<p>Trois sub-modes (<em>ghost text</em>, <em>sidebar chat</em>, <em>agent mode</em>) embarqués dans l'éditeur ou le document. L'IA suggère, raisonne ou agit sans changer d'application. <code>Cursor</code>, <code>GitHub Copilot</code>, <code>Notion AI</code>, <code>M365 Copilot</code>.</p>"
+      },
+      "card-canvas": {
+        eyebrow: "Régime 3 · 2024—",
+        title: "Canvas et narratif",
+        body: "<p>L'IA émet une <strong>surface pour la tâche</strong> — composant React, slide, mini-app, brief éditorial scénarisé. <em>La conversation devient commande, l'artefact devient résultat.</em> <code>Vercel v0</code>, <code>Claude Artifacts</code>, <code>Canvas</code>, <code>Tableau Pulse</code>, <code>Sierra</code>.</p>"
+      },
+      "card-onbehalfof": {
+        eyebrow: "Régime 4 · 2025—",
+        title: "L'agent agit pour vous",
+        body: "<p>VM cloud, navigateur, desktop, voice. La surface devient <em>fenêtre d'observation</em>, plus terrain d'action direct. <code>Operator</code>, <code>Computer Use</code>, <code>Devin</code>, <code>Manus</code>, <code>Sierra</code>, <code>Vapi</code>, <code>Agentforce</code>.</p>"
+      },
+    },
+    "schema-02": {
+      "card-affordance": {
+        eyebrow: "Grief I",
+        title: "Pas de port distinctif",
+        body: "<p>Un champ texte ChatGPT ressemble à une barre Google, à un login form, à un champ carte bancaire. <strong>Aucune affordance distinctive.</strong></p><p><em>« Un piano dit, sans rien apprendre, qu'on peut frapper toutes ses touches. Le chatbot n'a aucun équivalent. »</em> — A. Wattenberger, 2023.</p>"
+      },
+      "card-flow": {
+        eyebrow: "Grief II",
+        title: "L'aller-retour casse le rythme",
+        body: "<p>Csíkszentmihályi : on est en <em>flow</em> quand on alterne action et feedback à très haute fréquence. Le chat impose un cycle <code>implement → wait → evaluate</code>, exactement l'inverse.</p><p><em>« Chat is a debug interface ; it should not be the default surface for routine use. »</em> — A. Pike, <em>Post-Chat UI</em>, 2025.</p>"
+      },
+      "card-articulation": {
+        eyebrow: "Grief III",
+        title: "Tout doit être verbalisé à l'avance",
+        body: "<p>On pense en demi-phrases, en gestes, en pointages. Le chat exige une formulation verbale complète avant que la machine ne fasse quoi que ce soit. NN/G a formalisé ce point en 2024 sous le nom d'<strong>articulation barrier</strong> : <em>« obliger l'utilisateur à articuler verbalement chaque demande est une charge cognitive lourde »</em>.</p>"
+      },
+      "card-survit": {
+        eyebrow: "Ce qui survit",
+        title: "Le chat comme port USB universel",
+        body: "<p>Trois usages restent légitimes :</p><ol><li><em>La découverte d'usage</em> — quand l'utilisateur ne sait pas ce qu'il cherche.</li><li><em>L'expression de l'imprécis</em> — \"comme ce que David a partagé, mais plus formel\".</li><li><em>Le fallback universel</em> — quand l'UI structurée échoue. Dernier recours, pas premier choix.</li></ol>"
+      },
+    },
+    "schema-03": {
+      "card-ghost": {
+        eyebrow: "Sub-mode A",
+        title: "Ghost text — autocomplete",
+        body: "<p>L'IA insère une suggestion en texte gris italique à la position du curseur. Accept par <kbd>Tab</kbd>, reject par <kbd>Esc</kbd>. <strong>Zéro friction.</strong></p><p><strong>Cursor Tab v2</strong> pousse le pattern d'un cran : modèle propriétaire RL-trained qui ne prédit plus les caractères suivants mais <em>l'action suivante</em>. La première fois qu'un outil inline matérialise une <em>intention</em>, pas un complètement.</p><p>Limite : <em>aucune négociation possible</em>.</p>"
+      },
+      "card-sidebar": {
+        eyebrow: "Sub-mode B",
+        title: "Sidebar chat contextuelle",
+        body: "<p>Panneau latéral qui a accès au document, au repo, à la sélection. C'est un chat, mais <em>contextualisé</em> — l'utilisateur dit \"explique ça\" en pointant.</p><p>Force : négociation et raisonnement explicite. Limite : on retombe partiellement dans les griefs du procès du chatbot.</p>"
+      },
+      "card-agent": {
+        eyebrow: "Sub-mode C",
+        title: "Agent mode inline",
+        body: "<p>L'IA prend la main, modifie plusieurs fichiers, lance le terminal, lit les erreurs, itère.</p><p>Force : <strong>productivité ×3 à ×5 sur les tâches multi-fichiers</strong>. Cursor revendique 2 Md $ d'ARR run-rate (fév 2026). Windsurf, racheté par Cognition pour ~250 M$, défend l'<em>Arena Mode</em>.</p><p>Limite : <em>l'observabilité chute brutalement</em>.</p>"
+      },
+    },
+    "schema-04": {
+      "card-controlled": {
+        eyebrow: "Régime 1 · le plus contraint",
+        title: "Controlled / Static",
+        body: "<p>L'agent appelle un composant React pré-existant comme une tool ; les arguments du tool call deviennent les props. <strong>Couplage fort, prévisible</strong> — c'est ce que fait CopilotKit en mode classique.</p>"
+      },
+      "card-declarative": {
+        eyebrow: "Régime 2 · le compromis",
+        title: "Declarative — JSON schema",
+        body: "<p>L'agent émet un schéma JSON qui décrit l'UI à rendre parmi un catalogue connu côté frontend. <em>One tool, many UIs.</em> Cross-platform.</p><p><strong>A2UI</strong> (Google, décembre 2025) prend délibérément le pari déclaratif sans exécution de code, pour la sécurité.</p>"
+      },
+      "card-openended": {
+        eyebrow: "Régime 3 · le plus libre",
+        title: "Open-ended — HTML sandbox",
+        body: "<p>L'agent émet directement du HTML/JS exécuté en sandbox (iframe). <strong>Liberté maximale, risque maximal</strong> : XSS, dark patterns hallucinés.</p><p>C'est ce que font <code>Claude Artifacts</code>, <code>ChatGPT Canvas</code>, <code>Vercel v0</code>. La consolidation Anthropic vers la <em>VM unifiée</em> (avril–mai 2026) durcit le sandboxing.</p>"
+      },
+      "card-dynamic": {
+        eyebrow: "Régime 4 · le plus borné",
+        title: "Dynamic data-driven",
+        body: "<p>L'UI elle-même est pré-codée, mais ses paramètres et son contenu varient selon une requête NL → SQL → visualisation. <strong>Contrainte par le data model, sûr.</strong></p><p>C'est le régime de la BI conversationnelle : <code>Tableau Pulse</code>, <code>ThoughtSpot Spotter</code>, <code>Sigma AI</code>, <code>Sisense GenBI</code>, <code>Hex Magic</code>.</p>"
+      },
+    },
+    "schema-05": {
+      "card-q1": {
+        eyebrow: "Question 1",
+        title: "Qu'est-ce qu'il fait là, maintenant ?",
+        body: "<p>Pattern dominant : <strong>l'activity panel</strong>. <strong>Manus AI</strong> a popularisé le pattern radical avec <em>Manus's Computer</em> — un panneau visible en permanence à côté du chat, qui mirroir l'écran de l'agent.</p><p>Cognition (Devin) joue une variante : terminal + éditeur + navigateur dans un workspace partagé. OpenAI Operator rend l'iframe avec trois modes : <em>Takeover</em>, <em>Watch</em>, <em>Confirmation</em>.</p>"
+      },
+      "card-q2": {
+        eyebrow: "Question 2",
+        title: "Comment je l'interromps ?",
+        body: "<p>Pattern dominant : <strong>take-over instantané + plan visible</strong>. Claude Code matérialise ça avec une todo-list visible en temps réel.</p><p>Anthropic, sur la base de données empiriques montrant que <strong>les utilisateurs approuvent 93 % des prompts de permission</strong> (consentement de fatigue), a introduit le <strong>Plan Mode</strong> : l'utilisateur valide <em>un plan complet en amont</em>.</p>"
+      },
+      "card-q3": {
+        eyebrow: "Question 3",
+        title: "Comment je valide ce qui est destructif ?",
+        body: "<p>Pattern dominant : <strong>escalade contextuelle</strong>. La confirmation apparaît au moment exact où elle compte — juste avant l'action irréversible.</p><p>Operator demande confirmation avant de payer ou d'envoyer un email. Anthropic formalise un <em>reversibility-weighted risk</em>. Salesforce Agentforce Voice ajoute une <em>confirmation auditive de progrès</em>.</p>"
+      },
+      "card-q4": {
+        eyebrow: "Question 4",
+        title: "Pourquoi a-t-il fait ça ?",
+        body: "<p>Pattern dominant : <strong>extended thinking visible et narrate-as-you-go</strong>. Claude et o1/o3 affichent le raisonnement dans un bloc dépliable.</p><p>Le papier <strong>WaitGPT</strong> (UIST 2024) formalise ce besoin. Une bonne surface on-behalf-of sépare <strong>trois flux</strong> : <em>plan</em> (todo-list), <em>state</em> (où l'agent en est), <em>reasoning</em> (pourquoi cette étape).</p>"
+      },
+      "card-computer": {
+        eyebrow: "Le pattern radical",
+        title: "L'ordinateur de l'agent",
+        body: "<p><strong>Manus AI</strong> a popularisé un pattern qui pousse l'observabilité à sa conclusion logique : un panneau visible en permanence qui mirroir tous les onglets ouverts, tous les clics, tous les fichiers écrits.</p><p>L'utilisateur peut <strong>prendre le contrôle</strong> d'un onglet en cliquant dedans, ou <strong>tout stopper</strong> en le fermant. Devin et Operator déclinent la même idée différemment.</p>"
+      },
+      "card-handoff": {
+        eyebrow: "Question transverse",
+        title: "Warm handoff to human",
+        body: "<p>Pattern critique systématisé par Salesforce. L'agent identifie les scenarios sensibles ou complexes — sentiment utilisateur négatif, tâche requérant des permissions humaines — et fait un <em>warm hand-off</em> à un humain.</p><p>Le handoff <strong>porte le contexte</strong> de la conversation. C'est <em>warm</em> parce qu'il ne force pas l'utilisateur à tout recommencer.</p>"
+      },
+    },
+    "schema-06": {
+      "card-mcp": {
+        eyebrow: "Pilier I",
+        title: "MCP — Agent ↔ Tools / Data",
+        body: "<p>Standard ouvert pour connecter un agent aux outils externes — APIs, bases, file systems.</p><p>Lancé par <strong>Anthropic en novembre 2024</strong>. Donation à la Linux Foundation en décembre 2025.</p>"
+      },
+      "card-a2a": {
+        eyebrow: "Pilier II",
+        title: "A2A — Agent ↔ Agent",
+        body: "<p>Coordination multi-agents distribués. Standard plus jeune que MCP, encore en stabilisation.</p>"
+      },
+      "card-agui": {
+        eyebrow: "Pilier III",
+        title: "AG-UI — Agent ↔ Utilisateur",
+        body: "<p>Protocole d'événements <strong>bi-directionnel</strong> entre agent et UI — <strong>17 events core</strong>, JSON Patch state (RFC 6902), transport agnostique (SSE, WebSocket, binary).</p><p>Lancé par <strong>CopilotKit le 12 mai 2025</strong>. Adopté par LangGraph, CrewAI, Mastra, Microsoft Agent Framework, Google ADK, AWS Strands, Pydantic AI, Agno, LlamaIndex, AG2.</p>"
+      },
+      "card-agent": {
+        eyebrow: "Au centre",
+        title: "L'agent",
+        body: "<p>Le moteur : harness, model, agent loop, filesystem, skills, hooks. Connecté aux trois protocoles via ses interfaces respectives.</p><p>Voir le dossier <a href=\"../agent-sdk/\">Agent SDK</a> pour le détail du harness.</p>"
+      },
+    },
+    "schema-07": {
+      "card-lifecycle": {
+        eyebrow: "Famille 1",
+        title: "Lifecycle (5 events)",
+        body: "<p><code>RunStarted</code>, <code>RunFinished</code>, <code>RunError</code>, <code>StepStarted</code>, <code>StepFinished</code>. Délimitent le début et la fin d'une exécution agentic.</p><p>Côté frontend : banner spinner, statut, error toast.</p>"
+      },
+      "card-text": {
+        eyebrow: "Famille 2",
+        title: "Text Message (3+1 events)",
+        body: "<p><code>TextMessageStart</code>, <code>TextMessageContent</code> (avec <code>delta</code>), <code>TextMessageEnd</code>, plus <code>TextMessageChunk</code> (wrapper).</p><p>Côté frontend : bubble chat qui se remplit caractère par caractère via les deltas streamés.</p>"
+      },
+      "card-toolcall": {
+        eyebrow: "Famille 3",
+        title: "Tool Call (4+1 events)",
+        body: "<p><code>ToolCallStart</code>, <code>ToolCallArgs</code> (delta JSON streamé), <code>ToolCallEnd</code>, <code>ToolCallResult</code>, plus <code>ToolCallChunk</code>.</p><p>Côté frontend : card dépliable montrant le tool name + args + result. <strong>Audit-friendly.</strong></p>"
+      },
+      "card-state": {
+        eyebrow: "Famille 4",
+        title: "State (3 events)",
+        body: "<p><code>StateSnapshot</code> (état complet), <code>StateDelta</code> (JSON Patch RFC 6902 — <code>{op:&quot;replace&quot;,path:&quot;/temp&quot;,value:17}</code>), <code>MessagesSnapshot</code> (historique).</p><p>Côté frontend : widget mis à jour sans re-render complet. C'est le <em>shared state</em> bi-directionnel.</p>"
+      },
+      "card-completion": {
+        eyebrow: "Fin du run",
+        title: "RunFinished",
+        body: "<p>L'agent émet <code>RunFinished</code> avec status (ok / error) et duration. Côté frontend : spinner off, input ré-activé.</p>"
+      },
+    },
+    "schema-08": {
+      "card-operator": {
+        eyebrow: "Niveau 1",
+        title: "Operator",
+        body: "<p>L'utilisateur décide. L'agent suggère.</p><p><strong>Pattern UX</strong> : suggestion + bouton Accept. Tab/Esc ghost text.</p><p><strong>Exemples</strong> : Copilot autocomplete, Cursor Tab v2.</p>"
+      },
+      "card-collaborator": {
+        eyebrow: "Niveau 2",
+        title: "Collaborator",
+        body: "<p>L'utilisateur et l'agent à parts égales.</p><p><strong>Pattern UX</strong> : canvas partagé, co-édition, négociation.</p><p><strong>Exemples</strong> : Cursor Composer, Claude Artifacts itératif.</p>"
+      },
+      "card-consultant": {
+        eyebrow: "Niveau 3",
+        title: "Consultant",
+        body: "<p>L'utilisateur décide, après consultation de l'agent.</p><p><strong>Pattern UX</strong> : l'agent rend un avis ou un plan, l'utilisateur décide.</p><p><strong>Exemples</strong> : Deep Research, Tableau Pulse brief.</p>"
+      },
+      "card-approver": {
+        eyebrow: "Niveau 4",
+        title: "Approver",
+        body: "<p>L'agent décide. L'utilisateur approuve avant exécution.</p><p><strong>Pattern UX</strong> : Plan mode, confirmation pré-action.</p><p><strong>Exemples</strong> : Claude Code Plan Mode, Operator confirmation.</p>"
+      },
+      "card-observer": {
+        eyebrow: "Niveau 5",
+        title: "Observer",
+        body: "<p>L'agent décide et exécute. L'utilisateur regarde.</p><p><strong>Pattern UX</strong> : activity panel, narrate-as-you-go, audit log post-hoc.</p><p><strong>Exemples</strong> : Devin, Manus, Sierra, Agentforce.</p>"
+      },
+      "card-shavit": {
+        eyebrow: "Citation",
+        title: "Yonadav Shavit · Knight Institute · juillet 2025",
+        body: "<p><em>« L'autonomie n'est pas un sous-produit de la capacité du modèle. C'est une décision de design — et elle doit être exposée explicitement à l'utilisateur. »</em></p><p>Le papier propose des <strong>autonomy certificates</strong> — documents numériques qui prescrivent le niveau maximum d'autonomie autorisé pour un agent donné.</p>"
+      },
+    },
+    "schema-09": {
+      "card-layer1": {
+        eyebrow: "Couche 1",
+        title: "Agent backend",
+        body: "<p>Le moteur. Harness Claude Code / LangGraph / Mastra / Pydantic AI, le model, les tools, les skills, les hooks, le filesystem, le context management.</p><p>Voir <a href=\"../agent-sdk/\">Agent SDK</a> et <a href=\"../harness-agentique/\">Harness agentiques</a>.</p>"
+      },
+      "card-layer2": {
+        eyebrow: "Couche 2",
+        title: "Pipe AG-UI",
+        body: "<p>Le transport bi-directionnel d'événements. SSE ou WebSocket, 17 événements core, state delta JSON Patch.</p><p>Sans AG-UI : WebSocket maison ou stream Server Actions — mais on accepte le coût de réimplémenter le shared state.</p>"
+      },
+      "card-layer3": {
+        eyebrow: "Couche 3",
+        title: "Frontend runtime",
+        body: "<p>Ce qui rend les événements. Pour React : CopilotKit (hooks <code>useAgent</code>, <code>useCoAgent</code>), Vercel AI SDK UI, shadcn registry. Pour Angular : CopilotKit Angular SDK.</p>"
+      },
+      "card-layer4": {
+        eyebrow: "Couche 4",
+        title: "Generative UI surface",
+        body: "<p>Ce qui définit <em>ce que l'agent peut montrer</em>. Pour le canvas : composants typés (shadcn, A2UI catalog, json-render Zod), ou sandbox iframe (Claude Artifacts, MCP Apps). Pour le narratif : scenarios pré-définis paramétrables.</p>"
+      },
+      "card-layer5": {
+        eyebrow: "Couche 5",
+        title: "Guardrails et observability",
+        body: "<p>Hooks d'interception, permission system, logging exhaustif, audit log côté UI, pop-up de confirmation contextuelle. Plus : monitoring de coûts par tâche, <em>replay capability</em>.</p>"
+      },
+    },
+    "schema-10": {
+      "card-rr": {
+        eyebrow: "Routinier · réversible",
+        title: "Régime dominant : Inline copilot",
+        body: "<p>3 sub-modes (ghost · sidebar · agent). Pattern UX : ghost text + sidebar + agent mode embarqués dans l'outil.</p><p><strong>Cas</strong> : édition de code professionnelle, écriture de document, triage emails/Slack, recherche contextuelle, analyse exploratoire ad hoc.</p>"
+      },
+      "card-ri": {
+        eyebrow: "Routinier · irréversible",
+        title: "Régime : On-behalf-of + guardrails",
+        body: "<p>Plan mode, escalade contextuelle, warm handoff.</p><p><strong>Cas</strong> : customer-service à la demande (Sierra), refactor multi-fichier (Devin, Cursor BG), voice call (Vapi, Retell), automation cross-app, CI/CD pre-review.</p>"
+      },
+      "card-vr": {
+        eyebrow: "Rare · réversible",
+        title: "Régime dominant : Chat + Canvas",
+        body: "<p>Découverte d'usage, génération d'objets one-shot.</p><p><strong>Cas</strong> : présentation/deck (Gamma, Canvas), mini-app interne ad hoc (v0, Lovable), onboarding, brainstorming.</p>"
+      },
+      "card-vi": {
+        eyebrow: "Rare · irréversible",
+        title: "Régime : Narratif + escalade",
+        body: "<p>Brief éditorial + confirmation humaine systématique.</p><p><strong>Cas</strong> : dashboard sur métriques (Tableau Pulse), recherche web exploratoire (Operator), décision stratégique éclairée par data, migration ponctuelle critique.</p>"
+      },
+    },
+  };
   const SOURCES = [
     { n: 1, citation: "Thariq Shihipar, <em>Workshop Claude Code + Agent SDK</em>, Anthropic, mai 2026.", url: "", accessed: "" },
     { n: 2, citation: "Anthropic, <em>Claude Agent SDK overview</em>.", url: "https://code.claude.com/docs/en/agent-sdk/overview", accessed: "2026-05-18" },
