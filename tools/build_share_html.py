@@ -96,16 +96,27 @@ def inline_external_assets(html: str, html_path: Path) -> tuple[str, dict[str, i
     )
 
     # 3) <img ... src="...svg" ...> → src="data:image/svg+xml;base64,..."
+    # The regex captures whatever comes BEFORE `src=` and AFTER the closing quote,
+    # then re-emits with explicit spacing — otherwise an `<img src=...>` with no
+    # leading attrs collapses to `<imgsrc=...>` (the leading \s+ before src= eats
+    # the space and the f-string doesn't restore it).
     def repl_img_svg(m: re.Match) -> str:
-        prefix = m.group(1)
+        prefix = m.group(1).strip()
         url = m.group(2)
-        suffix = m.group(3)
+        suffix = m.group(3).strip()
         if url.endswith(".svg"):
             target = resolve_url(url, html_dir)
             if target and target.exists():
                 data_uri = encode_svg(target)
                 counts["svg_img"] += 1
-                return f'<img{prefix}src="{data_uri}"{suffix}>'
+                parts = ["<img"]
+                if prefix:
+                    parts.append(" " + prefix)
+                parts.append(f' src="{data_uri}"')
+                if suffix:
+                    parts.append(" " + suffix)
+                parts.append(">")
+                return "".join(parts)
         return m.group(0)
 
     html = re.sub(

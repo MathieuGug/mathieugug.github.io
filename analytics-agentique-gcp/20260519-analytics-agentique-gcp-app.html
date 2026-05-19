@@ -200,22 +200,25 @@
     main .figure--portrait .figure-caption { max-width: 560px; margin: 14px auto 0; padding: 0; text-align: center; }
 
     /* === callouts de renvoi vers d'autres dossiers === */
-    main .callout { display: grid; grid-template-columns: 220px 1fr; gap: 22px; align-items: center; margin: 2.4rem 0; padding: 20px 24px; background: var(--paper-2); border-left: 3px solid var(--teal); border-radius: 2px; transition: grid-template-columns 320ms cubic-bezier(.2,.7,.2,1); }
-    main .callout:hover { grid-template-columns: 380px 1fr; }
-    main .callout > .callout-thumb-link { position: relative; display: block; width: 100%; aspect-ratio: 3 / 2; overflow: hidden; border-radius: 2px; background: var(--paper); border: 1px solid var(--rule); cursor: zoom-in; padding: 0; -webkit-appearance: none; appearance: none; font: inherit; color: inherit; text-align: left; transition: border-color 200ms ease, box-shadow 200ms ease; }
-    main .callout > .callout-thumb-link:hover, main .callout > .callout-thumb-link:focus-visible { border-color: var(--accent); box-shadow: 0 4px 18px rgba(30,30,42,0.10); outline: none; }
-    main .callout > .callout-thumb-link img.callout-thumb { width: 100%; height: 100%; object-fit: contain; object-position: center center; display: block; padding: 6px; }
-    main .callout > .callout-thumb-link::after { content: '⛶ AGRANDIR'; position: absolute; top: 8px; right: 8px; padding: 3px 8px; font-family: var(--mono); font-size: 9.5px; font-weight: 600; letter-spacing: 0.10em; background: rgba(250,246,236,0.94); border: 1px solid var(--rule); border-radius: 2px; color: var(--graphite); opacity: 0; transition: opacity 180ms ease, color 180ms ease, border-color 180ms ease; pointer-events: none; }
+    main .callout { display: grid; grid-template-columns: 280px 1fr; gap: 28px; align-items: stretch; margin: 2.4rem 0; padding: 0; background: var(--paper-2); border-left: 3px solid var(--teal); border-radius: 2px; transition: grid-template-columns 320ms cubic-bezier(.2,.7,.2,1); overflow: hidden; }
+    main .callout:hover { grid-template-columns: 440px 1fr; }
+    main .callout > .callout-thumb-link { position: relative; display: block; width: 100%; height: 100%; min-height: 200px; overflow: hidden; border-radius: 0; background: var(--paper); border: 0; cursor: zoom-in; padding: 0; -webkit-appearance: none; appearance: none; font: inherit; color: inherit; text-align: left; transition: box-shadow 200ms ease; }
+    main .callout > .callout-thumb-link:hover, main .callout > .callout-thumb-link:focus-visible { box-shadow: inset 0 0 0 2px var(--accent); outline: none; }
+    main .callout > .callout-thumb-link img.callout-thumb { width: 100%; height: 100%; object-fit: contain; object-position: center center; display: block; padding: 0; }
+    main .callout > .callout-thumb-link::after { content: '⛶ AGRANDIR'; position: absolute; top: 10px; right: 10px; padding: 4px 9px; font-family: var(--mono); font-size: 9.5px; font-weight: 600; letter-spacing: 0.10em; background: rgba(250,246,236,0.94); border: 1px solid var(--rule); border-radius: 2px; color: var(--graphite); opacity: 0; transition: opacity 180ms ease, color 180ms ease, border-color 180ms ease; pointer-events: none; }
     main .callout > .callout-thumb-link:hover::after, main .callout > .callout-thumb-link:focus-visible::after { opacity: 1; color: var(--accent); border-color: var(--accent); }
-    main .callout > .callout-body { min-width: 0; }
+    main .callout > .callout-body { min-width: 0; padding: 22px 26px 22px 0; align-self: center; }
     main .callout .callout-eyebrow { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--teal); margin: 0 0 0.45rem; font-weight: 600; }
     main .callout > .callout-body p { margin: 0; font-size: 0.95rem; line-height: 1.55; color: var(--ink); }
     main .callout > .callout-body p a { color: var(--accent); text-decoration: none; border-bottom: 1px dotted var(--accent); }
     main .callout > .callout-body p a:hover { color: var(--carmine); border-bottom-color: var(--carmine); }
     main .callout.callout--text { grid-template-columns: 1fr; }
     main .callout.callout--text:hover { grid-template-columns: 1fr; }
+    main .callout.callout--text > .callout-body { padding: 20px 24px; }
     @media (max-width: 640px) {
-      main .callout, main .callout:hover { grid-template-columns: 1fr; gap: 14px; padding: 16px 18px; }
+      main .callout, main .callout:hover { grid-template-columns: 1fr; gap: 0; padding: 0; }
+      main .callout > .callout-thumb-link { min-height: 180px; }
+      main .callout > .callout-body { padding: 18px 20px; }
     }
 
     /* === quiz cards (vérification de compréhension) === */
@@ -3077,8 +3080,11 @@
     // Figure portrait (exec sum A4) — also click to zoom in modal
     document.querySelectorAll('a.figure-portrait-link').forEach((a) => {
       a.addEventListener('click', (e) => {
-        const src = a.getAttribute('href');
-        const alt = a.querySelector('img')?.getAttribute('alt') || '';
+        // Read from img.src (resolved URL or data: URI in share HTML) — more
+        // robust than href= which is not rewritten by build_share_html.
+        const img = a.querySelector('img');
+        const src = img?.currentSrc || img?.src || a.getAttribute('href');
+        const alt = img?.getAttribute('alt') || '';
         if (!src) return;
         e.preventDefault();
         openCalloutZoom(src, alt);
