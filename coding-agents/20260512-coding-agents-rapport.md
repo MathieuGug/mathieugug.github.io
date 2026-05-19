@@ -20,6 +20,10 @@ Ce dossier ne cherche ni à émerveiller ni à rassurer. Il décrit ce qui s'est
 
 Comment lire ce qui suit. La §1 pose les concepts. La §2 ouvre Claude Code et regarde sous le capot — c'est la section la plus dense, on peut y revenir. Les §3 et §4 traitent Codex CLI et GitHub Copilot par leurs spécificités, pas en panorama. La §5 est la pyramide : si l'on cherche son cas d'usage, c'est par là qu'il faut entrer. Les §6 et §7 traitent gains et coûts avec autant d'honnêteté que possible — sources contradictoires, retex chiffrés assumés. La §8 est une carte de décision pour démarrer. Le lecteur pressé peut sauter directement de l'intro à la §5, puis à la §8.
 
+![Synthèse visuelle A4 — cinq messages-clés du dossier|800](images/20260512-00-exec-sum-a4.svg)
+
+*Schéma 0 (exec sum) — Une infographie A4 portrait qui condense les cinq messages-clés : du copilote au collègue (trois ruptures : projet entier, boucle 10-60 min, livrable PR), trois outils dominants (Claude Code, Codex CLI, GitHub Copilot), anatomie commune en six rouages (contexte, tools, skills, sub-agents, hooks, permissions), pyramide d'usage à quatre étages (transverse, data quotidien, data expert, produit-décideurs), gains contradictoires (+55 % greenfield → −19 % codebase mature ; l'IA amplifie ce qui existe). Pensée pour être imprimée et glissée dans un dossier de RDV.*
+
 ## §1. Coding agent : définition opérationnelle
 
 ### Trois choses qu'un coding agent fait que rien ne faisait avant
