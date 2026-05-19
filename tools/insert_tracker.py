@@ -32,7 +32,7 @@ DATA = [
     ("16", 830, 16, "sam 16 mai"),
     ("17", 880, 15, "dim 17 mai"),
     ("18", 930, 14, "lun 18 mai"),
-    ("19", 980, 14, "mar 19 mai"),
+    ("19", 980, 5, "mar 19 mai"),
 ]
 
 # All 19 day positions for the X axis (the dim 10 mai stays labeled even with no bar)
