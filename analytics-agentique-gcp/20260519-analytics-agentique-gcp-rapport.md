@@ -32,6 +32,10 @@ Comment lire. La §1 pose la falaise du NL→SQL et la thèse. La §2 rappelle l
 
 - ==Asymétrie d'investissement recommandée : 70/20/10==. Sur un budget agentique data en banque, ~70 % doivent aller au socle (semantic layer, lineage Dataplex, observabilité, DLP, eval offline), ~20 % à la couche agent (orchestration, MCP servers internes), ~10 % au LLM. C'est exactement l'inverse de la répartition intuitive — et c'est ce qui distingue les projets qui passent en prod de ceux qui meurent au PoC.
 
+![Synthèse visuelle A4 — cinq messages-clés du dossier|800](images/20260519-00-exec-sum-a4.svg)
+
+*Schéma 0 (exec sum) — Une infographie A4 portrait qui condense les cinq messages-clés du dossier : effondrement du NL→SQL brut, trois surfaces agentiques sur GCP, alignement du marché, deux étages de contrainte bancaire, asymétrie 70/20/10. Pensée pour être imprimée et glissée dans un dossier de RDV banque.*
+
 ## §1. La rupture analytique en 2026
 
 ### Le NL→SQL « brut » est une fausse promesse
@@ -509,6 +513,10 @@ GCP est en commodité sur :
 ## §12. Feuille de route 18 mois — banque française tier 1 GCP-first
 
 Quatre phases. Chaque phase a un livrable, des métriques de sortie et un seuil pour passer à la suivante. ==Le séquencement est plus important que la vitesse.== Un PoC mené sans le socle T0-T3 ne tient pas en prod.
+
+![Plan de transformation 18 mois — quatre phases (socle, étages 1-2, étage 3, étage 4 + souveraineté), avec livrables, métriques de sortie et sept pièges à éviter|1300](images/20260519-10-plan-transformation.svg)
+
+*Schéma 10 — Feuille de route 18 mois. Quatre phases séquencées : socle (T0-T3), étages 1 et 2 (T3-T6), étage 3 data expert (T6-T12), étage 4 et souveraineté (T12-T18). La déclaration AI Act haut-risque tombe le 2 août 2026 (jalon rouge). Sept pièges en bandeau bas.*
 
 ### T0-T3 — Socle (trois mois)
 
