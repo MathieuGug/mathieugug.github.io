@@ -754,6 +754,283 @@ Le surlignage des options correctes/fausses utilise le pattern stabilo signature
 
 ---
 
+## Encadrés de renvoi vers d'autres dossiers (callouts avec mini-vignettes zoomables)
+
+Quand un dossier deep-research s'appuie sur des concepts déjà développés dans d'autres dossiers (pyramide d'usage de `coding-agents`, six piliers d'`observabilite-agents-ia`, etc.), on évite de re-développer et on insère un **encadré de renvoi** qui (a) résume en deux phrases pourquoi le lecteur devrait aller voir, et (b) embarque une **mini-vignette cliquable du schéma signature** du dossier cible.
+
+L'encadré est posé en fin de section, après la prose qui s'appuie sur le concept renvoyé. Il signale au lecteur qu'il peut creuser sans surcharger la section courante.
+
+### DOM
+
+```html
+<aside class="callout">
+  <button type="button"
+          class="callout-thumb-link"
+          data-svg-src="/coding-agents/images/20260512-05-pyramide.svg"
+          data-svg-alt="Mini-vignette du dossier coding-agents — pyramide d'usage"
+          aria-label="Agrandir : Mini-vignette du dossier coding-agents — pyramide d'usage">
+    <img class="callout-thumb"
+         src="/coding-agents/images/20260512-05-pyramide.svg"
+         alt="Mini-vignette du dossier coding-agents — pyramide d'usage"
+         loading="lazy">
+  </button>
+  <div class="callout-body">
+    <p class="callout-eyebrow">Pyramide d'usage data — déjà couverte</p>
+    <p>La typologie à quatre étages vient du dossier <a href="/coding-agents/">coding-agents</a>. À lire si la couche outillage n'est pas familière.</p>
+  </div>
+</aside>
+```
+
+**Variante text-only** (quand le dossier cible n'a pas de schéma signature exploitable — typiquement un scrollytelling sans SVG standalone) : remplacer la grille par `<aside class="callout callout--text">` et omettre le bouton.
+
+### CSS canonique
+
+```css
+main .callout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 22px;
+  align-items: center;
+  margin: 2.4rem 0;
+  padding: 20px 24px;
+  background: var(--paper-2);
+  border-left: 3px solid var(--teal);
+  border-radius: 2px;
+  transition: grid-template-columns 320ms cubic-bezier(.2,.7,.2,1);
+}
+main .callout:hover { grid-template-columns: 380px 1fr; }   /* la vignette pousse le texte */
+main .callout.callout--text,
+main .callout.callout--text:hover { grid-template-columns: 1fr; }
+
+main .callout > .callout-thumb-link {
+  position: relative; display: block;
+  width: 100%; aspect-ratio: 3 / 2;
+  overflow: hidden; border-radius: 2px;
+  background: var(--paper); border: 1px solid var(--rule);
+  cursor: zoom-in;
+  padding: 0; -webkit-appearance: none; appearance: none; font: inherit; color: inherit; text-align: left;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+main .callout > .callout-thumb-link:hover,
+main .callout > .callout-thumb-link:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 4px 18px rgba(30,30,42,0.10);
+  outline: none;
+}
+main .callout > .callout-thumb-link img.callout-thumb {
+  width: 100%; height: 100%;
+  object-fit: contain;          /* PAS cover — on veut le schéma entier, pas un crop */
+  object-position: center center;
+  display: block;
+  padding: 6px;
+}
+main .callout > .callout-thumb-link::after {
+  content: '⛶ AGRANDIR';
+  position: absolute; top: 8px; right: 8px;
+  padding: 3px 8px;
+  font-family: var(--mono); font-size: 9.5px; font-weight: 600; letter-spacing: 0.10em;
+  background: rgba(250,246,236,0.94);
+  border: 1px solid var(--rule); border-radius: 2px;
+  color: var(--graphite);
+  opacity: 0;
+  transition: opacity 180ms ease, color 180ms ease, border-color 180ms ease;
+  pointer-events: none;
+}
+main .callout > .callout-thumb-link:hover::after,
+main .callout > .callout-thumb-link:focus-visible::after {
+  opacity: 1; color: var(--accent); border-color: var(--accent);
+}
+
+main .callout > .callout-body { min-width: 0; }
+main .callout .callout-eyebrow {
+  font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--teal); margin: 0 0 0.45rem; font-weight: 600;
+}
+main .callout > .callout-body p { margin: 0; font-size: 0.95rem; line-height: 1.55; color: var(--ink); }
+main .callout > .callout-body p a { color: var(--accent); text-decoration: none; border-bottom: 1px dotted var(--accent); }
+main .callout > .callout-body p a:hover { color: var(--carmine); border-bottom-color: var(--carmine); }
+
+@media (max-width: 640px) {
+  main .callout, main .callout:hover { grid-template-columns: 1fr; gap: 14px; padding: 16px 18px; }
+}
+```
+
+Trois choses load-bearing :
+
+1. **`object-fit: contain`, pas `cover`** — l'utilisateur doit voir le schéma signature en entier (vrai scale), pas un crop centré qui coupe les bords. Sinon le rappel perd son intérêt visuel.
+2. **`transition` sur `grid-template-columns`** — au hover, la grille s'agrandit (220 → 380 px sur la vignette) et le texte se relaie naturellement. C'est plus lisible qu'un `transform: scale()` qui déborde du conteneur.
+3. **`button` natif, pas `<a target="_blank">`** — le clic ouvre la modale de zoom intégrée à la page, pas un nouvel onglet (cf. JS ci-dessous). `aria-label` riche pour les lecteurs d'écran.
+
+### JS — modale de zoom (réutilise `#zoom-overlay`)
+
+Ajouter cet IIFE à la fin du `<body>`, **après** l'inclusion de `/assets/dossier-app.js` (qui définit le comportement du `#zoom-overlay`) :
+
+```js
+(function setupCalloutZoom() {
+  const svgCache = new Map();
+  async function fetchSvg(src) {
+    if (svgCache.has(src)) return svgCache.get(src);
+    const res = await fetch(src);
+    const txt = await res.text();
+    const svg = new DOMParser().parseFromString(txt, 'image/svg+xml').documentElement;
+    svgCache.set(src, svg);
+    return svg;
+  }
+  async function openCalloutZoom(src, caption) {
+    const overlay = document.getElementById('zoom-overlay');
+    const content = document.getElementById('zoom-content');
+    const captionEl = document.getElementById('zoom-caption');
+    if (!overlay || !content) { window.open(src, '_blank', 'noopener'); return; }
+    try {
+      const svgSrc = await fetchSvg(src);
+      const clone = svgSrc.cloneNode(true);
+      const vb = clone.viewBox?.baseVal;
+      const w = (vb && vb.width)  || 1200;
+      const h = (vb && vb.height) || 800;
+      clone.setAttribute('width', w); clone.setAttribute('height', h);
+      clone.style.width = w + 'px';   clone.style.height = h + 'px';
+      content.innerHTML = '';
+      content.appendChild(clone);
+      if (captionEl) captionEl.textContent = caption || '';
+      overlay.hidden = false;
+      document.body.style.overflow = 'hidden';
+      overlay.querySelector('.zoom-reset')?.click();   // fitToStage via le handler existant
+    } catch (err) {
+      console.warn('[callout zoom] fetch failed, fallback open in new tab', err);
+      window.open(src, '_blank', 'noopener');
+    }
+  }
+  document.querySelectorAll('button.callout-thumb-link').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const src = btn.getAttribute('data-svg-src');
+      const alt = btn.getAttribute('data-svg-alt') || '';
+      if (src) openCalloutZoom(src, alt);
+    });
+  });
+})();
+```
+
+Le fetch fonctionne aussi bien en `file://` (sur certains navigateurs avec CORS désactivé) qu'en HTTP. Fallback gracieux vers `window.open` en cas d'échec — pas d'écran blanc.
+
+### Choisir la vignette signature
+
+Convention par défaut : c'est le schéma de structure transverse du dossier (souvent `01` ou `02`, parfois `05`). Vérifier ce que la prose du callout pointe précisément — si elle évoque « la pyramide d'usage » de coding-agents, pointer vers `20260512-05-pyramide.svg` plutôt que vers `20260512-02-anatomie.svg`, même si l'anatomie est le schéma signature stricto sensu. L'utilisateur a privilégié la pertinence de la vignette par rapport au concept référencé sur le dossier `analytics-agentique-gcp` (revue 19 mai 2026).
+
+Exceptions :
+- **Dossiers sans SVG standalone exploitable** (scrollytelling, HTML composite) → callout text-only, classe `.callout--text`.
+- **Dossiers récents non publiés** → ne pas créer le callout tant que le SVG cible n'est pas en ligne (pas de lien brisé sur `mathieugug.github.io`).
+
+---
+
+## Infographie A4 exec sum (synthèse visuelle imprimable)
+
+Pour les dossiers à enjeu RDV / pitch / executive briefing, **ajouter une infographie A4 portrait** juste après la synthèse exécutive textuelle. Elle condense les 5 messages-clés en un seul artefact visuel, imprimable directement (A4 standard) et utilisable en pièce jointe sur un mail ou un dossier client.
+
+### Format
+
+- **`viewBox="0 0 840 1188"`** — proportions A4 portrait (≈ 1 : 1.414). 840 unités de large, padding latéral 60 → zone utile 720 ; padding vertical 60 → zone utile 1068.
+- **5 messages-clés stackés verticalement**, séparés par des hairlines dashed (`stroke-dasharray="3,4"`).
+- Chaque message : circle numéroté (cx variable, r=20) + eyebrow mono + display title + corps visuel (mini bars, badges, colonnes, etc.).
+- Palette : la même que le reste du dossier (variables CSS du site partagées via la convention `:root`).
+
+### Structure type
+
+```
+y=0-152      Header (eyebrow date + titre 34pt + lede 16pt italic)
+y=170-440    MSG 01 — visuel principal (souvent une mini bar chart avec axe Y)
+y=478-660    MSG 02 — trois colonnes / cartes
+y=704-870    MSG 03 — trois lignes mises en avant
+y=890-1040   MSG 04 — badges/chips horizontaux
+y=1060-1140  MSG 05 — bar stacking (asymétrie)
+y=1170-1188  Footer (hairline)
+```
+
+### Axe Y obligatoire sur les bar charts mini
+
+**Tout bar chart mini dans l'A4 doit porter un axe Y explicite** (graduations 0/50/100 % minimum, axe vertical, ticks). Sans repère, l'œil ne peut pas lire les proportions — la barre 85 % paraît juste « grande » et la barre 10-20 % juste « petite », sans rapport métrique. Cas vu sur la première itération de l'A4 d'`analytics-agentique-gcp` le 19 mai 2026 : l'utilisateur a flagué l'absence d'échelle, on a rajouté axe + gridlines en réponse.
+
+Pattern :
+
+```xml
+<g transform="translate(160, 248)">
+  <!-- Y-axis : graduations 0 / 50 / 100 % -->
+  <text x="-8" y="36"  class="mono" font-size="9" fill="#9a9ca5" text-anchor="end">100</text>
+  <text x="-8" y="76"  class="mono" font-size="9" fill="#9a9ca5" text-anchor="end">50</text>
+  <text x="-8" y="116" class="mono" font-size="9" fill="#9a9ca5" text-anchor="end">0</text>
+  <text x="-32" y="78" class="mono" font-size="9" font-weight="600" fill="#6b6f7c"
+        letter-spacing="0.14em" text-anchor="middle"
+        transform="rotate(-90, -32, 78)">ACCURACY %</text>
+
+  <!-- Axe Y vertical + ticks -->
+  <line x1="0" y1="32"  x2="0" y2="112" stroke="#1e1e2a" stroke-width="0.75"/>
+  <line x1="-3" y1="32"  x2="0" y2="32"  stroke="#1e1e2a" stroke-width="0.75"/>
+  <line x1="-3" y1="72"  x2="0" y2="72"  stroke="#1e1e2a" stroke-width="0.75"/>
+  <line x1="-3" y1="112" x2="0" y2="112" stroke="#1e1e2a" stroke-width="0.75"/>
+
+  <!-- Gridlines horizontales -->
+  <line x1="0" y1="32"  x2="565" y2="32"  stroke="rgba(30,30,42,0.12)" stroke-width="0.5" stroke-dasharray="2,3"/>
+  <line x1="0" y1="72"  x2="565" y2="72"  stroke="rgba(30,30,42,0.10)" stroke-width="0.5" stroke-dasharray="2,3"/>
+  <line x1="0" y1="112" x2="565" y2="112" stroke="#1e1e2a" stroke-width="0.75"/>
+
+  <!-- ... bars : top y = 32 + (100-pct)/100 * 80 ... -->
+</g>
+```
+
+Les bars sont calées sur une zone de 80 px de haut (y=32 = 100 %, y=112 = 0 %), avec une formule directe `top_y = 32 + (100 - pct) / 100 * 80`.
+
+### Embed dans l'app HTML
+
+```html
+<figure class="figure figure--portrait" id="fig-00">
+  <a class="figure-portrait-link" href="images/YYYYMMDD-00-exec-sum-a4.svg"
+     target="_blank" rel="noopener"
+     title="Ouvrir l'infographie A4 en taille réelle / pour impression">
+    <img src="images/YYYYMMDD-00-exec-sum-a4.svg"
+         alt="Infographie A4 — [titre dossier], cinq messages-clés en synthèse visuelle"
+         loading="lazy">
+  </a>
+  <figcaption class="figure-caption">Synthèse visuelle A4 — cinq messages-clés du dossier, en un seul coup d'œil. Cliquer pour ouvrir en plein écran et imprimer.</figcaption>
+</figure>
+```
+
+CSS d'accompagnement (centrée, max-width 560 pour rendre la portrait lisible sans casser le wrap) :
+
+```css
+main .figure--portrait { margin: 3rem auto; padding: 0; border: none; max-width: 560px; }
+@media (min-width: 1025px) {
+  main .figure--portrait { margin-left: auto !important; margin-right: auto !important; padding: 0; }
+}
+main .figure--portrait .figure-portrait-link {
+  display: block; width: 100%;
+  border: 1px solid var(--rule); background: var(--paper); border-radius: 2px;
+  cursor: zoom-in;
+  transition: box-shadow 220ms ease, border-color 220ms ease;
+  overflow: hidden;
+}
+main .figure--portrait .figure-portrait-link:hover {
+  box-shadow: 0 8px 28px rgba(30,30,42,0.14);
+  border-color: var(--accent);
+}
+main .figure--portrait img { display: block; width: 100%; height: auto; }
+main .figure--portrait .figure-caption {
+  max-width: 560px; margin: 14px auto 0; padding: 0; text-align: center;
+}
+```
+
+Click → même IIFE de zoom modal que les callouts (le sélecteur `a.figure-portrait-link` est ajouté à l'IIFE `setupCalloutZoom` en parallèle des `button.callout-thumb-link`). L'utilisateur reste dans la page, pas de nouvel onglet.
+
+### Embed dans le rapport markdown
+
+Référencer en syntaxe Obsidian avec le hint `|800` (plus étroit que `|1300` parce que portrait) :
+
+```markdown
+![Synthèse visuelle A4 — cinq messages-clés du dossier|800](images/YYYYMMDD-00-exec-sum-a4.svg)
+```
+
+L'A4 est aussi le format imprimé par défaut quand l'utilisateur fait `Ctrl/Cmd+P` sur la page — confirmer en local que la mise en page imprime sans débordement avant publication.
+
+---
+
 ## Performance & defensiveness
 
 - Total HTML file should stay under ~3 MB; if SVGs push it past, consider lossless SVGO-style minification (remove comments, collapse whitespace, but preserve `data-*` and class attributes)

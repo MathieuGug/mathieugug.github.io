@@ -1,0 +1,410 @@
+/* dossier-app — shared structural CSS for dossier 2026*-app.html pages
+ *
+ * Source unique pour les patterns visuels partagés : zoom overlay,
+ * modal, panel-close mobile, topbar sticky, sources collapse,
+ * citations highlight, sigil MG, tooltips terms.
+ *
+ * Les variables de thème (--paper, --accent, --carmine, --ink…)
+ * restent définies par chaque page dans son <style> :root.
+ * Les sélecteurs ici les référencent via var(...).
+ *
+ * Spec : docs/superpowers/specs/2026-05-09-dossier-app-library-design.md
+ */
+
+/* dossier-app:patterns:start */
+
+/* ───────── Layout grid + panel-close (mobile) ───────── */
+    /* ───────── Layout ───────── */
+    /* Pleine largeur viewport — sidebars ancrées aux bords, contenu centré à 760 px
+       dans le main-cell, schémas qui s'étendent à toute la largeur disponible. */
+    .layout {
+      display: grid;
+      grid-template-columns: 240px minmax(0, 1fr) 320px;
+      gap: 0;
+      transition: grid-template-columns 280ms ease;
+      overflow-x: clip;
+    }
+    @media (min-width: 1025px) {
+      .layout.sources-collapsed {
+        grid-template-columns: 240px minmax(0, 1fr) 0;
+      }
+      .layout.sources-collapsed #sources {
+        transform: translateX(100%);
+        opacity: 0;
+        pointer-events: none;
+      }
+      .layout.sources-collapsed #sources-collapse-btn {
+        visibility: hidden;
+      }
+    }
+    @media (max-width: 1024px) {
+      .layout { grid-template-columns: 1fr; }
+      #toc, #sources { display: none; }
+      #toc.open, #sources.open { display: block; position: fixed; inset: 0; z-index: 90; background: var(--paper); overflow-y: auto; padding: 64px 24px 24px; }
+      #toc.open .panel-close, #sources.open .panel-close {
+        display: inline-flex; align-items: center; gap: 6px;
+        position: fixed; top: 16px; right: 16px; z-index: 91;
+        background: var(--paper); border: 1px solid var(--rule);
+        border-radius: 4px; padding: 8px 14px;
+        font-family: var(--mono); font-size: 0.85rem;
+        cursor: pointer; color: var(--ink);
+      }
+      #toc.open .panel-close:hover, #sources.open .panel-close:hover { background: var(--paper-2); }
+      #toc.open .panel-close:focus-visible, #sources.open .panel-close:focus-visible { outline: 2px solid var(--carmine); outline-offset: 2px; }
+    }
+    .panel-close { display: none; }
+    body { padding-top: 56px; }
+
+/* ───────── Topbar sticky ───────── */
+    /* ───────── Header ───────── */
+    /* === Sticky topbar — Mathieu / Hub / Accueil === */
+    .topbar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 60;
+      height: 56px; padding: 12px 28px;
+      display: flex; align-items: center; justify-content: space-between; gap: 24px;
+      background: rgba(250,248,243,0.82);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.3s;
+    }
+    .topbar.scrolled { border-bottom-color: var(--rule); }
+    .topbar > a { font-family: var(--serif); font-weight: 500; font-size: 15.5px; letter-spacing: -0.01em; text-decoration: none; color: var(--ink); flex-shrink: 0; }
+    .topbar em { font-style: italic; color: var(--carmine); }
+    .topbar .back { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--graphite); text-decoration: none; }
+    .topbar .back:hover { color: var(--carmine); }
+    .topbar .dossier-context { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase; opacity: 0.55; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px; flex-shrink: 1; min-width: 0; }
+    @media (max-width: 768px) { .topbar .dossier-context { display: none; } }
+    .topbar .back-nav { display: inline-flex; align-items: center; gap: 14px; flex-shrink: 0; }
+    .topbar .back-sep { font-family: var(--mono); font-size: 9.5px; color: var(--graphite); user-select: none; }
+    @media (max-width: 560px) {
+      .topbar { padding: 10px 14px; gap: 8px; }
+      .topbar > a { font-size: 13px; }
+      .topbar .back { font-size: 9px; letter-spacing: 0.16em; }
+      .topbar .back-nav { gap: 10px; }
+    }
+    @media (max-width: 380px) {
+      .topbar > a:first-child em { display: none; }
+    }
+
+/* ───────── Tooltipped terms ───────── */
+    /* ───────── Tooltipped terms ───────── */
+    .term {
+      border-bottom: 1px dotted var(--graphite);
+      cursor: help;
+      position: relative;
+    }
+    .term:hover::after,
+    .term:focus::after,
+    .term.pinned::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: calc(100% + 8px); left: 0;
+      background: var(--ink); color: var(--paper);
+      padding: 10px 14px; border-radius: 4px;
+      font-family: var(--sans);
+      font-style: normal;
+      font-size: 0.82rem;
+      line-height: 1.45;
+      white-space: normal;
+      width: max-content; max-width: 320px;
+      z-index: 50;
+      pointer-events: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    }
+    .term:hover::before,
+    .term:focus::before,
+    .term.pinned::before {
+      content: '';
+      position: absolute;
+      bottom: calc(100% + 2px); left: 12px;
+      width: 0; height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 6px solid var(--ink);
+      z-index: 51;
+    }
+    /* Mobile : la bulle ancrée au terme déborde quand le terme est en bord
+       droit. On la transforme en sheet fixe en bas du viewport. */
+    @media (max-width: 640px) {
+      .term:hover::after,
+      .term:focus::after,
+      .term.pinned::after {
+        position: fixed;
+        bottom: 16px; left: 16px; right: 16px;
+        top: auto;
+        width: auto; max-width: none;
+        font-size: 0.85rem;
+      }
+      .term:hover::before,
+      .term:focus::before,
+      .term.pinned::before {
+        display: none;
+      }
+    }
+
+/* ───────── Fullscreen zoom overlay ───────── */
+    /* ───────── Zoom button on each figure ───────── */
+    .zoom-btn {
+      position: absolute;
+      top: 32px; left: 8px;
+      width: 36px; height: 36px;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--paper);
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 18px; line-height: 1;
+      color: var(--graphite);
+      opacity: 0;
+      transition: opacity 140ms, background 140ms, color 140ms, border-color 140ms;
+      z-index: 2;
+    }
+    .figure:hover .zoom-btn,
+    .figure:focus-within .zoom-btn,
+    .zoom-btn:focus-visible { opacity: 1; }
+    .zoom-btn:hover {
+      background: var(--paper-2);
+      border-color: var(--ink);
+      color: var(--ink);
+    }
+    @media (hover: none) {
+      .zoom-btn { opacity: 0.85; }
+    }
+
+    /* ───────── Fullscreen zoom overlay ───────── */
+    #zoom-overlay[hidden] { display: none !important; }
+    #zoom-overlay {
+      position: fixed; inset: 0;
+      z-index: 80;
+      display: flex; flex-direction: column;
+      background: rgba(26, 26, 26, 0.94);
+      backdrop-filter: blur(3px);
+    }
+    #zoom-header {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px;
+      padding: 12px 20px;
+      color: var(--paper);
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 0.85rem;
+      border-bottom: 1px solid rgba(250, 248, 243, 0.12);
+    }
+    #zoom-caption {
+      flex: 1; min-width: 0;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      opacity: 0.85;
+    }
+    .zoom-controls {
+      display: flex; gap: 4px; flex-shrink: 0;
+    }
+    .zoom-controls button {
+      background: transparent;
+      border: 1px solid rgba(250, 248, 243, 0.32);
+      color: var(--paper);
+      padding: 6px 12px;
+      min-width: 36px;
+      cursor: pointer;
+      font: inherit; font-size: 0.85rem;
+      border-radius: 3px;
+      transition: background 120ms, border-color 120ms;
+    }
+    .zoom-controls button:hover { background: rgba(250, 248, 243, 0.12); border-color: rgba(250, 248, 243, 0.6); }
+    .zoom-controls button:focus-visible { outline: 2px solid var(--paper); outline-offset: 2px; }
+    .zoom-controls .zoom-close { font-size: 1.3rem; line-height: 1; padding: 2px 10px; }
+    #zoom-stage {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      cursor: grab;
+      touch-action: none;
+    }
+    #zoom-stage.grabbing { cursor: grabbing; }
+    #zoom-content {
+      position: absolute; top: 0; left: 0;
+      transform-origin: 0 0;
+      will-change: transform;
+    }
+    #zoom-content > svg {
+      display: block;
+      max-width: none; max-height: none;
+      background: var(--paper);
+      box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+    }
+    #zoom-hint {
+      position: absolute; bottom: 16px; left: 50%;
+      transform: translateX(-50%);
+      color: rgba(250, 248, 243, 0.55);
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 0.75rem;
+      pointer-events: none;
+      transition: opacity 400ms;
+    }
+    #zoom-hint.fade { opacity: 0; }
+    @media (max-width: 640px) {
+      .zoom-controls .zoom-reset { display: none; }
+      #zoom-caption { font-size: 0.78rem; }
+    }
+
+/* ───────── Citations ───────── */
+    /* ───────── Citations ───────── */
+    .cite {
+      font-family: var(--mono);
+      font-size: 0.72em;
+      color: var(--carmine);
+      text-decoration: none;
+      vertical-align: super;
+      padding: 0 1px;
+    }
+    .cite::before { content: '['; }
+    .cite::after  { content: ']'; }
+    .cite:hover { text-decoration: underline; }
+
+/* ───────── Sources sidebar (collapse btn only) ───────── */
+    /* ───────── Sidebar edge toggles ───────── */
+    .sidebar-edge-toggle {
+      width: 22px;
+      height: 60px;
+      background: var(--paper);
+      border: 1px solid var(--rule);
+      color: var(--graphite);
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 14px;
+      line-height: 1;
+      padding: 0;
+      transition: background 140ms, color 140ms, border-color 140ms;
+    }
+    .sidebar-edge-toggle:hover {
+      background: var(--paper-2);
+      color: var(--ink);
+      border-color: var(--graphite);
+    }
+    .sidebar-edge-toggle:focus-visible {
+      outline: 2px solid var(--carmine);
+      outline-offset: 2px;
+    }
+    /* Pinned to viewport (NOT inside the panel's overflow scroll) so the
+       button stays in place when the inner sources list is long. Centered
+       vertically on the panel's left edge to read as a pull-tab. */
+    #sources-collapse-btn {
+      position: fixed;
+      top: 50%;
+      right: 320px;
+      transform: translate(50%, -50%);
+      border-radius: 4px;
+      z-index: 70;
+    }
+    #sources-expand-btn {
+      position: fixed;
+      top: 50%;
+      right: 0;
+      transform: translateY(-50%);
+      border-radius: 4px 0 0 4px;
+      border-right: none;
+      z-index: 70;
+    }
+    #sources-expand-btn[hidden] { display: none !important; }
+    @media (max-width: 1024px) {
+      .sidebar-edge-toggle { display: none !important; }
+    }
+
+/* ───────── Schema sigil ───────── */
+    /* Schema sigil — MG monogram blason injected into each figure, links to author site.
+       Positioned over the schema SVG (top-right, aligned with the schema title);
+       .zoom-btn relegated to top-left. */
+    .schema-sigil {
+      position: absolute;
+      top: 72px;
+      right: clamp(14px, 4vw, 60px);
+      width: 38px; height: 38px;
+      display: inline-block;
+      text-decoration: none;
+      z-index: 3;
+      opacity: 0.78;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.18));
+      transition: transform 0.42s cubic-bezier(0.22,1,0.36,1), filter 0.3s ease, opacity 0.25s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .schema-sigil:hover, .schema-sigil:focus-visible {
+      transform: rotate(-7deg) scale(1.10);
+      filter: drop-shadow(0 6px 14px rgba(0,0,0,0.28));
+      opacity: 1;
+      outline: none;
+    }
+    .schema-sigil .sigil-mark { display: block; width: 100%; height: 100%; }
+    .schema-sigil .sigil-bg { fill: var(--carmine); }
+    .schema-sigil .sigil-ring {
+      fill: none; stroke: var(--paper);
+      stroke-width: 0.8; stroke-opacity: 0.55;
+      stroke-dasharray: 1.4 1.6;
+      transition: stroke-dashoffset 1.6s linear;
+    }
+    .schema-sigil:hover .sigil-ring { stroke-dashoffset: -24; }
+    .schema-sigil .sigil-letters text {
+      font-family: var(--serif);
+      font-style: italic; font-weight: 500;
+      font-size: 21px; letter-spacing: -0.04em;
+      fill: var(--paper);
+    }
+    @media (max-width: 640px) {
+      .schema-sigil { width: 32px; height: 32px; top: 28px; right: 12px; opacity: 0.85; }
+    }
+    /* Variant pour l'overlay zoom — z-index plus haut, drop-shadow renforcé */
+    .schema-sigil.zoom-sigil {
+      z-index: 20;
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,0.45)), drop-shadow(0 0 8px rgba(250,248,243,0.18));
+      opacity: 0.9;
+    }
+    @media print { .schema-sigil { display: none; } }
+
+/* ───────── Modal ───────── */
+    #modal-root[hidden] { display: none !important; }
+    #modal-root {
+      position: fixed; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100;
+    }
+    .modal-backdrop {
+      position: absolute; inset: 0;
+      background: rgba(26,26,26,0.55);
+      backdrop-filter: blur(2px);
+    }
+    .modal-card {
+      position: relative;
+      background: var(--paper);
+      max-width: 560px; width: calc(100% - 48px);
+      max-height: calc(100vh - 96px);
+      overflow-y: auto;
+      padding: 36px 36px 32px;
+      border-radius: 6px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.25);
+      border-top: 4px solid var(--carmine);
+    }
+    .modal-close {
+      position: absolute; top: 12px; right: 12px;
+      background: none; border: none;
+      font-size: 1.6rem; line-height: 1; cursor: pointer;
+      color: var(--graphite);
+      width: 32px; height: 32px;
+      border-radius: 4px;
+    }
+    .modal-close:hover { background: var(--paper-2); color: var(--ink); }
+    .modal-card h3 {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 1.4rem;
+      margin: 0 0 6px;
+      letter-spacing: -0.01em;
+    }
+    .modal-card .modal-eyebrow {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--carmine);
+      margin: 0 0 14px;
+    }
+    .modal-card .modal-body p { margin: 0 0 0.9rem; font-size: 0.95rem; }
+    .modal-card .modal-body p:last-child { margin-bottom: 0; }
+
+/* dossier-app:patterns:end */
