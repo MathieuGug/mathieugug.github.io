@@ -993,12 +993,17 @@ Les bars sont calées sur une zone de 80 px de haut (y=32 = 100 %, y=112 = 0 %),
 </figure>
 ```
 
-CSS d'accompagnement (centrée, max-width 560 pour rendre la portrait lisible sans casser le wrap) :
+CSS d'accompagnement — **breakout modéré au-delà de la colonne de prose** pour donner de l'air à l'A4. Le wrap principal (`main#report`) est cappé à 760 px ; la portrait casse légèrement ce cap par marges négatives, sans aller jusqu'au full-bleed des schémas landscape :
 
 ```css
-main .figure--portrait { margin: 3rem auto; padding: 0; border: none; max-width: 560px; }
+main .figure--portrait { margin: 3rem auto; padding: 0; border: none; max-width: 100%; }
 @media (min-width: 1025px) {
-  main .figure--portrait { margin-left: auto !important; margin-right: auto !important; padding: 0; }
+  /* Breakout +80 px de chaque côté → ~920 px de figure (au lieu de 760) */
+  main .figure--portrait { margin-left: -80px; margin-right: -80px; max-width: calc(100% + 160px); }
+}
+@media (min-width: 1440px) {
+  /* Sur grands écrans, breakout +140 px → ~1040 px de figure */
+  main .figure--portrait { margin-left: -140px; margin-right: -140px; max-width: calc(100% + 280px); }
 }
 main .figure--portrait .figure-portrait-link {
   display: block; width: 100%;
@@ -1013,9 +1018,11 @@ main .figure--portrait .figure-portrait-link:hover {
 }
 main .figure--portrait img { display: block; width: 100%; height: auto; }
 main .figure--portrait .figure-caption {
-  max-width: 560px; margin: 14px auto 0; padding: 0; text-align: center;
+  max-width: 760px; margin: 14px auto 0; padding: 0 8px; text-align: center;
 }
 ```
+
+Pourquoi pas full-bleed comme les schémas landscape ? Un A4 portrait à 1300 px de large devient lourd visuellement dans le flow de lecture (la prose à 760 px à côté est écrasée). Le breakout modéré (+80 px par défaut, +140 px sur 1440+) donne une présence éditoriale à l'infographie sans la transformer en wallpaper. La figcaption reste centrée à 760 px pour rester lisible.
 
 Click → même IIFE de zoom modal que les callouts (le sélecteur `a.figure-portrait-link` est ajouté à l'IIFE `setupCalloutZoom` en parallèle des `button.callout-thumb-link`). L'utilisateur reste dans la page, pas de nouvel onglet.
 
