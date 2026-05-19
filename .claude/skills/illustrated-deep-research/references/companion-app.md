@@ -1031,6 +1031,45 @@ L'A4 est aussi le format imprimé par défaut quand l'utilisateur fait `Ctrl/Cmd
 
 ---
 
+## Self-contained share HTML (`tools/build_share_html.py`)
+
+Le HTML canonique d'un dossier référence des assets partagés (`/assets/dossier-app.{css,js}`) et les schémas signature d'autres dossiers (`/coding-agents/images/...svg`) via chemins **absolus**. Ça fonctionne très bien sur GitHub Pages, mais le fichier devient inutile si on veut le partager en pièce jointe à un client : ces chemins ne résolvent plus en local.
+
+**Ne pas** copier `dossier-app.{css,js}` à côté du HTML — ça pollue le dossier et duplique la lib partagée. À la place, **générer un sibling `-share.html`** entièrement self-contained.
+
+### Usage
+
+```
+python tools/build_share_html.py <chemin-du-dossier>/YYYYMMDD-<slug>-app.html
+```
+
+Produit `YYYYMMDD-<slug>-app-share.html` à côté du fichier source. Taille typique : 400-700 KB (HTML + CSS + JS + 8-10 SVG signature en base64 = ~80 KB de blob par SVG).
+
+### Ce que le script inline
+
+- `<link rel="stylesheet" href="/assets/dossier-app.css">` → `<style>` block
+- `<script src="/assets/dossier-app.js" defer>` → `<script>` block (defer/async retirés, l'ordre est déjà bon)
+- `<img src=".../foo.svg">` (chemin absolu ou relatif) → `<img src="data:image/svg+xml;base64,...">`
+- `data-svg-src=".../foo.svg"` sur les `button.callout-thumb-link` → idem en data: URI. **Critique** : sans ça, le modal zoom des callouts essaierait de `fetch()` un chemin qui n'existe plus en local, et tomberait sur le fallback `window.open` qui ne marche pas non plus offline.
+
+### Ce que le script préserve (volontairement)
+
+- Liens Google Fonts (`fonts.googleapis.com`) — fallback gracieux si le lecteur est offline (sérif/sans-serif système).
+- OpenGraph / canonical / Twitter Card / JSON-LD — ces meta sont déjà absolues vers `mathieugug.github.io`.
+- Liens vers d'autres dossiers (`href="/coding-agents/"`) → réécrits en `href="https://mathieugug.github.io/coding-agents/" target="_blank" rel="noopener"`. Un clic offline reste utile : ouvre la version canonique en ligne plutôt que de renvoyer un 404.
+
+### Quand le générer
+
+- À la publication initiale du dossier — `-share.html` est commit à côté de l'app canonique. Les lecteurs peuvent télécharger l'un OU l'autre.
+- À chaque évolution éditoriale significative — re-runner le script pour que le share reflète le contenu courant. Il est idempotent (lecture → transformation → écriture, pas de patch).
+
+### Limites
+
+- **Le `-share.html` ne se met PAS à jour automatiquement** quand on touche `/assets/dossier-app.{css,js}` (puisque les contenus sont inlinés). À chaque update de la lib, re-runner le builder sur tous les `-share.html` existants. Une CI vérifie idéalement que les `-share.html` ne sont pas en dérive — TODO si ça devient un point de douleur.
+- **Le `-share.html` n'a pas de SEO/OG dédié** — il pointe vers la canonical via `<link rel="canonical">`, et son `og:url` reste celui de la version canonique. Volontaire : on ne veut pas que Google indexe le share comme contenu distinct.
+
+---
+
 ## Performance & defensiveness
 
 - Total HTML file should stay under ~3 MB; if SVGs push it past, consider lossless SVGO-style minification (remove comments, collapse whitespace, but preserve `data-*` and class attributes)
