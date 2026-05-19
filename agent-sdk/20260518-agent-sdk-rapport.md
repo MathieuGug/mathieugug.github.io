@@ -367,9 +367,13 @@ Shihipar décrit la sécurité d'un agent bash-driven comme un **gruyère suisse
 
 Insistance qui revient dans le workshop : ==le contrôle d'accès passe par des clés API scopées, des proxies backend qui filtrent les requêtes, des tokens temporaires à courte durée de vie — jamais par un prompt qui dit *« ne touche pas à ces données »*.== Un agent qui n'a pas accès à `users` via sa clé API ne touchera pas à `users`, quoi qu'il décide. Un agent qui a la clé mais à qui on a *demandé* de ne pas toucher peut être manipulé.
 
-![Swiss cheese de sécurité — repris du dossier Fabrique d'un agent|1300](images/ref-gruyere-suisse.svg)
+![Le gruyère suisse de la sécurité d'un agent bash-driven|1300](images/20260518-09-securite-couches.svg)
 
-*Schéma 9 — Repris du dossier [**La fabrique d'un agent**](../fabrique-agent/) : trois couches imparfaites composent ensemble une défense robuste.*
+*Schéma 9 — Trois couches imparfaites : alignement modèle (entraînement Anthropic), harness controls (parser bash, permissions, hooks) et sandbox env (isolation réseau et filesystem). Aucune ne suffit seule — c'est la superposition qui produit la défense.*
+
+![Comparaison — le gruyère suisse de l'évaluation (5 couches), repris du dossier Fabrique d'un agent|1300](images/ref-gruyere-suisse.svg)
+
+*Schéma 9 bis — À mettre en parallèle : le même motif appliqué à l'**évaluation** dans le dossier [**La fabrique d'un agent**](../fabrique-agent/) — 5 couches (auto evals, monitoring prod, A/B testing, revue manuelle, études humaines structurées). La défense en profondeur est un motif récurrent qui dépasse le champ sécurité.*
 
 ## 10. Quand utiliser quoi — synthèse décisionnelle
 
