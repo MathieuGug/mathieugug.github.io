@@ -32,13 +32,15 @@ DATA = [
     ("16", 830, 16, "sam 16 mai"),
     ("17", 880, 15, "dim 17 mai"),
     ("18", 930, 14, "lun 18 mai"),
+    ("19", 980, 14, "mar 19 mai"),
 ]
 
-# All 18 day positions for the X axis (the dim 10 mai stays labeled even with no bar)
+# All 19 day positions for the X axis (the dim 10 mai stays labeled even with no bar)
 DAY_X = [
     ("01", 80), ("02", 130), ("03", 180), ("04", 230), ("05", 280), ("06", 330),
     ("07", 380), ("08", 430), ("09", 480), ("10", 530), ("11", 580), ("12", 630),
     ("13", 680), ("14", 730), ("15", 780), ("16", 830), ("17", 880), ("18", 930),
+    ("19", 980),
 ]
 
 PLOT_TOP = 92        # y at 100 %
