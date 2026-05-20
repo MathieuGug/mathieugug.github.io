@@ -95,7 +95,30 @@
     else if (level === 2) live.textContent = 'Détails — ' + (node || '');
   }
 
-  function animateViewBox(targetVB) { /* Task A6 */ }
+  function animateViewBox(targetVB) {
+    if (currentAnim) cancelAnimationFrame(currentAnim);
+    const startVB = parseViewBox(canvas.getAttribute('viewBox'));
+    const startTime = performance.now();
+
+    function frame(now) {
+      const t = Math.min(1, (now - startTime) / DURATION_MS);
+      const e = easing(t);
+      const vb = {
+        x: startVB.x + (targetVB.x - startVB.x) * e,
+        y: startVB.y + (targetVB.y - startVB.y) * e,
+        w: startVB.w + (targetVB.w - startVB.w) * e,
+        h: startVB.h + (targetVB.h - startVB.h) * e,
+      };
+      canvas.setAttribute('viewBox', viewBoxString(vb));
+      if (t < 1) {
+        currentAnim = requestAnimationFrame(frame);
+      } else {
+        currentAnim = null;
+      }
+    }
+
+    currentAnim = requestAnimationFrame(frame);
+  }
   function bboxFromTarget(node) { /* Task A7 */ return null; }
   function leafViewBox(node) { /* Task A7 */ return null; }
   function findLeafForCard(cardId) { /* Task A7 */ return null; }
