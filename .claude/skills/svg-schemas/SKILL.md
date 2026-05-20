@@ -240,7 +240,7 @@ La proba est une **estimation éditoriale** ; elle doit suivre les pivots de la 
 ## Quick checklist avant de pusher un schéma
 
 - [ ] Flèches : blanc de 12–18 px avant la cible, origine sur le périmètre des cercles/hubs, centrées horizontalement sur la boîte cible
-- [ ] Annotations manuscrites (`class="hand"`) : gap vertical 30–50 px max vers la cible, départ après l'ellipsis du texte, courbure douce un seul bézier
+- [ ] Annotations manuscrites (`class="hand"`) : distance euclidienne à la cible < ~150 px, alignée latéralement avec la cible, départ après l'ellipsis du texte, courbure douce un seul bézier
 - [ ] `<rect>` : height englobe tout le texte interne (recompter `y_dernier_texte + ~20 px`)
 - [ ] `<text>` long : splitté à la main si > `W - 40` (cf. table px/char)
 - [ ] Bouton zoom `⛶` présent et fonctionnel
