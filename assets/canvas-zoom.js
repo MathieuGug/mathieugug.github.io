@@ -173,7 +173,36 @@
     animateViewBox(rootViewBox);
     history.pushState({ level: 0 }, '', location.pathname + location.search);
   }
-  function setupClickHandlers() { /* Task A9 */ }
+  function setupClickHandlers() {
+    canvas.addEventListener('click', function (e) {
+      // Click on a step/cheese box (data-card) in central playbook
+      // → résoudre via findLeafForCard puis ouvrir la leaf qui le couvre
+      const card = e.target.closest('[data-card]');
+      if (card && state.level === 0) {
+        const leaf = findLeafForCard(card.dataset.card);
+        if (leaf) {
+          openZone(leaf.dataset.node);
+          e.preventDefault();
+        }
+        return;
+      }
+
+      // Click on the focused leaf to drill down to level 2
+      const leafG = e.target.closest('.zoom-target');
+      if (leafG && state.level === 1 && leafG.dataset.node === state.node) {
+        openLeaf(state.node);
+        e.preventDefault();
+        return;
+      }
+
+      // Click on canvas background → go up one level
+      const bg = e.target.closest('[data-canvas-background]');
+      if (bg) {
+        if (state.level === 2) openZone(state.node);
+        else if (state.level === 1) reset();
+      }
+    });
+  }
   function setupKeyboardHandlers() { /* Task A10 */ }
   function setupResetButton() { /* Task A11 */ }
   function setupMobileInterstitial() { /* Task A11 */ }
