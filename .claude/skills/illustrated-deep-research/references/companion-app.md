@@ -1129,3 +1129,27 @@ Field-by-field:
 - `{{SCHEMAS_DATA}}` — JS object: `SCHEMAS[schemaId][cardId] = {title, body, eyebrow}`
 - `{{TOOLTIPS_DATA}}` — JS object: `TOOLTIPS[term] = definition`
 - `{{SOURCES_DATA}}` — JS array: `SOURCES = [{n, citation, url, accessed}]`
+
+---
+
+## Micro-patterns de style
+
+### Surlignage `<mark>` (stabilo)
+
+Signature visuelle pour les phrases-clés du corps narratif. Syntaxe Obsidian `==texte==` qui rend `<mark>texte</mark>`. Style : dégradé qui ne tache que la moitié basse du texte, façon stylo feutre.
+
+```css
+main mark {
+  background: linear-gradient(transparent 58%, rgba(178, 59, 27, 0.14) 58%);
+  color: inherit;
+  padding: 0 2px;
+}
+```
+
+**Scope du sélecteur** :
+- Apps long-format type `header.site` + `main#report` (i.e. les apps deep-research) → `main mark`
+- Pages narratives qui utilisent un wrapper `.entry` (journal, scrolly, livre) → `.entry mark`
+
+Cas piégeux pour le scope `.entry` : éviter `.entry .body mark` qui rate les `<mark>` situés dans les `<li>` (bullets de synthèse exécutive par exemple) — l'exécutif vit souvent en-dehors d'un `.body` interne. Toujours scoper sur le wrapper le plus extérieur qui contient toute la prose.
+
+À embarquer dans toute app HTML longue (rapport, journal).

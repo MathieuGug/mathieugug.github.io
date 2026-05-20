@@ -88,8 +88,11 @@ The companion app template (`assets/app-template.html`) is a scaffold. Two failu
 | Step-by-step execution (research, drafting, packaging) | `references/workflow.md` |
 | How to design SVGs in editorial style (palette, type, layout, annotation grammar) | `references/svg-editorial-style.md` |
 | HTML app architecture (layout, modal system, tooltips, sources sidebar, JS) — and the **mobile-friendliness + panel-close + `<pre>`/`<code>` overflow** patterns required by the host site's `CLAUDE.md` | `references/companion-app.md` |
+| Micro-pattern `<mark>` stabilo (signature visuelle de surlignage) | `references/companion-app.md` § "Micro-patterns de style" |
+| Obsidian preview width hint (`\|1300` sur les images Markdown) | `references/workflow.md` § 3.4 |
 | SEO + social previews (Open Graph, Twitter Card, og.png 1200×630, canonical, JSON-LD Article) | `references/seo.md` |
 | Building the **optional 10-min slideshow companion** (3rd format in the ZIP) | `references/slideshow.md` |
+| **Callouts** — renvois inter-dossiers avec mini-vignette zoomable | `references/callouts.md` |
 | Working HTML scaffold to start from | `assets/app-template.html` |
 | Slideshow companion HTML scaffold (10-min scenic alternative) | `assets/slideshow-template.html` |
 | Helper to assemble the app from fragments (avoids 1500-line Edit chains) | `assets/build-app.py` |
