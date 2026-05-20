@@ -34,6 +34,10 @@ evaluation-agentique/
 ├── 20260520-evaluation-agentique-canvas.html   (nouveau, fichier principal)
 └── 20260520-evaluation-agentique-poster.svg     (nouveau, généré)
 
+assets/
+├── canvas-zoom.js                               (nouveau, lib partagée semantic zoom)
+└── canvas-zoom.css                              (nouveau, lib partagée styles canvas)
+
 tools/
 └── extract_poster_svg.py                        (nouveau, dérive le poster depuis le canvas)
 ```
@@ -45,9 +49,19 @@ evaluation-agentique/
 └── index.html                                   (ajout d'une carte format 2)
 ```
 
-### Fichiers de la lib partagée — non modifiés
+### Fichiers de la lib partagée — utilisés
 
-Le canvas embarque `/assets/dossier-app.{js,css}` pour la topbar, le favicon, le sigil MG, le handler Escape global. La logique de zoom canvas est **inline** dans le fichier HTML (pas extraite dans la lib) tant qu'il y a un seul dossier qui utilise ce format. Extraction quand un deuxième dossier suit le pattern.
+Le canvas embarque :
+- `/assets/dossier-app.{js,css}` pour la topbar, le favicon, le sigil MG, le handler Escape global
+- `/assets/canvas-zoom.{js,css}` **dès le jour 1** (nouvelle lib partagée) pour la mécanique semantic zoom
+
+Choix assumé : extraction préemptive plutôt qu'inline-puis-extraction. Raison : le format zoomable est candidat à réutilisation sur d'autres dossiers (gouvernance, mcp-plateforme…), et la lib `dossier-app.{js,css}` montre qu'extraire à postériori coûte plus cher qu'extraire dès la première implémentation.
+
+**Contrat DOM `/assets/canvas-zoom.js`** :
+- `<svg id="canvas" data-canvas-zoom>` : opt-in par data-attr
+- `<g class="zoom-target" data-node="..." data-leaf-viewbox="x y w h" data-parent-bbox="x,y,w,h">` : chaque leaf
+- Bouton optionnel `[data-canvas-zoom-reset]` (la topbar y attache "Vue d'ensemble")
+- API publique minimale : `window.canvasZoom.openLeaf(nodeId)`, `window.canvasZoom.reset()`, `window.canvasZoom.getLevel()`
 
 ## Hiérarchie de contenu (3 niveaux)
 
@@ -194,7 +208,11 @@ Le bouton "Rester" cache l'interstitiel et laisse le canvas accessible. Le zoom 
 
 ## Poster SVG A0 standalone
 
-### Production
+### Production en deux temps
+
+**Le poster n'est pas une simple extraction du canvas** : c'est un livrable autonome qui exige une **identité visuelle unifiée** au-delà des 11 schémas réutilisés. Le canvas, sur écran, raconte par interaction (zoom, ghost, focus) ; le poster, en print, doit raconter par composition statique.
+
+**Étape 1 — extraction mécanique** (script idempotent) :
 
 ```bash
 python tools/extract_poster_svg.py evaluation-agentique/20260520-evaluation-agentique-canvas.html
@@ -202,12 +220,26 @@ python tools/extract_poster_svg.py evaluation-agentique/20260520-evaluation-agen
 
 Le script :
 1. Lit le `<svg id="canvas">` inline du canvas HTML
-2. Force tous les `data-state="ghost"` → `data-state="focused"` (équivaut à opacity 1)
+2. Force tous les `data-state` → `focused` (équivaut à opacity 1)
 3. Inline les Google Fonts via `<defs><style>@font-face{…}</style></defs>` avec base64 (ou fallback Georgia/Helvetica/Courier si trop lourd)
-4. Ajoute un cartouche signature en bas-droite : titre + date + URL canonique + sigil MG (cf. skill `svg-schemas` pour le sigil)
-5. Écrit `evaluation-agentique/20260520-evaluation-agentique-poster.svg`
+4. Écrit un brouillon `evaluation-agentique/20260520-evaluation-agentique-poster-draft.svg`
 
-**Idempotent** — re-runnable à chaque modification du canvas.
+**Étape 2 — habillage éditorial** (édition manuelle ou semi-générée) :
+
+Le brouillon est ensuite enrichi pour devenir le poster final. Liste des couches d'identité visuelle à produire (chiffrage volontairement vague — à raffiner dans le plan) :
+
+- **Bandeau titre** plein largeur en haut : titre éditorial *"Évaluer un agent — playbook gruyère"* + sous-titre *"de 20 tasks à un harness fiable"* + métadonnées (date, auteur, URL canonique)
+- **Légende narrative** verticale à gauche ou en bas : 5-7 lignes qui racontent l'arc *"on commence ici → on déploie en confiance"*
+- **Visuels de liaison** : flèches/cordons stylisés qui relient le playbook central à ses 14 leaves de façon plus expressive que les fines lignes du canvas écran. Ces visuels n'existent pas dans le canvas — c'est du dessin neuf, dédié au poster.
+- **Légende couleur** : un mini-encart qui explique la sémantique des 3 phases du playbook (collecte / harness & graders / maintenance) et des 3 niveaux de gruyère (préventif / curatif / qualitatif)
+- **Cartouche signature** en bas-droite : sigil MG (cf. skill `svg-schemas`) + URL + date + mention "Format co-écrit avec l'aide d'une IA"
+- **Numérotation visuelle** : chaque leaf porte un repère (S0..S7, C1..C6) qui en print remplace le hint "cliquer pour zoomer" du canvas
+
+Cette étape 2 produit `evaluation-agentique/20260520-evaluation-agentique-poster.svg` (sans suffixe `-draft`). Le brouillon `-draft.svg` reste dans le repo comme intermédiaire pour les re-runs ultérieurs.
+
+**Workflow re-run** : si le canvas change, on re-run l'étape 1 (regénère le brouillon), puis on re-applique manuellement les éléments d'habillage à partir du brouillon mis à jour. À voir si on peut formaliser l'habillage en un overlay SVG séparé qui se compose avec le brouillon — c'est le bon objectif d'évolution mais hors scope v1.
+
+**Source de vérité hybride** : canvas HTML pour les schémas et la structure ; poster.svg pour l'habillage éditorial. Cohabitation assumée.
 
 ### Dimensions et lisibilité
 
@@ -321,7 +353,7 @@ L'implémentation détaillée sera spécifiée par writing-plans. Vue d'ensemble
 
 - Pas de zoom continu wheel/pinch (assumé : semantic discret uniquement)
 - Pas de re-render linéaire mobile (assumé : redirection vers l'app)
-- Pas d'extraction de la mécanique de zoom dans la lib partagée (assumé : inline dans le fichier tant qu'il y a un seul dossier qui utilise le format)
-- Pas de nouveau SVG technique à dessiner (assumé : réutilisation des 11 schémas existants)
+- Pas de nouveau SVG **technique** à dessiner pour le canvas (assumé : réutilisation des 11 schémas existants pour les leaves)
 - Pas de quizzes embarqués (assumé : le canvas pointe vers les concepts, pas vers des questions)
 - Pas de modifications de l'app existante `20260501-…-app.html` (assumé : le canvas est un format additif, l'app reste la référence narrative)
+- Pas de formalisation de l'habillage poster en overlay automatisé v1 (assumé : étape 2 du poster reste manuelle, automatisation candidate pour v2)
