@@ -64,6 +64,18 @@ def force_focused_states(svg: str) -> str:
     return DATA_STATE_RE.sub('data-state="focused"', svg)
 
 
+def fix_boolean_attributes(svg: str) -> str:
+    """Convertit les attributs booléens HTML en attributs XML valides avec valeurs.
+
+    Dans HTML, data-canvas-zoom et autres data-* sans valeur sont des attributs booléens.
+    Dans XML/SVG, tous les attributs doivent avoir une valeur, donc on ajoute ="true".
+    """
+    # Pattern : data-* attribut sans valeur suivi d'un autre attribut ou de >
+    # Ex: data-canvas-zoom viewBox ou data-canvas-background x=
+    svg = re.sub(r'\s(data-[\w-]+)(?=[\s>])', r' \1="true"', svg)
+    return svg
+
+
 def inline_fonts_stylesheet(svg: str) -> str:
     """Injecte un <style> avec les fallbacks de polices (Cambria/Helvetica/Consolas).
 
@@ -130,6 +142,7 @@ def main():
         return 1
 
     svg = force_focused_states(svg)
+    svg = fix_boolean_attributes(svg)
     svg = add_xmlns(svg)
     svg = inline_fonts_stylesheet(svg)
 
