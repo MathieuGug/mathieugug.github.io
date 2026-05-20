@@ -913,6 +913,26 @@
     @media (max-width: 640px) {
       main .figure--portrait .schema-sigil { top: 8px !important; right: 10px !important; width: 24px !important; height: 24px !important; }
     }
+
+    /* === callouts de renvoi vers d'autres dossiers (pattern partagé avec agent-sdk + observabilite-agents-ia) === */
+    main .callout { display: grid; grid-template-columns: 280px 1fr; gap: 0; align-items: stretch; margin: 2.4rem 0; padding: 0; background: var(--paper); border-left: 3px solid var(--teal); border-radius: 2px; transition: grid-template-columns 320ms cubic-bezier(.2,.7,.2,1); }
+    main .callout:hover { grid-template-columns: 440px 1fr; }
+    main .callout > .callout-thumb-link { position: relative; display: block; width: 100%; height: 100%; min-height: 200px; overflow: hidden; border-radius: 0; background: transparent; border: 0; border-right: 1px solid var(--rule); cursor: zoom-in; padding: 0; -webkit-appearance: none; appearance: none; font: inherit; color: inherit; text-align: left; transition: filter 200ms ease; }
+    main .callout > .callout-thumb-link:hover { filter: drop-shadow(0 4px 14px rgba(183,51,44,0.18)); border-right-color: var(--carmine); }
+    main .callout > .callout-thumb-link:focus-visible { outline: 2px solid var(--carmine); outline-offset: -2px; }
+    main .callout > .callout-thumb-link img.callout-thumb { width: 100%; height: 100%; object-fit: contain; object-position: center center; display: block; padding: 0; }
+    main .callout > .callout-thumb-link::after { content: '⛶ AGRANDIR'; position: absolute; top: 10px; right: 10px; padding: 4px 9px; font-family: var(--mono); font-size: 9.5px; font-weight: 600; letter-spacing: 0.10em; background: rgba(250,248,243,0.94); border: 1px solid var(--rule); border-radius: 2px; color: var(--graphite); opacity: 0; transition: opacity 180ms ease, color 180ms ease, border-color 180ms ease; pointer-events: none; }
+    main .callout > .callout-thumb-link:hover::after, main .callout > .callout-thumb-link:focus-visible::after { opacity: 1; color: var(--carmine); border-color: var(--carmine); }
+    main .callout > .callout-body { min-width: 0; padding: 22px 26px 22px 26px; align-self: center; }
+    main .callout .callout-eyebrow { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--teal); margin: 0 0 0.45rem; font-weight: 600; }
+    main .callout > .callout-body p { margin: 0; font-size: 0.95rem; line-height: 1.55; color: var(--ink); }
+    main .callout > .callout-body p a { color: var(--carmine); text-decoration: none; border-bottom: 1px dotted var(--carmine); }
+    main .callout > .callout-body p a:hover { color: var(--teal); border-bottom-color: var(--teal); }
+    @media (max-width: 640px) {
+      main .callout, main .callout:hover { grid-template-columns: 1fr; gap: 0; padding: 0; }
+      main .callout > .callout-thumb-link { min-height: 180px; border-right: 0; border-bottom: 1px solid var(--rule); }
+      main .callout > .callout-body { padding: 18px 20px; }
+    }
   </style>
 </head>
 <body>
@@ -2685,6 +2705,17 @@ ExpectedOutcome = Deterministic Metrics × LLM-as-a-Judge Suite
 <li><strong>Reproduction d'incidents.</strong> Replay d'une trajectoire défaillante avec injection de variations contrôlées (autre persona, panne réseau, retriever dégradé) pour isoler la cause.</li>
 <li><strong>Alimentation continue de l'eval suite.</strong> Les transcripts production deviennent les meilleures <em>capability evals</em> — Anthropic le formalise : <em>« source realistic tasks from the failures you see »</em><a class="cite" data-cite="3" href="#source-3">3</a>.</li>
 </ul>
+
+<aside class="callout">
+  <button type="button" class="callout-thumb-link" data-svg-src="../observabilite-agents-ia/images/20260430-04-anatomie-trace-otel-genai.svg" data-svg-alt="Mini-vignette du dossier observabilite-agents-ia — anatomie d'une trace OpenTelemetry GenAI, avec event gen_ai.evaluation.result attaché" aria-label="Agrandir : anatomie d'une trace OpenTelemetry GenAI">
+    <img class="callout-thumb" src="../observabilite-agents-ia/images/20260430-04-anatomie-trace-otel-genai.svg" alt="Anatomie d'une trace OpenTelemetry GenAI — spans invoke_agent, chat, execute_tool et event d'évaluation" loading="lazy">
+  </button>
+  <div class="callout-body">
+    <p class="callout-eyebrow">Le pendant production — dossier complémentaire</p>
+    <p>L'évaluation produit le verdict ; l'observabilité fournit le matériau. Le dossier <a href="../observabilite-agents-ia/">observabilité des agents IA</a> détaille les six piliers de la télémétrie agentique, l'anatomie d'une trace OTel GenAI (event <code>gen_ai.evaluation.result</code> attaché au span évalué), la hiérarchie d'alertes L0 → L4, et la cartographie 2026 des plateformes — Datadog, Dynatrace, Splunk côté incumbents ; Langfuse, Braintrust, Arize, Galileo côté AI-native. Lecture en miroir naturelle pour cadrer un programme eval + monitoring continu.</p>
+  </div>
+</aside>
+
 <hr />
 <h2 id="8-frameworks-et-outils-du-marche">8. Frameworks et outils du marché</h2>
 <p>L'écosystème a mûri suffisamment pour qu'un choix soit possible — et nécessaire. Aucun outil ne couvre tout ; l'enjeu est de combiner offline / online et open-source / hosted selon le contexte.</p>
@@ -3566,6 +3597,14 @@ ExpectedOutcome = Deterministic Metrics × LLM-as-a-Judge Suite
       if (!src) return;
       e.preventDefault();
       openPortraitZoom(src, alt);
+    });
+  });
+  // Callout thumbs (renvoi vers d'autres dossiers) — même mécanique de zoom
+  document.querySelectorAll('button.callout-thumb-link').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const src = btn.getAttribute('data-svg-src');
+      const alt = btn.getAttribute('data-svg-alt') || '';
+      if (src) openPortraitZoom(src, alt);
     });
   });
 })();

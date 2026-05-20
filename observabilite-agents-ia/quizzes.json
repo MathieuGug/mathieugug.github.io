@@ -1,0 +1,187 @@
+[
+  {
+    "id": "rupture",
+    "title": "Pourquoi l'APM ne suffit-il plus ?",
+    "anchor": "1-du-deterministe-au-probabiliste-la-rupture-paradigmatique",
+    "before_heading_id": "2-les-six-piliers-de-la-telemetrie-agentique",
+    "questions": [
+      {
+        "mode": "single",
+        "stem": "Votre stack APM classique (Datadog ou New Relic) couvre déjà latence, throughput et error rate sur vos services. Vous ajoutez un agent IA en production. Qu'est-ce que l'APM ne verra <em>structurellement</em> pas, même bien configuré ?",
+        "options": [
+          {
+            "text": "Les pics de latence sur l'appel modèle distant — il faut une instrumentation spécifique au provider.",
+            "correct": false,
+            "explain": "Faux. Un APM classique capte très bien la latence d'un appel HTTP sortant vers <code>api.anthropic.com</code> ou un endpoint OpenAI : c'est exactement son métier depuis quinze ans. Ce n'est pas là qu'il échoue."
+          },
+          {
+            "text": "Une dérive comportementale silencieuse — l'agent commence à sélectionner un outil différent ou à dégrader sa qualité de réponse <em>sans déclencher la moindre erreur HTTP</em>.",
+            "correct": true,
+            "explain": "Vrai. C'est précisément le « vide causal » : l'APM suppose une causalité directe (stack trace → ligne de code), alors qu'un agent ne <em>crashe</em> pas, il <em>dérive</em>. La dégradation est graduelle, le pattern de tool-calling glisse silencieusement, le score qualité chute sous le radar des 4 Golden Signals. Sans pilier <em>Qualité</em> + <em>Comportement</em> instrumenté, on est aveugle.",
+            "back_link": "↗ relire §1"
+          },
+          {
+            "text": "Le coût total en tokens : il faut une plateforme spécialisée.",
+            "correct": false,
+            "explain": "Partiellement vrai mais pas le bon angle. Le coût en tokens peut s'instrumenter dans n'importe quel APM via des attributs custom — mais ce n'est qu'<em>un</em> des six piliers (Usage), et ce n'est pas la rupture épistémologique. Le vrai gap est cognitif, pas comptable."
+          },
+          {
+            "text": "Rien — un bon APM bien configuré avec custom metrics couvre tout le terrain agentique.",
+            "correct": false,
+            "explain": "Faux et c'est exactement le piège que dénonce ce rapport. Quatre angles morts structurels de l'APM : cécité comportementale, ignorance statistique (pas de détection de patterns probabilistes), vide causal, absence de contexte séquentiel. La rupture n'est pas un manque d'outillage — c'est un changement d'épistémologie : du déterministe au probabiliste."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "piliers",
+    "title": "Quel pilier attrape quelle défaillance ?",
+    "anchor": "2-les-six-piliers-de-la-telemetrie-agentique",
+    "before_heading_id": "3-architecture-de-reference-le-bus-dobservabilite-comme-colonne-vertebrale",
+    "questions": [
+      {
+        "mode": "multi",
+        "stem": "Vous priorisez l'instrumentation de votre agent commercial. Lesquelles de ces affirmations sur les six piliers sont correctes ? (Plusieurs réponses possibles.)",
+        "options": [
+          {
+            "text": "Un agent qui se met à appeler trois fois plus l'outil <code>search_crm</code> qu'il y a deux semaines, sans erreur ni baisse de latence, <em>doit</em> être détecté par le pilier <strong>Comportement</strong> — pas par <strong>Performance</strong>.",
+            "correct": true,
+            "explain": "Vrai. Comportement = sélection d'outils, séquences d'actions, patterns de routing. C'est précisément le glissement silencieux que la performance pure (latence, throughput) ne capte pas. Détecter cette dérive demande de tracer chaque <code>execute_tool</code> et de regarder sa distribution dans le temps.",
+            "back_link": "↗ relire §2"
+          },
+          {
+            "text": "Le pilier <strong>Qualité</strong> est mesurable uniquement <em>offline</em>, sur un dataset de référence — il n'a pas de place dans une trace de production.",
+            "correct": false,
+            "explain": "Faux. L'événement OTel GenAI <code>gen_ai.evaluation.result</code> attache un score qualité directement au span d'opération évaluée. C'est précisément la rupture 2025-2026 : le score n'est plus un artefact offline, c'est un attribut de la trace en production. Galileo (Luna-2 SLM-judge) et Braintrust en font leur cœur de produit."
+          },
+          {
+            "text": "Cinq piliers sur six suffisent — on peut sacrifier <strong>Gouvernance</strong> si on n'opère pas en secteur régulé.",
+            "correct": false,
+            "explain": "Faux, et plus fragile qu'il n'y paraît. Gouvernance ≠ régulation : c'est l'enregistrement de quels guardrails se sont déclenchés, quelles politiques ont été respectées, quelles sources l'agent a consultées. Sans ce pilier, impossible de répondre à « pourquoi cet agent a fait <em>ça</em> au tour 5 ? » lors d'un post-mortem — quel que soit le secteur."
+          },
+          {
+            "text": "Le pilier <strong>Drift &amp; fiabilité</strong> se distingue de <strong>Qualité</strong> par sa dimension temporelle : il observe l'évolution des scores sur le trafic réel, pas leur niveau absolu.",
+            "correct": true,
+            "explain": "Vrai. Qualité = score à l'instant T (la réponse était-elle bonne ?) ; Drift = trajectoire de ce score (se dégrade-t-il silencieusement après un changement amont ?). C'est la différence entre « le patient va-t-il bien aujourd'hui » et « la courbe de température dévie-t-elle depuis trois jours ». Les deux signaux sont nécessaires."
+          },
+          {
+            "text": "Les piliers sont indépendants — on peut interpréter chacun isolément.",
+            "correct": false,
+            "explain": "Faux, et c'est le piège principal. Une latence élevée seule peut être un pic temporaire bénin ; une latence élevée <em>corrélée</em> à un drop de qualité ET un surcoût signale une vraie régression. La valeur opérationnelle vient du <em>croisement</em> des piliers dans le bus de télémétrie, pas de l'observation isolée de chacun."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "otel",
+    "title": "OpenTelemetry GenAI : la promesse réelle",
+    "anchor": "4-opentelemetry-genai-le-standard-dinstrumentation",
+    "before_heading_id": "5-reactions-et-boucles-de-correction",
+    "questions": [
+      {
+        "mode": "single",
+        "stem": "Votre DSI hésite à investir dans OpenTelemetry GenAI en argumentant que Datadog (déjà installé) couvre 100 % des besoins d'observabilité IA. Quel est l'argument le plus solide pour standardiser malgré tout sur OTel dès le premier sprint ?",
+        "options": [
+          {
+            "text": "OTel produit des traces plus riches que Datadog — vous obtiendrez des attributs <code>gen_ai.*</code> que la solution managée ne supporte pas.",
+            "correct": false,
+            "explain": "Faux. Datadog ingère nativement les conventions <code>gen_ai.*</code> depuis 2024 — comme la plupart des backends sérieux (Application Insights, Grafana, OpenSearch, VictoriaMetrics). La richesse des attributs ne dépend pas du backend, elle dépend de l'instrumentation que <em>vous</em> écrivez."
+          },
+          {
+            "text": "OTel <em>découple</em> l'instrumentation du backend : vous instrumentez une fois, et vous restez libre de changer Datadog pour Grafana, Langfuse ou Application Insights sans réinstrumenter — un levier de négociation face à la facture qui peut grimper de 40 à 200 % après ajout du monitoring IA.",
+            "correct": true,
+            "explain": "Vrai. C'est la proposition de valeur fondamentale : <em>un instrument, N backends</em>. Le code applicatif émet des spans OTel standards ; le Collector route où vous voulez. Sans cela, chaque changement de backend = réinstrumentation complète = coût bloquant qui transforme le backend en lock-in de fait. Avec OTel, la négociation commerciale redevient ouverte.",
+            "back_link": "↗ relire §4"
+          },
+          {
+            "text": "OTel est gratuit alors que Datadog coûte cher — l'argument économique tranche.",
+            "correct": false,
+            "explain": "Confusion. OTel est gratuit comme instrumentation (le SDK + Collector sont open-source), mais vous payez toujours le backend (stockage, requêtes, dashboards). L'argument économique réel n'est pas « gratuit vs payant » mais « préserver la possibilité de négocier le backend » — ce qui suppose justement de pouvoir bouger."
+          },
+          {
+            "text": "La spec OTel GenAI étant stable depuis 2024, c'est une décision sans risque.",
+            "correct": false,
+            "explain": "Faux. La spec OTel GenAI était encore <em>expérimentale</em> (v1.37+) en avril 2026, avec stabilisation prévue au S2 2026. Il faut activer le flag <code>gen_ai_latest_experimental</code> en connaissance de cause. Cela ne contre-indique pas l'adoption — c'est juste un argument à connaître pour répondre honnêtement à la DSI."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "boucles",
+    "title": "À quel niveau réagir ?",
+    "anchor": "5-reactions-et-boucles-de-correction",
+    "before_heading_id": "6-cartographie-du-marche-incumbents-challengers-ai-native",
+    "questions": [
+      {
+        "mode": "single",
+        "stem": "Votre agent commercial passe d'un score <em>faithfulness</em> moyen de 0.91 à 0.84 sur les dernières 24 h. Aucun crash, latence stable, coûts normaux. À quel niveau de la hiérarchie doit déclencher le mécanisme de correction ?",
+        "options": [
+          {
+            "text": "<strong>L0 — Guardrail automatique</strong>. La baisse de score doit déclencher un blocage temps réel des outputs sous le seuil.",
+            "correct": false,
+            "explain": "Faux et risqué. L0 est réservé aux signaux <em>per-request</em> détectables en moins de 100 ms (PII, toxicité, jailbreak, injection). Une moyenne sur 24 h n'est pas un signal L0 — bloquer chaque output sur un score moyen historique provoquerait du bruit en masse et casserait l'agent en production."
+          },
+          {
+            "text": "<strong>L1 — Rerouting fallback</strong>. Basculer automatiquement sur le modèle de secours.",
+            "correct": false,
+            "explain": "Faux. L1 sert à absorber un incident <em>provider</em> (timeout, 5xx, latence excessive) avec un fallback modèle. Un drift qualité n'est pas un incident provider — basculer sur un Claude Haiku 4.5 sans diagnostic risque même d'aggraver la dégradation."
+          },
+          {
+            "text": "<strong>L2 — Alerte supervisée</strong>. Notification SRE/on-call sur Slack/PagerDuty avec lien vers la trace fautive et suggestion de rollback du prompt récent.",
+            "correct": true,
+            "explain": "Vrai. C'est exactement le signal-type de L2 : drift de score qualité observé sur fenêtre 24 h, pattern anormal qui sort des seuils sans crash. La réaction adaptée est l'alerte humaine avec contexte (lien trace + suggestion de rollback du dernier changement amont), SLA &lt; 5 min. L'on-call décide rollback ou tolère après investigation.",
+            "back_link": "↗ relire §5"
+          },
+          {
+            "text": "<strong>L4 — Refactor stratégique</strong>. Lancer un projet de refonte RAG + changement de modèle.",
+            "correct": false,
+            "explain": "Faux et disproportionné. L4 répond à une <em>dégradation systémique</em> persistante après plusieurs interventions L2/L3 — pas à un drift de 7 points sur 24 h. Sauter à L4 sans passer par L2 (alerte) puis L3 (replay + investigation) revient à amputer pour soigner une fièvre."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "maturite",
+    "title": "Le saut N2 → N3, le palier cognitif",
+    "anchor": "7-maturite-organisationnelle-et-feuille-de-route",
+    "before_heading_id": "8-conclusion-strategique",
+    "questions": [
+      {
+        "mode": "multi",
+        "stem": "Votre organisation est confortable en N2 (tracing OTel, dashboards latence/tokens, alertes seuil multi-signal) et vise N4 (autonomie supervisée avec auto-remédiation) pour 2027. Lesquelles de ces affirmations sur le saut intermédiaire N2 → N3 sont correctes ? (Plusieurs réponses possibles.)",
+        "options": [
+          {
+            "text": "On peut sauter N3 et viser directement N4 si on a des runbooks robustes et un modèle frontière récent — l'évaluation continue est un raffinement, pas un prérequis.",
+            "correct": false,
+            "explain": "Faux, et c'est précisément l'erreur que ce dossier dénonce. Sauter N3 = construire l'auto-remédiation (N4) sur des signaux non calibrés. Le système rollback ou redirige <em>sans savoir si ce qu'il rollback était meilleur ou pire</em>. Résultat documenté : autonomie illisible, incidents en boucle. Le « palier cognitif » n'est pas un raffinement, c'est la condition d'observabilité de N4."
+          },
+          {
+            "text": "N3 exige deux artefacts qui n'existent pas en N2 : un <strong>dataset de référence</strong> et des <strong>scorers calibrés</strong> contre annotation humaine.",
+            "correct": true,
+            "explain": "Vrai. N2 produit des traces structurées mais ne dit rien sur la qualité. N3 répond à « qu'est-ce qu'une bonne réponse » de façon mesurable : il faut (1) un golden dataset annoté par des experts du domaine, (2) trois à cinq scorers (LLM-as-judge ou heuristiques) calibrés contre 100-200 annotations humaines pour quantifier leur désaccord systématique. Sans ces deux briques, pas de N3.",
+            "back_link": "↗ relire §7"
+          },
+          {
+            "text": "Le passage de N2 à N3 transforme la qualité d'une intuition humaine en une <strong>métrique opérationnelle</strong> — c'est ce qui rend possible le drift detection.",
+            "correct": true,
+            "explain": "Vrai. En N2, la qualité reste implicite (« l'utilisateur s'est-il plaint ? »). En N3, elle devient un nombre par requête, agrégeable sur fenêtre temporelle, comparable entre versions. C'est précisément ce qui permet à l'alerte L2 (drift score qualité) d'exister, et donc à la conversion trace → test case de se déclencher en boucle continue."
+          },
+          {
+            "text": "N5 (autonomie complète) est aujourd'hui la cible réaliste pour la majorité des programmes IA enterprise en 2026.",
+            "correct": false,
+            "explain": "Faux. N5 (agents d'observabilité, auto-optimisation prompts, gouvernance AI-driven, remédiation autonome L2/L3) est un horizon 2027-2028 <em>sur scope limité</em>, pas une cible 2026. La cible réaliste pour la majorité en 2026 est N4 — encore faut-il avoir consolidé N3."
+          },
+          {
+            "text": "Les scorers calibrés en N3 servent à la fois en évaluation offline (avant déploiement) <em>et</em> en monitoring online (sur trafic réel) — c'est le même calibrage qui alimente les deux.",
+            "correct": true,
+            "explain": "Vrai. C'est l'économie clé du palier : un investissement de calibration (100-200 annotations humaines par scorer) sert deux usages — eval avant release, monitoring continu en prod. Sans cette double exploitation, le coût de N3 est rédhibitoire ; avec elle, il est amortissable."
+          }
+        ]
+      }
+    ]
+  }
+]
