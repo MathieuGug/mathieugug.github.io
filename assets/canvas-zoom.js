@@ -203,7 +203,33 @@
       }
     });
   }
-  function setupKeyboardHandlers() { /* Task A10 */ }
+  function setupKeyboardHandlers() {
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        if (state.level === 2) {
+          openZone(state.node);
+          e.preventDefault();
+        } else if (state.level === 1) {
+          reset();
+          e.preventDefault();
+        }
+        return;
+      }
+
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        if (state.level === 0) return;
+        const order = targets.map(function (t) { return t.dataset.node; });
+        const idx = order.indexOf(state.node);
+        if (idx === -1) return;
+        const step = e.key === 'ArrowRight' ? 1 : -1;
+        const nextIdx = (idx + step + order.length) % order.length;
+        const nextNode = order[nextIdx];
+        if (state.level === 1) openZone(nextNode);
+        else if (state.level === 2) openLeaf(nextNode);
+        e.preventDefault();
+      }
+    });
+  }
   function setupResetButton() { /* Task A11 */ }
   function setupMobileInterstitial() { /* Task A11 */ }
   function handlePopState(e) { /* Task A12 */ }
