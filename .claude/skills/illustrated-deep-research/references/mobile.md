@@ -95,15 +95,7 @@ Toujours fournir le bouton de zoom plein écran (`⛶`). Sur mobile, un schéma 
 
 ## 5. Sidebars `panel-close` (mobile)
 
-Le pattern complet (CSS + HTML + JS) est documenté dans `references/companion-app.md` § "Mobile-friendliness & panel close" → "### Pattern `panel-close` (jusqu'à extraction dans `sidebars.md`)". Une référence dédiée `references/sidebars.md` est prévue pour centraliser ce pattern.
-
-Résumé : sous `@media (max-width: 1024px)`, les panneaux `#toc.open` et `#sources.open` couvrent la pleine viewport. Sans bouton de fermeture interne, un lecteur mobile qui ouvre un panneau n'a plus accès au rapport. Le pattern est en trois parties :
-
-- **CSS** : `.panel-close { display: none; }` hors media query ; `position: fixed; top: 16px; right: 16px; z-index: 91` dans `@media (max-width: 1024px)`.
-- **HTML** : `<button class="panel-close" type="button" aria-label="Fermer le sommaire">Fermer ✕</button>` en **premier enfant** de `<nav id="toc">` ET de `<aside id="sources">`.
-- **JS** : handler click sur `.panel-close` + handler Escape global qui cède aux overlays zoom/modal.
-
-> Une référence `references/sidebars.md` centralisera ce pattern à terme (à créer en PR séparée). Pour l'instant, `companion-app.md` reste la source canonique.
+Le pattern complet (CSS + HTML + JS avec yield Escape sur zoom/modal) vit dans `references/sidebars.md` § "Pattern `panel-close` (mobile)".
 
 ---
 

@@ -87,36 +87,7 @@ Pour scrollies / livre / gouvernance scrolly : edits manuels ciblés (chaque pag
 
 ## Apps interactives — sidebars Sommaire/Sources
 
-Toute app long format avec sidebars `#toc` et `#sources` (toutes les apps deep-research existantes + tout nouvel app) **doit** embarquer le pattern de fermeture mobile :
-
-- En CSS, dans `@media (max-width: 1024px)` : padding top de `64px` sur `#toc.open`/`#sources.open` (pour ne pas masquer le bouton), styles de `.panel-close` (`position: fixed; top:16px; right:16px; z-index:91`). Hors media query : `.panel-close { display: none; }`.
-- En HTML : un `<button class="panel-close" type="button" aria-label="Fermer le sommaire">Fermer ✕</button>` en première position dans `<nav id="toc">` ET dans `<aside id="sources">`.
-- En JS : (1) handler click sur `.panel-close` qui retire la classe `open` du parent ; (2) handler `keydown` global qui ferme tout panneau ouvert sur `Escape` (en s'effaçant si un `#zoom-overlay` ou un `#modal-root` est déjà ouvert, pour ne pas marcher sur leurs propres handlers Escape).
-- **Hauteur des panneaux desktop** : utiliser `height: calc(100vh - 56px)` (pas `max-height: …`) sur `#toc` et `#sources`, avec `top: 56px` pour le sticky — la topbar fixe (cf. section dédiée) consomme les 56 premiers pixels de la viewport. Avec `align-self: start` dans la grille, `max-height` n'impose pas la hauteur — le panneau se rétrécit à la hauteur de son contenu, ce qui laisse un trou en bas si la liste est plus courte qu'une viewport (cf. bug visible le 2026-05-04 sur la sidebar Sources d'`agents-computer-use` : la liste s'arrêtait à mi-écran). `height: calc(100vh - 56px)` force la hauteur ; `overflow-y: auto` reste là pour scroller le contenu interne.
-- **Bouton replier Sources (`#sources-collapse-btn`) : `position: fixed`, pas `position: absolute`**. En `absolute` à l'intérieur du panneau qui a `overflow-y: auto`, le bouton scrolle avec le contenu interne — quand la liste de sources dépasse une viewport, l'utilisateur doit remonter le panneau pour le retrouver. Pattern correct : `position: fixed; top: 50%; right: 320px; transform: translate(50%, -50%); z-index: 70;` — bouton centré verticalement sur le bord gauche du panneau Sources (qui fait 320px de large), ancré à la viewport, fixe au scroll. Le bouton miroir `#sources-expand-btn` est déjà en `fixed` à `right: 0; top: 50%` ; les deux occupent le même axe vertical milieu-droit, alternant via la classe `.layout.sources-collapsed`.
-
-Pattern de référence : `proces-musk-altman/20260427-proces-musk-altman-app.html` (rechercher `panel-close`). **Nouvelle app = vérifier ces 3 points avant de merger**, sinon le panneau couvre tout l'écran sur mobile sans moyen de revenir en arrière. Le comportement (handler click + handler Escape) est désormais fourni par la bibliothèque partagée — voir section ci-dessous.
-
-### Convention des entrées de sources (`<li id="source-N">`)
-
-Le format canonique de chaque entrée du panneau Sources combine **numéro entre crochets** + **citation complète** + **URL complète affichée comme texte du lien** + **date d'accès**. Référence vivante : `llm-jailbreaking/20260428-…-app.html`. Pattern :
-
-```html
-<li id="source-1">
-  <span class="cite-num">[1]</span>OWASP Foundation, "OWASP Top 10 for LLM Applications 2025", v4.2.0a, 14 November 2024
-  <br><a href="https://owasp.org/.../OWASP-Top-10-for-LLMs-v2025.pdf" target="_blank" rel="noopener">https://owasp.org/.../OWASP-Top-10-for-LLMs-v2025.pdf</a><span class="accessed">Accessed 2026-04-28</span>
-</li>
-```
-
-Trois règles load-bearing :
-
-1. **`[N]` avec crochets littéraux dans le HTML**, pas de pseudo-element `::before`/`::after`. Le lecteur scanne le panneau en cherchant le `[N]` cité depuis le corps du rapport — il doit lire à l'identique dans le source et le rendu.
-2. **URL complète = texte du lien**, pas un label de host raccourci type `arxiv.org ↗`. Le label court masque la destination réelle (abstract vs PDF vs section ancrée vs mirror) ; l'URL complète, c'est la vérité. Les navigateurs modernes cassent les URLs proprement aux `/`, et le CSS canonique ajoute `overflow-wrap: anywhere` sur `#sources li a` comme filet de sécurité pour les URLs sans séparateur.
-3. **`<br>` avant le `<a>`** force le lien sur sa propre ligne, séparé visuellement du texte de citation — l'œil tombe dessus immédiatement.
-
-CSS canonique embarqué dans chaque app : voir le bloc `#sources li { ... }` de `llm-jailbreaking/20260428-…-app.html:548-583` (couleurs : numéro en `--carmine`, lien en `--teal`, accessed en `--mist`, taille 0.82/0.78/0.74 rem).
-
-Convention héritée à migrer au passage : les apps antérieures à mai 2026 utilisent parfois `<span class="cite-num">N</span>` sans crochets + `<a>host ↗</a>`. C'est legacy — toute édition d'une app sur ses sources (ajout, correction, refonte) doit en profiter pour basculer sur le pattern bracketed + full URL.
+Pattern complet (structure HTML, sticky math `height` vs `max-height`, `panel-close` mobile, `sources-collapse-btn` `position: fixed`, format canonique `<li id="source-N">` bracketed + full URL) : `.claude/skills/illustrated-deep-research/references/sidebars.md`.
 
 ## Quiz cards (vérification de compréhension)
 

@@ -40,37 +40,7 @@ Each schema also gets a **fullscreen zoom mode**: hovering a `.figure` reveals a
 
 Pour la **checklist mobile complète des 7 points** (`overflow-x`, topbar responsive, typographie `@1024px`, SVG, panel close, `<pre>`/`<code>`, `<table>`), voir `references/mobile.md`.
 
-Le pattern `panel-close` détaillé (CSS + HTML + JS) reste dans cette section jusqu'à ce qu'une référence dédiée `references/sidebars.md` soit créée (PR séparée).
-
-### Pattern `panel-close` (jusqu'à extraction dans `sidebars.md`)
-
-Below `1024px`, `#toc.open` and `#sources.open` cover the full viewport. Without an in-panel close button, a mobile reader who opens either panel has no way back to the report (no header is visible). The required pattern is **three-part**:
-
-- **CSS** (inside `@media (max-width: 1024px)`): `.panel-close` becomes `position: fixed; top: 16px; right: 16px; z-index: 91`, displayed only when its parent panel is `.open`. The opened panel must use `padding: 64px 24px 24px` (top padding so content doesn't sit under the close button). Outside the media query, `.panel-close { display: none; }`.
-- **HTML**: a `<button class="panel-close" type="button" aria-label="Fermer le sommaire">Fermer ✕</button>` as the **first child** of `<nav id="toc">`, and the same with `aria-label="Fermer les sources"` as the first child of `<aside id="sources">`.
-- **JS** — two handlers:
-  ```js
-  // 1) The button itself
-  document.querySelectorAll('.panel-close').forEach(btn => {
-    btn.addEventListener('click', () => {
-      btn.closest('#toc, #sources')?.classList.remove('open');
-    });
-  });
-  // 2) Escape closes any open panel — but yields to zoom and modal,
-  // which have their own Esc handlers. Without these guards, pressing
-  // Esc inside a fullscreen schema would close both at once.
-  document.addEventListener('keydown', (e) => {
-    if (e.key !== 'Escape') return;
-    const zoom  = document.getElementById('zoom-overlay');
-    const modal = document.getElementById('modal-root');
-    if (zoom && !zoom.hidden) return;
-    if (modal && !modal.hidden) return;
-    const open = document.querySelector('#toc.open, #sources.open');
-    if (open) { e.preventDefault(); open.classList.remove('open'); }
-  });
-  ```
-
-The skill's `assets/app-template.html` already ships these three pieces — keep them in.
+Pour le **pattern `panel-close` complet** (CSS + HTML + JS avec yield Escape sur zoom/modal), voir `references/sidebars.md` § "Pattern `panel-close` (mobile)".
 
 ### `← Retour aux dossiers` back link in the header (legacy — voir topbar)
 
