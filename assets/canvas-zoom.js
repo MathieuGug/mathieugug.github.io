@@ -230,8 +230,51 @@
       }
     });
   }
-  function setupResetButton() { /* Task A11 */ }
-  function setupMobileInterstitial() { /* Task A11 */ }
+  function setupResetButton() {
+    const btn = document.querySelector('[data-canvas-zoom-reset]');
+    if (!btn) return;
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      reset();
+    });
+
+    // Show/hide reset button based on current level
+    function syncButtonVisibility() {
+      btn.hidden = state.level === 0;
+    }
+    syncButtonVisibility();
+    // Re-sync after each transition
+    new MutationObserver(syncButtonVisibility).observe(
+      canvas.querySelector('#playbook-center') || canvas,
+      { attributes: true, attributeFilter: ['data-state'] }
+    );
+  }
+
+  function setupMobileInterstitial() {
+    const interstitial = document.querySelector('[data-mobile-interstitial]');
+    if (!interstitial) return;
+
+    const mq = window.matchMedia('(max-width: 768px)');
+
+    function update() {
+      // Only re-show interstitial if it was never dismissed by user
+      if (interstitial.dataset.dismissed === 'true') return;
+      interstitial.hidden = !mq.matches;
+    }
+
+    update();
+
+    if (mq.addEventListener) mq.addEventListener('change', update);
+    else mq.addListener(update); // Safari fallback
+
+    const dismiss = interstitial.querySelector('[data-dismiss]');
+    if (dismiss) {
+      dismiss.addEventListener('click', function () {
+        interstitial.hidden = true;
+        interstitial.dataset.dismissed = 'true';
+      });
+    }
+  }
   function handlePopState(e) { /* Task A12 */ }
   function restoreFromHash(hash) { /* Task A12 */ }
 
