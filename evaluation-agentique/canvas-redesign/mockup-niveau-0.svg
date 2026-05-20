@@ -1,0 +1,517 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4000 3000" preserveAspectRatio="xMidYMid meet">
+  <!--
+    Mockup niveau 0 — Gruyère fractal + flèches d'attaque
+    Composition :
+      ▸ TITRE en haut
+      ▸ ATTAQUES (carmine) à gauche → flèches qui pointent vers le gruyère
+      ▸ DÉFENSES (gruyère central) : 4 trous-phases en haut + 3 bandes-niveaux en bas
+      ▸ OUTCOMES (vert/rouge) à droite : ce qui sort
+      ▸ HINT manuscrit en bas
+
+    Métaphore : modèle Reason (swiss cheese). Les attaques essaient de passer
+    à travers le fromage. Les trous sont les phases du playbook qu'on construit
+    pour les attraper. Les bandes sont les couches de défense empilées.
+
+    Affordance de zoom : numéros + icons + hint Caveat.
+    À chaque niveau on découvrira que les trous contiennent un mini-gruyère.
+  -->
+
+  <defs>
+    <!-- Markers pour flèches d'attaque -->
+    <marker id="arr-attack" viewBox="0 0 14 10" refX="13" refY="5"
+            markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 14 5 L 0 10 Z" fill="#b7332c"/>
+    </marker>
+    <!-- Marker fin pour pipeline des phases -->
+    <marker id="arr-seq" viewBox="0 0 10 8" refX="9" refY="4"
+            markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 4 L 0 8 Z" fill="#8a7448"/>
+    </marker>
+    <!-- Pattern de texture gruyère subtile -->
+    <pattern id="cheese-tex" patternUnits="userSpaceOnUse" width="60" height="60">
+      <rect width="60" height="60" fill="#f3e5c0"/>
+      <circle cx="15" cy="20" r="3" fill="#e5d3a8" opacity="0.5"/>
+      <circle cx="42" cy="38" r="2" fill="#e5d3a8" opacity="0.5"/>
+      <circle cx="28" cy="50" r="2.5" fill="#e5d3a8" opacity="0.4"/>
+    </pattern>
+    <!-- Soft drop shadow pour les trous (effet "perforé") -->
+    <filter id="hole-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
+      <feOffset dx="0" dy="2"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.4"/></feComponentTransfer>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       FOND PAPIER
+       ═══════════════════════════════════════════════════════════ -->
+  <rect width="4000" height="3000" fill="#faf8f3"/>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       TITRE
+       ═══════════════════════════════════════════════════════════ -->
+  <g id="title-block">
+    <text x="2000" y="120" text-anchor="middle"
+          font-family="Cambria, Georgia, serif" font-size="78" font-weight="500"
+          fill="#1a1a1a" letter-spacing="-0.02em">Évaluer un agent</text>
+    <text x="2000" y="182" text-anchor="middle"
+          font-family="Cambria, Georgia, serif" font-size="26" font-style="italic"
+          fill="#5a5a5a">Une trajectoire à instrumenter — modèle gruyère, défenses et attaques</text>
+    <line x1="1600" y1="220" x2="2400" y2="220" stroke="#b8582e" stroke-width="2"/>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       BANNIÈRES DE COLONNE (légende implicite)
+       ═══════════════════════════════════════════════════════════ -->
+  <g id="column-labels" font-family="Consolas, monospace" font-size="18"
+     letter-spacing="0.2em" font-weight="500">
+    <text x="500" y="320" text-anchor="middle" fill="#b7332c">ATTAQUES →</text>
+    <text x="2000" y="320" text-anchor="middle" fill="#8a7448">← DÉFENSES (gruyère) →</text>
+    <text x="3500" y="320" text-anchor="middle" fill="#4b9466">→ OUTCOMES</text>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       GAUCHE — 7 ATTAQUES
+       y centers : 460, 765, 1070, 1375, 1680, 1985, 2290 (305 step)
+       ═══════════════════════════════════════════════════════════ -->
+  <g id="attacks" font-family="Cambria, Georgia, serif">
+
+    <!-- ─── 1. Hallucination ─── -->
+    <g class="attack" data-attack="hallucination">
+      <!-- icon : nuage stylisé (line-art) -->
+      <g transform="translate(140, 410)" stroke="#b7332c" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M 10 35 Q 0 25 12 18 Q 8 5 28 6 Q 38 -4 52 8 Q 70 4 70 22 Q 80 28 70 38 Z"/>
+        <circle cx="60" cy="50" r="3" fill="#b7332c"/>
+      </g>
+      <text x="240" y="455" font-size="32" font-weight="500" fill="#1a1a1a">Hallucination</text>
+      <text x="240" y="485" font-size="18" font-style="italic" fill="#5a5a5a">générer du faux factuel</text>
+      <!-- Flèche d'attaque -->
+      <path d="M 560 460 C 760 450, 920 470, 1080 470" stroke="#b7332c" stroke-width="3"
+            fill="none" marker-end="url(#arr-attack)" opacity="0.85"/>
+    </g>
+
+    <!-- ─── 2. Prompt injection ─── -->
+    <g class="attack" data-attack="prompt-injection">
+      <!-- icon : serpent / arrow détournée -->
+      <g transform="translate(140, 720)" stroke="#b7332c" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M 8 30 Q 25 10 40 30 T 75 30"/>
+        <path d="M 65 24 L 75 30 L 65 36"/>
+        <circle cx="14" cy="30" r="3" fill="#b7332c"/>
+      </g>
+      <text x="240" y="760" font-size="32" font-weight="500" fill="#1a1a1a">Prompt injection</text>
+      <text x="240" y="790" font-size="18" font-style="italic" fill="#5a5a5a">instructions adversariales</text>
+      <path d="M 560 765 C 770 770, 920 760, 1080 770" stroke="#b7332c" stroke-width="3"
+            fill="none" marker-end="url(#arr-attack)" opacity="0.85"/>
+    </g>
+
+    <!-- ─── 3. Tool misuse ─── -->
+    <g class="attack" data-attack="tool-misuse">
+      <!-- icon : clé cassée -->
+      <g transform="translate(140, 1025)" stroke="#b7332c" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="18" cy="20" r="12"/>
+        <path d="M 30 20 L 50 32 M 50 32 L 70 32 L 70 48"/>
+        <line x1="55" y1="42" x2="62" y2="48" stroke-dasharray="2 3"/>
+      </g>
+      <text x="240" y="1065" font-size="32" font-weight="500" fill="#1a1a1a">Tool misuse</text>
+      <text x="240" y="1095" font-size="18" font-style="italic" fill="#5a5a5a">mauvais args, outil oublié</text>
+      <path d="M 560 1070 C 760 1080, 920 1070, 1080 1075" stroke="#b7332c" stroke-width="3"
+            fill="none" marker-end="url(#arr-attack)" opacity="0.85"/>
+    </g>
+
+    <!-- ─── 4. Context saturation ─── -->
+    <g class="attack" data-attack="context-saturation">
+      <!-- icon : tasse qui déborde -->
+      <g transform="translate(140, 1330)" stroke="#b7332c" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M 15 20 L 15 48 Q 15 56 23 56 L 53 56 Q 61 56 61 48 L 61 20 Z"/>
+        <path d="M 61 28 Q 75 28 75 38 Q 75 48 61 48"/>
+        <path d="M 20 12 L 24 22 M 38 8 L 38 18 M 56 12 L 52 22" stroke-width="2"/>
+      </g>
+      <text x="240" y="1370" font-size="32" font-weight="500" fill="#1a1a1a">Context saturation</text>
+      <text x="240" y="1400" font-size="18" font-style="italic" fill="#5a5a5a">perdre le fil sur long horizon</text>
+      <path d="M 560 1375 C 760 1380, 920 1370, 1080 1380" stroke="#b7332c" stroke-width="3"
+            fill="none" marker-end="url(#arr-attack)" opacity="0.85"/>
+    </g>
+
+    <!-- ─── 5. Reward hacking ─── -->
+    <g class="attack" data-attack="reward-hacking">
+      <!-- icon : cible cassée -->
+      <g transform="translate(140, 1635)" stroke="#b7332c" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="40" cy="30" r="22"/>
+        <circle cx="40" cy="30" r="13"/>
+        <circle cx="40" cy="30" r="4" fill="#b7332c"/>
+        <line x1="15" y1="55" x2="65" y2="5" stroke-dasharray="3 3"/>
+      </g>
+      <text x="240" y="1675" font-size="32" font-weight="500" fill="#1a1a1a">Reward hacking</text>
+      <text x="240" y="1705" font-size="18" font-style="italic" fill="#5a5a5a">sur-optimiser la métrique</text>
+      <path d="M 560 1680 C 770 1690, 920 1680, 1080 1685" stroke="#b7332c" stroke-width="3"
+            fill="none" marker-end="url(#arr-attack)" opacity="0.85"/>
+    </g>
+
+    <!-- ─── 6. Spec mismatch ─── -->
+    <g class="attack" data-attack="spec-mismatch">
+      <!-- icon : deux flèches divergentes -->
+      <g transform="translate(140, 1940)" stroke="#b7332c" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M 10 30 L 55 15 M 45 9 L 55 15 L 49 25"/>
+        <path d="M 10 30 L 55 45 M 49 39 L 55 45 L 45 51"/>
+      </g>
+      <text x="240" y="1980" font-size="32" font-weight="500" fill="#1a1a1a">Spec mismatch</text>
+      <text x="240" y="2010" font-size="18" font-style="italic" fill="#5a5a5a">faire ce qui marche, pas demandé</text>
+      <path d="M 560 1985 C 760 1990, 920 1980, 1080 1985" stroke="#b7332c" stroke-width="3"
+            fill="none" marker-end="url(#arr-attack)" opacity="0.85"/>
+    </g>
+
+    <!-- ─── 7. Latency drift ─── -->
+    <g class="attack" data-attack="latency-drift">
+      <!-- icon : escargot / horloge ralentie -->
+      <g transform="translate(140, 2245)" stroke="#b7332c" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="40" cy="30" r="22"/>
+        <line x1="40" y1="30" x2="40" y2="14"/>
+        <line x1="40" y1="30" x2="54" y2="30"/>
+        <path d="M 40 52 Q 30 60 24 56" stroke-width="2"/>
+      </g>
+      <text x="240" y="2285" font-size="32" font-weight="500" fill="#1a1a1a">Latency drift</text>
+      <text x="240" y="2315" font-size="18" font-style="italic" fill="#5a5a5a">devenir lent sans alerte</text>
+      <path d="M 560 2290 C 760 2300, 920 2290, 1080 2290" stroke="#b7332c" stroke-width="3"
+            fill="none" marker-end="url(#arr-attack)" opacity="0.85"/>
+    </g>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       CENTRE — LE GRUYÈRE (DÉFENSES)
+       Block central : x 1100 → 2900 (w=1800), y 360 → 2680 (h=2320)
+       ═══════════════════════════════════════════════════════════ -->
+  <g id="gruyere">
+
+    <!-- Corps du gruyère (texture + bord) -->
+    <path d="M 1140 380 Q 1100 380 1100 420 L 1100 2640 Q 1100 2680 1140 2680 L 2860 2680 Q 2900 2680 2900 2640 L 2900 420 Q 2900 380 2860 380 Z"
+          fill="url(#cheese-tex)" stroke="#8a7448" stroke-width="3"/>
+
+    <!-- Croûte légère sur le bord droit (effet 3D minimal) -->
+    <path d="M 2880 400 L 2880 2660" stroke="#a88b4d" stroke-width="2" opacity="0.4"/>
+
+    <!-- ─── Section haute : 4 PHASES (trous) ─── -->
+    <g id="phases-section">
+      <text x="2000" y="450" text-anchor="middle" font-family="Consolas, monospace"
+            font-size="22" font-weight="500" letter-spacing="0.22em" fill="#8a7448">
+        PHASES — INSTRUMENTATION DE LA TRAJECTOIRE
+      </text>
+      <text x="2000" y="490" text-anchor="middle" font-family="Cambria, Georgia, serif"
+            font-size="20" font-style="italic" fill="#5a5a5a">
+        4 moments-clés du playbook · trous percés au moment qui compte
+      </text>
+
+      <!-- 4 trous-phases alignés horizontalement
+           cy = 850, r = 220
+           cx : 1380, 1850, 2320, 2790  -->
+
+      <!-- Phase 1 : Collecte tasks (teal) -->
+      <g class="phase" data-node="P1">
+        <circle cx="1380" cy="850" r="220" fill="#faf8f3" stroke="#1f5560" stroke-width="6" filter="url(#hole-shadow)"/>
+        <!-- Numéro (gros, lit petit) -->
+        <text x="1380" y="780" text-anchor="middle" font-family="Cambria, Georgia, serif"
+              font-size="68" font-weight="600" fill="#1f5560">1</text>
+        <!-- Icon watermark : grain qui germe -->
+        <g transform="translate(1330, 800)" stroke="#1f5560" stroke-width="3" fill="none" opacity="0.22"
+           stroke-linecap="round" stroke-linejoin="round">
+          <ellipse cx="50" cy="65" rx="14" ry="22"/>
+          <path d="M 50 50 Q 50 30 65 22"/>
+          <path d="M 50 50 Q 50 35 38 30"/>
+        </g>
+        <!-- Label -->
+        <text x="1380" y="920" text-anchor="middle" font-family="Consolas, monospace"
+              font-size="20" font-weight="500" letter-spacing="0.1em" fill="#1f5560">COLLECTE TASKS</text>
+        <text x="1380" y="950" text-anchor="middle" font-family="Cambria, Georgia, serif"
+              font-size="22" font-style="italic" fill="#1a1a1a">démarrer · 20–50 tasks</text>
+        <text x="1380" y="980" text-anchor="middle" font-family="Consolas, monospace"
+              font-size="14" fill="#8a7448" opacity="0.7">S0 + S1</text>
+      </g>
+
+      <!-- Phase 2A : Cadrer (ocre) -->
+      <g class="phase" data-node="P2A">
+        <circle cx="1850" cy="850" r="220" fill="#faf8f3" stroke="#b58a2c" stroke-width="6" filter="url(#hole-shadow)"/>
+        <text x="1850" y="780" text-anchor="middle" font-family="Cambria, Georgia, serif"
+              font-size="56" font-weight="600" fill="#b58a2c">2A</text>
+        <!-- Icon watermark : cible -->
+        <g transform="translate(1800, 800)" stroke="#b58a2c" stroke-width="3" fill="none" opacity="0.22"
+           stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="50" cy="50" r="25"/>
+          <circle cx="50" cy="50" r="14"/>
+          <circle cx="50" cy="50" r="4" fill="#b58a2c" opacity="0.4"/>
+          <line x1="50" y1="20" x2="50" y2="80"/>
+          <line x1="20" y1="50" x2="80" y2="50"/>
+        </g>
+        <text x="1850" y="920" text-anchor="middle" font-family="Consolas, monospace"
+              font-size="20" font-weight="500" letter-spacing="0.1em" fill="#b58a2c">CADRER LES CAS</text>
+        <text x="1850" y="950" text-anchor="middle" font-family="Cambria, Georgia, serif"
+              font-size="22" font-style="italic" fill="#1a1a1a">non-ambiguïté · pass@k</text>
+        <text x="1850" y="980" text-anchor="middle" font-family="Consolas, monospace"
+              font-size="14" fill="#8a7448" opacity="0.7">S2 + S3</text>
+      </g>
+
+      <!-- Phase 2B : Harness & graders (ocre foncé) -->
+      <g class="phase" data-node="P2B">
+        <circle cx="2320" cy="850" r="220" fill="#faf8f3" stroke="#a07320" stroke-width="6" filter="url(#hole-shadow)"/>
+        <text x="2320" y="780" text-anchor="middle" font-family="Cambria, Georgia, serif"
+              font-size="56" font-weight="600" fill="#a07320">2B</text>
+        <!-- Icon watermark : engrenage + œil -->
+        <g transform="translate(2270, 800)" stroke="#a07320" stroke-width="3" fill="none" opacity="0.22"
+           stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="50" cy="50" r="20"/>
+          <g stroke-width="3">
+            <line x1="50" y1="22" x2="50" y2="32"/>
+            <line x1="50" y1="68" x2="50" y2="78"/>
+            <line x1="22" y1="50" x2="32" y2="50"/>
+            <line x1="68" y1="50" x2="78" y2="50"/>
+            <line x1="30" y1="30" x2="38" y2="38"/>
+            <line x1="62" y1="62" x2="70" y2="70"/>
+            <line x1="30" y1="70" x2="38" y2="62"/>
+            <line x1="62" y1="38" x2="70" y2="30"/>
+          </g>
+          <circle cx="50" cy="50" r="6"/>
+        </g>
+        <text x="2320" y="920" text-anchor="middle" font-family="Consolas, monospace"
+              font-size="20" font-weight="500" letter-spacing="0.1em" fill="#a07320">HARNESS &amp; GRADERS</text>
+        <text x="2320" y="950" text-anchor="middle" font-family="Cambria, Georgia, serif"
+              font-size="22" font-style="italic" fill="#1a1a1a">observabilité · juges</text>
+        <text x="2320" y="980" text-anchor="middle" font-family="Consolas, monospace"
+              font-size="14" fill="#8a7448" opacity="0.7">S4 + S5</text>
+      </g>
+
+      <!-- Phase 3 : Maintenance (carmine) -->
+      <g class="phase" data-node="P3">
+        <circle cx="2790" cy="850" r="220" fill="#faf8f3" stroke="#b7332c" stroke-width="6" filter="url(#hole-shadow)"/>
+        <text x="2790" y="780" text-anchor="middle" font-family="Cambria, Georgia, serif"
+              font-size="68" font-weight="600" fill="#b7332c">3</text>
+        <!-- Icon watermark : cycle / refresh -->
+        <g transform="translate(2740, 800)" stroke="#b7332c" stroke-width="3" fill="none" opacity="0.22"
+           stroke-linecap="round" stroke-linejoin="round">
+          <path d="M 25 50 Q 25 25 50 25 Q 70 25 75 45"/>
+          <path d="M 67 38 L 75 45 L 82 38"/>
+          <path d="M 75 50 Q 75 75 50 75 Q 30 75 25 55"/>
+          <path d="M 33 62 L 25 55 L 18 62"/>
+        </g>
+        <text x="2790" y="920" text-anchor="middle" font-family="Consolas, monospace"
+              font-size="20" font-weight="500" letter-spacing="0.1em" fill="#b7332c">MAINTENANCE</text>
+        <text x="2790" y="950" text-anchor="middle" font-family="Cambria, Georgia, serif"
+              font-size="22" font-style="italic" fill="#1a1a1a">transcripts · évolution</text>
+        <text x="2790" y="980" text-anchor="middle" font-family="Consolas, monospace"
+              font-size="14" fill="#8a7448" opacity="0.7">S6 + S7</text>
+      </g>
+
+      <!-- Flèches de séquence entre phases -->
+      <g stroke="#8a7448" stroke-width="2.5" fill="none" opacity="0.55">
+        <line x1="1605" y1="850" x2="1625" y2="850" marker-end="url(#arr-seq)"/>
+        <line x1="2075" y1="850" x2="2095" y2="850" marker-end="url(#arr-seq)"/>
+        <line x1="2545" y1="850" x2="2565" y2="850" marker-end="url(#arr-seq)"/>
+      </g>
+
+      <!-- Hint manuscrit : "même la matière entre les trous compte" -->
+      <text x="2000" y="1140" text-anchor="middle" font-family="Caveat, cursive"
+            font-size="30" fill="#b8582e" opacity="0.7" font-style="italic">
+        ↑ chaque trou contient un mini-gruyère — zoome ↑
+      </text>
+    </g>
+
+    <!-- ─── Séparateur entre phases et niveaux ─── -->
+    <line x1="1200" y1="1240" x2="2800" y2="1240" stroke="#a88b4d"
+          stroke-width="1.5" stroke-dasharray="6 5" opacity="0.55"/>
+    <text x="2000" y="1265" text-anchor="middle" font-family="Consolas, monospace"
+          font-size="14" letter-spacing="0.2em" fill="#a88b4d" opacity="0.7">
+      ↓ ET, EN ARRIÈRE-PLAN, L'EMPILEMENT DES COUCHES ↓
+    </text>
+
+    <!-- ─── Section basse : 3 NIVEAUX (bandes empilées) ─── -->
+    <g id="niveaux-section">
+      <text x="2000" y="1335" text-anchor="middle" font-family="Consolas, monospace"
+            font-size="22" font-weight="500" letter-spacing="0.22em" fill="#8a7448">
+        NIVEAUX DE DÉFENSE — L'EMPILEMENT
+      </text>
+      <text x="2000" y="1375" text-anchor="middle" font-family="Cambria, Georgia, serif"
+            font-size="20" font-style="italic" fill="#5a5a5a">
+        3 couches qui se complètent · aucune ne suffit seule
+      </text>
+
+      <!-- Bande Niveau 1 : Préventif (teal) -->
+      <g class="niveau" data-node="N1">
+        <rect x="1180" y="1450" width="1640" height="320" rx="8"
+              fill="#e8f0f1" stroke="#1f5560" stroke-width="4" filter="url(#hole-shadow)"/>
+        <!-- Trous de gruyère à l'intérieur de la bande (texture) -->
+        <g fill="#faf8f3">
+          <circle cx="1380" cy="1620" r="46"/>
+          <circle cx="1720" cy="1560" r="32"/>
+          <circle cx="2090" cy="1660" r="38"/>
+          <circle cx="2480" cy="1580" r="28"/>
+          <circle cx="2680" cy="1660" r="42"/>
+        </g>
+        <!-- Icon watermark : bouclier -->
+        <g transform="translate(1220, 1510)" stroke="#1f5560" stroke-width="3" fill="none" opacity="0.55"
+           stroke-linecap="round" stroke-linejoin="round">
+          <path d="M 40 5 L 75 18 L 75 50 Q 75 78 40 95 Q 5 78 5 50 L 5 18 Z"/>
+          <path d="M 25 50 L 36 62 L 60 35" stroke-width="4"/>
+        </g>
+        <!-- Label : numéro + nom -->
+        <text x="1340" y="1545" font-family="Cambria, Georgia, serif"
+              font-size="52" font-weight="600" fill="#1f5560">1</text>
+        <text x="1400" y="1545" font-family="Consolas, monospace"
+              font-size="22" letter-spacing="0.18em" font-weight="500" fill="#1f5560">PRÉVENTIF</text>
+        <text x="1400" y="1580" font-family="Cambria, Georgia, serif"
+              font-size="22" font-style="italic" fill="#1a1a1a">automated evals · production monitoring</text>
+        <text x="1400" y="1610" font-family="Consolas, monospace"
+              font-size="14" fill="#5a5a5a" opacity="0.8">C1 + C2 · CI/CD &amp; vérité terrain</text>
+      </g>
+
+      <!-- Bande Niveau 2 : Curatif (ocre) -->
+      <g class="niveau" data-node="N2">
+        <rect x="1180" y="1810" width="1640" height="320" rx="8"
+              fill="#f4eccc" stroke="#b58a2c" stroke-width="4" filter="url(#hole-shadow)"/>
+        <g fill="#faf8f3">
+          <circle cx="1400" cy="1980" r="42"/>
+          <circle cx="1740" cy="1920" r="36"/>
+          <circle cx="2110" cy="2010" r="32"/>
+          <circle cx="2480" cy="1940" r="40"/>
+          <circle cx="2700" cy="2020" r="30"/>
+        </g>
+        <!-- Icon watermark : pansement -->
+        <g transform="translate(1220, 1870)" stroke="#b58a2c" stroke-width="3" fill="none" opacity="0.55"
+           stroke-linecap="round" stroke-linejoin="round">
+          <rect x="14" y="36" width="55" height="28" rx="6" transform="rotate(-15 41 50)"/>
+          <line x1="32" y1="50" x2="50" y2="50" stroke="#b58a2c" stroke-width="2"
+                transform="rotate(-15 41 50)"/>
+          <line x1="41" y1="41" x2="41" y2="59" stroke="#b58a2c" stroke-width="2"
+                transform="rotate(-15 41 50)"/>
+        </g>
+        <text x="1340" y="1905" font-family="Cambria, Georgia, serif"
+              font-size="52" font-weight="600" fill="#b58a2c">2</text>
+        <text x="1400" y="1905" font-family="Consolas, monospace"
+              font-size="22" letter-spacing="0.18em" font-weight="500" fill="#b58a2c">CURATIF</text>
+        <text x="1400" y="1940" font-family="Cambria, Georgia, serif"
+              font-size="22" font-style="italic" fill="#1a1a1a">A/B testing · user feedback</text>
+        <text x="1400" y="1970" font-family="Consolas, monospace"
+              font-size="14" fill="#5a5a5a" opacity="0.8">C3 + C4 · outcome &amp; cas non-anticipés</text>
+      </g>
+
+      <!-- Bande Niveau 3 : Qualitatif (carmine) -->
+      <g class="niveau" data-node="N3">
+        <rect x="1180" y="2170" width="1640" height="320" rx="8"
+              fill="#f5dedb" stroke="#b7332c" stroke-width="4" filter="url(#hole-shadow)"/>
+        <g fill="#faf8f3">
+          <circle cx="1410" cy="2340" r="38"/>
+          <circle cx="1770" cy="2280" r="42"/>
+          <circle cx="2130" cy="2370" r="34"/>
+          <circle cx="2470" cy="2300" r="36"/>
+          <circle cx="2720" cy="2380" r="32"/>
+        </g>
+        <!-- Icon watermark : œil humain -->
+        <g transform="translate(1220, 2230)" stroke="#b7332c" stroke-width="3" fill="none" opacity="0.55"
+           stroke-linecap="round" stroke-linejoin="round">
+          <path d="M 5 50 Q 40 18 75 50 Q 40 82 5 50 Z"/>
+          <circle cx="40" cy="50" r="14"/>
+          <circle cx="40" cy="50" r="5" fill="#b7332c" opacity="0.6"/>
+        </g>
+        <text x="1340" y="2265" font-family="Cambria, Georgia, serif"
+              font-size="52" font-weight="600" fill="#b7332c">3</text>
+        <text x="1400" y="2265" font-family="Consolas, monospace"
+              font-size="22" letter-spacing="0.18em" font-weight="500" fill="#b7332c">QUALITATIF</text>
+        <text x="1400" y="2300" font-family="Cambria, Georgia, serif"
+              font-size="22" font-style="italic" fill="#1a1a1a">manual transcript · human studies</text>
+        <text x="1400" y="2330" font-family="Consolas, monospace"
+              font-size="14" fill="#5a5a5a" opacity="0.8">C5 + C6 · calibration humaine</text>
+      </g>
+    </g>
+
+    <!-- ─── Légende discrète sous le gruyère ─── -->
+    <text x="2000" y="2560" text-anchor="middle" font-family="Cambria, Georgia, serif"
+          font-style="italic" font-size="22" fill="#5a5a5a">
+      « Aucune méthode unique ne suffit. Chaque couche a ses trous ;
+    </text>
+    <text x="2000" y="2590" text-anchor="middle" font-family="Cambria, Georgia, serif"
+          font-style="italic" font-size="22" fill="#5a5a5a">
+      l'empilement seul produit une couverture acceptable. »
+    </text>
+    <text x="2000" y="2625" text-anchor="middle" font-family="Consolas, monospace"
+          font-size="13" letter-spacing="0.2em" fill="#8a7448">
+      — REASON · MODÈLE GRUYÈRE SUISSE
+    </text>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       DROITE — OUTCOMES
+       ═══════════════════════════════════════════════════════════ -->
+  <g id="outcomes" font-family="Cambria, Georgia, serif">
+
+    <!-- Outcome positif (haut) : agent fiable -->
+    <g class="outcome" data-outcome="success">
+      <!-- arc d'entrée depuis le gruyère vers la zone success -->
+      <path d="M 2900 850 C 3100 750, 3250 700, 3450 700" stroke="#4b9466"
+            stroke-width="3" fill="none" opacity="0.6" marker-end="url(#arr-attack)"/>
+
+      <g transform="translate(3380, 600)" stroke="#4b9466" stroke-width="6" fill="none"
+         stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="80" cy="80" r="75"/>
+        <path d="M 38 80 L 70 110 L 130 50" stroke-width="9"/>
+      </g>
+      <text x="3460" y="820" text-anchor="middle" font-size="34" font-weight="500" fill="#1a1a1a">
+        agent fiable
+      </text>
+      <text x="3460" y="855" text-anchor="middle" font-size="18" font-style="italic" fill="#5a5a5a">
+        attaque bloquée
+      </text>
+      <text x="3460" y="885" text-anchor="middle" font-family="Consolas, monospace"
+            font-size="14" fill="#4b9466" letter-spacing="0.12em">DEFENSE OK</text>
+    </g>
+
+    <!-- Séparation -->
+    <line x1="3200" y1="1080" x2="3720" y2="1080" stroke="#a88b4d"
+          stroke-dasharray="4 4" stroke-width="1.5" opacity="0.5"/>
+
+    <!-- Outcome négatif (bas) : incident -->
+    <g class="outcome" data-outcome="incident">
+      <!-- arc d'entrée depuis le gruyère vers la zone incident -->
+      <path d="M 2900 1700 C 3100 1900, 3250 2000, 3450 2000" stroke="#b7332c"
+            stroke-width="3" fill="none" opacity="0.6" marker-end="url(#arr-attack)"/>
+
+      <g transform="translate(3380, 1900)" stroke="#b7332c" stroke-width="6" fill="none"
+         stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="80" cy="80" r="75"/>
+        <line x1="40" y1="40" x2="120" y2="120" stroke-width="9"/>
+        <line x1="120" y1="40" x2="40" y2="120" stroke-width="9"/>
+      </g>
+      <text x="3460" y="2120" text-anchor="middle" font-size="34" font-weight="500" fill="#1a1a1a">
+        incident
+      </text>
+      <text x="3460" y="2155" text-anchor="middle" font-size="18" font-style="italic" fill="#5a5a5a">
+        trous alignés · attaque passée
+      </text>
+      <text x="3460" y="2185" text-anchor="middle" font-family="Consolas, monospace"
+            font-size="14" fill="#b7332c" letter-spacing="0.12em">DEFENSE BROKEN</text>
+    </g>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       FOOTER — HINT D'INTERACTION
+       ═══════════════════════════════════════════════════════════ -->
+  <g id="footer">
+    <line x1="200" y1="2780" x2="3800" y2="2780" stroke="#e5d3a8" stroke-width="2"/>
+
+    <!-- Hint d'usage manuscrit -->
+    <text x="2000" y="2850" text-anchor="middle" font-family="Caveat, cursive"
+          font-size="42" fill="#b8582e">
+      ↓ Clique dans un trou (défense) OU sur une flèche (attaque) pour zoomer ↓
+    </text>
+
+    <text x="2000" y="2895" text-anchor="middle" font-family="Cambria, Georgia, serif"
+          font-size="18" font-style="italic" fill="#5a5a5a">
+      à chaque niveau, le contenu se révèle — gruyère fractal · semantic zoom · Échap pour revenir
+    </text>
+
+    <!-- Petites légendes coin -->
+    <text x="100" y="2960" font-family="Consolas, monospace" font-size="13"
+          fill="#8a7448" opacity="0.7" letter-spacing="0.1em">
+      mathieugug.github.io/evaluation-agentique · étude 08 · v.20260520
+    </text>
+    <text x="3900" y="2960" text-anchor="end" font-family="Cambria, Georgia, serif"
+          font-style="italic" font-size="14" fill="#b8582e">MG</text>
+  </g>
+</svg>
