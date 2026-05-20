@@ -233,6 +233,16 @@
     }
     main .figure--portrait .figure-portrait-link { display: block; width: 100%; border: 1px solid var(--rule); background: var(--paper); border-radius: 2px; cursor: zoom-in; transition: box-shadow 220ms ease, border-color 220ms ease; overflow: hidden; }
     main .figure--portrait .figure-portrait-link:hover { box-shadow: 0 8px 28px rgba(30,30,42,0.14); border-color: var(--accent); }
+    /* Sigil MG remonté sur les A4 portrait (au-dessus du header SVG, pas sur le titre) */
+    main .figure--portrait .schema-sigil {
+      top: 10px !important;
+      right: 14px !important;
+      width: 30px !important; height: 30px !important;
+      opacity: 0.60 !important;
+    }
+    @media (max-width: 640px) {
+      main .figure--portrait .schema-sigil { top: 8px !important; right: 10px !important; width: 24px !important; height: 24px !important; }
+    }
     main .figure--portrait img { display: block; width: 100%; height: auto; }
     main .figure--portrait .figure-caption { max-width: 100%; margin: 14px auto 0; padding: 0 8px; text-align: center; }
 
@@ -375,7 +385,7 @@
           <a class="figure-portrait-link" href="images/20260519-00-exec-sum-a4.svg" target="_blank" rel="noopener" title="Ouvrir l'infographie A4 en taille réelle / pour impression">
             <img src="images/20260519-00-exec-sum-a4.svg" alt="Infographie A4 — IA pour la data sur GCP, cinq messages-clés en synthèse visuelle" loading="lazy">
           </a>
-          <figcaption class="figure-caption">Synthèse visuelle A4 — cinq messages-clés du dossier, en un seul coup d'œil. Cliquer pour ouvrir en plein écran et imprimer.</figcaption>
+          <figcaption class="figure-caption"><a class="anchor" href="#fig-00" title="Lien direct vers cette infographie">¶</a>Synthèse visuelle A4 — cinq messages-clés du dossier, en un seul coup d'œil. Cliquer pour ouvrir en plein écran et imprimer.</figcaption>
         </figure>
       </section>
 
@@ -2637,13 +2647,19 @@
     <button id="sources-expand-btn" class="sidebar-edge-toggle" type="button" aria-label="Afficher les sources" title="Afficher les sources" aria-expanded="false" hidden>‹</button>
   </div>
 
-  <div id="zoom-overlay" hidden>
-    <div id="zoom-stage"><div id="zoom-content"></div></div>
-    <div class="zoom-controls">
-      <button class="zoom-close" type="button">Fermer ✕</button>
-      <button class="zoom-in" type="button">+</button>
-      <button class="zoom-out" type="button">−</button>
-      <button class="zoom-reset" type="button">Reset</button>
+  <div id="zoom-overlay" hidden role="dialog" aria-modal="true" aria-label="Schéma agrandi">
+    <div id="zoom-header">
+      <span id="zoom-caption"></span>
+      <div class="zoom-controls">
+        <button class="zoom-out" type="button" aria-label="Dézoomer">−</button>
+        <button class="zoom-reset" type="button" aria-label="Réinitialiser">Reset</button>
+        <button class="zoom-in" type="button" aria-label="Zoomer">+</button>
+        <button class="zoom-close" type="button" aria-label="Fermer">×</button>
+      </div>
+    </div>
+    <div id="zoom-stage" tabindex="-1">
+      <div id="zoom-content"></div>
+      <div id="zoom-hint">molette / pinch pour zoomer · clic-glisser pour déplacer · Esc pour fermer</div>
     </div>
   </div>
 
@@ -3083,28 +3099,13 @@
       return svg;
     }
     async function openCalloutZoom(src, caption) {
-      const { overlay, content, captionEl } = getOverlayParts();
-      if (!overlay || !content) {
-        window.open(src, '_blank', 'noopener');
-        return;
-      }
       try {
         const svgSrc = await fetchSvg(src);
-        const clone = svgSrc.cloneNode(true);
-        const vb = clone.viewBox?.baseVal;
-        const w = (vb && vb.width)  || 1200;
-        const h = (vb && vb.height) || 800;
-        clone.setAttribute('width',  w);
-        clone.setAttribute('height', h);
-        clone.style.width  = w + 'px';
-        clone.style.height = h + 'px';
-        content.innerHTML = '';
-        content.appendChild(clone);
-        if (captionEl) captionEl.textContent = caption || '';
-        overlay.hidden = false;
-        document.body.style.overflow = 'hidden';
-        // Trigger reset/fit via reset button click (handled by dossier-app.js)
-        overlay.querySelector('.zoom-reset')?.click();
+        if (window.__dossierOpenZoom) {
+          window.__dossierOpenZoom(svgSrc, caption);
+        } else {
+          window.open(src, '_blank', 'noopener');
+        }
       } catch (err) {
         console.warn('[callout zoom] fetch failed, fallback open in new tab', err);
         window.open(src, '_blank', 'noopener');

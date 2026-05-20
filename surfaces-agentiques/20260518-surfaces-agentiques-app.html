@@ -259,6 +259,16 @@
     main .figure--portrait .figure-portrait-link:hover { box-shadow: 0 8px 28px rgba(30,30,42,0.14); border-color: var(--accent); }
     main .figure--portrait img { display: block; width: 100%; height: auto; }
     main .figure--portrait .figure-caption { max-width: 100%; margin: 14px auto 0; padding: 0 8px; text-align: center; }
+    /* Sigil MG remonté sur les A4 portrait (au-dessus du header SVG, pas sur le titre) */
+    main .figure--portrait .schema-sigil {
+      top: 10px !important;
+      right: 14px !important;
+      width: 30px !important; height: 30px !important;
+      opacity: 0.60 !important;
+    }
+    @media (max-width: 640px) {
+      main .figure--portrait .schema-sigil { top: 8px !important; right: 10px !important; width: 24px !important; height: 24px !important; }
+    }
   </style>
 </head>
 <body>
@@ -322,7 +332,7 @@
             <a class="figure-portrait-link" href="images/20260518-00-exec-sum-a4.svg" target="_blank" rel="noopener" title="Ouvrir l'infographie A4 en taille réelle / pour impression">
               <img src="images/20260518-00-exec-sum-a4.svg" alt="Infographie A4 — Du chatbot au copilot on-behalf-of (synthèse visuelle surfaces agentiques)" loading="lazy">
             </a>
-            <figcaption class="figure-caption">Synthèse visuelle A4 — cinq clés du dossier, en un seul coup d'œil. Cliquer pour ouvrir en plein écran et imprimer.</figcaption>
+            <figcaption class="figure-caption"><a class="anchor" href="#fig-00" title="Lien direct vers cette infographie">¶</a>Synthèse visuelle A4 — cinq clés du dossier, en un seul coup d'œil. Cliquer pour ouvrir en plein écran et imprimer.</figcaption>
           </figure>
           <hr style="border:none;border-top:1px solid var(--rule);margin:3rem 0;">
         </section>
@@ -2117,13 +2127,19 @@ RunFinishedEvent(...)</code></pre>
     <button id="sources-expand-btn" class="sidebar-edge-toggle" type="button" aria-label="Afficher les sources" title="Afficher les sources" aria-expanded="false" hidden>‹</button>
   </div>
 
-  <div id="zoom-overlay" hidden>
-    <div id="zoom-stage"><div id="zoom-content"></div></div>
-    <div class="zoom-controls">
-      <button class="zoom-close" type="button">Fermer ✕</button>
-      <button class="zoom-in" type="button">+</button>
-      <button class="zoom-out" type="button">−</button>
-      <button class="zoom-reset" type="button">Reset</button>
+  <div id="zoom-overlay" hidden role="dialog" aria-modal="true" aria-label="Schéma agrandi">
+    <div id="zoom-header">
+      <span id="zoom-caption"></span>
+      <div class="zoom-controls">
+        <button class="zoom-out" type="button" aria-label="Dézoomer">−</button>
+        <button class="zoom-reset" type="button" aria-label="Réinitialiser">Reset</button>
+        <button class="zoom-in" type="button" aria-label="Zoomer">+</button>
+        <button class="zoom-close" type="button" aria-label="Fermer">×</button>
+      </div>
+    </div>
+    <div id="zoom-stage" tabindex="-1">
+      <div id="zoom-content"></div>
+      <div id="zoom-hint">molette / pinch pour zoomer · clic-glisser pour déplacer · Esc pour fermer</div>
     </div>
   </div>
 
@@ -2394,5 +2410,42 @@ RunFinishedEvent(...)</code></pre>
   window.SCHEMAS = SCHEMAS;
   </script>
   <script src="/assets/dossier-app.js" defer></script>
+<script>
+// Figure portrait (A4 exec sum) — click → modal zoom dans la page (réutilise #zoom-overlay)
+(function setupFigurePortraitZoom() {
+  const svgCache = new Map();
+  async function fetchSvg(src) {
+    if (svgCache.has(src)) return svgCache.get(src);
+    const res = await fetch(src);
+    const txt = await res.text();
+    const svg = new DOMParser().parseFromString(txt, 'image/svg+xml').documentElement;
+    svgCache.set(src, svg);
+    return svg;
+  }
+  async function openZoom(src, caption) {
+    try {
+      const svgSrc = await fetchSvg(src);
+      if (window.__dossierOpenZoom) {
+        window.__dossierOpenZoom(svgSrc, caption);
+      } else {
+        window.open(src, '_blank', 'noopener');
+      }
+    } catch (err) {
+      console.warn('[portrait zoom] fetch failed, fallback open in new tab', err);
+      window.open(src, '_blank', 'noopener');
+    }
+  }
+  document.querySelectorAll('a.figure-portrait-link').forEach((a) => {
+    a.addEventListener('click', (e) => {
+      const img = a.querySelector('img');
+      const src = img?.currentSrc || img?.src || a.getAttribute('href');
+      const alt = img?.getAttribute('alt') || '';
+      if (!src) return;
+      e.preventDefault();
+      openZoom(src, alt);
+    });
+  });
+})();
+</script>
 </body>
 </html>

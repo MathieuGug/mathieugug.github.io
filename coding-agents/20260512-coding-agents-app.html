@@ -445,6 +445,16 @@
     main .figure--portrait .figure-portrait-link:hover { box-shadow: 0 8px 28px rgba(30,30,42,0.14); border-color: var(--accent); }
     main .figure--portrait img { display: block; width: 100%; height: auto; }
     main .figure--portrait .figure-caption { max-width: 100%; margin: 14px auto 0; padding: 0 8px; text-align: center; }
+    /* Sigil MG remonté sur les A4 portrait (au-dessus du header SVG, pas sur le titre) */
+    main .figure--portrait .schema-sigil {
+      top: 10px !important;
+      right: 14px !important;
+      width: 30px !important; height: 30px !important;
+      opacity: 0.60 !important;
+    }
+    @media (max-width: 640px) {
+      main .figure--portrait .schema-sigil { top: 8px !important; right: 10px !important; width: 24px !important; height: 24px !important; }
+    }
   </style>
 </head>
 <body>
@@ -500,7 +510,7 @@
   <a class="figure-portrait-link" href="images/20260512-00-exec-sum-a4.svg" target="_blank" rel="noopener" title="Ouvrir l'infographie A4 en taille réelle / pour impression">
     <img src="images/20260512-00-exec-sum-a4.svg" alt="Infographie A4 — Coding agents 2026, cinq messages-clés en synthèse visuelle" loading="lazy">
   </a>
-  <figcaption class="figure-caption">Synthèse visuelle A4 — cinq messages-clés du dossier, en un seul coup d'œil. Cliquer pour ouvrir en plein écran et imprimer.</figcaption>
+  <figcaption class="figure-caption"><a class="anchor" href="#fig-00" title="Lien direct vers cette infographie">¶</a>Synthèse visuelle A4 — cinq messages-clés du dossier, en un seul coup d'œil. Cliquer pour ouvrir en plein écran et imprimer.</figcaption>
 </figure>
 
 <h2 id="def">§1. Coding agent : définition opérationnelle</h2>
@@ -2819,24 +2829,13 @@ window.SCHEMAS = SCHEMAS;
     return svg;
   }
   async function openZoom(src, caption) {
-    const overlay = document.getElementById('zoom-overlay');
-    const content = document.getElementById('zoom-content');
-    const captionEl = document.getElementById('zoom-caption');
-    if (!overlay || !content) { window.open(src, '_blank', 'noopener'); return; }
     try {
       const svgSrc = await fetchSvg(src);
-      const clone = svgSrc.cloneNode(true);
-      const vb = clone.viewBox?.baseVal;
-      const w = (vb && vb.width)  || 1200;
-      const h = (vb && vb.height) || 800;
-      clone.setAttribute('width', w); clone.setAttribute('height', h);
-      clone.style.width = w + 'px';   clone.style.height = h + 'px';
-      content.innerHTML = '';
-      content.appendChild(clone);
-      if (captionEl) captionEl.textContent = caption || '';
-      overlay.hidden = false;
-      document.body.style.overflow = 'hidden';
-      overlay.querySelector('.zoom-reset')?.click();
+      if (window.__dossierOpenZoom) {
+        window.__dossierOpenZoom(svgSrc, caption);
+      } else {
+        window.open(src, '_blank', 'noopener');
+      }
     } catch (err) {
       console.warn('[portrait zoom] fetch failed, fallback open in new tab', err);
       window.open(src, '_blank', 'noopener');
