@@ -62,6 +62,7 @@
 
   function setLevelState(level, node) {
     state.level = level;
+    canvas.setAttribute('data-level', String(level));
     state.node = node;
 
     targets.forEach(function (t) {
