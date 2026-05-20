@@ -46,21 +46,6 @@ Ajouter ~4 px de respiration au-delà du périmètre si la forme a un halo ou un
 
 Centrer la flèche sur le **milieu horizontal** de la boîte cible, pas sur une position arbitraire à l'intérieur. Pour une boîte `x=80, width=320`, viser `x=240`.
 
-### Annotations manuscrites (`class="hand"`, Caveat) — proximité de la cible
-
-Les annotations « stylo feutre » (Caveat 20–22pt 700, `fill` carmin `#a83e55`, légère `rotate(-3 …)`) **doivent rester visuellement collées à l'élément qu'elles commentent**. Le contrat n'est pas le même que pour une flèche structurelle : le geste manuscrit lit comme un commentaire personnel dans la marge, donc une flèche longue et courbée qui traverse un grand vide blanc ressemble à un texte orphelin qui pointe au hasard.
-
-**Règles** :
-- **Proximité visuelle de la cible — horizontale ET verticale**. La distance euclidienne (« à vol d'oiseau ») entre le centre du texte manuscrit et le centre de la cible doit rester sous **~150 px** en unités SVG. Au-delà, la flèche se transforme en grand sweep qui traverse la page et ne lit plus comme un commentaire de marge, mais comme un lien structurel. Une annotation placée au coin opposé du bloc trahit une mauvaise place dans le flux.
-- **Position dans le flux** : l'annotation se loge dans le « blanc résiduel » du bloc qu'elle commente, **alignée latéralement** avec la cible — souvent directement sous le sous-titre punchline si celui-ci est en colonne droite, ou directement sous la box principale si le texte commenté est à gauche. Ne pas la coller à l'autre extrémité horizontale du bloc et compter sur la flèche pour traverser. Ne pas non plus la pousser dans le blanc du bloc suivant (coincée juste au-dessus du `05` par ex.).
-- **Départ de la flèche** : `marker-end` `arr-hand` (forme « plume » asymétrique), origine au-delà de l'ellipsis `…` du texte manuscrit (≈ 10–15 px après le dernier glyphe), pas depuis le milieu du texte. Le geste lit comme la continuité de la phrase manuscrite : l'ellipsis devient le départ du stylo.
-- **Arrivée de la flèche** : laisser **15–20 px** de blanc avant le bord gauche du texte cible (équivalent du « blanc visible » des flèches structurelles, ajusté pour le marker `arr-hand` plus large).
-- **Direction de la flèche** : pas de contrainte rigide — peut aller up-right (texte à gauche de la cible) ou up-left (texte à droite). Ce qui compte, c'est la **courbure douce** : un seul `C` (bézier cubique), **pas plus de ~30 px de déviation** par rapport au segment droit. Une grande courbe `M…C…L…` qui zigzague trahit qu'on essaie de combler une distance qui devrait être réduite, pas chorégraphiée.
-
-**Anti-pattern observé (corrigé 2026-05-20 sur `evaluation-agentique` exec sum)** : annotation TLDR-pointer `si tu ne retiens qu'UNE chose…` placée à `x=90 y=985` (bord gauche du bloc, blanc résiduel sous les bars du gruyère) alors que sa cible « couvre les angles morts. » était à `x=510 y=910` (colonne droite du bloc) — distance euclidienne ~480 px, arrow path `M 365 968 C 420 952, 460 938, 490 924 L 510 916` (deux segments dont un quasi rectiligne en fin) qui traversait tout le bloc. Visuellement le commentaire flottait sans ancrage à droite. Fix : repositionner à `x=270 y=990` — directement sous la colonne punchline, distance ramenée à ~270 px, arrow simplifié `M 600 970 C 578 952, 545 935, 510 920` (un seul bézier, courbure douce, ~60 px de hauteur de courbe).
-
-**Vérification rapide** : si on doit faire la chasse à l'arrow path pour comprendre où il pointe, c'est que la cible est trop loin. Réduire la distance avant de raffiner la courbe.
-
 ## 2. Texte interne aux SVG
 
 ### Boîtes `<rect>` qui enveloppent du texte — la hauteur doit contenir TOUT le texte
@@ -240,7 +225,6 @@ La proba est une **estimation éditoriale** ; elle doit suivre les pivots de la 
 ## Quick checklist avant de pusher un schéma
 
 - [ ] Flèches : blanc de 12–18 px avant la cible, origine sur le périmètre des cercles/hubs, centrées horizontalement sur la boîte cible
-- [ ] Annotations manuscrites (`class="hand"`) : distance euclidienne à la cible < ~150 px, alignée latéralement avec la cible, départ après l'ellipsis du texte, courbure douce un seul bézier
 - [ ] `<rect>` : height englobe tout le texte interne (recompter `y_dernier_texte + ~20 px`)
 - [ ] `<text>` long : splitté à la main si > `W - 40` (cf. table px/char)
 - [ ] Bouton zoom `⛶` présent et fonctionnel
