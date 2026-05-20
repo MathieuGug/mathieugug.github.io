@@ -69,50 +69,45 @@ Choix assumé : extraction préemptive plutôt qu'inline-puis-extraction. Raison
 
 - **viewBox** : `0 0 5000 3500` (ratio 1.428, A0 ≈ 1.414)
 - **Centre** (translate 1900, 1350) : le SVG playbook+gruyère existant à sa taille native 1200×800
-- **Autour** : 14 leaves "ghostées" — opacity 0.15, labels masqués
-  - 8 leaves au-dessus du playbook, alignées sur les 8 step boxes, connectées par une fine ligne verticale
-  - 6 leaves en-dessous, alignées sur les 6 cheese layers, connectées par une fine ligne verticale
+- **Autour** : **7 leaves "ghostées"** — opacity 0.15, labels masqués. Chaque leaf **regroupe 2 cards** du playbook qui partagent une phase ou un niveau de défense (pattern combined-modal des slideshows récents)
+  - 4 leaves au-dessus du playbook, alignées sur les 4 phases (chaque leaf couvre 2 step boxes)
+  - 3 leaves en-dessous, alignées sur les 3 niveaux de défense (chaque leaf couvre 2 cheese layers)
+- **Connecteurs** : chaque leaf est reliée aux 2 cards parentes par 2 fines lignes
 - **Annotation manuscrite** Caveat font discrète au démarrage : *"Cliquer pour zoomer · Échap pour revenir"*. Disparaît au premier zoom.
 
-### Niveau 1 — zone (zoom sur une étape/couche)
+### Niveau 1 — zone (zoom sur une phase/niveau)
 
-- **Trigger** : clic ou tap sur une step box ou cheese layer
-- **Cible viewBox** : bbox(parent + son leaf + ~200 px de marge), calculée à partir des positions connues
-- **LOD** : le leaf cible passe à opacity 1, le playbook central à opacity 0.7, les autres leaves restent à 0.15
-- **Lisible à ce niveau** : titre du leaf + 2-3 bullets clés
-- **Sortie** : clic sur le leaf focalisé → niveau 2 ; Échap → retour niveau 0
+- **Trigger** : clic ou tap sur n'importe laquelle des 2 cards parentes (e.g. clic step-2 OU step-3 → ouvre la leaf L2)
+- **Cible viewBox** : bbox(union des 2 parents + leaf + ~200 px de marge)
+- **LOD** : la leaf cible passe à opacity 1, le playbook central à opacity 0.7, les autres leaves restent à 0.15
+- **Lisible à ce niveau** : titre de la leaf (`PHASE 1 · COLLECTE TASKS` etc.) + 2-3 bullets clés par sous-card
+- **Sortie** : clic sur la leaf focalisée → niveau 2 ; Échap → retour niveau 0
 
-### Niveau 2 — leaf (drill-down sur le schéma technique)
+### Niveau 2 — leaf (drill-down sur les schémas techniques)
 
-- **Trigger** : clic ou tap sur le leaf déjà focalisé au niveau 1
+- **Trigger** : clic ou tap sur la leaf déjà focalisée au niveau 1
 - **Cible viewBox** : `data-leaf-viewbox` lu directement depuis le `<g>` du leaf
-- **Contenu** : le schéma existant du dossier, inliné comme `<g>` nested
-- **LOD** : seul ce leaf à opacity 1, tout le reste à 0.05 (presque invisible)
+- **Contenu** : **2 schémas existants juxtaposés** (côte à côte ou empilés selon la place), composition statique — pas de sous-zoom 2.5
+- **LOD** : seule cette leaf à opacity 1, tout le reste à 0.05 (presque invisible)
 - **Sortie** : Échap → retour niveau 1 ; clic fond → retour niveau 0
 
-### Mapping leaf → schéma existant
+### Mapping leaf → cards & schémas existants
 
-| Node | Schéma source | Type |
-|---|---|---|
-| step-0 *démarrer tôt* | extrait 02-anatomie-evaluation (zone "20-50 tasks") | crop |
-| step-1 *manuel d'abord* | extrait 02-anatomie-evaluation (zone "sources") | crop |
-| step-2 *non ambiguïté* | 04-pyramide-metriques (focus pass@k vs pass^k) | inline |
-| step-3 *équilibre* | extrait 06bis-testcase-formula | inline |
-| step-4 *harness stable* | 07-observabilite-rca | inline |
-| step-5 *graders* | 03-taxonomie-graders + 05-llm-as-judge | inline (deux SVG juxtaposés) |
-| step-6 *lire transcripts* | 07-observabilite-rca (focus trace) | crop |
-| step-7 *saturation* | extrait 01-evolution-paradigmes | crop |
-| cheese-1 *automated* | 08-frameworks-matrice | inline |
-| cheese-2 *production monitoring* | 07-observabilite-rca (focus prod) | crop |
-| cheese-3 *A/B testing* | 09-couts-goulots | inline |
-| cheese-4 *user feedback* | 06-user-simulation | inline |
-| cheese-5 *manual transcript* | 07-observabilite-rca (angle review humain) | crop |
-| cheese-6 *human studies* | 05-llm-as-judge (focus calibration) | crop |
+| Leaf | Cards groupées | Eyebrow | Titre | Schémas réutilisés |
+|---|---|---|---|---|
+| **L1** | step-0 + step-1 | `PHASE 1 · COLLECTE TASKS` | Anatomie & sources de tasks | 02-anatomie-evaluation (panorama complet) |
+| **L2** | step-2 + step-3 | `PHASE 2A · CADRER LES CAS` | Pass@k & formula TestCase | 04-pyramide-metriques + 06bis-testcase-formula |
+| **L3** | step-4 + step-5 | `PHASE 2B · HARNESS & GRADERS` | Observabilité + graders | 07-observabilite-rca + 03-taxonomie-graders + 05-llm-as-judge |
+| **L4** | step-6 + step-7 | `PHASE 3 · MAINTENANCE` | Transcripts & évolution | 07 (focus trace) + 01-evolution-paradigmes |
+| **L5** | cheese-1 + cheese-2 | `NIVEAU 1 · PRÉVENTIF` | Frameworks + monitoring | 08-frameworks-matrice + 07 (focus prod) |
+| **L6** | cheese-3 + cheese-4 | `NIVEAU 2 · CURATIF` | Coûts & simulation utilisateur | 09-couts-goulots + 06-user-simulation |
+| **L7** | cheese-5 + cheese-6 | `NIVEAU 3 · QUALITATIF` | Review humain & calibration LAJ | 07 (review humain) + 05 (calibration) |
 
-**"Inline"** = SVG complet copié dans le canvas comme `<g>` avec translate dans son rectangle.
-**"Crop"** = SVG existant copié mais avec un `viewBox` interne qui ne montre qu'une portion (clip-path éventuel).
+**Couleurs** : chaque leaf reprend la couleur de phase/niveau du playbook source — L1/L5 en teal `#1F5560`, L2/L3/L6 en ocre `#B58A2C`, L4/L7 en carmine `#B7332C`. La cohérence chromatique fait le lien visuel entre le centre et ses leaves.
 
-Trois schémas (07-observabilite-rca, 05-llm-as-judge, 02-anatomie-evaluation) sont réutilisés 2-4 fois avec des cadrages différents — réutilisation efficiente, pas de redessin.
+**Inline** : chaque schéma source est copié intégralement dans la leaf comme `<g>` nested avec `transform="translate(...) scale(...)"`. Les ids internes (markers, gradients) sont préfixés `L1-`, `L2-` etc. pour éviter les collisions.
+
+**Réutilisations efficientes** : 07-observabilite-rca apparaît dans 4 leaves (L3, L4, L5, L7) avec des `clipPath` différents pour cadrer la portion pertinente. 05-llm-as-judge apparaît dans L3 et L7. Pas de redessin de schémas techniques.
 
 ## Mécanique de zoom
 
@@ -135,11 +130,12 @@ Trois schémas (07-observabilite-rca, 05-llm-as-judge, 02-anatomie-evaluation) s
 </svg>
 ```
 
-Chaque `.leaf` porte :
-- `data-node` : identifiant (step-0..7, cheese-1..6)
-- `data-parent-bbox` : `x,y,w,h` de la step/cheese box parente (référentiel SVG racine)
+Chaque `.zoom-target` porte :
+- `data-node` : identifiant de la leaf (L1..L7)
+- `data-cards` : liste CSV des cards parentes qui ouvrent cette leaf (ex. `"step-0,step-1"`, `"cheese-3,cheese-4"`)
+- `data-parent-bbox` : `x,y,w,h` de l'**union** des 2 cards parentes (référentiel SVG racine)
 - `data-leaf-viewbox` : viewBox cible pour le niveau 2 (`x y w h`)
-- `data-state` : `ghost` (initial) / `focused`
+- `data-state` : attribut runtime, vide par défaut / `focused` / `dimmed`
 
 ### Animation viewBox
 
@@ -163,17 +159,30 @@ Transitions JS :
 
 ### Interaction
 
-- **Clic/tap** sur une step ou cheese box (déjà `data-card="step-N"` dans le SVG playbook) → level-1
-- **Clic/tap** sur le leaf focalisé → level-2
-- **Clic sur fond** (event sur `<svg>` sans target intéressant), **bouton "↑ Vue d'ensemble"**, **Échap** → revient niveau précédent (level-2 → level-1 → level-0)
-- **Flèche gauche/droite** à level-1 ou level-2 → navigue entre frères dans l'ordre step-0..7 puis cheese-1..6
+- **Clic/tap** sur un step ou cheese box (`data-card="step-N"` ou `data-card="cheese-N"` dans le SVG playbook) → résolution card → leaf via `data-cards` CSV → level-1 sur la leaf qui couvre cette card
+- **Clic/tap** sur la leaf focalisée → level-2
+- **Clic sur fond** (event sur `[data-canvas-background]`), **bouton "↑ Vue d'ensemble"**, **Échap** → revient niveau précédent (level-2 → level-1 → level-0)
+- **Flèche gauche/droite** à level-1 ou level-2 → navigue entre frères dans l'ordre L1..L7 (les 4 phases puis les 3 niveaux gruyère)
 - **Pas de wheel/pinch zoom** — discipline assumée
+
+### Résolution card → leaf
+
+Le handler de clic traduit un `data-card="step-3"` en l'ID de leaf qui le couvre (`L2`) via :
+
+```js
+function findLeafForCard(cardId) {
+  return targets.find(t => (t.dataset.cards || '').split(',').includes(cardId));
+}
+```
+
+Pas de hardcoding — la lib `canvas-zoom.js` reste agnostique au schéma de regroupement. La page définit ses leaves avec leurs `data-cards`, la lib lit.
 
 ### Deep-link & historique
 
-- `history.pushState({ level, node }, '', '#node-id')` à chaque transition
+- `history.pushState({ level, node }, '', '#leaf-id')` à chaque transition
 - `popstate` listener pour gérer back/forward navigateur
-- Au chargement, lecture de `location.hash` : `#step-5` ouvre directement le niveau 2 sur step-5
+- Au chargement, lecture de `location.hash` : `#L2` ouvre directement le niveau 2 sur la leaf L2 ; `#zone-L2` ouvre le niveau 1
+- **Backward compat des deep-links card** : `#step-3` est résolu via `findLeafForCard` au chargement → ouvre `L2`. Permet de partager `#step-3` même si la structure d'une leaf bouge.
 - Pas de hash → niveau 0
 
 ## Fallback mobile (sous 768 px)
@@ -233,7 +242,7 @@ Le brouillon est ensuite enrichi pour devenir le poster final. Liste des couches
 - **Visuels de liaison** : flèches/cordons stylisés qui relient le playbook central à ses 14 leaves de façon plus expressive que les fines lignes du canvas écran. Ces visuels n'existent pas dans le canvas — c'est du dessin neuf, dédié au poster.
 - **Légende couleur** : un mini-encart qui explique la sémantique des 3 phases du playbook (collecte / harness & graders / maintenance) et des 3 niveaux de gruyère (préventif / curatif / qualitatif)
 - **Cartouche signature** en bas-droite : sigil MG (cf. skill `svg-schemas`) + URL + date + mention "Format co-écrit avec l'aide d'une IA"
-- **Numérotation visuelle** : chaque leaf porte un repère (S0..S7, C1..C6) qui en print remplace le hint "cliquer pour zoomer" du canvas
+- **Numérotation visuelle** : chaque leaf porte son repère L1..L7 (couleur calée sur la phase/niveau associé) qui en print remplace le hint "cliquer pour zoomer" du canvas. Au sein de chaque leaf, les sous-cards conservent leurs labels naturels (S0/S1 dans L1, C1/C2 dans L5, etc.) pour permettre la lecture détaillée en print.
 
 Cette étape 2 produit `evaluation-agentique/20260520-evaluation-agentique-poster.svg` (sans suffixe `-draft`). Le brouillon `-draft.svg` reste dans le repo comme intermédiaire pour les re-runs ultérieurs.
 
@@ -320,12 +329,12 @@ Pas de modification — l'entrée "evaluation-agentique" pointe déjà vers le d
 Pas de tests CI automatiques pour ce format (le `tests/lib-contract.test.mjs` ne s'applique qu'aux apps qui embarquent la lib partagée — le canvas l'embarque mais pas comme app deep-research, donc il sera auto-skippé via la regex existante).
 
 Vérifications manuelles obligatoires avant merge :
-1. Niveau 0 → niveau 1 sur tous les nodes (8 + 6 = 14)
-2. Niveau 1 → niveau 2 sur tous les nodes
+1. Niveau 0 → niveau 1 sur les 14 cards (8 steps + 6 cheese), chacune ouvrant la leaf L1..L7 attendue
+2. Niveau 1 → niveau 2 sur les 7 leaves
 3. Échap remonte d'un niveau à chaque fois
-4. Flèches gauche/droite cyclent dans l'ordre attendu
+4. Flèches gauche/droite cyclent dans l'ordre L1..L7
 5. Bouton "Vue d'ensemble" remet à niveau 0 depuis n'importe quel état
-6. URLs deep-link `#step-3`, `#cheese-2` ouvrent direct au niveau 2
+6. URLs deep-link `#L2`, `#zone-L5` (et compat `#step-3` qui résout vers L2) ouvrent au bon niveau
 7. Back/forward navigateur retracent les transitions
 8. Mobile 320/375/414 px : interstitiel affiché ; bouton "Rester" rend le canvas accessible ; "Lire le rapport" ouvre l'app à l'ancre attendue
 9. Poster `.svg` ouvert dans Inkscape/Illustrator/navigateur affiche tout déplié avec fonts correctes
