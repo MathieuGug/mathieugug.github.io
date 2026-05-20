@@ -30,6 +30,39 @@ porteur d'un attribut `src` ignore son contenu texte inline (donc l'IIFE ne
 s'exécute pas, et le bouton « Tester → » ne déclenche rien — bug observé en
 mai 2026 sur `process-reward-models` avant fix).
 
+## CSS local obligatoire quand la lib partagée est présente
+
+Quand une app charge `/assets/dossier-app.js`, le script `insert-quizzes.py`
+**ne réinjecte ni le CSS ni l'IIFE** (il détecte la présence de
+`<script src=".../assets/dossier-app.js">` et skip totalement ce bloc).
+
+Conséquence : le CSS quiz (bloc `.quiz-card`, `.quiz-q__*`, environ 150 lignes,
+avec les variantes `@media (max-width: 1024px)`) **doit être embarqué localement
+dans la `<style>` de l'app**. Le shared CSS (`/assets/dossier-app.css`) ne le
+contient pas — c'est intentionnel, car le CSS quiz est encore suffisamment
+volatile pour vivre par app.
+
+Pour obtenir le bloc canonique : copier-le depuis une app récente du site qui
+utilise à la fois la lib partagée et les quiz cards (chercher `quiz-card` dans
+les apps `*/2026*-app.html`). Ne pas écrire ce CSS à la main — recopier à
+l'identique, y compris les variantes mobile.
+
+## Anti-pattern : hand-rolled markup
+
+Écrire le markup `<aside class="quiz-card">` à la main dans le HTML «&nbsp;fonctionne&nbsp;»
+au sens où `setupQuizzes()` de la lib partagée ne dépend que des sélecteurs
+`.quiz-q__*` — le widget s'initialise correctement.
+
+**Problème** : le JSON et le HTML se désynchronisent immédiatement. Toute
+correction ultérieure d'énoncé, de bonne réponse ou d'explication doit être
+faite deux fois (dans le JSON et dans le HTML). Si un futur Claude édite le
+JSON et relance `insert-quizzes.py`, il écrase silencieusement les corrections
+hand-rollées qui n'auraient pas été reportées dans le JSON.
+
+**Règle** : si une nouvelle app n'a pas encore de `quizzes.json`, **créer le
+JSON d'abord**, lancer le script ensuite. Ne jamais écrire le markup
+`<aside class="quiz-card">` à la main.
+
 ## When to use
 
 - Adding quizzes to a brand-new app : write `quizzes.json` next to the report,

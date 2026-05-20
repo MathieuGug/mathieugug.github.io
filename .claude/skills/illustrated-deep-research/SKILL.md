@@ -96,6 +96,7 @@ The companion app template (`assets/app-template.html`) is a scaffold. Two failu
 | SEO + social previews (Open Graph, Twitter Card, og.png 1200×630, canonical, JSON-LD Article) | `references/seo.md` |
 | Building the **optional 10-min slideshow companion** (3rd format in the ZIP) | `references/slideshow.md` |
 | **Callouts** — renvois inter-dossiers avec mini-vignette zoomable | `references/callouts.md` |
+| **Quiz cards** — JSON sidecar workflow, invocation `insert-quizzes.py`, intégration lib partagée (CSS local obligatoire), anti-pattern hand-rolled | `references/quiz-authoring.md` |
 | Working HTML scaffold to start from | `assets/app-template.html` |
 | Slideshow companion HTML scaffold (10-min scenic alternative) | `assets/slideshow-template.html` |
 | Helper to assemble the app from fragments (avoids 1500-line Edit chains) | `assets/build-app.py` |
