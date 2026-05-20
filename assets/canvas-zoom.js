@@ -59,7 +59,42 @@
   }
 
   // Stubs — implémentations dans les tasks suivantes
-  function setLevelState(level, node) { /* Task A5 */ }
+
+  function setLevelState(level, node) {
+    state.level = level;
+    state.node = node;
+
+    targets.forEach(function (t) {
+      const tn = t.dataset.node;
+      if (level === 0) {
+        t.removeAttribute('data-state');
+      } else if (level === 1) {
+        if (tn === node) t.dataset.state = 'focused';
+        else t.removeAttribute('data-state');
+      } else if (level === 2) {
+        if (tn === node) t.dataset.state = 'focused';
+        else t.dataset.state = 'dimmed';
+      }
+    });
+
+    const center = canvas.querySelector('#playbook-center');
+    if (center) {
+      if (level === 0) center.removeAttribute('data-state');
+      else if (level === 1) center.dataset.state = 'dimmed';
+      else if (level === 2) center.dataset.state = 'dimmed-deep';
+    }
+
+    announce(level, node);
+  }
+
+  function announce(level, node) {
+    const live = document.querySelector('[data-zoom-live]');
+    if (!live) return;
+    if (level === 0) live.textContent = "Vue d'ensemble";
+    else if (level === 1) live.textContent = 'Niveau zone — ' + (node || '');
+    else if (level === 2) live.textContent = 'Détails — ' + (node || '');
+  }
+
   function animateViewBox(targetVB) { /* Task A6 */ }
   function bboxFromTarget(node) { /* Task A7 */ return null; }
   function leafViewBox(node) { /* Task A7 */ return null; }
