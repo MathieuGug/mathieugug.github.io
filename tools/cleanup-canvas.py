@@ -92,31 +92,32 @@ def make_subcard(sub_id, x, y, color):
         'S2': 'Non-ambiguïté', 'S3': 'Équilibre',
         'S4': 'Harness stable', 'S5': 'Graders sobres',
         'S6': 'Lire transcripts', 'S7': 'Saturation',
-        'C1': 'Automated evals', 'C2': 'Production monitoring',
+        'C1': 'Automated evals', 'C2': 'Production monitor.',
         'C3': 'A/B testing', 'C4': 'User feedback',
-        'C5': 'Manual transcript', 'C6': 'Human studies',
+        'C5': 'Manual review', 'C6': 'Human studies',
     }
     sub_map = {
-        'S0': '20-50 tasks · règle 80/20', 'S1': 'checks pre-release · bugs · support',
-        'S2': 'pass@k vs pass^k · 2 experts', 'S3': 'should trigger / should NOT trigger',
-        'S4': 'isolation · clean env · OTel', 'S5': 'det > LAJ > humain · partial credit',
-        'S6': "vraie skill d'agent dev", 'S7': 'capability → régression · ownership',
-        'C1': 'CI/CD pre-launch · 5 µ-méthodes', 'C2': 'post-launch · vérité terrain',
-        'C3': 'outcome utilisateur · décisif', 'C4': '👍/👎 · support · cas non-anticipés',
-        'C5': "calibre l'intuition · ne scale pas", 'C6': 'gold standard · 2-3x/an',
+        'S0': '20-50 tasks · 80/20', 'S1': 'pre-release · bugs',
+        'S2': 'pass@k vs pass^k', 'S3': 'should / NOT trigger',
+        'S4': 'isolation · OTel', 'S5': 'det > LAJ > humain',
+        'S6': "vraie skill dev", 'S7': 'capability → régression',
+        'C1': 'CI/CD · 5 µ-méthodes', 'C2': 'post-launch · prod',
+        'C3': 'outcome utilisateur', 'C4': '👍/👎 · support',
+        'C5': "calibre intuition", 'C6': 'gold standard',
     }
     name = name_map[sub_id]
     sub = sub_map[sub_id]
     svg_path, eyebrow, title_mod = SUB_CARD_MODALS[sub_id]
+    # Card 380 wide instead of 480 (to fit 2 side-by-side in 880-wide frame with gap)
     return f'''        <g transform="translate({x}, {y})" data-modal-svg="{svg_path}" data-modal-eyebrow="{eyebrow}" data-modal-title="{title_mod}">
-          <rect x="0" y="0" width="480" height="240" rx="10" fill="#faf8f3" stroke="{color}" stroke-width="3"/>
-          <circle cx="50" cy="50" r="30" fill="{color}"/>
-          <text x="50" y="62" text-anchor="middle" class="detail-title" font-size="28" font-weight="600" fill="#faf8f3">{badge}</text>
-          <text x="100" y="50" font-family="Source Code Pro, monospace" font-size="16" letter-spacing="0.2em" font-weight="500" fill="{color}">SOUS-ÉTAPE</text>
-          <text x="100" y="80" class="detail-title" font-size="34" fill="#1a1a1a">{name}</text>
-          <text x="20" y="135" class="detail-body" font-style="italic" font-size="22" fill="#5a5a5a">{sub}</text>
-          <line x1="20" y1="170" x2="460" y2="170" stroke="{color}" stroke-width="1.5" opacity="0.3"/>
-          <text x="240" y="208" text-anchor="middle" font-family="Source Code Pro, monospace" font-size="15" letter-spacing="0.2em" fill="{color}" font-weight="500">→ VOIR LE DÉTAIL</text>
+          <rect x="0" y="0" width="380" height="240" rx="10" fill="#faf8f3" stroke="{color}" stroke-width="3"/>
+          <circle cx="46" cy="46" r="28" fill="{color}"/>
+          <text x="46" y="56" text-anchor="middle" class="detail-title" font-size="24" font-weight="600" fill="#faf8f3">{badge}</text>
+          <text x="90" y="44" font-family="Source Code Pro, monospace" font-size="14" letter-spacing="0.18em" font-weight="500" fill="{color}">SOUS-ÉTAPE</text>
+          <text x="90" y="74" class="detail-title" font-size="28" fill="#1a1a1a">{name}</text>
+          <text x="20" y="130" class="detail-body" font-style="italic" font-size="20" fill="#5a5a5a">{sub}</text>
+          <line x1="20" y1="165" x2="360" y2="165" stroke="{color}" stroke-width="1.5" opacity="0.3"/>
+          <text x="190" y="205" text-anchor="middle" font-family="Source Code Pro, monospace" font-size="14" letter-spacing="0.15em" fill="{color}" font-weight="500">→ VOIR LE DÉTAIL</text>
         </g>'''
 
 def make_zoom_target_phase_couche(node_id, d):
@@ -124,11 +125,15 @@ def make_zoom_target_phase_couche(node_id, d):
     fx, fy, fw, fh, color = d['frame_x'], d['frame_y'], d['frame_w'], d['frame_h'], d['color']
     is_horizontal = fh < 800
     if is_horizontal:
-        c1x, c1y = fx + 40, fy + 180
-        c2x, c2y = fx + fw - 520, c1y
-    else:
+        # 2 cards 380 wide, gap 40, margins 40 each side : 40+380+40+380+40 = 880 ✓
         c1x, c1y = fx + 40, fy + 200
-        c2x, c2y = c1x, c1y + 320
+        c2x, c2y = fx + 460, c1y   # 40 + 380 + 40 = 460
+    else:
+        # Vertical stack : card 380 wide, centered in 720-wide frame
+        c1x = fx + (fw - 380) // 2
+        c1y = fy + 200
+        c2x = c1x
+        c2y = c1y + 280  # 240 height + 40 gap
     return f'''    <g class="zoom-target" data-node="{node_id}" data-cards="{node_id}"
        data-parent-bbox="{d['parent_bbox']}"
        data-leaf-viewbox="{d['leaf_viewbox']}">
