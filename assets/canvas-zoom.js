@@ -275,8 +275,53 @@
       });
     }
   }
-  function handlePopState(e) { /* Task A12 */ }
-  function restoreFromHash(hash) { /* Task A12 */ }
+  function handlePopState(e) {
+    const s = e.state || { level: 0 };
+    if (s.level === 0) {
+      setLevelState(0, null);
+      animateViewBox(rootViewBox);
+    } else if (s.level === 1) {
+      const vb = bboxFromTarget(s.node);
+      if (vb) {
+        setLevelState(1, s.node);
+        animateViewBox(vb);
+      }
+    } else if (s.level === 2) {
+      const vb = leafViewBox(s.node);
+      if (vb) {
+        setLevelState(2, s.node);
+        animateViewBox(vb);
+      }
+    }
+  }
+
+  function restoreFromHash(hash) {
+    if (!hash) return;
+    if (hash.indexOf('zone-') === 0) {
+      const node = hash.slice(5);
+      const vb = bboxFromTarget(node);
+      if (vb) {
+        setLevelState(1, node);
+        canvas.setAttribute('viewBox', viewBoxString(vb));
+      }
+      return;
+    }
+    // Try direct leaf id first
+    let vb = leafViewBox(hash);
+    let node = hash;
+    if (!vb) {
+      // Backward-compat : #step-3 → resolve to its parent leaf (L2)
+      const leaf = findLeafForCard(hash);
+      if (leaf) {
+        vb = leafViewBox(leaf.dataset.node);
+        node = leaf.dataset.node;
+      }
+    }
+    if (vb) {
+      setLevelState(2, node);
+      canvas.setAttribute('viewBox', viewBoxString(vb));
+    }
+  }
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
