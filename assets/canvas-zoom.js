@@ -119,9 +119,39 @@
 
     currentAnim = requestAnimationFrame(frame);
   }
-  function bboxFromTarget(node) { /* Task A7 */ return null; }
-  function leafViewBox(node) { /* Task A7 */ return null; }
-  function findLeafForCard(cardId) { /* Task A7 */ return null; }
+  function bboxFromTarget(node) {
+    const target = targets.find(function (t) { return t.dataset.node === node; });
+    if (!target) return null;
+    const parts = target.dataset.parentBbox.split(',').map(Number);
+    if (parts.length !== 4) return null;
+    const [px, py, pw, ph] = parts;
+    const leaf = target.dataset.leafViewbox.split(/\s+/).map(Number);
+    if (leaf.length !== 4) return null;
+    const [lx, ly, lw, lh] = leaf;
+    // Zone-level viewBox: union of parent + leaf bbox + 200/100 px margin
+    const x = Math.min(px, lx) - 200;
+    const y = Math.min(py, ly) - 100;
+    const w = Math.max(px + pw, lx + lw) - x + 200;
+    const h = Math.max(py + ph, ly + lh) - y + 100;
+    return { x, y, w, h };
+  }
+
+  function leafViewBox(node) {
+    const target = targets.find(function (t) { return t.dataset.node === node; });
+    if (!target) return null;
+    const parts = target.dataset.leafViewbox.split(/\s+/).map(Number);
+    if (parts.length !== 4) return null;
+    return { x: parts[0], y: parts[1], w: parts[2], h: parts[3] };
+  }
+
+  // Card → leaf resolution : un data-card="step-3" trouve la leaf qui
+  // a "step-3" dans son attribut data-cards. Permet le grouping de cards.
+  function findLeafForCard(cardId) {
+    return targets.find(function (t) {
+      const cards = (t.dataset.cards || '').split(',').map(function (s) { return s.trim(); });
+      return cards.indexOf(cardId) !== -1;
+    });
+  }
   function openZone(node) { /* Task A8 */ }
   function openLeaf(node) { /* Task A8 */ }
   function reset() { /* Task A8 */ }
