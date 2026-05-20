@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#faf8f3">
+<title>Évaluer un agent — carte zoomable</title>
+<meta name="description" content="Carte zoomable du modèle gruyère de Reason appliqué à l'évaluation des agents IA : 4 phases du playbook, 3 couches de défense, 7 attaques. Semantic zoom à 3 niveaux par Mathieu Guglielmino.">
+<!-- og:start -->
+<meta name="author" content="Mathieu Guglielmino">
+<link rel="canonical" href="https://mathieugug.github.io/evaluation-agentique/20260521-evaluation-agentique-canvas.html">
+<meta name="keywords" content="IA agentique, Mathieu Guglielmino, agents IA, étude, evaluation, agentique">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Mathieu Guglielmino">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:url" content="https://mathieugug.github.io/evaluation-agentique/20260521-evaluation-agentique-canvas.html">
+<meta property="og:title" content="Évaluer un agent — carte zoomable">
+<meta property="og:description" content="Carte zoomable du modèle gruyère de Reason appliqué à l'évaluation des agents IA : 4 phases du playbook, 3 couches de défense, 7 attaques. Semantic zoom à 3 niveaux par Mathieu Guglielmino.">
+<meta property="og:image" content="https://mathieugug.github.io/evaluation-agentique/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Évaluer un agent — carte zoomable — couverture social">
+<meta property="article:published_time" content="2026-05-21">
+<meta property="article:author" content="Mathieu Guglielmino">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Évaluer un agent — carte zoomable">
+<meta name="twitter:description" content="Carte zoomable du modèle gruyère de Reason appliqué à l'évaluation des agents IA : 4 phases du playbook, 3 couches de défense, 7 attaques. Semantic zoom à 3 niveaux par Mathieu Guglielmino.">
+<meta name="twitter:image" content="https://mathieugug.github.io/evaluation-agentique/og.png">
+<script type="application/ld+json">
+{"@context": "https://schema.org","@type": "Article","headline": "Évaluer un agent — carte zoomable","description": "Carte zoomable du modèle gruyère de Reason appliqué à l'évaluation des agents IA : 4 phases du playbook, 3 couches de défense, 7 attaques. Semantic zoom à 3 niveaux par Mathieu Guglielmino.","image": "https://mathieugug.github.io/evaluation-agentique/og.png","url": "https://mathieugug.github.io/evaluation-agentique/20260521-evaluation-agentique-canvas.html","datePublished": "2026-05-21","inLanguage": "fr-FR","author": {"@type": "Person","name": "Mathieu Guglielmino","url": "https://mathieugug.github.io/"},"publisher": {"@type": "Person","name": "Mathieu Guglielmino","url": "https://mathieugug.github.io/"}}
+</script>
+<!-- og:end -->
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400;500&family=Caveat:wght@400;500&family=Source+Code+Pro:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/dossier-app.css">
+<link rel="stylesheet" href="/assets/canvas-zoom.css">
+<style>
+:root {
+  --bg: #faf8f3;
+  --paper: #ffffff;
+  --ink: #1a1a1a;
+  --text: #1e1e2a;
+  --text-dim: #3b3f4d;
+  --text-mid: #6b6f7c;
+  --line: rgba(30,30,44,0.08);
+  --accent: #b8582e;
+  --carmine: #b7332c;
+  --teal: #1f5560;
+  --ocre: #b58a2c;
+  --vert: #4b9466;
+  --mono: 'JetBrains Mono', monospace;
+  --serif: 'Cambria', 'Fraunces', 'Georgia', serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-weight: 300;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  overflow-x: clip;
+  height: 100%;
+}
+body { display: flex; flex-direction: column; padding-top: 56px; }
+
+/* Cursor sur les targets zoomables */
+svg[data-canvas-zoom] [data-card] { cursor: pointer; }
+
+/* Au niveau 0 : tous les détails (.detail-content) sont presque invisibles */
+svg[data-canvas-zoom] .detail-content { opacity: 0; transition: opacity 500ms ease; pointer-events: none; }
+/* Au niveau 1+ : le détail focalisé devient visible */
+svg[data-canvas-zoom] .zoom-target[data-state="focused"] .detail-content { opacity: 1; pointer-events: auto; }
+
+/* Le contenu de niveau 0 (chrome de fond) s'atténue quand on zoome */
+svg[data-canvas-zoom][data-level="1"] #lod-base { opacity: 0.35; transition: opacity 500ms ease; }
+svg[data-canvas-zoom][data-level="2"] #lod-base { opacity: 0.15; transition: opacity 500ms ease; }
+svg[data-canvas-zoom] #lod-base { transition: opacity 500ms ease; }
+
+/* Outline visible des regions zoomables */
+svg[data-canvas-zoom] .zoom-target { opacity: 1; }
+svg[data-canvas-zoom] .zoom-target[data-state="focused"] { opacity: 1; }
+svg[data-canvas-zoom] .zoom-target[data-state="dimmed"] { opacity: 0.15; }
+
+/* Petit pulsation discrète sur les regions cliquables au niveau 0 */
+@keyframes pulse-hint {
+  0%, 100% { stroke-opacity: 0.4; }
+  50% { stroke-opacity: 0.9; }
+}
+svg[data-canvas-zoom][data-level="0"] [data-card]:hover .pulse-ring {
+  animation: pulse-hint 1.5s ease-in-out infinite;
+}
+
+/* Detail content : style général */
+.detail-frame { fill: var(--paper); stroke-width: 3; }
+.detail-title { font-family: Cambria, Georgia, serif; font-weight: 500; }
+.detail-body { font-family: Cambria, Georgia, serif; }
+.detail-mono { font-family: 'Source Code Pro', 'JetBrains Mono', monospace; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════
+     TOPBAR
+     ═══════════════════════════════════════════════════════════ -->
+<header class="topbar" id="topbar">
+  <a href="../index.html">Mathieu <em>Guglielmino</em></a>
+  <span class="dossier-context">Évaluer un agent</span>
+  <nav class="back-nav" aria-label="Navigation retour">
+    <button type="button" class="zoom-control" data-canvas-zoom-reset hidden
+            title="Revenir à la vue d'ensemble">↑ Vue d'ensemble</button>
+    <span class="back-sep" aria-hidden="true">·</span>
+    <a href="index.html" title="Revenir au hub du dossier">← Hub</a>
+    <span class="back-sep" aria-hidden="true">·</span>
+    <a href="../index.html#series" title="Revenir à l'accueil">Accueil</a>
+  </nav>
+</header>
+
+<main class="canvas-stage">
+  <svg id="canvas" data-canvas-zoom data-level="0" viewBox="0 0 4000 3000"
+       xmlns="http://www.w3.org/2000/svg"
+       aria-label="Carte zoomable — évaluer un agent (modèle gruyère)"
+       preserveAspectRatio="xMidYMid meet">
+
+    <defs>
+      <marker id="arr-incident" viewBox="0 0 14 10" refX="13" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+        <path d="M 0 0 L 14 5 L 0 10 Z" fill="#b7332c"/>
+      </marker>
+      <marker id="arr-seq" viewBox="0 0 10 8" refX="9" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 4 L 0 8 Z" fill="#8a7448"/>
+      </marker>
+      <pattern id="cheese-tex-teal" patternUnits="userSpaceOnUse" width="80" height="80">
+        <rect width="80" height="80" fill="#e8f0f1"/>
+        <circle cx="20" cy="25" r="2.5" fill="#c9d8db" opacity="0.6"/>
+        <circle cx="60" cy="55" r="2" fill="#c9d8db" opacity="0.5"/>
+      </pattern>
+      <pattern id="cheese-tex-ocre" patternUnits="userSpaceOnUse" width="80" height="80">
+        <rect width="80" height="80" fill="#f4eccc"/>
+        <circle cx="20" cy="25" r="2.5" fill="#dccfa0" opacity="0.6"/>
+        <circle cx="60" cy="55" r="2" fill="#dccfa0" opacity="0.5"/>
+      </pattern>
+      <pattern id="cheese-tex-carmine" patternUnits="userSpaceOnUse" width="80" height="80">
+        <rect width="80" height="80" fill="#f5dedb"/>
+        <circle cx="20" cy="25" r="2.5" fill="#dcb8b3" opacity="0.6"/>
+        <circle cx="60" cy="55" r="2" fill="#dcb8b3" opacity="0.5"/>
+      </pattern>
+      <filter id="slice-shadow" x="-5%" y="-5%" width="110%" height="110%">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="4"/>
+        <feOffset dx="6" dy="0"/>
+        <feComponentTransfer><feFuncA type="linear" slope="0.3"/></feComponentTransfer>
+        <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+
+    <!-- Background catcher (clic sur fond = remonter) -->
+    <rect data-canvas-background="true" x="0" y="0" width="4000" height="3000" fill="#faf8f3"/>
+
+    <!-- ═══════════════════════════════════════════════════════
+         NIVEAU 0 — base layer toujours visible
+         ═══════════════════════════════════════════════════════ -->
+    <g id="lod-base">
+
+      <!-- Titre -->
+      <g id="title-block">
+        <text x="2000" y="100" text-anchor="middle" font-family="Cambria, Georgia, serif" font-size="72" font-weight="500" fill="#1a1a1a">Évaluer un agent</text>
+        <text x="2000" y="158" text-anchor="middle" font-family="Cambria, Georgia, serif" font-size="24" font-style="italic" fill="#5a5a5a">Le playbook construit les défenses · le gruyère arrête les attaques</text>
+        <line x1="1650" y1="190" x2="2350" y2="190" stroke="#b8582e" stroke-width="2"/>
+      </g>
+
+      <!-- Bande haute - LE PLAYBOOK (4 stations) -->
+      <g id="playbook-pipeline">
+        <text x="2000" y="260" text-anchor="middle" font-family="Source Code Pro, monospace" font-size="20" font-weight="500" letter-spacing="0.22em" fill="#8a7448">① LE PLAYBOOK — COMMENT ON CONSTRUIT LES DÉFENSES</text>
+        <text x="2000" y="294" text-anchor="middle" font-family="Cambria, Georgia, serif" font-size="20" font-style="italic" fill="#5a5a5a">4 phases dans le temps · chaque phase produit ou maintient une couche</text>
+
+        <line x1="985" y1="510" x2="1095" y2="510" stroke="#8a7448" stroke-width="3" marker-end="url(#arr-seq)"/>
+        <line x1="1805" y1="510" x2="1915" y2="510" stroke="#8a7448" stroke-width="3" marker-end="url(#arr-seq)"/>
+        <line x1="2625" y1="510" x2="2735" y2="510" stroke="#8a7448" stroke-width="3" marker-end="url(#arr-seq)"/>
+
+        <!-- Station P1 - Phase 1 - CLICKABLE -->
+        <g data-card="P1">
+          <rect class="pulse-ring" x="280" y="350" width="700" height="320" rx="14" fill="#faf8f3" stroke="#1f5560" stroke-width="4"/>
+          <circle cx="350" cy="420" r="38" fill="#1f5560"/>
+          <text x="350" y="436" text-anchor="middle" font-family="Cambria, Georgia, serif" font-size="42" font-weight="600" fill="#faf8f3">1</text>
+          <text x="410" y="410" font-family="Source Code Pro, monospace" font-size="18" letter-spacing="0.15em" font-weight="500" fill="#1f5560">PHASE 1</text>
+          <text x="410" y="445" font-family="Source Code Pro, monospace" font-size="14" letter-spacing="0.12em" fill="#5a5a5a">COLLECTE TASKS</text>
+          <text x="320" y="530" font-family="Cambria, Georgia, serif" font-size="28" font-weight="500" fill="#1a1a1a">démarrer tôt</text>
+          <text x="320" y="565" font-family="Cambria, Georgia, serif" font-size="22" font-style="italic" fill="#5a5a5a">20–50 tasks · règle 80/20</text>
+          <text x="320" y="615" font-family="Source Code Pro, monospace" font-size="14" fill="#8a7448">S0 · démarrer · S1 · manuel d'abord</text>
+        </g>
+
+        <!-- Station P2A -->
+        <g data-card="P2A">
+          <rect class="pulse-ring" x="1100" y="350" width="700" height="320" rx="14" fill="#faf8f3" stroke="#b58a2c" stroke-width="4"/>
+          <circle cx="1170" cy="420" r="38" fill="#b58a2c"/>
+          <text x="1170" y="436" text-anchor="middle" font-family="Cambria, Georgia, serif" font-size="36" font-weight="600" fill="#faf8f3">2A</text>
+          <text x="1230" y="410" font-family="Source Code Pro, monospace" font-size="18" letter-spacing="0.15em" font-weight="500" fill="#b58a2c">PHASE 2A</text>
+          <text x="1230" y="445" font-family="Source Code Pro, monospace" font-size="14" letter-spacing="0.12em" fill="#5a5a5a">CADRER LES CAS</text>
+          <text x="1140" y="530" font-family="Cambria, Georgia, serif" font-size="28" font-weight="500" fill="#1a1a1a">non-ambiguïté</text>
+          <text x="1140" y="565" font-family="Cambria, Georgia, serif" font-size="22" font-style="italic" fill="#5a5a5a">pass@k · TestCase formula</text>
+          <text x="1140" y="615" font-family="Source Code Pro, monospace" font-size="14" fill="#8a7448">S2 · ambig. · S3 · équilibre triggers</text>
+        </g>
+
+        <!-- Station P2B -->
+        <g data-card="P2B">
+          <rect class="pulse-ring" x="1920" y="350" width="700" height="320" rx="14" fill="#faf8f3" stroke="#a07320" stroke-width="4"/>
+          <circle cx="1990" cy="420" r="38" fill="#a07320"/>
+          <text x="1990" y="436" text-anchor="middle" font-family="Cambria, Georgia, serif" font-size="36" font-weight="600" fill="#faf8f3">2B</text>
+          <text x="2050" y="410" font-family="Source Code Pro, monospace" font-size="18" letter-spacing="0.15em" font-weight="500" fill="#a07320">PHASE 2B</text>
+          <text x="2050" y="445" font-family="Source Code Pro, monospace" font-size="14" letter-spacing="0.12em" fill="#5a5a5a">HARNESS &amp; GRADERS</text>
+          <text x="1960" y="530" font-family="Cambria, Georgia, serif" font-size="28" font-weight="500" fill="#1a1a1a">instrumenter</text>
+          <text x="1960" y="565" font-family="Cambria, Georgia, serif" font-size="22" font-style="italic" fill="#5a5a5a">observabilité OTel · juges calibrés</text>
+          <text x="1960" y="615" font-family="Source Code Pro, monospace" font-size="14" fill="#8a7448">S4 · harness · S5 · graders sobres</text>
+        </g>
+
+        <!-- Station P3 -->
+        <g data-card="P3">
+          <rect class="pulse-ring" x="2740" y="350" width="700" height="320" rx="14" fill="#faf8f3" stroke="#b7332c" stroke-width="4"/>
+          <circle cx="2810" cy="420" r="38" fill="#b7332c"/>
+          <text x="2810" y="436" text-anchor="middle" font-family="Cambria, Georgia, serif" font-size="42" font-weight="600" fill="#faf8f3">3</text>
+          <text x="2870" y="410" font-family="Source Code Pro, monospace" font-size="18" letter-spacing="0.15em" font-weight="500" fill="#b7332c">PHASE 3</text>
+          <text x="2870" y="445" font-family="Source Code Pro, monospace" font-size="14" letter-spacing="0.12em" fill="#5a5a5a">MAINTENANCE</text>
+          <text x="2780" y="530" font-family="Cambria, Georgia, serif" font-size="28" font-weight="500" fill="#1a1a1a">tenir vivant</text>
+          <text x="2780" y="565" font-family="Cambria, Georgia, serif" font-size="22" font-style="italic" fill="#5a5a5a">transcripts · régression evals</text>
+          <text x="2780" y="615" font-family="Source Code Pro, monospace" font-size="14" fill="#8a7448">S6 · lire · S7 · saturation et ownership</text>
+        </g>
+      </g>
+
+      <!-- Transition -->
+      <g id="transition">
+        <path d="M 1900 720 Q 1900 760 1940 760 L 2060 760 Q 2100 760 2100 800" stroke="#a88b4d" stroke-width="3" fill="none" opacity="0.6"/>
+        <path d="M 2090 790 L 2100 800 L 2110 790" stroke="#a88b4d" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
+        <text x="2000" y="745" text-anchor="middle" font-family="Caveat, cursive" font-size="32" fill="#b8582e" font-style="italic">… qui produit cette structure de défense ↓</text>
+      </g>
+
+      <!-- Labels gruyère -->
+      <text x="2000" y="850" text-anchor="middle" font-family="Source Code Pro, monospace" font-size="20" font-weight="500" letter-spacing="0.22em" fill="#8a7448">② LE GRUYÈRE — CE QUI ARRÊTE LES ATTAQUES</text>
+      <text x="2000" y="884" text-anchor="middle" font-family="Cambria, Georgia, serif" font-size="20" font-style="italic" fill="#5a5a5a">3 couches empilées · chaque couche a ses trous · seul l'empilement couvre</text>
+
+      <!-- En-têtes colonnes -->
+      <text x="350" y="960" text-anchor="middle" font-family="Source Code Pro, monospace" font-size="16" letter-spacing="0.22em" font-weight="500" fill="#b7332c">ATTAQUES →</text>
+      <text x="1860" y="960" text-anchor="middle" font-family="Source Code Pro, monospace" font-size="16" letter-spacing="0.22em" font-weight="500" fill="#8a7448">3 COUCHES DE DÉFENSE</text>
+      <text x="3460" y="960" text-anchor="middle" font-family="Source Code Pro, monospace" font-size="16" letter-spacing="0.22em" font-weight="500" fill="#4b9466">→ OUTCOMES</text>
+
+      <!-- Slice N1 - CLICKABLE -->
+      <g data-card="N1">
+        <rect class="pulse-ring" x="700" y="1000" width="560" height="1480" rx="14" fill="url(#cheese-tex-teal)" stroke="#1f5560" stroke-width="5" filter="url(#slice-shadow)"/>
+        <text x="980" y="1040" text-anchor="middle" font-family="Source Code Pro, monospace" font-size="16" letter-spacing="0.18em" font-weight="500" fill="#1f5560">COUCHE 1</text>
+        <text x="980" y="1080" text-anchor="middle" font-family="Cambria, Georgia, serif" font-size="30" font-weight="500" fill="#1f5560">Préventif</text>
+        <text x="980" y="1112" text-anchor="middle" font-family="Cambria, Georgia, serif" font-size="18" font-style="italic" fill="#5a5a5a">automated · monitoring</text>
+        <text x="980" y="1145" text-anchor="middle" font-family="Source Code Pro, monospace" font-size="13" letter-spacing="0.12em" fill="#8a7448">C1 · CI/CD &amp; C2 · prod</text>
+        <g fill="#faf8f3">
+          <circle cx="980" cy="1300" r="38"/>
+          <circle cx="980" cy="1700" r="42"/>
+          <circle cx="980" cy="1850" r="36"/>
+          <circle cx="980" cy="2000" r="38"/>
+          <circle cx="980" cy="2200" r="40"/>
+        </g>
+      </g>
+
+      <!-- Slice N2 - CLICKABLE -->
+      <g data-card="N2">
+        <rect class="pulse-ring" x="1440" y="1000" width="560" height="1480" rx="14" fill="url(#cheese-tex-ocre)" stroke="#b58a2c" stroke-width="5" filter="url(#slice-shadow)"/>
+        <text x="1720" y="1040" text-anchor="middle" font-family="Source Code Pro, monospace" font-size="16" letter-spacing="0.18em" font-weight="500" fill="#b58a2c">COUCHE 2</text>
+        <text x="1720" y="1080" text-anchor="middle" font-family="Cambria, Georgia, serif" font-size="30" font-weight="500" fill="#b58a2c">Curatif</text>
+        <text x="1720" y="1112" text-anchor="middle" font-family="Cambria, Georgia, serif" font-size="18" font-style="italic" fill="#5a5a5a">A/B · user feedback</text>
+        <text x="1720" y="1145" text-anchor="middle" font-family="Source Code Pro, monospace" font-size="13" letter-spacing="0.12em" fill="#8a7448">C3 · A/B &amp; C4 · feedback</text>
+        <g fill="#faf8f3">
+          <circle cx="1720" cy="1700" r="40"/>
+          <circle cx="1720" cy="1850" r="38"/>
+          <circle cx="1720" cy="2200" r="42"/>
+        </g>
+      </g>
+
+      <!-- Slice N3 - CLICKABLE -->
+      <g data-card="N3">
+        <rect class="pulse-ring" x="2180" y="1000" width="560" height="1480" rx="14" fill="url(#cheese-tex-carmine)" stroke="#b7332c" stroke-width="5" filter="url(#slice-shadow)"/>
+        <text x="2460" y="1040" text-anchor="middle" font-family="Source Code Pro, monospace" font-size="16" letter-spacing="0.18em" font-weight="500" fill="#b7332c">COUCHE 3</text>
+        <text x="2460" y="1080" text-anchor="middle" font-family="Cambria, Georgia, serif" font-size="30" font-weight="500" fill="#b7332c">Qualitatif</text>
+        <text x="2460" y="1112" text-anchor="middle" font-family="Cambria, Georgia, serif" font-size="18" font-style="italic" fill="#5a5a5a">transcripts · humain</text>
+        <text x="2460" y="1145" text-anchor="middle" font-family="Source Code Pro, monospace" font-size="13" letter-spacing="0.12em" fill="#8a7448">C5 · transcripts &amp; C6 · humain</text>
+        <g fill="#faf8f3">
+          <circle cx="2460" cy="2200" r="40"/>
+        </g>
+      </g>
+
+      <!-- Attaques labels (gauche, niveau 0) -->
+      <g id="attacks" font-family="Cambria, Georgia, serif">
+        <g><text x="200" y="1455" font-size="26" font-weight="500" fill="#1a1a1a">Hallucination</text></g>
+        <g><text x="200" y="1308" font-size="26" font-weight="500" fill="#1a1a1a">Prompt injection</text></g>
+        <g><text x="200" y="1592" font-size="26" font-weight="500" fill="#1a1a1a">Tool misuse</text></g>
+        <g><text x="200" y="1703" font-size="26" font-weight="500" fill="#1a1a1a">Context saturation</text></g>
+        <g><text x="200" y="1855" font-size="26" font-weight="500" fill="#1a1a1a">Reward hacking</text></g>
+        <g><text x="200" y="2005" font-size="26" font-weight="500" fill="#1a1a1a">Spec mismatch</text></g>
+        <g><text x="200" y="2205" font-size="26" font-weight="500" fill="#1a1a1a">Latency drift</text></g>
+      </g>
+
+      <!-- Trajectoires - ligne d'incident (Latency drift) -->
+      <g id="trajectories" stroke="#b7332c" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="580" y1="1300" x2="1430" y2="1300" stroke-width="2.5" opacity="0.7"/>
+        <line x1="580" y1="1450" x2="690" y2="1450" stroke-width="2.5" opacity="0.7"/>
+        <line x1="580" y1="1590" x2="690" y2="1590" stroke-width="2.5" opacity="0.7"/>
+        <line x1="580" y1="1700" x2="2170" y2="1700" stroke-width="2.5" opacity="0.7"/>
+        <line x1="580" y1="1850" x2="2170" y2="1850" stroke-width="2.5" opacity="0.7"/>
+        <line x1="580" y1="2000" x2="1430" y2="2000" stroke-width="2.5" opacity="0.7"/>
+        <!-- INCIDENT : Latency drift passe les 3 -->
+        <line x1="580" y1="2200" x2="2900" y2="2200" stroke-width="4" marker-end="url(#arr-incident)"/>
+        <path d="M 2920 2200 Q 3100 2200 3200 2100" stroke="#b7332c" stroke-width="4" fill="none" marker-end="url(#arr-incident)"/>
+      </g>
+
+      <!-- Outcomes -->
+      <g id="outcomes" font-family="Cambria, Georgia, serif">
+        <g>
+          <rect x="3200" y="1050" width="700" height="650" rx="14" fill="#e8f3ec" stroke="#4b9466" stroke-width="4"/>
+          <g transform="translate(3400, 1130)" stroke="#4b9466" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="80" cy="80" r="65"/>
+            <path d="M 42 80 L 70 108 L 122 50" stroke-width="10"/>
+          </g>
+          <text x="3550" y="1380" text-anchor="middle" font-size="36" font-weight="500" fill="#1a1a1a">agent fiable</text>
+          <text x="3550" y="1418" text-anchor="middle" font-size="20" font-style="italic" fill="#5a5a5a">attaque arrêtée par une couche</text>
+          <text x="3550" y="1490" text-anchor="middle" font-family="Source Code Pro, monospace" font-size="14" letter-spacing="0.18em" fill="#4b9466">6 / 7 ATTAQUES STOPPÉES</text>
+        </g>
+        <g>
+          <rect x="3200" y="1830" width="700" height="650" rx="14" fill="#f5dedb" stroke="#b7332c" stroke-width="4"/>
+          <g transform="translate(3400, 1910)" stroke="#b7332c" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="80" cy="80" r="65"/>
+            <line x1="44" y1="44" x2="116" y2="116" stroke-width="10"/>
+            <line x1="116" y1="44" x2="44" y2="116" stroke-width="10"/>
+          </g>
+          <text x="3550" y="2160" text-anchor="middle" font-size="36" font-weight="500" fill="#1a1a1a">incident</text>
+          <text x="3550" y="2198" text-anchor="middle" font-size="20" font-style="italic" fill="#5a5a5a">trous alignés sur les 3 couches</text>
+          <text x="3550" y="2270" text-anchor="middle" font-family="Source Code Pro, monospace" font-size="14" letter-spacing="0.18em" fill="#b7332c">1 / 7 ATTAQUES PASSÉES</text>
+        </g>
+      </g>
+
+      <!-- Footer -->
+      <line x1="200" y1="2580" x2="3800" y2="2580" stroke="#e5d3a8" stroke-width="2"/>
+      <text x="2000" y="2640" text-anchor="middle" font-family="Cambria, Georgia, serif" font-style="italic" font-size="22" fill="#5a5a5a">« Chaque couche a ses trous ; l'empilement seul produit une couverture acceptable. »</text>
+      <text x="2000" y="2670" text-anchor="middle" font-family="Source Code Pro, monospace" font-size="13" letter-spacing="0.18em" fill="#8a7448">— JAMES REASON · MODÈLE GRUYÈRE SUISSE</text>
+    </g>
+
+    <!-- ═══════════════════════════════════════════════════════
+         ZOOM TARGETS — détails révélés au zoom
+         Chaque zoom-target couvre une région d'interaction et
+         contient son contenu détaillé visible quand focalisé.
+         ═══════════════════════════════════════════════════════ -->
+
+    <!-- ─── P1 — Phase 1 zoom : Collecte tasks ─── -->
+    <g class="zoom-target" data-node="P1" data-cards="P1"
+       data-parent-bbox="280,350,700,320"
+       data-leaf-viewbox="180 280 920 480">
+      <g class="detail-content">
+        <!-- Frame + contenu -->
+        <rect x="200" y="290" width="880" height="460" rx="14" class="detail-frame" stroke="#1f5560"/>
+        <text x="240" y="340" font-family="Source Code Pro, monospace" font-size="14" letter-spacing="0.2em" fill="#1f5560">PHASE 1 — DÉTAIL</text>
+        <text x="240" y="385" class="detail-title" font-size="36" fill="#1f5560">Collecte tasks</text>
+        <text x="240" y="420" class="detail-body" font-style="italic" font-size="18" fill="#5a5a5a">Comment on amorce un système d'eval avant d'avoir un harness</text>
+
+        <!-- S0 mini-card -->
+        <g transform="translate(240, 450)">
+          <rect x="0" y="0" width="380" height="260" rx="10" fill="#e8f0f1" stroke="#1f5560" stroke-width="2"/>
+          <circle cx="40" cy="40" r="22" fill="#1f5560"/>
+          <text x="40" y="48" text-anchor="middle" class="detail-title" font-size="20" fill="#faf8f3">S0</text>
+          <text x="75" y="48" class="detail-title" font-size="22" fill="#1a1a1a">Démarrer tôt</text>
+          <text x="20" y="100" class="detail-body" font-size="16" fill="#1a1a1a">• 20–50 tasks suffisent</text>
+          <text x="20" y="128" class="detail-body" font-size="16" fill="#1a1a1a">• issues de vrais échecs</text>
+          <text x="20" y="156" class="detail-body" font-size="16" fill="#1a1a1a">• règle 80/20 — pas 1000</text>
+          <text x="20" y="184" class="detail-body" font-size="16" fill="#1a1a1a">• value compose</text>
+          <text x="20" y="225" class="detail-body" font-style="italic" font-size="14" fill="#5a5a5a">⚠ anti-pattern : attendre 1000</text>
+          <text x="20" y="244" class="detail-body" font-style="italic" font-size="14" fill="#5a5a5a">tasks gold-labellisées avant.</text>
+        </g>
+
+        <!-- S1 mini-card -->
+        <g transform="translate(660, 450)">
+          <rect x="0" y="0" width="380" height="260" rx="10" fill="#e8f0f1" stroke="#1f5560" stroke-width="2"/>
+          <circle cx="40" cy="40" r="22" fill="#1f5560"/>
+          <text x="40" y="48" text-anchor="middle" class="detail-title" font-size="20" fill="#faf8f3">S1</text>
+          <text x="75" y="48" class="detail-title" font-size="22" fill="#1a1a1a">Manuel d'abord</text>
+          <text x="20" y="100" class="detail-body" font-size="16" fill="#1a1a1a">• checks pre-release</text>
+          <text x="20" y="128" class="detail-body" font-size="16" fill="#1a1a1a">• bugs reportés</text>
+          <text x="20" y="156" class="detail-body" font-size="16" fill="#1a1a1a">• support queue</text>
+          <text x="20" y="184" class="detail-body" font-size="16" fill="#1a1a1a">• conversations agent</text>
+          <text x="20" y="225" class="detail-body" font-style="italic" font-size="14" fill="#5a5a5a">→ source brute → input + état</text>
+          <text x="20" y="244" class="detail-body" font-style="italic" font-size="14" fill="#5a5a5a">attendu → test case</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- ─── P2A — Phase 2A zoom : Cadrer les cas ─── -->
+    <g class="zoom-target" data-node="P2A" data-cards="P2A"
+       data-parent-bbox="1100,350,700,320"
+       data-leaf-viewbox="1000 280 920 480">
+      <g class="detail-content">
+        <rect x="1020" y="290" width="880" height="460" rx="14" class="detail-frame" stroke="#b58a2c"/>
+        <text x="1060" y="340" font-family="Source Code Pro, monospace" font-size="14" letter-spacing="0.2em" fill="#b58a2c">PHASE 2A — DÉTAIL</text>
+        <text x="1060" y="385" class="detail-title" font-size="36" fill="#b58a2c">Cadrer les cas</text>
+        <text x="1060" y="420" class="detail-body" font-style="italic" font-size="18" fill="#5a5a5a">Tasks dont 2 experts conviennent sur pass/fail</text>
+
+        <g transform="translate(1060, 450)">
+          <rect x="0" y="0" width="380" height="260" rx="10" fill="#f4eccc" stroke="#b58a2c" stroke-width="2"/>
+          <circle cx="40" cy="40" r="22" fill="#b58a2c"/>
+          <text x="40" y="48" text-anchor="middle" class="detail-title" font-size="20" fill="#faf8f3">S2</text>
+          <text x="75" y="48" class="detail-title" font-size="22" fill="#1a1a1a">Non-ambiguïté</text>
+          <text x="20" y="100" class="detail-body" font-size="16" fill="#1a1a1a">• 2 experts → même verdict</text>
+          <text x="20" y="128" class="detail-body" font-size="16" fill="#1a1a1a">• pass@k vs pass^k</text>
+          <text x="20" y="156" class="detail-body" font-size="16" fill="#1a1a1a">• reference solution</text>
+          <text x="20" y="184" class="detail-body" font-size="16" fill="#1a1a1a">• 0% pass = task cassée</text>
+          <text x="20" y="225" class="detail-body" font-style="italic" font-size="14" fill="#5a5a5a">→ formule TestCase</text>
+          <text x="20" y="244" class="detail-body" font-style="italic" font-size="14" fill="#5a5a5a">= input + grader + outcome</text>
+        </g>
+
+        <g transform="translate(1480, 450)">
+          <rect x="0" y="0" width="380" height="260" rx="10" fill="#f4eccc" stroke="#b58a2c" stroke-width="2"/>
+          <circle cx="40" cy="40" r="22" fill="#b58a2c"/>
+          <text x="40" y="48" text-anchor="middle" class="detail-title" font-size="20" fill="#faf8f3">S3</text>
+          <text x="75" y="48" class="detail-title" font-size="22" fill="#1a1a1a">Équilibre</text>
+          <text x="20" y="100" class="detail-body" font-size="16" fill="#1a1a1a">• should trigger</text>
+          <text x="20" y="128" class="detail-body" font-size="16" fill="#1a1a1a">• should NOT trigger</text>
+          <text x="20" y="156" class="detail-body" font-size="16" fill="#1a1a1a">• éviter overtriggering</text>
+          <text x="20" y="184" class="detail-body" font-size="16" fill="#1a1a1a">• diversité de cas</text>
+          <text x="20" y="225" class="detail-body" font-style="italic" font-size="14" fill="#5a5a5a">cf. web search : N+ vs N− doivent</text>
+          <text x="20" y="244" class="detail-body" font-style="italic" font-size="14" fill="#5a5a5a">être équilibrés dans la suite.</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- ─── P2B — Phase 2B zoom : Harness & graders ─── -->
+    <g class="zoom-target" data-node="P2B" data-cards="P2B"
+       data-parent-bbox="1920,350,700,320"
+       data-leaf-viewbox="1820 280 920 480">
+      <g class="detail-content">
+        <rect x="1840" y="290" width="880" height="460" rx="14" class="detail-frame" stroke="#a07320"/>
+        <text x="1880" y="340" font-family="Source Code Pro, monospace" font-size="14" letter-spacing="0.2em" fill="#a07320">PHASE 2B — DÉTAIL</text>
+        <text x="1880" y="385" class="detail-title" font-size="36" fill="#a07320">Harness &amp; graders</text>
+        <text x="1880" y="420" class="detail-body" font-style="italic" font-size="18" fill="#5a5a5a">Observabilité OTel · juges calibrés &amp; sobres</text>
+
+        <g transform="translate(1880, 450)">
+          <rect x="0" y="0" width="380" height="260" rx="10" fill="#f5e9c8" stroke="#a07320" stroke-width="2"/>
+          <circle cx="40" cy="40" r="22" fill="#a07320"/>
+          <text x="40" y="48" text-anchor="middle" class="detail-title" font-size="20" fill="#faf8f3">S4</text>
+          <text x="75" y="48" class="detail-title" font-size="22" fill="#1a1a1a">Harness stable</text>
+          <text x="20" y="100" class="detail-body" font-size="16" fill="#1a1a1a">• isolation par trial</text>
+          <text x="20" y="128" class="detail-body" font-size="16" fill="#1a1a1a">• clean env à chaque run</text>
+          <text x="20" y="156" class="detail-body" font-size="16" fill="#1a1a1a">• pas de shared state</text>
+          <text x="20" y="184" class="detail-body" font-size="16" fill="#1a1a1a">• traces OpenTelemetry</text>
+          <text x="20" y="225" class="detail-body" font-style="italic" font-size="14" fill="#5a5a5a">⚠ piège classique : git history</text>
+          <text x="20" y="244" class="detail-body" font-style="italic" font-size="14" fill="#5a5a5a">leak entre trials.</text>
+        </g>
+
+        <g transform="translate(2300, 450)">
+          <rect x="0" y="0" width="380" height="260" rx="10" fill="#f5e9c8" stroke="#a07320" stroke-width="2"/>
+          <circle cx="40" cy="40" r="22" fill="#a07320"/>
+          <text x="40" y="48" text-anchor="middle" class="detail-title" font-size="20" fill="#faf8f3">S5</text>
+          <text x="75" y="48" class="detail-title" font-size="22" fill="#1a1a1a">Graders sobres</text>
+          <text x="20" y="100" class="detail-body" font-size="16" fill="#1a1a1a">• déterministe &gt; LAJ &gt; humain</text>
+          <text x="20" y="128" class="detail-body" font-size="16" fill="#1a1a1a">• grader résultat, pas chemin</text>
+          <text x="20" y="156" class="detail-body" font-size="16" fill="#1a1a1a">• partial credit possible</text>
+          <text x="20" y="184" class="detail-body" font-size="16" fill="#1a1a1a">• calibrer LAJ vs humain</text>
+          <text x="20" y="225" class="detail-body" font-style="italic" font-size="14" fill="#5a5a5a">LAJ flaky → bruit → fausses</text>
+          <text x="20" y="244" class="detail-body" font-style="italic" font-size="14" fill="#5a5a5a">régressions → perte de confiance.</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- ─── P3 — Phase 3 zoom : Maintenance ─── -->
+    <g class="zoom-target" data-node="P3" data-cards="P3"
+       data-parent-bbox="2740,350,700,320"
+       data-leaf-viewbox="2640 280 920 480">
+      <g class="detail-content">
+        <rect x="2660" y="290" width="880" height="460" rx="14" class="detail-frame" stroke="#b7332c"/>
+        <text x="2700" y="340" font-family="Source Code Pro, monospace" font-size="14" letter-spacing="0.2em" fill="#b7332c">PHASE 3 — DÉTAIL</text>
+        <text x="2700" y="385" class="detail-title" font-size="36" fill="#b7332c">Maintenance</text>
+        <text x="2700" y="420" class="detail-body" font-style="italic" font-size="18" fill="#5a5a5a">Transcripts · régression evals · ownership équipe</text>
+
+        <g transform="translate(2700, 450)">
+          <rect x="0" y="0" width="380" height="260" rx="10" fill="#f5dedb" stroke="#b7332c" stroke-width="2"/>
+          <circle cx="40" cy="40" r="22" fill="#b7332c"/>
+          <text x="40" y="48" text-anchor="middle" class="detail-title" font-size="20" fill="#faf8f3">S6</text>
+          <text x="75" y="48" class="detail-title" font-size="22" fill="#1a1a1a">Lire transcripts</text>
+          <text x="20" y="100" class="detail-body" font-size="16" fill="#1a1a1a">• vraie skill d'agent dev</text>
+          <text x="20" y="128" class="detail-body" font-size="16" fill="#1a1a1a">• tooling de viz aussi</text>
+          <text x="20" y="156" class="detail-body" font-size="16" fill="#1a1a1a">  rentable que graders</text>
+          <text x="20" y="184" class="detail-body" font-size="16" fill="#1a1a1a">• samples biaisés sur erreurs</text>
+          <text x="20" y="225" class="detail-body" font-style="italic" font-size="14" fill="#5a5a5a">→ calibre l'intuition de l'équipe</text>
+          <text x="20" y="244" class="detail-body" font-style="italic" font-size="14" fill="#5a5a5a">avant tout grader formel.</text>
+        </g>
+
+        <g transform="translate(3120, 450)">
+          <rect x="0" y="0" width="380" height="260" rx="10" fill="#f5dedb" stroke="#b7332c" stroke-width="2"/>
+          <circle cx="40" cy="40" r="22" fill="#b7332c"/>
+          <text x="40" y="48" text-anchor="middle" class="detail-title" font-size="20" fill="#faf8f3">S7</text>
+          <text x="75" y="48" class="detail-title" font-size="22" fill="#1a1a1a">Saturation</text>
+          <text x="20" y="100" class="detail-body" font-size="16" fill="#1a1a1a">• capability eval (état T)</text>
+          <text x="20" y="128" class="detail-body" font-size="16" fill="#1a1a1a">  → régression eval (CI)</text>
+          <text x="20" y="156" class="detail-body" font-size="16" fill="#1a1a1a">• ownership team explicite</text>
+          <text x="20" y="184" class="detail-body" font-size="16" fill="#1a1a1a">• living artifact</text>
+          <text x="20" y="225" class="detail-body" font-style="italic" font-size="14" fill="#5a5a5a">Un harness sans owner devient</text>
+          <text x="20" y="244" class="detail-body" font-style="italic" font-size="14" fill="#5a5a5a">obsolète en 6 semaines.</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- ─── N1 — Couche 1 Préventif zoom ─── -->
+    <g class="zoom-target" data-node="N1" data-cards="N1"
+       data-parent-bbox="700,1000,560,1480"
+       data-leaf-viewbox="600 950 760 1600">
+      <g class="detail-content">
+        <rect x="620" y="970" width="720" height="1560" rx="14" class="detail-frame" stroke="#1f5560"/>
+        <text x="650" y="1010" font-family="Source Code Pro, monospace" font-size="14" letter-spacing="0.2em" fill="#1f5560">COUCHE 1 — DÉTAIL</text>
+        <text x="650" y="1050" class="detail-title" font-size="32" fill="#1f5560">Préventif</text>
+        <text x="650" y="1085" class="detail-body" font-style="italic" font-size="17" fill="#5a5a5a">Pre-launch · ce qui filtre AVANT la prod</text>
+
+        <!-- C1 mini-block -->
+        <g transform="translate(650, 1120)">
+          <rect x="0" y="0" width="660" height="640" rx="10" fill="#e8f0f1" stroke="#1f5560" stroke-width="2"/>
+          <circle cx="40" cy="40" r="22" fill="#1f5560"/>
+          <text x="40" y="48" text-anchor="middle" class="detail-title" font-size="20" fill="#faf8f3">C1</text>
+          <text x="75" y="48" class="detail-title" font-size="22" fill="#1a1a1a">Automated evals</text>
+          <text x="20" y="78" class="detail-body" font-style="italic" font-size="14" fill="#5a5a5a">CI/CD pre-launch · 5 micro-méthodes</text>
+
+          <!-- 5 mini-bandes pour les µ-méthodes -->
+          <g transform="translate(20, 100)" font-family="Cambria, Georgia, serif" font-size="15">
+            <g><rect x="0" y="0" width="620" height="80" rx="6" fill="#faf8f3" stroke="#1f5560" stroke-width="1.5"/>
+              <text x="15" y="28" font-weight="500" fill="#1f5560">µ-1 Prompt unit tests</text>
+              <text x="15" y="56" font-style="italic" fill="#5a5a5a">templates testés en isolation</text></g>
+            <g transform="translate(0, 100)"><rect x="0" y="0" width="620" height="80" rx="6" fill="#faf8f3" stroke="#1f5560" stroke-width="1.5"/>
+              <text x="15" y="28" font-weight="500" fill="#1f5560">µ-2 Tool schema validation</text>
+              <text x="15" y="56" font-style="italic" fill="#5a5a5a">arguments typés et bornés</text></g>
+            <g transform="translate(0, 200)"><rect x="0" y="0" width="620" height="80" rx="6" fill="#faf8f3" stroke="#1f5560" stroke-width="1.5"/>
+              <text x="15" y="28" font-weight="500" fill="#1f5560">µ-3 Golden regression suite</text>
+              <text x="15" y="56" font-style="italic" fill="#5a5a5a">N tasks figées re-jouées à chaque ship</text></g>
+            <g transform="translate(0, 300)"><rect x="0" y="0" width="620" height="80" rx="6" fill="#faf8f3" stroke="#1f5560" stroke-width="1.5"/>
+              <text x="15" y="28" font-weight="500" fill="#1f5560">µ-4 Output structure validation</text>
+              <text x="15" y="56" font-style="italic" fill="#5a5a5a">JSON schema · pas de free-form</text></g>
+            <g transform="translate(0, 400)"><rect x="0" y="0" width="620" height="80" rx="6" fill="#faf8f3" stroke="#1f5560" stroke-width="1.5"/>
+              <text x="15" y="28" font-weight="500" fill="#1f5560">µ-5 Perf &amp; cost benchmark</text>
+              <text x="15" y="56" font-style="italic" fill="#b8582e">⚠ trous larges : latency drift y passe</text></g>
+          </g>
+        </g>
+
+        <!-- C2 mini-block (résumé compact) -->
+        <g transform="translate(650, 1800)">
+          <rect x="0" y="0" width="660" height="700" rx="10" fill="#e8f0f1" stroke="#1f5560" stroke-width="2"/>
+          <circle cx="40" cy="40" r="22" fill="#1f5560"/>
+          <text x="40" y="48" text-anchor="middle" class="detail-title" font-size="20" fill="#faf8f3">C2</text>
+          <text x="75" y="48" class="detail-title" font-size="22" fill="#1a1a1a">Production monitoring</text>
+          <text x="20" y="78" class="detail-body" font-style="italic" font-size="14" fill="#5a5a5a">Post-launch · vérité terrain</text>
+
+          <g transform="translate(20, 100)" font-family="Cambria, Georgia, serif" font-size="15">
+            <g><rect x="0" y="0" width="620" height="80" rx="6" fill="#faf8f3" stroke="#1f5560" stroke-width="1.5"/>
+              <text x="15" y="28" font-weight="500" fill="#1f5560">µ-1 Error rate / 5xx / timeout</text>
+              <text x="15" y="56" font-style="italic" fill="#5a5a5a">alertes sur taux d'erreurs HTTP</text></g>
+            <g transform="translate(0, 100)"><rect x="0" y="0" width="620" height="80" rx="6" fill="#faf8f3" stroke="#b7332c" stroke-width="2"/>
+              <text x="15" y="28" font-weight="500" fill="#b7332c">µ-2 Latency p95 / p99</text>
+              <text x="15" y="56" font-style="italic" fill="#b8582e">⚠ TROU LARGE : seuils trop lâches</text></g>
+            <g transform="translate(0, 200)"><rect x="0" y="0" width="620" height="80" rx="6" fill="#faf8f3" stroke="#1f5560" stroke-width="1.5"/>
+              <text x="15" y="28" font-weight="500" fill="#1f5560">µ-3 Cost per task / tokens</text>
+              <text x="15" y="56" font-style="italic" fill="#5a5a5a">alertes dépassement budget</text></g>
+            <g transform="translate(0, 300)"><rect x="0" y="0" width="620" height="80" rx="6" fill="#faf8f3" stroke="#1f5560" stroke-width="1.5"/>
+              <text x="15" y="28" font-weight="500" fill="#1f5560">µ-4 Output anomaly detection</text>
+              <text x="15" y="56" font-style="italic" fill="#5a5a5a">distribution-shift sur les outputs</text></g>
+            <g transform="translate(0, 400)"><rect x="0" y="0" width="620" height="80" rx="6" fill="#faf8f3" stroke="#1f5560" stroke-width="1.5"/>
+              <text x="15" y="28" font-weight="500" fill="#1f5560">µ-5 User reports / 👎</text>
+              <text x="15" y="56" font-style="italic" fill="#5a5a5a">signal direct mais sparse</text></g>
+          </g>
+        </g>
+      </g>
+    </g>
+
+    <!-- ─── N2 — Couche 2 Curatif zoom ─── -->
+    <g class="zoom-target" data-node="N2" data-cards="N2"
+       data-parent-bbox="1440,1000,560,1480"
+       data-leaf-viewbox="1340 950 760 1600">
+      <g class="detail-content">
+        <rect x="1360" y="970" width="720" height="1560" rx="14" class="detail-frame" stroke="#b58a2c"/>
+        <text x="1390" y="1010" font-family="Source Code Pro, monospace" font-size="14" letter-spacing="0.2em" fill="#b58a2c">COUCHE 2 — DÉTAIL</text>
+        <text x="1390" y="1050" class="detail-title" font-size="32" fill="#b58a2c">Curatif</text>
+        <text x="1390" y="1085" class="detail-body" font-style="italic" font-size="17" fill="#5a5a5a">Post-launch · ce qui mesure l'impact utilisateur</text>
+
+        <g transform="translate(1390, 1120)">
+          <rect x="0" y="0" width="660" height="640" rx="10" fill="#f4eccc" stroke="#b58a2c" stroke-width="2"/>
+          <circle cx="40" cy="40" r="22" fill="#b58a2c"/>
+          <text x="40" y="48" text-anchor="middle" class="detail-title" font-size="20" fill="#faf8f3">C3</text>
+          <text x="75" y="48" class="detail-title" font-size="22" fill="#1a1a1a">A/B testing</text>
+          <text x="20" y="78" class="detail-body" font-style="italic" font-size="14" fill="#5a5a5a">Changements significatifs · outcome utilisateur</text>
+
+          <g transform="translate(20, 110)" font-family="Cambria, Georgia, serif" font-size="16">
+            <text x="0" y="0" font-weight="500">• Traffic split par cohorte</text>
+            <text x="0" y="34" font-weight="500">• Métriques primaires : success rate, satisfaction</text>
+            <text x="0" y="68" font-weight="500">• Secondaires : latence, coût, escalations</text>
+            <text x="0" y="102" font-weight="500">• Durée minimale pour significativité</text>
+            <text x="0" y="136" font-style="italic" fill="#5a5a5a">⚠ Latence pas toujours en métrique 1° → drift</text>
+            <text x="0" y="158" font-style="italic" fill="#5a5a5a">   invisible (cf. niveau 0, attaque latency drift)</text>
+            <text x="0" y="220" font-weight="500">Effort : haut · Impact : décisif</text>
+            <text x="0" y="248" font-style="italic" fill="#5a5a5a">Le seul vrai juge d'une amélioration en prod.</text>
+            <text x="0" y="290" font-family="Source Code Pro, monospace" font-size="13" letter-spacing="0.18em" fill="#b58a2c">✎ FIX MANQUANT</text>
+            <text x="0" y="318" font-style="italic">ajouter latency en métrique primaire</text>
+            <text x="0" y="340" font-style="italic">obligatoire dans la matrice A/B</text>
+          </g>
+        </g>
+
+        <g transform="translate(1390, 1800)">
+          <rect x="0" y="0" width="660" height="700" rx="10" fill="#f4eccc" stroke="#b58a2c" stroke-width="2"/>
+          <circle cx="40" cy="40" r="22" fill="#b58a2c"/>
+          <text x="40" y="48" text-anchor="middle" class="detail-title" font-size="20" fill="#faf8f3">C4</text>
+          <text x="75" y="48" class="detail-title" font-size="22" fill="#1a1a1a">User feedback</text>
+          <text x="20" y="78" class="detail-body" font-style="italic" font-size="14" fill="#5a5a5a">Continu · cas non-anticipés</text>
+
+          <g transform="translate(20, 110)" font-family="Cambria, Georgia, serif" font-size="16">
+            <text x="0" y="0" font-weight="500">• Boutons 👍/👎 en bas de chaque réponse</text>
+            <text x="0" y="34" font-weight="500">• Ticket support · NPS · canaux Slack/Discord</text>
+            <text x="0" y="68" font-weight="500">• Tagger les feedbacks par catégorie</text>
+            <text x="0" y="102" font-weight="500">• Triager hebdo en équipe (1h max)</text>
+            <text x="0" y="160" font-style="italic" fill="#5a5a5a">Force : capture les angles morts des graders</text>
+            <text x="0" y="180" font-style="italic" fill="#5a5a5a">automatisés (ce qu'on n'a pas pensé à tester).</text>
+            <text x="0" y="240" font-style="italic" fill="#5a5a5a">Limite : sparse (≪ 1% des users feedbackent)</text>
+            <text x="0" y="260" font-style="italic" fill="#5a5a5a">+ biaisé (utilisateurs en colère sur-représentés).</text>
+            <text x="0" y="320" font-family="Source Code Pro, monospace" font-size="13" letter-spacing="0.18em" fill="#b58a2c">USAGE</text>
+            <text x="0" y="348" font-style="italic">extraire patterns → nouvelles golden tasks → S1</text>
+            <text x="0" y="370" font-style="italic">(la boucle vertueuse playbook → gruyère → playbook)</text>
+          </g>
+        </g>
+      </g>
+    </g>
+
+    <!-- ─── N3 — Couche 3 Qualitatif zoom ─── -->
+    <g class="zoom-target" data-node="N3" data-cards="N3"
+       data-parent-bbox="2180,1000,560,1480"
+       data-leaf-viewbox="2080 950 760 1600">
+      <g class="detail-content">
+        <rect x="2100" y="970" width="720" height="1560" rx="14" class="detail-frame" stroke="#b7332c"/>
+        <text x="2130" y="1010" font-family="Source Code Pro, monospace" font-size="14" letter-spacing="0.2em" fill="#b7332c">COUCHE 3 — DÉTAIL</text>
+        <text x="2130" y="1050" class="detail-title" font-size="32" fill="#b7332c">Qualitatif</text>
+        <text x="2130" y="1085" class="detail-body" font-style="italic" font-size="17" fill="#5a5a5a">Calibration humaine · gold standard · ne scale pas</text>
+
+        <g transform="translate(2130, 1120)">
+          <rect x="0" y="0" width="660" height="640" rx="10" fill="#f5dedb" stroke="#b7332c" stroke-width="2"/>
+          <circle cx="40" cy="40" r="22" fill="#b7332c"/>
+          <text x="40" y="48" text-anchor="middle" class="detail-title" font-size="20" fill="#faf8f3">C5</text>
+          <text x="75" y="48" class="detail-title" font-size="22" fill="#1a1a1a">Manual transcript review</text>
+          <text x="20" y="78" class="detail-body" font-style="italic" font-size="14" fill="#5a5a5a">~20 traces / semaine · lecture qualitative</text>
+
+          <g transform="translate(20, 110)" font-family="Cambria, Georgia, serif" font-size="16">
+            <text x="0" y="0" font-weight="500">• 20 traces samples / semaine</text>
+            <text x="0" y="34" font-weight="500">• Sampling biaisé (50% sur traces lentes/anormales)</text>
+            <text x="0" y="68" font-weight="500">• Checklist : précision · ton · timing</text>
+            <text x="0" y="102" font-weight="500">• Postmortem mensuel (perçu vs mesuré)</text>
+            <text x="0" y="160" font-style="italic" fill="#5a5a5a">Force : calibre l'intuition de l'équipe.</text>
+            <text x="0" y="190" font-style="italic" fill="#5a5a5a">Les graders LAJ &amp; deterministic restent</text>
+            <text x="0" y="210" font-style="italic" fill="#5a5a5a">en accord avec ce qui compte vraiment.</text>
+            <text x="0" y="270" font-style="italic" fill="#5a5a5a">Limite : ne scale pas. 20 traces ≠ 10⁶ traces.</text>
+            <text x="0" y="320" font-family="Source Code Pro, monospace" font-size="13" letter-spacing="0.18em" fill="#b8582e">⚠ FIX MANQUANT</text>
+            <text x="0" y="348" font-style="italic">checklist doit explicitement noter le timing</text>
+          </g>
+        </g>
+
+        <g transform="translate(2130, 1800)">
+          <rect x="0" y="0" width="660" height="700" rx="10" fill="#f5dedb" stroke="#b7332c" stroke-width="2"/>
+          <circle cx="40" cy="40" r="22" fill="#b7332c"/>
+          <text x="40" y="48" text-anchor="middle" class="detail-title" font-size="20" fill="#faf8f3">C6</text>
+          <text x="75" y="48" class="detail-title" font-size="22" fill="#1a1a1a">Systematic human studies</text>
+          <text x="20" y="78" class="detail-body" font-style="italic" font-size="14" fill="#5a5a5a">Gold standard · cher, lent, rare</text>
+
+          <g transform="translate(20, 110)" font-family="Cambria, Georgia, serif" font-size="16">
+            <text x="0" y="0" font-weight="500">• Étude formelle (N=30+ raters)</text>
+            <text x="0" y="34" font-weight="500">• Calibration LAJ vs humain (inter-rater agreement)</text>
+            <text x="0" y="68" font-weight="500">• Rubrics structurées + double review</text>
+            <text x="0" y="102" font-weight="500">• Détection biais systématiques</text>
+            <text x="0" y="160" font-style="italic" fill="#5a5a5a">Force : seule méthode qui produit du gold-label</text>
+            <text x="0" y="180" font-style="italic" fill="#5a5a5a">utilisable pour calibrer le LLM-as-judge.</text>
+            <text x="0" y="240" font-style="italic" fill="#5a5a5a">Limite : ~10-30 K€ par étude, ~6 semaines de</text>
+            <text x="0" y="260" font-style="italic" fill="#5a5a5a">délai. À faire 2-3x par an, pas en continu.</text>
+            <text x="0" y="320" font-family="Source Code Pro, monospace" font-size="13" letter-spacing="0.18em" fill="#b7332c">USAGE</text>
+            <text x="0" y="348" font-style="italic">référence pour recalibrer toute la pyramide :</text>
+            <text x="0" y="370" font-style="italic">LAJ → graders deterministic → metrics in CI.</text>
+          </g>
+        </g>
+      </g>
+    </g>
+
+    <!-- ═══════════════════════════════════════════════════════
+         HINT CAVEAT — visible uniquement au niveau 0
+         ═══════════════════════════════════════════════════════ -->
+    <g id="canvas-hint">
+      <text x="2000" y="2870" text-anchor="middle" font-family="Caveat, cursive"
+            font-size="42" fill="#b8582e">
+        ↓ Clique sur une phase ou une couche pour zoomer ↓
+      </text>
+    </g>
+
+  </svg>
+
+  <style>
+    #canvas-hint { transition: opacity 600ms ease; }
+    svg[data-canvas-zoom]:not([data-level="0"]) #canvas-hint { opacity: 0; pointer-events: none; }
+  </style>
+</main>
+
+<!-- ═══════════════════════════════════════════════════════════
+     MOBILE INTERSTITIAL
+     ═══════════════════════════════════════════════════════════ -->
+<aside class="canvas-mobile-interstitial" data-mobile-interstitial>
+  <h2>La carte zoomable est conçue pour <em>grand écran</em>.</h2>
+  <p>Sur mobile, on bascule sur le rapport interactif du dossier qui couvre les mêmes notions en lecture linéaire.</p>
+  <div class="actions">
+    <a href="20260501-evaluation-agentique-app.html#10-playbook-de-zero-a-des-evals-fiables">→ Lire le rapport interactif</a>
+    <button type="button" data-dismiss>Rester sur la carte</button>
+  </div>
+</aside>
+
+<!-- Aria-live region pour annoncer les transitions de zoom -->
+<div class="sr-only" aria-live="polite" data-zoom-live></div>
+
+<script src="/assets/dossier-app.js" defer></script>
+<script src="/assets/canvas-zoom.js" defer></script>
+<script src="/admin.js" defer></script>
+</body>
+</html>
