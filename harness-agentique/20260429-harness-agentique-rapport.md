@@ -10,6 +10,10 @@
 - **Coûts et durées de mise en œuvre ont des fourchettes mesurables.** POC simple : 50 k$ et 4–8 semaines. Agent mid-complexity (RAG + intégrations) : 150–300 k$ et 3–5 mois. Système multi-agents en production : 500 k$ à 2 M$+ et 6–12 mois. La part data + intégration capture 60–75 % de l'effort total. [^6] [^7]
 - **Les secteurs à plus fort ROI partagent deux traits : volume transactionnel élevé et workflows répétables.** BFSI, support client, supply chain, ITSM, healthcare administration sont en tête. Les déploiements emblématiques 2026 — Azure SRE Agent (1 300+ agents, 35 000+ incidents, MTTR App Service 40,5 h → 3 min), Coinbase agents observabilité-first, Thomson Reuters AWS Transform sur .NET legacy — convergent sur les mêmes patterns techniques : observability-first, file-based handoffs, evaluator séparé. [^8] [^9] [^10]
 
+![Synthèse visuelle A4 — cinq messages-clés du dossier|800](images/20260429-00-exec-sum-a4.svg)
+
+*Schéma 0 (exec sum) — Une infographie A4 portrait qui condense les cinq messages-clés : inversion modèle ↔ harness (1,3 pt entre 6 modèles sur SWE-bench, 22 pt de scaffold sur le même modèle), architecture GAN à trois agents (planner / generator / evaluator), marché restructuré en trois couches (API / SDK / runtime managé) avec MCP+A2A comme noyau protocolaire, fourchettes coûts mesurables (50 k$ POC → 500 k–2 M+ multi-agents prod), secteurs à plus fort ROI (BFSI, support, supply chain, ITSM, healthcare) avec le cas Azure SRE (MTTR 40,5 h → 3 min). Pensée pour être imprimée et glissée dans un dossier de RDV.*
+
 ---
 
 ## 1. De l'agent au harness : pourquoi 2026 est l'année du harness

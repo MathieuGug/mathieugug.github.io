@@ -264,8 +264,9 @@
     function openZoom(svgEl, captionText) {
       const clone = svgEl.cloneNode(true);
       const vb = clone.viewBox?.baseVal;
-      svgW = (vb && vb.width)  || svgEl.getBoundingClientRect().width  || 1200;
-      svgH = (vb && vb.height) || svgEl.getBoundingClientRect().height || 800;
+      const rect = svgEl.isConnected ? svgEl.getBoundingClientRect() : null;
+      svgW = (vb && vb.width)  || (rect && rect.width)  || 1200;
+      svgH = (vb && vb.height) || (rect && rect.height) || 800;
       clone.setAttribute('width',  svgW);
       clone.setAttribute('height', svgH);
       clone.style.width  = svgW + 'px';
@@ -341,16 +342,19 @@
       zoomAt(mx, my, factor);
     }, { passive: false });
 
-    let dragging = false, sx = 0, sy = 0, stx = 0, sty = 0;
+    let dragging = false, sx = 0, sy = 0, stx = 0, sty = 0, pointerMoved = false;
+    const CLICK_DRAG_THRESHOLD = 5; // px
     stage.addEventListener('pointerdown', (e) => {
       if (e.target.closest('.interactive[data-card]')) return;
       dragging = true;
+      pointerMoved = false;
       stage.classList.add('grabbing');
       stage.setPointerCapture?.(e.pointerId);
       sx = e.clientX; sy = e.clientY; stx = tx; sty = ty;
     });
     stage.addEventListener('pointermove', (e) => {
       if (!dragging) return;
+      if (Math.hypot(e.clientX - sx, e.clientY - sy) > CLICK_DRAG_THRESHOLD) pointerMoved = true;
       tx = stx + (e.clientX - sx);
       ty = sty + (e.clientY - sy);
       applyTransform();
@@ -360,6 +364,10 @@
       dragging = false;
       stage.classList.remove('grabbing');
       stage.releasePointerCapture?.(e.pointerId);
+      // Click-outside-to-close : si le pointer n'a pas drag ET cible le fond du stage (pas le SVG content), fermer.
+      if (!pointerMoved && e.target === stage && e.type === 'pointerup') {
+        closeZoom();
+      }
     }
     stage.addEventListener('pointerup', endDrag);
     stage.addEventListener('pointercancel', endDrag);
@@ -393,6 +401,9 @@
     window.addEventListener('resize', () => {
       if (!overlay.hidden) fitToStage();
     });
+
+    // Expose openZoom to inline portrait-zoom handlers so they share state (drag, +/- buttons, etc.).
+    window.__dossierOpenZoom = openZoom;
   }
 
   // ──────────────────────────────────────────────────────────
