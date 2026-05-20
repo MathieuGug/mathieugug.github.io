@@ -91,19 +91,17 @@ Pattern complet (structure HTML, sticky math `height` vs `max-height`, `panel-cl
 
 ## Quiz cards (vérification de compréhension)
 
-Workflow **JSON-first, tool-generated** : chaque app deep-research qui ajoute des quiz aux charnières conceptuelles maintient un sidecar `<slug>/quizzes.json` (source de vérité) et **génère** le markup HTML via le script idempotent `python .claude/skills/illustrated-deep-research/assets/insert-quizzes.py --app <path> --quizzes <path>` (cf. `.claude/skills/illustrated-deep-research/references/quiz-authoring.md` pour la spec complète).
+Workflow JSON-first, spec complète : `.claude/skills/illustrated-deep-research/references/quiz-authoring.md`.
 
-- **Le JSON est la source.** Toute correction d'énoncé, de bonne réponse, d'explication ou de back-link se fait dans le `.json`, puis on relance le script (qui réécrit chaque `<aside class="quiz-card" data-quiz-id="q-{id}">` en place). Idempotent. À chaque édition d'un quiz : éditer le JSON → re-run → diff review.
-- **Convention canonique des `name` d'inputs** (load-bearing pour les radios single-mode, cosmétique pour les checkboxes mais à respecter pour la cohérence) :
-  - single, 1 question : tous les radios partagent `name="q-{id}"`
-  - single, N>1 questions : question k → `name="q-{id}-{k}"`
-  - multi, 1 question : chaque option → `name="q-{id}-{i}"`
-  - multi, N>1 questions : `name="q-{id}-{k}-{i}"`
-- **CSS et IIFE `setupQuizzes()`** : la lib partagée `/assets/dossier-app.js` fournit `setupQuizzes()` qui bind chaque `.quiz-card`. Le script `insert-quizzes.py` détecte la présence de `<script src="/assets/dossier-app.js">` et **skip totalement l'injection CSS + IIFE** dans ce cas (sinon double binding). Conséquence pratique : le CSS quiz (bloc `.quiz-card`, `.quiz-q__*`) doit être embarqué localement dans la `<style>` de chaque app qui utilise la lib partagée (le shared CSS ne le contient pas à date 2026-05). Copier le bloc canonique depuis `evaluation-agentique/20260501-…-app.html` ou `observabilite-agents-ia/20260430-…-app.html` (~150 lignes, variantes mobile `@media (max-width: 1024px)` incluses).
-- **Placement automatique** : le script insère chaque carte juste avant le `<h2 id="{before_heading_id}">` (ou `<h3>`) déclaré dans le JSON. Si ce heading est précédé d'un `<hr />`, la carte se loge AVANT le `<hr />` pour préserver le flow visuel `…prose… <quiz/> <hr/> <heading/>`.
-- **Hand-rolled à éviter.** Écrire le markup à la main « marche » (le shared `setupQuizzes()` ne dépend que des sélecteurs `.quiz-q__*`), mais désynchronise le JSON du HTML et oblige à toute correction ultérieure de le faire deux fois. Si une nouvelle app n'a pas encore de `quizzes.json`, **créer le JSON d'abord**, lancer le script ensuite — la `obs` app a été créée à l'envers une fois (2026-05-20) puis rattrapée en re-runnant le tool en mode `replaced` pour normaliser le markup.
+**Commande repo** (idempotent, à re-runner après chaque édition du JSON) :
+```
+python .claude/skills/illustrated-deep-research/assets/insert-quizzes.py \
+  --app <path/to/app.html> --quizzes <path/to/quizzes.json>
+```
 
-Sidecars existants à date 2026-05 (pattern reproductible) : `evaluation-agentique/quizzes.json`, `ia-frugale/quizzes.json`, `observabilite-agents-ia/quizzes.json`, `process-reward-models/quizzes.json`. Autres apps quizzées sans sidecar (legacy hand-rolled) : `surfaces-agentiques`, `agent-sdk`, `ia-et-travail`, `mcp-plateforme`, `benchmarks-contestes`, `measure-roi`, `analytics-agentique-gcp` — à migrer au passage si on les édite (créer le `quizzes.json` puis re-runner le script en mode `replaced`).
+**Sidecars existants** (pattern reproductible) : `evaluation-agentique/quizzes.json`, `ia-frugale/quizzes.json`, `observabilite-agents-ia/quizzes.json`, `process-reward-models/quizzes.json`.
+
+**Apps quizzées sans sidecar** (legacy hand-rolled à migrer au passage si on les édite) : `surfaces-agentiques`, `agent-sdk`, `ia-et-travail`, `mcp-plateforme`, `benchmarks-contestes`, `measure-roi`, `analytics-agentique-gcp`.
 
 ## Encadrés de renvoi vers d'autres dossiers (callouts)
 
