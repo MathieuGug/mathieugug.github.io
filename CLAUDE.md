@@ -32,8 +32,8 @@ Site personnel de Mathieu Guglielmino, hébergé sur GitHub Pages. Il publie des
 - Illustrations : SVG inline pour l'accessibilité et l'interactivité.
 - **Favicon** : `/favicon.svg` à la racine (monogramme MG italique sur fond accent). Toute nouvelle page HTML publiée doit inclure `<link rel="icon" type="image/svg+xml" href="/favicon.svg">` dans son `<head>`.
 - Pas de tracker, pas d'analytics, pas de tiers en dehors de Google Fonts.
-- **Surlignage stabilo (`<mark>`)** : signature visuelle du site, à utiliser pour les phrases-clés que je veux faire ressortir dans le corps narratif. En markdown : syntaxe Obsidian `==texte==` qui rend `<mark>texte</mark>`. Style : un dégradé qui ne tache que la moitié basse du texte, façon stylo feutre — `background: linear-gradient(transparent 58%, rgba(178, 59, 27, 0.14) 58%); color: inherit; padding: 0 2px;`. La règle CSS doit cibler `main mark` (apps `header.site` + `main#report`) ou **`.entry mark`** (journal/scrolly — **pas** `.entry .body mark`, qui rate les `<mark>` dans les bullets `<li>` de l'exec sum ; cas vu le 14 mai 2026 sur le journal Musk : un `<mark>` en bullet apparaissait en jaune browser-default au lieu du wash orange). Le pattern d'origine vient de `gouvernance/20260421-pitch-gouvernance-agentic.html:189`. Embarqué dans toutes les apps deep-research (22+ à date 2026-05), dans `proces-musk-altman/journal.html`, et dans les deux templates de la skill `illustrated-deep-research/assets/` (`app-template.html` et `slideshow-template.html`). Toute nouvelle app HTML longue (rapport, journal) doit l'embarquer.
-- **Hint de largeur Obsidian `|1300` sur les images des journaux markdown** : dans tout fichier journal `.md` (cas en cours : `proces-musk-altman/journal.md`), chaque image inline doit porter le suffixe `|1300` — syntaxe Obsidian `![alt|1300](path.svg)`. C'est purement un hint pour homogénéiser la prévisualisation Obsidian locale (sinon les schémas s'affichent à la largeur du wrap éditeur, trop étroite pour relire). **N'affecte pas le rendu HTML publié** : le `journal.html` est écrit/maintenu à la main, pas auto-généré depuis le `.md`. Toute nouvelle entrée journal qui ajoute un `![...](...)` doit l'embarquer dès sa rédaction.
+- **Surlignage stabilo (`<mark>`)** : signature visuelle du site, syntaxe Obsidian `==texte==`. Pattern complet (CSS, scope `.entry` vs `main`) : `.claude/skills/illustrated-deep-research/references/companion-app.md` § "Micro-patterns de style".
+- **Hint de largeur Obsidian `|1300`** sur les images des journaux markdown — voir `.claude/skills/illustrated-deep-research/references/workflow.md` § 3.4.
 
 ## SEO et social previews
 
@@ -183,29 +183,9 @@ Sidecars existants à date 2026-05 (pattern reproductible) : `evaluation-agentiq
 
 ## Encadrés de renvoi vers d'autres dossiers (callouts)
 
-Pattern partagé `main .callout` (CSS local à chaque app, pas dans la lib partagée à date) pour pointer vers un autre dossier en parallèle d'une section de prose — typiquement obs ↔ eval, harness ↔ agent-sdk, etc. Pattern d'origine : `agent-sdk/20260518-agent-sdk-app.html:237-258` (CSS) + exemple HTML lignes 705-713.
+Pattern complet : `.claude/skills/illustrated-deep-research/references/callouts.md`.
 
-Structure HTML :
-
-```html
-<aside class="callout">
-  <button type="button" class="callout-thumb-link"
-          data-svg-src="../<autre-dossier>/images/<schema>.svg"
-          data-svg-alt="Description de la mini-vignette"
-          aria-label="Agrandir : <titre>">
-    <img class="callout-thumb" src="../<autre-dossier>/images/<schema>.svg"
-         alt="…" loading="lazy">
-  </button>
-  <div class="callout-body">
-    <p class="callout-eyebrow">Eyebrow contextuel (mono caps)</p>
-    <p>Texte de renvoi avec <a href="../<autre-dossier>/">lien</a> vers le hub.</p>
-  </div>
-</aside>
-```
-
-Mécanique du zoom : la mini-vignette est un `<button>` (pas un `<a>`) ; un IIFE inline en bas de page (à côté de `setupFigurePortraitZoom`) attache un click handler qui fetch le SVG et réutilise `window.__dossierOpenZoom` (exposé par la lib partagée). Embarquer ces 7 lignes dans le `<script>` final de chaque app qui ajoute des callouts (cf. `observabilite-agents-ia/20260430-…-app.html` fin de fichier). Variant `callout--text` (sans vignette, pleine largeur) pour un renvoi purement textuel.
-
-Bordure gauche en `--teal` pour différencier visuellement des `.quiz-card` (bordure `--carmine`). Sur mobile (`max-width: 640px`), la vignette passe au-dessus du body en colonne unique.
+**Quand l'utiliser dans ce repo** : à chaque charnière où un dossier voisin éclaire la section (obs ↔ eval, harness ↔ agent-sdk, etc.). Bordure gauche en `--teal` pour différencier visuellement des `.quiz-card` (bordure `--carmine`).
 
 ## Bibliothèque partagée `/assets/dossier-app.{js,css}`
 
