@@ -152,9 +152,27 @@
       return cards.indexOf(cardId) !== -1;
     });
   }
-  function openZone(node) { /* Task A8 */ }
-  function openLeaf(node) { /* Task A8 */ }
-  function reset() { /* Task A8 */ }
+  function openZone(node) {
+    const vb = bboxFromTarget(node);
+    if (!vb) return;
+    setLevelState(1, node);
+    animateViewBox(vb);
+    history.pushState({ level: 1, node: node }, '', '#zone-' + node);
+  }
+
+  function openLeaf(node) {
+    const vb = leafViewBox(node);
+    if (!vb) return;
+    setLevelState(2, node);
+    animateViewBox(vb);
+    history.pushState({ level: 2, node: node }, '', '#' + node);
+  }
+
+  function reset() {
+    setLevelState(0, null);
+    animateViewBox(rootViewBox);
+    history.pushState({ level: 0 }, '', location.pathname + location.search);
+  }
   function setupClickHandlers() { /* Task A9 */ }
   function setupKeyboardHandlers() { /* Task A10 */ }
   function setupResetButton() { /* Task A11 */ }
