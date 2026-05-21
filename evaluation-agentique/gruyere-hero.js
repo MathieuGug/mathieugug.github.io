@@ -10,7 +10,7 @@ const DEFAULTS = {
   resetIntervalMs: 30000,
   plateOpacity: 0.08,
   showResetButton: false,
-  orbitSpeed: 0.015,
+  orbitSpeed: 0.055,
   holeSeed: 'eval-2026',
   // Target fraction of emitted particles that reach the accumulator (the "attack
   // success rate"). The hole alignment between plates is tuned at mount time
@@ -190,7 +190,7 @@ function buildMarkSystem(maxCount) {
     vertexShader: `
       void main() {
         vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-        gl_PointSize = 18.0 * (1.0 / -mvPosition.z);
+        gl_PointSize = 42.0 * (1.0 / -mvPosition.z);
         gl_Position = projectionMatrix * mvPosition;
       }
     `,
@@ -480,8 +480,8 @@ function buildVolumeFrame() {
 
 // Bounding sphere of the visible scene (spawn area + plates + accumulator).
 // Camera distance is derived from this radius + the camera's actual FOV/aspect.
-const SCENE_RADIUS = 6.2;
-const FIT_PADDING = 1.15;
+const SCENE_RADIUS = 5.5;
+const FIT_PADDING = 1.02;
 
 function computeOrbitRadius(camera) {
   const vFovHalf = camera.fov * Math.PI / 360;
@@ -493,18 +493,23 @@ function computeOrbitRadius(camera) {
   return FIT_PADDING * SCENE_RADIUS / Math.sin(minHalfFov);
 }
 
-// Plate visual constants — warm steel-taupe that reads light against cream bg.
-const PLATE_THICKNESS = 0.10;
-const PLATE_COLOR = 0x9a8c7d;   // warm taupe, clearly NOT black
-const PLATE_METALNESS = 0.35;
-const PLATE_ROUGHNESS = 0.55;
-const PLATE_OPACITY = 0.72;     // see-through enough to read holes + back wall through
+// Plate visual constants — three rich tones (layer-coded), MeshPhong so they
+// don't need an environment map to read as coloured rather than black.
+const PLATE_THICKNESS = 0.12;
+const PLATE_COLORS = [
+  0x3a5570,   // deep steel blue — préventif
+  0x8a5a3a,   // brushed copper — curatif
+  0x5a4068,   // muted aubergine — qualitatif
+];
+const PLATE_SPECULAR = 0xb8a888;
+const PLATE_SHININESS = 90;
+const PLATE_OPACITY = 0.78;
 
-// Particle visual — dark slate blue, visible against BOTH cream bg and translucent plates.
-const PARTICLE_COLOR = 0x3d4b66;
+// Particle visual — bright cream/white, high contrast on the coloured plates.
+const PARTICLE_COLOR = 0xf6efe0;
 const PARTICLE_SIZE_PX = 60;
 
-function buildPlate(holes, z) {
+function buildPlate(holes, z, plateIndex) {
   const shape = new THREE.Shape();
   shape.moveTo(-PLATE_HALF, -PLATE_HALF);
   shape.lineTo( PLATE_HALF, -PLATE_HALF);
@@ -517,39 +522,38 @@ function buildPlate(holes, z) {
     shape.holes.push(hole);
   }
 
-  // Extrude the 2D shape into a thin 3D slab so the plate has real edges
-  // (visible side faces, depth, light response).
+  // Extrude the 2D shape into a thin 3D slab so the plate has real edges.
   const geom = new THREE.ExtrudeGeometry(shape, {
     depth: PLATE_THICKNESS,
     bevelEnabled: true,
-    bevelThickness: 0.012,
-    bevelSize: 0.008,
+    bevelThickness: 0.014,
+    bevelSize: 0.010,
     bevelSegments: 2,
     curveSegments: 32,
   });
-  // Extrude builds along +z starting at z=0. Center it on z=0 so positioning
-  // by `mesh.position.z = z` places the slab's midplane at z.
   geom.translate(0, 0, -PLATE_THICKNESS / 2);
 
-  const mat = new THREE.MeshStandardMaterial({
-    color: PLATE_COLOR,
-    metalness: PLATE_METALNESS,
-    roughness: PLATE_ROUGHNESS,
+  // Phong material reads colour without needing an env map (unlike PBR
+  // standard which paints black without one).
+  const mat = new THREE.MeshPhongMaterial({
+    color: PLATE_COLORS[plateIndex] ?? PLATE_COLORS[0],
+    specular: PLATE_SPECULAR,
+    shininess: PLATE_SHININESS,
     side: THREE.DoubleSide,
     transparent: true,
     opacity: PLATE_OPACITY,
-    depthWrite: false,  // translucent — let trails/particles behind blend through
+    depthWrite: false,
   });
 
   const mesh = new THREE.Mesh(geom, mat);
   mesh.position.z = z;
 
-  // Faint dark rim around the front face for hole readability.
+  // Subtle dark rim picks out the front silhouette + holes.
   const rimEdges = new THREE.EdgesGeometry(geom, 18);
   const rimMat = new THREE.LineBasicMaterial({
     color: 0x141414,
     transparent: true,
-    opacity: 0.45,
+    opacity: 0.55,
   });
   const rim = new THREE.LineSegments(rimEdges, rimMat);
   rim.position.z = z;
@@ -594,15 +598,18 @@ function initScene(container) {
   renderer.setClearColor(0x000000, 0);
   container.appendChild(renderer.domElement);
 
-  // Lighting: ambient + warm key + cool fill. PBR plates need light.
-  const ambient = new THREE.AmbientLight(0xfff5e0, 0.55);
-  scene.add(ambient);
-  const key = new THREE.DirectionalLight(0xfff2d8, 1.25);
-  key.position.set(-5, 6, -4);
+  // Lighting: hemisphere (sky+ground tonality) + warm key + cool fill.
+  const hemi = new THREE.HemisphereLight(0xfff1d8, 0x6a4a2a, 0.65);
+  scene.add(hemi);
+  const key = new THREE.DirectionalLight(0xfff2d8, 1.10);
+  key.position.set(-5, 7, -3);
   scene.add(key);
-  const fill = new THREE.DirectionalLight(0xc8d4e2, 0.45);
-  fill.position.set(4, -1, 5);
+  const fill = new THREE.DirectionalLight(0xc8d4e2, 0.55);
+  fill.position.set(5, -1, 6);
   scene.add(fill);
+  const rim = new THREE.DirectionalLight(0xff9a5a, 0.35);
+  rim.position.set(2, 2, 10);  // warm rim from behind to lick the back wall
+  scene.add(rim);
 
   return { scene, camera, renderer };
 }
@@ -659,7 +666,7 @@ export function mountGruyereHero(container, opts = {}) {
   const tuned = tuneHolesForTarget(config.holeSeed, config.targetSurvivalRate);
   const platesData = [];
   for (let i = 0; i < 3; i++) {
-    const plate = buildPlate(tuned.holesPerPlate[i], PLATE_Z[i]);
+    const plate = buildPlate(tuned.holesPerPlate[i], PLATE_Z[i], i);
     platesData.push(plate);
     scene.add(plate.group);
   }
@@ -828,6 +835,36 @@ export function mountGruyereHero(container, opts = {}) {
   const ORBIT_CENTER = new THREE.Vector3(0, 0, (SPAWN_Z + ACCUMULATOR_Z) / 2);
   let orbitAngle = -Math.PI * 0.78;
 
+  // Drag-to-rotate (horizontal mouse/touch drag → orbit angle).
+  // Auto-rotation pauses while the user is dragging.
+  let dragActive = false;
+  let dragLastX = 0;
+  renderer.domElement.style.cursor = 'grab';
+  renderer.domElement.style.touchAction = 'pan-y';
+  function onPointerDown(e) {
+    dragActive = true;
+    dragLastX = e.clientX;
+    try { renderer.domElement.setPointerCapture(e.pointerId); } catch (_) {}
+    renderer.domElement.style.cursor = 'grabbing';
+  }
+  function onPointerMove(e) {
+    if (!dragActive) return;
+    const dx = e.clientX - dragLastX;
+    dragLastX = e.clientX;
+    orbitAngle -= dx * 0.0065;
+  }
+  function onPointerUp(e) {
+    if (!dragActive) return;
+    dragActive = false;
+    try { renderer.domElement.releasePointerCapture(e.pointerId); } catch (_) {}
+    renderer.domElement.style.cursor = 'grab';
+  }
+  renderer.domElement.addEventListener('pointerdown', onPointerDown);
+  renderer.domElement.addEventListener('pointermove', onPointerMove);
+  renderer.domElement.addEventListener('pointerup', onPointerUp);
+  renderer.domElement.addEventListener('pointercancel', onPointerUp);
+  renderer.domElement.addEventListener('pointerleave', onPointerUp);
+
   function syncViewport() {
     const w = container.clientWidth;
     const h = container.clientHeight;
@@ -858,7 +895,10 @@ export function mountGruyereHero(container, opts = {}) {
 
     syncViewport();
 
-    orbitAngle += config.orbitSpeed * dt;
+    // Auto-rotate, unless the user is actively dragging.
+    if (!dragActive) {
+      orbitAngle += config.orbitSpeed * dt;
+    }
     const orbitRadius = computeOrbitRadius(camera);
     const orbitY = orbitRadius * ORBIT_Y_RATIO;
     camera.position.set(
