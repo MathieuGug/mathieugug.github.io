@@ -109,7 +109,7 @@ const STATE_FADING = 1;
 const STATE_ACCUMULATED = 2;
 const STATE_DEAD = 3;
 
-const PARTICLE_SPEED = 2.5;  // units/s along +z
+const PARTICLE_SPEED = 1.4;  // units/s along +z — slow enough to follow each particle visually
 const SPAWN_HALF = 2.2;      // x,y range at spawn (slightly wider than plates)
 
 function buildParticleSystem(maxCount) {
@@ -424,6 +424,12 @@ export function mountGruyereHero(container, opts = {}) {
   const impacts = buildImpactPool(accentColor);
   for (const r of impacts) scene.add(r.mesh);
 
+  // Accumulation: particles that pass plate 3 are frozen on the back wall.
+  const accumulated = [];
+  let resetCycleStart = performance.now();
+  let resetStartedAt = -1; // -1 = not currently fading out the constellation
+  const RESET_FADE_MS = 1500;
+
   let lastT = performance.now();
   let spawnAccumulator = 0;
 
@@ -465,8 +471,13 @@ export function mountGruyereHero(container, opts = {}) {
           }
         }
         if (p.state === STATE_ALIVE && p.z >= ACCUMULATOR_Z) {
-          // Task 8 will accumulate; for now cull.
-          p.state = STATE_DEAD;
+          p.state = STATE_ACCUMULATED;
+          p.z = ACCUMULATOR_Z;
+          p.r = accentColor.r;
+          p.g = accentColor.g;
+          p.b = accentColor.b;
+          p.a = 0.85;
+          accumulated.push(p);
         }
       } else if (p.state === STATE_FADING) {
         const elapsed = (now - p.fadeStart) / 1000;
@@ -493,6 +504,27 @@ export function mountGruyereHero(container, opts = {}) {
     psys.geom.attributes.color.needsUpdate = true;
     psys.geom.attributes.alpha.needsUpdate = true;
     psys.geom.setDrawRange(0, drawCount);
+  }
+
+  function maybeReset(now) {
+    if (resetStartedAt < 0) {
+      const overflow = accumulated.length >= config.maxAccumulated;
+      const timeOut = (now - resetCycleStart) >= config.resetIntervalMs;
+      if (overflow || timeOut) {
+        resetStartedAt = now;
+      }
+    } else {
+      const elapsed = now - resetStartedAt;
+      const t = Math.min(1, elapsed / RESET_FADE_MS);
+      const targetAlpha = 0.85 * (1 - t);
+      for (const p of accumulated) p.a = targetAlpha;
+      if (t >= 1) {
+        for (const p of accumulated) p.state = STATE_DEAD;
+        accumulated.length = 0;
+        resetStartedAt = -1;
+        resetCycleStart = now;
+      }
+    }
   }
 
   // Orbital camera: slow rotation around the cube center. Distance is
@@ -534,6 +566,7 @@ export function mountGruyereHero(container, opts = {}) {
 
     updateParticles(dt, now);
     updateImpacts(impacts, dt);
+    maybeReset(now);
     renderer.render(scene, camera);
   }
   animate();
@@ -544,8 +577,8 @@ export function mountGruyereHero(container, opts = {}) {
       renderer.dispose();
       renderer.domElement.remove();
     },
-    pause() { cancelAnimationFrame(rafId); rafId = null; },
-    resume() { if (!rafId) animate(); },
-    reset() {},
+    pause() { if (rafId) { cancelAnimationFrame(rafId); rafId = null; } },
+    resume() { if (!rafId) { lastT = performance.now(); animate(); } },
+    reset() { resetStartedAt = performance.now(); },
   };
 }
