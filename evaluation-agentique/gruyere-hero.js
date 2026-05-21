@@ -396,6 +396,17 @@ export function mountGruyereHero(container, opts = {}) {
     config.particleRate = 8;
   }
 
+  // Optional reset button (hidden by default).
+  let resetButton = null;
+  if (config.showResetButton) {
+    resetButton = document.createElement('button');
+    resetButton.type = 'button';
+    resetButton.className = 'gruyere-hero__reset';
+    resetButton.textContent = 'Reset';
+    resetButton.setAttribute('aria-label', 'Réinitialiser l\'accumulation');
+    container.appendChild(resetButton);
+  }
+
   // Volume frame: wireframe cube + socle (the implicit cube made visible).
   const frame = buildVolumeFrame();
   scene.add(frame);
@@ -545,6 +556,15 @@ export function mountGruyereHero(container, opts = {}) {
     renderer.setSize(w, h, false);
   }
 
+  // Pause rendering when the hero is out of viewport (battery on long pages).
+  let inView = true;
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) inView = e.isIntersecting;
+    if (inView && !rafId) { lastT = performance.now(); animate(); }
+    if (!inView && rafId) { cancelAnimationFrame(rafId); rafId = null; }
+  }, { threshold: 0.01 });
+  io.observe(container);
+
   let rafId = null;
   function animate() {
     rafId = requestAnimationFrame(animate);
@@ -571,9 +591,29 @@ export function mountGruyereHero(container, opts = {}) {
   }
   animate();
 
+  if (resetButton) {
+    resetButton.addEventListener('click', () => { resetStartedAt = performance.now(); });
+  }
+
+  function disposeNode(obj) {
+    if (obj.geometry) obj.geometry.dispose();
+    if (obj.material) {
+      if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
+      else obj.material.dispose();
+    }
+  }
+
   return {
     destroy() {
-      cancelAnimationFrame(rafId);
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = null;
+      io.disconnect();
+      if (resetButton) resetButton.remove();
+      frame.traverse(disposeNode);
+      for (const plate of platesData) plate.group.traverse(disposeNode);
+      for (const r of impacts) disposeNode(r.mesh);
+      psys.geom.dispose();
+      psys.points.material.dispose();
       renderer.dispose();
       renderer.domElement.remove();
     },

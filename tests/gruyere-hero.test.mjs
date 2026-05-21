@@ -48,3 +48,12 @@ test('gruyere-hero.js builds 3 plates from PLATE_Z (inside a 4×4×4 cube)', () 
   assert.match(HERO_JS, /ShapeGeometry/);
   assert.match(HERO_JS, /EdgesGeometry/);
 });
+
+test('gruyere-hero.js wires IntersectionObserver lifecycle', () => {
+  assert.match(HERO_JS, /new IntersectionObserver/);
+});
+
+test('gruyere-hero.js destroy() disposes Three.js resources', () => {
+  assert.match(HERO_JS, /renderer\.dispose/);
+  assert.match(HERO_JS, /\.geometry\.dispose/);
+});
