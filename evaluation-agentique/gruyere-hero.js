@@ -5,18 +5,18 @@
 import * as THREE from 'three';
 
 const DEFAULTS = {
-  particleRate: 25,
+  particleRate: 38,
   maxAccumulated: 300,
   resetIntervalMs: 30000,
   plateOpacity: 0.08,
   showResetButton: false,
   orbitSpeed: 0.055,
   holeSeed: 'eval-2026',
-  // Target fraction of emitted particles that reach the accumulator (the "attack
-  // success rate"). The hole alignment between plates is tuned at mount time
-  // via Monte Carlo until the geometric survival rate matches this target.
-  // 0.01 = 1% — realistic for stacked defenses.
-  targetSurvivalRate: 0.01,
+  // Target fraction of emitted particles that reach the accumulator. Hole
+  // alignment is tuned at mount via Monte Carlo until the geometric survival
+  // rate matches this target. 0.05 = 5% — enough to see the constellation
+  // grow steadily during a 30s cycle.
+  targetSurvivalRate: 0.05,
 };
 
 // Deterministic RNG: mulberry32. Same seed string → same hole layout on all 3 pages.
@@ -42,8 +42,8 @@ function mulberry32(seed) {
 
 // Plate dimensions: 5×5 unit square centered on origin (x,y in [-2.5, 2.5]).
 const PLATE_HALF = 2.5;
-const HOLE_R_MIN = 0.07;
-const HOLE_R_MAX = 0.22;
+const HOLE_R_MIN = 0.12;
+const HOLE_R_MAX = 0.34;
 const ALIGN_P2_TO_P1 = 0.30;
 const ALIGN_P3_TO_P2 = 0.15;
 
@@ -63,7 +63,7 @@ function tooClose(hole, others, slack = 0.1) {
 }
 
 function generateHoles(plateIndex, rng, parentHoles, alignRatioOverride) {
-  const target = 4 + Math.floor(rng() * 5); // 4..8 inclusive
+  const target = 7 + Math.floor(rng() * 4); // 7..10 inclusive
   const holes = [];
 
   // Alignment pass: copy a fraction of parent holes (with small jitter).
