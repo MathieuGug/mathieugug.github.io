@@ -66,3 +66,41 @@ test('gruyere-hero.js tunes hole alignment via Monte Carlo to match target', () 
   assert.match(HERO_JS, /function\s+monteCarloSurvival/);
   assert.match(HERO_JS, /function\s+tuneHolesForTarget/);
 });
+
+test('gruyere-hero-poster.svg exists and is well-formed', () => {
+  const svg = readFileSync(join(ROOT, 'evaluation-agentique/gruyere-hero-poster.svg'), 'utf8');
+  assert.ok(svg.length > 1000, 'poster SVG suspiciously short');
+  assert.match(svg, /<svg/);
+  assert.match(svg, /viewBox="0 0 1200 620"/);
+});
+
+const HOST_PAGES = [
+  'evaluation-agentique/index.html',
+  'evaluation-agentique/20260501-evaluation-agentique-app.html',
+  'evaluation-agentique/20260521-evaluation-agentique-canvas.html',
+];
+
+for (const page of HOST_PAGES) {
+  const html = readFileSync(join(ROOT, page), 'utf8');
+
+  test(`${page}: includes gruyere-hero.css`, () => {
+    assert.match(html, /href=["']gruyere-hero\.css["']/);
+  });
+
+  test(`${page}: declares importmap for three`, () => {
+    assert.match(html, /importmap[\s\S]*"three"[\s\S]*three\.module\.js/);
+  });
+
+  test(`${page}: contains <figure class="gruyere-hero" id="gruyere-hero">`, () => {
+    assert.match(html, /<figure[^>]*class="gruyere-hero"[^>]*id="gruyere-hero"/);
+  });
+
+  test(`${page}: mounts mountGruyereHero on the figure`, () => {
+    assert.match(html, /import\s*\{\s*mountGruyereHero\s*\}\s*from\s*['"]\.\/gruyere-hero\.js['"]/);
+    assert.match(html, /mountGruyereHero\(\s*document\.getElementById\(['"]gruyere-hero['"]\)/);
+  });
+
+  test(`${page}: has <noscript> poster fallback`, () => {
+    assert.match(html, /<noscript>\s*<img[^>]*gruyere-hero-poster\.svg/);
+  });
+}
