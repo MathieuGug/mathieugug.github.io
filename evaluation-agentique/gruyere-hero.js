@@ -14,14 +14,36 @@ const DEFAULTS = {
   holeSeed: 'eval-2026',
 };
 
+function detectCapabilities() {
+  const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const probe = document.createElement('canvas');
+  const webgl = !!(probe.getContext('webgl2') || probe.getContext('webgl'));
+  const mobile = matchMedia('(max-width: 768px)').matches ||
+                 (navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4);
+  return { reducedMotion, webgl, mobile };
+}
+
+function mountPoster(container, scriptDir) {
+  const img = document.createElement('img');
+  img.src = scriptDir + 'gruyere-hero-poster.svg';
+  img.alt = '3 plaques perforées en perspective, particules accumulées sur l\'écran arrière';
+  img.style.width = '100%';
+  img.style.height = '100%';
+  img.style.objectFit = 'cover';
+  const caption = container.querySelector('.gruyere-hero__caption');
+  if (caption) container.insertBefore(img, caption);
+  else container.appendChild(img);
+  return { destroy() { img.remove(); }, pause() {}, resume() {}, reset() {} };
+}
+
 export function mountGruyereHero(container, opts = {}) {
   const config = { ...DEFAULTS, ...opts };
-  // TODO Task 2: capability detection + fallback
-  // TODO Task 4-9: scene, plates, particles, accumulation, camera
-  return {
-    destroy() {},
-    pause() {},
-    resume() {},
-    reset() {},
-  };
+  const caps = detectCapabilities();
+  // Resolve poster URL relative to this module's directory (works from hub, app, canvas).
+  const scriptDir = new URL('.', import.meta.url).href;
+  if (caps.reducedMotion || !caps.webgl) {
+    return mountPoster(container, scriptDir);
+  }
+  // TODO Task 4: scene, plates, particles
+  return { destroy() {}, pause() {}, resume() {}, reset() {} };
 }
