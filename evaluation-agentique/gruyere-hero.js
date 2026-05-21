@@ -47,12 +47,12 @@ const HOLE_R_MAX = 0.18;
 const ALIGN_P2_TO_P1 = 0.30;
 const ALIGN_P3_TO_P2 = 0.15;
 
-// Z layout — plates inside the front, accumulator screen well behind plate 3.
-const PLATE_Z = [0.5, 2.0, 3.5];
-const ACCUMULATOR_Z = 5.0;   // back wall: 1.5 units behind plate 3 so the gap reads
-const SPAWN_Z = -2.5;        // well upstream so trajectories are visible before they reach plate 0
+// Z layout — well-spaced plates and the accumulator screen far behind plate 3.
+const PLATE_Z = [0.5, 3.0, 5.5];     // 2.5u between plates so the depth reads
+const ACCUMULATOR_Z = 8.0;            // 2.5u behind plate 3 — distinct back wall
+const SPAWN_Z = -3.0;                 // well upstream — particles enter from far in front
 const CUBE_Z_MIN = 0;
-const CUBE_Z_MAX = 5.0;
+const CUBE_Z_MAX = 8.0;
 
 function tooClose(hole, others, slack = 0.1) {
   for (const o of others) {
@@ -173,6 +173,59 @@ function detectCapabilities() {
   const mobile = matchMedia('(max-width: 768px)').matches ||
                  (navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4);
   return { reducedMotion, webgl, mobile };
+}
+
+// Persistent "scars" left on plates where particles crashed. Accumulate across
+// the reset cycle, then cleared together with the accumulated survivors.
+const MAX_MARKS = 800;
+const MARK_COLOR = 0xa83020;  // deeper red than the ring so the trace stains the plate
+
+function buildMarkSystem(maxCount) {
+  const positions = new Float32Array(maxCount * 3);
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geom.setDrawRange(0, 0);
+  const mat = new THREE.ShaderMaterial({
+    uniforms: { uColor: { value: new THREE.Color(MARK_COLOR) } },
+    vertexShader: `
+      void main() {
+        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+        gl_PointSize = 18.0 * (1.0 / -mvPosition.z);
+        gl_Position = projectionMatrix * mvPosition;
+      }
+    `,
+    fragmentShader: `
+      uniform vec3 uColor;
+      void main() {
+        vec2 c = gl_PointCoord - vec2(0.5);
+        float d = length(c);
+        if (d > 0.5) discard;
+        float soft = smoothstep(0.5, 0.25, d);
+        gl_FragColor = vec4(uColor, 0.85 * soft);
+      }
+    `,
+    transparent: true,
+    depthWrite: false,
+  });
+  const points = new THREE.Points(geom, mat);
+  return { points, geom, positions, count: 0 };
+}
+
+function addMark(ms, x, y, z) {
+  if (ms.count >= MAX_MARKS) return;
+  const off = ms.count * 3;
+  ms.positions[off    ] = x;
+  ms.positions[off + 1] = y;
+  // Push the mark just in front of the plate so it sits ON the surface, not inside.
+  ms.positions[off + 2] = z - 0.055;
+  ms.count++;
+  ms.geom.attributes.position.needsUpdate = true;
+  ms.geom.setDrawRange(0, ms.count);
+}
+
+function clearMarks(ms) {
+  ms.count = 0;
+  ms.geom.setDrawRange(0, 0);
 }
 
 // Particle states.
@@ -427,8 +480,8 @@ function buildVolumeFrame() {
 
 // Bounding sphere of the visible scene (spawn area + plates + accumulator).
 // Camera distance is derived from this radius + the camera's actual FOV/aspect.
-const SCENE_RADIUS = 5.0;
-const FIT_PADDING = 1.20;
+const SCENE_RADIUS = 6.2;
+const FIT_PADDING = 1.15;
 
 function computeOrbitRadius(camera) {
   const vFovHalf = camera.fov * Math.PI / 360;
@@ -624,8 +677,10 @@ export function mountGruyereHero(container, opts = {}) {
 
   const blockedRings = buildRingPool(BLOCKED_COLOR);  // red — blocked at a plate
   const passedBursts = buildBurstPool(PASSED_COLOR);  // green — passed through a hole
+  const marks = buildMarkSystem(MAX_MARKS);            // persistent red scars on plates
   for (const r of blockedRings) scene.add(r.mesh);
   for (const r of passedBursts) scene.add(r.mesh);
+  scene.add(marks.points);
 
   // Accumulation: particles that pass plate 3 are frozen on the back wall.
   const accumulated = [];
@@ -669,6 +724,7 @@ export function mountGruyereHero(container, opts = {}) {
               p.state = STATE_FADING;
               p.fadeStart = now;
               triggerBurst(blockedRings, p.x, p.y, plate.z);
+              addMark(marks, p.x, p.y, plate.z);
               break;
             } else {
               // Passed through a hole — green cloud signals the breach.
@@ -758,6 +814,7 @@ export function mountGruyereHero(container, opts = {}) {
       if (t >= 1) {
         for (const p of accumulated) p.state = STATE_DEAD;
         accumulated.length = 0;
+        clearMarks(marks);
         resetStartedAt = -1;
         resetCycleStart = now;
       }
@@ -841,6 +898,8 @@ export function mountGruyereHero(container, opts = {}) {
       for (const plate of platesData) plate.group.traverse(disposeNode);
       for (const r of blockedRings) disposeNode(r.mesh);
       for (const r of passedBursts) disposeNode(r.mesh);
+      marks.geom.dispose();
+      marks.points.material.dispose();
       psys.geom.dispose();
       psys.points.material.dispose();
       renderer.dispose();
