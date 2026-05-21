@@ -606,7 +606,19 @@ function buildPlate(holes, z, plateIndex) {
   const group = new THREE.Group();
   group.add(mesh);
   group.add(rim);
-  return { group, holes, z };
+  // plate.enabled === false → collision skipped + opacity fades to 0.
+  // currentOpacity / targetOpacity are interpolated each frame in tickPlateOpacity().
+  // mesh and rim are kept on the returned object so tick can mutate their material.opacity directly.
+  return {
+    group,
+    holes,
+    z,
+    mesh,
+    rim,
+    enabled: true,
+    currentOpacity: PLATE_OPACITY,
+    targetOpacity: PLATE_OPACITY,
+  };
 }
 
 // The back wall where survivors accumulate — a deeper, matte surface that
