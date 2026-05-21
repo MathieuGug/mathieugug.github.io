@@ -782,6 +782,7 @@ export function mountGruyereHero(container, opts = {}) {
         p.z += PARTICLE_SPEED * dt;
         for (let k = 0; k < platesData.length; k++) {
           const plate = platesData[k];
+          if (!plate.enabled) continue;   // collision désactivée quand la plaque n'est pas active
           if (prevZ < plate.z && p.z >= plate.z) {
             if (!hitsAnyHole(p.x, p.y, plate.holes)) {
               p.state = STATE_FADING;
