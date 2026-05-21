@@ -940,6 +940,26 @@ export function mountGruyereHero(container, opts = {}) {
   }, { threshold: 0.01 });
   io.observe(container);
 
+  // Interpolation des opacités de plaques vers leur cible.
+  // dt en secondes, transitionMs en ms — le taux de lerp est calibré pour
+  // atteindre ~95 % de la cible en `transitionMs` (constante temporelle ~1/3).
+  function tickPlateOpacity(dt) {
+    const transitionS = Math.max(0.05, config.beatTransitionMs / 1000);
+    // Exponential damping: rate = 1 - exp(-dt / tau). tau = transitionS / 3 → 95% in transitionS.
+    const tau = transitionS / 3;
+    const rate = 1 - Math.exp(-dt / tau);
+    for (const plate of platesData) {
+      const delta = plate.targetOpacity - plate.currentOpacity;
+      plate.currentOpacity += delta * rate;
+      // Snap to target when very close (avoid asymptotic creep).
+      if (Math.abs(delta) < 0.001) plate.currentOpacity = plate.targetOpacity;
+      plate.mesh.material.opacity = plate.currentOpacity;
+      plate.rim.material.opacity = plate.currentOpacity * 0.7;  // rim slightly fainter than face
+      plate.mesh.visible = plate.currentOpacity > 0.001;
+      plate.rim.visible = plate.currentOpacity > 0.001;
+    }
+  }
+
   let rafId = null;
   function animate() {
     rafId = requestAnimationFrame(animate);
@@ -962,6 +982,7 @@ export function mountGruyereHero(container, opts = {}) {
     );
     camera.lookAt(ORBIT_CENTER);
 
+    tickPlateOpacity(dt);
     updateParticles(dt, now);
     updateBurst(blockedRings, dt, 3.5);  // red ring expands fast
     updateBurst(passedBursts, dt, 5.0);  // green cloud expands faster
