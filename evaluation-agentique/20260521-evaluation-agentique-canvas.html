@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#faf6ec">
+<title>Évaluer un agent — carte zoomable</title>
+<meta name="description" content="Carte zoomable du modèle gruyère de Reason appliqué à l'évaluation des agents IA : 4 phases du playbook, 3 couches de défense, 7 attaques. Semantic zoom HTML-first par Mathieu Guglielmino.">
+<!-- og:start -->
+<!-- og:end -->
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;1,400&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap">
+
+<style>
+/* === Reset minimal === */
+*, *::before, *::after { box-sizing: border-box; }
+* { margin: 0; padding: 0; }
+html, body { height: 100%; }
+img, svg { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+
+/* === Variables === */
+:root {
+  --bg: #faf6ec;
+  --paper: #ffffff;
+  --line: rgba(30,30,44,0.10);
+  --line-strong: rgba(30,30,44,0.20);
+  --accent: #b8582e;
+  --text: #1e1e2a;
+  --text-dim: #5b5f6c;
+  --text-faint: #8b8f9c;
+  --teal: #1f5560;
+  --carmine: #b7332c;
+  --gap: clamp(40px, 6vw, 80px);
+}
+
+/* === Typography === */
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 300;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+h1 { font-size: clamp(40px, 8vw, 80px); }
+h2 { font-size: clamp(28px, 4vw, 44px); margin-bottom: 0.5em; }
+h3 { font-size: clamp(22px, 2.8vw, 32px); }
+
+/* === Topbar (3 items, 56px) === */
+.topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  padding: 12px clamp(16px, 4vw, 32px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  z-index: 60;
+  background: rgba(250,246,236,0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+.topbar .logo {
+  font-family: 'Fraunces', serif;
+  font-weight: 500;
+  font-size: 15.5px;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  flex-shrink: 0;
+}
+.topbar .dossier-context {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  opacity: 0.55;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 320px;
+  flex-shrink: 1;
+  min-width: 0;
+}
+.topbar .back-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+.topbar .back {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  transition: color 0.2s;
+}
+.topbar .back:hover { color: var(--accent); }
+.topbar .back-sep {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  color: var(--text-faint);
+  user-select: none;
+}
+
+@media (max-width: 768px) {
+  .topbar .dossier-context { display: none; }
+}
+@media (max-width: 560px) {
+  .topbar { padding: 10px 14px; gap: 10px; }
+  .topbar .logo { font-size: 13px; }
+  .topbar .back { font-size: 9px; letter-spacing: 0.16em; }
+}
+
+/* === Canvas (A0 doc container) === */
+.canvas {
+  display: grid;
+  grid-template-columns: minmax(0, 720px);
+  justify-content: center;
+  gap: var(--gap);
+  padding: calc(56px + var(--gap)) clamp(16px, 4vw, 48px) var(--gap);
+}
+
+.canvas > section {
+  display: grid;
+  gap: clamp(16px, 2vw, 24px);
+}
+
+.placeholder {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  padding: 16px 20px;
+  border: 1px dashed var(--line);
+  border-radius: 4px;
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a class="logo" href="/">Mathieu Guglielmino</a>
+  <span class="dossier-context">Évaluer un agent</span>
+  <nav class="back-nav" aria-label="Navigation retour">
+    <a href="./" class="back" title="Revenir au hub du dossier">← Hub</a>
+    <span class="back-sep" aria-hidden="true">·</span>
+    <a href="/" class="back" title="Revenir à l'accueil">Accueil</a>
+  </nav>
+</header>
+
+<main class="canvas" data-zoom="0">
+  <section class="hero">
+    <h1>Évaluer un agent</h1>
+    <p class="placeholder">Hero — à venir Task 2 (titre + subtitle + lede + citation Reason) et Task 7 (SVG gruyère hero)</p>
+  </section>
+
+  <section class="playbook">
+    <h2>Le playbook</h2>
+    <p class="placeholder">Playbook — à venir Task 3 (4 phases × 2 sub-cards : S0–S7)</p>
+  </section>
+
+  <section class="gruyere">
+    <h2>Le gruyère</h2>
+    <p class="placeholder">Gruyère — à venir Task 4 (3 couches × 2 sub-cards : C1–C6)</p>
+  </section>
+
+  <section class="attaques">
+    <h2>7 attaques</h2>
+    <p class="placeholder">Attaques — à venir Task 5 (7 attaques × 3 verdicts)</p>
+  </section>
+
+  <section class="outcomes">
+    <h2>Outcomes</h2>
+    <p class="placeholder">Outcomes — à venir Task 6 (succès ✓ / échec ✗)</p>
+  </section>
+</main>
+</body>
+</html>
