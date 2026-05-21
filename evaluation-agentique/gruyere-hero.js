@@ -549,8 +549,9 @@ const PLATE_SPECULAR = 0xb8a888;
 const PLATE_SHININESS = 90;
 const PLATE_OPACITY = 0.78;
 
-// Particle visual — bright cream head, warm-red "danger" trail behind.
-const PARTICLE_COLOR = 0xfaf2e0;
+// Particle visual — orange accent head (visible sur écran arrière blanc papier),
+// warm-red "danger" trail behind. Cohérent avec la couleur des survivants accumulés.
+const PARTICLE_COLOR = 0xb8582e;
 const PARTICLE_SIZE_PX = 95;
 const TRAIL_DANGER_COLOR = 0xff5a28;  // warm orange-red — "threat in motion"
 
@@ -621,9 +622,10 @@ function buildPlate(holes, z, plateIndex) {
   };
 }
 
-// The back wall where survivors accumulate — a deeper, matte surface that
-// clearly reads as "the screen behind the defenses".
-const ACCUMULATOR_COLOR = 0x1d1b18;
+// The back wall where survivors accumulate — paper-white matte surface
+// matching --bg, lit comme un écran de projection sur lequel les attaques
+// orange viennent se déposer.
+const ACCUMULATOR_COLOR = 0xfaf6ec;
 function buildAccumulatorScreen() {
   const w = PLATE_HALF * 2;
   const geom = new THREE.PlaneGeometry(w, w);
