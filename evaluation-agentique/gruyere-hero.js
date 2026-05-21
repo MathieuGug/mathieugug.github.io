@@ -95,6 +95,26 @@ function detectCapabilities() {
   return { reducedMotion, webgl, mobile };
 }
 
+function initScene(container) {
+  const w = container.clientWidth;
+  const h = container.clientHeight;
+  const scene = new THREE.Scene();
+  scene.background = null; // CSS background of container shows through
+
+  const camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 100);
+  camera.position.set(0, 1.5, -3);
+  camera.lookAt(2, 0, 2);
+
+  const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+  const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+  renderer.setPixelRatio(dpr);
+  renderer.setSize(w, h);
+  renderer.setClearColor(0x000000, 0); // transparent — CSS bg shows
+  container.appendChild(renderer.domElement);
+
+  return { scene, camera, renderer };
+}
+
 function mountPoster(container, scriptDir) {
   const img = document.createElement('img');
   img.src = scriptDir + 'gruyere-hero-poster.svg';
@@ -111,11 +131,34 @@ function mountPoster(container, scriptDir) {
 export function mountGruyereHero(container, opts = {}) {
   const config = { ...DEFAULTS, ...opts };
   const caps = detectCapabilities();
-  // Resolve poster URL relative to this module's directory (works from hub, app, canvas).
   const scriptDir = new URL('.', import.meta.url).href;
   if (caps.reducedMotion || !caps.webgl) {
     return mountPoster(container, scriptDir);
   }
-  // TODO Task 4: scene, plates, particles
-  return { destroy() {}, pause() {}, resume() {}, reset() {} };
+
+  const { scene, camera, renderer } = initScene(container);
+
+  if (caps.mobile) {
+    config.particleRate = 8;
+  }
+
+  // TODO Task 5-9: plates, particles, accumulation, camera orbit
+
+  let rafId = null;
+  function animate() {
+    rafId = requestAnimationFrame(animate);
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  return {
+    destroy() {
+      cancelAnimationFrame(rafId);
+      renderer.dispose();
+      renderer.domElement.remove();
+    },
+    pause() { cancelAnimationFrame(rafId); rafId = null; },
+    resume() { if (!rafId) animate(); },
+    reset() {},
+  };
 }

@@ -35,3 +35,9 @@ test('gruyere-hero.js applies alignment ratio between plates', () => {
   assert.match(HERO_JS, /0\.30|0\.3/, 'expected ~30% plate-2 alignment with plate-1');
   assert.match(HERO_JS, /0\.15/, 'expected ~15% plate-3 alignment with plate-2');
 });
+
+test('gruyere-hero.js initialises a Three.js scene', () => {
+  assert.match(HERO_JS, /new THREE\.Scene/);
+  assert.match(HERO_JS, /new THREE\.PerspectiveCamera/);
+  assert.match(HERO_JS, /new THREE\.WebGLRenderer/);
+});
