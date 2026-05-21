@@ -13,23 +13,34 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 CANVAS = 'evaluation-agentique/20260521-evaluation-agentique-canvas.html'
 ZOOMS_DIR = pathlib.Path('evaluation-agentique/canvas-redesign')
 
-# Layout : 2 colonnes × 7 rangées, slot 2000×2700
+# Layout : 1 colonne × 14 rangées (évite overlap horizontal au niveau-2)
+# Contenu de chaque slot reste 2000×2700, MAIS le viewBox de zoom élargit
+# horizontalement à 4500 pour matcher l'aspect du stage (~1.66) et centrer
+# le contenu sans dévoiler les slots voisins.
 SLOT_W = 2000
 SLOT_H = 2700
-START_Y = 3100   # juste sous le viewport niveau-0
+START_Y = 3100
 ROW_GAP = 100
+
+# Viewbox de zoom : aspect 1.66 (matche stage desktop)
+ZOOM_VB_W = 4500
+ZOOM_VB_H = 2700
+ZOOM_VB_X_OFFSET = -(ZOOM_VB_W - SLOT_W) // 2   # = -1250, centre le contenu
 
 # Ordre des slots
 SLOTS_ORDER = ['S0', 'S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7',
                'C1', 'C2', 'C3', 'C4', 'C5', 'C6']
 
 def slot_position(idx):
-    """idx 0..13 → (x, y)."""
-    col = idx % 2
-    row = idx // 2
-    x = col * SLOT_W
-    y = START_Y + row * (SLOT_H + ROW_GAP)
+    """idx 0..13 → (x, y). Une seule colonne, x=0."""
+    x = 0
+    y = START_Y + idx * (SLOT_H + ROW_GAP)
     return x, y
+
+def slot_viewbox(idx):
+    """Viewbox de zoom (aspect 1.66), centré horizontalement sur le contenu."""
+    _, sy = slot_position(idx)
+    return f'{ZOOM_VB_X_OFFSET} {sy} {ZOOM_VB_W} {ZOOM_VB_H}'
 
 def extract_svg_content(svg_text):
     """Extrait le contenu entre <svg ...> et </svg>, et la hauteur du viewBox."""
@@ -92,11 +103,8 @@ print(f'\nNiveau2 layer embed : {len(layer)} chars')
 
 # Update sub-cards : data-modal-svg → data-niveau2-viewbox + data-niveau2-target
 # Pattern : <g transform="translate(X, Y)" data-modal-svg="..." data-modal-eyebrow="..." data-modal-title="...">
-# Map sub_id → slot viewbox
-slot_vb = {}
-for idx, sub_id in enumerate(SLOTS_ORDER):
-    sx, sy = slot_position(idx)
-    slot_vb[sub_id] = f'{sx} {sy} {SLOT_W} {SLOT_H}'
+# Map sub_id → slot viewbox (aspect 1.66, contenu centré)
+slot_vb = {sub_id: slot_viewbox(idx) for idx, sub_id in enumerate(SLOTS_ORDER)}
 
 # Pour chaque sub-card (identifié par son badge text), remplacer ses attributs
 n_replaced = 0
