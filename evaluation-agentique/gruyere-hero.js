@@ -234,7 +234,7 @@ const STATE_FADING = 1;
 const STATE_ACCUMULATED = 2;
 const STATE_DEAD = 3;
 
-const PARTICLE_SPEED = 1.4;  // units/s along +z — slow enough to follow each particle visually
+const PARTICLE_SPEED = 2.4;  // units/s — tuned so lifetime × spawnRate stays below the cap
 const SPAWN_HALF = 2.2;      // x,y range at spawn (slightly wider than plates)
 
 function buildParticleSystem(maxCount) {
