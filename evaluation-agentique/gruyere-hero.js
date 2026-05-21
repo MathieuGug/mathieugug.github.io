@@ -14,6 +14,78 @@ const DEFAULTS = {
   holeSeed: 'eval-2026',
 };
 
+// Deterministic RNG: mulberry32. Same seed string → same hole layout on all 3 pages.
+function hashSeed(str) {
+  let h = 1779033703 ^ str.length;
+  for (let i = 0; i < str.length; i++) {
+    h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+    h = (h << 13) | (h >>> 19);
+  }
+  return (h ^= h >>> 16) >>> 0;
+}
+
+function mulberry32(seed) {
+  let t = seed >>> 0;
+  return function() {
+    t = (t + 0x6D2B79F5) >>> 0;
+    let r = t;
+    r = Math.imul(r ^ (r >>> 15), r | 1);
+    r ^= r + Math.imul(r ^ (r >>> 7), r | 61);
+    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// Plate dimensions: 4×4 unit square centered on origin (x,y in [-2, 2]).
+const PLATE_HALF = 2.0;
+const HOLE_R_MIN = 0.05;
+const HOLE_R_MAX = 0.18;
+const ALIGN_P2_TO_P1 = 0.30;
+const ALIGN_P3_TO_P2 = 0.15;
+
+function tooClose(hole, others, slack = 0.1) {
+  for (const o of others) {
+    const dx = hole.x - o.x, dy = hole.y - o.y;
+    if (Math.hypot(dx, dy) < hole.r + o.r + slack) return true;
+  }
+  return false;
+}
+
+function generateHoles(plateIndex, rng, parentHoles) {
+  const target = 4 + Math.floor(rng() * 5); // 4..8 inclusive
+  const holes = [];
+
+  // Alignment pass: copy a fraction of parent holes (with small jitter).
+  if (parentHoles) {
+    const ratio = plateIndex === 1 ? ALIGN_P2_TO_P1 : ALIGN_P3_TO_P2;
+    const nAlign = Math.round(parentHoles.length * ratio);
+    const shuffled = parentHoles.slice().sort(() => rng() - 0.5);
+    for (let i = 0; i < nAlign && holes.length < target; i++) {
+      const p = shuffled[i];
+      const r = HOLE_R_MIN + rng() * (HOLE_R_MAX - HOLE_R_MIN);
+      const jitter = 0.04;
+      const candidate = {
+        x: p.x + (rng() - 0.5) * jitter,
+        y: p.y + (rng() - 0.5) * jitter,
+        r,
+      };
+      if (!tooClose(candidate, holes)) holes.push(candidate);
+    }
+  }
+
+  // Random pass: fill remainder.
+  let attempts = 0;
+  while (holes.length < target && attempts < 200) {
+    attempts++;
+    const candidate = {
+      x: (rng() * 2 - 1) * (PLATE_HALF - HOLE_R_MAX - 0.05),
+      y: (rng() * 2 - 1) * (PLATE_HALF - HOLE_R_MAX - 0.05),
+      r: HOLE_R_MIN + rng() * (HOLE_R_MAX - HOLE_R_MIN),
+    };
+    if (!tooClose(candidate, holes)) holes.push(candidate);
+  }
+  return holes;
+}
+
 function detectCapabilities() {
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const probe = document.createElement('canvas');
