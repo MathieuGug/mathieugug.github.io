@@ -56,12 +56,14 @@ export function mountHeroIntro({ introContainer, bannerContainer }) {
     };
   }
 
+  // Desktop : scrollytelling uniquement, pas de bannière résiduelle après.
+  // On masque le <figure> bannière (utile seulement sur mobile/reduced-motion)
+  // et on ne monte pas d'instance Three.js dessus — économie GPU + pas de
+  // répétition visuelle de l'anim à la sortie du sticky.
+  if (bannerContainer) bannerContainer.hidden = true;
+
   const introFigure = introContainer.querySelector('.gruyere-hero');
   const heroIntro = mountGruyereHero(introFigure, { initialBeat: 1 });
-  const heroBanner = mountGruyereHero(bannerContainer, { initialBeat: 5 });
-
-  // Mute la bannière avant son premier render — la section intro est en vue au load.
-  heroBanner.pause();
 
   const captionEl = introContainer.querySelector('.hero-intro__caption');
   const titleEl = captionEl.querySelector('.hero-intro__title');
@@ -99,26 +101,21 @@ export function mountHeroIntro({ introContainer, bannerContainer }) {
   });
   introContainer.querySelectorAll('.hero-intro__trigger').forEach((t) => beatIO.observe(t));
 
-  // IO 2 : pause/resume bascule entre intro et bannière
+  // IO 2 : pause l'intro quand on est sorti de la section (économie GPU
+  // pendant la lecture du hub).
   const sectionIO = new IntersectionObserver(([e]) => {
-    if (e.isIntersecting) {
-      heroIntro.resume();
-      heroBanner.pause();
-    } else {
-      heroIntro.pause();
-      heroBanner.resume();
-    }
+    if (e.isIntersecting) heroIntro.resume();
+    else heroIntro.pause();
   }, { threshold: 0 });
   sectionIO.observe(introContainer);
 
   return {
     intro: heroIntro,
-    banner: heroBanner,
+    banner: null,
     destroy() {
       beatIO.disconnect();
       sectionIO.disconnect();
       heroIntro.destroy();
-      heroBanner.destroy();
     },
   };
 }
