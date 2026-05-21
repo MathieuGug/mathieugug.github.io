@@ -20,6 +20,11 @@ const DEFAULTS = {
   // rate matches this target. 0.05 = 5% — enough to see the constellation
   // grow steadily.
   targetSurvivalRate: 0.05,
+  // Beat narrative state: 1..5. Default 5 = full configuration (3 plates active).
+  // Mount A (scrollytelling intro) overrides to 1; mount B (banner) stays at 5.
+  initialBeat: 5,
+  // Duration of the plate fade-in/out when setBeat() is called.
+  beatTransitionMs: 600,
 };
 
 // Deterministic RNG: mulberry32. Same seed string → same hole layout on all 3 pages.
