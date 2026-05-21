@@ -1385,12 +1385,6 @@ html { scroll-behavior: smooth; }
   color: var(--text-faint);
 }
 
-.canvas-v2-gruyere .gruyere-svg {
-  width: 100%;
-  height: 100%;
-  max-height: 100%;
-}
-
 /* === Playbook : 4 cellules en grid morphable === */
 .canvas-v2-playbook {
   display: grid;
@@ -1527,6 +1521,112 @@ html { scroll-behavior: smooth; }
 }
 .canvas-v2[data-phase-zoom^="S"] .canvas-v2-hero {
   grid-template-rows: clamp(220px, 50vh, 60vh) 1fr clamp(40px, 6vh, 56px);
+}
+
+/* === Gruyère : grid 5 cols (attaques | N1 | N2 | N3 | outcomes) === */
+.canvas-v2-gruyere {
+  display: grid;
+  grid-template-columns: clamp(160px, 14vw, 220px) 1fr 1fr 1fr clamp(160px, 14vw, 220px);
+  gap: 8px;
+  transition: grid-template-columns 400ms cubic-bezier(.4,0,.2,1);
+}
+
+.gruyere-attaques,
+.gruyere-outcomes {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+.gruyere-attaques .gruyere-attaques-svg,
+.gruyere-outcomes .gruyere-outcomes-svg {
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+}
+
+.gruyere-cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  cursor: pointer;
+  transition: opacity 400ms ease;
+}
+.gruyere-cell .gruyere-cell-svg {
+  width: 100%;
+  flex: 0 0 auto;
+  max-height: 100%;
+}
+
+.couche-overlay {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 8px 12px;
+  display: none;
+}
+
+.verdict-overlay {
+  position: absolute;
+  inset: auto 8px 8px 8px;
+  padding: 6px 10px;
+  background: rgba(250,246,236,0.85);
+  border-top: 1px solid var(--line);
+  font-size: 12px;
+  pointer-events: none;
+}
+.verdict-default-hint {
+  font-style: italic;
+  color: var(--text-faint);
+  font-size: 11px;
+}
+
+/* === Morph couches === */
+.canvas-v2:is([data-couche-zoom="N1"], [data-couche-zoom="C1"], [data-couche-zoom="C2"]) .canvas-v2-gruyere {
+  grid-template-columns: clamp(160px, 14vw, 220px) 7fr 1fr 1fr clamp(160px, 14vw, 220px);
+}
+.canvas-v2:is([data-couche-zoom="N2"], [data-couche-zoom="C3"], [data-couche-zoom="C4"]) .canvas-v2-gruyere {
+  grid-template-columns: clamp(160px, 14vw, 220px) 1fr 7fr 1fr clamp(160px, 14vw, 220px);
+}
+.canvas-v2:is([data-couche-zoom="N3"], [data-couche-zoom="C5"], [data-couche-zoom="C6"]) .canvas-v2-gruyere {
+  grid-template-columns: clamp(160px, 14vw, 220px) 1fr 1fr 7fr clamp(160px, 14vw, 220px);
+}
+
+/* === Couche expanded → overlay visible + teasers visible === */
+.canvas-v2:is([data-couche-zoom="N1"], [data-couche-zoom="C1"], [data-couche-zoom="C2"]) .gruyere-cell[data-couche="N1"] .couche-overlay,
+.canvas-v2:is([data-couche-zoom="N2"], [data-couche-zoom="C3"], [data-couche-zoom="C4"]) .gruyere-cell[data-couche="N2"] .couche-overlay,
+.canvas-v2:is([data-couche-zoom="N3"], [data-couche-zoom="C5"], [data-couche-zoom="C6"]) .gruyere-cell[data-couche="N3"] .couche-overlay { display: block; }
+
+.canvas-v2[data-couche-zoom="N1"] .gruyere-cell[data-couche="N1"] .subcard-teaser,
+.canvas-v2[data-couche-zoom="N2"] .gruyere-cell[data-couche="N2"] .subcard-teaser,
+.canvas-v2[data-couche-zoom="N3"] .gruyere-cell[data-couche="N3"] .subcard-teaser { display: block; }
+
+/* === Sub-card C* expanded → teasers cachés, detail visible === */
+.canvas-v2:is([data-couche-zoom="C1"], [data-couche-zoom="C2"]) .gruyere-cell[data-couche="N1"] .subcard-teaser,
+.canvas-v2:is([data-couche-zoom="C3"], [data-couche-zoom="C4"]) .gruyere-cell[data-couche="N2"] .subcard-teaser,
+.canvas-v2:is([data-couche-zoom="C5"], [data-couche-zoom="C6"]) .gruyere-cell[data-couche="N3"] .subcard-teaser { display: none; }
+
+.canvas-v2[data-couche-zoom="C1"] .gruyere-cell[data-couche="N1"] .subcard-detail[data-subcard="C1"],
+.canvas-v2[data-couche-zoom="C2"] .gruyere-cell[data-couche="N1"] .subcard-detail[data-subcard="C2"],
+.canvas-v2[data-couche-zoom="C3"] .gruyere-cell[data-couche="N2"] .subcard-detail[data-subcard="C3"],
+.canvas-v2[data-couche-zoom="C4"] .gruyere-cell[data-couche="N2"] .subcard-detail[data-subcard="C4"],
+.canvas-v2[data-couche-zoom="C5"] .gruyere-cell[data-couche="N3"] .subcard-detail[data-subcard="C5"],
+.canvas-v2[data-couche-zoom="C6"] .gruyere-cell[data-couche="N3"] .subcard-detail[data-subcard="C6"] { display: block; }
+
+/* === Cellules non focus en opacity réduite quand une couche est zoomée === */
+.canvas-v2[data-couche-zoom="N1"] .gruyere-cell:not([data-couche="N1"]),
+.canvas-v2[data-couche-zoom="N2"] .gruyere-cell:not([data-couche="N2"]),
+.canvas-v2[data-couche-zoom="N3"] .gruyere-cell:not([data-couche="N3"]),
+.canvas-v2:is([data-couche-zoom="C1"], [data-couche-zoom="C2"]) .gruyere-cell:not([data-couche="N1"]),
+.canvas-v2:is([data-couche-zoom="C3"], [data-couche-zoom="C4"]) .gruyere-cell:not([data-couche="N2"]),
+.canvas-v2:is([data-couche-zoom="C5"], [data-couche-zoom="C6"]) .gruyere-cell:not([data-couche="N3"]) {
+  opacity: 0.55;
+}
+
+/* === SVG cell shrink quand cell expanded → laisse de la place au overlay === */
+.canvas-v2:not([data-couche-zoom="N0"]):not([data-couche-zoom=""]) .gruyere-cell .gruyere-cell-svg {
+  max-height: 40%;
 }
 
 .canvas-v2-footer .footer-legend { display: flex; gap: 16px; }
@@ -1921,169 +2021,364 @@ html { scroll-behavior: smooth; }
     </div>
 
     <div class="canvas-v2-gruyere">
-      <svg class="gruyere-svg"
-           viewBox="0 820 4000 1680"
-           preserveAspectRatio="xMidYMid meet"
-           xmlns="http://www.w3.org/2000/svg"
-           role="img"
-           aria-label="Gruyère — 3 couches de défense traversées par 7 attaques, 6 stoppées et 1 incident.">
-        <title>Gruyère de Reason — 3 couches × 7 attaques</title>
-<defs>
-          <marker id="gruyere-arr-incident" viewBox="0 0 14 10" refX="13" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
-            <path d="M 0 0 L 14 5 L 0 10 Z" fill="#b7332c"/>
-          </marker>
-          <marker id="gruyere-arr-seq" viewBox="0 0 14 10" refX="13" refY="5" markerWidth="10" markerHeight="10" orient="auto-start-reverse">
-            <path d="M 0 0 L 14 5 L 0 10 Z" fill="#8a7448"/>
-          </marker>
-          <pattern id="gruyere-tex-teal" patternUnits="userSpaceOnUse" width="80" height="80">
-            <rect width="80" height="80" fill="#e8f0f1"/>
-            <circle cx="20" cy="25" r="2.5" fill="#c9d8db" opacity="0.6"/>
-            <circle cx="60" cy="55" r="2" fill="#c9d8db" opacity="0.5"/>
-          </pattern>
-          <pattern id="gruyere-tex-ocre" patternUnits="userSpaceOnUse" width="80" height="80">
-            <rect width="80" height="80" fill="#f4eccc"/>
-            <circle cx="20" cy="25" r="2.5" fill="#dccfa0" opacity="0.6"/>
-            <circle cx="60" cy="55" r="2" fill="#dccfa0" opacity="0.5"/>
-          </pattern>
-          <pattern id="gruyere-tex-carmine" patternUnits="userSpaceOnUse" width="80" height="80">
-            <rect width="80" height="80" fill="#f5dedb"/>
-            <circle cx="20" cy="25" r="2.5" fill="#dcb8b3" opacity="0.6"/>
-            <circle cx="60" cy="55" r="2" fill="#dcb8b3" opacity="0.5"/>
-          </pattern>
-          <filter id="gruyere-slice-shadow" x="-5%" y="-5%" width="110%" height="110%">
-            <feGaussianBlur in="SourceAlpha" stdDeviation="4"/>
-            <feOffset dx="6" dy="0"/>
-            <feComponentTransfer><feFuncA type="linear" slope="0.3"/></feComponentTransfer>
-            <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
-          </filter>
-        </defs>
-
-        <!-- ============================================================ -->
-        <!-- ② LE GRUYÈRE — 3 couches × 7 attaques                         -->
-        <!-- ============================================================ -->
-<!-- ============================================================ -->
-        <!-- ② LE GRUYÈRE — 3 couches × 7 attaques                         -->
-        <!-- ============================================================ -->
-        <text x="2000" y="850" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="34" font-weight="500" letter-spacing="0.22em" fill="#8a7448">② LE GRUYÈRE — CE QUI ARRÊTE LES ATTAQUES</text>
-        <text x="2000" y="884" text-anchor="middle" font-family="'Fraunces', Cambria, Georgia, serif" font-size="34" font-style="italic" fill="#5a5a5a">3 couches empilées · chaque couche a ses trous · seul l'empilement couvre</text>
-
-        <!-- En-têtes colonnes -->
-        <text x="350" y="960" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="27" letter-spacing="0.22em" font-weight="500" fill="#b7332c">ATTAQUES →</text>
-        <text x="1860" y="960" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="27" letter-spacing="0.22em" font-weight="500" fill="#8a7448">3 COUCHES DE DÉFENSE</text>
-        <text x="3460" y="960" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="27" letter-spacing="0.22em" font-weight="500" fill="#4b9466">→ OUTCOMES</text>
-
-        <!-- Slice N1 — Préventif -->
-        <g data-zoom-target="N1" tabindex="0" role="button" aria-label="Couche 1 — Préventif (zoom à venir)">
-          <rect x="700" y="1000" width="560" height="1480" rx="14" fill="url(#gruyere-tex-teal)" stroke="#1f5560" stroke-width="5" filter="url(#gruyere-slice-shadow)"/>
-          <text x="980" y="1040" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="27" letter-spacing="0.18em" font-weight="500" fill="#1f5560">COUCHE 1</text>
-          <text x="980" y="1080" text-anchor="middle" font-family="'Fraunces', Cambria, Georgia, serif" font-size="51" font-weight="500" fill="#1f5560">Préventif</text>
-          <text x="980" y="1112" text-anchor="middle" font-family="'Fraunces', Cambria, Georgia, serif" font-size="31" font-style="italic" fill="#5a5a5a">automated · monitoring</text>
-          <text x="980" y="1145" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="22" letter-spacing="0.12em" fill="#8a7448">C1 · CI/CD &amp; C2 · prod</text>
-          <g fill="#faf8f3">
-            <circle cx="980" cy="1300" r="38"/>
-            <circle cx="980" cy="1700" r="42"/>
-            <circle cx="980" cy="1850" r="36"/>
-            <circle cx="980" cy="2000" r="38"/>
-            <circle cx="980" cy="2200" r="40"/>
-          </g>
-        </g>
-
-        <!-- Slice N2 — Curatif -->
-        <g data-zoom-target="N2" tabindex="0" role="button" aria-label="Couche 2 — Curatif (zoom à venir)">
-          <rect x="1440" y="1000" width="560" height="1480" rx="14" fill="url(#gruyere-tex-ocre)" stroke="#b58a2c" stroke-width="5" filter="url(#gruyere-slice-shadow)"/>
-          <text x="1720" y="1040" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="27" letter-spacing="0.18em" font-weight="500" fill="#b58a2c">COUCHE 2</text>
-          <text x="1720" y="1080" text-anchor="middle" font-family="'Fraunces', Cambria, Georgia, serif" font-size="51" font-weight="500" fill="#b58a2c">Curatif</text>
-          <text x="1720" y="1112" text-anchor="middle" font-family="'Fraunces', Cambria, Georgia, serif" font-size="31" font-style="italic" fill="#5a5a5a">A/B · user feedback</text>
-          <text x="1720" y="1145" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="22" letter-spacing="0.12em" fill="#8a7448">C3 · A/B &amp; C4 · feedback</text>
-          <g fill="#faf8f3">
-            <circle cx="1720" cy="1700" r="40"/>
-            <circle cx="1720" cy="1850" r="38"/>
-            <circle cx="1720" cy="2200" r="42"/>
-          </g>
-        </g>
-
-        <!-- Slice N3 — Qualitatif -->
-        <g data-zoom-target="N3" tabindex="0" role="button" aria-label="Couche 3 — Qualitatif (zoom à venir)">
-          <rect x="2180" y="1000" width="560" height="1480" rx="14" fill="url(#gruyere-tex-carmine)" stroke="#b7332c" stroke-width="5" filter="url(#gruyere-slice-shadow)"/>
-          <text x="2460" y="1040" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="27" letter-spacing="0.18em" font-weight="500" fill="#b7332c">COUCHE 3</text>
-          <text x="2460" y="1080" text-anchor="middle" font-family="'Fraunces', Cambria, Georgia, serif" font-size="51" font-weight="500" fill="#b7332c">Qualitatif</text>
-          <text x="2460" y="1112" text-anchor="middle" font-family="'Fraunces', Cambria, Georgia, serif" font-size="31" font-style="italic" fill="#5a5a5a">transcripts · humain</text>
-          <text x="2460" y="1145" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="22" letter-spacing="0.12em" fill="#8a7448">C5 · transcripts &amp; C6 · humain</text>
-          <g fill="#faf8f3">
-            <circle cx="2460" cy="2200" r="40"/>
-          </g>
-        </g>
-
-        <!-- Labels des 7 attaques (à gauche) — chacune wrappée dans un <g> cliquable -->
-        <g id="attack-labels" font-family="'Fraunces', Cambria, Georgia, serif">
-          <g data-zoom-target="A-prompt-injection" tabindex="0" role="button" aria-label="Attaque — Prompt injection (zoom à venir)">
-            <rect x="100" y="1268" width="480" height="60" fill="transparent" pointer-events="all"/>
-            <text x="200" y="1308" font-size="44" font-weight="500" fill="#1a1a1a">Prompt injection</text>
-          </g>
-          <g data-zoom-target="A-hallucination" tabindex="0" role="button" aria-label="Attaque — Hallucination (zoom à venir)">
-            <rect x="100" y="1415" width="480" height="60" fill="transparent" pointer-events="all"/>
-            <text x="200" y="1455" font-size="44" font-weight="500" fill="#1a1a1a">Hallucination</text>
-          </g>
-          <g data-zoom-target="A-tool-misuse" tabindex="0" role="button" aria-label="Attaque — Tool misuse (zoom à venir)">
-            <rect x="100" y="1552" width="480" height="60" fill="transparent" pointer-events="all"/>
-            <text x="200" y="1592" font-size="44" font-weight="500" fill="#1a1a1a">Tool misuse</text>
-          </g>
-          <g data-zoom-target="A-context-saturation" tabindex="0" role="button" aria-label="Attaque — Context saturation (zoom à venir)">
-            <rect x="100" y="1663" width="480" height="60" fill="transparent" pointer-events="all"/>
-            <text x="200" y="1703" font-size="44" font-weight="500" fill="#1a1a1a">Context saturation</text>
-          </g>
-          <g data-zoom-target="A-reward-hacking" tabindex="0" role="button" aria-label="Attaque — Reward hacking (zoom à venir)">
-            <rect x="100" y="1815" width="480" height="60" fill="transparent" pointer-events="all"/>
-            <text x="200" y="1855" font-size="44" font-weight="500" fill="#1a1a1a">Reward hacking</text>
-          </g>
-          <g data-zoom-target="A-spec-mismatch" tabindex="0" role="button" aria-label="Attaque — Spec mismatch (zoom à venir)">
-            <rect x="100" y="1965" width="480" height="60" fill="transparent" pointer-events="all"/>
-            <text x="200" y="2005" font-size="44" font-weight="500" fill="#1a1a1a">Spec mismatch</text>
-          </g>
-          <g data-zoom-target="A-latency-drift" tabindex="0" role="button" aria-label="Attaque — Latency drift (zoom à venir)">
-            <rect x="100" y="2165" width="480" height="60" fill="transparent" pointer-events="all"/>
-            <text x="200" y="2205" font-size="44" font-weight="500" fill="#1a1a1a">Latency drift</text>
-          </g>
-        </g>
-
-        <!-- Trajectoires : 6 attaques stoppées + 1 incident (Latency drift) -->
-        <g stroke="#b7332c" fill="none" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="580" y1="1300" x2="1430" y2="1300" stroke-width="2.5" opacity="0.7"/>
-          <line x1="580" y1="1450" x2="690" y2="1450" stroke-width="2.5" opacity="0.7"/>
-          <line x1="580" y1="1590" x2="690" y2="1590" stroke-width="2.5" opacity="0.7"/>
-          <line x1="580" y1="1700" x2="2170" y2="1700" stroke-width="2.5" opacity="0.7"/>
-          <line x1="580" y1="1850" x2="2170" y2="1850" stroke-width="2.5" opacity="0.7"/>
-          <line x1="580" y1="2000" x2="1430" y2="2000" stroke-width="2.5" opacity="0.7"/>
-          <!-- INCIDENT : Latency drift traverse les 3 couches -->
-          <line x1="580" y1="2200" x2="2900" y2="2200" stroke-width="4" marker-end="url(#gruyere-arr-incident)"/>
-          <path d="M 2920 2200 Q 3100 2200 3200 2100" stroke="#b7332c" stroke-width="4" fill="none" marker-end="url(#gruyere-arr-incident)"/>
-        </g>
-
-        <!-- Outcomes -->
-        <g font-family="'Fraunces', Cambria, Georgia, serif">
-          <g>
-            <rect x="3200" y="1050" width="700" height="650" rx="14" fill="#e8f3ec" stroke="#4b9466" stroke-width="4"/>
-            <g transform="translate(3400, 1130)" stroke="#4b9466" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="80" cy="80" r="65"/>
-              <path d="M 42 80 L 70 108 L 122 50" stroke-width="10"/>
+      <div class="gruyere-attaques">
+        <svg class="gruyere-attaques-svg"
+             viewBox="100 1260 480 980"
+             preserveAspectRatio="xMinYMid meet"
+             xmlns="http://www.w3.org/2000/svg"
+             role="img"
+             aria-label="7 attaques : prompt injection, hallucination, tool misuse, context saturation, reward hacking, spec mismatch, latency drift.">
+          <title>7 attaques agentiques</title>
+          <g id="attack-labels" font-family="'Fraunces', Cambria, Georgia, serif">
+            <g data-zoom-target="A-prompt-injection" tabindex="0" role="button" aria-label="Attaque — Prompt injection (zoom à venir)">
+              <rect x="100" y="1268" width="480" height="60" fill="transparent" pointer-events="all"/>
+              <text x="200" y="1308" font-size="44" font-weight="500" fill="#1a1a1a">Prompt injection</text>
             </g>
-            <text x="3550" y="1380" text-anchor="middle" font-size="61" font-weight="500" fill="#1a1a1a">agent fiable</text>
-            <text x="3550" y="1418" text-anchor="middle" font-size="34" font-style="italic" fill="#5a5a5a">attaque arrêtée par une couche</text>
-            <text x="3550" y="1490" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="24" letter-spacing="0.18em" fill="#4b9466">6 / 7 ATTAQUES STOPPÉES</text>
-          </g>
-          <g>
-            <rect x="3200" y="1830" width="700" height="650" rx="14" fill="#f5dedb" stroke="#b7332c" stroke-width="4"/>
-            <g transform="translate(3400, 1910)" stroke="#b7332c" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="80" cy="80" r="65"/>
-              <line x1="44" y1="44" x2="116" y2="116" stroke-width="10"/>
-              <line x1="116" y1="44" x2="44" y2="116" stroke-width="10"/>
+            <g data-zoom-target="A-hallucination" tabindex="0" role="button" aria-label="Attaque — Hallucination (zoom à venir)">
+              <rect x="100" y="1415" width="480" height="60" fill="transparent" pointer-events="all"/>
+              <text x="200" y="1455" font-size="44" font-weight="500" fill="#1a1a1a">Hallucination</text>
             </g>
-            <text x="3550" y="2160" text-anchor="middle" font-size="61" font-weight="500" fill="#1a1a1a">incident</text>
-            <text x="3550" y="2198" text-anchor="middle" font-size="34" font-style="italic" fill="#5a5a5a">trous alignés sur les 3 couches</text>
-            <text x="3550" y="2270" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="24" letter-spacing="0.18em" fill="#b7332c">1 / 7 ATTAQUES PASSÉES</text>
+            <g data-zoom-target="A-tool-misuse" tabindex="0" role="button" aria-label="Attaque — Tool misuse (zoom à venir)">
+              <rect x="100" y="1552" width="480" height="60" fill="transparent" pointer-events="all"/>
+              <text x="200" y="1592" font-size="44" font-weight="500" fill="#1a1a1a">Tool misuse</text>
+            </g>
+            <g data-zoom-target="A-context-saturation" tabindex="0" role="button" aria-label="Attaque — Context saturation (zoom à venir)">
+              <rect x="100" y="1663" width="480" height="60" fill="transparent" pointer-events="all"/>
+              <text x="200" y="1703" font-size="44" font-weight="500" fill="#1a1a1a">Context saturation</text>
+            </g>
+            <g data-zoom-target="A-reward-hacking" tabindex="0" role="button" aria-label="Attaque — Reward hacking (zoom à venir)">
+              <rect x="100" y="1815" width="480" height="60" fill="transparent" pointer-events="all"/>
+              <text x="200" y="1855" font-size="44" font-weight="500" fill="#1a1a1a">Reward hacking</text>
+            </g>
+            <g data-zoom-target="A-spec-mismatch" tabindex="0" role="button" aria-label="Attaque — Spec mismatch (zoom à venir)">
+              <rect x="100" y="1965" width="480" height="60" fill="transparent" pointer-events="all"/>
+              <text x="200" y="2005" font-size="44" font-weight="500" fill="#1a1a1a">Spec mismatch</text>
+            </g>
+            <g data-zoom-target="A-latency-drift" tabindex="0" role="button" aria-label="Attaque — Latency drift (zoom à venir)">
+              <rect x="100" y="2165" width="480" height="60" fill="transparent" pointer-events="all"/>
+              <text x="200" y="2205" font-size="44" font-weight="500" fill="#1a1a1a">Latency drift</text>
+            </g>
           </g>
-        </g>
-      </svg>
+        </svg>
+      </div>
+
+      <div class="gruyere-cell" data-couche="N1">
+        <svg class="gruyere-cell-svg"
+             viewBox="690 990 580 1500"
+             preserveAspectRatio="xMidYMid meet"
+             xmlns="http://www.w3.org/2000/svg"
+             role="img"
+             aria-label="Couche 1 — Préventif (CI/CD et prod monitoring)">
+          <title>Couche 1 — Préventif</title>
+          <defs>
+            <pattern id="gruyere-tex-teal-n1" patternUnits="userSpaceOnUse" width="80" height="80">
+              <rect width="80" height="80" fill="#e8f0f1"/>
+              <circle cx="20" cy="25" r="2.5" fill="#c9d8db" opacity="0.6"/>
+              <circle cx="60" cy="55" r="2" fill="#c9d8db" opacity="0.5"/>
+            </pattern>
+            <filter id="gruyere-slice-shadow-n1" x="-5%" y="-5%" width="110%" height="110%">
+              <feGaussianBlur in="SourceAlpha" stdDeviation="4"/>
+              <feOffset dx="6" dy="0"/>
+              <feComponentTransfer><feFuncA type="linear" slope="0.3"/></feComponentTransfer>
+              <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <g data-zoom-target="N1" tabindex="0" role="button" aria-label="Couche 1 — Préventif">
+            <rect x="700" y="1000" width="560" height="1480" rx="14" fill="url(#gruyere-tex-teal-n1)" stroke="#1f5560" stroke-width="5" filter="url(#gruyere-slice-shadow-n1)"/>
+            <text x="980" y="1040" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="27" letter-spacing="0.18em" font-weight="500" fill="#1f5560">COUCHE 1</text>
+            <text x="980" y="1080" text-anchor="middle" font-family="'Fraunces', Cambria, Georgia, serif" font-size="51" font-weight="500" fill="#1f5560">Préventif</text>
+            <text x="980" y="1112" text-anchor="middle" font-family="'Fraunces', Cambria, Georgia, serif" font-size="31" font-style="italic" fill="#5a5a5a">automated · monitoring</text>
+            <text x="980" y="1145" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="22" letter-spacing="0.12em" fill="#8a7448">C1 · CI/CD &amp; C2 · prod</text>
+            <g fill="#faf8f3">
+              <circle cx="980" cy="1300" r="38"/>
+              <circle cx="980" cy="1700" r="42"/>
+              <circle cx="980" cy="1850" r="36"/>
+              <circle cx="980" cy="2000" r="38"/>
+              <circle cx="980" cy="2200" r="40"/>
+            </g>
+          </g>
+        </svg>
+        <div class="couche-overlay" data-couche="N1">
+          <article class="subcard-teaser" data-subcard="C1" data-zoom-target="C1" tabindex="0" role="button" aria-label="Sub-card C1 — CI/CD préventif">
+            <span class="subcard-badge">C1</span>
+            <h4>Automated evals</h4>
+            <p class="subcard-sub">CI/CD pre-launch · 5 µ-méthodes · cycle rapide</p>
+          </article>
+          <article class="subcard-teaser" data-subcard="C2" data-zoom-target="C2" tabindex="0" role="button" aria-label="Sub-card C2 — monitoring prod">
+            <span class="subcard-badge">C2</span>
+            <h4>Production monitoring</h4>
+            <p class="subcard-sub">post-launch · vérité terrain · signal bruyant</p>
+          </article>
+          <article class="subcard-detail" data-subcard="C1">
+            <header class="subcard-detail-head">
+              <span class="subcard-badge">C1</span>
+              <h4>Automated evals</h4>
+              <p class="subcard-sub">CI/CD pre-launch · 5 µ-méthodes empilées · cycle rapide, scalable</p>
+            </header>
+            <ul class="methods">
+              <li class="method"><span class="mu">µ-1</span><h5>Prompt unit tests</h5><p class="method-subtitle">templates testés en isolation</p><p>attrape : prompt injection sur templates</p></li>
+              <li class="method"><span class="mu">µ-2</span><h5>Tool call schema validation</h5><p class="method-subtitle">arguments typés et bornés</p><p>attrape : tool misuse — mauvais args</p></li>
+              <li class="method"><span class="mu">µ-3</span><h5>Golden regression suite</h5><p class="method-subtitle">N tasks figées re-jouées à chaque ship</p><p>attrape : hallucination — drift sur cas connus</p></li>
+              <li class="method"><span class="mu">µ-4</span><h5>Output structure / JSON schema</h5><p class="method-subtitle">format validé · pas de free-form en sortie</p><p>attrape : spec mismatch — format incorrect</p></li>
+              <li class="method"><span class="mu">µ-5</span><h5>Perf &amp; cost benchmark</h5><p class="method-subtitle">latence p95 + $ par task suivis dans la CI</p><p>⚠ trous larges : latency drift y passe souvent</p></li>
+            </ul>
+            <div class="frameworks">
+              <p class="fw-eyebrow">Frameworks / outils</p>
+              <ul><li>Promptfoo</li><li>DeepEval</li><li>JSON Schema</li><li>Anthropic Evals</li><li>k6 perf</li></ul>
+            </div>
+            <blockquote class="tagline">« CI/CD pre-launch · drift à monitorer, investissement up-front nécessaire. »</blockquote>
+          </article>
+          <article class="subcard-detail" data-subcard="C2">
+            <header class="subcard-detail-head">
+              <span class="subcard-badge">C2</span>
+              <h4>Production monitoring</h4>
+              <p class="subcard-sub">Post-launch · vérité terrain · 5 µ-méthodes · réactif mais signal bruyant</p>
+            </header>
+            <ul class="methods">
+              <li class="method"><span class="mu">µ-1</span><h5>Error rate / 5xx / timeout</h5><p class="method-subtitle">alertes sur taux d&#39;erreurs HTTP/runtime</p><p>attrape : tool misuse — échecs API répétés</p></li>
+              <li class="method"><span class="mu">µ-2</span><h5>Latency p95 / p99</h5><p class="method-subtitle">seuils trop lâches · drift lent invisible</p><p>⚠ TROU LARGE : latency drift passe ici → incident</p></li>
+              <li class="method"><span class="mu">µ-3</span><h5>Cost per task / token usage</h5><p class="method-subtitle">alertes sur dépassement budget</p><p>attrape : reward hacking — long thinking</p></li>
+              <li class="method"><span class="mu">µ-4</span><h5>Output anomaly detection</h5><p class="method-subtitle">distribution-shift sur les outputs</p><p>attrape : hallucination — sortie hors distribution</p></li>
+              <li class="method"><span class="mu">µ-5</span><h5>User reports · 👍/👎</h5><p class="method-subtitle">signal direct mais sparse, biaisé</p><p>attrape : context saturation — fil perdu signalé</p></li>
+            </ul>
+            <div class="frameworks">
+              <p class="fw-eyebrow">Frameworks / outils</p>
+              <ul><li>Datadog</li><li>Honeycomb</li><li>Sentry</li><li>Anomalo</li><li>PostHog</li></ul>
+            </div>
+            <blockquote class="tagline">« Réactif et utile, mais le signal bruyant requiert du tri. »</blockquote>
+          </article>
+        </div>
+        <div class="verdict-overlay" data-couche="N1">
+          <div class="verdict-default-hint">← clique une attaque pour voir comment Préventif réagit</div>
+          <!-- Task 5 ajoutera ici les 7 .verdict-content (un par attaque) -->
+        </div>
+      </div>
+
+      <div class="gruyere-cell" data-couche="N2">
+        <svg class="gruyere-cell-svg"
+             viewBox="1430 990 580 1500"
+             preserveAspectRatio="xMidYMid meet"
+             xmlns="http://www.w3.org/2000/svg"
+             role="img"
+             aria-label="Couche 2 — Curatif (A/B testing et user feedback)">
+          <title>Couche 2 — Curatif</title>
+          <defs>
+            <pattern id="gruyere-tex-ocre-n2" patternUnits="userSpaceOnUse" width="80" height="80">
+              <rect width="80" height="80" fill="#f4eccc"/>
+              <circle cx="20" cy="25" r="2.5" fill="#dccfa0" opacity="0.6"/>
+              <circle cx="60" cy="55" r="2" fill="#dccfa0" opacity="0.5"/>
+            </pattern>
+            <filter id="gruyere-slice-shadow-n2" x="-5%" y="-5%" width="110%" height="110%">
+              <feGaussianBlur in="SourceAlpha" stdDeviation="4"/>
+              <feOffset dx="6" dy="0"/>
+              <feComponentTransfer><feFuncA type="linear" slope="0.3"/></feComponentTransfer>
+              <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <g data-zoom-target="N2" tabindex="0" role="button" aria-label="Couche 2 — Curatif">
+            <rect x="1440" y="1000" width="560" height="1480" rx="14" fill="url(#gruyere-tex-ocre-n2)" stroke="#b58a2c" stroke-width="5" filter="url(#gruyere-slice-shadow-n2)"/>
+            <text x="1720" y="1040" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="27" letter-spacing="0.18em" font-weight="500" fill="#b58a2c">COUCHE 2</text>
+            <text x="1720" y="1080" text-anchor="middle" font-family="'Fraunces', Cambria, Georgia, serif" font-size="51" font-weight="500" fill="#b58a2c">Curatif</text>
+            <text x="1720" y="1112" text-anchor="middle" font-family="'Fraunces', Cambria, Georgia, serif" font-size="31" font-style="italic" fill="#5a5a5a">A/B · user feedback</text>
+            <text x="1720" y="1145" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="22" letter-spacing="0.12em" fill="#8a7448">C3 · A/B &amp; C4 · feedback</text>
+            <g fill="#faf8f3">
+              <circle cx="1720" cy="1700" r="40"/>
+              <circle cx="1720" cy="1850" r="38"/>
+              <circle cx="1720" cy="2200" r="42"/>
+            </g>
+          </g>
+        </svg>
+        <div class="couche-overlay" data-couche="N2">
+          <article class="subcard-teaser" data-subcard="C3" data-zoom-target="C3" tabindex="0" role="button" aria-label="Sub-card C3 — A/B testing">
+            <span class="subcard-badge">C3</span>
+            <h4>A/B testing</h4>
+            <p class="subcard-sub">outcome utilisateur · décisif mais lent</p>
+          </article>
+          <article class="subcard-teaser" data-subcard="C4" data-zoom-target="C4" tabindex="0" role="button" aria-label="Sub-card C4 — user feedback">
+            <span class="subcard-badge">C4</span>
+            <h4>User feedback</h4>
+            <p class="subcard-sub">continu · sparse · biaisé sévère</p>
+          </article>
+          <article class="subcard-detail" data-subcard="C3">
+            <header class="subcard-detail-head">
+              <span class="subcard-badge">C3</span>
+              <h4>A/B testing</h4>
+              <p class="subcard-sub">Outcome utilisateur · décisif mais lent · seul juge réel d&#39;une amélioration</p>
+            </header>
+            <ul class="methods">
+              <li class="method"><span class="mu">µ-1</span><h5>Traffic split par cohorte</h5><p class="method-subtitle">segmentation propre</p><p>random + filtres d&#39;éligibilité</p></li>
+              <li class="method"><span class="mu">µ-2</span><h5>Métriques primaires</h5><p class="method-subtitle">success rate, satisfaction</p><p>ce qu&#39;on optimise</p></li>
+              <li class="method"><span class="mu">µ-3</span><h5>Métriques secondaires</h5><p class="method-subtitle">latence, coût, escalations</p><p>garde-fous obligatoires</p></li>
+              <li class="method"><span class="mu">µ-4</span><h5>Durée minimale</h5><p class="method-subtitle">significativité statistique</p><p>pas de squashing à 2 jours</p></li>
+            </ul>
+            <aside class="antipattern">
+              <p class="anti-eyebrow">⚠ ANTI-PATTERN</p>
+              <p class="anti-headline">Latency en métrique secondaire optionnelle</p>
+              <p class="anti-consequence">Drift invisible — l&#39;agent devient lent sans qu&#39;aucune alerte ne se déclenche.</p>
+            </aside>
+            <div class="frameworks">
+              <p class="fw-eyebrow">Frameworks / outils</p>
+              <ul><li>Statsig</li><li>GrowthBook</li><li>PostHog</li><li>Optimizely</li><li>Eppo</li></ul>
+            </div>
+            <blockquote class="tagline">« Le seul vrai juge d&#39;une amélioration en prod. Mais lent. »</blockquote>
+          </article>
+          <article class="subcard-detail" data-subcard="C4">
+            <header class="subcard-detail-head">
+              <span class="subcard-badge">C4</span>
+              <h4>User feedback</h4>
+              <p class="subcard-sub">Continu · cas non-anticipés · sparse (≪ 1%) et biaisé sévère</p>
+            </header>
+            <ul class="methods">
+              <li class="method"><span class="mu">µ-1</span><h5>Boutons 👍/👎</h5><p class="method-subtitle">feedback inline</p><p>capture immédiate après réponse</p></li>
+              <li class="method"><span class="mu">µ-2</span><h5>Ticket support · NPS</h5><p class="method-subtitle">canaux Slack/Discord</p><p>feedback structuré et qualitatif</p></li>
+              <li class="method"><span class="mu">µ-3</span><h5>Tagger par catégorie</h5><p class="method-subtitle">classification</p><p>pour analyser les patterns</p></li>
+              <li class="method"><span class="mu">µ-4</span><h5>Triager hebdo en équipe</h5><p class="method-subtitle">1h max</p><p>cadence régulière pour éviter le backlog</p></li>
+            </ul>
+            <aside class="antipattern">
+              <p class="anti-eyebrow">⚠ ANTI-PATTERN</p>
+              <p class="anti-headline">Ignorer les feedbacks sparse</p>
+              <p class="anti-consequence">Les utilisateurs en colère sur-représentent les feedbacks. Mais c&#39;est aussi un signal.</p>
+            </aside>
+            <div class="frameworks">
+              <p class="fw-eyebrow">Frameworks / outils</p>
+              <ul><li>Sentry feedback</li><li>Canny</li><li>Pendo</li><li>Productboard</li></ul>
+            </div>
+            <blockquote class="tagline">« Force : capture les angles morts des graders automatisés. »</blockquote>
+          </article>
+        </div>
+        <div class="verdict-overlay" data-couche="N2">
+          <div class="verdict-default-hint">← clique une attaque pour voir comment Curatif réagit</div>
+        </div>
+      </div>
+
+      <div class="gruyere-cell" data-couche="N3">
+        <svg class="gruyere-cell-svg"
+             viewBox="2170 990 580 1500"
+             preserveAspectRatio="xMidYMid meet"
+             xmlns="http://www.w3.org/2000/svg"
+             role="img"
+             aria-label="Couche 3 — Qualitatif (transcripts et humain)">
+          <title>Couche 3 — Qualitatif</title>
+          <defs>
+            <pattern id="gruyere-tex-carmine-n3" patternUnits="userSpaceOnUse" width="80" height="80">
+              <rect width="80" height="80" fill="#f5dedb"/>
+              <circle cx="20" cy="25" r="2.5" fill="#dcb8b3" opacity="0.6"/>
+              <circle cx="60" cy="55" r="2" fill="#dcb8b3" opacity="0.5"/>
+            </pattern>
+            <filter id="gruyere-slice-shadow-n3" x="-5%" y="-5%" width="110%" height="110%">
+              <feGaussianBlur in="SourceAlpha" stdDeviation="4"/>
+              <feOffset dx="6" dy="0"/>
+              <feComponentTransfer><feFuncA type="linear" slope="0.3"/></feComponentTransfer>
+              <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+            </filter>
+          </defs>
+          <g data-zoom-target="N3" tabindex="0" role="button" aria-label="Couche 3 — Qualitatif">
+            <rect x="2180" y="1000" width="560" height="1480" rx="14" fill="url(#gruyere-tex-carmine-n3)" stroke="#b7332c" stroke-width="5" filter="url(#gruyere-slice-shadow-n3)"/>
+            <text x="2460" y="1040" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="27" letter-spacing="0.18em" font-weight="500" fill="#b7332c">COUCHE 3</text>
+            <text x="2460" y="1080" text-anchor="middle" font-family="'Fraunces', Cambria, Georgia, serif" font-size="51" font-weight="500" fill="#b7332c">Qualitatif</text>
+            <text x="2460" y="1112" text-anchor="middle" font-family="'Fraunces', Cambria, Georgia, serif" font-size="31" font-style="italic" fill="#5a5a5a">transcripts · humain</text>
+            <text x="2460" y="1145" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="22" letter-spacing="0.12em" fill="#8a7448">C5 · transcripts &amp; C6 · humain</text>
+            <g fill="#faf8f3">
+              <circle cx="2460" cy="2200" r="40"/>
+            </g>
+          </g>
+        </svg>
+        <div class="couche-overlay" data-couche="N3">
+          <article class="subcard-teaser" data-subcard="C5" data-zoom-target="C5" tabindex="0" role="button" aria-label="Sub-card C5 — manual transcript review">
+            <span class="subcard-badge">C5</span>
+            <h4>Manual transcript review</h4>
+            <p class="subcard-sub">~20 traces/sem · calibre l&#39;intuition · ne scale pas</p>
+          </article>
+          <article class="subcard-teaser" data-subcard="C6" data-zoom-target="C6" tabindex="0" role="button" aria-label="Sub-card C6 — systematic human studies">
+            <span class="subcard-badge">C6</span>
+            <h4>Systematic human studies</h4>
+            <p class="subcard-sub">gold standard · cher · 2-3×/an</p>
+          </article>
+          <article class="subcard-detail" data-subcard="C5">
+            <header class="subcard-detail-head">
+              <span class="subcard-badge">C5</span>
+              <h4>Manual transcript review</h4>
+              <p class="subcard-sub">~20 traces / semaine · lecture qualitative · calibre l&#39;intuition · ne scale pas</p>
+            </header>
+            <ul class="methods">
+              <li class="method"><span class="mu">µ-1</span><h5>Sample 20 traces / semaine</h5><p class="method-subtitle">cadence régulière</p><p>sur des millions de traces</p></li>
+              <li class="method"><span class="mu">µ-2</span><h5>Sampling biaisé</h5><p class="method-subtitle">50% sur traces lentes/anormales</p><p>biais utile pour détecter les drifts</p></li>
+              <li class="method"><span class="mu">µ-3</span><h5>Checklist structurée</h5><p class="method-subtitle">précision · ton · timing</p><p>éviter le freestyle</p></li>
+              <li class="method"><span class="mu">µ-4</span><h5>Postmortem mensuel</h5><p class="method-subtitle">perçu vs mesuré</p><p>recalibration des intuitions</p></li>
+            </ul>
+            <aside class="antipattern">
+              <p class="anti-eyebrow">⚠ ANTI-PATTERN</p>
+              <p class="anti-headline">Skipper le timing dans la checklist</p>
+              <p class="anti-consequence">Latency drift passe inaperçu. C&#39;est ce qui a causé l&#39;incident niveau 0.</p>
+            </aside>
+            <div class="frameworks">
+              <p class="fw-eyebrow">Frameworks / outils</p>
+              <ul><li>Honeycomb</li><li>LangSmith</li><li>Datadog APM</li><li>Jaeger</li></ul>
+            </div>
+            <blockquote class="tagline">« Force : calibre l&#39;intuition de l&#39;équipe. Limite : ne scale pas. »</blockquote>
+          </article>
+          <article class="subcard-detail" data-subcard="C6">
+            <header class="subcard-detail-head">
+              <span class="subcard-badge">C6</span>
+              <h4>Systematic human studies</h4>
+              <p class="subcard-sub">Gold standard · cher (~10-30 K€) · lent (~6 semaines) · à faire 2-3×/an</p>
+            </header>
+            <ul class="methods">
+              <li class="method"><span class="mu">µ-1</span><h5>Étude formelle</h5><p class="method-subtitle">N=30+ raters</p><p>pas un sample bricolé</p></li>
+              <li class="method"><span class="mu">µ-2</span><h5>Calibration LAJ vs humain</h5><p class="method-subtitle">inter-rater agreement</p><p>mesure du gap LAJ/gold</p></li>
+              <li class="method"><span class="mu">µ-3</span><h5>Rubrics structurées</h5><p class="method-subtitle">critères explicites</p><p>+ double review pour la fiabilité</p></li>
+              <li class="method"><span class="mu">µ-4</span><h5>Détection biais systématiques</h5><p class="method-subtitle">biais de positionnement</p><p>biais culturels, etc.</p></li>
+            </ul>
+            <aside class="antipattern">
+              <p class="anti-eyebrow">⚠ ANTI-PATTERN</p>
+              <p class="anti-headline">Faire des human studies en continu</p>
+              <p class="anti-consequence">Trop cher pour le quotidien. Réserver aux moments de recalibration majeure.</p>
+            </aside>
+            <div class="frameworks">
+              <p class="fw-eyebrow">Frameworks / outils</p>
+              <ul><li>Surge AI</li><li>Scale AI</li><li>Prolific</li><li>Toloka</li></ul>
+            </div>
+            <blockquote class="tagline">« Référence pour recalibrer toute la pyramide : LAJ → graders deterministic → metrics in CI. »</blockquote>
+          </article>
+        </div>
+        <div class="verdict-overlay" data-couche="N3">
+          <div class="verdict-default-hint">← clique une attaque pour voir comment Qualitatif réagit</div>
+        </div>
+      </div>
+
+      <div class="gruyere-outcomes">
+        <svg class="gruyere-outcomes-svg"
+             viewBox="3190 1040 720 1320"
+             preserveAspectRatio="xMidYMid meet"
+             xmlns="http://www.w3.org/2000/svg"
+             role="img"
+             aria-label="Outcomes : agent fiable (6/7 attaques stoppées) ou incident (1/7).">
+          <title>Outcomes : fiable ou incident</title>
+          <g font-family="'Fraunces', Cambria, Georgia, serif">
+            <g>
+              <rect x="3200" y="1050" width="700" height="650" rx="14" fill="#e8f3ec" stroke="#4b9466" stroke-width="4"/>
+              <g transform="translate(3400, 1130)" stroke="#4b9466" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="80" cy="80" r="65"/>
+                <path d="M 42 80 L 70 108 L 122 50" stroke-width="10"/>
+              </g>
+              <text x="3550" y="1380" text-anchor="middle" font-size="61" font-weight="500" fill="#1a1a1a">agent fiable</text>
+              <text x="3550" y="1418" text-anchor="middle" font-size="34" font-style="italic" fill="#5a5a5a">attaque arrêtée par une couche</text>
+              <text x="3550" y="1490" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="24" letter-spacing="0.18em" fill="#4b9466">6 / 7 ATTAQUES STOPPÉES</text>
+            </g>
+            <g>
+              <rect x="3200" y="1830" width="700" height="650" rx="14" fill="#f5dedb" stroke="#b7332c" stroke-width="4"/>
+              <g transform="translate(3400, 1910)" stroke="#b7332c" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="80" cy="80" r="65"/>
+                <line x1="44" y1="44" x2="116" y2="116" stroke-width="10"/>
+                <line x1="116" y1="44" x2="44" y2="116" stroke-width="10"/>
+              </g>
+              <text x="3550" y="2160" text-anchor="middle" font-size="61" font-weight="500" fill="#1a1a1a">incident</text>
+              <text x="3550" y="2198" text-anchor="middle" font-size="34" font-style="italic" fill="#5a5a5a">trous alignés sur les 3 couches</text>
+              <text x="3550" y="2270" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="24" letter-spacing="0.18em" fill="#b7332c">1 / 7 ATTAQUES PASSÉES</text>
+            </g>
+          </g>
+        </svg>
+      </div>
     </div>
 
     <footer class="canvas-v2-footer">
