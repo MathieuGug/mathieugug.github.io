@@ -783,8 +783,10 @@ export function mountGruyereHero(container, opts = {}) {
     plate.rim.visible = plate.currentOpacity > 0.001;
   }
 
-  // Particles + trails.
-  const MAX_PARTICLES = caps.mobile ? 50 : 100;
+  // Particles + trails. Pool généreux : au beat 1 (no-plates), TOUTES les
+  // particules s'accumulent et persistent `landedLifetimeMs` (60s). Un pool
+  // trop petit s'épuise vite et l'émission semble s'arrêter aux beats suivants.
+  const MAX_PARTICLES = caps.mobile ? 120 : 400;
   const psys = buildParticleSystem(MAX_PARTICLES);
   const tsys = buildTrailSystem(MAX_PARTICLES);
   scene.add(tsys.lines);  // trails behind heads (z-order: drawn first)
@@ -823,12 +825,23 @@ export function mountGruyereHero(container, opts = {}) {
     spawnAccumulator += config.particleRate * dt;
     while (spawnAccumulator >= 1) {
       spawnAccumulator -= 1;
+      // 1) Cherche un slot DEAD libre
+      let target = null;
       for (let i = 0; i < psys.particles.length; i++) {
         if (psys.particles[i].state === STATE_DEAD) {
-          spawnParticle(psys.particles[i], partRng, particleColor);
+          target = psys.particles[i];
           break;
         }
       }
+      // 2) Pool plein → évict la plus vieille accumulée pour libérer un slot.
+      //    Garantit que l'émission ne s'arrête JAMAIS, même si toutes les
+      //    particules persistent en STATE_ACCUMULATED (cas du beat 1).
+      if (!target && accumulated.length > 0) {
+        const old = accumulated.shift();
+        old.state = STATE_DEAD;
+        target = old;
+      }
+      if (target) spawnParticle(target, partRng, particleColor);
     }
     for (let i = 0; i < psys.particles.length; i++) {
       const p = psys.particles[i];
