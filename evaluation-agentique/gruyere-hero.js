@@ -624,11 +624,15 @@ function buildPlate(holes, z, plateIndex) {
 
 // The back wall where survivors accumulate — paper-white surface in
 // MeshBasicMaterial (non-lit) pour qu'elle reste #faf6ec pur quelle que
-// soit la lumière chaude/froide de la scène. C'est l'écran de projection
-// sur lequel les attaques orange viennent se déposer.
+// soit la lumière chaude/froide de la scène. Comme la couleur matche le
+// fond de page, on ajoute une fine bordure sombre pour délimiter l'écran.
 const ACCUMULATOR_COLOR = 0xfaf6ec;
+const ACCUMULATOR_OUTLINE_COLOR = 0x1a1a1a;
+const ACCUMULATOR_OUTLINE_OPACITY = 0.28;
 function buildAccumulatorScreen() {
   const w = PLATE_HALF * 2;
+  const group = new THREE.Group();
+
   const geom = new THREE.PlaneGeometry(w, w);
   const mat = new THREE.MeshBasicMaterial({
     color: ACCUMULATOR_COLOR,
@@ -636,7 +640,27 @@ function buildAccumulatorScreen() {
   });
   const plane = new THREE.Mesh(geom, mat);
   plane.position.z = ACCUMULATOR_Z;
-  return plane;
+  group.add(plane);
+
+  // Thin outline so the plane reads as a surface against the same-coloured page bg.
+  const halfW = w / 2;
+  const outlinePositions = new Float32Array([
+    -halfW, -halfW, ACCUMULATOR_Z,   halfW, -halfW, ACCUMULATOR_Z,
+     halfW, -halfW, ACCUMULATOR_Z,   halfW,  halfW, ACCUMULATOR_Z,
+     halfW,  halfW, ACCUMULATOR_Z,  -halfW,  halfW, ACCUMULATOR_Z,
+    -halfW,  halfW, ACCUMULATOR_Z,  -halfW, -halfW, ACCUMULATOR_Z,
+  ]);
+  const outlineGeom = new THREE.BufferGeometry();
+  outlineGeom.setAttribute('position', new THREE.BufferAttribute(outlinePositions, 3));
+  const outlineMat = new THREE.LineBasicMaterial({
+    color: ACCUMULATOR_OUTLINE_COLOR,
+    transparent: true,
+    opacity: ACCUMULATOR_OUTLINE_OPACITY,
+  });
+  const outline = new THREE.LineSegments(outlineGeom, outlineMat);
+  group.add(outline);
+
+  return group;
 }
 
 function initScene(container) {
