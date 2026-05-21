@@ -622,17 +622,16 @@ function buildPlate(holes, z, plateIndex) {
   };
 }
 
-// The back wall where survivors accumulate — paper-white matte surface
-// matching --bg, lit comme un écran de projection sur lequel les attaques
-// orange viennent se déposer.
+// The back wall where survivors accumulate — paper-white surface in
+// MeshBasicMaterial (non-lit) pour qu'elle reste #faf6ec pur quelle que
+// soit la lumière chaude/froide de la scène. C'est l'écran de projection
+// sur lequel les attaques orange viennent se déposer.
 const ACCUMULATOR_COLOR = 0xfaf6ec;
 function buildAccumulatorScreen() {
   const w = PLATE_HALF * 2;
   const geom = new THREE.PlaneGeometry(w, w);
-  const mat = new THREE.MeshStandardMaterial({
+  const mat = new THREE.MeshBasicMaterial({
     color: ACCUMULATOR_COLOR,
-    metalness: 0.10,
-    roughness: 0.92,
     side: THREE.DoubleSide,
   });
   const plane = new THREE.Mesh(geom, mat);
