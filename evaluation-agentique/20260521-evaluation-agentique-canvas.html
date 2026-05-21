@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" data-zoom="0">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -661,6 +661,261 @@ h3 { font-size: clamp(22px, 2.8vw, 32px); }
 
 .footer-credit { color: var(--text); font-weight: 500; }
 .footer-disclosure { font-style: italic; }
+
+/* =============================================================
+   === Zoom states ===
+   data-zoom est posé sur <html> (cf. :root) et muté par le JS.
+   Valeurs : "0" (overview), "P1"|"P2A"|"P2B"|"P3" (phase),
+   "N1"|"N2"|"N3" (couche), "S0..S7"|"C1..C6" (sub-card focus),
+   "A-prompt-injection"|"A-hallucination"|"A-tool-misuse"
+   |"A-context-saturation"|"A-reward-hacking"
+   |"A-spec-mismatch"|"A-latency-drift" (attaque focus).
+   ============================================================= */
+
+/* Transitions globales pour les morphs */
+.canvas > section,
+.subcard,
+.attaque,
+.phase,
+.couche,
+.verdicts {
+  transition: opacity 400ms ease;
+}
+
+/* ---- Overview compact (data-zoom="0") ---- */
+
+/* Sub-cards en mode teaser : header + subtitle + affordance uniquement */
+:root[data-zoom="0"] .subcard .methods,
+:root[data-zoom="0"] .subcard .antipattern,
+:root[data-zoom="0"] .subcard .frameworks,
+:root[data-zoom="0"] .subcard .tagline {
+  display: none;
+}
+
+/* Affordance "voir le détail" en mode compact */
+:root[data-zoom="0"] .subcard::after {
+  content: '→ voir le détail';
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  color: var(--accent);
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  margin-top: 4px;
+}
+
+/* Attaques compactes : juste l'attaque-head, pas les 3 verdicts */
+:root[data-zoom="0"] .attaque .verdicts {
+  display: none;
+}
+
+:root[data-zoom="0"] .attaque::after {
+  content: '→ voir trajectoire';
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  color: var(--accent);
+  padding-top: 8px;
+  margin-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+/* ---- Zoom phase / couche / attaque : focus section, dim others ---- */
+
+:root[data-zoom^="P"] .canvas > section:not(.playbook),
+:root[data-zoom^="N"] .canvas > section:not(.gruyere),
+:root[data-zoom^="A-"] .canvas > section:not(.attaques) {
+  opacity: 0.04;
+  pointer-events: none;
+}
+
+/* Phase active mise en valeur, autres dimmées */
+:root[data-zoom="P1"] .phase:not(#P1),
+:root[data-zoom="P2A"] .phase:not(#P2A),
+:root[data-zoom="P2B"] .phase:not(#P2B),
+:root[data-zoom="P3"] .phase:not(#P3) {
+  opacity: 0.15;
+  pointer-events: none;
+}
+
+/* Couche active, autres dimmées */
+:root[data-zoom="N1"] .couche:not(#N1),
+:root[data-zoom="N2"] .couche:not(#N2),
+:root[data-zoom="N3"] .couche:not(#N3) {
+  opacity: 0.15;
+  pointer-events: none;
+}
+
+/* Attaques : par défaut dim toutes, on rallume celle ciblée */
+:root[data-zoom^="A-"] .attaque {
+  opacity: 0.15;
+  pointer-events: none;
+}
+:root[data-zoom="A-prompt-injection"] #A-prompt-injection,
+:root[data-zoom="A-hallucination"] #A-hallucination,
+:root[data-zoom="A-tool-misuse"] #A-tool-misuse,
+:root[data-zoom="A-context-saturation"] #A-context-saturation,
+:root[data-zoom="A-reward-hacking"] #A-reward-hacking,
+:root[data-zoom="A-spec-mismatch"] #A-spec-mismatch,
+:root[data-zoom="A-latency-drift"] #A-latency-drift {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Sur l'attaque focalisée, on déplie les 3 verdicts */
+:root[data-zoom="A-prompt-injection"] #A-prompt-injection .verdicts,
+:root[data-zoom="A-hallucination"] #A-hallucination .verdicts,
+:root[data-zoom="A-tool-misuse"] #A-tool-misuse .verdicts,
+:root[data-zoom="A-context-saturation"] #A-context-saturation .verdicts,
+:root[data-zoom="A-reward-hacking"] #A-reward-hacking .verdicts,
+:root[data-zoom="A-spec-mismatch"] #A-spec-mismatch .verdicts,
+:root[data-zoom="A-latency-drift"] #A-latency-drift .verdicts {
+  display: grid;
+}
+
+/* L'affordance "→ voir trajectoire" disparaît sur l'attaque focalisée */
+:root[data-zoom="A-prompt-injection"] #A-prompt-injection::after,
+:root[data-zoom="A-hallucination"] #A-hallucination::after,
+:root[data-zoom="A-tool-misuse"] #A-tool-misuse::after,
+:root[data-zoom="A-context-saturation"] #A-context-saturation::after,
+:root[data-zoom="A-reward-hacking"] #A-reward-hacking::after,
+:root[data-zoom="A-spec-mismatch"] #A-spec-mismatch::after,
+:root[data-zoom="A-latency-drift"] #A-latency-drift::after {
+  display: none;
+}
+
+/* ---- Sub-card focalisée : position fixed plein écran ---- */
+
+:root[data-zoom="S0"] #S0,
+:root[data-zoom="S1"] #S1,
+:root[data-zoom="S2"] #S2,
+:root[data-zoom="S3"] #S3,
+:root[data-zoom="S4"] #S4,
+:root[data-zoom="S5"] #S5,
+:root[data-zoom="S6"] #S6,
+:root[data-zoom="S7"] #S7,
+:root[data-zoom="C1"] #C1,
+:root[data-zoom="C2"] #C2,
+:root[data-zoom="C3"] #C3,
+:root[data-zoom="C4"] #C4,
+:root[data-zoom="C5"] #C5,
+:root[data-zoom="C6"] #C6 {
+  position: fixed;
+  inset: 56px 0 0 0;  /* sous la topbar */
+  z-index: 40;
+  overflow-y: auto;
+  padding: clamp(32px, 4vw, 64px) clamp(20px, 4vw, 60px);
+  background: var(--bg);
+  border: none;
+  border-radius: 0;
+  max-width: 900px;
+  margin-inline: auto;
+  cursor: default;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Contenu détaillé visible sur la sub-card focalisée */
+:root[data-zoom="S0"] #S0 .methods,
+:root[data-zoom="S0"] #S0 .antipattern,
+:root[data-zoom="S0"] #S0 .frameworks,
+:root[data-zoom="S0"] #S0 .tagline,
+:root[data-zoom="S1"] #S1 .methods,
+:root[data-zoom="S1"] #S1 .antipattern,
+:root[data-zoom="S1"] #S1 .frameworks,
+:root[data-zoom="S1"] #S1 .tagline,
+:root[data-zoom="S2"] #S2 .methods,
+:root[data-zoom="S2"] #S2 .antipattern,
+:root[data-zoom="S2"] #S2 .frameworks,
+:root[data-zoom="S2"] #S2 .tagline,
+:root[data-zoom="S3"] #S3 .methods,
+:root[data-zoom="S3"] #S3 .antipattern,
+:root[data-zoom="S3"] #S3 .frameworks,
+:root[data-zoom="S3"] #S3 .tagline,
+:root[data-zoom="S4"] #S4 .methods,
+:root[data-zoom="S4"] #S4 .antipattern,
+:root[data-zoom="S4"] #S4 .frameworks,
+:root[data-zoom="S4"] #S4 .tagline,
+:root[data-zoom="S5"] #S5 .methods,
+:root[data-zoom="S5"] #S5 .antipattern,
+:root[data-zoom="S5"] #S5 .frameworks,
+:root[data-zoom="S5"] #S5 .tagline,
+:root[data-zoom="S6"] #S6 .methods,
+:root[data-zoom="S6"] #S6 .antipattern,
+:root[data-zoom="S6"] #S6 .frameworks,
+:root[data-zoom="S6"] #S6 .tagline,
+:root[data-zoom="S7"] #S7 .methods,
+:root[data-zoom="S7"] #S7 .antipattern,
+:root[data-zoom="S7"] #S7 .frameworks,
+:root[data-zoom="S7"] #S7 .tagline,
+:root[data-zoom="C1"] #C1 .methods,
+:root[data-zoom="C1"] #C1 .antipattern,
+:root[data-zoom="C1"] #C1 .frameworks,
+:root[data-zoom="C1"] #C1 .tagline,
+:root[data-zoom="C2"] #C2 .methods,
+:root[data-zoom="C2"] #C2 .antipattern,
+:root[data-zoom="C2"] #C2 .frameworks,
+:root[data-zoom="C2"] #C2 .tagline,
+:root[data-zoom="C3"] #C3 .methods,
+:root[data-zoom="C3"] #C3 .antipattern,
+:root[data-zoom="C3"] #C3 .frameworks,
+:root[data-zoom="C3"] #C3 .tagline,
+:root[data-zoom="C4"] #C4 .methods,
+:root[data-zoom="C4"] #C4 .antipattern,
+:root[data-zoom="C4"] #C4 .frameworks,
+:root[data-zoom="C4"] #C4 .tagline,
+:root[data-zoom="C5"] #C5 .methods,
+:root[data-zoom="C5"] #C5 .antipattern,
+:root[data-zoom="C5"] #C5 .frameworks,
+:root[data-zoom="C5"] #C5 .tagline,
+:root[data-zoom="C6"] #C6 .methods,
+:root[data-zoom="C6"] #C6 .antipattern,
+:root[data-zoom="C6"] #C6 .frameworks,
+:root[data-zoom="C6"] #C6 .tagline {
+  display: block;
+}
+
+/* Pas d'affordance "voir détail" sur la sub-card focalisée */
+:root[data-zoom="S0"] #S0::after,
+:root[data-zoom="S1"] #S1::after,
+:root[data-zoom="S2"] #S2::after,
+:root[data-zoom="S3"] #S3::after,
+:root[data-zoom="S4"] #S4::after,
+:root[data-zoom="S5"] #S5::after,
+:root[data-zoom="S6"] #S6::after,
+:root[data-zoom="S7"] #S7::after,
+:root[data-zoom="C1"] #C1::after,
+:root[data-zoom="C2"] #C2::after,
+:root[data-zoom="C3"] #C3::after,
+:root[data-zoom="C4"] #C4::after,
+:root[data-zoom="C5"] #C5::after,
+:root[data-zoom="C6"] #C6::after {
+  display: none;
+}
+
+/* Tout le doc dimmé quand sub-card focalisée */
+:root[data-zoom^="S"] .canvas > section,
+:root[data-zoom^="C"] .canvas > section {
+  opacity: 0.04;
+  pointer-events: none;
+}
+
+/* Lock body scroll + cache hero gruyère pour réduire le bruit */
+:root[data-zoom^="S"],
+:root[data-zoom^="C"] {
+  overflow: hidden;
+}
+:root[data-zoom^="S"] body,
+:root[data-zoom^="C"] body {
+  overflow: hidden;
+  height: 100vh;
+}
+:root[data-zoom^="S"] .gruyere-figure,
+:root[data-zoom^="C"] .gruyere-figure { display: none; }
 </style>
 </head>
 <body>
@@ -674,7 +929,7 @@ h3 { font-size: clamp(22px, 2.8vw, 32px); }
   </nav>
 </header>
 
-<main class="canvas" data-zoom="0">
+<main class="canvas">
   <section class="hero">
     <p class="eyebrow">Carte zoomable · semantic zoom Bret Victor style</p>
     <h1>Évaluer un agent</h1>
