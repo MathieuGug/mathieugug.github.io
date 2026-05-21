@@ -932,6 +932,19 @@ h3 { font-size: clamp(22px, 2.8vw, 32px); }
 }
 :root[data-zoom^="S"] .gruyere-figure,
 :root[data-zoom^="C"] .gruyere-figure { display: none; }
+
+/* ── Screen reader only ────────────────────────────────── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
 </style>
 </head>
 <body>
@@ -2353,5 +2366,143 @@ h3 { font-size: clamp(22px, 2.8vw, 32px); }
   <p class="footer-credit">Mathieu Guglielmino · Practice Manager Lincoln</p>
   <p class="footer-disclosure">Format co-écrit avec l'aide d'une IA. Le contenu engage uniquement l'auteur à titre personnel.</p>
 </footer>
+
+<!-- Aria-live region pour annoncer les transitions de zoom -->
+<div id="zoom-live" aria-live="polite" aria-atomic="true" class="sr-only"></div>
+
+<script>
+(function () {
+  'use strict';
+  const root = document.documentElement;
+
+  // ── Hash ↔ data-zoom mapping ──────────────────────────────
+
+  function hashToZoom(hash) {
+    if (!hash || hash === '#') return '0';
+    const h = hash.startsWith('#') ? hash.slice(1) : hash;
+    if (h.startsWith('zone-')) return h.slice(5);  // #zone-P1 → P1
+    return h;  // #S0, #C1, #A-prompt-injection
+  }
+
+  function zoomToHash(zoom) {
+    if (!zoom || zoom === '0') return '';
+    // Phases/couches : préfixe zone-
+    if (/^(P\d|P2[AB]|N\d)$/.test(zoom)) return '#zone-' + zoom;
+    return '#' + zoom;
+  }
+
+  // ── Apply zoom (with focus management) ────────────────────
+
+  function applyZoom(zoom, opts = {}) {
+    root.dataset.zoom = zoom || '0';
+    // Focus la card / section ciblée
+    if (zoom && zoom !== '0') {
+      const target = document.getElementById(zoom);
+      if (target && !opts.skipFocus) {
+        target.focus({ preventScroll: true });
+      }
+    }
+    // Aria-live announce
+    const live = document.getElementById('zoom-live');
+    if (live) {
+      if (!zoom || zoom === '0') live.textContent = "Vue d'ensemble";
+      else live.textContent = 'Zoom · ' + zoom;
+    }
+  }
+
+  // Init depuis le hash
+  applyZoom(hashToZoom(location.hash), { skipFocus: true });
+
+  // ── Hashchange listener ───────────────────────────────────
+
+  window.addEventListener('hashchange', function () {
+    applyZoom(hashToZoom(location.hash));
+  });
+
+  // ── Click handler ─────────────────────────────────────────
+
+  document.addEventListener('click', function (e) {
+    // Ignore clicks dans la topbar / footer / liens / boutons
+    if (e.target.closest('a, button')) return;
+
+    // Sub-card clic → zoom S*/C*
+    const sub = e.target.closest('.subcard');
+    if (sub && sub.id && root.dataset.zoom !== sub.id) {
+      e.preventDefault();
+      location.hash = zoomToHash(sub.id);
+      return;
+    }
+
+    // Phase / couche clic → zoom P*/N* (sauf si on a cliqué dans une sub-card,
+    // ce qui est déjà géré au-dessus)
+    if (!sub) {
+      const phase = e.target.closest('.phase, .couche');
+      if (phase && phase.id && root.dataset.zoom !== phase.id) {
+        e.preventDefault();
+        location.hash = zoomToHash(phase.id);
+        return;
+      }
+    }
+
+    // Attaque clic → zoom A-*
+    const attaque = e.target.closest('.attaque');
+    if (attaque && attaque.id && root.dataset.zoom !== attaque.id) {
+      e.preventDefault();
+      location.hash = zoomToHash(attaque.id);
+      return;
+    }
+  });
+
+  // ── Keyboard ──────────────────────────────────────────────
+
+  document.addEventListener('keydown', function (e) {
+    // Échap : pop le niveau de zoom
+    if (e.key === 'Escape') {
+      const z = root.dataset.zoom;
+      if (!z || z === '0') return;
+
+      let parentZoom = '0';
+      if (/^[SC]\d/.test(z)) {
+        // Sub-card → revenir à sa phase/couche parente
+        const target = document.getElementById(z);
+        const parent = target && target.closest('.phase, .couche');
+        if (parent && parent.id) parentZoom = parent.id;
+      }
+      // Sinon (phase/couche/attaque) → niveau 0
+
+      location.hash = zoomToHash(parentZoom);
+      e.preventDefault();
+      return;
+    }
+
+    // Flèches : naviguer entre siblings au niveau courant
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+      const z = root.dataset.zoom;
+      if (!z || z === '0') return;
+      const target = document.getElementById(z);
+      if (!target) return;
+
+      // Trouver les siblings de même classe dans le même parent
+      const cls = target.className.split(' ').find(function (c) {
+        return ['subcard', 'phase', 'couche', 'attaque'].indexOf(c) !== -1;
+      });
+      if (!cls) return;
+
+      const parent = target.parentElement;
+      if (!parent) return;
+      const siblings = Array.from(parent.querySelectorAll(':scope > .' + cls));
+      const idx = siblings.indexOf(target);
+      if (idx === -1) return;
+
+      const step = e.key === 'ArrowRight' ? 1 : -1;
+      const next = siblings[(idx + step + siblings.length) % siblings.length];
+      if (next && next.id) {
+        location.hash = zoomToHash(next.id);
+        e.preventDefault();
+      }
+    }
+  });
+})();
+</script>
 </body>
 </html>
