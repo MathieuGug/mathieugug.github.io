@@ -40,10 +40,10 @@ function mulberry32(seed) {
   };
 }
 
-// Plate dimensions: 4×4 unit square centered on origin (x,y in [-2, 2]).
-const PLATE_HALF = 2.0;
-const HOLE_R_MIN = 0.05;
-const HOLE_R_MAX = 0.18;
+// Plate dimensions: 5×5 unit square centered on origin (x,y in [-2.5, 2.5]).
+const PLATE_HALF = 2.5;
+const HOLE_R_MIN = 0.07;
+const HOLE_R_MAX = 0.22;
 const ALIGN_P2_TO_P1 = 0.30;
 const ALIGN_P3_TO_P2 = 0.15;
 
@@ -102,10 +102,13 @@ function generateHoles(plateIndex, rng, parentHoles, alignRatioOverride) {
 // Monte Carlo: estimate the geometric survival rate of `plates` (array of
 // { holes, z }). N random spawn positions, count how many pass-through.
 function monteCarloSurvival(plates, n) {
+  // Sample over the actual spawn area so the estimated rate matches the
+  // animation. SPAWN_HALF is declared later in the file but hoisted via `const`.
+  const half = PLATE_HALF - 0.2;
   let survivors = 0;
   for (let i = 0; i < n; i++) {
-    const x = (Math.random() * 2 - 1) * 2.2; // SPAWN_HALF — declared further down
-    const y = (Math.random() * 2 - 1) * 2.2;
+    const x = (Math.random() * 2 - 1) * half;
+    const y = (Math.random() * 2 - 1) * half;
     let alive = true;
     for (const plate of plates) {
       let hits = false;
@@ -235,7 +238,10 @@ const STATE_ACCUMULATED = 2;
 const STATE_DEAD = 3;
 
 const PARTICLE_SPEED = 2.4;  // units/s — tuned so lifetime × spawnRate stays below the cap
-const SPAWN_HALF = 2.2;      // x,y range at spawn (slightly wider than plates)
+// SPAWN_HALF MUST be ≤ PLATE_HALF — particles must engage with the plates,
+// never fall above/below them. Small inward padding keeps the impact pattern
+// safely inside the plate face.
+const SPAWN_HALF = PLATE_HALF - 0.2;
 
 function buildParticleSystem(maxCount) {
   const positions = new Float32Array(maxCount * 3);
@@ -258,7 +264,7 @@ function buildParticleSystem(maxCount) {
         vColor = color;
         vAlpha = alpha;
         vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-        gl_PointSize = 60.0 * (1.0 / -mvPosition.z);
+        gl_PointSize = 95.0 * (1.0 / -mvPosition.z);
         gl_Position = projectionMatrix * mvPosition;
       }
     `,
@@ -478,10 +484,13 @@ function buildVolumeFrame() {
   return group;
 }
 
-// Bounding sphere of the visible scene (spawn area + plates + accumulator).
-// Camera distance is derived from this radius + the camera's actual FOV/aspect.
+// Bounding sphere — bounds plates + accumulator (the framed subject). Padding
+// > 1.0 leaves margin so the orbital camera NEVER clips at any angle. Spawn
+// area extends slightly outside the sphere; particles there read as "incoming
+// from off-screen", which is intentional. Padding must compensate for the
+// asymmetry between the bounding-sphere math and actual scene corner reach.
 const SCENE_RADIUS = 5.5;
-const FIT_PADDING = 1.02;
+const FIT_PADDING = 1.12;
 
 function computeOrbitRadius(camera) {
   const vFovHalf = camera.fov * Math.PI / 360;
@@ -505,9 +514,10 @@ const PLATE_SPECULAR = 0xb8a888;
 const PLATE_SHININESS = 90;
 const PLATE_OPACITY = 0.78;
 
-// Particle visual — bright cream/white, high contrast on the coloured plates.
-const PARTICLE_COLOR = 0xf6efe0;
-const PARTICLE_SIZE_PX = 60;
+// Particle visual — bright cream head, warm-red "danger" trail behind.
+const PARTICLE_COLOR = 0xfaf2e0;
+const PARTICLE_SIZE_PX = 95;
+const TRAIL_DANGER_COLOR = 0xff5a28;  // warm orange-red — "threat in motion"
 
 function buildPlate(holes, z, plateIndex) {
   const shape = new THREE.Shape();
@@ -679,6 +689,7 @@ export function mountGruyereHero(container, opts = {}) {
   scene.add(psys.points);
 
   const particleColor = new THREE.Color(PARTICLE_COLOR);
+  const dangerColor = new THREE.Color(TRAIL_DANGER_COLOR);
   const accentColor = readAccentColor();
   const partRng = mulberry32(hashSeed(config.holeSeed + '-particles'));
 
@@ -771,26 +782,27 @@ export function mountGruyereHero(container, opts = {}) {
       psys.alphas[drawCount] = p.a;
       drawCount++;
 
-      // Trail segment (LineSegments) — only for in-flight particles, not
-      // for FADING/ACCUMULATED which are static or dying.
+      // Trail segment (LineSegments) — only for in-flight particles. Head is
+      // the bright cream particle; tail fades to a warm danger orange + 0 alpha,
+      // giving a hot streak behind each incoming attack.
       if (p.state === STATE_ALIVE) {
         const offT = trailCount * 6;
-        // Head vertex (current position, alpha matches head)
+        // Head vertex
         tsys.positions[offT    ] = p.x;
         tsys.positions[offT + 1] = p.y;
         tsys.positions[offT + 2] = p.z;
         tsys.colors[offT    ] = p.r;
         tsys.colors[offT + 1] = p.g;
         tsys.colors[offT + 2] = p.b;
-        tsys.alphas[trailCount * 2] = p.a * 0.7;
-        // Tail vertex (TRAIL_LENGTH behind in -z, alpha 0 = fully faded)
+        tsys.alphas[trailCount * 2] = p.a * 0.85;
+        // Tail vertex — warm orange-red, fully faded alpha
         const tailZ = Math.max(p.z - TRAIL_LENGTH, SPAWN_Z);
         tsys.positions[offT + 3] = p.x;
         tsys.positions[offT + 4] = p.y;
         tsys.positions[offT + 5] = tailZ;
-        tsys.colors[offT + 3] = p.r;
-        tsys.colors[offT + 4] = p.g;
-        tsys.colors[offT + 5] = p.b;
+        tsys.colors[offT + 3] = dangerColor.r;
+        tsys.colors[offT + 4] = dangerColor.g;
+        tsys.colors[offT + 5] = dangerColor.b;
         tsys.alphas[trailCount * 2 + 1] = 0.0;
         trailCount++;
       }
@@ -831,8 +843,8 @@ export function mountGruyereHero(container, opts = {}) {
   // Orbital camera: slow rotation around the scene center. Distance is
   // recomputed each frame from the current aspect so the scene never clips.
   const ORBIT_Y_RATIO = 0.18;
-  // Centre on the midpoint of the full visible scene: spawn → accumulator.
-  const ORBIT_CENTER = new THREE.Vector3(0, 0, (SPAWN_Z + ACCUMULATOR_Z) / 2);
+  // Centre on the midpoint of plate-0 to accumulator (the framed subject).
+  const ORBIT_CENTER = new THREE.Vector3(0, 0, (PLATE_Z[0] + ACCUMULATOR_Z) / 2);
   let orbitAngle = -Math.PI * 0.78;
 
   // Drag-to-rotate (horizontal mouse/touch drag → orbit angle).
