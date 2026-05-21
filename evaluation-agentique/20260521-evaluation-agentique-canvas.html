@@ -4201,5 +4201,181 @@ html { scroll-behavior: smooth; }
   });
 })();
 </script>
+
+<script>
+// Canvas v2 — routing triplet phase/couche/attack + Escape stack.
+// Format hash canonique : #P1/N1/A-prompt-injection (slash-separated).
+// Tolerances : #P1, #N1, #A-prompt-injection, #P1.N1, #zone-P1 (legacy v1).
+(function () {
+  const canvas = document.querySelector('.canvas-v2');
+  if (!canvas) return;  // ne devrait pas arriver, mais defensive
+
+  // === Constants ===
+  const PHASES = ['P0', 'P1', 'P2A', 'P2B', 'P3', 'S0', 'S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7'];
+  const COUCHES = ['N0', 'N1', 'N2', 'N3', 'C1', 'C2', 'C3', 'C4', 'C5', 'C6'];
+  const ATTACKS = ['A0', 'A-prompt-injection', 'A-hallucination', 'A-tool-misuse', 'A-context-saturation', 'A-reward-hacking', 'A-spec-mismatch', 'A-latency-drift'];
+  const SUBCARDS_PHASE = ['S0', 'S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7'];
+  const SUBCARDS_COUCHE = ['C1', 'C2', 'C3', 'C4', 'C5', 'C6'];
+  const PARENT_PHASE = { S0: 'P1', S1: 'P1', S2: 'P2A', S3: 'P2A', S4: 'P2B', S5: 'P2B', S6: 'P3', S7: 'P3' };
+  const PARENT_COUCHE = { C1: 'N1', C2: 'N1', C3: 'N2', C4: 'N2', C5: 'N3', C6: 'N3' };
+  const DEFAULTS = { phase: 'P0', couche: 'N0', attack: 'A0' };
+
+  // === State stack (axes most-recently-manipulated) ===
+  const axisStack = [];
+
+  // === Hash parsing ===
+  // Format canonique : #P1/N1/A-prompt-injection (slash-separated).
+  // Tolerances : #P1 ; #N1 ; #A-prompt-injection ; #P1/N1 ; #N1.A-prompt-injection ; etc.
+  // Backward-compat avec v1 : #S0, #zone-P1 (zone- prefix), etc.
+  function parseHash(hash) {
+    const out = Object.assign({}, DEFAULTS);
+    if (!hash || hash === '#') return out;
+    const cleaned = hash.replace(/^#/, '').replace(/^zone-/, '');
+    const tokens = cleaned.split(/[\/.]+/).filter(Boolean);
+    for (const tok of tokens) {
+      // Tolere encore les anciens hashs v1 type "zone-P1"
+      const t = tok.replace(/^zone-/, '');
+      if (PHASES.includes(t)) out.phase = t;
+      else if (COUCHES.includes(t)) out.couche = t;
+      else if (ATTACKS.includes(t)) out.attack = t;
+    }
+    return out;
+  }
+
+  function stateToHash(state) {
+    const parts = [];
+    if (state.phase !== DEFAULTS.phase) parts.push(state.phase);
+    if (state.couche !== DEFAULTS.couche) parts.push(state.couche);
+    if (state.attack !== DEFAULTS.attack) parts.push(state.attack);
+    return parts.length ? '#' + parts.join('/') : '#';
+  }
+
+  function applyState(state) {
+    // IMPORTANT : toujours setAttribute (jamais removeAttribute) pour preserver
+    // les selecteurs CSS :not([data-*="X0"]) qui depend des defaults explicites.
+    canvas.setAttribute('data-phase-zoom', state.phase);
+    canvas.setAttribute('data-couche-zoom', state.couche);
+    canvas.setAttribute('data-attack', state.attack);
+  }
+
+  function currentState() {
+    return {
+      phase: canvas.getAttribute('data-phase-zoom') || DEFAULTS.phase,
+      couche: canvas.getAttribute('data-couche-zoom') || DEFAULTS.couche,
+      attack: canvas.getAttribute('data-attack') || DEFAULTS.attack,
+    };
+  }
+
+  function setAxis(axis, value) {
+    const state = currentState();
+    state[axis] = value;
+    applyState(state);
+    const newHash = stateToHash(state);
+    if (location.hash !== newHash && !(location.hash === '' && newHash === '#')) {
+      // pushState plutot que location.hash = pour eviter de declencher hashchange
+      history.pushState(null, '', newHash);
+    }
+    // Met a jour le stack
+    const idx = axisStack.indexOf(axis);
+    if (idx !== -1) axisStack.splice(idx, 1);
+    axisStack.push(axis);
+  }
+
+  // === Click handler delegated ===
+  function onClick(e) {
+    const target = e.target.closest('[data-zoom-target]');
+    if (!target) return;
+    const id = target.getAttribute('data-zoom-target');
+    e.preventDefault();
+    const state = currentState();
+
+    if (id === 'P0' || id === 'N0' || id === 'A0') return;  // reset markers, ignored
+
+    if (PHASES.includes(id)) {
+      // Re-clic sur Pk deja actif (ou sur Sk-enfant de Pk actif) -> reset axe phase
+      const isActive = state.phase === id ||
+                       (SUBCARDS_PHASE.includes(state.phase) && PARENT_PHASE[state.phase] === id);
+      setAxis('phase', isActive ? DEFAULTS.phase : id);
+      return;
+    }
+    if (SUBCARDS_PHASE.includes(id)) {
+      // Re-clic sur Sk deja actif -> reset au parent Pk
+      if (state.phase === id) {
+        setAxis('phase', PARENT_PHASE[id] || DEFAULTS.phase);
+      } else {
+        setAxis('phase', id);
+      }
+      return;
+    }
+    if (COUCHES.includes(id)) {
+      const isActive = state.couche === id ||
+                       (SUBCARDS_COUCHE.includes(state.couche) && PARENT_COUCHE[state.couche] === id);
+      setAxis('couche', isActive ? DEFAULTS.couche : id);
+      return;
+    }
+    if (SUBCARDS_COUCHE.includes(id)) {
+      if (state.couche === id) {
+        setAxis('couche', PARENT_COUCHE[id] || DEFAULTS.couche);
+      } else {
+        setAxis('couche', id);
+      }
+      return;
+    }
+    if (ATTACKS.includes(id)) {
+      setAxis('attack', state.attack === id ? DEFAULTS.attack : id);
+      return;
+    }
+  }
+
+  // === Keyboard : Escape pop axe le plus recemment manipule ===
+  function onKeydown(e) {
+    if (e.key !== 'Escape') return;
+    e.preventDefault();
+    const axis = axisStack[axisStack.length - 1];
+    if (!axis) return;
+    const state = currentState();
+    if (axis === 'phase') {
+      if (SUBCARDS_PHASE.includes(state.phase)) {
+        setAxis('phase', PARENT_PHASE[state.phase] || DEFAULTS.phase);
+      } else if (state.phase !== DEFAULTS.phase) {
+        setAxis('phase', DEFAULTS.phase);
+        axisStack.pop();  // axe complet reset -> enleve du stack
+      } else {
+        axisStack.pop();
+      }
+    } else if (axis === 'couche') {
+      if (SUBCARDS_COUCHE.includes(state.couche)) {
+        setAxis('couche', PARENT_COUCHE[state.couche] || DEFAULTS.couche);
+      } else if (state.couche !== DEFAULTS.couche) {
+        setAxis('couche', DEFAULTS.couche);
+        axisStack.pop();
+      } else {
+        axisStack.pop();
+      }
+    } else if (axis === 'attack') {
+      if (state.attack !== DEFAULTS.attack) {
+        setAxis('attack', DEFAULTS.attack);
+        axisStack.pop();
+      } else {
+        axisStack.pop();
+      }
+    }
+  }
+
+  // === Hashchange (back/forward du browser) ===
+  function onHashChange() {
+    applyState(parseHash(location.hash));
+  }
+
+  // === Init ===
+  applyState(parseHash(location.hash));
+  canvas.addEventListener('click', onClick);
+  document.addEventListener('keydown', onKeydown);
+  window.addEventListener('hashchange', onHashChange);
+
+  // Expose pour debug devtools
+  window.canvasV2 = { currentState, setAxis, applyState, parseHash, stateToHash };
+})();
+</script>
 </body>
 </html>
