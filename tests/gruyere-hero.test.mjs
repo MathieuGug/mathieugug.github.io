@@ -104,3 +104,25 @@ for (const page of HOST_PAGES) {
     assert.match(html, /<noscript>\s*<img[^>]*gruyere-hero-poster\.svg/);
   });
 }
+
+test('gruyere-hero.js declares setBeat function', () => {
+  assert.match(HERO_JS, /\bsetBeat\b/, 'mountGruyereHero return value must include setBeat');
+});
+
+test('gruyere-hero.js declares getBeat function', () => {
+  assert.match(HERO_JS, /\bgetBeat\b/, 'mountGruyereHero return value must include getBeat');
+});
+
+test('gruyere-hero.js supports initialBeat option', () => {
+  assert.match(HERO_JS, /initialBeat/, 'DEFAULTS or opts must reference initialBeat');
+});
+
+test('gruyere-hero.js supports beatTransitionMs option', () => {
+  assert.match(HERO_JS, /beatTransitionMs/, 'DEFAULTS or opts must reference beatTransitionMs');
+});
+
+test('gruyere-hero.js gates collision by plate.enabled', () => {
+  // The collision loop in updateParticles must check an `enabled` field on plates.
+  // We match the JS source for an `enabled` reference inside the collision logic.
+  assert.match(HERO_JS, /\.enabled\b/, 'plates must have an .enabled flag used by collision gate');
+});
