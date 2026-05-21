@@ -156,32 +156,6 @@ h3 { font-size: clamp(22px, 2.8vw, 32px); }
   gap: clamp(20px, 2.5vw, 32px);
 }
 
-.eyebrow {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--text-dim);
-}
-
-.subtitle {
-  font-family: 'Fraunces', Georgia, serif;
-  font-style: italic;
-  font-weight: 400;
-  font-size: clamp(18px, 2.5vw, 24px);
-  color: var(--text-dim);
-  line-height: 1.3;
-}
-
-.lede {
-  font-size: clamp(16px, 1.8vw, 18px);
-  line-height: 1.65;
-  max-width: 60ch;
-}
-
-.lede strong { font-weight: 500; color: var(--text); }
-
 /* Figure gruyère hero — diagramme statique du modèle de Reason */
 .gruyere-figure {
   display: grid;
@@ -465,7 +439,7 @@ h3 { font-size: clamp(22px, 2.8vw, 32px); }
 /* ============================================================ */
 
 /* Canvas v2 — reset du wrapper (display:block + viewport bound) */
-:root .canvas-v2.canvas-v2 {
+.canvas-v2 {
   display: block;
   min-height: 0;
   padding: 0;
@@ -491,8 +465,7 @@ h3 { font-size: clamp(22px, 2.8vw, 32px); }
     "playbook"
     "gruyere"
     "footer";
-  /* Override .hero { place-items: center } hérité de v1 — on veut que les zones
-     remplissent leurs cellules, pas qu'elles se centrent sur leur taille intrinsèque. */
+  /* Les zones remplissent leurs cellules, pas centrées sur leur taille intrinsèque. */
   place-items: stretch;
   height: 100%;
   width: 100%;
@@ -840,6 +813,17 @@ h3 { font-size: clamp(22px, 2.8vw, 32px); }
 @media (max-width: 768px) {
   .canvas-v2-title { font-size: 14px; }
   .canvas-v2-title .title-sub { display: none; }
+}
+
+/* === A11y : prefers-reduced-motion ============================ */
+@media (prefers-reduced-motion: reduce) {
+  .canvas-v2-playbook,
+  .canvas-v2-gruyere,
+  .gruyere-cell,
+  .playbook-cell,
+  .gruyere-attaques-svg [data-zoom-target^="A-"] text {
+    transition: none;
+  }
 }
 </style>
 </head>
@@ -1876,8 +1860,8 @@ h3 { font-size: clamp(22px, 2.8vw, 32px); }
   <p class="footer-disclosure">Format co-écrit avec l'aide d'une IA. Le contenu engage uniquement l'auteur à titre personnel.</p>
 </footer>
 
-<!-- Aria-live region pour annoncer les transitions de zoom -->
-<div id="zoom-live" aria-live="polite" aria-atomic="true" class="sr-only"></div>
+<!-- Aria-live region pour annoncer les transitions d'état du canvas (phase/couche/attack) -->
+<div id="canvas-status" aria-live="polite" aria-atomic="true" class="sr-only"></div>
 
 <script>
 // Canvas v2 — routing triplet phase/couche/attack + Escape stack.
@@ -1896,6 +1880,41 @@ h3 { font-size: clamp(22px, 2.8vw, 32px); }
   const PARENT_PHASE = { S0: 'P1', S1: 'P1', S2: 'P2A', S3: 'P2A', S4: 'P2B', S5: 'P2B', S6: 'P3', S7: 'P3' };
   const PARENT_COUCHE = { C1: 'N1', C2: 'N1', C3: 'N2', C4: 'N2', C5: 'N3', C6: 'N3' };
   const DEFAULTS = { phase: 'P0', couche: 'N0', attack: 'A0' };
+
+  // === A11y : libelles descriptifs pour aria-live ===
+  const DESCRIBE_PHASE = {
+    P0: 'Vue d\'ensemble',
+    P1: 'Phase 1 collecte tasks',
+    P2A: 'Phase 2A cadrer les cas',
+    P2B: 'Phase 2B harness et graders',
+    P3: 'Phase 3 maintenance',
+    S0: 'Demarrer tot',
+    S1: 'Manuel d\'abord',
+    S2: 'Non-ambiguite',
+    S3: 'Equilibrer triggers',
+    S4: 'Harness',
+    S5: 'Graders sobres',
+    S6: 'Lire transcripts',
+    S7: 'Saturation ownership',
+  };
+  const DESCRIBE_COUCHE = {
+    N0: '', N1: 'Couche Preventif', N2: 'Couche Curatif', N3: 'Couche Qualitatif',
+    C1: 'CI/CD preventif', C2: 'Monitoring prod', C3: 'A/B testing',
+    C4: 'User feedback', C5: 'Transcripts', C6: 'Humain',
+  };
+  const DESCRIBE_ATTACK = {
+    'A0': '',
+    'A-prompt-injection': 'Attaque prompt injection',
+    'A-hallucination': 'Attaque hallucination',
+    'A-tool-misuse': 'Attaque tool misuse',
+    'A-context-saturation': 'Attaque context saturation',
+    'A-reward-hacking': 'Attaque reward hacking',
+    'A-spec-mismatch': 'Attaque spec mismatch',
+    'A-latency-drift': 'Attaque latency drift',
+  };
+  function describePhase(p) { return DESCRIBE_PHASE[p] || p; }
+  function describeCouche(c) { return DESCRIBE_COUCHE[c] || c; }
+  function describeAttack(a) { return DESCRIBE_ATTACK[a] || a; }
 
   // === State stack (axes most-recently-manipulated) ===
   const axisStack = [];
@@ -1933,6 +1952,15 @@ h3 { font-size: clamp(22px, 2.8vw, 32px); }
     canvas.setAttribute('data-phase-zoom', state.phase);
     canvas.setAttribute('data-couche-zoom', state.couche);
     canvas.setAttribute('data-attack', state.attack);
+    // A11y : aria-live announce
+    const status = document.getElementById('canvas-status');
+    if (status) {
+      const parts = [];
+      if (state.phase !== DEFAULTS.phase) parts.push(describePhase(state.phase));
+      if (state.couche !== DEFAULTS.couche) parts.push(describeCouche(state.couche));
+      if (state.attack !== DEFAULTS.attack) parts.push(describeAttack(state.attack));
+      status.textContent = parts.length ? 'Etat : ' + parts.join(', ') : 'Vue d\'ensemble';
+    }
   }
 
   function currentState() {
@@ -1956,6 +1984,32 @@ h3 { font-size: clamp(22px, 2.8vw, 32px); }
     const idx = axisStack.indexOf(axis);
     if (idx !== -1) axisStack.splice(idx, 1);
     axisStack.push(axis);
+
+    // === A11y : focus management — porte le focus sur la zone agrandie ===
+    requestAnimationFrame(() => {
+      const sel = focusSelectorFor(axis, value);
+      if (!sel) return;
+      const target = canvas.querySelector(sel);
+      if (target && typeof target.focus === 'function') {
+        if (!target.hasAttribute('tabindex')) target.setAttribute('tabindex', '-1');
+        target.focus({ preventScroll: true });
+      }
+    });
+  }
+
+  function focusSelectorFor(axis, value) {
+    if (axis === 'phase') {
+      if (SUBCARDS_PHASE.includes(value)) return '.subcard-detail[data-subcard="' + value + '"]';
+      if (value !== DEFAULTS.phase) return '.playbook-cell[data-phase="' + value + '"] .subcard-teaser';
+    }
+    if (axis === 'couche') {
+      if (SUBCARDS_COUCHE.includes(value)) return '.subcard-detail[data-subcard="' + value + '"]';
+      if (value !== DEFAULTS.couche) return '.gruyere-cell[data-couche="' + value + '"] .subcard-teaser';
+    }
+    if (axis === 'attack') {
+      if (value !== DEFAULTS.attack) return '[data-zoom-target="' + value + '"]';
+    }
+    return null;
   }
 
   // === Click handler delegated ===
@@ -2004,38 +2058,61 @@ h3 { font-size: clamp(22px, 2.8vw, 32px); }
     }
   }
 
-  // === Keyboard : Escape pop axe le plus recemment manipule ===
+  // === Keyboard : Escape pop axe + ArrowLeft/Right navigue les siblings ===
   function onKeydown(e) {
-    if (e.key !== 'Escape') return;
-    e.preventDefault();
-    const axis = axisStack[axisStack.length - 1];
-    if (!axis) return;
-    const state = currentState();
-    if (axis === 'phase') {
-      if (SUBCARDS_PHASE.includes(state.phase)) {
-        setAxis('phase', PARENT_PHASE[state.phase] || DEFAULTS.phase);
-      } else if (state.phase !== DEFAULTS.phase) {
-        setAxis('phase', DEFAULTS.phase);
-        axisStack.pop();  // axe complet reset -> enleve du stack
-      } else {
-        axisStack.pop();
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      const axis = axisStack[axisStack.length - 1];
+      if (!axis) return;
+      const state = currentState();
+      if (axis === 'phase') {
+        if (SUBCARDS_PHASE.includes(state.phase)) {
+          setAxis('phase', PARENT_PHASE[state.phase] || DEFAULTS.phase);
+        } else if (state.phase !== DEFAULTS.phase) {
+          setAxis('phase', DEFAULTS.phase);
+          axisStack.pop();  // axe complet reset -> enleve du stack
+        } else {
+          axisStack.pop();
+        }
+      } else if (axis === 'couche') {
+        if (SUBCARDS_COUCHE.includes(state.couche)) {
+          setAxis('couche', PARENT_COUCHE[state.couche] || DEFAULTS.couche);
+        } else if (state.couche !== DEFAULTS.couche) {
+          setAxis('couche', DEFAULTS.couche);
+          axisStack.pop();
+        } else {
+          axisStack.pop();
+        }
+      } else if (axis === 'attack') {
+        if (state.attack !== DEFAULTS.attack) {
+          setAxis('attack', DEFAULTS.attack);
+          axisStack.pop();
+        } else {
+          axisStack.pop();
+        }
       }
-    } else if (axis === 'couche') {
-      if (SUBCARDS_COUCHE.includes(state.couche)) {
-        setAxis('couche', PARENT_COUCHE[state.couche] || DEFAULTS.couche);
-      } else if (state.couche !== DEFAULTS.couche) {
-        setAxis('couche', DEFAULTS.couche);
-        axisStack.pop();
-      } else {
-        axisStack.pop();
-      }
-    } else if (axis === 'attack') {
-      if (state.attack !== DEFAULTS.attack) {
-        setAxis('attack', DEFAULTS.attack);
-        axisStack.pop();
-      } else {
-        axisStack.pop();
-      }
+      return;
+    }
+
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      const axis = axisStack[axisStack.length - 1];
+      if (!axis) return;
+      const orders = {
+        phase: ['P1', 'P2A', 'P2B', 'P3'],
+        couche: ['N1', 'N2', 'N3'],
+        attack: ATTACKS.slice(1),
+      };
+      const order = orders[axis];
+      if (!order) return;
+      const state = currentState();
+      let cur = state[axis];
+      if (axis === 'phase' && SUBCARDS_PHASE.includes(cur)) cur = PARENT_PHASE[cur];
+      if (axis === 'couche' && SUBCARDS_COUCHE.includes(cur)) cur = PARENT_COUCHE[cur];
+      const idx = order.indexOf(cur);
+      if (idx === -1) return;
+      const next = order[(idx + (e.key === 'ArrowRight' ? 1 : -1) + order.length) % order.length];
+      setAxis(axis, next);
+      e.preventDefault();
     }
   }
 
@@ -2051,7 +2128,7 @@ h3 { font-size: clamp(22px, 2.8vw, 32px); }
   window.addEventListener('hashchange', onHashChange);
 
   // Expose pour debug devtools
-  window.canvasV2 = { currentState, setAxis, applyState, parseHash, stateToHash };
+  window.canvasV2 = { currentState, setAxis, applyState, parseHash, stateToHash, focusSelectorFor, describePhase, describeCouche, describeAttack };
 })();
 </script>
 </body>
