@@ -46,7 +46,9 @@ test('gruyere-hero.js builds 3 well-spaced extruded plates', () => {
   assert.match(HERO_JS, /PLATE_Z\s*=\s*\[0\.5,\s*3\.0?,\s*5\.5\]/);
   assert.match(HERO_JS, /function\s+buildPlate/);
   assert.match(HERO_JS, /ExtrudeGeometry/);
-  assert.match(HERO_JS, /MeshStandardMaterial/);
+  // Plates use Phong material (lit by directional lights). The accumulator
+  // screen uses MeshBasicMaterial since the écran-blanc-papier fix.
+  assert.match(HERO_JS, /MeshPhongMaterial/);
 });
 
 test('gruyere-hero.js wires IntersectionObserver lifecycle', () => {
