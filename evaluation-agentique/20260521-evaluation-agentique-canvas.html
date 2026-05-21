@@ -1330,6 +1330,63 @@ html { scroll-behavior: smooth; }
   white-space: nowrap;
   border: 0;
 }
+
+/* ============================================================ */
+/* === v2 — canvas grid bound viewport, schéma toujours vivant === */
+/* ============================================================ */
+
+/* Spécificité bumped pour battre :root[data-zoom="0"] .canvas hérité de v1 */
+:root .canvas-v2.canvas-v2 {
+  display: block;
+  min-height: 0;
+  padding: 0;
+  margin: 0;
+  gap: 0;
+  grid-template-columns: none;
+}
+
+.canvas-v2-grid {
+  display: grid;
+  grid-template-rows: 1fr;  /* phase 1 = neutre, ajustera dans Task 2 */
+  height: calc(100vh - 56px);  /* sous topbar */
+  margin-top: 56px;
+  overflow: hidden;
+}
+
+.canvas-v2-hero {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: clamp(16px, 2vw, 32px);
+}
+
+.canvas-v2-hero .gruyere-figure {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+}
+
+.canvas-v2-hero .gruyere-diagram {
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+}
+
+/* Démolition v1 — sections long-form rétrogradées en hidden pour ce wrapper */
+.canvas-v2 > .canvas-v2-grid > section.playbook,
+.canvas-v2 > .canvas-v2-grid > section.gruyere,
+.canvas-v2 > .canvas-v2-grid > section.attaques,
+.canvas-v2 > .canvas-v2-grid > section.outcomes,
+.canvas-v2 > .canvas-v2-grid > footer.canvas-footer {
+  display: none;
+}
+
+/* Démolition v1 — neutralise le fixed-inset des sub-cards */
+.canvas-v2 :is(.subcard, .phase, .couche, .attaque) {
+  position: static !important;
+  inset: auto !important;
+  z-index: auto !important;
+}
 </style>
 </head>
 <body>
@@ -1343,8 +1400,10 @@ html { scroll-behavior: smooth; }
   </nav>
 </header>
 
-<main class="canvas">
-  <section class="hero">
+<main class="canvas canvas-v2" data-phase-zoom="P0" data-couche-zoom="N0" data-attack="A0">
+  <!-- v2 layout — schéma toujours visible, grid bound viewport -->
+  <div class="canvas-v2-grid">
+    <section class="hero canvas-v2-hero">
     <p class="eyebrow">Carte zoomable · semantic zoom Bret Victor style</p>
     <h1>Évaluer un agent</h1>
     <p class="subtitle">Le playbook construit les défenses · le gruyère arrête les attaques</p>
@@ -2842,6 +2901,7 @@ html { scroll-behavior: smooth; }
       « L'empilement n'est pas une garantie ; c'est une <em>réduction de la probabilité</em> qu'une attaque atteigne la prod. La maintenance (Phase 3) re-pondère les trous au fur et à mesure que le modèle évolue. »
     </p>
   </section>
+  </div><!-- /.canvas-v2-grid -->
 </main>
 
 <footer class="site-footer">
@@ -2855,6 +2915,10 @@ html { scroll-behavior: smooth; }
 <script>
 (function () {
   'use strict';
+  // v2 guard — si .canvas-v2 actif, le code v1 ci-dessous est désactivé.
+  // Le routing/zoom est repris par la couche v2 (Task 3+).
+  if (document.querySelector('.canvas-v2')) return;
+
   const root = document.documentElement;
 
   // ── Hash ↔ data-zoom mapping ──────────────────────────────
