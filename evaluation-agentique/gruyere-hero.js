@@ -42,10 +42,13 @@ const HOLE_R_MAX = 0.18;
 const ALIGN_P2_TO_P1 = 0.30;
 const ALIGN_P3_TO_P2 = 0.15;
 
-// Z layout: spawn → 3 plates → accumulator screen.
-const PLATE_Z = [0, 2, 4];
-const ACCUMULATOR_Z = 5.5;
-const SPAWN_Z = -3;
+// Z layout — cube 4×4×4 from z=0 (front face) to z=4 (back face = accumulator).
+// Plates sit inside with margin from the cube faces.
+const PLATE_Z = [0.5, 2.0, 3.5];
+const ACCUMULATOR_Z = 4.0;   // back face of the cube
+const SPAWN_Z = -1.0;        // just in front of the cube front face
+const CUBE_Z_MIN = 0;
+const CUBE_Z_MAX = 4;
 
 function tooClose(hole, others, slack = 0.1) {
   for (const o of others) {
@@ -232,6 +235,65 @@ function updateImpacts(rings, dt) {
   }
 }
 
+// Wireframe cube (12 edges) + faint base socle. Defines the volume so the
+// implicit cube becomes visible. The cube is centered on (0, 0, (CUBE_Z_MIN + CUBE_Z_MAX)/2).
+function buildVolumeFrame() {
+  const group = new THREE.Group();
+  const w = PLATE_HALF * 2;            // 4
+  const d = CUBE_Z_MAX - CUBE_Z_MIN;   // 4
+  const centerZ = (CUBE_Z_MIN + CUBE_Z_MAX) / 2;
+
+  // 12 cube edges.
+  const box = new THREE.BoxGeometry(w, w, d);
+  const edges = new THREE.EdgesGeometry(box);
+  const edgeMat = new THREE.LineBasicMaterial({
+    color: 0x1a1a1a,
+    transparent: true,
+    opacity: 0.32,
+  });
+  const wire = new THREE.LineSegments(edges, edgeMat);
+  wire.position.z = centerZ;
+  group.add(wire);
+
+  // Socle: faint horizontal plane just below the cube bottom, slightly larger.
+  const socleW = w + 0.6;
+  const socleD = d + 0.6;
+  const socleGeom = new THREE.PlaneGeometry(socleW, socleD);
+  socleGeom.rotateX(-Math.PI / 2);
+  const socleMat = new THREE.MeshBasicMaterial({
+    color: 0x1a1a1a,
+    transparent: true,
+    opacity: 0.05,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+  });
+  const socle = new THREE.Mesh(socleGeom, socleMat);
+  socle.position.set(0, -PLATE_HALF - 0.02, centerZ);
+  group.add(socle);
+
+  // Socle outline (thin border around the base, slightly darker).
+  const halfW = socleW / 2;
+  const halfD = socleD / 2;
+  const outlinePositions = new Float32Array([
+    -halfW, 0, -halfD,  halfW, 0, -halfD,
+     halfW, 0, -halfD,  halfW, 0,  halfD,
+     halfW, 0,  halfD, -halfW, 0,  halfD,
+    -halfW, 0,  halfD, -halfW, 0, -halfD,
+  ]);
+  const outlineGeom = new THREE.BufferGeometry();
+  outlineGeom.setAttribute('position', new THREE.BufferAttribute(outlinePositions, 3));
+  const outlineMat = new THREE.LineBasicMaterial({
+    color: 0x1a1a1a,
+    transparent: true,
+    opacity: 0.45,
+  });
+  const outline = new THREE.LineSegments(outlineGeom, outlineMat);
+  outline.position.set(0, -PLATE_HALF - 0.02, centerZ);
+  group.add(outline);
+
+  return group;
+}
+
 function buildPlate(holes, z, opacity) {
   // Outer rectangle (4×4 unit square centered on origin in local space).
   const shape = new THREE.Shape();
@@ -277,9 +339,10 @@ function initScene(container) {
   const scene = new THREE.Scene();
   scene.background = null; // CSS background of container shows through
 
-  const camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 100);
-  camera.position.set(0, 1.5, -3);
-  camera.lookAt(2, 0, 2);
+  const camera = new THREE.PerspectiveCamera(38, w / h, 0.1, 100);
+  // Initial position set by orbital camera in animate loop.
+  camera.position.set(-6, 3, -4);
+  camera.lookAt(0, 0, 2);
 
   const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
   const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
@@ -317,6 +380,10 @@ export function mountGruyereHero(container, opts = {}) {
   if (caps.mobile) {
     config.particleRate = 8;
   }
+
+  // Volume frame: wireframe cube + socle (the implicit cube made visible).
+  const frame = buildVolumeFrame();
+  scene.add(frame);
 
   // Build plates with seeded holes.
   const seed = hashSeed(config.holeSeed);
@@ -413,12 +480,28 @@ export function mountGruyereHero(container, opts = {}) {
     psys.geom.setDrawRange(0, drawCount);
   }
 
+  // Orbital camera: slow rotation around the cube center.
+  const ORBIT_RADIUS = 7.5;
+  const ORBIT_Y = 2.0;
+  const ORBIT_CENTER = new THREE.Vector3(0, 0, (CUBE_Z_MIN + CUBE_Z_MAX) / 2);
+  // Initial angle: 3/4 view from front-left, slightly above the cube.
+  let orbitAngle = -Math.PI * 0.78;
+
   let rafId = null;
   function animate() {
     rafId = requestAnimationFrame(animate);
     const now = performance.now();
     const dt = Math.min(0.05, (now - lastT) / 1000);
     lastT = now;
+
+    orbitAngle += config.orbitSpeed * dt;
+    camera.position.set(
+      ORBIT_CENTER.x + ORBIT_RADIUS * Math.sin(orbitAngle),
+      ORBIT_Y,
+      ORBIT_CENTER.z + ORBIT_RADIUS * Math.cos(orbitAngle),
+    );
+    camera.lookAt(ORBIT_CENTER);
+
     updateParticles(dt, now);
     updateImpacts(impacts, dt);
     renderer.render(scene, camera);
