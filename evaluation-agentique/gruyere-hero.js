@@ -20,6 +20,11 @@ const DEFAULTS = {
   // rate matches this target. 0.05 = 5% — enough to see the constellation
   // grow steadily.
   targetSurvivalRate: 0.05,
+  // Beat narrative state: 1..5. Default 5 = full configuration (3 plates active).
+  // Mount A (scrollytelling intro) overrides to 1; mount B (banner) stays at 5.
+  initialBeat: 5,
+  // Duration of the plate fade-in/out when setBeat() is called.
+  beatTransitionMs: 600,
 };
 
 // Deterministic RNG: mulberry32. Same seed string → same hole layout on all 3 pages.
@@ -544,8 +549,9 @@ const PLATE_SPECULAR = 0xb8a888;
 const PLATE_SHININESS = 90;
 const PLATE_OPACITY = 0.78;
 
-// Particle visual — bright cream head, warm-red "danger" trail behind.
-const PARTICLE_COLOR = 0xfaf2e0;
+// Particle visual — orange accent head (visible sur écran arrière blanc papier),
+// warm-red "danger" trail behind. Cohérent avec la couleur des survivants accumulés.
+const PARTICLE_COLOR = 0xb8582e;
 const PARTICLE_SIZE_PX = 95;
 const TRAIL_DANGER_COLOR = 0xff5a28;  // warm orange-red — "threat in motion"
 
@@ -601,24 +607,60 @@ function buildPlate(holes, z, plateIndex) {
   const group = new THREE.Group();
   group.add(mesh);
   group.add(rim);
-  return { group, holes, z };
+  // plate.enabled === false → collision skipped + opacity fades to 0.
+  // currentOpacity / targetOpacity are interpolated each frame in tickPlateOpacity().
+  // mesh and rim are kept on the returned object so tick can mutate their material.opacity directly.
+  return {
+    group,
+    holes,
+    z,
+    mesh,
+    rim,
+    enabled: true,
+    currentOpacity: PLATE_OPACITY,
+    targetOpacity: PLATE_OPACITY,
+  };
 }
 
-// The back wall where survivors accumulate — a deeper, matte surface that
-// clearly reads as "the screen behind the defenses".
-const ACCUMULATOR_COLOR = 0x1d1b18;
+// The back wall where survivors accumulate — paper-white surface in
+// MeshBasicMaterial (non-lit) pour qu'elle reste #faf6ec pur quelle que
+// soit la lumière chaude/froide de la scène. Comme la couleur matche le
+// fond de page, on ajoute une fine bordure sombre pour délimiter l'écran.
+const ACCUMULATOR_COLOR = 0xfaf6ec;
+const ACCUMULATOR_OUTLINE_COLOR = 0x1a1a1a;
+const ACCUMULATOR_OUTLINE_OPACITY = 0.28;
 function buildAccumulatorScreen() {
   const w = PLATE_HALF * 2;
+  const group = new THREE.Group();
+
   const geom = new THREE.PlaneGeometry(w, w);
-  const mat = new THREE.MeshStandardMaterial({
+  const mat = new THREE.MeshBasicMaterial({
     color: ACCUMULATOR_COLOR,
-    metalness: 0.10,
-    roughness: 0.92,
     side: THREE.DoubleSide,
   });
   const plane = new THREE.Mesh(geom, mat);
   plane.position.z = ACCUMULATOR_Z;
-  return plane;
+  group.add(plane);
+
+  // Thin outline so the plane reads as a surface against the same-coloured page bg.
+  const halfW = w / 2;
+  const outlinePositions = new Float32Array([
+    -halfW, -halfW, ACCUMULATOR_Z,   halfW, -halfW, ACCUMULATOR_Z,
+     halfW, -halfW, ACCUMULATOR_Z,   halfW,  halfW, ACCUMULATOR_Z,
+     halfW,  halfW, ACCUMULATOR_Z,  -halfW,  halfW, ACCUMULATOR_Z,
+    -halfW,  halfW, ACCUMULATOR_Z,  -halfW, -halfW, ACCUMULATOR_Z,
+  ]);
+  const outlineGeom = new THREE.BufferGeometry();
+  outlineGeom.setAttribute('position', new THREE.BufferAttribute(outlinePositions, 3));
+  const outlineMat = new THREE.LineBasicMaterial({
+    color: ACCUMULATOR_OUTLINE_COLOR,
+    transparent: true,
+    opacity: ACCUMULATOR_OUTLINE_OPACITY,
+  });
+  const outline = new THREE.LineSegments(outlineGeom, outlineMat);
+  group.add(outline);
+
+  return group;
 }
 
 function initScene(container) {
@@ -711,8 +753,40 @@ export function mountGruyereHero(container, opts = {}) {
     scene.add(plate.group);
   }
 
-  // Particles + trails.
-  const MAX_PARTICLES = caps.mobile ? 50 : 100;
+  // Beat state — drives which plates are enabled + visible.
+  let currentBeat = 1;
+
+  function applyBeat(n) {
+    if (typeof n !== 'number' || n < 1 || n > 5) return;  // silent no-op for out-of-range
+    currentBeat = n;
+    // Plates 1..(n-1) become active (enabled + fade in). Plate index = beat index - 1
+    // (so beat 2 enables plate index 0, etc.).
+    // Beats: 1 → 0 active, 2 → 1 active (P1), 3 → 2 active (P1+P2), 4 or 5 → 3 active (all).
+    const activeCount = Math.min(3, Math.max(0, n - 1));
+    for (let i = 0; i < platesData.length; i++) {
+      const wantActive = i < activeCount;
+      platesData[i].enabled = wantActive;
+      platesData[i].targetOpacity = wantActive ? PLATE_OPACITY : 0;
+    }
+  }
+
+  // Apply the initial beat. If no override, beat 5 = legacy behavior (all plates).
+  // We seed currentOpacity = targetOpacity so the first frame renders the correct
+  // state instantly (no fade-in for the initial mount; the fade is only triggered
+  // by later setBeat calls).
+  applyBeat(config.initialBeat);
+  for (const plate of platesData) {
+    plate.currentOpacity = plate.targetOpacity;
+    plate.mesh.material.opacity = plate.currentOpacity;
+    plate.rim.material.opacity = plate.currentOpacity * 0.7;
+    plate.mesh.visible = plate.currentOpacity > 0.001;
+    plate.rim.visible = plate.currentOpacity > 0.001;
+  }
+
+  // Particles + trails. Pool généreux : au beat 1 (no-plates), TOUTES les
+  // particules s'accumulent et persistent `landedLifetimeMs` (60s). Un pool
+  // trop petit s'épuise vite et l'émission semble s'arrêter aux beats suivants.
+  const MAX_PARTICLES = caps.mobile ? 120 : 400;
   const psys = buildParticleSystem(MAX_PARTICLES);
   const tsys = buildTrailSystem(MAX_PARTICLES);
   scene.add(tsys.lines);  // trails behind heads (z-order: drawn first)
@@ -751,12 +825,23 @@ export function mountGruyereHero(container, opts = {}) {
     spawnAccumulator += config.particleRate * dt;
     while (spawnAccumulator >= 1) {
       spawnAccumulator -= 1;
+      // 1) Cherche un slot DEAD libre
+      let target = null;
       for (let i = 0; i < psys.particles.length; i++) {
         if (psys.particles[i].state === STATE_DEAD) {
-          spawnParticle(psys.particles[i], partRng, particleColor);
+          target = psys.particles[i];
           break;
         }
       }
+      // 2) Pool plein → évict la plus vieille accumulée pour libérer un slot.
+      //    Garantit que l'émission ne s'arrête JAMAIS, même si toutes les
+      //    particules persistent en STATE_ACCUMULATED (cas du beat 1).
+      if (!target && accumulated.length > 0) {
+        const old = accumulated.shift();
+        old.state = STATE_DEAD;
+        target = old;
+      }
+      if (target) spawnParticle(target, partRng, particleColor);
     }
     for (let i = 0; i < psys.particles.length; i++) {
       const p = psys.particles[i];
@@ -765,6 +850,7 @@ export function mountGruyereHero(container, opts = {}) {
         p.z += PARTICLE_SPEED * dt;
         for (let k = 0; k < platesData.length; k++) {
           const plate = platesData[k];
+          if (!plate.enabled) continue;   // collision désactivée quand la plaque n'est pas active
           if (prevZ < plate.z && p.z >= plate.z) {
             if (!hitsAnyHole(p.x, p.y, plate.holes)) {
               p.state = STATE_FADING;
@@ -922,6 +1008,26 @@ export function mountGruyereHero(container, opts = {}) {
   }, { threshold: 0.01 });
   io.observe(container);
 
+  // Interpolation des opacités de plaques vers leur cible.
+  // dt en secondes, transitionMs en ms — le taux de lerp est calibré pour
+  // atteindre ~95 % de la cible en `transitionMs` (constante temporelle ~1/3).
+  function tickPlateOpacity(dt) {
+    const transitionS = Math.max(0.05, config.beatTransitionMs / 1000);
+    // Exponential damping: rate = 1 - exp(-dt / tau). tau = transitionS / 3 → 95% in transitionS.
+    const tau = transitionS / 3;
+    const rate = 1 - Math.exp(-dt / tau);
+    for (const plate of platesData) {
+      const delta = plate.targetOpacity - plate.currentOpacity;
+      plate.currentOpacity += delta * rate;
+      // Snap to target when very close (avoid asymptotic creep).
+      if (Math.abs(delta) < 0.001) plate.currentOpacity = plate.targetOpacity;
+      plate.mesh.material.opacity = plate.currentOpacity;
+      plate.rim.material.opacity = plate.currentOpacity * 0.7;  // rim slightly fainter than face
+      plate.mesh.visible = plate.currentOpacity > 0.001;
+      plate.rim.visible = plate.currentOpacity > 0.001;
+    }
+  }
+
   let rafId = null;
   function animate() {
     rafId = requestAnimationFrame(animate);
@@ -944,6 +1050,7 @@ export function mountGruyereHero(container, opts = {}) {
     );
     camera.lookAt(ORBIT_CENTER);
 
+    tickPlateOpacity(dt);
     updateParticles(dt, now);
     updateBurst(blockedRings, dt, 3.5);  // red ring expands fast
     updateBurst(passedBursts, dt, 5.0);  // green cloud expands faster
@@ -989,5 +1096,7 @@ export function mountGruyereHero(container, opts = {}) {
       accumulated.length = 0;
       clearMarks(marks);
     },
+    setBeat(n) { applyBeat(n); },
+    getBeat() { return currentBeat; },
   };
 }
