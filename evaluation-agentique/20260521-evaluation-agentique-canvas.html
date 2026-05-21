@@ -843,11 +843,119 @@ h3 { font-size: clamp(22px, 2.8vw, 32px); }
   border-top: 1px solid var(--line);
 }
 
-/* ---- Zoom phase / couche / attaque : focus section, dim others ---- */
+/* ════════════════════════════════════════════════════════════
+   Niveau intermédiaire — Hero en minimap sticky top (Phase D)
+   ════════════════════════════════════════════════════════════
+   À data-zoom P-x / N-x / A-x, le hero SVG devient une minimap (~200 px
+   sticky top), l'élément focalisé est highlight, les autres dimmés.
+   La section HTML correspondante s'affiche en-dessous, scrollable. */
 
-:root[data-zoom^="P"] .canvas > section:not(.playbook),
-:root[data-zoom^="N"] .canvas > section:not(.gruyere),
-:root[data-zoom^="A-"] .canvas > section:not(.attaques) {
+:root[data-zoom^="P"] .hero,
+:root[data-zoom^="N"] .hero,
+:root[data-zoom^="A-"] .hero {
+  position: sticky;
+  top: 56px;
+  z-index: 30;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+  height: auto;
+  display: block;
+  padding: 12px clamp(16px, 4vw, 48px);
+  /* casse le cap 720px du grid parent : marge négative pour occuper toute la largeur */
+  margin-inline: calc(-1 * clamp(16px, 4vw, 48px));
+  max-width: none;
+  width: auto;
+}
+
+:root[data-zoom^="P"]  .gruyere-figure,
+:root[data-zoom^="N"]  .gruyere-figure,
+:root[data-zoom^="A-"] .gruyere-figure {
+  margin: 0 auto;
+  max-width: 1200px;
+  height: 200px;
+  display: grid;
+  place-items: center;
+  gap: 0;
+}
+
+:root[data-zoom^="P"]  .gruyere-diagram,
+:root[data-zoom^="N"]  .gruyere-diagram,
+:root[data-zoom^="A-"] .gruyere-diagram {
+  width: 100%;
+  height: 100%;
+  max-height: 200px;
+  max-width: 1200px;
+}
+
+/* Pas de figcaption sous la minimap (économie de pixels) */
+:root[data-zoom^="P"]  .gruyere-figure figcaption,
+:root[data-zoom^="N"]  .gruyere-figure figcaption,
+:root[data-zoom^="A-"] .gruyere-figure figcaption {
+  display: none;
+}
+
+/* La canvas garde son padding-top topbar, mais on neutralise
+   le gap initial puisque la minimap occupe déjà la zone haute */
+:root[data-zoom^="P"]  .canvas,
+:root[data-zoom^="N"]  .canvas,
+:root[data-zoom^="A-"] .canvas {
+  padding-top: 56px;
+}
+
+/* Dans le SVG minimap : dim les zones non-focalisées */
+:root[data-zoom="P1"] .gruyere-diagram [data-zoom-target]:not([data-zoom-target="P1"]),
+:root[data-zoom="P2A"] .gruyere-diagram [data-zoom-target]:not([data-zoom-target="P2A"]),
+:root[data-zoom="P2B"] .gruyere-diagram [data-zoom-target]:not([data-zoom-target="P2B"]),
+:root[data-zoom="P3"] .gruyere-diagram [data-zoom-target]:not([data-zoom-target="P3"]),
+:root[data-zoom="N1"] .gruyere-diagram [data-zoom-target]:not([data-zoom-target="N1"]),
+:root[data-zoom="N2"] .gruyere-diagram [data-zoom-target]:not([data-zoom-target="N2"]),
+:root[data-zoom="N3"] .gruyere-diagram [data-zoom-target]:not([data-zoom-target="N3"]),
+:root[data-zoom="A-prompt-injection"]   .gruyere-diagram [data-zoom-target]:not([data-zoom-target="A-prompt-injection"]),
+:root[data-zoom="A-hallucination"]      .gruyere-diagram [data-zoom-target]:not([data-zoom-target="A-hallucination"]),
+:root[data-zoom="A-tool-misuse"]        .gruyere-diagram [data-zoom-target]:not([data-zoom-target="A-tool-misuse"]),
+:root[data-zoom="A-context-saturation"] .gruyere-diagram [data-zoom-target]:not([data-zoom-target="A-context-saturation"]),
+:root[data-zoom="A-reward-hacking"]     .gruyere-diagram [data-zoom-target]:not([data-zoom-target="A-reward-hacking"]),
+:root[data-zoom="A-spec-mismatch"]      .gruyere-diagram [data-zoom-target]:not([data-zoom-target="A-spec-mismatch"]),
+:root[data-zoom="A-latency-drift"]      .gruyere-diagram [data-zoom-target]:not([data-zoom-target="A-latency-drift"]) {
+  opacity: 0.3;
+}
+
+/* Highlight stroke renforcé sur l'élément focalisé (phases/couches) */
+:root[data-zoom="P1"]  [data-zoom-target="P1"]  > rect:first-of-type,
+:root[data-zoom="P2A"] [data-zoom-target="P2A"] > rect:first-of-type,
+:root[data-zoom="P2B"] [data-zoom-target="P2B"] > rect:first-of-type,
+:root[data-zoom="P3"]  [data-zoom-target="P3"]  > rect:first-of-type,
+:root[data-zoom="N1"]  [data-zoom-target="N1"]  > rect:first-of-type,
+:root[data-zoom="N2"]  [data-zoom-target="N2"]  > rect:first-of-type,
+:root[data-zoom="N3"]  [data-zoom-target="N3"]  > rect:first-of-type {
+  stroke-width: 9;  /* viewBox 4000-wide → 9 unités ≈ stroke visible en minimap */
+}
+
+/* Hint Caveat caché aux niveaux intermédiaires (gardé qu'au niveau 0) */
+:root:not([data-zoom="0"]) .canvas::after {
+  display: none;
+}
+
+/* Marge de respiration entre la minimap et la section ciblée */
+:root[data-zoom^="P"]  .canvas > .playbook,
+:root[data-zoom^="N"]  .canvas > .gruyere,
+:root[data-zoom^="A-"] .canvas > .attaques {
+  margin-top: clamp(16px, 2vw, 32px);
+}
+
+/* Niveau sub-card (S-x / C-x) : minimap CACHEE — la card prend tout */
+:root[data-zoom^="S"] .hero,
+:root[data-zoom^="C"] .hero {
+  display: none;
+}
+
+/* ---- Zoom phase / couche / attaque : focus section, dim others ----
+   Exempte .hero du dim aux niveaux intermédiaires (sinon la minimap
+   serait elle-même dimmée à 0.04). */
+
+:root[data-zoom^="P"] .canvas > section:not(.playbook):not(.hero),
+:root[data-zoom^="N"] .canvas > section:not(.gruyere):not(.hero),
+:root[data-zoom^="A-"] .canvas > section:not(.attaques):not(.hero) {
   opacity: 0.04;
   pointer-events: none;
 }
@@ -1124,7 +1232,7 @@ h3 { font-size: clamp(22px, 2.8vw, 32px); }
     height: auto;
   }
 
-  /* Neutralise les dim cascades (niveau 1/2 et S*/C*/A-*) :
+  /* Neutralise les dim cascades (niveau 1/2 et S-x / C-x / A-* slugs) :
      puisque la mécanique zoom n'opère plus, tout reste visible. */
   :root[data-zoom^="S"] .canvas > section,
   :root[data-zoom^="C"] .canvas > section,
