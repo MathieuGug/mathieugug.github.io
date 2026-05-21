@@ -74,13 +74,13 @@ test('gruyere-hero-poster.svg exists and is well-formed', () => {
   assert.match(svg, /viewBox="0 0 1200 620"/);
 });
 
-const HOST_PAGES = [
-  'evaluation-agentique/index.html',
+// Pages qui montent directement gruyere-hero sur <figure id="gruyere-hero"> (app + carte zoomable).
+const DIRECT_HOST_PAGES = [
   'evaluation-agentique/20260501-evaluation-agentique-app.html',
   'evaluation-agentique/20260521-evaluation-agentique-canvas.html',
 ];
 
-for (const page of HOST_PAGES) {
+for (const page of DIRECT_HOST_PAGES) {
   const html = readFileSync(join(ROOT, page), 'utf8');
 
   test(`${page}: includes gruyere-hero.css`, () => {
@@ -101,6 +101,50 @@ for (const page of HOST_PAGES) {
   });
 
   test(`${page}: has <noscript> poster fallback`, () => {
+    assert.match(html, /<noscript>\s*<img[^>]*gruyere-hero-poster\.svg/);
+  });
+}
+
+// Hub : structure scrollytelling spécifique
+{
+  const page = 'evaluation-agentique/index.html';
+  const html = readFileSync(join(ROOT, page), 'utf8');
+
+  test(`${page}: includes gruyere-hero.css`, () => {
+    assert.match(html, /href=["']gruyere-hero\.css["']/);
+  });
+
+  test(`${page}: declares importmap for three`, () => {
+    assert.match(html, /importmap[\s\S]*"three"[\s\S]*three\.module\.js/);
+  });
+
+  test(`${page}: contains intro section with 5 beat triggers`, () => {
+    assert.match(html, /<section[^>]*class="hero-intro"[^>]*id="hero-intro"/);
+    for (let n = 1; n <= 5; n++) {
+      assert.match(html, new RegExp(`<div[^>]*class="hero-intro__trigger"[^>]*data-beat="${n}"`),
+        `intro section must contain a trigger for beat ${n}`);
+    }
+  });
+
+  test(`${page}: contains fullscreen figure inside sticky wrapper`, () => {
+    assert.match(html, /<div[^>]*class="hero-intro__sticky"/);
+    assert.match(html, /<figure[^>]*class="gruyere-hero"[^>]*id="gruyere-hero-intro"/);
+  });
+
+  test(`${page}: contains banner figure with id gruyere-hero`, () => {
+    assert.match(html, /<figure[^>]*class="gruyere-hero gruyere-hero--banner"[^>]*id="gruyere-hero"/);
+  });
+
+  test(`${page}: caption overlay has aria-live polite`, () => {
+    assert.match(html, /<div[^>]*class="hero-intro__caption"[^>]*aria-live="polite"/);
+  });
+
+  test(`${page}: mounts mountHeroIntro from hero-intro.js`, () => {
+    assert.match(html, /import\s*\{\s*mountHeroIntro\s*\}\s*from\s*['"]\.\/hero-intro\.js['"]/);
+    assert.match(html, /mountHeroIntro\(/);
+  });
+
+  test(`${page}: has <noscript> poster fallback in intro figure`, () => {
     assert.match(html, /<noscript>\s*<img[^>]*gruyere-hero-poster\.svg/);
   });
 }
