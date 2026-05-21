@@ -31,7 +31,7 @@ Site personnel de Mathieu Guglielmino, hébergé sur GitHub Pages. Il publie des
 - Palette définie en haut de `index.html` (`--bg #faf6ec`, `--accent #b8582e`, etc.). Réutiliser ces variables pour la cohérence visuelle.
 - Illustrations : SVG inline pour l'accessibilité et l'interactivité.
 - **Favicon** : `/favicon.svg` à la racine (monogramme MG italique sur fond accent). Toute nouvelle page HTML publiée doit inclure `<link rel="icon" type="image/svg+xml" href="/favicon.svg">` dans son `<head>`.
-- Pas de tracker, pas d'analytics, pas de tiers en dehors de Google Fonts.
+- Pas de tracker, pas d'analytics. **Tiers autorisés** : Google Fonts (toutes pages) + jsDelivr (Three.js via CDN ESM, restreint au dossier `evaluation-agentique/` pour la bannière `gruyere-hero.js`). Toute autre dépendance tierce doit être justifiée explicitement avant intégration.
 - **Surlignage stabilo (`<mark>`)** : signature visuelle du site, syntaxe Obsidian `==texte==`. Pattern complet (CSS, scope `.entry` vs `main`) : `.claude/skills/illustrated-deep-research/references/companion-app.md` § "Micro-patterns de style".
 - **Hint de largeur Obsidian `|1300`** sur les images des journaux markdown — voir `.claude/skills/illustrated-deep-research/references/workflow.md` § 3.4.
 

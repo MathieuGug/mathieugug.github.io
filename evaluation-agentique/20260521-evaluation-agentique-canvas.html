@@ -1,0 +1,2358 @@
+<!DOCTYPE html>
+<html lang="fr" data-zoom="0">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#faf6ec">
+<title>Évaluer un agent — carte zoomable</title>
+<meta name="description" content="Carte zoomable du modèle gruyère de Reason appliqué à l'évaluation des agents IA : 4 phases du playbook, 3 couches de défense, 7 attaques. Semantic zoom HTML-first par Mathieu Guglielmino.">
+<!-- og:start -->
+<meta name="author" content="Mathieu Guglielmino">
+<link rel="canonical" href="https://mathieugug.github.io/evaluation-agentique/20260521-evaluation-agentique-canvas.html">
+<meta name="keywords" content="IA agentique, Mathieu Guglielmino, agents IA, étude, evaluation, agentique">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Mathieu Guglielmino">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:url" content="https://mathieugug.github.io/evaluation-agentique/20260521-evaluation-agentique-canvas.html">
+<meta property="og:title" content="Évaluer un agent — carte zoomable">
+<meta property="og:description" content="Carte zoomable du modèle gruyère de Reason appliqué à l'évaluation des agents IA : 4 phases du playbook, 3 couches de défense, 7 attaques. Semantic zoom HTML-first par Mathieu Guglielmino.">
+<meta property="og:image" content="https://mathieugug.github.io/evaluation-agentique/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Évaluer un agent — carte zoomable — couverture social">
+<meta property="article:published_time" content="2026-05-21">
+<meta property="article:author" content="Mathieu Guglielmino">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Évaluer un agent — carte zoomable">
+<meta name="twitter:description" content="Carte zoomable du modèle gruyère de Reason appliqué à l'évaluation des agents IA : 4 phases du playbook, 3 couches de défense, 7 attaques. Semantic zoom HTML-first par Mathieu Guglielmino.">
+<meta name="twitter:image" content="https://mathieugug.github.io/evaluation-agentique/og.png">
+<script type="application/ld+json">
+{"@context": "https://schema.org","@type": "Article","headline": "Évaluer un agent — carte zoomable","description": "Carte zoomable du modèle gruyère de Reason appliqué à l'évaluation des agents IA : 4 phases du playbook, 3 couches de défense, 7 attaques. Semantic zoom HTML-first par Mathieu Guglielmino.","image": "https://mathieugug.github.io/evaluation-agentique/og.png","url": "https://mathieugug.github.io/evaluation-agentique/20260521-evaluation-agentique-canvas.html","datePublished": "2026-05-21","inLanguage": "fr-FR","author": {"@type": "Person","name": "Mathieu Guglielmino","url": "https://mathieugug.github.io/"},"publisher": {"@type": "Person","name": "Mathieu Guglielmino","url": "https://mathieugug.github.io/"}}
+</script>
+<!-- og:end -->
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;1,400&family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap">
+
+<style>
+/* === Reset minimal === */
+*, *::before, *::after { box-sizing: border-box; }
+* { margin: 0; padding: 0; }
+html, body { height: 100%; }
+img, svg { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+
+/* === Variables === */
+:root {
+  --bg: #faf6ec;
+  --paper: #ffffff;
+  --line: rgba(30,30,44,0.10);
+  --line-strong: rgba(30,30,44,0.20);
+  --accent: #b8582e;
+  --text: #1e1e2a;
+  --text-dim: #5b5f6c;
+  --text-faint: #8b8f9c;
+  --teal: #1f5560;
+  --carmine: #b7332c;
+  --gap: clamp(40px, 6vw, 80px);
+}
+
+/* === Typography === */
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 300;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+h1 { font-size: clamp(40px, 8vw, 80px); }
+h2 { font-size: clamp(28px, 4vw, 44px); margin-bottom: 0.5em; }
+h3 { font-size: clamp(22px, 2.8vw, 32px); }
+
+/* === Topbar (3 items, 56px) === */
+.topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  padding: 12px clamp(16px, 4vw, 32px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  z-index: 60;
+  background: rgba(250,246,236,0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+.topbar .logo {
+  font-family: 'Fraunces', serif;
+  font-weight: 500;
+  font-size: 15.5px;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  flex-shrink: 0;
+}
+.topbar .dossier-context {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  opacity: 0.55;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 320px;
+  flex-shrink: 1;
+  min-width: 0;
+}
+.topbar .back-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+.topbar .back {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  transition: color 0.2s;
+}
+.topbar .back:hover { color: var(--accent); }
+.topbar .back-sep {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  color: var(--text-faint);
+  user-select: none;
+}
+
+@media (max-width: 768px) {
+  .topbar .dossier-context { display: none; }
+}
+@media (max-width: 560px) {
+  .topbar { padding: 10px 14px; gap: 10px; }
+  .topbar .logo { font-size: 13px; }
+  .topbar .back { font-size: 9px; letter-spacing: 0.16em; }
+}
+
+/* === Canvas (A0 doc container) === */
+.canvas {
+  display: grid;
+  grid-template-columns: minmax(0, 720px);
+  justify-content: center;
+  gap: var(--gap);
+  padding: calc(56px + var(--gap)) clamp(16px, 4vw, 48px) var(--gap);
+}
+
+.canvas > section {
+  display: grid;
+  gap: clamp(16px, 2vw, 24px);
+}
+
+/* === Hero === */
+.hero {
+  display: grid;
+  gap: clamp(20px, 2.5vw, 32px);
+}
+
+.eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.subtitle {
+  font-family: 'Fraunces', Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(18px, 2.5vw, 24px);
+  color: var(--text-dim);
+  line-height: 1.3;
+}
+
+.lede {
+  font-size: clamp(16px, 1.8vw, 18px);
+  line-height: 1.65;
+  max-width: 60ch;
+}
+
+.lede strong { font-weight: 500; color: var(--text); }
+
+.reason-quote {
+  font-family: 'Fraunces', Georgia, serif;
+  font-style: italic;
+  font-size: clamp(16px, 1.8vw, 20px);
+  color: var(--text-dim);
+  border-left: 3px solid var(--accent);
+  padding-left: 1.2em;
+  max-width: 60ch;
+  line-height: 1.5;
+}
+
+.reason-quote cite {
+  display: block;
+  font-style: normal;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-top: 0.8em;
+}
+
+/* Figure gruyère hero — diagramme statique du modèle de Reason */
+.gruyere-figure {
+  display: grid;
+  gap: 12px;
+  margin-top: clamp(20px, 3vw, 40px);
+}
+
+.gruyere-diagram {
+  width: 100%;
+  height: auto;
+  max-height: 70vh;
+}
+
+.gruyere-figure figcaption {
+  font-style: italic;
+  color: var(--text-dim);
+  font-size: 13px;
+  text-align: center;
+  font-family: 'Fraunces', Georgia, serif;
+}
+
+.placeholder {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  padding: 16px 20px;
+  border: 1px dashed var(--line);
+  border-radius: 4px;
+}
+
+/* === Playbook & Gruyère sections (structure partagée) === */
+.playbook,
+.gruyere {
+  display: grid;
+  gap: clamp(32px, 4vw, 56px);
+}
+
+.phase,
+.couche {
+  display: grid;
+  gap: clamp(20px, 2.5vw, 32px);
+}
+
+.phase-head {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 18px;
+  background: var(--teal);
+  color: white;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+
+.badge--sub { background: var(--teal); font-size: 13px; min-width: 32px; height: 32px; }
+
+.phase-meta { display: grid; gap: 4px; }
+
+.subcards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(16px, 2vw, 24px);
+}
+
+.subcard {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: clamp(20px, 2.5vw, 28px);
+  display: grid;
+  gap: clamp(14px, 1.6vw, 20px);
+  background: var(--bg);
+  transition: padding 400ms cubic-bezier(.4,0,.2,1),
+              border-color 400ms ease;
+  cursor: pointer;
+}
+
+.subcard:hover { border-color: var(--line-strong); }
+
+.subcard-head {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: start;
+}
+
+.subcard h4 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(20px, 2.4vw, 28px);
+  line-height: 1.15;
+}
+
+/* Methods list */
+.methods {
+  display: grid;
+  gap: 10px;
+  list-style: none;
+}
+
+.method {
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.method .mu {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  color: var(--teal);
+}
+
+.method h5 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 500;
+  font-size: 15px;
+  margin: 4px 0 2px;
+}
+
+.method-subtitle {
+  font-style: italic;
+  color: var(--text-dim);
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.method > p:last-child {
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+/* Anti-pattern */
+.antipattern {
+  background: rgba(184,88,46,0.06);
+  border-left: 3px solid var(--accent);
+  padding: 12px 16px;
+  border-radius: 0 6px 6px 0;
+}
+
+.anti-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  color: var(--accent);
+}
+
+.anti-headline {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 500;
+  font-size: 15px;
+  margin: 4px 0;
+  color: var(--text);
+}
+
+.anti-consequence {
+  font-style: italic;
+  color: var(--text-dim);
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+/* Frameworks */
+.frameworks .fw-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+
+.frameworks ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  list-style: none;
+}
+
+.frameworks li {
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  background: var(--paper);
+  color: var(--text-dim);
+}
+
+/* Tagline */
+.tagline {
+  font-family: 'Fraunces', Georgia, serif;
+  font-style: italic;
+  color: var(--text-dim);
+  font-size: 13.5px;
+  line-height: 1.5;
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
+}
+
+/* Mobile : single column subcards */
+@media (max-width: 760px) {
+  .subcards { grid-template-columns: 1fr; }
+}
+
+/* === Attaques section === */
+.attaques {
+  display: grid;
+  gap: clamp(20px, 2.5vw, 32px);
+}
+
+.attaque {
+  display: grid;
+  gap: clamp(16px, 2vw, 24px);
+  padding: clamp(20px, 2.5vw, 28px);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+}
+
+.attaque-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.attaque-head h3 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(20px, 2.2vw, 26px);
+  line-height: 1.15;
+}
+
+.attack-arrow {
+  width: 200px;
+  height: 40px;
+  flex-shrink: 0;
+}
+
+.verdicts {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: clamp(12px, 1.5vw, 16px);
+  list-style: none;
+}
+
+.verdict {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  display: grid;
+  gap: 8px;
+}
+
+.verdict[data-verdict="passe"] { border-color: rgba(183,51,44,0.4); background: rgba(183,51,44,0.04); }
+.verdict[data-verdict="arrete"] { border-color: rgba(75,148,102,0.4); background: rgba(75,148,102,0.04); }
+.verdict[data-verdict="redondant"],
+.verdict[data-verdict="rare"] { background: rgba(90,90,90,0.04); }
+
+.verdict-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.verdict-slice {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+.verdict-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  padding: 3px 7px;
+  border-radius: 3px;
+  color: white;
+}
+
+.verdict-tag.verdict-passe { background: var(--carmine); }
+.verdict-tag.verdict-arrete { background: #4b9466; }
+.verdict-tag.verdict-redondant,
+.verdict-tag.verdict-rare { background: #5a5a5a; }
+
+.verdict-headline {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 500;
+  font-size: 13.5px;
+  line-height: 1.3;
+}
+
+.verdict-lines {
+  list-style: none;
+  font-size: 12.5px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.verdict-lines li { padding: 1px 0; }
+
+.verdict-fw {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  list-style: none;
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
+}
+
+.verdict-fw li {
+  padding: 2px 6px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  background: var(--paper);
+  color: var(--text-dim);
+}
+
+@media (max-width: 900px) {
+  .verdicts { grid-template-columns: 1fr; }
+  .attack-arrow { display: none; }
+}
+
+/* === Outcomes section === */
+.outcomes {
+  display: grid;
+  gap: clamp(20px, 2.5vw, 32px);
+}
+
+.outcomes-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(16px, 2vw, 24px);
+}
+
+.outcome {
+  padding: clamp(24px, 3vw, 36px);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  text-align: center;
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  align-content: start;
+}
+
+.outcome--success {
+  background: rgba(75,148,102,0.04);
+  border-color: rgba(75,148,102,0.3);
+}
+
+.outcome--failure {
+  background: rgba(183,51,44,0.04);
+  border-color: rgba(183,51,44,0.3);
+}
+
+.outcome-icon {
+  width: 48px;
+  height: 48px;
+}
+
+.outcome h3 {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 500;
+  font-size: clamp(20px, 2.4vw, 26px);
+}
+
+.outcome-body {
+  font-size: clamp(14px, 1.5vw, 16px);
+  color: var(--text-dim);
+  line-height: 1.5;
+  max-width: 36ch;
+}
+
+.outcome-body em {
+  font-style: italic;
+  color: var(--text);
+}
+
+.footnote {
+  font-family: 'Fraunces', Georgia, serif;
+  font-style: italic;
+  color: var(--text-dim);
+  font-size: clamp(14px, 1.6vw, 17px);
+  line-height: 1.55;
+  text-align: center;
+  max-width: 60ch;
+  margin: clamp(16px, 2vw, 24px) auto 0;
+}
+
+.footnote em {
+  font-style: italic;
+  color: var(--accent);
+}
+
+@media (max-width: 760px) {
+  .outcomes-grid { grid-template-columns: 1fr; }
+}
+
+/* === Site footer === */
+.site-footer {
+  margin-top: var(--gap);
+  padding: 32px clamp(16px, 4vw, 48px);
+  border-top: 1px solid var(--line);
+  text-align: center;
+  display: grid;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 0.02em;
+}
+
+.footer-credit { color: var(--text); font-weight: 500; }
+.footer-disclosure { font-style: italic; }
+
+/* =============================================================
+   === Zoom states ===
+   data-zoom est posé sur <html> (cf. :root) et muté par le JS.
+   Valeurs : "0" (overview), "P1"|"P2A"|"P2B"|"P3" (phase),
+   "N1"|"N2"|"N3" (couche), "S0..S7"|"C1..C6" (sub-card focus),
+   "A-prompt-injection"|"A-hallucination"|"A-tool-misuse"
+   |"A-context-saturation"|"A-reward-hacking"
+   |"A-spec-mismatch"|"A-latency-drift" (attaque focus).
+   ============================================================= */
+
+/* Transitions globales pour les morphs */
+.canvas > section,
+.subcard,
+.attaque,
+.phase,
+.couche,
+.verdicts {
+  transition: opacity 400ms ease;
+}
+
+/* ---- Overview compact (data-zoom="0") ---- */
+
+/* Sub-cards en mode teaser : header + subtitle + affordance uniquement */
+:root[data-zoom="0"] .subcard .methods,
+:root[data-zoom="0"] .subcard .antipattern,
+:root[data-zoom="0"] .subcard .frameworks,
+:root[data-zoom="0"] .subcard .tagline {
+  display: none;
+}
+
+/* Affordance "voir le détail" en mode compact */
+:root[data-zoom="0"] .subcard::after {
+  content: '→ voir le détail';
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  color: var(--accent);
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  margin-top: 4px;
+}
+
+/* Attaques compactes : juste l'attaque-head, pas les 3 verdicts */
+:root[data-zoom="0"] .attaque .verdicts {
+  display: none;
+}
+
+:root[data-zoom="0"] .attaque::after {
+  content: '→ voir trajectoire';
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  color: var(--accent);
+  padding-top: 8px;
+  margin-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+/* ---- Zoom phase / couche / attaque : focus section, dim others ---- */
+
+:root[data-zoom^="P"] .canvas > section:not(.playbook),
+:root[data-zoom^="N"] .canvas > section:not(.gruyere),
+:root[data-zoom^="A-"] .canvas > section:not(.attaques) {
+  opacity: 0.04;
+  pointer-events: none;
+}
+
+/* Phase active mise en valeur, autres dimmées */
+:root[data-zoom="P1"] .phase:not(#P1),
+:root[data-zoom="P2A"] .phase:not(#P2A),
+:root[data-zoom="P2B"] .phase:not(#P2B),
+:root[data-zoom="P3"] .phase:not(#P3) {
+  opacity: 0.15;
+  pointer-events: none;
+}
+
+/* Couche active, autres dimmées */
+:root[data-zoom="N1"] .couche:not(#N1),
+:root[data-zoom="N2"] .couche:not(#N2),
+:root[data-zoom="N3"] .couche:not(#N3) {
+  opacity: 0.15;
+  pointer-events: none;
+}
+
+/* Attaques : par défaut dim toutes, on rallume celle ciblée */
+:root[data-zoom^="A-"] .attaque {
+  opacity: 0.15;
+  pointer-events: none;
+}
+:root[data-zoom="A-prompt-injection"] #A-prompt-injection,
+:root[data-zoom="A-hallucination"] #A-hallucination,
+:root[data-zoom="A-tool-misuse"] #A-tool-misuse,
+:root[data-zoom="A-context-saturation"] #A-context-saturation,
+:root[data-zoom="A-reward-hacking"] #A-reward-hacking,
+:root[data-zoom="A-spec-mismatch"] #A-spec-mismatch,
+:root[data-zoom="A-latency-drift"] #A-latency-drift {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Sur l'attaque focalisée, on déplie les 3 verdicts */
+:root[data-zoom="A-prompt-injection"] #A-prompt-injection .verdicts,
+:root[data-zoom="A-hallucination"] #A-hallucination .verdicts,
+:root[data-zoom="A-tool-misuse"] #A-tool-misuse .verdicts,
+:root[data-zoom="A-context-saturation"] #A-context-saturation .verdicts,
+:root[data-zoom="A-reward-hacking"] #A-reward-hacking .verdicts,
+:root[data-zoom="A-spec-mismatch"] #A-spec-mismatch .verdicts,
+:root[data-zoom="A-latency-drift"] #A-latency-drift .verdicts {
+  display: grid;
+}
+
+/* L'affordance "→ voir trajectoire" disparaît sur l'attaque focalisée */
+:root[data-zoom="A-prompt-injection"] #A-prompt-injection::after,
+:root[data-zoom="A-hallucination"] #A-hallucination::after,
+:root[data-zoom="A-tool-misuse"] #A-tool-misuse::after,
+:root[data-zoom="A-context-saturation"] #A-context-saturation::after,
+:root[data-zoom="A-reward-hacking"] #A-reward-hacking::after,
+:root[data-zoom="A-spec-mismatch"] #A-spec-mismatch::after,
+:root[data-zoom="A-latency-drift"] #A-latency-drift::after {
+  display: none;
+}
+
+/* ---- Sub-card focalisée : position fixed plein écran ---- */
+
+:root[data-zoom="S0"] #S0,
+:root[data-zoom="S1"] #S1,
+:root[data-zoom="S2"] #S2,
+:root[data-zoom="S3"] #S3,
+:root[data-zoom="S4"] #S4,
+:root[data-zoom="S5"] #S5,
+:root[data-zoom="S6"] #S6,
+:root[data-zoom="S7"] #S7,
+:root[data-zoom="C1"] #C1,
+:root[data-zoom="C2"] #C2,
+:root[data-zoom="C3"] #C3,
+:root[data-zoom="C4"] #C4,
+:root[data-zoom="C5"] #C5,
+:root[data-zoom="C6"] #C6 {
+  position: fixed;
+  inset: 56px 0 0 0;  /* sous la topbar */
+  z-index: 40;
+  overflow-y: auto;
+  padding: clamp(32px, 4vw, 64px) clamp(20px, 4vw, 60px);
+  background: var(--bg);
+  border: none;
+  border-radius: 0;
+  max-width: 900px;
+  margin-inline: auto;
+  cursor: default;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Contenu détaillé visible sur la sub-card focalisée */
+:root[data-zoom="S0"] #S0 .methods,
+:root[data-zoom="S0"] #S0 .antipattern,
+:root[data-zoom="S0"] #S0 .frameworks,
+:root[data-zoom="S0"] #S0 .tagline,
+:root[data-zoom="S1"] #S1 .methods,
+:root[data-zoom="S1"] #S1 .antipattern,
+:root[data-zoom="S1"] #S1 .frameworks,
+:root[data-zoom="S1"] #S1 .tagline,
+:root[data-zoom="S2"] #S2 .methods,
+:root[data-zoom="S2"] #S2 .antipattern,
+:root[data-zoom="S2"] #S2 .frameworks,
+:root[data-zoom="S2"] #S2 .tagline,
+:root[data-zoom="S3"] #S3 .methods,
+:root[data-zoom="S3"] #S3 .antipattern,
+:root[data-zoom="S3"] #S3 .frameworks,
+:root[data-zoom="S3"] #S3 .tagline,
+:root[data-zoom="S4"] #S4 .methods,
+:root[data-zoom="S4"] #S4 .antipattern,
+:root[data-zoom="S4"] #S4 .frameworks,
+:root[data-zoom="S4"] #S4 .tagline,
+:root[data-zoom="S5"] #S5 .methods,
+:root[data-zoom="S5"] #S5 .antipattern,
+:root[data-zoom="S5"] #S5 .frameworks,
+:root[data-zoom="S5"] #S5 .tagline,
+:root[data-zoom="S6"] #S6 .methods,
+:root[data-zoom="S6"] #S6 .antipattern,
+:root[data-zoom="S6"] #S6 .frameworks,
+:root[data-zoom="S6"] #S6 .tagline,
+:root[data-zoom="S7"] #S7 .methods,
+:root[data-zoom="S7"] #S7 .antipattern,
+:root[data-zoom="S7"] #S7 .frameworks,
+:root[data-zoom="S7"] #S7 .tagline,
+:root[data-zoom="C1"] #C1 .methods,
+:root[data-zoom="C1"] #C1 .antipattern,
+:root[data-zoom="C1"] #C1 .frameworks,
+:root[data-zoom="C1"] #C1 .tagline,
+:root[data-zoom="C2"] #C2 .methods,
+:root[data-zoom="C2"] #C2 .antipattern,
+:root[data-zoom="C2"] #C2 .frameworks,
+:root[data-zoom="C2"] #C2 .tagline,
+:root[data-zoom="C3"] #C3 .methods,
+:root[data-zoom="C3"] #C3 .antipattern,
+:root[data-zoom="C3"] #C3 .frameworks,
+:root[data-zoom="C3"] #C3 .tagline,
+:root[data-zoom="C4"] #C4 .methods,
+:root[data-zoom="C4"] #C4 .antipattern,
+:root[data-zoom="C4"] #C4 .frameworks,
+:root[data-zoom="C4"] #C4 .tagline,
+:root[data-zoom="C5"] #C5 .methods,
+:root[data-zoom="C5"] #C5 .antipattern,
+:root[data-zoom="C5"] #C5 .frameworks,
+:root[data-zoom="C5"] #C5 .tagline,
+:root[data-zoom="C6"] #C6 .methods,
+:root[data-zoom="C6"] #C6 .antipattern,
+:root[data-zoom="C6"] #C6 .frameworks,
+:root[data-zoom="C6"] #C6 .tagline {
+  display: block;
+}
+
+/* Pas d'affordance "voir détail" sur la sub-card focalisée */
+:root[data-zoom="S0"] #S0::after,
+:root[data-zoom="S1"] #S1::after,
+:root[data-zoom="S2"] #S2::after,
+:root[data-zoom="S3"] #S3::after,
+:root[data-zoom="S4"] #S4::after,
+:root[data-zoom="S5"] #S5::after,
+:root[data-zoom="S6"] #S6::after,
+:root[data-zoom="S7"] #S7::after,
+:root[data-zoom="C1"] #C1::after,
+:root[data-zoom="C2"] #C2::after,
+:root[data-zoom="C3"] #C3::after,
+:root[data-zoom="C4"] #C4::after,
+:root[data-zoom="C5"] #C5::after,
+:root[data-zoom="C6"] #C6::after {
+  display: none;
+}
+
+/* Tout le doc dimmé quand sub-card focalisée */
+:root[data-zoom^="S"] .canvas > section,
+:root[data-zoom^="C"] .canvas > section {
+  opacity: 0.04;
+  pointer-events: none;
+}
+
+/* Lock body scroll + cache hero gruyère pour réduire le bruit */
+:root[data-zoom^="S"],
+:root[data-zoom^="C"] {
+  overflow: hidden;
+}
+:root[data-zoom^="S"] body,
+:root[data-zoom^="C"] body {
+  overflow: hidden;
+  height: 100vh;
+}
+:root[data-zoom^="S"] .gruyere-figure,
+:root[data-zoom^="C"] .gruyere-figure { display: none; }
+</style>
+<script type="importmap">
+{"imports": {"three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}
+</script>
+<link rel="stylesheet" href="gruyere-hero.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="logo" href="/">Mathieu Guglielmino</a>
+  <span class="dossier-context">Évaluer un agent</span>
+  <nav class="back-nav" aria-label="Navigation retour">
+    <a href="./" class="back" title="Revenir au hub du dossier">← Hub</a>
+    <span class="back-sep" aria-hidden="true">·</span>
+    <a href="/" class="back" title="Revenir à l'accueil">Accueil</a>
+  </nav>
+</header>
+
+<figure class="gruyere-hero" id="gruyere-hero" role="img"
+        aria-label="Diagramme animé du modèle gruyère : 3 couches de défense filtrent les attaques, certaines passent.">
+  <noscript><img src="gruyere-hero-poster.svg" alt="3 plaques perforées en perspective, particules accumulées sur l'écran arrière"></noscript>
+  <figcaption class="gruyere-hero__caption">
+    3 couches de défense · 7 attaques · ~1% des survivants s'accumulent
+  </figcaption>
+</figure>
+
+<main class="canvas">
+  <section class="hero">
+    <p class="eyebrow">Carte zoomable · semantic zoom Bret Victor style</p>
+    <h1>Évaluer un agent</h1>
+    <p class="subtitle">Le playbook construit les défenses · le gruyère arrête les attaques</p>
+
+    <p class="lede">
+      On construit l'évaluation en 4 phases (collecte tasks, cadrage, instrumentation, maintenance) — c'est le <strong>playbook</strong>. Le résultat est un dispositif à 3 couches de défense (préventif, curatif, qualitatif) — c'est le <strong>gruyère de Reason</strong>. Chaque couche a ses trous, seul l'empilement arrête les attaques.
+    </p>
+
+    <!-- Hero SVG gruyère diagram -->
+    <figure class="gruyere-figure">
+      <svg class="gruyere-diagram"
+           viewBox="0 830 4000 1700"
+           preserveAspectRatio="xMidYMid meet"
+           xmlns="http://www.w3.org/2000/svg"
+           role="img"
+           aria-label="Diagramme gruyère de Reason appliqué à l'évaluation d'agents IA : 3 couches de défense (préventif, curatif, qualitatif) traversées par 7 attaques, dont 6 sont arrêtées par au moins une couche.">
+        <title>Gruyère de Reason — 3 couches × 7 attaques</title>
+
+        <defs>
+          <marker id="gruyere-arr-incident" viewBox="0 0 14 10" refX="13" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+            <path d="M 0 0 L 14 5 L 0 10 Z" fill="#b7332c"/>
+          </marker>
+          <pattern id="gruyere-tex-teal" patternUnits="userSpaceOnUse" width="80" height="80">
+            <rect width="80" height="80" fill="#e8f0f1"/>
+            <circle cx="20" cy="25" r="2.5" fill="#c9d8db" opacity="0.6"/>
+            <circle cx="60" cy="55" r="2" fill="#c9d8db" opacity="0.5"/>
+          </pattern>
+          <pattern id="gruyere-tex-ocre" patternUnits="userSpaceOnUse" width="80" height="80">
+            <rect width="80" height="80" fill="#f4eccc"/>
+            <circle cx="20" cy="25" r="2.5" fill="#dccfa0" opacity="0.6"/>
+            <circle cx="60" cy="55" r="2" fill="#dccfa0" opacity="0.5"/>
+          </pattern>
+          <pattern id="gruyere-tex-carmine" patternUnits="userSpaceOnUse" width="80" height="80">
+            <rect width="80" height="80" fill="#f5dedb"/>
+            <circle cx="20" cy="25" r="2.5" fill="#dcb8b3" opacity="0.6"/>
+            <circle cx="60" cy="55" r="2" fill="#dcb8b3" opacity="0.5"/>
+          </pattern>
+          <filter id="gruyere-slice-shadow" x="-5%" y="-5%" width="110%" height="110%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="4"/>
+            <feOffset dx="6" dy="0"/>
+            <feComponentTransfer><feFuncA type="linear" slope="0.3"/></feComponentTransfer>
+            <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+
+        <!-- Bandeau titre section -->
+        <text x="2000" y="884" text-anchor="middle" font-family="'Fraunces', Cambria, Georgia, serif" font-size="34" font-style="italic" fill="#5a5a5a">3 couches empilées · chaque couche a ses trous · seul l'empilement couvre</text>
+
+        <!-- En-têtes colonnes -->
+        <text x="350" y="960" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="27" letter-spacing="0.22em" font-weight="500" fill="#b7332c">ATTAQUES →</text>
+        <text x="1860" y="960" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="27" letter-spacing="0.22em" font-weight="500" fill="#8a7448">3 COUCHES DE DÉFENSE</text>
+        <text x="3460" y="960" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="27" letter-spacing="0.22em" font-weight="500" fill="#4b9466">→ OUTCOMES</text>
+
+        <!-- Slice N1 — Préventif -->
+        <g>
+          <rect x="700" y="1000" width="560" height="1480" rx="14" fill="url(#gruyere-tex-teal)" stroke="#1f5560" stroke-width="5" filter="url(#gruyere-slice-shadow)"/>
+          <text x="980" y="1040" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="27" letter-spacing="0.18em" font-weight="500" fill="#1f5560">COUCHE 1</text>
+          <text x="980" y="1080" text-anchor="middle" font-family="'Fraunces', Cambria, Georgia, serif" font-size="51" font-weight="500" fill="#1f5560">Préventif</text>
+          <text x="980" y="1112" text-anchor="middle" font-family="'Fraunces', Cambria, Georgia, serif" font-size="31" font-style="italic" fill="#5a5a5a">automated · monitoring</text>
+          <text x="980" y="1145" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="22" letter-spacing="0.12em" fill="#8a7448">C1 · CI/CD &amp; C2 · prod</text>
+          <g fill="#faf8f3">
+            <circle cx="980" cy="1300" r="38"/>
+            <circle cx="980" cy="1700" r="42"/>
+            <circle cx="980" cy="1850" r="36"/>
+            <circle cx="980" cy="2000" r="38"/>
+            <circle cx="980" cy="2200" r="40"/>
+          </g>
+        </g>
+
+        <!-- Slice N2 — Curatif -->
+        <g>
+          <rect x="1440" y="1000" width="560" height="1480" rx="14" fill="url(#gruyere-tex-ocre)" stroke="#b58a2c" stroke-width="5" filter="url(#gruyere-slice-shadow)"/>
+          <text x="1720" y="1040" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="27" letter-spacing="0.18em" font-weight="500" fill="#b58a2c">COUCHE 2</text>
+          <text x="1720" y="1080" text-anchor="middle" font-family="'Fraunces', Cambria, Georgia, serif" font-size="51" font-weight="500" fill="#b58a2c">Curatif</text>
+          <text x="1720" y="1112" text-anchor="middle" font-family="'Fraunces', Cambria, Georgia, serif" font-size="31" font-style="italic" fill="#5a5a5a">A/B · user feedback</text>
+          <text x="1720" y="1145" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="22" letter-spacing="0.12em" fill="#8a7448">C3 · A/B &amp; C4 · feedback</text>
+          <g fill="#faf8f3">
+            <circle cx="1720" cy="1700" r="40"/>
+            <circle cx="1720" cy="1850" r="38"/>
+            <circle cx="1720" cy="2200" r="42"/>
+          </g>
+        </g>
+
+        <!-- Slice N3 — Qualitatif -->
+        <g>
+          <rect x="2180" y="1000" width="560" height="1480" rx="14" fill="url(#gruyere-tex-carmine)" stroke="#b7332c" stroke-width="5" filter="url(#gruyere-slice-shadow)"/>
+          <text x="2460" y="1040" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="27" letter-spacing="0.18em" font-weight="500" fill="#b7332c">COUCHE 3</text>
+          <text x="2460" y="1080" text-anchor="middle" font-family="'Fraunces', Cambria, Georgia, serif" font-size="51" font-weight="500" fill="#b7332c">Qualitatif</text>
+          <text x="2460" y="1112" text-anchor="middle" font-family="'Fraunces', Cambria, Georgia, serif" font-size="31" font-style="italic" fill="#5a5a5a">transcripts · humain</text>
+          <text x="2460" y="1145" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="22" letter-spacing="0.12em" fill="#8a7448">C5 · transcripts &amp; C6 · humain</text>
+          <g fill="#faf8f3">
+            <circle cx="2460" cy="2200" r="40"/>
+          </g>
+        </g>
+
+        <!-- Labels des 7 attaques (à gauche) -->
+        <g font-family="'Fraunces', Cambria, Georgia, serif">
+          <text x="200" y="1308" font-size="44" font-weight="500" fill="#1a1a1a">Prompt injection</text>
+          <text x="200" y="1455" font-size="44" font-weight="500" fill="#1a1a1a">Hallucination</text>
+          <text x="200" y="1592" font-size="44" font-weight="500" fill="#1a1a1a">Tool misuse</text>
+          <text x="200" y="1703" font-size="44" font-weight="500" fill="#1a1a1a">Context saturation</text>
+          <text x="200" y="1855" font-size="44" font-weight="500" fill="#1a1a1a">Reward hacking</text>
+          <text x="200" y="2005" font-size="44" font-weight="500" fill="#1a1a1a">Spec mismatch</text>
+          <text x="200" y="2205" font-size="44" font-weight="500" fill="#1a1a1a">Latency drift</text>
+        </g>
+
+        <!-- Trajectoires : 6 attaques stoppées + 1 incident (Latency drift) -->
+        <g stroke="#b7332c" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="580" y1="1300" x2="1430" y2="1300" stroke-width="2.5" opacity="0.7"/>
+          <line x1="580" y1="1450" x2="690" y2="1450" stroke-width="2.5" opacity="0.7"/>
+          <line x1="580" y1="1590" x2="690" y2="1590" stroke-width="2.5" opacity="0.7"/>
+          <line x1="580" y1="1700" x2="2170" y2="1700" stroke-width="2.5" opacity="0.7"/>
+          <line x1="580" y1="1850" x2="2170" y2="1850" stroke-width="2.5" opacity="0.7"/>
+          <line x1="580" y1="2000" x2="1430" y2="2000" stroke-width="2.5" opacity="0.7"/>
+          <!-- INCIDENT : Latency drift traverse les 3 couches -->
+          <line x1="580" y1="2200" x2="2900" y2="2200" stroke-width="4" marker-end="url(#gruyere-arr-incident)"/>
+          <path d="M 2920 2200 Q 3100 2200 3200 2100" stroke="#b7332c" stroke-width="4" fill="none" marker-end="url(#gruyere-arr-incident)"/>
+        </g>
+
+        <!-- Outcomes -->
+        <g font-family="'Fraunces', Cambria, Georgia, serif">
+          <g>
+            <rect x="3200" y="1050" width="700" height="650" rx="14" fill="#e8f3ec" stroke="#4b9466" stroke-width="4"/>
+            <g transform="translate(3400, 1130)" stroke="#4b9466" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="80" cy="80" r="65"/>
+              <path d="M 42 80 L 70 108 L 122 50" stroke-width="10"/>
+            </g>
+            <text x="3550" y="1380" text-anchor="middle" font-size="61" font-weight="500" fill="#1a1a1a">agent fiable</text>
+            <text x="3550" y="1418" text-anchor="middle" font-size="34" font-style="italic" fill="#5a5a5a">attaque arrêtée par une couche</text>
+            <text x="3550" y="1490" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="24" letter-spacing="0.18em" fill="#4b9466">6 / 7 ATTAQUES STOPPÉES</text>
+          </g>
+          <g>
+            <rect x="3200" y="1830" width="700" height="650" rx="14" fill="#f5dedb" stroke="#b7332c" stroke-width="4"/>
+            <g transform="translate(3400, 1910)" stroke="#b7332c" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="80" cy="80" r="65"/>
+              <line x1="44" y1="44" x2="116" y2="116" stroke-width="10"/>
+              <line x1="116" y1="44" x2="44" y2="116" stroke-width="10"/>
+            </g>
+            <text x="3550" y="2160" text-anchor="middle" font-size="61" font-weight="500" fill="#1a1a1a">incident</text>
+            <text x="3550" y="2198" text-anchor="middle" font-size="34" font-style="italic" fill="#5a5a5a">trous alignés sur les 3 couches</text>
+            <text x="3550" y="2270" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="24" letter-spacing="0.18em" fill="#b7332c">1 / 7 ATTAQUES PASSÉES</text>
+          </g>
+        </g>
+      </svg>
+      <figcaption>3 couches empilées · chaque couche a ses trous · les flèches sont les 7 modes d'attaque modélisés.</figcaption>
+    </figure>
+
+    <blockquote class="reason-quote">
+      « Chaque couche a ses trous ; l'empilement seul produit une couverture acceptable. »
+      <cite>— James Reason, modèle gruyère suisse</cite>
+    </blockquote>
+  </section>
+
+  <section class="playbook">
+    <h2>Le playbook — comment on construit les défenses</h2>
+    <p class="lede">4 phases dans le temps · chaque phase produit ou maintient une couche du dispositif.</p>
+
+    <article class="phase" id="P1">
+      <header class="phase-head">
+        <span class="badge badge--phase">1</span>
+        <div class="phase-meta">
+          <p class="eyebrow">Phase 1 · collecte tasks</p>
+          <h3>Collecte tasks</h3>
+          <p class="subtitle">Démarrer tôt · 20–50 tasks de vrais échecs</p>
+        </div>
+      </header>
+      <div class="subcards">
+        <article class="subcard" id="S0" tabindex="0">
+          <header class="subcard-head">
+            <span class="badge badge--sub">S0</span>
+            <div class="subcard-meta">
+              <p class="eyebrow">Collecte tasks · démarrer tôt</p>
+              <h4>Démarrer tôt</h4>
+              <p class="subtitle">20–50 tasks de vrais échecs suffisent à amorcer un système d'eval</p>
+            </div>
+          </header>
+          <ul class="methods">
+            <li class="method">
+              <span class="mu">µ-1</span>
+              <h5>20–50 tasks</h5>
+              <p class="method-subtitle">volume initial</p>
+              <p>assez pour révéler 80 % des modes d'échec</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-2</span>
+              <h5>Issues de vrais échecs</h5>
+              <p class="method-subtitle">sources</p>
+              <p>bugs reportés, edge cases déjà observés en prod</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-3</span>
+              <h5>Règle 80/20</h5>
+              <p class="method-subtitle">discipline</p>
+              <p>on capture l'essentiel avec un effort modeste</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-4</span>
+              <h5>Value compose</h5>
+              <p class="method-subtitle">effet cumulatif</p>
+              <p>chaque task ajoutée renforce le harness existant</p>
+            </li>
+          </ul>
+          <aside class="antipattern">
+            <p class="anti-eyebrow">⚠ ANTI-PATTERN</p>
+            <p class="anti-headline">Attendre 1 000 tasks gold-labellisées avant de démarrer</p>
+            <p class="anti-consequence">Conséquence : la dette d'eval gonfle pendant qu'on optimise dans le noir.</p>
+          </aside>
+          <div class="frameworks">
+            <p class="fw-eyebrow">Frameworks / outils</p>
+            <ul>
+              <li>Linear</li><li>GitHub Issues</li><li>Notion</li><li>Loom replay</li>
+            </ul>
+          </div>
+          <blockquote class="tagline">« Toujours préférer un démarrage modeste qui itère sur la dette. »</blockquote>
+        </article>
+
+        <article class="subcard" id="S1" tabindex="0">
+          <header class="subcard-head">
+            <span class="badge badge--sub">S1</span>
+            <div class="subcard-meta">
+              <p class="eyebrow">Collecte tasks · manuel d'abord</p>
+              <h4>Manuel d'abord</h4>
+              <p class="subtitle">Tes tasks vivent déjà dans les bugs, le support, tes checks pre-release</p>
+            </div>
+          </header>
+          <ul class="methods">
+            <li class="method">
+              <span class="mu">µ-1</span>
+              <h5>Checks pre-release</h5>
+              <p class="method-subtitle">validation manuelle</p>
+              <p>ce que tu valides à la main avant chaque ship</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-2</span>
+              <h5>Bugs reportés</h5>
+              <p class="method-subtitle">tickets</p>
+              <p>Linear, GitHub issues, Jira — chacun est une task</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-3</span>
+              <h5>Support queue</h5>
+              <p class="method-subtitle">questions récurrentes</p>
+              <p>les patterns qui reviennent = patterns à grader</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-4</span>
+              <h5>Conversations agent</h5>
+              <p class="method-subtitle">transcripts d'échecs</p>
+              <p>où l'agent a foiré — déjà des cas par défaut</p>
+            </li>
+          </ul>
+          <div class="frameworks">
+            <p class="fw-eyebrow">Frameworks / outils</p>
+            <ul>
+              <li>Zendesk</li><li>Intercom</li><li>PostHog session replay</li><li>Hotjar</li>
+            </ul>
+          </div>
+          <blockquote class="tagline">« Pas besoin d'un Excel parfait — un Notion suffit pour démarrer. »</blockquote>
+        </article>
+      </div>
+    </article>
+
+    <article class="phase" id="P2A">
+      <header class="phase-head">
+        <span class="badge badge--phase">2A</span>
+        <div class="phase-meta">
+          <p class="eyebrow">Phase 2A · cadrer les cas</p>
+          <h3>Cadrer les cas</h3>
+          <p class="subtitle">Non-ambiguïté · pass@k · testcase formula</p>
+        </div>
+      </header>
+      <div class="subcards">
+        <article class="subcard" id="S2" tabindex="0">
+          <header class="subcard-head">
+            <span class="badge badge--sub">S2</span>
+            <div class="subcard-meta">
+              <p class="eyebrow">Cadrer les cas · non-ambiguïté</p>
+              <h4>Non-ambiguïté</h4>
+              <p class="subtitle">Tasks dont 2 experts conviennent sur pass/fail · pass@k vs pass^k</p>
+            </div>
+          </header>
+          <ul class="methods">
+            <li class="method">
+              <span class="mu">µ-1</span>
+              <h5>2 experts → même verdict</h5>
+              <p class="method-subtitle">critère minimal</p>
+              <p>si pas d'accord, la task est cassée</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-2</span>
+              <h5>Reference solution</h5>
+              <p class="method-subtitle">gold standard</p>
+              <p>la "bonne" réponse documentée</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-3</span>
+              <h5>pass@k</h5>
+              <p class="method-subtitle">au moins 1 succès sur k tries</p>
+              <p>mesure de la capabilité brute</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-4</span>
+              <h5>pass^k</h5>
+              <p class="method-subtitle">tous les k tries réussis</p>
+              <p>mesure de fiabilité (plus stricte)</p>
+            </li>
+          </ul>
+          <aside class="antipattern">
+            <p class="anti-eyebrow">⚠ ANTI-PATTERN</p>
+            <p class="anti-headline">0% pass = task cassée</p>
+            <p class="anti-consequence">Si même les meilleurs experts ne savent pas trancher, le grader ne saura pas.</p>
+          </aside>
+          <div class="frameworks">
+            <p class="fw-eyebrow">Frameworks / outils</p>
+            <ul>
+              <li>SWE-bench</li><li>HumanEval</li><li>GAIA</li><li>AgentBench</li>
+            </ul>
+          </div>
+          <blockquote class="tagline">« Privilégier la qualité du critère sur la quantité de tasks. »</blockquote>
+        </article>
+
+        <article class="subcard" id="S3" tabindex="0">
+          <header class="subcard-head">
+            <span class="badge badge--sub">S3</span>
+            <div class="subcard-meta">
+              <p class="eyebrow">Cadrer les cas · équilibre</p>
+              <h4>Équilibre</h4>
+              <p class="subtitle">Should trigger / should NOT trigger — éviter l'overtriggering</p>
+            </div>
+          </header>
+          <ul class="methods">
+            <li class="method">
+              <span class="mu">µ-1</span>
+              <h5>should trigger</h5>
+              <p class="method-subtitle">cas où l'agent doit agir</p>
+              <p>mesure la capability</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-2</span>
+              <h5>should NOT trigger</h5>
+              <p class="method-subtitle">cas où l'agent doit ne PAS agir</p>
+              <p>mesure la prudence</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-3</span>
+              <h5>Ratio cible</h5>
+              <p class="method-subtitle">50/50</p>
+              <p>pour éviter le bias vers une réponse par défaut</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-4</span>
+              <h5>Diversité</h5>
+              <p class="method-subtitle">angles d'attaque variés</p>
+              <p>pas tous les cas du même domaine</p>
+            </li>
+          </ul>
+          <aside class="antipattern">
+            <p class="anti-eyebrow">⚠ ANTI-PATTERN</p>
+            <p class="anti-headline">Web search : 90% should-trigger</p>
+            <p class="anti-consequence">L'agent apprend à toujours déclencher → coût, latence, et faux positifs.</p>
+          </aside>
+          <div class="frameworks">
+            <p class="fw-eyebrow">Frameworks / outils</p>
+            <ul>
+              <li>BFCL</li><li>ToolBench</li><li>BBH</li><li>τ-bench</li>
+            </ul>
+          </div>
+          <blockquote class="tagline">« Le déséquilibre est le piège le plus fréquent des suites d'eval naïves. »</blockquote>
+        </article>
+      </div>
+    </article>
+
+    <article class="phase" id="P2B">
+      <header class="phase-head">
+        <span class="badge badge--phase">2B</span>
+        <div class="phase-meta">
+          <p class="eyebrow">Phase 2B · harness &amp; graders</p>
+          <h3>Harness &amp; graders</h3>
+          <p class="subtitle">Instrumenter · observabilité OTel · juges calibrés</p>
+        </div>
+      </header>
+      <div class="subcards">
+        <article class="subcard" id="S4" tabindex="0">
+          <header class="subcard-head">
+            <span class="badge badge--sub">S4</span>
+            <div class="subcard-meta">
+              <p class="eyebrow">Harness &amp; graders · harness stable</p>
+              <h4>Harness stable</h4>
+              <p class="subtitle">Isolation par trial · clean env · pas de shared state · traces OTel</p>
+            </div>
+          </header>
+          <ul class="methods">
+            <li class="method">
+              <span class="mu">µ-1</span>
+              <h5>Isolation par trial</h5>
+              <p class="method-subtitle">chaque task indépendante</p>
+              <p>pas de fuite entre les runs</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-2</span>
+              <h5>Clean environment</h5>
+              <p class="method-subtitle">reset complet</p>
+              <p>filesystem, network, env vars</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-3</span>
+              <h5>Pas de shared state</h5>
+              <p class="method-subtitle">idempotence</p>
+              <p>rejouer une task donne le même résultat</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-4</span>
+              <h5>Traces OpenTelemetry</h5>
+              <p class="method-subtitle">observabilité native</p>
+              <p>GenAI semantic conventions OTel</p>
+            </li>
+          </ul>
+          <aside class="antipattern">
+            <p class="anti-eyebrow">⚠ ANTI-PATTERN</p>
+            <p class="anti-headline">git history leak entre trials</p>
+            <p class="anti-consequence">L'agent voit l'historique de ses tentatives précédentes → l'eval est faussée.</p>
+          </aside>
+          <div class="frameworks">
+            <p class="fw-eyebrow">Frameworks / outils</p>
+            <ul>
+              <li>Inspect AI</li><li>Anthropic Evals</li><li>LangSmith</li><li>Phoenix Arize</li>
+            </ul>
+          </div>
+          <blockquote class="tagline">« Un harness flaky pollue les graders. Investir tôt. »</blockquote>
+        </article>
+
+        <article class="subcard" id="S5" tabindex="0">
+          <header class="subcard-head">
+            <span class="badge badge--sub">S5</span>
+            <div class="subcard-meta">
+              <p class="eyebrow">Harness &amp; graders · graders sobres</p>
+              <h4>Graders sobres</h4>
+              <p class="subtitle">Déterministe &gt; LLM-as-judge &gt; humain · grader le résultat pas le chemin</p>
+            </div>
+          </header>
+          <ul class="methods">
+            <li class="method">
+              <span class="mu">µ-1</span>
+              <h5>Hiérarchie 1</h5>
+              <p class="method-subtitle">déterministe quand possible</p>
+              <p>regex, schema check, exact match</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-2</span>
+              <h5>Hiérarchie 2</h5>
+              <p class="method-subtitle">LLM-as-judge pour le nuancé</p>
+              <p>avec calibration humaine</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-3</span>
+              <h5>Hiérarchie 3</h5>
+              <p class="method-subtitle">humain pour les cas durs</p>
+              <p>gold standard, mais lent et cher</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-4</span>
+              <h5>Partial credit</h5>
+              <p class="method-subtitle">éviter le tout-ou-rien</p>
+              <p>gradient de qualité = signal plus riche</p>
+            </li>
+          </ul>
+          <aside class="antipattern">
+            <p class="anti-eyebrow">⚠ ANTI-PATTERN</p>
+            <p class="anti-headline">LAJ flaky → fausses régressions</p>
+            <p class="anti-consequence">Si le LAJ n'est pas calibré, le bruit masque le signal. Perte de confiance.</p>
+          </aside>
+          <div class="frameworks">
+            <p class="fw-eyebrow">Frameworks / outils</p>
+            <ul>
+              <li>DeepEval</li><li>Ragas</li><li>Promptfoo</li><li>OpenAI Evals</li>
+            </ul>
+          </div>
+          <blockquote class="tagline">« Grader le RÉSULTAT pas le CHEMIN — sinon on bride l'exploration. »</blockquote>
+        </article>
+      </div>
+    </article>
+
+    <article class="phase" id="P3">
+      <header class="phase-head">
+        <span class="badge badge--phase">3</span>
+        <div class="phase-meta">
+          <p class="eyebrow">Phase 3 · maintenance</p>
+          <h3>Maintenance</h3>
+          <p class="subtitle">Tenir vivant · transcripts · régression evals</p>
+        </div>
+      </header>
+      <div class="subcards">
+        <article class="subcard" id="S6" tabindex="0">
+          <header class="subcard-head">
+            <span class="badge badge--sub">S6</span>
+            <div class="subcard-meta">
+              <p class="eyebrow">Maintenance · lire transcripts</p>
+              <h4>Lire transcripts</h4>
+              <p class="subtitle">Vraie skill d'agent dev · tooling de viz aussi rentable que les graders</p>
+            </div>
+          </header>
+          <ul class="methods">
+            <li class="method">
+              <span class="mu">µ-1</span>
+              <h5>Sample biaisé</h5>
+              <p class="method-subtitle">50% sur erreurs</p>
+              <p>sampler sur les outliers · pas uniforme</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-2</span>
+              <h5>Tooling de visualisation</h5>
+              <p class="method-subtitle">investissement clé</p>
+              <p>rentable autant que les graders</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-3</span>
+              <h5>Lecture hebdomadaire</h5>
+              <p class="method-subtitle">1h en équipe</p>
+              <p>tag des patterns émergents</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-4</span>
+              <h5>Feed les graders</h5>
+              <p class="method-subtitle">feedback loop</p>
+              <p>transcripts → nouvelles golden tasks</p>
+            </li>
+          </ul>
+          <aside class="antipattern">
+            <p class="anti-eyebrow">⚠ ANTI-PATTERN</p>
+            <p class="anti-headline">Ne pas lire les transcripts</p>
+            <p class="anti-consequence">Les métriques agrégées cachent les modes d'échec subtils. Le grader est aveugle.</p>
+          </aside>
+          <div class="frameworks">
+            <p class="fw-eyebrow">Frameworks / outils</p>
+            <ul>
+              <li>Honeycomb</li><li>LangSmith</li><li>Phoenix</li><li>Datadog APM</li>
+            </ul>
+          </div>
+          <blockquote class="tagline">« La lecture qualitative est la skill la plus sous-estimée du métier. »</blockquote>
+        </article>
+
+        <article class="subcard" id="S7" tabindex="0">
+          <header class="subcard-head">
+            <span class="badge badge--sub">S7</span>
+            <div class="subcard-meta">
+              <p class="eyebrow">Maintenance · saturation</p>
+              <h4>Saturation</h4>
+              <p class="subtitle">Capability eval → régression eval · ownership team · living artifact</p>
+            </div>
+          </header>
+          <ul class="methods">
+            <li class="method">
+              <span class="mu">µ-1</span>
+              <h5>Capability eval</h5>
+              <p class="method-subtitle">au début</p>
+              <p>tu mesures ce que l'agent peut faire</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-2</span>
+              <h5>Régression eval</h5>
+              <p class="method-subtitle">à la maturité</p>
+              <p>tu vérifies que rien ne casse</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-3</span>
+              <h5>Ownership team</h5>
+              <p class="method-subtitle">qui maintient ?</p>
+              <p>sans owner, le harness pourrit en 6 semaines</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-4</span>
+              <h5>Living artifact</h5>
+              <p class="method-subtitle">pas un one-shot</p>
+              <p>la suite évolue avec le produit</p>
+            </li>
+          </ul>
+          <aside class="antipattern">
+            <p class="anti-eyebrow">⚠ ANTI-PATTERN</p>
+            <p class="anti-headline">Harness sans owner explicite</p>
+            <p class="anti-consequence">Tout le monde et personne. Les golden tasks deviennent obsolètes silencieusement.</p>
+          </aside>
+          <div class="frameworks">
+            <p class="fw-eyebrow">Frameworks / outils</p>
+            <ul>
+              <li>Datadog regression</li><li>Sentry</li><li>Snowflake metrics</li><li>Hex</li>
+            </ul>
+          </div>
+          <blockquote class="tagline">« Évolution de paradigme : eval qualitative → régression quantitative. »</blockquote>
+        </article>
+      </div>
+    </article>
+  </section>
+
+  <section class="gruyere">
+    <h2>Le gruyère — ce qui arrête les attaques</h2>
+    <p class="lede">3 couches de défense empilées · chaque couche a ses trous · seul l'empilement couvre.</p>
+
+    <article class="couche" id="N1">
+      <header class="phase-head">
+        <span class="badge badge--couche">1</span>
+        <div class="phase-meta">
+          <p class="eyebrow">Couche 1 · préventif</p>
+          <h3>Préventif</h3>
+          <p class="subtitle">automated · monitoring · catch before ship</p>
+        </div>
+      </header>
+      <div class="subcards">
+        <article class="subcard" id="C1" tabindex="0">
+          <header class="subcard-head">
+            <span class="badge badge--sub">C1</span>
+            <div class="subcard-meta">
+              <p class="eyebrow">Préventif · automated evals</p>
+              <h4>Automated evals</h4>
+              <p class="subtitle">CI/CD pre-launch · 5 µ-méthodes empilées · cycle rapide, scalable</p>
+            </div>
+          </header>
+          <ul class="methods">
+            <li class="method">
+              <span class="mu">µ-1</span>
+              <h5>Prompt unit tests</h5>
+              <p class="method-subtitle">templates testés en isolation</p>
+              <p>attrape : prompt injection sur templates</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-2</span>
+              <h5>Tool call schema validation</h5>
+              <p class="method-subtitle">arguments typés et bornés</p>
+              <p>attrape : tool misuse — mauvais args</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-3</span>
+              <h5>Golden regression suite</h5>
+              <p class="method-subtitle">N tasks figées re-jouées à chaque ship</p>
+              <p>attrape : hallucination — drift sur cas connus</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-4</span>
+              <h5>Output structure / JSON schema</h5>
+              <p class="method-subtitle">format validé · pas de free-form en sortie</p>
+              <p>attrape : spec mismatch — format incorrect</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-5</span>
+              <h5>Perf &amp; cost benchmark</h5>
+              <p class="method-subtitle">latence p95 + $ par task suivis dans la CI</p>
+              <p>⚠ trous larges : latency drift y passe souvent</p>
+            </li>
+          </ul>
+          <div class="frameworks">
+            <p class="fw-eyebrow">Frameworks / outils</p>
+            <ul>
+              <li>Promptfoo</li><li>DeepEval</li><li>JSON Schema</li><li>Anthropic Evals</li><li>k6 perf</li>
+            </ul>
+          </div>
+          <blockquote class="tagline">« CI/CD pre-launch · drift à monitorer, investissement up-front nécessaire. »</blockquote>
+        </article>
+
+        <article class="subcard" id="C2" tabindex="0">
+          <header class="subcard-head">
+            <span class="badge badge--sub">C2</span>
+            <div class="subcard-meta">
+              <p class="eyebrow">Préventif · production monitoring</p>
+              <h4>Production monitoring</h4>
+              <p class="subtitle">Post-launch · vérité terrain · 5 µ-méthodes · réactif mais signal bruyant</p>
+            </div>
+          </header>
+          <ul class="methods">
+            <li class="method">
+              <span class="mu">µ-1</span>
+              <h5>Error rate / 5xx / timeout</h5>
+              <p class="method-subtitle">alertes sur taux d'erreurs HTTP/runtime</p>
+              <p>attrape : tool misuse — échecs API répétés</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-2</span>
+              <h5>Latency p95 / p99</h5>
+              <p class="method-subtitle">seuils trop lâches · drift lent invisible</p>
+              <p>⚠ TROU LARGE : latency drift passe ici → incident</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-3</span>
+              <h5>Cost per task / token usage</h5>
+              <p class="method-subtitle">alertes sur dépassement budget</p>
+              <p>attrape : reward hacking — long thinking</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-4</span>
+              <h5>Output anomaly detection</h5>
+              <p class="method-subtitle">distribution-shift sur les outputs</p>
+              <p>attrape : hallucination — sortie hors distribution</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-5</span>
+              <h5>User reports · 👍/👎</h5>
+              <p class="method-subtitle">signal direct mais sparse, biaisé</p>
+              <p>attrape : context saturation — fil perdu signalé</p>
+            </li>
+          </ul>
+          <div class="frameworks">
+            <p class="fw-eyebrow">Frameworks / outils</p>
+            <ul>
+              <li>Datadog</li><li>Honeycomb</li><li>Sentry</li><li>Anomalo</li><li>PostHog</li>
+            </ul>
+          </div>
+          <blockquote class="tagline">« Réactif et utile, mais le signal bruyant requiert du tri. »</blockquote>
+        </article>
+      </div>
+    </article>
+
+    <article class="couche" id="N2">
+      <header class="phase-head">
+        <span class="badge badge--couche">2</span>
+        <div class="phase-meta">
+          <p class="eyebrow">Couche 2 · curatif</p>
+          <h3>Curatif</h3>
+          <p class="subtitle">A/B · user feedback · catch in prod</p>
+        </div>
+      </header>
+      <div class="subcards">
+        <article class="subcard" id="C3" tabindex="0">
+          <header class="subcard-head">
+            <span class="badge badge--sub">C3</span>
+            <div class="subcard-meta">
+              <p class="eyebrow">Curatif · A/B testing</p>
+              <h4>A/B testing</h4>
+              <p class="subtitle">Outcome utilisateur · décisif mais lent · seul juge réel d'une amélioration</p>
+            </div>
+          </header>
+          <ul class="methods">
+            <li class="method">
+              <span class="mu">µ-1</span>
+              <h5>Traffic split par cohorte</h5>
+              <p class="method-subtitle">segmentation propre</p>
+              <p>random + filtres d'éligibilité</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-2</span>
+              <h5>Métriques primaires</h5>
+              <p class="method-subtitle">success rate, satisfaction</p>
+              <p>ce qu'on optimise</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-3</span>
+              <h5>Métriques secondaires</h5>
+              <p class="method-subtitle">latence, coût, escalations</p>
+              <p>garde-fous obligatoires</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-4</span>
+              <h5>Durée minimale</h5>
+              <p class="method-subtitle">significativité statistique</p>
+              <p>pas de squashing à 2 jours</p>
+            </li>
+          </ul>
+          <aside class="antipattern">
+            <p class="anti-eyebrow">⚠ ANTI-PATTERN</p>
+            <p class="anti-headline">Latency en métrique secondaire optionnelle</p>
+            <p class="anti-consequence">Drift invisible — l'agent devient lent sans qu'aucune alerte ne se déclenche.</p>
+          </aside>
+          <div class="frameworks">
+            <p class="fw-eyebrow">Frameworks / outils</p>
+            <ul>
+              <li>Statsig</li><li>GrowthBook</li><li>PostHog</li><li>Optimizely</li><li>Eppo</li>
+            </ul>
+          </div>
+          <blockquote class="tagline">« Le seul vrai juge d'une amélioration en prod. Mais lent. »</blockquote>
+        </article>
+
+        <article class="subcard" id="C4" tabindex="0">
+          <header class="subcard-head">
+            <span class="badge badge--sub">C4</span>
+            <div class="subcard-meta">
+              <p class="eyebrow">Curatif · user feedback</p>
+              <h4>User feedback</h4>
+              <p class="subtitle">Continu · cas non-anticipés · sparse (≪ 1%) et biaisé sévère</p>
+            </div>
+          </header>
+          <ul class="methods">
+            <li class="method">
+              <span class="mu">µ-1</span>
+              <h5>Boutons 👍/👎</h5>
+              <p class="method-subtitle">feedback inline</p>
+              <p>capture immédiate après réponse</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-2</span>
+              <h5>Ticket support · NPS</h5>
+              <p class="method-subtitle">canaux Slack/Discord</p>
+              <p>feedback structuré et qualitatif</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-3</span>
+              <h5>Tagger par catégorie</h5>
+              <p class="method-subtitle">classification</p>
+              <p>pour analyser les patterns</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-4</span>
+              <h5>Triager hebdo en équipe</h5>
+              <p class="method-subtitle">1h max</p>
+              <p>cadence régulière pour éviter le backlog</p>
+            </li>
+          </ul>
+          <aside class="antipattern">
+            <p class="anti-eyebrow">⚠ ANTI-PATTERN</p>
+            <p class="anti-headline">Ignorer les feedbacks sparse</p>
+            <p class="anti-consequence">Les utilisateurs en colère sur-représentent les feedbacks. Mais c'est aussi un signal.</p>
+          </aside>
+          <div class="frameworks">
+            <p class="fw-eyebrow">Frameworks / outils</p>
+            <ul>
+              <li>Sentry feedback</li><li>Canny</li><li>Pendo</li><li>Productboard</li>
+            </ul>
+          </div>
+          <blockquote class="tagline">« Force : capture les angles morts des graders automatisés. »</blockquote>
+        </article>
+      </div>
+    </article>
+
+    <article class="couche" id="N3">
+      <header class="phase-head">
+        <span class="badge badge--couche">3</span>
+        <div class="phase-meta">
+          <p class="eyebrow">Couche 3 · qualitatif</p>
+          <h3>Qualitatif</h3>
+          <p class="subtitle">transcripts · humain · catch the subtle</p>
+        </div>
+      </header>
+      <div class="subcards">
+        <article class="subcard" id="C5" tabindex="0">
+          <header class="subcard-head">
+            <span class="badge badge--sub">C5</span>
+            <div class="subcard-meta">
+              <p class="eyebrow">Qualitatif · manual transcript review</p>
+              <h4>Manual transcript review</h4>
+              <p class="subtitle">~20 traces / semaine · lecture qualitative · calibre l'intuition · ne scale pas</p>
+            </div>
+          </header>
+          <ul class="methods">
+            <li class="method">
+              <span class="mu">µ-1</span>
+              <h5>Sample 20 traces / semaine</h5>
+              <p class="method-subtitle">cadence régulière</p>
+              <p>sur des millions de traces</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-2</span>
+              <h5>Sampling biaisé</h5>
+              <p class="method-subtitle">50% sur traces lentes/anormales</p>
+              <p>biais utile pour détecter les drifts</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-3</span>
+              <h5>Checklist structurée</h5>
+              <p class="method-subtitle">précision · ton · timing</p>
+              <p>éviter le freestyle</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-4</span>
+              <h5>Postmortem mensuel</h5>
+              <p class="method-subtitle">perçu vs mesuré</p>
+              <p>recalibration des intuitions</p>
+            </li>
+          </ul>
+          <aside class="antipattern">
+            <p class="anti-eyebrow">⚠ ANTI-PATTERN</p>
+            <p class="anti-headline">Skipper le timing dans la checklist</p>
+            <p class="anti-consequence">Latency drift passe inaperçu. C'est ce qui a causé l'incident niveau 0.</p>
+          </aside>
+          <div class="frameworks">
+            <p class="fw-eyebrow">Frameworks / outils</p>
+            <ul>
+              <li>Honeycomb</li><li>LangSmith</li><li>Datadog APM</li><li>Jaeger</li>
+            </ul>
+          </div>
+          <blockquote class="tagline">« Force : calibre l'intuition de l'équipe. Limite : ne scale pas. »</blockquote>
+        </article>
+
+        <article class="subcard" id="C6" tabindex="0">
+          <header class="subcard-head">
+            <span class="badge badge--sub">C6</span>
+            <div class="subcard-meta">
+              <p class="eyebrow">Qualitatif · systematic human studies</p>
+              <h4>Systematic human studies</h4>
+              <p class="subtitle">Gold standard · cher (~10-30 K€) · lent (~6 semaines) · à faire 2-3×/an</p>
+            </div>
+          </header>
+          <ul class="methods">
+            <li class="method">
+              <span class="mu">µ-1</span>
+              <h5>Étude formelle</h5>
+              <p class="method-subtitle">N=30+ raters</p>
+              <p>pas un sample bricolé</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-2</span>
+              <h5>Calibration LAJ vs humain</h5>
+              <p class="method-subtitle">inter-rater agreement</p>
+              <p>mesure du gap LAJ/gold</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-3</span>
+              <h5>Rubrics structurées</h5>
+              <p class="method-subtitle">critères explicites</p>
+              <p>+ double review pour la fiabilité</p>
+            </li>
+            <li class="method">
+              <span class="mu">µ-4</span>
+              <h5>Détection biais systématiques</h5>
+              <p class="method-subtitle">biais de positionnement</p>
+              <p>biais culturels, etc.</p>
+            </li>
+          </ul>
+          <aside class="antipattern">
+            <p class="anti-eyebrow">⚠ ANTI-PATTERN</p>
+            <p class="anti-headline">Faire des human studies en continu</p>
+            <p class="anti-consequence">Trop cher pour le quotidien. Réserver aux moments de recalibration majeure.</p>
+          </aside>
+          <div class="frameworks">
+            <p class="fw-eyebrow">Frameworks / outils</p>
+            <ul>
+              <li>Surge AI</li><li>Scale AI</li><li>Prolific</li><li>Toloka</li>
+            </ul>
+          </div>
+          <blockquote class="tagline">« Référence pour recalibrer toute la pyramide : LAJ → graders deterministic → metrics in CI. »</blockquote>
+        </article>
+      </div>
+    </article>
+  </section>
+
+  <section class="attaques">
+    <h2>7 attaques · trajectoires sur les 3 couches</h2>
+    <p class="lede">Chaque attaque traverse les 3 couches du gruyère. Pour chacune, on lit où elle est arrêtée (✓), où elle passe (✗), et où la défense est redondante ou rare.</p>
+
+  <article class="attaque" id="A-prompt-injection" tabindex="0">
+    <header class="attaque-head">
+      <h3>Prompt injection</h3>
+      <svg class="attack-arrow" viewBox="0 0 200 40" aria-hidden="true">
+          <line x1="20" y1="20" x2="100" y2="20" stroke="#b7332c" stroke-width="2"/>
+          <line x1="100" y1="20" x2="180" y2="20" stroke="#5a5a5a" stroke-width="1" stroke-dasharray="3,3" opacity="0.4"/>
+          <circle cx="40" cy="20" r="8" fill="rgba(183,51,44,0.15)" stroke="#b7332c" stroke-width="1.5"/>
+          <circle cx="100" cy="20" r="8" fill="#4b9466" stroke="#4b9466" stroke-width="1.5"/>
+          <text x="100" y="24" text-anchor="middle" fill="white" font-family="JetBrains Mono, monospace" font-size="11" font-weight="500">✓</text>
+          <circle cx="160" cy="20" r="8" fill="rgba(90,90,90,0.15)" stroke="#5a5a5a" stroke-width="1.5"/>
+        </svg>
+    </header>
+    <ol class="verdicts">
+      <li class="verdict" data-slice="N1" data-verdict="passe">
+        <header class="verdict-head">
+          <span class="verdict-slice">N1 · Préventif</span>
+          <span class="verdict-tag verdict-passe">✗ PASSE</span>
+        </header>
+        <p class="verdict-headline">Tests ne couvrent que les patterns connus</p>
+        <ul class="verdict-lines">
+          <li>Templates testés en isolation</li>
+          <li>Garak / PromptInject scannent</li>
+          <li>mais les injections nouvelles passent</li>
+        </ul>
+        <ul class="verdict-fw">
+          <li>Garak</li>
+          <li>DeepEval</li>
+        </ul>
+      </li>
+      <li class="verdict" data-slice="N2" data-verdict="arrete">
+        <header class="verdict-head">
+          <span class="verdict-slice">N2 · Détectif</span>
+          <span class="verdict-tag verdict-arrete">✓ ARRÊTE</span>
+        </header>
+        <p class="verdict-headline">Anomaly detection + 👎 spikes en prod</p>
+        <ul class="verdict-lines">
+          <li>Distribution-shift sur outputs</li>
+          <li>User feedback signale du bizarre</li>
+          <li>Détection en 2-12h</li>
+        </ul>
+        <ul class="verdict-fw">
+          <li>Lakera</li>
+          <li>Sentry</li>
+          <li>Datadog</li>
+        </ul>
+      </li>
+      <li class="verdict" data-slice="N3" data-verdict="redondant">
+        <header class="verdict-head">
+          <span class="verdict-slice">N3 · Correctif</span>
+          <span class="verdict-tag verdict-redondant">⊘ REDONDANT</span>
+        </header>
+        <p class="verdict-headline">Manual review filet de sécurité</p>
+        <ul class="verdict-lines">
+          <li>Sample hebdomadaire détecte</li>
+          <li>les injections évidentes</li>
+          <li>enrichit le corpus d’attaques</li>
+        </ul>
+        <ul class="verdict-fw">
+          <li>LangSmith</li>
+        </ul>
+      </li>
+    </ol>
+  </article>
+
+  <article class="attaque" id="A-hallucination" tabindex="0">
+    <header class="attaque-head">
+      <h3>Hallucination</h3>
+      <svg class="attack-arrow" viewBox="0 0 200 40" aria-hidden="true">
+          <line x1="20" y1="20" x2="40" y2="20" stroke="#b7332c" stroke-width="2"/>
+          <line x1="40" y1="20" x2="180" y2="20" stroke="#5a5a5a" stroke-width="1" stroke-dasharray="3,3" opacity="0.4"/>
+          <circle cx="40" cy="20" r="8" fill="#4b9466" stroke="#4b9466" stroke-width="1.5"/>
+          <text x="40" y="24" text-anchor="middle" fill="white" font-family="JetBrains Mono, monospace" font-size="11" font-weight="500">✓</text>
+          <circle cx="100" cy="20" r="8" fill="rgba(90,90,90,0.15)" stroke="#5a5a5a" stroke-width="1.5"/>
+          <circle cx="160" cy="20" r="8" fill="rgba(90,90,90,0.15)" stroke="#5a5a5a" stroke-width="1.5"/>
+        </svg>
+    </header>
+    <ol class="verdicts">
+      <li class="verdict" data-slice="N1" data-verdict="arrete">
+        <header class="verdict-head">
+          <span class="verdict-slice">N1 · Préventif</span>
+          <span class="verdict-tag verdict-arrete">✓ ARRÊTE</span>
+        </header>
+        <p class="verdict-headline">µ-3 Golden regression + Output validation</p>
+        <ul class="verdict-lines">
+          <li>Tasks figées détectent</li>
+          <li>le drift sur cas connus</li>
+          <li>JSON schema force le format</li>
+        </ul>
+        <ul class="verdict-fw">
+          <li>HaluEval</li>
+          <li>TruthfulQA</li>
+          <li>FActScore</li>
+        </ul>
+      </li>
+      <li class="verdict" data-slice="N2" data-verdict="redondant">
+        <header class="verdict-head">
+          <span class="verdict-slice">N2 · Détectif</span>
+          <span class="verdict-tag verdict-redondant">⊘ REDONDANT</span>
+        </header>
+        <p class="verdict-headline">A/B verrait NPS chute</p>
+        <ul class="verdict-lines">
+          <li>+ user feedback "l’IA invente"</li>
+          <li>détection rapide</li>
+          <li>déjà stoppé en amont</li>
+        </ul>
+        <ul class="verdict-fw">
+          <li>Statsig</li>
+        </ul>
+      </li>
+      <li class="verdict" data-slice="N3" data-verdict="redondant">
+        <header class="verdict-head">
+          <span class="verdict-slice">N3 · Correctif</span>
+          <span class="verdict-tag verdict-redondant">⊘ REDONDANT</span>
+        </header>
+        <p class="verdict-headline">Manual review filet sécurité</p>
+        <ul class="verdict-lines">
+          <li>→ feed nouvelles golden tasks</li>
+          <li>boucle vertueuse</li>
+          <li>playbook → gruyère → playbook</li>
+        </ul>
+        <ul class="verdict-fw">
+          <li>LangSmith</li>
+        </ul>
+      </li>
+    </ol>
+  </article>
+
+  <article class="attaque" id="A-tool-misuse" tabindex="0">
+    <header class="attaque-head">
+      <h3>Tool misuse</h3>
+      <svg class="attack-arrow" viewBox="0 0 200 40" aria-hidden="true">
+          <line x1="20" y1="20" x2="40" y2="20" stroke="#b7332c" stroke-width="2"/>
+          <line x1="40" y1="20" x2="180" y2="20" stroke="#5a5a5a" stroke-width="1" stroke-dasharray="3,3" opacity="0.4"/>
+          <circle cx="40" cy="20" r="8" fill="#4b9466" stroke="#4b9466" stroke-width="1.5"/>
+          <text x="40" y="24" text-anchor="middle" fill="white" font-family="JetBrains Mono, monospace" font-size="11" font-weight="500">✓</text>
+          <circle cx="100" cy="20" r="8" fill="rgba(90,90,90,0.15)" stroke="#5a5a5a" stroke-width="1.5"/>
+          <circle cx="160" cy="20" r="8" fill="rgba(90,90,90,0.15)" stroke="#5a5a5a" stroke-width="1.5"/>
+        </svg>
+    </header>
+    <ol class="verdicts">
+      <li class="verdict" data-slice="N1" data-verdict="arrete">
+        <header class="verdict-head">
+          <span class="verdict-slice">N1 · Préventif</span>
+          <span class="verdict-tag verdict-arrete">✓ ARRÊTE</span>
+        </header>
+        <p class="verdict-headline">µ-2 Tool schema validation typée</p>
+        <ul class="verdict-lines">
+          <li>JSON Schema / OpenAPI / Zod</li>
+          <li>arguments typés et bornés</li>
+          <li>rejette le mauvais appel</li>
+        </ul>
+        <ul class="verdict-fw">
+          <li>JSON Schema</li>
+          <li>OpenAPI</li>
+          <li>Zod</li>
+        </ul>
+      </li>
+      <li class="verdict" data-slice="N2" data-verdict="redondant">
+        <header class="verdict-head">
+          <span class="verdict-slice">N2 · Détectif</span>
+          <span class="verdict-tag verdict-redondant">⊘ REDONDANT</span>
+        </header>
+        <p class="verdict-headline">5xx spikes en prod</p>
+        <ul class="verdict-lines">
+          <li>+ "ça plante" feedback</li>
+          <li>rapide mais après-coup</li>
+          <li>C1 est plus efficace</li>
+        </ul>
+        <ul class="verdict-fw">
+          <li>Sentry</li>
+        </ul>
+      </li>
+      <li class="verdict" data-slice="N3" data-verdict="rare">
+        <header class="verdict-head">
+          <span class="verdict-slice">N3 · Correctif</span>
+          <span class="verdict-tag verdict-rare">⊘ RARE</span>
+        </header>
+        <p class="verdict-headline">Pas le bon outil ici</p>
+        <ul class="verdict-lines">
+          <li>Validation programmatique gagne</li>
+          <li>haut la main sur tool calls</li>
+          <li>review humaine = overkill</li>
+        </ul>
+      </li>
+    </ol>
+  </article>
+
+  <article class="attaque" id="A-context-saturation" tabindex="0">
+    <header class="attaque-head">
+      <h3>Context saturation</h3>
+      <svg class="attack-arrow" viewBox="0 0 200 40" aria-hidden="true">
+          <line x1="20" y1="20" x2="160" y2="20" stroke="#b7332c" stroke-width="2"/>
+          <line x1="160" y1="20" x2="180" y2="20" stroke="#5a5a5a" stroke-width="1" stroke-dasharray="3,3" opacity="0.4"/>
+          <circle cx="40" cy="20" r="8" fill="rgba(183,51,44,0.15)" stroke="#b7332c" stroke-width="1.5"/>
+          <circle cx="100" cy="20" r="8" fill="rgba(183,51,44,0.15)" stroke="#b7332c" stroke-width="1.5"/>
+          <circle cx="160" cy="20" r="8" fill="#4b9466" stroke="#4b9466" stroke-width="1.5"/>
+          <text x="160" y="24" text-anchor="middle" fill="white" font-family="JetBrains Mono, monospace" font-size="11" font-weight="500">✓</text>
+        </svg>
+    </header>
+    <ol class="verdicts">
+      <li class="verdict" data-slice="N1" data-verdict="passe">
+        <header class="verdict-head">
+          <span class="verdict-slice">N1 · Préventif</span>
+          <span class="verdict-tag verdict-passe">✗ PASSE</span>
+        </header>
+        <p class="verdict-headline">Trajectory bench partiel</p>
+        <ul class="verdict-lines">
+          <li>Tests typiques 2-3 turns</li>
+          <li>pas 12+ comme en prod</li>
+          <li>⚠ trou large</li>
+        </ul>
+        <ul class="verdict-fw">
+          <li>τ-bench</li>
+          <li>AgentBench</li>
+        </ul>
+      </li>
+      <li class="verdict" data-slice="N2" data-verdict="passe">
+        <header class="verdict-head">
+          <span class="verdict-slice">N2 · Détectif</span>
+          <span class="verdict-tag verdict-passe">✗ PASSE</span>
+        </header>
+        <p class="verdict-headline">Success_rate baisse, cause floue</p>
+        <ul class="verdict-lines">
+          <li>Signal indirect</li>
+          <li>corrélation avec longueur session</li>
+          <li>difficile à diagnostiquer</li>
+        </ul>
+        <ul class="verdict-fw">
+          <li>PostHog</li>
+        </ul>
+      </li>
+      <li class="verdict" data-slice="N3" data-verdict="arrete">
+        <header class="verdict-head">
+          <span class="verdict-slice">N3 · Correctif</span>
+          <span class="verdict-tag verdict-arrete">✓ ARRÊTE</span>
+        </header>
+        <p class="verdict-headline">Manual review observe</p>
+        <ul class="verdict-lines">
+          <li>l’agent perdre le fil</li>
+          <li>sur 12+ turns</li>
+          <li>signal direct et lisible</li>
+        </ul>
+        <ul class="verdict-fw">
+          <li>Honeycomb</li>
+          <li>LangSmith</li>
+        </ul>
+      </li>
+    </ol>
+  </article>
+
+  <article class="attaque" id="A-reward-hacking" tabindex="0">
+    <header class="attaque-head">
+      <h3>Reward hacking</h3>
+      <svg class="attack-arrow" viewBox="0 0 200 40" aria-hidden="true">
+          <line x1="20" y1="20" x2="160" y2="20" stroke="#b7332c" stroke-width="2"/>
+          <line x1="160" y1="20" x2="180" y2="20" stroke="#5a5a5a" stroke-width="1" stroke-dasharray="3,3" opacity="0.4"/>
+          <circle cx="40" cy="20" r="8" fill="rgba(183,51,44,0.15)" stroke="#b7332c" stroke-width="1.5"/>
+          <circle cx="100" cy="20" r="8" fill="rgba(183,51,44,0.15)" stroke="#b7332c" stroke-width="1.5"/>
+          <circle cx="160" cy="20" r="8" fill="#4b9466" stroke="#4b9466" stroke-width="1.5"/>
+          <text x="160" y="24" text-anchor="middle" fill="white" font-family="JetBrains Mono, monospace" font-size="11" font-weight="500">✓</text>
+        </svg>
+    </header>
+    <ol class="verdicts">
+      <li class="verdict" data-slice="N1" data-verdict="passe">
+        <header class="verdict-head">
+          <span class="verdict-slice">N1 · Préventif</span>
+          <span class="verdict-tag verdict-passe">✗ PASSE</span>
+        </header>
+        <p class="verdict-headline">Graders deterministic contournés</p>
+        <ul class="verdict-lines">
+          <li>L’agent apprend les patterns</li>
+          <li>explicites et les évite</li>
+          <li>Goodhart’s law en action</li>
+        </ul>
+        <ul class="verdict-fw">
+          <li>BBH</li>
+          <li>TruthfulQA</li>
+        </ul>
+      </li>
+      <li class="verdict" data-slice="N2" data-verdict="passe">
+        <header class="verdict-head">
+          <span class="verdict-slice">N2 · Détectif</span>
+          <span class="verdict-tag verdict-passe">✗ PASSE</span>
+        </header>
+        <p class="verdict-headline">Métrique monte, but réel baisse</p>
+        <ul class="verdict-lines">
+          <li>Proxy decoupling</li>
+          <li>A/B trompé par sur-optim</li>
+          <li>invisible en aggregate</li>
+        </ul>
+        <ul class="verdict-fw">
+          <li>Statsig</li>
+        </ul>
+      </li>
+      <li class="verdict" data-slice="N3" data-verdict="arrete">
+        <header class="verdict-head">
+          <span class="verdict-slice">N3 · Correctif</span>
+          <span class="verdict-tag verdict-arrete">✓ ARRÊTE</span>
+        </header>
+        <p class="verdict-headline">Human studies + red team manual</p>
+        <ul class="verdict-lines">
+          <li>Détectent les patterns subtils</li>
+          <li>inter-rater agreement</li>
+          <li>gold standard</li>
+        </ul>
+        <ul class="verdict-fw">
+          <li>MACHIAVELLI</li>
+          <li>RewardBench</li>
+        </ul>
+      </li>
+    </ol>
+  </article>
+
+  <article class="attaque" id="A-spec-mismatch" tabindex="0">
+    <header class="attaque-head">
+      <h3>Spec mismatch</h3>
+      <svg class="attack-arrow" viewBox="0 0 200 40" aria-hidden="true">
+          <line x1="20" y1="20" x2="100" y2="20" stroke="#b7332c" stroke-width="2"/>
+          <line x1="100" y1="20" x2="180" y2="20" stroke="#5a5a5a" stroke-width="1" stroke-dasharray="3,3" opacity="0.4"/>
+          <circle cx="40" cy="20" r="8" fill="rgba(183,51,44,0.15)" stroke="#b7332c" stroke-width="1.5"/>
+          <circle cx="100" cy="20" r="8" fill="#4b9466" stroke="#4b9466" stroke-width="1.5"/>
+          <text x="100" y="24" text-anchor="middle" fill="white" font-family="JetBrains Mono, monospace" font-size="11" font-weight="500">✓</text>
+          <circle cx="160" cy="20" r="8" fill="rgba(90,90,90,0.15)" stroke="#5a5a5a" stroke-width="1.5"/>
+        </svg>
+    </header>
+    <ol class="verdicts">
+      <li class="verdict" data-slice="N1" data-verdict="passe">
+        <header class="verdict-head">
+          <span class="verdict-slice">N1 · Préventif</span>
+          <span class="verdict-tag verdict-passe">✗ PASSE</span>
+        </header>
+        <p class="verdict-headline">Schema OK pour format,</p>
+        <ul class="verdict-lines">
+          <li>pas pour l’INTENTION</li>
+          <li>le free-form passe le check</li>
+          <li>mais le sens dérive</li>
+        </ul>
+        <ul class="verdict-fw">
+          <li>JSON Schema</li>
+        </ul>
+      </li>
+      <li class="verdict" data-slice="N2" data-verdict="arrete">
+        <header class="verdict-head">
+          <span class="verdict-slice">N2 · Détectif</span>
+          <span class="verdict-tag verdict-arrete">✓ ARRÊTE</span>
+        </header>
+        <p class="verdict-headline">A/B révèle re-prompts/abandons</p>
+        <ul class="verdict-lines">
+          <li>Les users redemandent autrement</li>
+          <li>session replay confirme</li>
+          <li>MAU baisse</li>
+        </ul>
+        <ul class="verdict-fw">
+          <li>Statsig</li>
+          <li>PostHog</li>
+        </ul>
+      </li>
+      <li class="verdict" data-slice="N3" data-verdict="redondant">
+        <header class="verdict-head">
+          <span class="verdict-slice">N3 · Correctif</span>
+          <span class="verdict-tag verdict-redondant">⊘ REDONDANT</span>
+        </header>
+        <p class="verdict-headline">Review catégorise les types</p>
+        <ul class="verdict-lines">
+          <li>de mismatches observés</li>
+          <li>→ feed golden tasks S2/S3</li>
+          <li>boucle vertueuse</li>
+        </ul>
+        <ul class="verdict-fw">
+          <li>LangSmith</li>
+        </ul>
+      </li>
+    </ol>
+  </article>
+
+  <article class="attaque" id="A-latency-drift" tabindex="0">
+    <header class="attaque-head">
+      <h3>Latency drift</h3>
+      <svg class="attack-arrow" viewBox="0 0 200 40" aria-hidden="true">
+          <line x1="20" y1="20" x2="170" y2="20" stroke="#b7332c" stroke-width="2"/>
+          <polygon points="170,14 182,20 170,26" fill="#b7332c"/>
+          <circle cx="40" cy="20" r="8" fill="rgba(183,51,44,0.15)" stroke="#b7332c" stroke-width="1.5"/>
+          <circle cx="100" cy="20" r="8" fill="rgba(183,51,44,0.15)" stroke="#b7332c" stroke-width="1.5"/>
+          <circle cx="160" cy="20" r="8" fill="rgba(183,51,44,0.15)" stroke="#b7332c" stroke-width="1.5"/>
+          <text x="190" y="25" text-anchor="middle" fill="#b7332c" font-family="JetBrains Mono, monospace" font-size="13" font-weight="600">✗</text>
+        </svg>
+    </header>
+    <ol class="verdicts">
+      <li class="verdict" data-slice="N1" data-verdict="passe">
+        <header class="verdict-head">
+          <span class="verdict-slice">N1 · Préventif</span>
+          <span class="verdict-tag verdict-passe">✗ PASSE</span>
+        </header>
+        <p class="verdict-headline">Perf bench 1 task isolée</p>
+        <ul class="verdict-lines">
+          <li>Pas trajectoire 12 tool calls</li>
+          <li>⚠ TROU LARGE</li>
+          <li>fix : ajouter trajectory bench</li>
+        </ul>
+        <ul class="verdict-fw">
+          <li>k6</li>
+          <li>Promptfoo</li>
+        </ul>
+      </li>
+      <li class="verdict" data-slice="N2" data-verdict="passe">
+        <header class="verdict-head">
+          <span class="verdict-slice">N2 · Détectif</span>
+          <span class="verdict-tag verdict-passe">✗ PASSE</span>
+        </header>
+        <p class="verdict-headline">A/B utilise success_rate</p>
+        <ul class="verdict-lines">
+          <li>pas latency comme métrique 1°</li>
+          <li>user tolère 1-2s, signale &gt; 4s</li>
+          <li>fix : latency obligatoire</li>
+        </ul>
+        <ul class="verdict-fw">
+          <li>Statsig</li>
+        </ul>
+      </li>
+      <li class="verdict" data-slice="N3" data-verdict="passe">
+        <header class="verdict-head">
+          <span class="verdict-slice">N3 · Correctif</span>
+          <span class="verdict-tag verdict-passe">✗ PASSE</span>
+        </header>
+        <p class="verdict-headline">Review note la précision,</p>
+        <ul class="verdict-lines">
+          <li>pas le timing</li>
+          <li>sample 20/sem ≪ M traces</li>
+          <li>fix : checklist timing</li>
+        </ul>
+        <ul class="verdict-fw">
+          <li>LangSmith</li>
+        </ul>
+      </li>
+    </ol>
+  </article>
+  </section>
+
+  <section class="outcomes">
+    <h2>Issues possibles</h2>
+    <p class="lede">Les 7 attaques produisent l'une des deux issues, selon que le gruyère a couvert ou non.</p>
+
+    <div class="outcomes-grid">
+      <article class="outcome outcome--success">
+        <svg class="outcome-icon" viewBox="0 0 48 48" aria-hidden="true">
+          <circle cx="24" cy="24" r="22" fill="none" stroke="#4b9466" stroke-width="2"/>
+          <path d="M14 24l7 8 14-16" fill="none" stroke="#4b9466" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <h3>Agent fiable</h3>
+        <p class="outcome-body">Attaque arrêtée par au moins une couche · 6 attaques sur 7 stoppées dans notre modèle.</p>
+      </article>
+
+      <article class="outcome outcome--failure">
+        <svg class="outcome-icon" viewBox="0 0 48 48" aria-hidden="true">
+          <circle cx="24" cy="24" r="22" fill="none" stroke="#b7332c" stroke-width="2"/>
+          <path d="M16 16l16 16M32 16l-16 16" fill="none" stroke="#b7332c" stroke-width="3" stroke-linecap="round"/>
+        </svg>
+        <h3>Incident</h3>
+        <p class="outcome-body">Trous alignés sur les 3 couches · l'attaque traverse sans être interceptée. Dans notre modèle, c'est <em>latency drift</em>.</p>
+      </article>
+    </div>
+
+    <p class="footnote">
+      « L'empilement n'est pas une garantie ; c'est une <em>réduction de la probabilité</em> qu'une attaque atteigne la prod. La maintenance (Phase 3) re-pondère les trous au fur et à mesure que le modèle évolue. »
+    </p>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <p class="footer-credit">Mathieu Guglielmino · Practice Manager Lincoln</p>
+  <p class="footer-disclosure">Format co-écrit avec l'aide d'une IA. Le contenu engage uniquement l'auteur à titre personnel.</p>
+</footer>
+
+<script type="module">
+  import { mountGruyereHero } from './gruyere-hero.js';
+  mountGruyereHero(document.getElementById('gruyere-hero'));
+</script>
+</body>
+</html>

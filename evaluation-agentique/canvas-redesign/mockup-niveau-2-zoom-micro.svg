@@ -1,0 +1,492 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4000 3000" preserveAspectRatio="xMidYMid meet">
+  <!--
+    Mockup niveau 2 — Ultra-zoom dans une MICRO-SLICE
+    ═════════════════════════════════════════════════
+    Vue après animation de zoom depuis niveau 1B vers la µ-méthode µ-3
+    (Golden regression suite) de C1 Automated evals.
+
+    À ce niveau, c'est du détail technique concret :
+      ▸ Définition + intention
+      ▸ Pipeline d'intégration CI/CD (diagramme)
+      ▸ Exemple de YAML golden task (code snippet)
+      ▸ 3 golden tasks réelles (input/expected/grader)
+      ▸ Trade-offs et failure modes
+      ▸ Affordances de référence (sources, déjà lu, prochain niveau)
+
+    Échap → retour niveau 1B
+  -->
+
+  <defs>
+    <marker id="arr-flow" viewBox="0 0 10 8" refX="9" refY="4"
+            markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 4 L 0 8 Z" fill="#1f5560"/>
+    </marker>
+  </defs>
+
+  <rect width="4000" height="3000" fill="#faf8f3"/>
+
+  <!-- ═══════════════════════════════════════════════════════
+       BREADCRUMB
+       ═══════════════════════════════════════════════════════ -->
+  <g id="breadcrumb">
+    <text x="200" y="90" font-family="Consolas, monospace" font-size="27"
+          letter-spacing="0.2em" fill="#8a7448">
+      <tspan fill="#b8582e" text-decoration="underline">↑ ÉVALUER UN AGENT</tspan>
+      <tspan dx="20" fill="#5a5a5a">·</tspan>
+      <tspan dx="20" fill="#1f5560">COUCHE 1</tspan>
+      <tspan dx="20" fill="#5a5a5a">·</tspan>
+      <tspan dx="20" fill="#1f5560">C1 AUTOMATED</tspan>
+      <tspan dx="20" fill="#5a5a5a">·</tspan>
+      <tspan dx="20" fill="#1f5560">µ-3 GOLDEN REGRESSION</tspan>
+    </text>
+    <text x="200" y="160" font-family="Cambria, Georgia, serif" font-size="87"
+          font-weight="500" fill="#1a1a1a" letter-spacing="-0.01em">
+      <tspan fill="#1f5560">µ-3</tspan>
+      <tspan dx="20">Golden regression suite</tspan>
+    </text>
+    <text x="200" y="210" font-family="Cambria, Georgia, serif" font-size="36"
+          font-style="italic" fill="#5a5a5a">
+      « La mémoire vivante de ce qui marche — 20 à 100 tasks figées rejouées à chaque ship »
+    </text>
+    <line x1="200" y1="245" x2="800" y2="245" stroke="#1f5560" stroke-width="3"/>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 1 — INTENTION + PIPELINE CI (colonne gauche)
+       ═══════════════════════════════════════════════════════ -->
+
+  <g id="section-intent" transform="translate(180, 300)">
+    <text x="0" y="0" font-family="Consolas, monospace" font-size="24"
+          letter-spacing="0.22em" font-weight="500" fill="#1f5560">
+      ① INTENTION
+    </text>
+    <text x="0" y="50" font-family="Cambria, Georgia, serif" font-size="45"
+          font-weight="500" fill="#1a1a1a">
+      Fixer ce qui marche pour détecter les régressions
+    </text>
+    <text x="0" y="100" font-family="Cambria, Georgia, serif" font-size="33"
+          font-style="italic" fill="#5a5a5a">
+      Avant de partir explorer des nouvelles capacités, on veut être sûr
+    </text>
+    <text x="0" y="128" font-family="Cambria, Georgia, serif" font-size="33"
+          font-style="italic" fill="#5a5a5a">
+      que les comportements établis n'ont pas régressé.
+    </text>
+
+    <!-- Pipeline diagram -->
+    <text x="0" y="220" font-family="Consolas, monospace" font-size="24"
+          letter-spacing="0.22em" font-weight="500" fill="#1f5560">
+      ② PIPELINE CI/CD
+    </text>
+
+    <!-- 4 étapes verticales avec flèches -->
+    <g transform="translate(0, 270)" font-family="Cambria, Georgia, serif">
+      <!-- step 1 -->
+      <rect x="0" y="0" width="1620" height="120" rx="10" fill="#faf8f3" stroke="#1f5560" stroke-width="2"/>
+      <circle cx="50" cy="60" r="30" fill="#1f5560"/>
+      <text x="50" y="72" text-anchor="middle" font-size="39" font-weight="600" fill="#faf8f3">1</text>
+      <text x="100" y="55" font-size="33" font-weight="500" fill="#1a1a1a">PR ouverte / merge sur main</text>
+      <text x="100" y="90" font-size="26" font-style="italic" fill="#5a5a5a">
+        trigger automatique : modification d'un prompt, d'un tool, d'un model ID
+      </text>
+
+      <line x1="810" y1="120" x2="810" y2="160" stroke="#1f5560" stroke-width="3" marker-end="url(#arr-flow)"/>
+
+      <!-- step 2 -->
+      <rect x="0" y="170" width="1620" height="120" rx="10" fill="#faf8f3" stroke="#1f5560" stroke-width="2"/>
+      <circle cx="50" cy="230" r="30" fill="#1f5560"/>
+      <text x="50" y="242" text-anchor="middle" font-size="39" font-weight="600" fill="#faf8f3">2</text>
+      <text x="100" y="225" font-size="33" font-weight="500" fill="#1a1a1a">Run sur N tasks figées (en parallèle)</text>
+      <text x="100" y="260" font-size="26" font-style="italic" fill="#5a5a5a">
+        chaque task : input → agent → output → grader → score 0-100
+      </text>
+
+      <line x1="810" y1="290" x2="810" y2="330" stroke="#1f5560" stroke-width="3" marker-end="url(#arr-flow)"/>
+
+      <!-- step 3 -->
+      <rect x="0" y="340" width="1620" height="120" rx="10" fill="#faf8f3" stroke="#1f5560" stroke-width="2"/>
+      <circle cx="50" cy="400" r="30" fill="#1f5560"/>
+      <text x="50" y="412" text-anchor="middle" font-size="39" font-weight="600" fill="#faf8f3">3</text>
+      <text x="100" y="395" font-size="33" font-weight="500" fill="#1a1a1a">Compare baseline (N-1) vs candidate (N)</text>
+      <text x="100" y="430" font-size="26" font-style="italic" fill="#5a5a5a">
+        Δ score par task + Δ agrégé + détection régressions individuelles
+      </text>
+
+      <line x1="810" y1="460" x2="810" y2="500" stroke="#1f5560" stroke-width="3" marker-end="url(#arr-flow)"/>
+
+      <!-- step 4 -->
+      <rect x="0" y="510" width="1620" height="120" rx="10" fill="#faf8f3" stroke="#1f5560" stroke-width="3"/>
+      <circle cx="50" cy="570" r="30" fill="#b58a2c"/>
+      <text x="50" y="582" text-anchor="middle" font-size="39" font-weight="600" fill="#faf8f3">4</text>
+      <text x="100" y="565" font-size="33" font-weight="500" fill="#1a1a1a">Gate : merge OK / blocked / human-review</text>
+      <text x="100" y="600" font-size="26" font-style="italic" fill="#5a5a5a">
+        seuil typique : pas de task régressée de plus de 5 points
+      </text>
+    </g>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 2 — STRUCTURE D'UNE GOLDEN TASK (colonne droite)
+       ═══════════════════════════════════════════════════════ -->
+
+  <g id="section-yaml" transform="translate(2000, 300)">
+    <text x="0" y="0" font-family="Consolas, monospace" font-size="24"
+          letter-spacing="0.22em" font-weight="500" fill="#1f5560">
+      ③ ANATOMIE D'UNE GOLDEN TASK
+    </text>
+    <text x="0" y="50" font-family="Cambria, Georgia, serif" font-size="33"
+          font-style="italic" fill="#5a5a5a">
+      Chaque task est un YAML versionné — l'input, le contexte, l'output attendu, le grader.
+    </text>
+
+    <!-- Code block YAML -->
+    <g transform="translate(0, 100)">
+      <rect x="0" y="0" width="1820" height="810" rx="10" fill="#1a1a1a" stroke="#1f5560" stroke-width="2"/>
+      <!-- editor chrome -->
+      <rect x="0" y="0" width="1820" height="40" rx="10" fill="#2a2a2a"/>
+      <circle cx="20" cy="20" r="6" fill="#ff5f56"/>
+      <circle cx="42" cy="20" r="6" fill="#ffbd2e"/>
+      <circle cx="64" cy="20" r="6" fill="#27c93f"/>
+      <text x="100" y="26" font-family="Consolas, monospace" font-size="20" fill="#9a9ca5">
+        evals/golden/task_037_book_refund.yaml
+      </text>
+
+      <!-- YAML content -->
+      <g font-family="Consolas, monospace" font-size="28" fill="#e5e0d8">
+        <text x="30" y="75"><tspan fill="#b58a2c">id:</tspan>          task_037_book_refund</text>
+        <text x="30" y="105"><tspan fill="#b58a2c">domain:</tspan>      customer_support</text>
+        <text x="30" y="135"><tspan fill="#b58a2c">difficulty:</tspan>  medium</text>
+        <text x="30" y="165"><tspan fill="#b58a2c">tags:</tspan>        [refund, multi_turn, edge_case]</text>
+        <text x="30" y="195"><tspan fill="#b58a2c">source:</tspan>      bug_ticket_#1234 (S+12)</text>
+
+        <text x="30" y="245"><tspan fill="#b58a2c">input:</tspan></text>
+        <text x="60" y="275"><tspan fill="#b58a2c">user_query:</tspan>  <tspan fill="#7fc97f">"</tspan></text>
+        <text x="80" y="305" fill="#e5e0d8">  Je veux annuler ma commande #BK-8821 (livre</text>
+        <text x="80" y="335" fill="#e5e0d8">  Eat Pray Love) — il est arrivé déchiré.</text>
+        <text x="80" y="365" fill="#7fc97f">  "</text>
+        <text x="60" y="395"><tspan fill="#b58a2c">context:</tspan></text>
+        <text x="80" y="425" fill="#e5e0d8">  order_id: BK-8821</text>
+        <text x="80" y="455" fill="#e5e0d8">  policy_window: 30 days</text>
+        <text x="80" y="485" fill="#e5e0d8">  damaged_item: true</text>
+
+        <text x="30" y="535"><tspan fill="#b58a2c">expected_outcome:</tspan></text>
+        <text x="60" y="565" fill="#e5e0d8"><tspan fill="#b58a2c">tool_calls:</tspan>    [check_order, issue_refund]</text>
+        <text x="60" y="595" fill="#e5e0d8"><tspan fill="#b58a2c">refund_amount:</tspan> 14.99</text>
+        <text x="60" y="625" fill="#e5e0d8"><tspan fill="#b58a2c">tone:</tspan>          empathetic</text>
+        <text x="60" y="655" fill="#e5e0d8"><tspan fill="#b58a2c">no_call:</tspan>       [escalate_to_human]</text>
+
+        <text x="30" y="705"><tspan fill="#b58a2c">grader:</tspan></text>
+        <text x="60" y="735" fill="#e5e0d8"><tspan fill="#b58a2c">type:</tspan> hybrid</text>
+        <text x="60" y="765" fill="#e5e0d8"><tspan fill="#b58a2c">weights:</tspan> {tools: 0.5, amount: 0.3, tone: 0.2}</text>
+      </g>
+    </g>
+
+    <!-- Légende -->
+    <text x="0" y="950" font-family="Cambria, Georgia, serif" font-size="30"
+          font-style="italic" fill="#5a5a5a">
+      Une golden task = un comportement attendu reproductible, jugé par hybrid grader (déterministe + LAJ).
+    </text>
+    <text x="0" y="978" font-family="Cambria, Georgia, serif" font-size="30"
+          font-style="italic" fill="#5a5a5a">
+      Issue d'un vrai ticket (semaine 12), figée pour ne JAMAIS régresser.
+    </text>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 3 — DASHBOARD : VUE TYPIQUE D'UN RUN
+       ═══════════════════════════════════════════════════════ -->
+
+  <g id="section-dashboard" transform="translate(180, 1380)">
+    <text x="0" y="0" font-family="Consolas, monospace" font-size="24"
+          letter-spacing="0.22em" font-weight="500" fill="#1f5560">
+      ④ LE DASHBOARD QU'ON REGARDE
+    </text>
+    <text x="0" y="50" font-family="Cambria, Georgia, serif" font-size="33"
+          font-style="italic" fill="#5a5a5a">
+      Sortie typique d'une run sur 50 golden tasks — comparaison baseline vs candidate
+    </text>
+
+    <!-- Dashboard mockup -->
+    <g transform="translate(0, 100)">
+      <rect x="0" y="0" width="3620" height="600" rx="10" fill="#faf8f3" stroke="#1f5560" stroke-width="2"/>
+
+      <!-- Header row -->
+      <rect x="0" y="0" width="3620" height="60" rx="10" fill="#e8f0f1"/>
+      <g font-family="Consolas, monospace" font-size="21" letter-spacing="0.15em" font-weight="500" fill="#1f5560">
+        <text x="40" y="38">TASK ID</text>
+        <text x="700" y="38">DOMAIN</text>
+        <text x="1080" y="38">BASELINE</text>
+        <text x="1380" y="38">CANDIDATE</text>
+        <text x="1720" y="38">Δ</text>
+        <text x="1920" y="38">STATUT</text>
+        <text x="2400" y="38">TOOL CALLS</text>
+        <text x="2900" y="38">LATENCE</text>
+        <text x="3300" y="38">COÛT</text>
+      </g>
+
+      <!-- Rows -->
+      <g font-family="Consolas, monospace" font-size="26" fill="#1a1a1a">
+
+        <!-- row 1 OK -->
+        <line x1="20" y1="100" x2="3600" y2="100" stroke="#e5d3a8" opacity="0.5"/>
+        <text x="40" y="92">task_037_book_refund</text>
+        <text x="700" y="92" fill="#5a5a5a">customer_support</text>
+        <text x="1080" y="92">94</text>
+        <text x="1380" y="92">95</text>
+        <text x="1720" y="92" fill="#4b9466">+1</text>
+        <g transform="translate(1920, 78)">
+          <rect x="0" y="0" width="80" height="22" rx="3" fill="#4b9466"/>
+          <text x="40" y="16" text-anchor="middle" font-size="20" fill="#faf8f3" font-weight="500">PASS</text>
+        </g>
+        <text x="2400" y="92">2 ✓</text>
+        <text x="2900" y="92">820 ms</text>
+        <text x="3300" y="92">$0.018</text>
+
+        <!-- row 2 OK -->
+        <line x1="20" y1="140" x2="3600" y2="140" stroke="#e5d3a8" opacity="0.5"/>
+        <text x="40" y="132">task_038_address_change</text>
+        <text x="700" y="132" fill="#5a5a5a">customer_support</text>
+        <text x="1080" y="132">88</text>
+        <text x="1380" y="132">88</text>
+        <text x="1720" y="132" fill="#8a7448">0</text>
+        <g transform="translate(1920, 118)">
+          <rect x="0" y="0" width="80" height="22" rx="3" fill="#4b9466"/>
+          <text x="40" y="16" text-anchor="middle" font-size="20" fill="#faf8f3" font-weight="500">PASS</text>
+        </g>
+        <text x="2400" y="132">3 ✓</text>
+        <text x="2900" y="132">1 200 ms</text>
+        <text x="3300" y="132">$0.024</text>
+
+        <!-- row 3 OK -->
+        <line x1="20" y1="180" x2="3600" y2="180" stroke="#e5d3a8" opacity="0.5"/>
+        <text x="40" y="172">task_039_double_charge</text>
+        <text x="700" y="172" fill="#5a5a5a">customer_support</text>
+        <text x="1080" y="172">91</text>
+        <text x="1380" y="172">92</text>
+        <text x="1720" y="172" fill="#4b9466">+1</text>
+        <g transform="translate(1920, 158)">
+          <rect x="0" y="0" width="80" height="22" rx="3" fill="#4b9466"/>
+          <text x="40" y="16" text-anchor="middle" font-size="20" fill="#faf8f3" font-weight="500">PASS</text>
+        </g>
+        <text x="2400" y="172">2 ✓</text>
+        <text x="2900" y="172">920 ms</text>
+        <text x="3300" y="172">$0.019</text>
+
+        <!-- row 4 RÉGRESSION -->
+        <line x1="20" y1="220" x2="3600" y2="220" stroke="#e5d3a8" opacity="0.5"/>
+        <rect x="0" y="220" width="3620" height="40" fill="#fbf2ea" opacity="0.7"/>
+        <text x="40" y="212" font-weight="600">task_040_subscription_cancel</text>
+        <text x="700" y="212" fill="#5a5a5a">subscription</text>
+        <text x="1080" y="212">86</text>
+        <text x="1380" y="212" font-weight="600">73</text>
+        <text x="1720" y="212" fill="#b7332c" font-weight="600">−13</text>
+        <g transform="translate(1920, 198)">
+          <rect x="0" y="0" width="80" height="22" rx="3" fill="#b7332c"/>
+          <text x="40" y="16" text-anchor="middle" font-size="20" fill="#faf8f3" font-weight="500">FAIL</text>
+        </g>
+        <text x="2400" y="212" fill="#b7332c">1 ✗ + 1 ⚠</text>
+        <text x="2900" y="212">2 100 ms</text>
+        <text x="3300" y="212">$0.034</text>
+
+        <!-- row 5 OK -->
+        <line x1="20" y1="260" x2="3600" y2="260" stroke="#e5d3a8" opacity="0.5"/>
+        <text x="40" y="252">task_041_lost_package</text>
+        <text x="700" y="252" fill="#5a5a5a">customer_support</text>
+        <text x="1080" y="252">79</text>
+        <text x="1380" y="252">82</text>
+        <text x="1720" y="252" fill="#4b9466">+3</text>
+        <g transform="translate(1920, 238)">
+          <rect x="0" y="0" width="80" height="22" rx="3" fill="#4b9466"/>
+          <text x="40" y="16" text-anchor="middle" font-size="20" fill="#faf8f3" font-weight="500">PASS</text>
+        </g>
+        <text x="2400" y="252">3 ✓</text>
+        <text x="2900" y="252">1 580 ms</text>
+        <text x="3300" y="252">$0.027</text>
+
+        <!-- row 6 RÉGRESSION -->
+        <line x1="20" y1="300" x2="3600" y2="300" stroke="#e5d3a8" opacity="0.5"/>
+        <rect x="0" y="300" width="3620" height="40" fill="#fbf2ea" opacity="0.7"/>
+        <text x="40" y="292" font-weight="600">task_042_partial_return</text>
+        <text x="700" y="292" fill="#5a5a5a">subscription</text>
+        <text x="1080" y="292">90</text>
+        <text x="1380" y="292" font-weight="600">82</text>
+        <text x="1720" y="292" fill="#b7332c" font-weight="600">−8</text>
+        <g transform="translate(1920, 278)">
+          <rect x="0" y="0" width="80" height="22" rx="3" fill="#b7332c"/>
+          <text x="40" y="16" text-anchor="middle" font-size="20" fill="#faf8f3" font-weight="500">FAIL</text>
+        </g>
+        <text x="2400" y="292" fill="#b58a2c">2 ⚠</text>
+        <text x="2900" y="292">1 750 ms</text>
+        <text x="3300" y="292">$0.029</text>
+
+        <!-- ... 44 autres tasks ... -->
+        <text x="40" y="335" font-style="italic" fill="#8a7448">… 44 autres tasks (toutes PASS)</text>
+
+        <!-- Aggregate row -->
+        <line x1="20" y1="365" x2="3600" y2="365" stroke="#1f5560" stroke-width="2"/>
+        <g transform="translate(0, 380)">
+          <text x="40" y="22" font-weight="600">AGRÉGÉ (50 tasks)</text>
+          <text x="1080" y="22" font-weight="500">88.4</text>
+          <text x="1380" y="22" font-weight="500">87.2</text>
+          <text x="1720" y="22" fill="#b58a2c" font-weight="600">−1.2</text>
+          <g transform="translate(1920, 8)">
+            <rect x="0" y="0" width="180" height="22" rx="3" fill="#b58a2c"/>
+            <text x="90" y="16" text-anchor="middle" font-size="20" fill="#faf8f3" font-weight="500">REVIEW REQUIRED</text>
+          </g>
+          <text x="2400" y="22">avg 2.4 calls</text>
+          <text x="2900" y="22">avg 1 280 ms</text>
+          <text x="3300" y="22">total $1.18</text>
+        </g>
+
+        <!-- Verdict -->
+        <text x="40" y="475" font-family="Cambria, Georgia, serif" font-size="33"
+              font-style="italic" fill="#1a1a1a">
+          → 2 régressions critiques détectées sur le domaine
+        </text>
+        <text x="40" y="503" font-family="Cambria, Georgia, serif" font-size="33"
+              font-style="italic" font-weight="500" fill="#b7332c">
+          subscription. Merge bloqué — investigation required.
+        </text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 4 — TRADE-OFFS / FAILURE MODES
+       ═══════════════════════════════════════════════════════ -->
+
+  <g id="section-tradeoffs" transform="translate(180, 2150)">
+    <text x="0" y="0" font-family="Consolas, monospace" font-size="24"
+          letter-spacing="0.22em" font-weight="500" fill="#1f5560">
+      ⑤ TRADE-OFFS ET LIMITES
+    </text>
+
+    <!-- 3 colonnes : strengths, weaknesses, common failure modes -->
+    <g transform="translate(0, 60)">
+      <!-- col 1 — points forts -->
+      <g>
+        <rect x="0" y="0" width="1140" height="500" rx="10" fill="#e8f3ec"
+              stroke="#4b9466" stroke-width="2"/>
+        <text x="40" y="50" font-family="Consolas, monospace" font-size="21"
+              letter-spacing="0.18em" font-weight="500" fill="#4b9466">✓ FORCES</text>
+
+        <g font-family="Cambria, Georgia, serif" font-size="30" fill="#1a1a1a">
+          <text x="40" y="100" font-weight="500">Détection rapide</text>
+          <text x="40" y="130" font-size="26" font-style="italic" fill="#5a5a5a">la régression est captée AVANT ship, pas en prod.</text>
+
+          <text x="40" y="190" font-weight="500">Reproductible &amp; objectif</text>
+          <text x="40" y="220" font-size="26" font-style="italic" fill="#5a5a5a">mêmes inputs, mêmes graders, scores comparables.</text>
+
+          <text x="40" y="280" font-weight="500">Value compose</text>
+          <text x="40" y="310" font-size="26" font-style="italic" fill="#5a5a5a">chaque task ajoutée renforce la couverture pour toujours.</text>
+
+          <text x="40" y="370" font-weight="500">Coût marginal faible</text>
+          <text x="40" y="400" font-size="26" font-style="italic" fill="#5a5a5a">une fois la golden suite construite, elle tourne à l'auto.</text>
+
+          <text x="40" y="450" font-weight="500">Trust signal pour PR</text>
+          <text x="40" y="480" font-size="26" font-style="italic" fill="#5a5a5a">le reviewer voit le delta avant d'approuver.</text>
+        </g>
+      </g>
+
+      <!-- col 2 — points faibles -->
+      <g transform="translate(1190, 0)">
+        <rect x="0" y="0" width="1140" height="500" rx="10" fill="#fbf2ea"
+              stroke="#b8582e" stroke-width="2"/>
+        <text x="40" y="50" font-family="Consolas, monospace" font-size="21"
+              letter-spacing="0.18em" font-weight="500" fill="#b8582e">⚠ LIMITES</text>
+
+        <g font-family="Cambria, Georgia, serif" font-size="30" fill="#1a1a1a">
+          <text x="40" y="100" font-weight="500">Couvre que le connu</text>
+          <text x="40" y="130" font-size="26" font-style="italic" fill="#5a5a5a">les modes d'échec inédits passent au travers.</text>
+
+          <text x="40" y="190" font-weight="500">Drift de baseline</text>
+          <text x="40" y="220" font-size="26" font-style="italic" fill="#5a5a5a">si le LAJ change, la baseline doit être re-calibrée.</text>
+
+          <text x="40" y="280" font-weight="500">Investissement up-front</text>
+          <text x="40" y="310" font-size="26" font-style="italic" fill="#5a5a5a">construire 50 golden tasks = 1-2 semaines de travail.</text>
+
+          <text x="40" y="370" font-weight="500">Couverture pas mesurée</text>
+          <text x="40" y="400" font-size="26" font-style="italic" fill="#5a5a5a">on ne sait pas quels comportements ne sont PAS testés.</text>
+
+          <text x="40" y="450" font-weight="500">Latence non testée</text>
+          <text x="40" y="480" font-size="26" font-style="italic" fill="#5a5a5a">
+            <tspan font-weight="500" fill="#b7332c">⚠ d'où l'incident latency drift au niveau 0.</tspan>
+          </text>
+        </g>
+      </g>
+
+      <!-- col 3 — failure modes typiques -->
+      <g transform="translate(2380, 0)">
+        <rect x="0" y="0" width="1240" height="500" rx="10" fill="#faf8f3"
+              stroke="#1f5560" stroke-width="2"/>
+        <text x="40" y="50" font-family="Consolas, monospace" font-size="21"
+              letter-spacing="0.18em" font-weight="500" fill="#1f5560">🔎 FAILURE MODES OBSERVÉS</text>
+
+        <g font-family="Cambria, Georgia, serif" font-size="30" fill="#1a1a1a">
+          <text x="40" y="100" font-weight="500">« Mais ça marche en local ! »</text>
+          <text x="40" y="130" font-size="26" font-style="italic" fill="#5a5a5a">stale data, fixtures locales différentes du CI.</text>
+
+          <text x="40" y="190" font-weight="500">Suite trop courte</text>
+          <text x="40" y="220" font-size="26" font-style="italic" fill="#5a5a5a">5 tasks ≠ couverture. Démarrer à 20, viser 50-100.</text>
+
+          <text x="40" y="280" font-weight="500">Tâches « trivialement faciles »</text>
+          <text x="40" y="310" font-size="26" font-style="italic" fill="#5a5a5a">si tout passe à 99 %, on ne voit pas les régressions subtiles.</text>
+
+          <text x="40" y="370" font-weight="500">Grader instable</text>
+          <text x="40" y="400" font-size="26" font-style="italic" fill="#5a5a5a">LAJ flaky → bruit, fausses régressions, perte de confiance.</text>
+
+          <text x="40" y="450" font-weight="500">Tasks devenues obsolètes</text>
+          <text x="40" y="480" font-size="26" font-style="italic" fill="#5a5a5a">prompt updated, expected output non rafraîchi.</text>
+        </g>
+      </g>
+    </g>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════
+       MINI-MAP
+       ═══════════════════════════════════════════════════════ -->
+  <g id="minimap" transform="translate(3460, 90)" opacity="0.85">
+    <rect x="0" y="0" width="320" height="120" rx="8" fill="#faf8f3" stroke="#a88b4d" stroke-width="2"/>
+    <text x="10" y="20" font-family="Consolas, monospace" font-size="16"
+          letter-spacing="0.15em" fill="#8a7448">VUE D'ENSEMBLE</text>
+    <g transform="translate(10, 32)">
+      <rect x="0" y="0" width="60" height="40" rx="4" fill="#faf8f3" stroke="#1f5560" stroke-width="1.5" opacity="0.4"/>
+      <rect x="74" y="0" width="60" height="40" rx="4" fill="#faf8f3" stroke="#b58a2c" stroke-width="1.5" opacity="0.4"/>
+      <rect x="148" y="0" width="60" height="40" rx="4" fill="#faf8f3" stroke="#a07320" stroke-width="1.5" opacity="0.4"/>
+      <rect x="222" y="0" width="60" height="40" rx="4" fill="#faf8f3" stroke="#b7332c" stroke-width="1.5" opacity="0.4"/>
+      <!-- mini cheese N1 surligné -->
+      <rect x="0" y="50" width="282" height="20" rx="3" fill="#1f5560" stroke="#1f5560" stroke-width="2"/>
+      <!-- pinpoint inside N1 -->
+      <circle cx="50" cy="60" r="6" fill="#b7332c" stroke="#faf8f3" stroke-width="2"/>
+      <text x="64" y="64" font-family="Consolas, monospace" font-size="15"
+            font-weight="600" fill="#b7332c">▸ µ-3</text>
+      <rect x="0" y="74" width="282" height="14" rx="3" fill="#f4eccc" stroke="#b58a2c" stroke-width="1" opacity="0.5"/>
+    </g>
+    <text x="160" y="-2" text-anchor="middle" font-family="Cambria, Georgia, serif"
+          font-size="18" font-style="italic" fill="#1f5560">Échap pour revenir</text>
+  </g>
+
+  <!-- ═══════════════════════════════════════════════════════
+       FOOTER
+       ═══════════════════════════════════════════════════════ -->
+  <g id="footer">
+    <line x1="200" y1="2750" x2="3800" y2="2750" stroke="#e5d3a8" stroke-width="2"/>
+
+    <text x="2000" y="2820" text-anchor="middle" font-family="Caveat, cursive"
+          font-size="48" fill="#b8582e">
+      Niveau 2/3 atteint — détail technique · Échap pour la vue d'ensemble ↑
+    </text>
+    <text x="2000" y="2865" text-anchor="middle" font-family="Cambria, Georgia, serif"
+          font-size="24" font-style="italic" fill="#5a5a5a">
+      à ce niveau on touche le concret : YAML, dashboards, trade-offs · pas de zoom supplémentaire
+    </text>
+
+    <text x="100" y="2960" font-family="Consolas, monospace" font-size="20"
+          fill="#8a7448" opacity="0.7" letter-spacing="0.1em">
+      mathieugug.github.io/evaluation-agentique · étude 08 · v.20260520
+    </text>
+    <text x="3900" y="2960" text-anchor="end" font-family="Cambria, Georgia, serif"
+          font-style="italic" font-size="21" fill="#b8582e">MG</text>
+  </g>
+</svg>
