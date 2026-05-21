@@ -963,6 +963,47 @@ h3 { font-size: clamp(22px, 2.8vw, 32px); }
   margin-top: clamp(16px, 2vw, 32px);
 }
 
+/* === Scroll-margin pour offset topbar (+ minimap aux niveaux intermédiaires) ===
+   Permet à scrollIntoView() de positionner l'élément ciblé SOUS la zone fixée :
+   - Sub-cards (S-x, C-x) : juste sous topbar 56px
+   - Phases/couches/attaques : sous topbar + minimap (~250px total) */
+.subcard, .phase, .couche, .attaque {
+  scroll-margin-top: clamp(72px, 8vh, 88px);
+}
+
+:root[data-zoom^="P"] .phase,
+:root[data-zoom^="N"] .couche,
+:root[data-zoom^="A-"] .attaque {
+  scroll-margin-top: clamp(260px, 30vh, 300px);
+}
+
+/* === Transitions smooth entre niveaux === */
+.hero,
+.gruyere-figure,
+.gruyere-diagram {
+  transition: height 350ms cubic-bezier(.4, 0, .2, 1),
+              max-height 350ms cubic-bezier(.4, 0, .2, 1),
+              padding 300ms ease;
+}
+
+.gruyere-diagram [data-zoom-target] {
+  transition: opacity 350ms ease, stroke-width 250ms ease;
+}
+
+.gruyere-diagram [data-zoom-target] > rect:first-of-type {
+  transition: stroke-width 250ms ease;
+}
+
+.phase, .couche, .attaque, .subcard {
+  transition: opacity 300ms ease, border-color 250ms ease;
+}
+
+/* Le hero passe en sticky → static au sub-card : sticky ne s'anime pas
+   (changement de position discret), donc on accepte le saut.
+   Au moins l'opacité et la hauteur de la minimap s'animent. */
+
+html { scroll-behavior: smooth; }
+
 /* Niveau sub-card (S-x / C-x) : minimap CACHEE — la card prend tout */
 :root[data-zoom^="S"] .hero,
 :root[data-zoom^="C"] .hero {
@@ -2841,7 +2882,19 @@ h3 { font-size: clamp(22px, 2.8vw, 32px); }
       const target = document.getElementById(zoom);
       if (target && !opts.skipFocus) {
         target.focus({ preventScroll: true });
+        // Scroll smooth vers l'élément focalisé, avec offset topbar+minimap
+        // (scroll-margin-top défini en CSS sur les targets pertinentes)
+        if (!opts.skipScroll) {
+          // Petit délai pour laisser le layout se stabiliser après le changement
+          // de data-zoom (display:none → block sur les sections)
+          requestAnimationFrame(() => {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          });
+        }
       }
+    } else if (!opts.skipScroll) {
+      // Niveau 0 : retour au top
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
     // Aria-live announce
     const live = document.getElementById('zoom-live');
