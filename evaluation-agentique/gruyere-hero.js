@@ -236,20 +236,20 @@ function updateImpacts(rings, dt) {
 }
 
 // Wireframe cube (12 edges) + faint base socle. Defines the volume so the
-// implicit cube becomes visible. The cube is centered on (0, 0, (CUBE_Z_MIN + CUBE_Z_MAX)/2).
+// implicit cube becomes legible without being loud. Centered on z = (CUBE_Z_MIN + CUBE_Z_MAX) / 2.
 function buildVolumeFrame() {
   const group = new THREE.Group();
   const w = PLATE_HALF * 2;            // 4
   const d = CUBE_Z_MAX - CUBE_Z_MIN;   // 4
   const centerZ = (CUBE_Z_MIN + CUBE_Z_MAX) / 2;
 
-  // 12 cube edges.
+  // 12 cube edges (faint).
   const box = new THREE.BoxGeometry(w, w, d);
   const edges = new THREE.EdgesGeometry(box);
   const edgeMat = new THREE.LineBasicMaterial({
     color: 0x1a1a1a,
     transparent: true,
-    opacity: 0.32,
+    opacity: 0.22,
   });
   const wire = new THREE.LineSegments(edges, edgeMat);
   wire.position.z = centerZ;
@@ -271,7 +271,7 @@ function buildVolumeFrame() {
   socle.position.set(0, -PLATE_HALF - 0.02, centerZ);
   group.add(socle);
 
-  // Socle outline (thin border around the base, slightly darker).
+  // Socle outline (thin border around the base).
   const halfW = socleW / 2;
   const halfD = socleD / 2;
   const outlinePositions = new Float32Array([
@@ -285,13 +285,28 @@ function buildVolumeFrame() {
   const outlineMat = new THREE.LineBasicMaterial({
     color: 0x1a1a1a,
     transparent: true,
-    opacity: 0.45,
+    opacity: 0.40,
   });
   const outline = new THREE.LineSegments(outlineGeom, outlineMat);
   outline.position.set(0, -PLATE_HALF - 0.02, centerZ);
   group.add(outline);
 
   return group;
+}
+
+// Bounding sphere of the cube (corner-to-center). Camera distance is derived
+// from this radius + the camera's actual FOV/aspect, so the scene always fits.
+const SCENE_RADIUS = 3.6;
+const FIT_PADDING = 1.25;
+
+function computeOrbitRadius(camera) {
+  const vFovHalf = camera.fov * Math.PI / 360;
+  const aspect = camera.aspect;
+  // Horizontal half-FOV derived from vertical FOV and aspect ratio.
+  const hFovHalf = Math.atan(aspect * Math.tan(vFovHalf));
+  // The narrower of the two dimensions constrains the required distance.
+  const minHalfFov = Math.min(vFovHalf, hFovHalf);
+  return FIT_PADDING * SCENE_RADIUS / Math.sin(minHalfFov);
 }
 
 function buildPlate(holes, z, opacity) {
@@ -480,12 +495,23 @@ export function mountGruyereHero(container, opts = {}) {
     psys.geom.setDrawRange(0, drawCount);
   }
 
-  // Orbital camera: slow rotation around the cube center.
-  const ORBIT_RADIUS = 7.5;
-  const ORBIT_Y = 2.0;
+  // Orbital camera: slow rotation around the cube center. Distance is
+  // recomputed each frame from the current aspect so the scene never clips.
+  const ORBIT_Y_RATIO = 0.18;  // camera Y as a fraction of orbit radius
   const ORBIT_CENTER = new THREE.Vector3(0, 0, (CUBE_Z_MIN + CUBE_Z_MAX) / 2);
-  // Initial angle: 3/4 view from front-left, slightly above the cube.
   let orbitAngle = -Math.PI * 0.78;
+
+  function syncViewport() {
+    const w = container.clientWidth;
+    const h = container.clientHeight;
+    if (w === 0 || h === 0) return;
+    const aspect = w / h;
+    if (Math.abs(camera.aspect - aspect) > 1e-3) {
+      camera.aspect = aspect;
+      camera.updateProjectionMatrix();
+    }
+    renderer.setSize(w, h, false);
+  }
 
   let rafId = null;
   function animate() {
@@ -494,11 +520,15 @@ export function mountGruyereHero(container, opts = {}) {
     const dt = Math.min(0.05, (now - lastT) / 1000);
     lastT = now;
 
+    syncViewport();
+
     orbitAngle += config.orbitSpeed * dt;
+    const orbitRadius = computeOrbitRadius(camera);
+    const orbitY = orbitRadius * ORBIT_Y_RATIO;
     camera.position.set(
-      ORBIT_CENTER.x + ORBIT_RADIUS * Math.sin(orbitAngle),
-      ORBIT_Y,
-      ORBIT_CENTER.z + ORBIT_RADIUS * Math.cos(orbitAngle),
+      ORBIT_CENTER.x + orbitRadius * Math.sin(orbitAngle),
+      orbitY,
+      ORBIT_CENTER.z + orbitRadius * Math.cos(orbitAngle),
     );
     camera.lookAt(ORBIT_CENTER);
 
