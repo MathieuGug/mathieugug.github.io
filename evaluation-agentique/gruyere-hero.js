@@ -12,6 +12,11 @@ const DEFAULTS = {
   showResetButton: false,
   orbitSpeed: 0.015,
   holeSeed: 'eval-2026',
+  // Target fraction of emitted particles that reach the accumulator (the "attack
+  // success rate"). The hole alignment between plates is tuned at mount time
+  // via Monte Carlo until the geometric survival rate matches this target.
+  // 0.01 = 1% — realistic for stacked defenses.
+  targetSurvivalRate: 0.01,
 };
 
 // Deterministic RNG: mulberry32. Same seed string → same hole layout on all 3 pages.
@@ -58,13 +63,14 @@ function tooClose(hole, others, slack = 0.1) {
   return false;
 }
 
-function generateHoles(plateIndex, rng, parentHoles) {
+function generateHoles(plateIndex, rng, parentHoles, alignRatioOverride) {
   const target = 4 + Math.floor(rng() * 5); // 4..8 inclusive
   const holes = [];
 
   // Alignment pass: copy a fraction of parent holes (with small jitter).
   if (parentHoles) {
-    const ratio = plateIndex === 1 ? ALIGN_P2_TO_P1 : ALIGN_P3_TO_P2;
+    const defaultRatio = plateIndex === 1 ? ALIGN_P2_TO_P1 : ALIGN_P3_TO_P2;
+    const ratio = alignRatioOverride != null ? alignRatioOverride : defaultRatio;
     const nAlign = Math.round(parentHoles.length * ratio);
     const shuffled = parentHoles.slice().sort(() => rng() - 0.5);
     for (let i = 0; i < nAlign && holes.length < target; i++) {
@@ -92,6 +98,73 @@ function generateHoles(plateIndex, rng, parentHoles) {
     if (!tooClose(candidate, holes)) holes.push(candidate);
   }
   return holes;
+}
+
+// Monte Carlo: estimate the geometric survival rate of `plates` (array of
+// { holes, z }). N random spawn positions, count how many pass-through.
+function monteCarloSurvival(plates, n) {
+  let survivors = 0;
+  for (let i = 0; i < n; i++) {
+    const x = (Math.random() * 2 - 1) * 2.2; // SPAWN_HALF — declared further down
+    const y = (Math.random() * 2 - 1) * 2.2;
+    let alive = true;
+    for (const plate of plates) {
+      let hits = false;
+      for (const h of plate.holes) {
+        const dx = x - h.x, dy = y - h.y;
+        if (dx*dx + dy*dy <= h.r * h.r) { hits = true; break; }
+      }
+      if (!hits) { alive = false; break; }
+    }
+    if (alive) survivors++;
+  }
+  return survivors / n;
+}
+
+// Iteratively tune the plate-2-to-1 and plate-3-to-2 alignment ratios until
+// the Monte Carlo survival rate matches `targetRate` within ±25%. The seed
+// stays fixed so hole positions/sizes are identical across iterations —
+// only the count of "aligned" holes changes. Returns the best-fitting
+// hole layouts plus the achieved survival rate.
+function tuneHolesForTarget(seedStr, targetRate, maxAttempts = 8) {
+  let alignP2 = ALIGN_P2_TO_P1;
+  let alignP3 = ALIGN_P3_TO_P2;
+  let bestHoles = null;
+  let bestDelta = Infinity;
+  let bestRate = 0;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const rng = mulberry32(hashSeed(seedStr));
+    const platesHoles = [];
+    for (let i = 0; i < 3; i++) {
+      const parent = i === 0 ? null : platesHoles[i - 1];
+      const ratio = i === 0 ? null : (i === 1 ? alignP2 : alignP3);
+      platesHoles.push(generateHoles(i, rng, parent, ratio));
+    }
+    const platesForSim = platesHoles.map((h, i) => ({ holes: h, z: PLATE_Z[i] }));
+    const rate = monteCarloSurvival(platesForSim, 5000);
+
+    const delta = Math.abs(rate - targetRate);
+    if (delta < bestDelta) {
+      bestDelta = delta;
+      bestHoles = platesHoles;
+      bestRate = rate;
+    }
+    if (targetRate > 0 && delta / targetRate < 0.25) break;
+
+    // Adjust toward target. Sqrt damping keeps it stable.
+    if (rate > 0) {
+      const factor = Math.sqrt(targetRate / rate);
+      alignP2 = Math.max(0.0, Math.min(0.95, alignP2 * factor));
+      alignP3 = Math.max(0.0, Math.min(0.95, alignP3 * factor));
+    } else {
+      // No survivors at all — push alignment up.
+      alignP2 = Math.min(0.95, alignP2 * 1.5 + 0.05);
+      alignP3 = Math.min(0.95, alignP3 * 1.5 + 0.05);
+    }
+  }
+
+  return { holesPerPlate: bestHoles, achievedRate: bestRate };
 }
 
 function detectCapabilities() {
@@ -411,14 +484,13 @@ export function mountGruyereHero(container, opts = {}) {
   const frame = buildVolumeFrame();
   scene.add(frame);
 
-  // Build plates with seeded holes.
-  const seed = hashSeed(config.holeSeed);
-  const rng = mulberry32(seed);
+  // Hole geometry: tune alignment ratios via Monte Carlo so that the resulting
+  // geometric survival rate matches config.targetSurvivalRate. Same seed
+  // across iterations = stable visual identity, only alignment varies.
+  const tuned = tuneHolesForTarget(config.holeSeed, config.targetSurvivalRate);
   const platesData = [];
   for (let i = 0; i < 3; i++) {
-    const parent = i === 0 ? null : platesData[i - 1].holes;
-    const holes = generateHoles(i, rng, parent);
-    const plate = buildPlate(holes, PLATE_Z[i], config.plateOpacity);
+    const plate = buildPlate(tuned.holesPerPlate[i], PLATE_Z[i], config.plateOpacity);
     platesData.push(plate);
     scene.add(plate.group);
   }

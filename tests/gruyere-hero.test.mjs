@@ -57,3 +57,12 @@ test('gruyere-hero.js destroy() disposes Three.js resources', () => {
   assert.match(HERO_JS, /renderer\.dispose/);
   assert.match(HERO_JS, /\.geometry\.dispose/);
 });
+
+test('gruyere-hero.js exposes targetSurvivalRate (default 1%)', () => {
+  assert.match(HERO_JS, /targetSurvivalRate:\s*0\.01/);
+});
+
+test('gruyere-hero.js tunes hole alignment via Monte Carlo to match target', () => {
+  assert.match(HERO_JS, /function\s+monteCarloSurvival/);
+  assert.match(HERO_JS, /function\s+tuneHolesForTarget/);
+});
