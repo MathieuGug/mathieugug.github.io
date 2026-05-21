@@ -47,13 +47,12 @@ const HOLE_R_MAX = 0.18;
 const ALIGN_P2_TO_P1 = 0.30;
 const ALIGN_P3_TO_P2 = 0.15;
 
-// Z layout — cube 4×4×4 from z=0 (front face) to z=4 (back face = accumulator).
-// Plates sit inside with margin from the cube faces.
+// Z layout — plates inside the front, accumulator screen well behind plate 3.
 const PLATE_Z = [0.5, 2.0, 3.5];
-const ACCUMULATOR_Z = 4.0;   // back face of the cube
+const ACCUMULATOR_Z = 5.0;   // back wall: 1.5 units behind plate 3 so the gap reads
 const SPAWN_Z = -2.5;        // well upstream so trajectories are visible before they reach plate 0
 const CUBE_Z_MIN = 0;
-const CUBE_Z_MAX = 4;
+const CUBE_Z_MAX = 5.0;
 
 function tooClose(hole, others, slack = 0.1) {
   for (const o of others) {
@@ -206,7 +205,7 @@ function buildParticleSystem(maxCount) {
         vColor = color;
         vAlpha = alpha;
         vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-        gl_PointSize = 38.0 * (1.0 / -mvPosition.z);
+        gl_PointSize = 60.0 * (1.0 / -mvPosition.z);
         gl_Position = projectionMatrix * mvPosition;
       }
     `,
@@ -302,16 +301,20 @@ function readAccentColor() {
   return new THREE.Color(css);
 }
 
-// Impact rings: short-lived expanding rings at the point a particle was stopped.
-const IMPACT_LIFETIME = 0.6; // seconds
-const MAX_IMPACTS = 30;
+// Effect pools — short-lived bursts at the point of a plate-crossing.
+// - blocked → red expanding RING (the particle was stopped)
+// - passed  → green soft DISC (the particle made it through a hole)
+const BURST_LIFETIME = 0.65; // seconds
+const MAX_BURSTS = 30;
+const BLOCKED_COLOR = 0xc0392b;  // red — alert / failure
+const PASSED_COLOR  = 0x4caf50;  // green — success / breach signal
 
-function buildImpactPool(accentColor) {
+function buildRingPool(color) {
   const rings = [];
-  for (let i = 0; i < MAX_IMPACTS; i++) {
-    const geom = new THREE.RingGeometry(0.04, 0.06, 24);
+  for (let i = 0; i < MAX_BURSTS; i++) {
+    const geom = new THREE.RingGeometry(0.04, 0.07, 28);
     const mat = new THREE.MeshBasicMaterial({
-      color: accentColor.clone(),
+      color,
       transparent: true,
       opacity: 0,
       side: THREE.DoubleSide,
@@ -324,22 +327,41 @@ function buildImpactPool(accentColor) {
   return rings;
 }
 
-function triggerImpact(rings, x, y, z) {
-  for (const r of rings) {
+function buildBurstPool(color) {
+  const discs = [];
+  for (let i = 0; i < MAX_BURSTS; i++) {
+    const geom = new THREE.CircleGeometry(0.12, 28);
+    const mat = new THREE.MeshBasicMaterial({
+      color,
+      transparent: true,
+      opacity: 0,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    });
+    const mesh = new THREE.Mesh(geom, mat);
+    mesh.visible = false;
+    discs.push({ mesh, life: 0, alive: false });
+  }
+  return discs;
+}
+
+function triggerBurst(pool, x, y, z) {
+  for (const r of pool) {
     if (!r.alive) {
       r.alive = true;
-      r.life = IMPACT_LIFETIME;
+      r.life = BURST_LIFETIME;
       r.mesh.position.set(x, y, z);
       r.mesh.scale.set(1, 1, 1);
-      r.mesh.material.opacity = 0.8;
+      r.mesh.material.opacity = 0.85;
       r.mesh.visible = true;
       return;
     }
   }
 }
 
-function updateImpacts(rings, dt) {
-  for (const r of rings) {
+function updateBurst(pool, dt, growthFactor) {
+  for (const r of pool) {
     if (!r.alive) continue;
     r.life -= dt;
     if (r.life <= 0) {
@@ -347,10 +369,10 @@ function updateImpacts(rings, dt) {
       r.mesh.visible = false;
       continue;
     }
-    const t = 1 - r.life / IMPACT_LIFETIME;
-    const scale = 1 + t * 3;
+    const t = 1 - r.life / BURST_LIFETIME;
+    const scale = 1 + t * growthFactor;
     r.mesh.scale.set(scale, scale, 1);
-    r.mesh.material.opacity = 0.8 * (1 - t);
+    r.mesh.material.opacity = 0.85 * (1 - t);
   }
 }
 
@@ -403,11 +425,10 @@ function buildVolumeFrame() {
   return group;
 }
 
-// Bounding sphere of the visible scene (cube + spawn area + accumulator).
-// Camera distance is derived from this radius + the camera's actual FOV/aspect,
-// so the scene always fits the viewport regardless of width/height.
-const SCENE_RADIUS = 4.4;
-const FIT_PADDING = 1.18;
+// Bounding sphere of the visible scene (spawn area + plates + accumulator).
+// Camera distance is derived from this radius + the camera's actual FOV/aspect.
+const SCENE_RADIUS = 5.0;
+const FIT_PADDING = 1.20;
 
 function computeOrbitRadius(camera) {
   const vFovHalf = camera.fov * Math.PI / 360;
@@ -419,11 +440,16 @@ function computeOrbitRadius(camera) {
   return FIT_PADDING * SCENE_RADIUS / Math.sin(minHalfFov);
 }
 
-// Plate visual constants.
+// Plate visual constants — warm steel-taupe that reads light against cream bg.
 const PLATE_THICKNESS = 0.10;
-const PLATE_COLOR = 0x4a4540;   // dark warm steel
-const PLATE_METALNESS = 0.78;
-const PLATE_ROUGHNESS = 0.40;
+const PLATE_COLOR = 0x9a8c7d;   // warm taupe, clearly NOT black
+const PLATE_METALNESS = 0.35;
+const PLATE_ROUGHNESS = 0.55;
+const PLATE_OPACITY = 0.72;     // see-through enough to read holes + back wall through
+
+// Particle visual — dark slate blue, visible against BOTH cream bg and translucent plates.
+const PARTICLE_COLOR = 0x3d4b66;
+const PARTICLE_SIZE_PX = 60;
 
 function buildPlate(holes, z) {
   const shape = new THREE.Shape();
@@ -457,6 +483,9 @@ function buildPlate(holes, z) {
     metalness: PLATE_METALNESS,
     roughness: PLATE_ROUGHNESS,
     side: THREE.DoubleSide,
+    transparent: true,
+    opacity: PLATE_OPACITY,
+    depthWrite: false,  // translucent — let trails/particles behind blend through
   });
 
   const mesh = new THREE.Mesh(geom, mat);
@@ -589,12 +618,14 @@ export function mountGruyereHero(container, opts = {}) {
   scene.add(tsys.lines);  // trails behind heads (z-order: drawn first)
   scene.add(psys.points);
 
-  const creamColor = new THREE.Color(0xfaf6ec);
+  const particleColor = new THREE.Color(PARTICLE_COLOR);
   const accentColor = readAccentColor();
   const partRng = mulberry32(hashSeed(config.holeSeed + '-particles'));
 
-  const impacts = buildImpactPool(accentColor);
-  for (const r of impacts) scene.add(r.mesh);
+  const blockedRings = buildRingPool(BLOCKED_COLOR);  // red — blocked at a plate
+  const passedBursts = buildBurstPool(PASSED_COLOR);  // green — passed through a hole
+  for (const r of blockedRings) scene.add(r.mesh);
+  for (const r of passedBursts) scene.add(r.mesh);
 
   // Accumulation: particles that pass plate 3 are frozen on the back wall.
   const accumulated = [];
@@ -621,7 +652,7 @@ export function mountGruyereHero(container, opts = {}) {
       spawnAccumulator -= 1;
       for (let i = 0; i < psys.particles.length; i++) {
         if (psys.particles[i].state === STATE_DEAD) {
-          spawnParticle(psys.particles[i], partRng, creamColor);
+          spawnParticle(psys.particles[i], partRng, particleColor);
           break;
         }
       }
@@ -637,8 +668,11 @@ export function mountGruyereHero(container, opts = {}) {
             if (!hitsAnyHole(p.x, p.y, plate.holes)) {
               p.state = STATE_FADING;
               p.fadeStart = now;
-              triggerImpact(impacts, p.x, p.y, plate.z);
+              triggerBurst(blockedRings, p.x, p.y, plate.z);
               break;
+            } else {
+              // Passed through a hole — green cloud signals the breach.
+              triggerBurst(passedBursts, p.x, p.y, plate.z + 0.01);
             }
           }
         }
@@ -730,10 +764,11 @@ export function mountGruyereHero(container, opts = {}) {
     }
   }
 
-  // Orbital camera: slow rotation around the cube center. Distance is
+  // Orbital camera: slow rotation around the scene center. Distance is
   // recomputed each frame from the current aspect so the scene never clips.
-  const ORBIT_Y_RATIO = 0.18;  // camera Y as a fraction of orbit radius
-  const ORBIT_CENTER = new THREE.Vector3(0, 0, (CUBE_Z_MIN + CUBE_Z_MAX) / 2);
+  const ORBIT_Y_RATIO = 0.18;
+  // Centre on the midpoint of the full visible scene: spawn → accumulator.
+  const ORBIT_CENTER = new THREE.Vector3(0, 0, (SPAWN_Z + ACCUMULATOR_Z) / 2);
   let orbitAngle = -Math.PI * 0.78;
 
   function syncViewport() {
@@ -777,7 +812,8 @@ export function mountGruyereHero(container, opts = {}) {
     camera.lookAt(ORBIT_CENTER);
 
     updateParticles(dt, now);
-    updateImpacts(impacts, dt);
+    updateBurst(blockedRings, dt, 3.5);  // red ring expands fast
+    updateBurst(passedBursts, dt, 5.0);  // green cloud expands faster (breach signal)
     maybeReset(now);
     renderer.render(scene, camera);
   }
@@ -803,7 +839,8 @@ export function mountGruyereHero(container, opts = {}) {
       if (resetButton) resetButton.remove();
       frame.traverse(disposeNode);
       for (const plate of platesData) plate.group.traverse(disposeNode);
-      for (const r of impacts) disposeNode(r.mesh);
+      for (const r of blockedRings) disposeNode(r.mesh);
+      for (const r of passedBursts) disposeNode(r.mesh);
       psys.geom.dispose();
       psys.points.material.dispose();
       renderer.dispose();
