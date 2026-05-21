@@ -1347,29 +1347,83 @@ html { scroll-behavior: smooth; }
 
 .canvas-v2-grid {
   display: grid;
-  grid-template-rows: 1fr;  /* phase 1 = neutre, ajustera dans Task 2 */
+  grid-template-rows: 1fr;
   height: calc(100vh - 56px);  /* sous topbar */
   margin-top: 56px;
   overflow: hidden;
 }
 
-.canvas-v2-hero {
-  display: flex;
-  flex-direction: column;
+/* Spécificité bumpée (3 classes) pour battre :root[data-zoom="0"] .hero { place-items:center } */
+.canvas-v2 .canvas-v2-grid .canvas-v2-hero {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: clamp(140px, 18vh, 220px) 1fr clamp(40px, 6vh, 56px);
+  grid-template-areas:
+    "playbook"
+    "gruyere"
+    "footer";
+  /* Override .hero { place-items: center } hérité de v1 — on veut que les zones
+     remplissent leurs cellules, pas qu'elles se centrent sur leur taille intrinsèque. */
+  place-items: stretch;
+  height: 100%;
+  width: 100%;
   overflow: hidden;
-  padding: clamp(16px, 2vw, 32px);
+  padding: clamp(8px, 1vw, 16px);
+  gap: clamp(8px, 1vw, 16px);
 }
 
-.canvas-v2-hero .gruyere-figure {
-  flex: 1 1 auto;
-  min-height: 0;
+.canvas-v2-playbook { grid-area: playbook; min-height: 0; display: flex; }
+.canvas-v2-gruyere  { grid-area: gruyere;  min-height: 0; display: flex; }
+.canvas-v2-footer   {
+  grid-area: footer;
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 clamp(8px, 1vw, 16px);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: clamp(11px, 0.85vw, 13px);
+  color: var(--text-faint);
 }
 
-.canvas-v2-hero .gruyere-diagram {
+.canvas-v2-playbook .playbook-svg,
+.canvas-v2-gruyere .gruyere-svg {
   width: 100%;
   height: 100%;
   max-height: 100%;
+}
+
+.canvas-v2-footer .footer-legend { display: flex; gap: 16px; }
+.canvas-v2-footer .legend-item::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+.canvas-v2-footer .legend-passe::before     { background: var(--carmine); }
+.canvas-v2-footer .legend-arrete::before    { background: #4b9466; }
+.canvas-v2-footer .legend-redondant::before { background: #8a7448; }
+
+/* Titre du dossier centré dans la topbar (v2 only) */
+.canvas-v2-title {
+  font-family: 'Fraunces', Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(16px, 1.6vw, 22px);
+  letter-spacing: -0.01em;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1 1 auto;
+  text-align: center;
+  min-width: 0;
+}
+.canvas-v2-title .title-sub { color: var(--text-faint); font-style: italic; font-weight: 300; }
+@media (max-width: 768px) {
+  .canvas-v2-title { font-size: 14px; }
+  .canvas-v2-title .title-sub { display: none; }
 }
 
 /* Démolition v1 — sections long-form rétrogradées en hidden pour ce wrapper */
@@ -1387,12 +1441,24 @@ html { scroll-behavior: smooth; }
   inset: auto !important;
   z-index: auto !important;
 }
+
+/* Override v1 — :root[data-zoom="0"] .hero > *:not(.gruyere-figure) {display:none}
+   masquait nos nouvelles zones playbook/gruyere/footer. On les ré-affiche
+   avec une spécificité supérieure (attribute + 2 classes). */
+:root[data-zoom] .canvas-v2-hero > .canvas-v2-playbook,
+:root[data-zoom] .canvas-v2-hero > .canvas-v2-gruyere { display: flex; }
+:root[data-zoom] .canvas-v2-hero > .canvas-v2-footer  { display: flex; }
+
+/* Override v1 — supprime le hint Caveat ::after (notre nouveau footer joue ce rôle) */
+:root[data-zoom] .canvas-v2::after { content: none; display: none; }
 </style>
 </head>
 <body>
 <header class="topbar">
   <a class="logo" href="/">Mathieu Guglielmino</a>
-  <span class="dossier-context">Évaluer un agent</span>
+  <h1 class="canvas-v2-title">
+    Évaluer un agent <span class="title-sub">— le gruyère de Reason</span>
+  </h1>
   <nav class="back-nav" aria-label="Navigation retour">
     <a href="./" class="back" title="Revenir au hub du dossier">← Hub</a>
     <span class="back-sep" aria-hidden="true">·</span>
@@ -1404,25 +1470,15 @@ html { scroll-behavior: smooth; }
   <!-- v2 layout — schéma toujours visible, grid bound viewport -->
   <div class="canvas-v2-grid">
     <section class="hero canvas-v2-hero">
-    <p class="eyebrow">Carte zoomable · semantic zoom Bret Victor style</p>
-    <h1>Évaluer un agent</h1>
-    <p class="subtitle">Le playbook construit les défenses · le gruyère arrête les attaques</p>
-
-    <p class="lede">
-      On construit l'évaluation en 4 phases (collecte tasks, cadrage, instrumentation, maintenance) — c'est le <strong>playbook</strong>. Le résultat est un dispositif à 3 couches de défense (préventif, curatif, qualitatif) — c'est le <strong>gruyère de Reason</strong>. Chaque couche a ses trous, seul l'empilement arrête les attaques.
-    </p>
-
-    <!-- Hero SVG gruyère diagram -->
-    <figure class="gruyere-figure">
-      <svg class="gruyere-diagram"
-           viewBox="0 190 4000 2360"
+    <div class="canvas-v2-playbook">
+      <svg class="playbook-svg"
+           viewBox="0 280 4000 460"
            preserveAspectRatio="xMidYMid meet"
            xmlns="http://www.w3.org/2000/svg"
            role="img"
-           aria-label="Canvas évaluation-agentique : 4 phases du playbook (Phase 1 collecte tasks, Phase 2A cadrer les cas, Phase 2B harness et graders, Phase 3 maintenance), 3 couches de défense gruyère (préventif, curatif, qualitatif) traversées par 7 attaques, 6 stoppées et 1 incident.">
-        <title>Canvas évaluation-agentique — 4 phases × 3 couches × 7 attaques</title>
-
-        <defs>
+           aria-label="Playbook — 4 phases : Phase 1 collecte tasks, Phase 2A cadrer les cas, Phase 2B harness et graders, Phase 3 maintenance.">
+        <title>Playbook — 4 phases de construction des défenses</title>
+<defs>
           <marker id="gruyere-arr-incident" viewBox="0 0 14 10" refX="13" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
             <path d="M 0 0 L 14 5 L 0 10 Z" fill="#b7332c"/>
           </marker>
@@ -1455,7 +1511,7 @@ html { scroll-behavior: smooth; }
         <!-- ============================================================ -->
         <!-- ① LE PLAYBOOK — 4 phases en row supérieure                    -->
         <!-- ============================================================ -->
-        <g id="playbook-pipeline">
+<g id="playbook-pipeline">
           <text x="2000" y="280" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="34" font-weight="500" letter-spacing="0.22em" fill="#8a7448">① LE PLAYBOOK — COMMENT ON CONSTRUIT LES DÉFENSES</text>
           <text x="2000" y="314" text-anchor="middle" font-family="'Fraunces', Cambria, Georgia, serif" font-size="34" font-style="italic" fill="#5a5a5a">4 phases dans le temps · chaque phase produit ou maintient une couche</text>
 
@@ -1512,17 +1568,51 @@ html { scroll-behavior: smooth; }
             <text x="2780" y="635" font-family="'JetBrains Mono', monospace" font-size="24" fill="#8a7448">S6 · lire · S7 · saturation et ownership</text>
           </g>
         </g>
+      </svg>
+    </div>
 
-        <!-- Transition playbook → gruyère -->
-        <g id="playbook-to-gruyere-transition">
-          <path d="M 1900 740 Q 1900 780 1940 780 L 2060 780 Q 2100 780 2100 820"
-                stroke="#a88b4d" stroke-width="3" fill="none" opacity="0.6"/>
-          <path d="M 2090 810 L 2100 820 L 2110 810"
-                stroke="#a88b4d" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
-          <text x="2000" y="765" text-anchor="middle" font-family="'Fraunces', Cambria, Georgia, serif" font-size="34" font-style="italic" fill="#b8582e">… qui produit cette structure de défense ↓</text>
-        </g>
+    <div class="canvas-v2-gruyere">
+      <svg class="gruyere-svg"
+           viewBox="0 850 4000 1650"
+           preserveAspectRatio="xMidYMid meet"
+           xmlns="http://www.w3.org/2000/svg"
+           role="img"
+           aria-label="Gruyère — 3 couches de défense traversées par 7 attaques, 6 stoppées et 1 incident.">
+        <title>Gruyère de Reason — 3 couches × 7 attaques</title>
+<defs>
+          <marker id="gruyere-arr-incident" viewBox="0 0 14 10" refX="13" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+            <path d="M 0 0 L 14 5 L 0 10 Z" fill="#b7332c"/>
+          </marker>
+          <marker id="gruyere-arr-seq" viewBox="0 0 14 10" refX="13" refY="5" markerWidth="10" markerHeight="10" orient="auto-start-reverse">
+            <path d="M 0 0 L 14 5 L 0 10 Z" fill="#8a7448"/>
+          </marker>
+          <pattern id="gruyere-tex-teal" patternUnits="userSpaceOnUse" width="80" height="80">
+            <rect width="80" height="80" fill="#e8f0f1"/>
+            <circle cx="20" cy="25" r="2.5" fill="#c9d8db" opacity="0.6"/>
+            <circle cx="60" cy="55" r="2" fill="#c9d8db" opacity="0.5"/>
+          </pattern>
+          <pattern id="gruyere-tex-ocre" patternUnits="userSpaceOnUse" width="80" height="80">
+            <rect width="80" height="80" fill="#f4eccc"/>
+            <circle cx="20" cy="25" r="2.5" fill="#dccfa0" opacity="0.6"/>
+            <circle cx="60" cy="55" r="2" fill="#dccfa0" opacity="0.5"/>
+          </pattern>
+          <pattern id="gruyere-tex-carmine" patternUnits="userSpaceOnUse" width="80" height="80">
+            <rect width="80" height="80" fill="#f5dedb"/>
+            <circle cx="20" cy="25" r="2.5" fill="#dcb8b3" opacity="0.6"/>
+            <circle cx="60" cy="55" r="2" fill="#dcb8b3" opacity="0.5"/>
+          </pattern>
+          <filter id="gruyere-slice-shadow" x="-5%" y="-5%" width="110%" height="110%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="4"/>
+            <feOffset dx="6" dy="0"/>
+            <feComponentTransfer><feFuncA type="linear" slope="0.3"/></feComponentTransfer>
+            <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
 
         <!-- ============================================================ -->
+        <!-- ② LE GRUYÈRE — 3 couches × 7 attaques                         -->
+        <!-- ============================================================ -->
+<!-- ============================================================ -->
         <!-- ② LE GRUYÈRE — 3 couches × 7 attaques                         -->
         <!-- ============================================================ -->
         <text x="2000" y="850" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="34" font-weight="500" letter-spacing="0.22em" fill="#8a7448">② LE GRUYÈRE — CE QUI ARRÊTE LES ATTAQUES</text>
@@ -1645,13 +1735,17 @@ html { scroll-behavior: smooth; }
           </g>
         </g>
       </svg>
-      <figcaption>3 couches empilées · chaque couche a ses trous · les flèches sont les 7 modes d'attaque modélisés.</figcaption>
-    </figure>
+    </div>
 
-    <blockquote class="reason-quote">
-      « Chaque couche a ses trous ; l'empilement seul produit une couverture acceptable. »
-      <cite>— James Reason, modèle gruyère suisse</cite>
-    </blockquote>
+    <footer class="canvas-v2-footer">
+      <span class="footer-hint">Clique sur une phase, une couche ou une attaque</span>
+      <span class="footer-legend">
+        <span class="legend-item legend-passe">✗ passe</span>
+        <span class="legend-item legend-arrete">✓ arrête</span>
+        <span class="legend-item legend-redondant">○ redondant</span>
+      </span>
+    </footer>
+
   </section>
 
   <section class="playbook">
