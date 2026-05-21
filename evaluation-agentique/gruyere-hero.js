@@ -42,6 +42,11 @@ const HOLE_R_MAX = 0.18;
 const ALIGN_P2_TO_P1 = 0.30;
 const ALIGN_P3_TO_P2 = 0.15;
 
+// Z layout: spawn → 3 plates → accumulator screen.
+const PLATE_Z = [0, 2, 4];
+const ACCUMULATOR_Z = 5.5;
+const SPAWN_Z = -3;
+
 function tooClose(hole, others, slack = 0.1) {
   for (const o of others) {
     const dx = hole.x - o.x, dy = hole.y - o.y;
@@ -95,6 +100,45 @@ function detectCapabilities() {
   return { reducedMotion, webgl, mobile };
 }
 
+function buildPlate(holes, z, opacity) {
+  // Outer rectangle (4×4 unit square centered on origin in local space).
+  const shape = new THREE.Shape();
+  shape.moveTo(-PLATE_HALF, -PLATE_HALF);
+  shape.lineTo( PLATE_HALF, -PLATE_HALF);
+  shape.lineTo( PLATE_HALF,  PLATE_HALF);
+  shape.lineTo(-PLATE_HALF,  PLATE_HALF);
+  shape.lineTo(-PLATE_HALF, -PLATE_HALF);
+
+  // Holes as circular paths.
+  for (const h of holes) {
+    const hole = new THREE.Path();
+    hole.absarc(h.x, h.y, h.r, 0, Math.PI * 2, true);
+    shape.holes.push(hole);
+  }
+
+  const geom = new THREE.ShapeGeometry(shape);
+  const faceMat = new THREE.MeshBasicMaterial({
+    color: 0x1a1a1a,
+    transparent: true,
+    opacity,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+  });
+  const face = new THREE.Mesh(geom, faceMat);
+  face.position.z = z;
+
+  // Wireframe overlay: edges only (outer rect + circles).
+  const edges = new THREE.EdgesGeometry(geom);
+  const edgeMat = new THREE.LineBasicMaterial({ color: 0x1a1a1a, transparent: true, opacity: 0.9 });
+  const wire = new THREE.LineSegments(edges, edgeMat);
+  wire.position.z = z;
+
+  const group = new THREE.Group();
+  group.add(face);
+  group.add(wire);
+  return { group, holes, z };
+}
+
 function initScene(container) {
   const w = container.clientWidth;
   const h = container.clientHeight;
@@ -142,7 +186,19 @@ export function mountGruyereHero(container, opts = {}) {
     config.particleRate = 8;
   }
 
-  // TODO Task 5-9: plates, particles, accumulation, camera orbit
+  // Build plates with seeded holes.
+  const seed = hashSeed(config.holeSeed);
+  const rng = mulberry32(seed);
+  const platesData = [];
+  for (let i = 0; i < 3; i++) {
+    const parent = i === 0 ? null : platesData[i - 1].holes;
+    const holes = generateHoles(i, rng, parent);
+    const plate = buildPlate(holes, PLATE_Z[i], config.plateOpacity);
+    platesData.push(plate);
+    scene.add(plate.group);
+  }
+
+  // TODO Task 6-9: particles, accumulation, camera orbit
 
   let rafId = null;
   function animate() {

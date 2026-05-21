@@ -41,3 +41,10 @@ test('gruyere-hero.js initialises a Three.js scene', () => {
   assert.match(HERO_JS, /new THREE\.PerspectiveCamera/);
   assert.match(HERO_JS, /new THREE\.WebGLRenderer/);
 });
+
+test('gruyere-hero.js builds 3 plates from PLATE_Z', () => {
+  assert.match(HERO_JS, /PLATE_Z\s*=\s*\[0,\s*2,\s*4\]/);
+  assert.match(HERO_JS, /function\s+buildPlate/);
+  assert.match(HERO_JS, /ShapeGeometry/);
+  assert.match(HERO_JS, /EdgesGeometry/);
+});
