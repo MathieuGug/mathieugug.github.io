@@ -100,6 +100,86 @@ function detectCapabilities() {
   return { reducedMotion, webgl, mobile };
 }
 
+// Particle states.
+const STATE_ALIVE = 0;
+const STATE_FADING = 1;
+const STATE_ACCUMULATED = 2;
+const STATE_DEAD = 3;
+
+const PARTICLE_SPEED = 2.5;  // units/s along +z
+const SPAWN_HALF = 2.2;      // x,y range at spawn (slightly wider than plates)
+
+function buildParticleSystem(maxCount) {
+  const positions = new Float32Array(maxCount * 3);
+  const colors = new Float32Array(maxCount * 3);
+  const alphas = new Float32Array(maxCount);
+
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geom.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  geom.setAttribute('alpha', new THREE.BufferAttribute(alphas, 1));
+  geom.setDrawRange(0, 0);
+
+  // Shader material with per-vertex alpha + circular point sprite.
+  const mat = new THREE.ShaderMaterial({
+    vertexShader: `
+      attribute float alpha;
+      varying vec3 vColor;
+      varying float vAlpha;
+      void main() {
+        vColor = color;
+        vAlpha = alpha;
+        vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+        gl_PointSize = 18.0 * (1.0 / -mvPosition.z);
+        gl_Position = projectionMatrix * mvPosition;
+      }
+    `,
+    fragmentShader: `
+      varying vec3 vColor;
+      varying float vAlpha;
+      void main() {
+        vec2 c = gl_PointCoord - vec2(0.5);
+        float d = length(c);
+        if (d > 0.5) discard;
+        float soft = smoothstep(0.5, 0.2, d);
+        gl_FragColor = vec4(vColor, vAlpha * soft);
+      }
+    `,
+    transparent: true,
+    vertexColors: true,
+    depthWrite: false,
+  });
+
+  const points = new THREE.Points(geom, mat);
+
+  const particles = new Array(maxCount).fill(null).map(() => ({
+    state: STATE_DEAD,
+    x: 0, y: 0, z: 0,
+    r: 1, g: 1, b: 1,
+    a: 1,
+    fadeStart: 0,
+  }));
+
+  return { points, geom, particles, positions, colors, alphas };
+}
+
+function spawnParticle(p, rng, creamColor) {
+  p.state = STATE_ALIVE;
+  p.x = (rng() * 2 - 1) * SPAWN_HALF;
+  p.y = (rng() * 2 - 1) * SPAWN_HALF;
+  p.z = SPAWN_Z;
+  p.r = creamColor.r;
+  p.g = creamColor.g;
+  p.b = creamColor.b;
+  p.a = 0.9;
+}
+
+function readAccentColor() {
+  const css = getComputedStyle(document.documentElement)
+    .getPropertyValue('--accent').trim() || '#b8582e';
+  return new THREE.Color(css);
+}
+
 function buildPlate(holes, z, opacity) {
   // Outer rectangle (4×4 unit square centered on origin in local space).
   const shape = new THREE.Shape();
@@ -198,11 +278,66 @@ export function mountGruyereHero(container, opts = {}) {
     scene.add(plate.group);
   }
 
-  // TODO Task 6-9: particles, accumulation, camera orbit
+  // Particles.
+  const MAX_PARTICLES = caps.mobile ? 50 : 100;
+  const psys = buildParticleSystem(MAX_PARTICLES);
+  scene.add(psys.points);
+
+  const creamColor = new THREE.Color(0xfaf6ec);
+  const accentColor = readAccentColor();
+  const partRng = mulberry32(hashSeed(config.holeSeed + '-particles'));
+
+  let lastT = performance.now();
+  let spawnAccumulator = 0;
+
+  function updateParticles(dt) {
+    spawnAccumulator += config.particleRate * dt;
+    while (spawnAccumulator >= 1) {
+      spawnAccumulator -= 1;
+      for (let i = 0; i < psys.particles.length; i++) {
+        if (psys.particles[i].state === STATE_DEAD) {
+          spawnParticle(psys.particles[i], partRng, creamColor);
+          break;
+        }
+      }
+    }
+    for (let i = 0; i < psys.particles.length; i++) {
+      const p = psys.particles[i];
+      if (p.state === STATE_ALIVE) {
+        p.z += PARTICLE_SPEED * dt;
+        if (p.z >= ACCUMULATOR_Z) {
+          // Task 7-8 will refine: for now just cull beyond accumulator.
+          p.state = STATE_DEAD;
+        }
+      }
+    }
+    let drawCount = 0;
+    for (let i = 0; i < psys.particles.length; i++) {
+      const p = psys.particles[i];
+      if (p.state === STATE_DEAD) continue;
+      const off = drawCount * 3;
+      psys.positions[off    ] = p.x;
+      psys.positions[off + 1] = p.y;
+      psys.positions[off + 2] = p.z;
+      psys.colors[off    ] = p.r;
+      psys.colors[off + 1] = p.g;
+      psys.colors[off + 2] = p.b;
+      psys.alphas[drawCount] = p.a;
+      drawCount++;
+    }
+    psys.geom.attributes.position.needsUpdate = true;
+    psys.geom.attributes.color.needsUpdate = true;
+    psys.geom.attributes.alpha.needsUpdate = true;
+    psys.geom.setDrawRange(0, drawCount);
+  }
 
   let rafId = null;
   function animate() {
     rafId = requestAnimationFrame(animate);
+    const now = performance.now();
+    const dt = Math.min(0.05, (now - lastT) / 1000);
+    lastT = now;
+    updateParticles(dt);
     renderer.render(scene, camera);
   }
   animate();
