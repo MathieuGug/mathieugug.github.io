@@ -679,7 +679,17 @@ h3 { font-size: clamp(22px, 2.8vw, 32px); }
 .phase,
 .couche,
 .verdicts {
-  transition: opacity 400ms ease;
+  transition: opacity 400ms ease, border-color 300ms ease;
+}
+
+/* Focus visible — clavier */
+.subcard:focus-visible,
+.phase:focus-visible,
+.couche:focus-visible,
+.attaque:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 8px;
 }
 
 /* ---- Overview compact (data-zoom="0") ---- */
@@ -797,6 +807,7 @@ h3 { font-size: clamp(22px, 2.8vw, 32px); }
   position: fixed;
   inset: 56px 0 0 0;
   background: var(--bg);
+  transition: opacity 200ms ease;
   z-index: 35;
   pointer-events: none;
 }
@@ -932,6 +943,103 @@ h3 { font-size: clamp(22px, 2.8vw, 32px); }
 }
 :root[data-zoom^="S"] .gruyere-figure,
 :root[data-zoom^="C"] .gruyere-figure { display: none; }
+
+/* ── Mobile dégradé (≤ 768 px) ─────────────────────────────
+   Sur mobile, on désactive la mécanique zoom : la page se
+   comporte comme un long article scrollable, tout déplié.
+   ─────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Grilles : 1 colonne partout */
+  .subcards { grid-template-columns: 1fr; }
+  .verdicts { grid-template-columns: 1fr; }
+  .outcomes-grid { grid-template-columns: 1fr; }
+
+  /* Sub-cards toujours dépliées en niveau 0, pas de teaser */
+  :root[data-zoom="0"] .subcard .methods,
+  :root[data-zoom="0"] .subcard .antipattern,
+  :root[data-zoom="0"] .subcard .frameworks,
+  :root[data-zoom="0"] .subcard .tagline {
+    display: block;
+  }
+  :root[data-zoom="0"] .subcard::after {
+    display: none;
+  }
+  /* Idem pour les attaques : verdicts dépliés, plus d'affordance */
+  :root[data-zoom="0"] .attaque .verdicts {
+    display: grid;  /* la règle 1-col ci-dessus s'applique */
+  }
+  :root[data-zoom="0"] .attaque::after {
+    display: none;
+  }
+
+  /* Pas de plein écran : la card focalisée reste static dans le flow */
+  :root[data-zoom="S0"] #S0,
+  :root[data-zoom="S1"] #S1,
+  :root[data-zoom="S2"] #S2,
+  :root[data-zoom="S3"] #S3,
+  :root[data-zoom="S4"] #S4,
+  :root[data-zoom="S5"] #S5,
+  :root[data-zoom="S6"] #S6,
+  :root[data-zoom="S7"] #S7,
+  :root[data-zoom="C1"] #C1,
+  :root[data-zoom="C2"] #C2,
+  :root[data-zoom="C3"] #C3,
+  :root[data-zoom="C4"] #C4,
+  :root[data-zoom="C5"] #C5,
+  :root[data-zoom="C6"] #C6 {
+    position: static;
+    inset: auto;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: clamp(20px, 2.5vw, 28px);
+    max-width: none;
+    z-index: auto;
+    overflow-y: visible;
+    background: var(--bg);
+  }
+
+  /* Pas de backdrop sur mobile */
+  :root[data-zoom^="S"] body::before,
+  :root[data-zoom^="C"] body::before {
+    display: none;
+  }
+
+  /* Pas de body scroll lock sur mobile */
+  :root[data-zoom^="S"],
+  :root[data-zoom^="C"] {
+    overflow: auto;
+  }
+  :root[data-zoom^="S"] body,
+  :root[data-zoom^="C"] body {
+    overflow: auto;
+    height: auto;
+  }
+
+  /* Neutralise les dim cascades (niveau 1/2 et S*/C*/A-*) :
+     puisque la mécanique zoom n'opère plus, tout reste visible. */
+  :root[data-zoom^="S"] .canvas > section,
+  :root[data-zoom^="C"] .canvas > section,
+  :root[data-zoom^="P"] .canvas > section:not(.playbook),
+  :root[data-zoom^="N"] .canvas > section:not(.gruyere),
+  :root[data-zoom^="A-"] .canvas > section:not(.attaques) {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  :root[data-zoom="P1"] .phase:not(#P1),
+  :root[data-zoom="P2A"] .phase:not(#P2A),
+  :root[data-zoom="P2B"] .phase:not(#P2B),
+  :root[data-zoom="P3"] .phase:not(#P3),
+  :root[data-zoom="N1"] .couche:not(#N1),
+  :root[data-zoom="N2"] .couche:not(#N2),
+  :root[data-zoom="N3"] .couche:not(#N3),
+  :root[data-zoom^="A-"] .attaque {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Cache le hero gruyère SVG sur mobile (trop dense pour viewport étroit) */
+  .gruyere-figure { display: none; }
+}
 
 /* ── Screen reader only ────────────────────────────────── */
 .sr-only {
@@ -1117,7 +1225,7 @@ h3 { font-size: clamp(22px, 2.8vw, 32px); }
     <h2>Le playbook — comment on construit les défenses</h2>
     <p class="lede">4 phases dans le temps · chaque phase produit ou maintient une couche du dispositif.</p>
 
-    <article class="phase" id="P1">
+    <article class="phase" id="P1" tabindex="0">
       <header class="phase-head">
         <span class="badge badge--phase">1</span>
         <div class="phase-meta">
@@ -1222,7 +1330,7 @@ h3 { font-size: clamp(22px, 2.8vw, 32px); }
       </div>
     </article>
 
-    <article class="phase" id="P2A">
+    <article class="phase" id="P2A" tabindex="0">
       <header class="phase-head">
         <span class="badge badge--phase">2A</span>
         <div class="phase-meta">
@@ -1332,7 +1440,7 @@ h3 { font-size: clamp(22px, 2.8vw, 32px); }
       </div>
     </article>
 
-    <article class="phase" id="P2B">
+    <article class="phase" id="P2B" tabindex="0">
       <header class="phase-head">
         <span class="badge badge--phase">2B</span>
         <div class="phase-meta">
@@ -1442,7 +1550,7 @@ h3 { font-size: clamp(22px, 2.8vw, 32px); }
       </div>
     </article>
 
-    <article class="phase" id="P3">
+    <article class="phase" id="P3" tabindex="0">
       <header class="phase-head">
         <span class="badge badge--phase">3</span>
         <div class="phase-meta">
@@ -1557,7 +1665,7 @@ h3 { font-size: clamp(22px, 2.8vw, 32px); }
     <h2>Le gruyère — ce qui arrête les attaques</h2>
     <p class="lede">3 couches de défense empilées · chaque couche a ses trous · seul l'empilement couvre.</p>
 
-    <article class="couche" id="N1">
+    <article class="couche" id="N1" tabindex="0">
       <header class="phase-head">
         <span class="badge badge--couche">1</span>
         <div class="phase-meta">
@@ -1669,7 +1777,7 @@ h3 { font-size: clamp(22px, 2.8vw, 32px); }
       </div>
     </article>
 
-    <article class="couche" id="N2">
+    <article class="couche" id="N2" tabindex="0">
       <header class="phase-head">
         <span class="badge badge--couche">2</span>
         <div class="phase-meta">
@@ -1779,7 +1887,7 @@ h3 { font-size: clamp(22px, 2.8vw, 32px); }
       </div>
     </article>
 
-    <article class="couche" id="N3">
+    <article class="couche" id="N3" tabindex="0">
       <header class="phase-head">
         <span class="badge badge--couche">3</span>
         <div class="phase-meta">
@@ -2456,6 +2564,21 @@ h3 { font-size: clamp(22px, 2.8vw, 32px); }
   // ── Keyboard ──────────────────────────────────────────────
 
   document.addEventListener('keydown', function (e) {
+    // Enter / Espace : activer la card focalisée au clavier
+    if (e.key === 'Enter' || e.key === ' ') {
+      const active = document.activeElement;
+      if (active && (
+        active.classList.contains('subcard') ||
+        active.classList.contains('phase') ||
+        active.classList.contains('couche') ||
+        active.classList.contains('attaque')
+      )) {
+        active.click();
+        e.preventDefault();
+        return;
+      }
+    }
+
     // Échap : pop le niveau de zoom
     if (e.key === 'Escape') {
       const z = root.dataset.zoom;
