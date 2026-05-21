@@ -180,6 +180,58 @@ function readAccentColor() {
   return new THREE.Color(css);
 }
 
+// Impact rings: short-lived expanding rings at the point a particle was stopped.
+const IMPACT_LIFETIME = 0.6; // seconds
+const MAX_IMPACTS = 30;
+
+function buildImpactPool(accentColor) {
+  const rings = [];
+  for (let i = 0; i < MAX_IMPACTS; i++) {
+    const geom = new THREE.RingGeometry(0.04, 0.06, 24);
+    const mat = new THREE.MeshBasicMaterial({
+      color: accentColor.clone(),
+      transparent: true,
+      opacity: 0,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+    const mesh = new THREE.Mesh(geom, mat);
+    mesh.visible = false;
+    rings.push({ mesh, life: 0, alive: false });
+  }
+  return rings;
+}
+
+function triggerImpact(rings, x, y, z) {
+  for (const r of rings) {
+    if (!r.alive) {
+      r.alive = true;
+      r.life = IMPACT_LIFETIME;
+      r.mesh.position.set(x, y, z);
+      r.mesh.scale.set(1, 1, 1);
+      r.mesh.material.opacity = 0.8;
+      r.mesh.visible = true;
+      return;
+    }
+  }
+}
+
+function updateImpacts(rings, dt) {
+  for (const r of rings) {
+    if (!r.alive) continue;
+    r.life -= dt;
+    if (r.life <= 0) {
+      r.alive = false;
+      r.mesh.visible = false;
+      continue;
+    }
+    const t = 1 - r.life / IMPACT_LIFETIME;
+    const scale = 1 + t * 3;
+    r.mesh.scale.set(scale, scale, 1);
+    r.mesh.material.opacity = 0.8 * (1 - t);
+  }
+}
+
 function buildPlate(holes, z, opacity) {
   // Outer rectangle (4×4 unit square centered on origin in local space).
   const shape = new THREE.Shape();
@@ -287,10 +339,23 @@ export function mountGruyereHero(container, opts = {}) {
   const accentColor = readAccentColor();
   const partRng = mulberry32(hashSeed(config.holeSeed + '-particles'));
 
+  const impacts = buildImpactPool(accentColor);
+  for (const r of impacts) scene.add(r.mesh);
+
   let lastT = performance.now();
   let spawnAccumulator = 0;
 
-  function updateParticles(dt) {
+  const FADE_DURATION = 0.3; // seconds
+
+  function hitsAnyHole(x, y, holes) {
+    for (const h of holes) {
+      const dx = x - h.x, dy = y - h.y;
+      if (dx*dx + dy*dy <= h.r * h.r) return true;
+    }
+    return false;
+  }
+
+  function updateParticles(dt, now) {
     spawnAccumulator += config.particleRate * dt;
     while (spawnAccumulator >= 1) {
       spawnAccumulator -= 1;
@@ -304,11 +369,28 @@ export function mountGruyereHero(container, opts = {}) {
     for (let i = 0; i < psys.particles.length; i++) {
       const p = psys.particles[i];
       if (p.state === STATE_ALIVE) {
+        const prevZ = p.z;
         p.z += PARTICLE_SPEED * dt;
-        if (p.z >= ACCUMULATOR_Z) {
-          // Task 7-8 will refine: for now just cull beyond accumulator.
+        for (let k = 0; k < platesData.length; k++) {
+          const plate = platesData[k];
+          if (prevZ < plate.z && p.z >= plate.z) {
+            if (!hitsAnyHole(p.x, p.y, plate.holes)) {
+              p.state = STATE_FADING;
+              p.fadeStart = now;
+              triggerImpact(impacts, p.x, p.y, plate.z);
+              break;
+            }
+          }
+        }
+        if (p.state === STATE_ALIVE && p.z >= ACCUMULATOR_Z) {
+          // Task 8 will accumulate; for now cull.
           p.state = STATE_DEAD;
         }
+      } else if (p.state === STATE_FADING) {
+        const elapsed = (now - p.fadeStart) / 1000;
+        const t = Math.min(1, elapsed / FADE_DURATION);
+        p.a = 0.9 * (1 - t);
+        if (t >= 1) p.state = STATE_DEAD;
       }
     }
     let drawCount = 0;
@@ -337,7 +419,8 @@ export function mountGruyereHero(container, opts = {}) {
     const now = performance.now();
     const dt = Math.min(0.05, (now - lastT) / 1000);
     lastT = now;
-    updateParticles(dt);
+    updateParticles(dt, now);
+    updateImpacts(impacts, dt);
     renderer.render(scene, camera);
   }
   animate();
