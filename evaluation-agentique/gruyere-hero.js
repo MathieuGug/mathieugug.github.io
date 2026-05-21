@@ -51,7 +51,7 @@ const ALIGN_P3_TO_P2 = 0.15;
 // Plates sit inside with margin from the cube faces.
 const PLATE_Z = [0.5, 2.0, 3.5];
 const ACCUMULATOR_Z = 4.0;   // back face of the cube
-const SPAWN_Z = -1.0;        // just in front of the cube front face
+const SPAWN_Z = -2.5;        // well upstream so trajectories are visible before they reach plate 0
 const CUBE_Z_MIN = 0;
 const CUBE_Z_MAX = 4;
 
@@ -206,7 +206,7 @@ function buildParticleSystem(maxCount) {
         vColor = color;
         vAlpha = alpha;
         vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-        gl_PointSize = 18.0 * (1.0 / -mvPosition.z);
+        gl_PointSize = 38.0 * (1.0 / -mvPosition.z);
         gl_Position = projectionMatrix * mvPosition;
       }
     `,
@@ -237,6 +237,52 @@ function buildParticleSystem(maxCount) {
   }));
 
   return { points, geom, particles, positions, colors, alphas };
+}
+
+// Trail length behind each alive particle, in world units.
+const TRAIL_LENGTH = 0.45;
+
+// One LineSegments mesh holds the trail of every alive particle. Each particle
+// contributes 2 vertices: head (at current position, full alpha) and tail
+// (TRAIL_LENGTH behind, alpha 0). The fragment shader interpolates colour and
+// alpha along each line segment giving a fading streak.
+function buildTrailSystem(maxCount) {
+  const positions = new Float32Array(maxCount * 2 * 3);
+  const colors = new Float32Array(maxCount * 2 * 3);
+  const alphas = new Float32Array(maxCount * 2);
+
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geom.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  geom.setAttribute('alpha', new THREE.BufferAttribute(alphas, 1));
+  geom.setDrawRange(0, 0);
+
+  const mat = new THREE.ShaderMaterial({
+    vertexShader: `
+      attribute float alpha;
+      varying vec3 vColor;
+      varying float vAlpha;
+      void main() {
+        vColor = color;
+        vAlpha = alpha;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      varying vec3 vColor;
+      varying float vAlpha;
+      void main() {
+        gl_FragColor = vec4(vColor, vAlpha);
+      }
+    `,
+    transparent: true,
+    vertexColors: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+  });
+
+  const lines = new THREE.LineSegments(geom, mat);
+  return { lines, geom, positions, colors, alphas };
 }
 
 function spawnParticle(p, rng, creamColor) {
@@ -316,17 +362,7 @@ function buildVolumeFrame() {
   const d = CUBE_Z_MAX - CUBE_Z_MIN;   // 4
   const centerZ = (CUBE_Z_MIN + CUBE_Z_MAX) / 2;
 
-  // 12 cube edges (faint).
-  const box = new THREE.BoxGeometry(w, w, d);
-  const edges = new THREE.EdgesGeometry(box);
-  const edgeMat = new THREE.LineBasicMaterial({
-    color: 0x1a1a1a,
-    transparent: true,
-    opacity: 0.22,
-  });
-  const wire = new THREE.LineSegments(edges, edgeMat);
-  wire.position.z = centerZ;
-  group.add(wire);
+  // No visible cube wireframe — the volume is implicit. Only socle is drawn.
 
   // Socle: faint horizontal plane just below the cube bottom, slightly larger.
   const socleW = w + 0.6;
@@ -367,10 +403,11 @@ function buildVolumeFrame() {
   return group;
 }
 
-// Bounding sphere of the cube (corner-to-center). Camera distance is derived
-// from this radius + the camera's actual FOV/aspect, so the scene always fits.
-const SCENE_RADIUS = 3.6;
-const FIT_PADDING = 1.25;
+// Bounding sphere of the visible scene (cube + spawn area + accumulator).
+// Camera distance is derived from this radius + the camera's actual FOV/aspect,
+// so the scene always fits the viewport regardless of width/height.
+const SCENE_RADIUS = 4.4;
+const FIT_PADDING = 1.18;
 
 function computeOrbitRadius(camera) {
   const vFovHalf = camera.fov * Math.PI / 360;
@@ -382,53 +419,89 @@ function computeOrbitRadius(camera) {
   return FIT_PADDING * SCENE_RADIUS / Math.sin(minHalfFov);
 }
 
-function buildPlate(holes, z, opacity) {
-  // Outer rectangle (4×4 unit square centered on origin in local space).
+// Plate visual constants.
+const PLATE_THICKNESS = 0.10;
+const PLATE_COLOR = 0x4a4540;   // dark warm steel
+const PLATE_METALNESS = 0.78;
+const PLATE_ROUGHNESS = 0.40;
+
+function buildPlate(holes, z) {
   const shape = new THREE.Shape();
   shape.moveTo(-PLATE_HALF, -PLATE_HALF);
   shape.lineTo( PLATE_HALF, -PLATE_HALF);
   shape.lineTo( PLATE_HALF,  PLATE_HALF);
   shape.lineTo(-PLATE_HALF,  PLATE_HALF);
   shape.lineTo(-PLATE_HALF, -PLATE_HALF);
-
-  // Holes as circular paths.
   for (const h of holes) {
     const hole = new THREE.Path();
     hole.absarc(h.x, h.y, h.r, 0, Math.PI * 2, true);
     shape.holes.push(hole);
   }
 
-  const geom = new THREE.ShapeGeometry(shape);
-  const faceMat = new THREE.MeshBasicMaterial({
-    color: 0x1a1a1a,
-    transparent: true,
-    opacity,
-    side: THREE.DoubleSide,
-    depthWrite: false,
+  // Extrude the 2D shape into a thin 3D slab so the plate has real edges
+  // (visible side faces, depth, light response).
+  const geom = new THREE.ExtrudeGeometry(shape, {
+    depth: PLATE_THICKNESS,
+    bevelEnabled: true,
+    bevelThickness: 0.012,
+    bevelSize: 0.008,
+    bevelSegments: 2,
+    curveSegments: 32,
   });
-  const face = new THREE.Mesh(geom, faceMat);
-  face.position.z = z;
+  // Extrude builds along +z starting at z=0. Center it on z=0 so positioning
+  // by `mesh.position.z = z` places the slab's midplane at z.
+  geom.translate(0, 0, -PLATE_THICKNESS / 2);
 
-  // Wireframe overlay: edges only (outer rect + circles).
-  const edges = new THREE.EdgesGeometry(geom);
-  const edgeMat = new THREE.LineBasicMaterial({ color: 0x1a1a1a, transparent: true, opacity: 0.9 });
-  const wire = new THREE.LineSegments(edges, edgeMat);
-  wire.position.z = z;
+  const mat = new THREE.MeshStandardMaterial({
+    color: PLATE_COLOR,
+    metalness: PLATE_METALNESS,
+    roughness: PLATE_ROUGHNESS,
+    side: THREE.DoubleSide,
+  });
+
+  const mesh = new THREE.Mesh(geom, mat);
+  mesh.position.z = z;
+
+  // Faint dark rim around the front face for hole readability.
+  const rimEdges = new THREE.EdgesGeometry(geom, 18);
+  const rimMat = new THREE.LineBasicMaterial({
+    color: 0x141414,
+    transparent: true,
+    opacity: 0.45,
+  });
+  const rim = new THREE.LineSegments(rimEdges, rimMat);
+  rim.position.z = z;
 
   const group = new THREE.Group();
-  group.add(face);
-  group.add(wire);
+  group.add(mesh);
+  group.add(rim);
   return { group, holes, z };
+}
+
+// The back wall where survivors accumulate — a deeper, matte surface that
+// clearly reads as "the screen behind the defenses".
+const ACCUMULATOR_COLOR = 0x1d1b18;
+function buildAccumulatorScreen() {
+  const w = PLATE_HALF * 2;
+  const geom = new THREE.PlaneGeometry(w, w);
+  const mat = new THREE.MeshStandardMaterial({
+    color: ACCUMULATOR_COLOR,
+    metalness: 0.10,
+    roughness: 0.92,
+    side: THREE.DoubleSide,
+  });
+  const plane = new THREE.Mesh(geom, mat);
+  plane.position.z = ACCUMULATOR_Z;
+  return plane;
 }
 
 function initScene(container) {
   const w = container.clientWidth;
   const h = container.clientHeight;
   const scene = new THREE.Scene();
-  scene.background = null; // CSS background of container shows through
+  scene.background = null;
 
   const camera = new THREE.PerspectiveCamera(38, w / h, 0.1, 100);
-  // Initial position set by orbital camera in animate loop.
   camera.position.set(-6, 3, -4);
   camera.lookAt(0, 0, 2);
 
@@ -436,8 +509,18 @@ function initScene(container) {
   const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
   renderer.setPixelRatio(dpr);
   renderer.setSize(w, h);
-  renderer.setClearColor(0x000000, 0); // transparent — CSS bg shows
+  renderer.setClearColor(0x000000, 0);
   container.appendChild(renderer.domElement);
+
+  // Lighting: ambient + warm key + cool fill. PBR plates need light.
+  const ambient = new THREE.AmbientLight(0xfff5e0, 0.55);
+  scene.add(ambient);
+  const key = new THREE.DirectionalLight(0xfff2d8, 1.25);
+  key.position.set(-5, 6, -4);
+  scene.add(key);
+  const fill = new THREE.DirectionalLight(0xc8d4e2, 0.45);
+  fill.position.set(4, -1, 5);
+  scene.add(fill);
 
   return { scene, camera, renderer };
 }
@@ -484,20 +567,26 @@ export function mountGruyereHero(container, opts = {}) {
   const frame = buildVolumeFrame();
   scene.add(frame);
 
+  // Back wall: the accumulator screen, visible as a matte surface.
+  const accumulatorScreen = buildAccumulatorScreen();
+  scene.add(accumulatorScreen);
+
   // Hole geometry: tune alignment ratios via Monte Carlo so that the resulting
   // geometric survival rate matches config.targetSurvivalRate. Same seed
   // across iterations = stable visual identity, only alignment varies.
   const tuned = tuneHolesForTarget(config.holeSeed, config.targetSurvivalRate);
   const platesData = [];
   for (let i = 0; i < 3; i++) {
-    const plate = buildPlate(tuned.holesPerPlate[i], PLATE_Z[i], config.plateOpacity);
+    const plate = buildPlate(tuned.holesPerPlate[i], PLATE_Z[i]);
     platesData.push(plate);
     scene.add(plate.group);
   }
 
-  // Particles.
+  // Particles + trails.
   const MAX_PARTICLES = caps.mobile ? 50 : 100;
   const psys = buildParticleSystem(MAX_PARTICLES);
+  const tsys = buildTrailSystem(MAX_PARTICLES);
+  scene.add(tsys.lines);  // trails behind heads (z-order: drawn first)
   scene.add(psys.points);
 
   const creamColor = new THREE.Color(0xfaf6ec);
@@ -570,9 +659,11 @@ export function mountGruyereHero(container, opts = {}) {
       }
     }
     let drawCount = 0;
+    let trailCount = 0;
     for (let i = 0; i < psys.particles.length; i++) {
       const p = psys.particles[i];
       if (p.state === STATE_DEAD) continue;
+      // Head dot (Points).
       const off = drawCount * 3;
       psys.positions[off    ] = p.x;
       psys.positions[off + 1] = p.y;
@@ -582,11 +673,40 @@ export function mountGruyereHero(container, opts = {}) {
       psys.colors[off + 2] = p.b;
       psys.alphas[drawCount] = p.a;
       drawCount++;
+
+      // Trail segment (LineSegments) — only for in-flight particles, not
+      // for FADING/ACCUMULATED which are static or dying.
+      if (p.state === STATE_ALIVE) {
+        const offT = trailCount * 6;
+        // Head vertex (current position, alpha matches head)
+        tsys.positions[offT    ] = p.x;
+        tsys.positions[offT + 1] = p.y;
+        tsys.positions[offT + 2] = p.z;
+        tsys.colors[offT    ] = p.r;
+        tsys.colors[offT + 1] = p.g;
+        tsys.colors[offT + 2] = p.b;
+        tsys.alphas[trailCount * 2] = p.a * 0.7;
+        // Tail vertex (TRAIL_LENGTH behind in -z, alpha 0 = fully faded)
+        const tailZ = Math.max(p.z - TRAIL_LENGTH, SPAWN_Z);
+        tsys.positions[offT + 3] = p.x;
+        tsys.positions[offT + 4] = p.y;
+        tsys.positions[offT + 5] = tailZ;
+        tsys.colors[offT + 3] = p.r;
+        tsys.colors[offT + 4] = p.g;
+        tsys.colors[offT + 5] = p.b;
+        tsys.alphas[trailCount * 2 + 1] = 0.0;
+        trailCount++;
+      }
     }
     psys.geom.attributes.position.needsUpdate = true;
     psys.geom.attributes.color.needsUpdate = true;
     psys.geom.attributes.alpha.needsUpdate = true;
     psys.geom.setDrawRange(0, drawCount);
+
+    tsys.geom.attributes.position.needsUpdate = true;
+    tsys.geom.attributes.color.needsUpdate = true;
+    tsys.geom.attributes.alpha.needsUpdate = true;
+    tsys.geom.setDrawRange(0, trailCount * 2);
   }
 
   function maybeReset(now) {
