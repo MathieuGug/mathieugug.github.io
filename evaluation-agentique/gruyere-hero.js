@@ -730,6 +730,36 @@ export function mountGruyereHero(container, opts = {}) {
     scene.add(plate.group);
   }
 
+  // Beat state — drives which plates are enabled + visible.
+  let currentBeat = 1;
+
+  function applyBeat(n) {
+    if (typeof n !== 'number' || n < 1 || n > 5) return;  // silent no-op for out-of-range
+    currentBeat = n;
+    // Plates 1..(n-1) become active (enabled + fade in). Plate index = beat index - 1
+    // (so beat 2 enables plate index 0, etc.).
+    // Beats: 1 → 0 active, 2 → 1 active (P1), 3 → 2 active (P1+P2), 4 or 5 → 3 active (all).
+    const activeCount = Math.min(3, Math.max(0, n - 1));
+    for (let i = 0; i < platesData.length; i++) {
+      const wantActive = i < activeCount;
+      platesData[i].enabled = wantActive;
+      platesData[i].targetOpacity = wantActive ? PLATE_OPACITY : 0;
+    }
+  }
+
+  // Apply the initial beat. If no override, beat 5 = legacy behavior (all plates).
+  // We seed currentOpacity = targetOpacity so the first frame renders the correct
+  // state instantly (no fade-in for the initial mount; the fade is only triggered
+  // by later setBeat calls).
+  applyBeat(config.initialBeat);
+  for (const plate of platesData) {
+    plate.currentOpacity = plate.targetOpacity;
+    plate.mesh.material.opacity = plate.currentOpacity;
+    plate.rim.material.opacity = plate.currentOpacity * 0.7;
+    plate.mesh.visible = plate.currentOpacity > 0.001;
+    plate.rim.visible = plate.currentOpacity > 0.001;
+  }
+
   // Particles + trails.
   const MAX_PARTICLES = caps.mobile ? 50 : 100;
   const psys = buildParticleSystem(MAX_PARTICLES);
@@ -1030,5 +1060,7 @@ export function mountGruyereHero(container, opts = {}) {
       accumulated.length = 0;
       clearMarks(marks);
     },
+    setBeat(n) { applyBeat(n); },
+    getBeat() { return currentBeat; },
   };
 }
