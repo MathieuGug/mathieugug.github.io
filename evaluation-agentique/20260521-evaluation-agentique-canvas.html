@@ -1629,6 +1629,56 @@ html { scroll-behavior: smooth; }
   max-height: 40%;
 }
 
+/* === Verdict content : CSS-only visibility par data-attack === */
+.verdict-content { display: none; font-size: 11px; line-height: 1.4; }
+.verdict-content .verdict-head { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.verdict-content .verdict-slice { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-faint); letter-spacing: 0.06em; }
+.verdict-content .verdict-tag { font-family: 'JetBrains Mono', monospace; font-size: 9px; padding: 1px 5px; border-radius: 3px; color: #fff; letter-spacing: 0.06em; }
+.verdict-content .verdict-tag.verdict-passe { background: var(--carmine); }
+.verdict-content .verdict-tag.verdict-arrete { background: #4b9466; }
+.verdict-content .verdict-tag.verdict-redondant,
+.verdict-content .verdict-tag.verdict-rare { background: #5a5a5a; }
+.verdict-content .verdict-headline { font-family: 'Fraunces', Georgia, serif; font-size: 13px; font-weight: 500; margin: 4px 0; }
+.verdict-content .verdict-lines { list-style: none; padding-left: 0; font-size: 11px; }
+.verdict-content .verdict-lines li { padding: 1px 0; color: var(--text-dim); }
+.verdict-content .verdict-fw { list-style: none; padding-left: 0; font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--text-faint); margin-top: 3px; }
+.verdict-content .verdict-fw li { display: inline; margin-right: 4px; }
+
+/* Quand A0 actif (par défaut) → hint visible, content caché */
+.canvas-v2[data-attack="A0"] .verdict-default-hint { display: block; }
+
+/* Quand attaque sélectionnée → hint caché, content correspondant visible */
+.canvas-v2:not([data-attack="A0"]) .verdict-default-hint { display: none; }
+
+.canvas-v2[data-attack="A-prompt-injection"]   .verdict-content[data-attack="A-prompt-injection"],
+.canvas-v2[data-attack="A-hallucination"]      .verdict-content[data-attack="A-hallucination"],
+.canvas-v2[data-attack="A-tool-misuse"]        .verdict-content[data-attack="A-tool-misuse"],
+.canvas-v2[data-attack="A-context-saturation"] .verdict-content[data-attack="A-context-saturation"],
+.canvas-v2[data-attack="A-reward-hacking"]     .verdict-content[data-attack="A-reward-hacking"],
+.canvas-v2[data-attack="A-spec-mismatch"]      .verdict-content[data-attack="A-spec-mismatch"],
+.canvas-v2[data-attack="A-latency-drift"]      .verdict-content[data-attack="A-latency-drift"] { display: block; }
+
+/* === Attack labels — état sélectionné dans le SVG attaques === */
+.gruyere-attaques-svg [data-zoom-target^="A-"] { cursor: pointer; }
+.gruyere-attaques-svg [data-zoom-target^="A-"] text { transition: fill 200ms ease, font-weight 200ms ease, opacity 200ms ease; }
+.gruyere-attaques-svg [data-zoom-target^="A-"]:hover text { fill: var(--accent); }
+
+/* Quand une attaque est sélectionnée : autres labels dimmed */
+.canvas-v2:not([data-attack="A0"]) .gruyere-attaques-svg [data-zoom-target^="A-"] text { opacity: 0.4; }
+
+/* L'attaque sélectionnée : accent + bold */
+.canvas-v2[data-attack="A-prompt-injection"]   .gruyere-attaques-svg [data-zoom-target="A-prompt-injection"]   text,
+.canvas-v2[data-attack="A-hallucination"]      .gruyere-attaques-svg [data-zoom-target="A-hallucination"]      text,
+.canvas-v2[data-attack="A-tool-misuse"]        .gruyere-attaques-svg [data-zoom-target="A-tool-misuse"]        text,
+.canvas-v2[data-attack="A-context-saturation"] .gruyere-attaques-svg [data-zoom-target="A-context-saturation"] text,
+.canvas-v2[data-attack="A-reward-hacking"]     .gruyere-attaques-svg [data-zoom-target="A-reward-hacking"]     text,
+.canvas-v2[data-attack="A-spec-mismatch"]      .gruyere-attaques-svg [data-zoom-target="A-spec-mismatch"]      text,
+.canvas-v2[data-attack="A-latency-drift"]      .gruyere-attaques-svg [data-zoom-target="A-latency-drift"]      text {
+  fill: var(--accent);
+  font-weight: 600;
+  opacity: 1;
+}
+
 .canvas-v2-footer .footer-legend { display: flex; gap: 16px; }
 .canvas-v2-footer .legend-item::before {
   content: "";
@@ -2150,7 +2200,119 @@ html { scroll-behavior: smooth; }
         </div>
         <div class="verdict-overlay" data-couche="N1">
           <div class="verdict-default-hint">← clique une attaque pour voir comment Préventif réagit</div>
-          <!-- Task 5 ajoutera ici les 7 .verdict-content (un par attaque) -->
+          <div class="verdict-content" data-attack="A-prompt-injection">
+            <header class="verdict-head">
+              <span class="verdict-slice">N1 · Préventif</span>
+              <span class="verdict-tag verdict-passe">✗ PASSE</span>
+            </header>
+            <p class="verdict-headline">Tests ne couvrent que les patterns connus</p>
+            <ul class="verdict-lines">
+              <li>Templates testés en isolation</li>
+              <li>Garak / PromptInject scannent</li>
+              <li>mais les injections nouvelles passent</li>
+            </ul>
+            <ul class="verdict-fw">
+              <li>Garak</li>
+              <li>DeepEval</li>
+            </ul>
+          </div>
+          <div class="verdict-content" data-attack="A-hallucination">
+            <header class="verdict-head">
+              <span class="verdict-slice">N1 · Préventif</span>
+              <span class="verdict-tag verdict-arrete">✓ ARRÊTE</span>
+            </header>
+            <p class="verdict-headline">µ-3 Golden regression + Output validation</p>
+            <ul class="verdict-lines">
+              <li>Tasks figées détectent</li>
+              <li>le drift sur cas connus</li>
+              <li>JSON schema force le format</li>
+            </ul>
+            <ul class="verdict-fw">
+              <li>HaluEval</li>
+              <li>TruthfulQA</li>
+              <li>FActScore</li>
+            </ul>
+          </div>
+          <div class="verdict-content" data-attack="A-tool-misuse">
+            <header class="verdict-head">
+              <span class="verdict-slice">N1 · Préventif</span>
+              <span class="verdict-tag verdict-arrete">✓ ARRÊTE</span>
+            </header>
+            <p class="verdict-headline">µ-2 Tool schema validation typée</p>
+            <ul class="verdict-lines">
+              <li>JSON Schema / OpenAPI / Zod</li>
+              <li>arguments typés et bornés</li>
+              <li>rejette le mauvais appel</li>
+            </ul>
+            <ul class="verdict-fw">
+              <li>JSON Schema</li>
+              <li>OpenAPI</li>
+              <li>Zod</li>
+            </ul>
+          </div>
+          <div class="verdict-content" data-attack="A-context-saturation">
+            <header class="verdict-head">
+              <span class="verdict-slice">N1 · Préventif</span>
+              <span class="verdict-tag verdict-passe">✗ PASSE</span>
+            </header>
+            <p class="verdict-headline">Trajectory bench partiel</p>
+            <ul class="verdict-lines">
+              <li>Tests typiques 2-3 turns</li>
+              <li>pas 12+ comme en prod</li>
+              <li>⚠ trou large</li>
+            </ul>
+            <ul class="verdict-fw">
+              <li>τ-bench</li>
+              <li>AgentBench</li>
+            </ul>
+          </div>
+          <div class="verdict-content" data-attack="A-reward-hacking">
+            <header class="verdict-head">
+              <span class="verdict-slice">N1 · Préventif</span>
+              <span class="verdict-tag verdict-passe">✗ PASSE</span>
+            </header>
+            <p class="verdict-headline">Graders deterministic contournés</p>
+            <ul class="verdict-lines">
+              <li>L’agent apprend les patterns</li>
+              <li>explicites et les évite</li>
+              <li>Goodhart’s law en action</li>
+            </ul>
+            <ul class="verdict-fw">
+              <li>BBH</li>
+              <li>TruthfulQA</li>
+            </ul>
+          </div>
+          <div class="verdict-content" data-attack="A-spec-mismatch">
+            <header class="verdict-head">
+              <span class="verdict-slice">N1 · Préventif</span>
+              <span class="verdict-tag verdict-passe">✗ PASSE</span>
+            </header>
+            <p class="verdict-headline">Schema OK pour format,</p>
+            <ul class="verdict-lines">
+              <li>pas pour l’INTENTION</li>
+              <li>le free-form passe le check</li>
+              <li>mais le sens dérive</li>
+            </ul>
+            <ul class="verdict-fw">
+              <li>JSON Schema</li>
+            </ul>
+          </div>
+          <div class="verdict-content" data-attack="A-latency-drift">
+            <header class="verdict-head">
+              <span class="verdict-slice">N1 · Préventif</span>
+              <span class="verdict-tag verdict-passe">✗ PASSE</span>
+            </header>
+            <p class="verdict-headline">Perf bench 1 task isolée</p>
+            <ul class="verdict-lines">
+              <li>Pas trajectoire 12 tool calls</li>
+              <li>⚠ TROU LARGE</li>
+              <li>fix : ajouter trajectory bench</li>
+            </ul>
+            <ul class="verdict-fw">
+              <li>k6</li>
+              <li>Promptfoo</li>
+            </ul>
+          </div>
         </div>
       </div>
 
@@ -2248,6 +2410,114 @@ html { scroll-behavior: smooth; }
         </div>
         <div class="verdict-overlay" data-couche="N2">
           <div class="verdict-default-hint">← clique une attaque pour voir comment Curatif réagit</div>
+          <div class="verdict-content" data-attack="A-prompt-injection">
+            <header class="verdict-head">
+              <span class="verdict-slice">N2 · Détectif</span>
+              <span class="verdict-tag verdict-arrete">✓ ARRÊTE</span>
+            </header>
+            <p class="verdict-headline">Anomaly detection + 👎 spikes en prod</p>
+            <ul class="verdict-lines">
+              <li>Distribution-shift sur outputs</li>
+              <li>User feedback signale du bizarre</li>
+              <li>Détection en 2-12h</li>
+            </ul>
+            <ul class="verdict-fw">
+              <li>Lakera</li>
+              <li>Sentry</li>
+              <li>Datadog</li>
+            </ul>
+          </div>
+          <div class="verdict-content" data-attack="A-hallucination">
+            <header class="verdict-head">
+              <span class="verdict-slice">N2 · Détectif</span>
+              <span class="verdict-tag verdict-redondant">⊘ REDONDANT</span>
+            </header>
+            <p class="verdict-headline">A/B verrait NPS chute</p>
+            <ul class="verdict-lines">
+              <li>+ user feedback "l’IA invente"</li>
+              <li>détection rapide</li>
+              <li>déjà stoppé en amont</li>
+            </ul>
+            <ul class="verdict-fw">
+              <li>Statsig</li>
+            </ul>
+          </div>
+          <div class="verdict-content" data-attack="A-tool-misuse">
+            <header class="verdict-head">
+              <span class="verdict-slice">N2 · Détectif</span>
+              <span class="verdict-tag verdict-redondant">⊘ REDONDANT</span>
+            </header>
+            <p class="verdict-headline">5xx spikes en prod</p>
+            <ul class="verdict-lines">
+              <li>+ "ça plante" feedback</li>
+              <li>rapide mais après-coup</li>
+              <li>C1 est plus efficace</li>
+            </ul>
+            <ul class="verdict-fw">
+              <li>Sentry</li>
+            </ul>
+          </div>
+          <div class="verdict-content" data-attack="A-context-saturation">
+            <header class="verdict-head">
+              <span class="verdict-slice">N2 · Détectif</span>
+              <span class="verdict-tag verdict-passe">✗ PASSE</span>
+            </header>
+            <p class="verdict-headline">Success_rate baisse, cause floue</p>
+            <ul class="verdict-lines">
+              <li>Signal indirect</li>
+              <li>corrélation avec longueur session</li>
+              <li>difficile à diagnostiquer</li>
+            </ul>
+            <ul class="verdict-fw">
+              <li>PostHog</li>
+            </ul>
+          </div>
+          <div class="verdict-content" data-attack="A-reward-hacking">
+            <header class="verdict-head">
+              <span class="verdict-slice">N2 · Détectif</span>
+              <span class="verdict-tag verdict-passe">✗ PASSE</span>
+            </header>
+            <p class="verdict-headline">Métrique monte, but réel baisse</p>
+            <ul class="verdict-lines">
+              <li>Proxy decoupling</li>
+              <li>A/B trompé par sur-optim</li>
+              <li>invisible en aggregate</li>
+            </ul>
+            <ul class="verdict-fw">
+              <li>Statsig</li>
+            </ul>
+          </div>
+          <div class="verdict-content" data-attack="A-spec-mismatch">
+            <header class="verdict-head">
+              <span class="verdict-slice">N2 · Détectif</span>
+              <span class="verdict-tag verdict-arrete">✓ ARRÊTE</span>
+            </header>
+            <p class="verdict-headline">A/B révèle re-prompts/abandons</p>
+            <ul class="verdict-lines">
+              <li>Les users redemandent autrement</li>
+              <li>session replay confirme</li>
+              <li>MAU baisse</li>
+            </ul>
+            <ul class="verdict-fw">
+              <li>Statsig</li>
+              <li>PostHog</li>
+            </ul>
+          </div>
+          <div class="verdict-content" data-attack="A-latency-drift">
+            <header class="verdict-head">
+              <span class="verdict-slice">N2 · Détectif</span>
+              <span class="verdict-tag verdict-passe">✗ PASSE</span>
+            </header>
+            <p class="verdict-headline">A/B utilise success_rate</p>
+            <ul class="verdict-lines">
+              <li>pas latency comme métrique 1°</li>
+              <li>user tolère 1-2s, signale &gt; 4s</li>
+              <li>fix : latency obligatoire</li>
+            </ul>
+            <ul class="verdict-fw">
+              <li>Statsig</li>
+            </ul>
+          </div>
         </div>
       </div>
 
@@ -2343,6 +2613,110 @@ html { scroll-behavior: smooth; }
         </div>
         <div class="verdict-overlay" data-couche="N3">
           <div class="verdict-default-hint">← clique une attaque pour voir comment Qualitatif réagit</div>
+          <div class="verdict-content" data-attack="A-prompt-injection">
+            <header class="verdict-head">
+              <span class="verdict-slice">N3 · Correctif</span>
+              <span class="verdict-tag verdict-redondant">⊘ REDONDANT</span>
+            </header>
+            <p class="verdict-headline">Manual review filet de sécurité</p>
+            <ul class="verdict-lines">
+              <li>Sample hebdomadaire détecte</li>
+              <li>les injections évidentes</li>
+              <li>enrichit le corpus d’attaques</li>
+            </ul>
+            <ul class="verdict-fw">
+              <li>LangSmith</li>
+            </ul>
+          </div>
+          <div class="verdict-content" data-attack="A-hallucination">
+            <header class="verdict-head">
+              <span class="verdict-slice">N3 · Correctif</span>
+              <span class="verdict-tag verdict-redondant">⊘ REDONDANT</span>
+            </header>
+            <p class="verdict-headline">Manual review filet sécurité</p>
+            <ul class="verdict-lines">
+              <li>→ feed nouvelles golden tasks</li>
+              <li>boucle vertueuse</li>
+              <li>playbook → gruyère → playbook</li>
+            </ul>
+            <ul class="verdict-fw">
+              <li>LangSmith</li>
+            </ul>
+          </div>
+          <div class="verdict-content" data-attack="A-tool-misuse">
+            <header class="verdict-head">
+              <span class="verdict-slice">N3 · Correctif</span>
+              <span class="verdict-tag verdict-rare">⊘ RARE</span>
+            </header>
+            <p class="verdict-headline">Pas le bon outil ici</p>
+            <ul class="verdict-lines">
+              <li>Validation programmatique gagne</li>
+              <li>haut la main sur tool calls</li>
+              <li>review humaine = overkill</li>
+            </ul>
+          </div>
+          <div class="verdict-content" data-attack="A-context-saturation">
+            <header class="verdict-head">
+              <span class="verdict-slice">N3 · Correctif</span>
+              <span class="verdict-tag verdict-arrete">✓ ARRÊTE</span>
+            </header>
+            <p class="verdict-headline">Manual review observe</p>
+            <ul class="verdict-lines">
+              <li>l’agent perdre le fil</li>
+              <li>sur 12+ turns</li>
+              <li>signal direct et lisible</li>
+            </ul>
+            <ul class="verdict-fw">
+              <li>Honeycomb</li>
+              <li>LangSmith</li>
+            </ul>
+          </div>
+          <div class="verdict-content" data-attack="A-reward-hacking">
+            <header class="verdict-head">
+              <span class="verdict-slice">N3 · Correctif</span>
+              <span class="verdict-tag verdict-arrete">✓ ARRÊTE</span>
+            </header>
+            <p class="verdict-headline">Human studies + red team manual</p>
+            <ul class="verdict-lines">
+              <li>Détectent les patterns subtils</li>
+              <li>inter-rater agreement</li>
+              <li>gold standard</li>
+            </ul>
+            <ul class="verdict-fw">
+              <li>MACHIAVELLI</li>
+              <li>RewardBench</li>
+            </ul>
+          </div>
+          <div class="verdict-content" data-attack="A-spec-mismatch">
+            <header class="verdict-head">
+              <span class="verdict-slice">N3 · Correctif</span>
+              <span class="verdict-tag verdict-redondant">⊘ REDONDANT</span>
+            </header>
+            <p class="verdict-headline">Review catégorise les types</p>
+            <ul class="verdict-lines">
+              <li>de mismatches observés</li>
+              <li>→ feed golden tasks S2/S3</li>
+              <li>boucle vertueuse</li>
+            </ul>
+            <ul class="verdict-fw">
+              <li>LangSmith</li>
+            </ul>
+          </div>
+          <div class="verdict-content" data-attack="A-latency-drift">
+            <header class="verdict-head">
+              <span class="verdict-slice">N3 · Correctif</span>
+              <span class="verdict-tag verdict-passe">✗ PASSE</span>
+            </header>
+            <p class="verdict-headline">Review note la précision,</p>
+            <ul class="verdict-lines">
+              <li>pas le timing</li>
+              <li>sample 20/sem ≪ M traces</li>
+              <li>fix : checklist timing</li>
+            </ul>
+            <ul class="verdict-fw">
+              <li>LangSmith</li>
+            </ul>
+          </div>
         </div>
       </div>
 
