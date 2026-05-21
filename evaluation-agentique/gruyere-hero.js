@@ -7,7 +7,10 @@ import * as THREE from 'three';
 const DEFAULTS = {
   particleRate: 38,
   maxAccumulated: 300,
-  resetIntervalMs: 30000,
+  // Each landed mark (red scar on a plate) or accumulated particle (orange
+  // dot on the back wall) fades to 0 over this many ms. No hard reset cycle:
+  // the constellation decays organically.
+  landedLifetimeMs: 60000,
   plateOpacity: 0.08,
   showResetButton: false,
   orbitSpeed: 0.055,
@@ -15,7 +18,7 @@ const DEFAULTS = {
   // Target fraction of emitted particles that reach the accumulator. Hole
   // alignment is tuned at mount via Monte Carlo until the geometric survival
   // rate matches this target. 0.05 = 5% — enough to see the constellation
-  // grow steadily during a 30s cycle.
+  // grow steadily.
   targetSurvivalRate: 0.05,
 };
 
@@ -178,20 +181,26 @@ function detectCapabilities() {
   return { reducedMotion, webgl, mobile };
 }
 
-// Persistent "scars" left on plates where particles crashed. Accumulate across
-// the reset cycle, then cleared together with the accumulated survivors.
+// Red "scars" left on plates where particles crashed. Each has a birth time
+// and fades to 0 alpha over `landedLifetimeMs`. FIFO eviction when the cap
+// is hit — no hard reset cycle, the trace breathes on its own.
 const MAX_MARKS = 800;
-const MARK_COLOR = 0xa83020;  // deeper red than the ring so the trace stains the plate
+const MARK_COLOR = 0xa83020;
 
 function buildMarkSystem(maxCount) {
   const positions = new Float32Array(maxCount * 3);
+  const alphas = new Float32Array(maxCount);
   const geom = new THREE.BufferGeometry();
   geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geom.setAttribute('alpha', new THREE.BufferAttribute(alphas, 1));
   geom.setDrawRange(0, 0);
   const mat = new THREE.ShaderMaterial({
     uniforms: { uColor: { value: new THREE.Color(MARK_COLOR) } },
     vertexShader: `
+      attribute float alpha;
+      varying float vAlpha;
       void main() {
+        vAlpha = alpha;
         vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
         gl_PointSize = 110.0 * (1.0 / -mvPosition.z);
         gl_Position = projectionMatrix * mvPosition;
@@ -199,35 +208,56 @@ function buildMarkSystem(maxCount) {
     `,
     fragmentShader: `
       uniform vec3 uColor;
+      varying float vAlpha;
       void main() {
         vec2 c = gl_PointCoord - vec2(0.5);
         float d = length(c);
         if (d > 0.5) discard;
         float soft = smoothstep(0.5, 0.25, d);
-        gl_FragColor = vec4(uColor, 0.85 * soft);
+        gl_FragColor = vec4(uColor, vAlpha * soft);
       }
     `,
     transparent: true,
     depthWrite: false,
   });
   const points = new THREE.Points(geom, mat);
-  return { points, geom, positions, count: 0 };
+  return { points, geom, positions, alphas, entries: [], maxCount };
 }
 
-function addMark(ms, x, y, z) {
-  if (ms.count >= MAX_MARKS) return;
-  const off = ms.count * 3;
-  ms.positions[off    ] = x;
-  ms.positions[off + 1] = y;
-  // Push the mark just in front of the plate so it sits ON the surface, not inside.
-  ms.positions[off + 2] = z - 0.055;
-  ms.count++;
+function addMark(ms, x, y, z, now) {
+  if (ms.entries.length >= ms.maxCount) ms.entries.shift(); // FIFO drop oldest
+  ms.entries.push({ x, y, z: z - 0.055, bornAt: now });
+}
+
+function updateMarks(ms, now, lifetimeMs) {
+  // Cull expired
+  let writeIdx = 0;
+  for (let i = 0; i < ms.entries.length; i++) {
+    const e = ms.entries[i];
+    if (now - e.bornAt < lifetimeMs) {
+      if (writeIdx !== i) ms.entries[writeIdx] = e;
+      writeIdx++;
+    }
+  }
+  ms.entries.length = writeIdx;
+
+  // Push positions + alphas to GPU buffers
+  for (let i = 0; i < ms.entries.length; i++) {
+    const e = ms.entries[i];
+    const off = i * 3;
+    ms.positions[off    ] = e.x;
+    ms.positions[off + 1] = e.y;
+    ms.positions[off + 2] = e.z;
+    const age = (now - e.bornAt) / lifetimeMs;
+    ms.alphas[i] = 0.85 * Math.max(0, 1 - age);
+  }
   ms.geom.attributes.position.needsUpdate = true;
-  ms.geom.setDrawRange(0, ms.count);
+  ms.geom.attributes.alpha.needsUpdate = true;
+  ms.geom.setDrawRange(0, ms.entries.length);
 }
 
 function clearMarks(ms) {
-  ms.count = 0;
+  ms.entries.length = 0;
   ms.geom.setDrawRange(0, 0);
 }
 
@@ -701,10 +731,8 @@ export function mountGruyereHero(container, opts = {}) {
   scene.add(marks.points);
 
   // Accumulation: particles that pass plate 3 are frozen on the back wall.
+  // Each fades on its own over config.landedLifetimeMs; no hard reset cycle.
   const accumulated = [];
-  let resetCycleStart = performance.now();
-  let resetStartedAt = -1; // -1 = not currently fading out the constellation
-  const RESET_FADE_MS = 1500;
 
   let lastT = performance.now();
   let spawnAccumulator = 0;
@@ -742,7 +770,7 @@ export function mountGruyereHero(container, opts = {}) {
               p.state = STATE_FADING;
               p.fadeStart = now;
               triggerBurst(blockedRings, p.x, p.y, plate.z);
-              addMark(marks, p.x, p.y, plate.z);
+              addMark(marks, p.x, p.y, plate.z, now);
               break;
             } else {
               // Passed through a hole — green cloud signals the breach.
@@ -751,12 +779,18 @@ export function mountGruyereHero(container, opts = {}) {
           }
         }
         if (p.state === STATE_ALIVE && p.z >= ACCUMULATOR_Z) {
+          if (accumulated.length >= config.maxAccumulated) {
+            // FIFO: evict oldest accumulated so the new one can land.
+            const old = accumulated.shift();
+            old.state = STATE_DEAD;
+          }
           p.state = STATE_ACCUMULATED;
           p.z = ACCUMULATOR_Z;
           p.r = accentColor.r;
           p.g = accentColor.g;
           p.b = accentColor.b;
           p.a = 0.85;
+          p.landedAt = now;
           accumulated.push(p);
         }
       } else if (p.state === STATE_FADING) {
@@ -764,6 +798,15 @@ export function mountGruyereHero(container, opts = {}) {
         const t = Math.min(1, elapsed / FADE_DURATION);
         p.a = 0.9 * (1 - t);
         if (t >= 1) p.state = STATE_DEAD;
+      } else if (p.state === STATE_ACCUMULATED) {
+        // Temporal decay: fade to 0 over config.landedLifetimeMs.
+        const age = (now - p.landedAt) / config.landedLifetimeMs;
+        p.a = 0.85 * Math.max(0, 1 - age);
+        if (age >= 1) {
+          p.state = STATE_DEAD;
+          const idx = accumulated.indexOf(p);
+          if (idx >= 0) accumulated.splice(idx, 1);
+        }
       }
     }
     let drawCount = 0;
@@ -818,27 +861,8 @@ export function mountGruyereHero(container, opts = {}) {
     tsys.geom.setDrawRange(0, trailCount * 2);
   }
 
-  function maybeReset(now) {
-    if (resetStartedAt < 0) {
-      const overflow = accumulated.length >= config.maxAccumulated;
-      const timeOut = (now - resetCycleStart) >= config.resetIntervalMs;
-      if (overflow || timeOut) {
-        resetStartedAt = now;
-      }
-    } else {
-      const elapsed = now - resetStartedAt;
-      const t = Math.min(1, elapsed / RESET_FADE_MS);
-      const targetAlpha = 0.85 * (1 - t);
-      for (const p of accumulated) p.a = targetAlpha;
-      if (t >= 1) {
-        for (const p of accumulated) p.state = STATE_DEAD;
-        accumulated.length = 0;
-        clearMarks(marks);
-        resetStartedAt = -1;
-        resetCycleStart = now;
-      }
-    }
-  }
+  // No maybeReset: marks + accumulated particles now decay individually via
+  // their bornAt/landedAt timestamps.
 
   // Orbital camera: slow rotation around the scene center. Distance is
   // recomputed each frame from the current aspect so the scene never clips.
@@ -922,8 +946,8 @@ export function mountGruyereHero(container, opts = {}) {
 
     updateParticles(dt, now);
     updateBurst(blockedRings, dt, 3.5);  // red ring expands fast
-    updateBurst(passedBursts, dt, 5.0);  // green cloud expands faster (breach signal)
-    maybeReset(now);
+    updateBurst(passedBursts, dt, 5.0);  // green cloud expands faster
+    updateMarks(marks, now, config.landedLifetimeMs);
     renderer.render(scene, camera);
   }
   animate();
@@ -959,6 +983,11 @@ export function mountGruyereHero(container, opts = {}) {
     },
     pause() { if (rafId) { cancelAnimationFrame(rafId); rafId = null; } },
     resume() { if (!rafId) { lastT = performance.now(); animate(); } },
-    reset() { resetStartedAt = performance.now(); },
+    reset() {
+      // Manual purge of every landed dot/mark.
+      for (const p of accumulated) p.state = STATE_DEAD;
+      accumulated.length = 0;
+      clearMarks(marks);
+    },
   };
 }
