@@ -81,6 +81,23 @@ Tout schéma SVG inline **doit** être agrandissable en plein écran (overlay + 
 
 Sur mobile, le schéma rendu à 320 px de large devient illisible — le zoom est l'échappatoire **non négociable**.
 
+### Anchor `¶` au début de la figcaption (deep-link)
+
+Toute `<figure>` qui contient un schéma SVG ou une infographie **doit** porter un `id="fig-XX"` **et** ouvrir sa `<figcaption>` par un petit lien d'ancre `¶` cliquable, identique au pattern infographie. Permet de copier un lien direct vers un schéma précis (utile pour le partage, les renvois croisés entre dossiers, et la cite interne dans un futur sommaire des schémas).
+
+```html
+<figure class="figure" id="fig-03">
+  <svg …>…</svg>
+  <figcaption class="figure-caption"><a class="anchor" href="#fig-03" title="Lien direct vers ce schéma">¶</a>Schéma 3 — …</figcaption>
+</figure>
+```
+
+- **Style** : déjà défini dans `/assets/dossier-app.css` (`.figure-caption .anchor`) — accent `--accent`, opacity 0.55, plein 1 au hover. Pas de CSS local à ajouter sur les apps deep-research.
+- **Scroll-margin** : `dossier-app.css` règle `scroll-margin-top: 80px` sur tout `main figure[id]` pour décaler sous la topbar fixe quand on jump à l'ancre.
+- **Convention `id`** : `fig-NN` zero-padded à 2 chiffres (`fig-01`, …, `fig-10`), suffixe `bis` autorisé (`fig-06bis`). Garder cohérent avec le numéro affiché dans le titre de la figcaption.
+- **Title attribute** : `"Lien direct vers ce schéma"` (ou `"… cette infographie"` pour les A4 portrait) — sert d'affordance au survol.
+- **Pages non-apps** (journal, scrolly, livre) : même pattern HTML, mais le style `.figure-caption .anchor` est uniquement embarqué par `dossier-app.css`. Sur ces pages, ajouter le bloc CSS localement (copier-coller de `assets/dossier-app.css` lignes 24-38).
+
 ## 4. Layout — full-bleed sur les pages narratives
 
 Sur les pages narratives (journal, livre, scrolly) qui ont un wrap étroit (typiquement `.wrap { max-width: 760px }`), les schémas SVG **cassent** le wrap pour occuper toute la viewport — texte à 760 px, schémas pleine largeur. Le `<figcaption>` reste re-centré à 760 px sinon sa typographie devient illisible sur grand écran.
@@ -228,6 +245,7 @@ La proba est une **estimation éditoriale** ; elle doit suivre les pivots de la 
 - [ ] `<rect>` : height englobe tout le texte interne (recompter `y_dernier_texte + ~20 px`)
 - [ ] `<text>` long : splitté à la main si > `W - 40` (cf. table px/char)
 - [ ] Bouton zoom `⛶` présent et fonctionnel
+- [ ] `<figure id="fig-NN">` + anchor `<a class="anchor" href="#fig-NN">¶</a>` au début de la figcaption (deep-link)
 - [ ] Page narrative : full-bleed avec `margin: … calc(50% - 50vw); padding: 0 clamp(16px, 3vw, 48px)` ; `<figcaption>` re-centré à 760 px
 - [ ] App deep-research : `main#report` container-capped à 760 px ; formule `.figure` margin-inline adaptative aux deux états sidebar (vérifier à 1320 / 1440 / 1920 px que ni TOC ni Sources ne sont recouverts)
 - [ ] Branche interactive (journal Musk) : `data-modal-id` présent + entrée correspondante dans `modals`
