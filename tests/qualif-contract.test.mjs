@@ -75,5 +75,11 @@ test('qualif.json: adjustments reference valid axes and inputs', () => {
     assert.ok(adj.when, `${adj.id} missing when clause`);
     assert.ok(axisIds.has(adj.when.axis), `${adj.id} references unknown axis: ${adj.when.axis}`);
     assert.ok(inputIds.get(adj.when.axis).has(adj.when.input), `${adj.id} references unknown input ${adj.when.input} on axis ${adj.when.axis}`);
+    for (const nested of [adj.when.and, adj.when.and_not].filter(Boolean)) {
+      assert.ok(axisIds.has(nested.axis),
+        `${adj.id}.when.and/and_not references unknown axis: ${nested.axis}`);
+      assert.ok(inputIds.get(nested.axis).has(nested.input),
+        `${adj.id}.when.and/and_not references unknown input ${nested.input} on axis ${nested.axis}`);
+    }
   }
 });
