@@ -230,10 +230,26 @@
       wireSteps(handles);
       wireRecap(handles);
       wireQualifNav(handles);
+      wireHashAutoExpand();
       renderAll(handles);
     }).catch(function (err) {
       console.error('[qualif]', err);
     });
+  }
+
+  function wireHashAutoExpand() {
+    function expandFromHash() {
+      const hash = window.location.hash;
+      if (!hash || hash.indexOf('#qualif-step-') !== 0) return;
+      const step = document.querySelector('aside.qualif-step' + hash);
+      if (!step) return;
+      const toggle = step.querySelector('.qualif-step__toggle');
+      const body = step.querySelector('.qualif-step__body');
+      if (!toggle || !body || !body.hidden) return;
+      toggle.click();
+    }
+    expandFromHash();
+    window.addEventListener('hashchange', expandFromHash);
   }
 
   function hydrateState(key) {
@@ -301,8 +317,25 @@
       step.addEventListener('input', function (e) { handleStepInput(e, axis, handles); });
       step.addEventListener('change', function (e) { handleStepInput(e, axis, handles); });
 
+      // Bind du bouton toggle (Renseigner → / Replier ↑)
+      wireStepToggle(step);
+
       // Update du témoin (witness) initial
       updateStepWitness(step, axis, handles.state);
+    });
+  }
+
+  function wireStepToggle(step) {
+    const toggle = step.querySelector('.qualif-step__toggle');
+    const body = step.querySelector('.qualif-step__body');
+    if (!toggle || !body) return;
+    const closedLabel = toggle.textContent.trim() || 'Renseigner →';
+    const openLabel = 'Replier ↑';
+    toggle.addEventListener('click', function () {
+      const open = toggle.getAttribute('aria-expanded') === 'true';
+      toggle.setAttribute('aria-expanded', String(!open));
+      body.hidden = open;
+      toggle.textContent = open ? closedLabel : openLabel;
     });
   }
 
