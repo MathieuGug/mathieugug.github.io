@@ -433,18 +433,23 @@ def ensure_data_link(html_src: str, qualif_path: Path, app_path: Path) -> tuple[
 
 
 def ensure_topbar_button(html_src: str) -> tuple[str, str]:
-    """Inject <button id="toggle-qualif"> after #toggle-sources in <header class="site">."""
+    """Inject <button id="toggle-qualif"> into <header class="topbar"> just before <nav class="back-nav">.
+
+    Placement load-bearing : la topbar est `position: fixed`, donc le bouton
+    reste visible à tout moment. Le mettre dans <header class="site"> le ferait
+    disparaître dès que l'utilisateur scrolle au-delà de l'en-tête.
+    """
     if 'id="toggle-qualif"' in html_src:
         return html_src, 'present'
     btn = '<button id="toggle-qualif" class="menu-toggle" aria-label="Ouvrir le profil de qualif">Profil</button>'
     pat = re.compile(
-        r'(<button id="toggle-sources"[^>]*>[^<]*</button>)',
+        r'([ \t]*)(<nav class="back-nav"[^>]*>)',
         re.IGNORECASE,
     )
     m = pat.search(html_src)
     if not m:
-        return html_src, 'skipped (no toggle-sources anchor)'
-    new_html = pat.sub(lambda mt: mt.group(1) + '\n      ' + btn, html_src, count=1)
+        return html_src, 'skipped (no back-nav anchor in topbar)'
+    new_html = pat.sub(lambda mt: mt.group(1) + btn + '\n' + mt.group(1) + mt.group(2), html_src, count=1)
     return new_html, 'inserted'
 
 
