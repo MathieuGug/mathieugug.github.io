@@ -174,7 +174,7 @@ def render_input(axis_id: str, inp: dict[str, Any]) -> str:
 def render_step(axis: dict[str, Any]) -> str:
     """Rend un <aside class="qualif-step"> complet."""
     inputs_html = '\n    '.join(render_input(axis['id'], inp) for inp in axis['inputs'])
-    return f'''<aside class="qualif-step" data-axis="{axis["id"]}">
+    return f'''<aside class="qualif-step" id="qualif-step-{axis["id"]}" data-axis="{axis["id"]}">
   <header class="qualif-step__head">
     <p class="qualif-step__eyebrow">// votre profil — {html.escape(axis["label"])}</p>
     <p class="qualif-step__intro">{html.escape(axis["intro"])}</p>
@@ -301,7 +301,7 @@ def inject_step(html_src: str, axis: dict[str, Any], strict: bool = False) -> tu
     """Retourne (new_html, action) où action ∈ {'inserted', 'replaced', 'skipped'}."""
     rendered = render_step(axis)
     pat = re.compile(
-        rf'<aside class="qualif-step" data-axis="{re.escape(axis["id"])}">.*?</aside>',
+        rf'<aside class="qualif-step"(?: id="qualif-step-{re.escape(axis["id"])}")? data-axis="{re.escape(axis["id"])}">.*?</aside>',
         re.DOTALL,
     )
     if pat.search(html_src):
