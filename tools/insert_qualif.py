@@ -270,6 +270,115 @@ def render_recap(config: dict[str, Any]) -> str:
 </aside>'''
 
 
+# ─────────────────────────────────────────────────────────────────────────
+# Injection : replace si existant, sinon insert avant le heading
+# ─────────────────────────────────────────────────────────────────────────
+
+ASIDE_RECAP_RE = re.compile(
+    r'<aside id="qualif-recap"[^>]*>.*?</aside>',
+    re.DOTALL,
+)
+
+
+def heading_pos(html_src: str, heading_id: str) -> int:
+    """Retourne la position du <h2|h3 id="..."> dans html_src, ou -1."""
+    pat = re.compile(rf'<h[23] id="{re.escape(heading_id)}"[^>]*>')
+    m = pat.search(html_src)
+    return m.start() if m else -1
+
+
+def maybe_pull_before_hr(html_src: str, pos: int) -> int:
+    """Si un <hr> précède directement le heading (à moins de ~200 chars), retourne sa position."""
+    start = max(0, pos - 200)
+    window = html_src[start:pos]
+    hr_match = re.search(r'<hr\s*/?>\s*$', window)
+    if hr_match:
+        return start + hr_match.start()
+    return pos
+
+
+def inject_step(html_src: str, axis: dict[str, Any], strict: bool = False) -> tuple[str, str]:
+    """Retourne (new_html, action) où action ∈ {'inserted', 'replaced', 'skipped'}."""
+    rendered = render_step(axis)
+    pat = re.compile(
+        rf'<aside class="qualif-step" data-axis="{re.escape(axis["id"])}">.*?</aside>',
+        re.DOTALL,
+    )
+    if pat.search(html_src):
+        new_html = pat.sub(lambda m: rendered, html_src, count=1)
+        return new_html, 'replaced'
+    pos = heading_pos(html_src, axis['before_heading_id'])
+    if pos == -1:
+        msg = f'warning: heading id "{axis["before_heading_id"]}" not found for axis "{axis["id"]}"'
+        if strict:
+            raise RuntimeError(msg)
+        print(msg, file=sys.stderr)
+        return html_src, 'skipped'
+    insert_pos = maybe_pull_before_hr(html_src, pos)
+    indent = '\n\n'
+    new_html = html_src[:insert_pos] + rendered + indent + html_src[insert_pos:]
+    return new_html, 'inserted'
+
+
+def inject_recap(html_src: str, config: dict[str, Any], strict: bool = False) -> tuple[str, str]:
+    rendered = render_recap(config)
+    if ASIDE_RECAP_RE.search(html_src):
+        new_html = ASIDE_RECAP_RE.sub(lambda m: rendered, html_src, count=1)
+        return new_html, 'replaced'
+    pos = heading_pos(html_src, config['meta']['recap_before_heading_id'])
+    if pos == -1:
+        msg = f'warning: heading id "{config["meta"]["recap_before_heading_id"]}" not found for recap'
+        if strict:
+            raise RuntimeError(msg)
+        print(msg, file=sys.stderr)
+        return html_src, 'skipped'
+    insert_pos = maybe_pull_before_hr(html_src, pos)
+    indent = '\n\n'
+    new_html = html_src[:insert_pos] + rendered + indent + html_src[insert_pos:]
+    return new_html, 'inserted'
+
+
+def ensure_lib_tags(html_src: str) -> tuple[str, str]:
+    """Injecte <link> et <script> de la lib si absents."""
+    has_css = 'href="/assets/dossier-qualif.css"' in html_src
+    has_js = 'src="/assets/dossier-qualif.js"' in html_src
+    if has_css and has_js:
+        return html_src, 'present'
+
+    css_tag = '<link rel="stylesheet" href="/assets/dossier-qualif.css">'
+    js_tag = '<script src="/assets/dossier-qualif.js" defer></script>'
+
+    if not has_css:
+        if 'href="/assets/dossier-app.css"' in html_src:
+            pat = re.compile(r'<link[^>]+href="/assets/dossier-app\.css"[^>]*>')
+            html_src = pat.sub(lambda m: m.group(0) + '\n  ' + css_tag, html_src, count=1)
+        else:
+            html_src = html_src.replace('</head>', '  ' + css_tag + '\n</head>', 1)
+
+    if not has_js:
+        if 'src="/assets/dossier-app.js"' in html_src:
+            pat = re.compile(r'<script[^>]+src="/assets/dossier-app\.js"[^>]*>\s*</script>')
+            html_src = pat.sub(lambda m: m.group(0) + '\n  ' + js_tag, html_src, count=1)
+        else:
+            html_src = html_src.replace('</body>', '  ' + js_tag + '\n</body>', 1)
+
+    return html_src, 'inserted'
+
+
+def ensure_data_link(html_src: str, qualif_path: Path, app_path: Path) -> tuple[str, str]:
+    """Injecte <link rel="qualif-data" href="..."> pointant vers le sidecar JSON."""
+    if 'rel="qualif-data"' in html_src:
+        return html_src, 'present'
+    try:
+        rel = qualif_path.resolve().relative_to(app_path.resolve().parent)
+        href = './' + rel.as_posix()
+    except ValueError:
+        href = '/' + qualif_path.as_posix().lstrip('/')
+    tag = f'<link rel="qualif-data" href="{href}">'
+    html_src = html_src.replace('</head>', '  ' + tag + '\n</head>', 1)
+    return html_src, 'inserted'
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description='Inject qualification widget blocks into an app HTML.')
     ap.add_argument('--app', required=True, type=Path)
@@ -295,11 +404,34 @@ def main(argv: list[str] | None = None) -> int:
 
     html_src = args.app.read_text(encoding='utf-8')
 
-    # Phase 5.3+ : rendu + injection
-    print(f'qualif JSON validated: {len(config["axes"])} axes, {len(config["profiles"])} profiles, {len(config.get("adjustments", []))} adjustments')
-    print(f'app: {args.app} ({len(html_src)} chars)')
-    print('rendu + injection: TODO (Task 5.3+)')
+    # Inject mini-blocs (axes)
+    actions: list[str] = []
+    for axis in config['axes']:
+        html_src, action = inject_step(html_src, axis, strict=args.strict)
+        actions.append(f'  axis "{axis["id"]}" → {action}')
 
+    # Inject récap
+    html_src, recap_action = inject_recap(html_src, config, strict=args.strict)
+    actions.append(f'  recap → {recap_action}')
+
+    # Inject lib tags (link + script) if absent
+    html_src, lib_action = ensure_lib_tags(html_src)
+    actions.append(f'  lib tags → {lib_action}')
+
+    # Inject <link rel="qualif-data"> pointing to the sidecar JSON
+    html_src, data_link_action = ensure_data_link(html_src, args.qualif, args.app)
+    actions.append(f'  data link → {data_link_action}')
+
+    print(f'qualif JSON validated: {len(config["axes"])} axes, {len(config["profiles"])} profiles, {len(config.get("adjustments", []))} adjustments')
+    print(f'app: {args.app}')
+    print('\n'.join(actions))
+
+    if args.check:
+        print('\n--check : no file written')
+        return 0
+
+    args.app.write_text(html_src, encoding='utf-8')
+    print(f'\nwritten: {args.app}')
     return 0
 
 
