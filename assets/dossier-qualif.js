@@ -52,7 +52,16 @@
   /**
    * Retourne le profil le plus proche du vecteur utilisateur (distance euclidienne).
    * Les entrées null/undefined sont traitées comme 50 (neutre).
-   * Tie-break stable selon l'ordre prioritaire fourni.
+   * Tie-break stable selon l'ordre prioritaire fourni ; ids inconnus → priorité basse.
+   *
+   * **Invariant** : `vec` doit avoir exactement 6 entrées (padder avec null pour
+   * les axes non renseignés). Une longueur < 6 produit NaN et retourne null
+   * silencieusement.
+   *
+   * @param {Array<number|null>} vec - 6 scores axiaux (peut contenir null pour partiel).
+   * @param {Array<Object>} profiles - Liste des profils avec {id, anchor: [6]}.
+   * @param {Array<string>} tiebreakOrder - IDs de profils dans l'ordre prioritaire.
+   * @returns {Object|null} Le profil dominant, ou null si profiles est vide.
    */
   Q.dominantProfile = function dominantProfile(vec, profiles, tiebreakOrder) {
     const normalized = vec.map(function (v) {
@@ -68,7 +77,9 @@
         const d = normalized[k] - p.anchor[k];
         dist += d * d;
       }
-      const priority = tiebreakOrder.indexOf(p.id);
+      const rawPriority = tiebreakOrder.indexOf(p.id);
+      // Unknown ids land last (large number) rather than first (would be -1).
+      const priority = rawPriority === -1 ? tiebreakOrder.length : rawPriority;
       const isCloser = dist < bestDist;
       const isTieAndPrior = (dist === bestDist) && (priority < bestPriority);
       if (isCloser || isTieAndPrior) {
@@ -120,6 +131,19 @@
     return true;
   }
 
+  /**
+   * Retourne les recos déclenchées par les règles, max `cap` (défaut Infinity).
+   * Ordre de déclaration du JSON respecté ; premières règles match gagnent.
+   *
+   * **En production**, passer cap=2 explicitement (limite éditoriale spec).
+   * Le défaut Infinity facilite les tests qui exercent des règles plus loin
+   * dans la séquence sans saturer le cap.
+   *
+   * @param {Object} state - Map des saisies.
+   * @param {Array<Object>} adjustments - Règles du JSON.
+   * @param {number} [cap=Infinity] - Maximum de recos. Phase 3 doit passer 2.
+   * @returns {Array<string>}
+   */
   Q.applyAdjustments = function applyAdjustments(state, adjustments, cap) {
     if (cap === undefined) cap = Infinity;
     const out = [];

@@ -107,6 +107,12 @@ test('dominantProfile: null entries treated as 50 (neutral) for partial profiles
   assert.equal(Q.dominantProfile([20, 30, null, null, null, null], TEST_PROFILES, TIEBREAK_ORDER).id, 'poc');
 });
 
+test('dominantProfile: empty profiles array → returns null', () => {
+  // Pin behavior : caller should never invoke with an empty profile list,
+  // but if it does, we return null (not undefined, not throw).
+  assert.equal(Q.dominantProfile([50,50,50,50,50,50], [], []), null);
+});
+
 const TEST_ADJUSTMENTS = [
   { id: 'a-contains',
     when: { axis: 'maturite-ia', input: 'freins', contains: 'hallucinations' },
@@ -173,6 +179,14 @@ test('applyAdjustments: not triggers when value differs', () => {
   assert.ok(recos.includes('Reco not'));
   const notTriggered = Q.applyAdjustments({ 'gouvernance.regime': 'hors-fin-sante' }, TEST_ADJUSTMENTS);
   assert.ok(!notTriggered.includes('Reco not'));
+});
+
+test('applyAdjustments: not does NOT trigger when state key absent (unanswered)', () => {
+  // Design choice: adjustments only apply to fields the user has actually answered.
+  // An adjustment with `not: 'X'` does NOT fire if the field is undefined — otherwise
+  // every untouched field would mass-trigger negative-match recos at page load.
+  const recos = Q.applyAdjustments({}, TEST_ADJUSTMENTS);
+  assert.ok(!recos.includes('Reco not'));
 });
 
 test('applyAdjustments: contains_any_of triggers if at least one in list', () => {
