@@ -178,11 +178,85 @@
   };
 
   // ─────────────────────────────────────────────────────────────────────────
-  // DOM bootstrap — branché en Phase 3 (laissé vide pour l'instant)
+  // Chargement du sidecar JSON
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Cherche <link rel="qualif-data" href="...qualif.json"> dans <head>,
+   * fetch le JSON, retourne la Promise<config>.
+   */
+  function loadQualifConfig() {
+    const link = document.querySelector('link[rel="qualif-data"]');
+    if (!link) return Promise.resolve(null);
+    return fetch(link.href).then(function (r) {
+      if (!r.ok) throw new Error('qualif: fetch ' + link.href + ' → ' + r.status);
+      return r.json();
+    });
+  }
+
+  /**
+   * Tiebreak order standard (Regulated > Builder > PoC > Pioneer > Explorer).
+   * Pour les calibrages génériques. Override possible via config.meta.tiebreak.
+   */
+  const DEFAULT_TIEBREAK = ['regulated', 'builder', 'poc-trapped', 'pioneer', 'explorer'];
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // DOM bootstrap — Phase 3
   // ─────────────────────────────────────────────────────────────────────────
 
   function init() {
-    // Branché en Phase 3
+    // Guard pour environnements de test (sandbox vm sans DOM complet)
+    if (typeof document.querySelectorAll !== 'function') return;
+
+    const steps = document.querySelectorAll('aside.qualif-step');
+    const recap = document.querySelector('aside#qualif-recap');
+    if (steps.length === 0 && !recap) return; // pas de widget sur cette page
+
+    loadQualifConfig().then(function (config) {
+      if (!config) return;
+      const slug = config.meta.slug;
+      const version = config.meta.version || 1;
+      const storageKey = 'qualif_' + slug + '_v' + version;
+      const tiebreak = (config.meta && config.meta.tiebreak) || DEFAULT_TIEBREAK;
+
+      const state = hydrateState(storageKey);
+      const handles = {
+        config: config,
+        storageKey: storageKey,
+        tiebreak: tiebreak,
+        state: state
+      };
+
+      wireSteps(handles);
+      wireRecap(handles);
+      renderAll(handles);
+    }).catch(function (err) {
+      console.error('[qualif]', err);
+    });
+  }
+
+  function hydrateState(key) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return {};
+      const data = JSON.parse(raw);
+      return (data && data.inputs) || {};
+    } catch (e) {
+      console.warn('[qualif] hydrate failed', e);
+      return {};
+    }
+  }
+
+  function persistState(key, state, dominantId) {
+    try {
+      localStorage.setItem(key, JSON.stringify({
+        inputs: state,
+        ts: new Date().toISOString(),
+        dominant_profile: dominantId
+      }));
+    } catch (e) {
+      console.warn('[qualif] persist failed', e);
+    }
   }
 
   if (typeof document !== 'undefined') {
