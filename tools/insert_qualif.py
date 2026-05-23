@@ -270,6 +270,33 @@ def render_recap(config: dict[str, Any]) -> str:
 </aside>'''
 
 
+def render_qualif_nav(config: dict[str, Any]) -> str:
+    """Rend la sidebar nav (liste des 6 axes + état)."""
+    items = []
+    for axis in config['axes']:
+        items.append(
+            f'    <li data-axis="{axis["id"]}" class="is-empty">'
+            f'<a href="#qualif-step-{axis["id"]}">'
+            f'<span class="qualif-nav__label">{html.escape(axis["label"])}</span>'
+            f'<span class="qualif-nav__state" data-bind="state">0 / {len(axis["inputs"])}</span>'
+            f'</a></li>'
+        )
+    items_html = '\n'.join(items)
+    return f'''<aside id="qualif-nav" class="qualif-nav" aria-labelledby="qualif-nav-title">
+  <header class="qualif-nav__head">
+    <p class="qualif-nav__eyebrow">// votre profil</p>
+    <h4 id="qualif-nav-title">Profil de qualif</h4>
+    <button class="panel-close" type="button" aria-label="Fermer le profil de qualif">Fermer ✕</button>
+  </header>
+  <ol class="qualif-nav__list">
+{items_html}
+  </ol>
+  <footer class="qualif-nav__foot">
+    <a href="#qualif-recap" class="qualif-nav__see-recap">Voir mon profil ↓</a>
+  </footer>
+</aside>'''
+
+
 # ─────────────────────────────────────────────────────────────────────────
 # Injection : replace si existant, sinon insert avant le heading
 # ─────────────────────────────────────────────────────────────────────────
@@ -334,6 +361,32 @@ def inject_recap(html_src: str, config: dict[str, Any], strict: bool = False) ->
         return html_src, 'skipped'
     insert_pos = maybe_pull_before_hr(html_src, pos)
     indent = '\n\n'
+    new_html = html_src[:insert_pos] + rendered + indent + html_src[insert_pos:]
+    return new_html, 'inserted'
+
+
+ASIDE_QUALIF_NAV_RE = re.compile(
+    r'<aside id="qualif-nav"[^>]*>.*?</aside>',
+    re.DOTALL,
+)
+
+
+def inject_qualif_nav(html_src: str, config: dict[str, Any], strict: bool = False) -> tuple[str, str]:
+    """Inject (or replace) the qualif-nav sidebar before <aside id="sources"."""
+    rendered = render_qualif_nav(config)
+    if ASIDE_QUALIF_NAV_RE.search(html_src):
+        new_html = ASIDE_QUALIF_NAV_RE.sub(lambda m: rendered, html_src, count=1)
+        return new_html, 'replaced'
+    sources_pat = re.compile(r'<aside id="sources"', re.IGNORECASE)
+    m = sources_pat.search(html_src)
+    if not m:
+        msg = 'warning: <aside id="sources"> not found — cannot anchor qualif-nav'
+        if strict:
+            raise RuntimeError(msg)
+        print(msg, file=sys.stderr)
+        return html_src, 'skipped'
+    insert_pos = m.start()
+    indent = '\n\n    '
     new_html = html_src[:insert_pos] + rendered + indent + html_src[insert_pos:]
     return new_html, 'inserted'
 
@@ -418,6 +471,10 @@ def main(argv: list[str] | None = None) -> int:
     # Inject récap
     html_src, recap_action = inject_recap(html_src, config, strict=args.strict)
     actions.append(f'  recap → {recap_action}')
+
+    # Inject qualif-nav sidebar (right column, above #sources)
+    html_src, nav_action = inject_qualif_nav(html_src, config, strict=args.strict)
+    actions.append(f'  qualif-nav → {nav_action}')
 
     # Inject lib tags (link + script) if absent
     html_src, lib_action = ensure_lib_tags(html_src)
