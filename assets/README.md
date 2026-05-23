@@ -68,3 +68,40 @@ Pour les apps qui dérivent du pattern → migration manuelle, voir le code de `
 - **Patterns techniques généraux** (mobile, topbar, sidebars, callouts) : skill `.claude/skills/illustrated-deep-research/references/`.
 - **Conventions éditoriales du site** (cadrage, workflow git, mode admin) : `CLAUDE.md` à la racine.
 - **Suite de tests détaillée** + procédure de mise à jour du contrat fixtures : `tests/README.md`.
+
+---
+
+# Lib `dossier-qualif.{js,css}` (widget de qualif business)
+
+Pilier indépendant de `dossier-app`. Active le widget de qualification business sur un dossier en plus du runtime principal.
+
+## Fichiers
+
+- **`dossier-qualif.js`** — IIFE qui charge le sidecar JSON via `<link rel="qualif-data">`, rend les mini-blocs interactifs, calcule profil + recos, peint le radar SVG, persiste en LocalStorage.
+- **`dossier-qualif.css`** — patterns structurels pour `.qualif-step`, `.qualif-input--{slider,multi,segmented}`, `.qualif-recap` + radar SVG + print A4.
+
+## Inclusion dans une app
+
+```html
+<!-- Dans <head>, après <link href="/assets/dossier-app.css"> -->
+<link rel="stylesheet" href="/assets/dossier-qualif.css">
+<link rel="qualif-data" href="./qualif.json">
+
+<!-- Dans <body>, juste avant </body>, après <script src="/assets/dossier-app.js"> -->
+<script src="/assets/dossier-qualif.js" defer></script>
+```
+
+L'injection est automatique via `tools/insert_qualif.py` — voir CLAUDE.md.
+
+## Contrat DOM
+
+| Pattern | IDs / sélecteurs |
+|---|---|
+| Mini-blocs | `<aside class="qualif-step" data-axis="...">` |
+| Récap | `<aside id="qualif-recap">` |
+| Bindings dynamiques | `[data-bind="profile-label"]`, `[data-bind="verdict"]`, `[data-bind="recos"]`, `[data-bind="ts"]`, `[data-bind="completeness"]`, `[data-bind="radar-desc"]`, `[data-bind="radar-caption"]`, `[data-bind="user-polygon"]`, `[data-bind="profile-polygon"]` |
+| Actions | `button[data-action="print"]`, `button[data-action="reset"]` |
+
+## Persistance
+
+LocalStorage clé `qualif_<slug>_v<n>`. Bump `meta.version` du JSON → ancien profil silencieusement ignoré (pas de migration).
