@@ -380,6 +380,167 @@
     }
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // wireRecap + renderAll — radar SVG, verdict, recos, print, reset
+  // ─────────────────────────────────────────────────────────────────────────
+
+  function wireRecap(handles) {
+    const recap = document.querySelector('aside#qualif-recap');
+    if (!recap) return;
+
+    const printBtn = recap.querySelector('button[data-action="print"]');
+    const resetBtn = recap.querySelector('button[data-action="reset"]');
+
+    if (printBtn) {
+      printBtn.addEventListener('click', function () { window.print(); });
+    }
+    if (resetBtn) {
+      resetBtn.addEventListener('click', function () {
+        if (!window.confirm('Réinitialiser votre profil ?')) return;
+        localStorage.removeItem(handles.storageKey);
+        for (const k of Object.keys(handles.state)) delete handles.state[k];
+        // Reset DOM inputs visuellement
+        document.querySelectorAll('aside.qualif-step input').forEach(function (el) {
+          if (el.type === 'checkbox' || el.type === 'radio') el.checked = false;
+          if (el.type === 'range') {
+            const def = el.getAttribute('value');
+            el.value = (def !== null) ? def : Math.round((Number(el.min || 0) + Number(el.max || 100)) / 2);
+          }
+          if (el.disabled) el.disabled = false;
+        });
+        document.querySelectorAll('aside.qualif-step').forEach(function (step) {
+          const axisId = step.dataset.axis;
+          const axis = handles.config.axes.find(function (a) { return a.id === axisId; });
+          if (axis) updateStepWitness(step, axis, handles.state);
+        });
+        renderAll(handles);
+      });
+    }
+  }
+
+  function renderAll(handles) {
+    const config = handles.config;
+    const state = handles.state;
+
+    // 1. Vecteur 6 axes
+    const vec = config.axes.map(function (axis) {
+      return Q.computeAxisScore(axis, state);
+    });
+
+    // 2. Axes renseignés
+    const filledCount = vec.filter(function (v) { return v !== null; }).length;
+
+    // 3. Profil dominant (normalisation neutre 50 pour partiel)
+    const profile = Q.dominantProfile(vec, config.profiles, handles.tiebreak);
+
+    // 4. Recos d'ajustement — cap=2 explicite (cf. JSDoc applyAdjustments)
+    const adjRecos = Q.applyAdjustments(state, config.adjustments || [], 2);
+
+    // 5. Persist
+    persistState(handles.storageKey, state, profile ? profile.id : null);
+
+    // 6. Render UI
+    renderRecapUI(config, vec, filledCount, profile, adjRecos);
+  }
+
+  function renderRecapUI(config, vec, filledCount, profile, adjRecos) {
+    const recap = document.querySelector('aside#qualif-recap');
+    if (!recap || !profile) return;
+
+    // a) label profil
+    const labelEl = recap.querySelector('[data-bind="profile-label"]');
+    if (labelEl) labelEl.textContent = filledCount > 0 ? profile.label : '—';
+
+    // b) verdict
+    const verdictEl = recap.querySelector('[data-bind="verdict"]');
+    if (verdictEl) {
+      if (filledCount === 0) {
+        verdictEl.textContent = 'Aucun axe renseigné. Complétez les blocs ci-dessus pour faire apparaître votre profil.';
+        verdictEl.classList.add('is-empty');
+      } else {
+        verdictEl.textContent = profile.verdict;
+        verdictEl.classList.remove('is-empty');
+      }
+    }
+
+    // c) recos
+    const recosEl = recap.querySelector('[data-bind="recos"]');
+    if (recosEl) {
+      recosEl.innerHTML = '';
+      if (filledCount > 0) {
+        (profile.recos || []).forEach(function (r) {
+          const li = document.createElement('li');
+          li.textContent = r;
+          recosEl.appendChild(li);
+        });
+        adjRecos.forEach(function (r) {
+          const li = document.createElement('li');
+          li.className = 'reco-adjustment';
+          li.textContent = '↪ ' + r;
+          recosEl.appendChild(li);
+        });
+      }
+    }
+
+    // d) meta : timestamp + completeness
+    const tsEl = recap.querySelector('[data-bind="ts"]');
+    if (tsEl) {
+      const now = new Date();
+      tsEl.dateTime = now.toISOString();
+      tsEl.textContent = formatDateFr(now);
+    }
+    const compEl = recap.querySelector('[data-bind="completeness"]');
+    if (compEl) compEl.textContent = filledCount + ' sur 6 axes renseignés';
+
+    // e) radar SVG
+    drawRadar(recap, vec, profile);
+
+    // f) figcaption
+    const figcap = recap.querySelector('[data-bind="radar-caption"]');
+    if (figcap) {
+      figcap.textContent = filledCount === 0
+        ? 'Complétez les blocs pour voir votre radar.'
+        : 'Profil ' + profile.label + ' — vous êtes le plus proche de ce profil cible sur les axes renseignés.';
+    }
+
+    // g) radar desc (a11y)
+    const desc = recap.querySelector('[data-bind="radar-desc"]');
+    if (desc) {
+      const axisLabels = config.axes.map(function (a) { return a.label; });
+      const parts = vec.map(function (v, i) {
+        return axisLabels[i] + ' ' + (v === null ? 'non renseigné' : v);
+      });
+      desc.textContent = 'Vous êtes sur le profil ' + profile.label + '. Scores : ' + parts.join(', ') + '.';
+    }
+
+    // h) état des boutons
+    const printBtn = recap.querySelector('button[data-action="print"]');
+    const resetBtn = recap.querySelector('button[data-action="reset"]');
+    if (printBtn) printBtn.disabled = (filledCount === 0);
+    if (resetBtn) resetBtn.disabled = (filledCount === 0);
+  }
+
+  function drawRadar(recap, vec, profile) {
+    const svg = recap.querySelector('figure.qualif-recap__radar svg');
+    if (!svg) return;
+    const geom = { cx: 160, cy: 160, radius: 120 };
+
+    const userPath = svg.querySelector('path[data-bind="user-polygon"]');
+    if (userPath) {
+      userPath.setAttribute('d', Q.renderRadarPath(vec, geom));
+    }
+    const profilePath = svg.querySelector('path[data-bind="profile-polygon"]');
+    if (profilePath && profile) {
+      profilePath.setAttribute('d', Q.renderRadarPath(profile.anchor, geom));
+    }
+  }
+
+  function formatDateFr(d) {
+    const months = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+    return d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear()
+      + ' · ' + String(d.getHours()).padStart(2, '0') + 'h' + String(d.getMinutes()).padStart(2, '0');
+  }
+
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', init);
