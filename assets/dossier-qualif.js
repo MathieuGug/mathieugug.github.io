@@ -28,7 +28,27 @@
   // Pure functions — moteur de calcul (Phase 2)
   // ─────────────────────────────────────────────────────────────────────────
 
-  Q.computeAxisScore = function () {};   // Phase 2.2
+  /**
+   * Retourne le score 0-100 d'un axe, ou null si non renseigné.
+   */
+  Q.computeAxisScore = function computeAxisScore(axis, state) {
+    const axial = axis.inputs.find(function (i) { return i.scoring === 'axis'; });
+    if (!axial) {
+      throw new Error('Axis "' + axis.id + '" has no axial-scoring input');
+    }
+    const key = axis.id + '.' + axial.id;
+    const raw = state[key];
+    if (raw === undefined || raw === null || raw === '') return null;
+
+    if (axial.type === 'slider-anchored') {
+      return Number(raw);
+    }
+    if (axial.type === 'segmented') {
+      const opt = axial.options.find(function (o) { return o.id === raw; });
+      return opt && typeof opt.score === 'number' ? opt.score : null;
+    }
+    return null;
+  };
   Q.dominantProfile = function () {};    // Phase 2.3
   Q.applyAdjustments = function () {};   // Phase 2.4
   Q.renderRadarPath = function () {};    // Phase 2.5
