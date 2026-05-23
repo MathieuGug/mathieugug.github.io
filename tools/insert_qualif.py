@@ -172,20 +172,20 @@ def render_input(axis_id: str, inp: dict[str, Any]) -> str:
 
 
 def render_step(axis: dict[str, Any]) -> str:
-    """Rend un <aside class="qualif-step"> complet."""
+    """Rend un <aside class="qualif-step"> complet, collapsible (body hidden par défaut)."""
     inputs_html = '\n    '.join(render_input(axis['id'], inp) for inp in axis['inputs'])
-    return f'''<aside class="qualif-step" id="qualif-step-{axis["id"]}" data-axis="{axis["id"]}">
+    axis_id = axis['id']
+    return f'''<aside class="qualif-step" id="qualif-step-{axis_id}" data-axis="{axis_id}">
   <header class="qualif-step__head">
     <p class="qualif-step__eyebrow">// votre profil — {html.escape(axis["label"])}</p>
     <p class="qualif-step__intro">{html.escape(axis["intro"])}</p>
-  </header>
-  <div class="qualif-step__body">
-    {inputs_html}
-  </div>
-  <footer class="qualif-step__foot">
     <p class="qualif-step__witness" role="status" aria-live="polite">— En attente de saisie</p>
+    <button class="qualif-step__toggle" type="button" aria-expanded="false" aria-controls="qualif-body-{axis_id}">Renseigner →</button>
+  </header>
+  <div class="qualif-step__body" id="qualif-body-{axis_id}" hidden>
+    {inputs_html}
     <a class="qualif-step__see-recap" href="#qualif-recap" hidden>Voir mon profil ↓</a>
-  </footer>
+  </div>
 </aside>'''
 
 
