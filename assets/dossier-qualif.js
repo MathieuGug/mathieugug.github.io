@@ -351,11 +351,12 @@
     rangeEl.setAttribute('aria-valuetext', closest.label);
   }
 
-  function updateStepWitness(step, axis, state) {
-    const witness = step.querySelector('.qualif-step__witness');
-    const seeRecap = step.querySelector('.qualif-step__see-recap');
-    if (!witness) return;
-
+  /**
+   * Helper pur : compte les inputs renseignés d'un axe.
+   * Retourne { filled: number, total: number, isComplete: boolean }.
+   * Réutilisé par updateStepWitness (mini-bloc inline) et updateNavState (sidebar).
+   */
+  function axisCompletion(axis, state) {
     const total = axis.inputs.length;
     let filled = 0;
     for (let i = 0; i < axis.inputs.length; i++) {
@@ -367,11 +368,20 @@
       if (typeof v === 'string' && v === '') continue;
       filled++;
     }
+    return { filled: filled, total: total, isComplete: filled === total };
+  }
+
+  function updateStepWitness(step, axis, state) {
+    const witness = step.querySelector('.qualif-step__witness');
+    const seeRecap = step.querySelector('.qualif-step__see-recap');
+    if (!witness) return;
+
+    const { filled, total, isComplete } = axisCompletion(axis, state);
 
     if (filled === 0) {
       witness.textContent = '— En attente de saisie';
       if (seeRecap) seeRecap.hidden = true;
-    } else if (filled < total) {
+    } else if (!isComplete) {
       witness.textContent = filled + ' sur ' + total + ' renseignés';
       if (seeRecap) seeRecap.hidden = false;
     } else {
