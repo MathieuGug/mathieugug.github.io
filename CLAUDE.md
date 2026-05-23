@@ -10,6 +10,7 @@ Site personnel de Mathieu Guglielmino, hébergé sur GitHub Pages. Il publie des
 3. `python tools/seo_dossiers.py --only <slug>` — génère `og.png` et injecte le bloc SEO dans toutes les pages du dossier (idempotent, à re-runner après modif titre/desc/date).
 4. App deep-research : embarquer `/assets/dossier-app.css` + `/assets/dossier-app.js`, la topbar 3-items, le favicon, et le contrat DOM (cf. section *Bibliothèque partagée*). Alternative : `python tools/extract_to_lib.py path/to/app.html`.
 5. Avant merge : vérifier la checklist mobile 7 points (section *Mobile-friendliness*) **sur device réel ou Chrome devtools en mode mobile** (pas "desktop site").
+6. (Optionnel) Si tu veux activer le widget de qualif : créer `<slug>/qualif.json` (6 axes, 5 profils, règles), puis `python tools/insert_qualif.py --app … --qualif …`. Cf. *Widget de qualification business* pour le calibrage.
 
 **Tests CI** : `node --test tests/lib-contract.test.mjs tests/apps-integration.test.mjs` (zéro dépendance, < 5 s).
 
@@ -109,6 +110,34 @@ python .claude/skills/illustrated-deep-research/assets/insert-quizzes.py \
 Pattern complet : `.claude/skills/illustrated-deep-research/references/callouts.md`.
 
 **Quand l'utiliser dans ce repo** : à chaque charnière où un dossier voisin éclaire la section (obs ↔ eval, harness ↔ agent-sdk, etc.). Bordure gauche en `--teal` pour différencier visuellement des `.quiz-card` (bordure `--carmine`).
+
+## Widget de qualification business (qualif)
+
+Widget diégétique : 6 mini-blocs distribués au fil de la prose d'un dossier deep-research (axes Maturité IA, Environnement, Cas d'usage, Équipe, Budget, Gouvernance), + récap radar SVG en fin d'article avec verdict + recos. Pilote sur `analytics-agentique-gcp/`.
+
+**Source de vérité** : sidecar JSON par dossier (`<dossier>/qualif.json`) déclare axes, inputs, profils types et règles d'ajustement. La lib partagée rend les mini-blocs, calcule le profil dominant par distance euclidienne, peint le radar et persiste en localStorage.
+
+**Couleur sémantique** : `--qualif: #5b6d8a` (slate-blue), 3e couleur du fil après `--carmine` (quiz) et `--teal` (callout).
+
+**Commande repo** (idempotente, à re-runner après chaque édition du JSON) :
+
+```
+python tools/insert_qualif.py \
+  --app analytics-agentique-gcp/20260519-analytics-agentique-gcp-app.html \
+  --qualif analytics-agentique-gcp/qualif.json
+```
+
+Le script idempotent (`--check` pour dry-run, `--strict` pour failer sur missing heading) :
+- valide le JSON (6 axes, 5 profils, anchor de longueur 6, références d'ajustement)
+- injecte les 6 `<aside class="qualif-step" data-axis="...">` avant les `before_heading_id` du JSON
+- injecte le `<aside id="qualif-recap">` avant `meta.recap_before_heading_id`
+- ajoute `<link href="/assets/dossier-qualif.css">`, `<script src="/assets/dossier-qualif.js" defer>` et `<link rel="qualif-data" href="./qualif.json">` si absents
+
+**Spec & plan** : `docs/superpowers/specs/2026-05-23-business-qualification-widget-design.md`, `docs/superpowers/plans/2026-05-23-business-qualification-widget.md`.
+
+**Tests CI** : `tests/qualif-contract.test.mjs`, `tests/qualif-engine.test.mjs`, `tests/qualif-integration.test.mjs` (run dans le workflow `.github/workflows/test.yml`).
+
+**Print** : `@media print` dans `/assets/dossier-qualif.css` masque tout sauf le récap → one-pager A4 propre pour glisser dans un dossier RDV.
 
 ## Bibliothèque partagée `/assets/dossier-app.{js,css}`
 
