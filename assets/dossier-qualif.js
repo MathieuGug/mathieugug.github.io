@@ -405,6 +405,14 @@
           if (el.type === 'range') {
             const def = el.getAttribute('value');
             el.value = (def !== null) ? def : Math.round((Number(el.min || 0) + Number(el.max || 100)) / 2);
+            // Re-aligner aria-valuetext avec la valeur reset (sinon SR annonce le palier pré-reset)
+            const stepEl = el.closest('aside.qualif-step');
+            if (stepEl) {
+              const axisId = stepEl.dataset.axis;
+              const axis = handles.config.axes.find(function (a) { return a.id === axisId; });
+              const inputDef = axis && axis.inputs.find(function (i) { return el.name.endsWith('.' + i.id); });
+              if (inputDef) updateSliderAriaText(el, inputDef);
+            }
           }
           if (el.disabled) el.disabled = false;
         });
@@ -445,11 +453,14 @@
 
   function renderRecapUI(config, vec, filledCount, profile, adjRecos) {
     const recap = document.querySelector('aside#qualif-recap');
-    if (!recap || !profile) return;
+    if (!recap) return;
+    // Note : profile peut être null si config.profiles est vide. On rend quand même
+    // l'état vide (verdict gris, figcaption prompt, boutons disabled) — la garde
+    // précédente sur !profile masquait silencieusement une misconfig JSON.
 
     // a) label profil
     const labelEl = recap.querySelector('[data-bind="profile-label"]');
-    if (labelEl) labelEl.textContent = filledCount > 0 ? profile.label : '—';
+    if (labelEl) labelEl.textContent = (filledCount > 0 && profile) ? profile.label : '—';
 
     // b) verdict
     const verdictEl = recap.querySelector('[data-bind="verdict"]');
@@ -457,9 +468,12 @@
       if (filledCount === 0) {
         verdictEl.textContent = 'Aucun axe renseigné. Complétez les blocs ci-dessus pour faire apparaître votre profil.';
         verdictEl.classList.add('is-empty');
-      } else {
+      } else if (profile) {
         verdictEl.textContent = profile.verdict;
         verdictEl.classList.remove('is-empty');
+      } else {
+        verdictEl.textContent = 'Aucun profil défini dans le sidecar JSON.';
+        verdictEl.classList.add('is-empty');
       }
     }
 
@@ -467,7 +481,7 @@
     const recosEl = recap.querySelector('[data-bind="recos"]');
     if (recosEl) {
       recosEl.innerHTML = '';
-      if (filledCount > 0) {
+      if (filledCount > 0 && profile) {
         (profile.recos || []).forEach(function (r) {
           const li = document.createElement('li');
           li.textContent = r;
@@ -490,7 +504,7 @@
       tsEl.textContent = formatDateFr(now);
     }
     const compEl = recap.querySelector('[data-bind="completeness"]');
-    if (compEl) compEl.textContent = filledCount + ' sur 6 axes renseignés';
+    if (compEl) compEl.textContent = filledCount + ' sur ' + config.axes.length + ' axes renseignés';
 
     // e) radar SVG
     drawRadar(recap, vec, profile);
@@ -498,7 +512,7 @@
     // f) figcaption
     const figcap = recap.querySelector('[data-bind="radar-caption"]');
     if (figcap) {
-      figcap.textContent = filledCount === 0
+      figcap.textContent = (filledCount === 0 || !profile)
         ? 'Complétez les blocs pour voir votre radar.'
         : 'Profil ' + profile.label + ' — vous êtes le plus proche de ce profil cible sur les axes renseignés.';
     }
@@ -510,7 +524,11 @@
       const parts = vec.map(function (v, i) {
         return axisLabels[i] + ' ' + (v === null ? 'non renseigné' : v);
       });
-      desc.textContent = 'Vous êtes sur le profil ' + profile.label + '. Scores : ' + parts.join(', ') + '.';
+      if (profile) {
+        desc.textContent = 'Vous êtes sur le profil ' + profile.label + '. Scores : ' + parts.join(', ') + '.';
+      } else {
+        desc.textContent = 'Pas de profil disponible.';
+      }
     }
 
     // h) état des boutons
