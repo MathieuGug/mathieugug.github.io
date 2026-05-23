@@ -85,9 +85,39 @@ export function mountHeroIntro({ introContainer, bannerContainer }) {
   ledeEl.textContent = BEATS[0].lede;
   captionEl.style.opacity = '1';
 
-  // Expose le beat courant sur introContainer via data-current-beat — CSS l'utilise
-  // pour fader l'affordance scroll dès qu'on est sorti de beat 1.
+  // Expose le beat courant sur introContainer via data-current-beat.
   introContainer.dataset.currentBeat = '1';
+
+  // Pill bottom-right "x/5 · Défiler ↓" cliquable : avance d'un beat à la fois.
+  // Sur beat 5, sort de la section (scroll vers le contenu en-dessous).
+  const advanceBtn = introContainer.querySelector('.hero-intro__advance');
+  const stepEl = introContainer.querySelector('#hero-step-current');
+  const triggers = Array.from(introContainer.querySelectorAll('.hero-intro__trigger'));
+
+  function updateAdvance(n) {
+    if (!advanceBtn) return;
+    if (stepEl) stepEl.textContent = String(n);
+    if (n >= 5) {
+      advanceBtn.querySelector('span:nth-child(2)').textContent = 'Continuer';
+      advanceBtn.setAttribute('aria-label', 'Continuer vers le dossier');
+    } else {
+      advanceBtn.querySelector('span:nth-child(2)').textContent = 'Défiler';
+      advanceBtn.setAttribute('aria-label', `Passer à l'étape ${n + 1} sur 5`);
+    }
+  }
+
+  advanceBtn?.addEventListener('click', () => {
+    const cur = Number(introContainer.dataset.currentBeat) || 1;
+    if (cur < 5 && triggers[cur]) {
+      triggers[cur].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else {
+      // Beat 5 : sortir de la section, aller au contenu en-dessous.
+      const next = introContainer.nextElementSibling;
+      if (next) next.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+
+  updateAdvance(1);
 
   // IO 1 : beat triggers — bande horizontale centrale du viewport (~1px de haut)
   const beatIO = new IntersectionObserver((entries) => {
@@ -98,13 +128,14 @@ export function mountHeroIntro({ introContainer, bannerContainer }) {
         heroIntro.setBeat(n);
         updateCaption(n);
         introContainer.dataset.currentBeat = String(n);
+        updateAdvance(n);
       }
     }
   }, {
     rootMargin: '-50% 0px -50% 0px',
     threshold: 0,
   });
-  introContainer.querySelectorAll('.hero-intro__trigger').forEach((t) => beatIO.observe(t));
+  triggers.forEach((t) => beatIO.observe(t));
 
   // IO 2 : pause l'intro quand on est sorti de la section (économie GPU
   // pendant la lecture du hub).
