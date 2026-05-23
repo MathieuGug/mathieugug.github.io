@@ -49,7 +49,36 @@
     }
     return null;
   };
-  Q.dominantProfile = function () {};    // Phase 2.3
+  /**
+   * Retourne le profil le plus proche du vecteur utilisateur (distance euclidienne).
+   * Les entrées null/undefined sont traitées comme 50 (neutre).
+   * Tie-break stable selon l'ordre prioritaire fourni.
+   */
+  Q.dominantProfile = function dominantProfile(vec, profiles, tiebreakOrder) {
+    const normalized = vec.map(function (v) {
+      return (v === null || v === undefined) ? 50 : v;
+    });
+    let best = null;
+    let bestDist = Infinity;
+    let bestPriority = Infinity;
+    for (let i = 0; i < profiles.length; i++) {
+      const p = profiles[i];
+      let dist = 0;
+      for (let k = 0; k < 6; k++) {
+        const d = normalized[k] - p.anchor[k];
+        dist += d * d;
+      }
+      const priority = tiebreakOrder.indexOf(p.id);
+      const isCloser = dist < bestDist;
+      const isTieAndPrior = (dist === bestDist) && (priority < bestPriority);
+      if (isCloser || isTieAndPrior) {
+        best = p;
+        bestDist = dist;
+        bestPriority = priority;
+      }
+    }
+    return best;
+  };
   Q.applyAdjustments = function () {};   // Phase 2.4
   Q.renderRadarPath = function () {};    // Phase 2.5
 
