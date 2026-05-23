@@ -106,3 +106,101 @@ test('dominantProfile: null entries treated as 50 (neutral) for partial profiles
   // → poc wins
   assert.equal(Q.dominantProfile([20, 30, null, null, null, null], TEST_PROFILES, TIEBREAK_ORDER).id, 'poc');
 });
+
+const TEST_ADJUSTMENTS = [
+  { id: 'a-contains',
+    when: { axis: 'maturite-ia', input: 'freins', contains: 'hallucinations' },
+    reco: 'Reco contains' },
+  { id: 'a-equals',
+    when: { axis: 'cas-usage', input: 'surface', equals: 'indecis' },
+    reco: 'Reco equals' },
+  { id: 'a-lt',
+    when: { axis: 'equipe', input: 'structure', lt: 25 },
+    reco: 'Reco lt' },
+  { id: 'a-gte',
+    when: { axis: 'maturite-ia', input: 'stade', gte: 50 },
+    reco: 'Reco gte' },
+  { id: 'a-and',
+    when: { axis: 'equipe', input: 'structure', lt: 25,
+            and: { axis: 'maturite-ia', input: 'stade', gte: 50 } },
+    reco: 'Reco and' },
+  { id: 'a-not',
+    when: { axis: 'gouvernance', input: 'regime', not: 'hors-fin-sante' },
+    reco: 'Reco not' },
+  { id: 'a-contains-any-of',
+    when: { axis: 'environnement', input: 'cloud', contains_any_of: ['aws', 'azure'] },
+    reco: 'Reco contains_any_of' },
+  { id: 'a-and-not',
+    when: { axis: 'environnement', input: 'cloud', contains_any_of: ['aws', 'azure'],
+            and_not: { axis: 'environnement', input: 'cloud', contains: 'gcp' } },
+    reco: 'Reco and_not' }
+];
+
+test('applyAdjustments: contains triggers when option in multi-select', () => {
+  const recos = Q.applyAdjustments({ 'maturite-ia.freins': ['hallucinations', 'accuracy'] }, TEST_ADJUSTMENTS);
+  assert.ok(recos.includes('Reco contains'));
+});
+
+test('applyAdjustments: contains does NOT trigger when option absent', () => {
+  const recos = Q.applyAdjustments({ 'maturite-ia.freins': ['accuracy'] }, TEST_ADJUSTMENTS);
+  assert.ok(!recos.includes('Reco contains'));
+});
+
+test('applyAdjustments: equals triggers on exact match', () => {
+  const recos = Q.applyAdjustments({ 'cas-usage.surface': 'indecis' }, TEST_ADJUSTMENTS);
+  assert.ok(recos.includes('Reco equals'));
+});
+
+test('applyAdjustments: lt triggers when value below threshold', () => {
+  const recos = Q.applyAdjustments({ 'equipe.structure': 10 }, TEST_ADJUSTMENTS);
+  assert.ok(recos.includes('Reco lt'));
+});
+
+test('applyAdjustments: gte triggers when value at threshold', () => {
+  const recos = Q.applyAdjustments({ 'maturite-ia.stade': 50 }, TEST_ADJUSTMENTS);
+  assert.ok(recos.includes('Reco gte'));
+});
+
+test('applyAdjustments: and requires both conditions', () => {
+  const both = Q.applyAdjustments({ 'equipe.structure': 10, 'maturite-ia.stade': 60 }, TEST_ADJUSTMENTS);
+  assert.ok(both.includes('Reco and'));
+  const onlyOne = Q.applyAdjustments({ 'equipe.structure': 10, 'maturite-ia.stade': 30 }, TEST_ADJUSTMENTS);
+  assert.ok(!onlyOne.includes('Reco and'));
+});
+
+test('applyAdjustments: not triggers when value differs', () => {
+  const recos = Q.applyAdjustments({ 'gouvernance.regime': 'banque-assur' }, TEST_ADJUSTMENTS);
+  assert.ok(recos.includes('Reco not'));
+  const notTriggered = Q.applyAdjustments({ 'gouvernance.regime': 'hors-fin-sante' }, TEST_ADJUSTMENTS);
+  assert.ok(!notTriggered.includes('Reco not'));
+});
+
+test('applyAdjustments: contains_any_of triggers if at least one in list', () => {
+  const aws = Q.applyAdjustments({ 'environnement.cloud': ['aws'] }, TEST_ADJUSTMENTS);
+  assert.ok(aws.includes('Reco contains_any_of'));
+  const none = Q.applyAdjustments({ 'environnement.cloud': ['gcp'] }, TEST_ADJUSTMENTS);
+  assert.ok(!none.includes('Reco contains_any_of'));
+});
+
+test('applyAdjustments: and_not blocks when secondary condition matches', () => {
+  // aws + gcp → and_not(contains gcp) blocks Reco and_not
+  const both = Q.applyAdjustments({ 'environnement.cloud': ['aws', 'gcp'] }, TEST_ADJUSTMENTS);
+  assert.ok(!both.includes('Reco and_not'));
+  // aws only → and_not satisfied → triggers
+  const awsOnly = Q.applyAdjustments({ 'environnement.cloud': ['aws'] }, TEST_ADJUSTMENTS);
+  assert.ok(awsOnly.includes('Reco and_not'));
+});
+
+test('applyAdjustments: caps at 2 recos max in declaration order', () => {
+  const state = {
+    'maturite-ia.freins': ['hallucinations'],
+    'cas-usage.surface': 'indecis',
+    'equipe.structure': 10,
+    'maturite-ia.stade': 60,
+    'gouvernance.regime': 'banque-assur'
+  };
+  const recos = Q.applyAdjustments(state, TEST_ADJUSTMENTS, 2);
+  assert.equal(recos.length, 2);
+  assert.equal(recos[0], 'Reco contains');
+  assert.equal(recos[1], 'Reco equals');
+});

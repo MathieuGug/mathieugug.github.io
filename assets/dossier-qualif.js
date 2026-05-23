@@ -79,7 +79,58 @@
     }
     return best;
   };
-  Q.applyAdjustments = function () {};   // Phase 2.4
+  function matchClause(when, state) {
+    const key = when.axis + '.' + when.input;
+    const value = state[key];
+
+    if (when.contains !== undefined) {
+      if (!Array.isArray(value)) return false;
+      if (!value.includes(when.contains)) return false;
+    }
+    if (when.contains_any_of !== undefined) {
+      if (!Array.isArray(value)) return false;
+      const hit = when.contains_any_of.some(function (v) { return value.includes(v); });
+      if (!hit) return false;
+    }
+    if (when.equals !== undefined) {
+      if (value !== when.equals) return false;
+    }
+    if (when.not !== undefined) {
+      if (value === when.not) return false;
+      if (value === undefined || value === null) return false;
+    }
+    if (when.lt !== undefined) {
+      if (typeof value !== 'number' || value >= when.lt) return false;
+    }
+    if (when.gt !== undefined) {
+      if (typeof value !== 'number' || value <= when.gt) return false;
+    }
+    if (when.lte !== undefined) {
+      if (typeof value !== 'number' || value > when.lte) return false;
+    }
+    if (when.gte !== undefined) {
+      if (typeof value !== 'number' || value < when.gte) return false;
+    }
+    if (when.and) {
+      if (!matchClause(when.and, state)) return false;
+    }
+    if (when.and_not) {
+      if (matchClause(when.and_not, state)) return false;
+    }
+    return true;
+  }
+
+  Q.applyAdjustments = function applyAdjustments(state, adjustments, cap) {
+    if (cap === undefined) cap = Infinity;
+    const out = [];
+    for (let i = 0; i < adjustments.length && out.length < cap; i++) {
+      const adj = adjustments[i];
+      if (matchClause(adj.when, state)) {
+        out.push(adj.reco);
+      }
+    }
+    return out;
+  };
   Q.renderRadarPath = function () {};    // Phase 2.5
 
   // ─────────────────────────────────────────────────────────────────────────
