@@ -204,3 +204,44 @@ test('applyAdjustments: caps at 2 recos max in declaration order', () => {
   assert.equal(recos[0], 'Reco contains');
   assert.equal(recos[1], 'Reco equals');
 });
+
+test('renderRadarPath: 6 scores → SVG d= with 6 line segments + close', () => {
+  const d = Q.renderRadarPath([50, 50, 50, 50, 50, 50], { cx: 160, cy: 160, radius: 120 });
+  assert.match(d, /^M [\d.-]+,[\d.-]+( L [\d.-]+,[\d.-]+){5} Z$/);
+});
+
+test('renderRadarPath: zero scores → all points at center', () => {
+  const d = Q.renderRadarPath([0, 0, 0, 0, 0, 0], { cx: 160, cy: 160, radius: 120 });
+  const segments = d.match(/[\d.-]+,[\d.-]+/g);
+  assert.equal(segments.length, 6);
+  for (const s of segments) {
+    const [x, y] = s.split(',').map(Number);
+    assert.ok(Math.abs(x - 160) < 0.01, `x not at center: ${x}`);
+    assert.ok(Math.abs(y - 160) < 0.01, `y not at center: ${y}`);
+  }
+});
+
+test('renderRadarPath: max scores → all points at radius', () => {
+  const d = Q.renderRadarPath([100, 100, 100, 100, 100, 100], { cx: 160, cy: 160, radius: 120 });
+  const segments = d.match(/[\d.-]+,[\d.-]+/g);
+  for (const s of segments) {
+    const [x, y] = s.split(',').map(Number);
+    const dist = Math.sqrt((x - 160) ** 2 + (y - 160) ** 2);
+    assert.ok(Math.abs(dist - 120) < 0.01, `point not at radius: ${dist}`);
+  }
+});
+
+test('renderRadarPath: no NaN in output', () => {
+  const d = Q.renderRadarPath([42, 17, 88, 3, 71, 56], { cx: 160, cy: 160, radius: 120 });
+  assert.ok(!d.includes('NaN'), `path contains NaN: ${d}`);
+});
+
+test('renderRadarPath: null scores treated as 0', () => {
+  const d = Q.renderRadarPath([null, null, null, null, null, null], { cx: 160, cy: 160, radius: 120 });
+  const segments = d.match(/[\d.-]+,[\d.-]+/g);
+  for (const s of segments) {
+    const [x, y] = s.split(',').map(Number);
+    assert.ok(Math.abs(x - 160) < 0.01);
+    assert.ok(Math.abs(y - 160) < 0.01);
+  }
+});

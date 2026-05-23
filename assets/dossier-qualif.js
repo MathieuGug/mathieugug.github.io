@@ -131,7 +131,27 @@
     }
     return out;
   };
-  Q.renderRadarPath = function () {};    // Phase 2.5
+  /**
+   * Construit l'attribut "d" d'un <path> SVG polygonal à 6 sommets,
+   * un par axe, à partir des scores 0-100. Premier axe à -90° (top), sens horaire.
+   */
+  Q.renderRadarPath = function renderRadarPath(scores, geom) {
+    const cx = geom.cx;
+    const cy = geom.cy;
+    const r = geom.radius;
+    const N = 6;
+    const points = [];
+    for (let i = 0; i < N; i++) {
+      const raw = scores[i];
+      const v = (raw === null || raw === undefined) ? 0 : raw;
+      const ratio = v / 100;
+      const angle = -Math.PI / 2 + (i * 2 * Math.PI) / N;
+      const x = cx + ratio * r * Math.cos(angle);
+      const y = cy + ratio * r * Math.sin(angle);
+      points.push(x.toFixed(2) + ',' + y.toFixed(2));
+    }
+    return 'M ' + points[0] + ' L ' + points.slice(1).join(' L ') + ' Z';
+  };
 
   // ─────────────────────────────────────────────────────────────────────────
   // DOM bootstrap — branché en Phase 3 (laissé vide pour l'instant)
