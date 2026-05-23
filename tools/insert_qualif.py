@@ -380,6 +380,11 @@ def ensure_data_link(html_src: str, qualif_path: Path, app_path: Path) -> tuple[
 
 
 def main(argv: list[str] | None = None) -> int:
+    # Force utf-8 stdout pour les flèches '→' dans les logs (cp1252 sur Windows Bash).
+    try:
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    except Exception:
+        pass
     ap = argparse.ArgumentParser(description='Inject qualification widget blocks into an app HTML.')
     ap.add_argument('--app', required=True, type=Path)
     ap.add_argument('--qualif', required=True, type=Path)
