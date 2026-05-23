@@ -259,6 +259,127 @@
     }
   }
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // wireSteps — hydratation DOM + binding events sur mini-blocs
+  // ─────────────────────────────────────────────────────────────────────────
+
+  function wireSteps(handles) {
+    const config = handles.config;
+    const steps = document.querySelectorAll('aside.qualif-step');
+
+    steps.forEach(function (step) {
+      const axisId = step.dataset.axis;
+      const axis = config.axes.find(function (a) { return a.id === axisId; });
+      if (!axis) return;
+
+      // Hydrate : restore les valeurs depuis state vers DOM
+      axis.inputs.forEach(function (input) {
+        const key = axisId + '.' + input.id;
+        const v = handles.state[key];
+        if (v === undefined || v === null) return;
+
+        if (input.type === 'slider-anchored') {
+          const el = step.querySelector('input[type="range"][name="' + key + '"]');
+          if (el) {
+            el.value = v;
+            updateSliderAriaText(el, input);
+          }
+        } else if (input.type === 'segmented') {
+          const el = step.querySelector('input[type="radio"][name="' + key + '"][value="' + v + '"]');
+          if (el) el.checked = true;
+        } else if (input.type === 'multi') {
+          (Array.isArray(v) ? v : []).forEach(function (opt) {
+            const el = step.querySelector('input[type="checkbox"][name="' + key + '"][value="' + opt + '"]');
+            if (el) el.checked = true;
+          });
+          enforceMaxPicks(step, key, input.max_picks);
+        }
+      });
+
+      // Bind events
+      step.addEventListener('input', function (e) { handleStepInput(e, axis, handles); });
+      step.addEventListener('change', function (e) { handleStepInput(e, axis, handles); });
+
+      // Update du témoin (witness) initial
+      updateStepWitness(step, axis, handles.state);
+    });
+  }
+
+  function handleStepInput(e, axis, handles) {
+    const target = e.target;
+    if (!target.name) return;
+    const key = target.name;
+    const step = target.closest('aside.qualif-step');
+
+    if (target.type === 'range') {
+      handles.state[key] = Number(target.value);
+      const input = axis.inputs.find(function (i) { return key.endsWith('.' + i.id); });
+      if (input) updateSliderAriaText(target, input);
+    } else if (target.type === 'radio') {
+      handles.state[key] = target.value;
+    } else if (target.type === 'checkbox') {
+      const all = step.querySelectorAll('input[type="checkbox"][name="' + key + '"]:checked');
+      const values = Array.prototype.map.call(all, function (el) { return el.value; });
+      handles.state[key] = values;
+      const input = axis.inputs.find(function (i) { return key.endsWith('.' + i.id); });
+      if (input && input.max_picks) enforceMaxPicks(step, key, input.max_picks);
+    }
+
+    if (step) updateStepWitness(step, axis, handles.state);
+    renderAll(handles);
+  }
+
+  function enforceMaxPicks(scope, name, maxPicks) {
+    if (!maxPicks) return;
+    const all = scope.querySelectorAll('input[type="checkbox"][name="' + name + '"]');
+    const checked = scope.querySelectorAll('input[type="checkbox"][name="' + name + '"]:checked');
+    const atCap = checked.length >= maxPicks;
+    all.forEach(function (el) {
+      if (!el.checked) el.disabled = atCap;
+    });
+  }
+
+  function updateSliderAriaText(rangeEl, input) {
+    const v = Number(rangeEl.value);
+    if (!input.levels) return;
+    let closest = input.levels[0];
+    let bestDelta = Math.abs(v - closest.value);
+    for (let i = 1; i < input.levels.length; i++) {
+      const d = Math.abs(v - input.levels[i].value);
+      if (d < bestDelta) { closest = input.levels[i]; bestDelta = d; }
+    }
+    rangeEl.setAttribute('aria-valuetext', closest.label);
+  }
+
+  function updateStepWitness(step, axis, state) {
+    const witness = step.querySelector('.qualif-step__witness');
+    const seeRecap = step.querySelector('.qualif-step__see-recap');
+    if (!witness) return;
+
+    const total = axis.inputs.length;
+    let filled = 0;
+    for (let i = 0; i < axis.inputs.length; i++) {
+      const input = axis.inputs[i];
+      const key = axis.id + '.' + input.id;
+      const v = state[key];
+      if (v === undefined || v === null) continue;
+      if (Array.isArray(v) && v.length === 0) continue;
+      if (typeof v === 'string' && v === '') continue;
+      filled++;
+    }
+
+    if (filled === 0) {
+      witness.textContent = '— En attente de saisie';
+      if (seeRecap) seeRecap.hidden = true;
+    } else if (filled < total) {
+      witness.textContent = filled + ' sur ' + total + ' renseignés';
+      if (seeRecap) seeRecap.hidden = false;
+    } else {
+      witness.textContent = '✓ Axe pris en compte';
+      if (seeRecap) seeRecap.hidden = false;
+    }
+  }
+
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', init);
