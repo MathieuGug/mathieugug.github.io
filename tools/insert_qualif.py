@@ -87,6 +87,189 @@ def validate_qualif(config: dict[str, Any]) -> list[str]:
     return errors
 
 
+# ─────────────────────────────────────────────────────────────────────────
+# Rendu HTML par type d'input
+# ─────────────────────────────────────────────────────────────────────────
+
+def render_slider_anchored(axis_id: str, inp: dict[str, Any]) -> str:
+    """Rend un slider HTML5 avec datalist + labels d'ancres."""
+    name = f'{axis_id}.{inp["id"]}'
+    levels = inp.get('levels', [])
+    list_id = f'qualif-{axis_id}-{inp["id"]}-levels'
+    default_value = levels[0]['value'] if levels else 0
+    min_value = min(lvl['value'] for lvl in levels) if levels else 0
+    max_value = max(lvl['value'] for lvl in levels) if levels else 100
+
+    datalist_options = '\n        '.join(
+        f'<option value="{lvl["value"]}" label="{html.escape(lvl["label"])}"></option>'
+        for lvl in levels
+    )
+    anchor_spans = '\n        '.join(
+        f'<span>{html.escape(lvl["label"])}</span>' for lvl in levels
+    )
+
+    return f'''<fieldset class="qualif-input qualif-input--slider" style="--anchor-count: {len(levels)};">
+      <legend>{html.escape(inp["label"])}</legend>
+      <input type="range"
+             name="{name}"
+             id="qualif-{axis_id}-{inp["id"]}"
+             min="{min_value}"
+             max="{max_value}"
+             step="1"
+             value="{default_value}"
+             list="{list_id}"
+             aria-valuetext="{html.escape(levels[0]["label"]) if levels else ""}">
+      <datalist id="{list_id}">
+        {datalist_options}
+      </datalist>
+      <div class="qualif-anchors" aria-hidden="true">
+        {anchor_spans}
+      </div>
+    </fieldset>'''
+
+
+def render_multi(axis_id: str, inp: dict[str, Any]) -> str:
+    """Rend un multi-select (checkboxes) avec max_picks optionnel."""
+    name = f'{axis_id}.{inp["id"]}'
+    max_picks = inp.get('max_picks')
+    max_label = f' (max {max_picks})' if max_picks else ''
+    options_html = '\n        '.join(
+        f'<li><label><input type="checkbox" name="{name}" value="{opt["id"]}"> {html.escape(opt["label"])}</label></li>'
+        for opt in inp.get('options', [])
+    )
+    return f'''<fieldset class="qualif-input qualif-input--multi">
+      <legend>{html.escape(inp["label"])}{max_label}</legend>
+      <ul>
+        {options_html}
+      </ul>
+    </fieldset>'''
+
+
+def render_segmented(axis_id: str, inp: dict[str, Any]) -> str:
+    """Rend un segmented control (radios stylés)."""
+    name = f'{axis_id}.{inp["id"]}'
+    options_html = '\n        '.join(
+        f'<li><label><input type="radio" name="{name}" value="{opt["id"]}"><span>{html.escape(opt["label"])}</span></label></li>'
+        for opt in inp.get('options', [])
+    )
+    return f'''<fieldset class="qualif-input qualif-input--segmented">
+      <legend>{html.escape(inp["label"])}</legend>
+      <ul>
+        {options_html}
+      </ul>
+    </fieldset>'''
+
+
+def render_input(axis_id: str, inp: dict[str, Any]) -> str:
+    t = inp.get('type')
+    if t == 'slider-anchored':
+        return render_slider_anchored(axis_id, inp)
+    if t == 'multi':
+        return render_multi(axis_id, inp)
+    if t == 'segmented':
+        return render_segmented(axis_id, inp)
+    raise ValueError(f'unknown input type: {t}')
+
+
+def render_step(axis: dict[str, Any]) -> str:
+    """Rend un <aside class="qualif-step"> complet."""
+    inputs_html = '\n    '.join(render_input(axis['id'], inp) for inp in axis['inputs'])
+    return f'''<aside class="qualif-step" data-axis="{axis["id"]}">
+  <header class="qualif-step__head">
+    <p class="qualif-step__eyebrow">// votre profil — {html.escape(axis["label"])}</p>
+    <p class="qualif-step__intro">{html.escape(axis["intro"])}</p>
+  </header>
+  <div class="qualif-step__body">
+    {inputs_html}
+  </div>
+  <footer class="qualif-step__foot">
+    <p class="qualif-step__witness" role="status" aria-live="polite">— En attente de saisie</p>
+    <a class="qualif-step__see-recap" href="#qualif-recap" hidden>Voir mon profil ↓</a>
+  </footer>
+</aside>'''
+
+
+def render_recap(config: dict[str, Any]) -> str:
+    """Rend le <aside id='qualif-recap'> avec radar SVG inline (grille statique, polygones data-bind)."""
+    import math
+    axes = config['axes']
+    cx, cy, r = 160, 160, 120
+    n = len(axes)
+    axis_lines: list[str] = []
+    axis_labels: list[str] = []
+    for i, a in enumerate(axes):
+        angle = -math.pi / 2 + (i * 2 * math.pi) / n
+        x_end = cx + r * math.cos(angle)
+        y_end = cy + r * math.sin(angle)
+        axis_lines.append(f'<line class="grid-axis" x1="{cx}" y1="{cy}" x2="{x_end:.2f}" y2="{y_end:.2f}"/>')
+        lx = cx + (r + 16) * math.cos(angle)
+        ly = cy + (r + 16) * math.sin(angle)
+        anchor = 'middle'
+        if math.cos(angle) > 0.3:
+            anchor = 'start'
+        elif math.cos(angle) < -0.3:
+            anchor = 'end'
+        axis_labels.append(
+            f'<text class="axis-label" x="{lx:.1f}" y="{ly:.1f}" text-anchor="{anchor}" dominant-baseline="middle">{html.escape(a["label"])}</text>'
+        )
+
+    grid_polys: list[str] = []
+    for ratio in (0.25, 0.5, 0.75, 1.0):
+        pts = []
+        for i in range(n):
+            angle = -math.pi / 2 + (i * 2 * math.pi) / n
+            x = cx + ratio * r * math.cos(angle)
+            y = cy + ratio * r * math.sin(angle)
+            pts.append(f'{x:.2f},{y:.2f}')
+        grid_polys.append(f'<polygon class="grid-poly" points="{" ".join(pts)}"/>')
+
+    axis_lines_html = '\n          '.join(axis_lines)
+    axis_labels_html = '\n          '.join(axis_labels)
+    grid_polys_html = '\n          '.join(grid_polys)
+
+    return f'''<aside id="qualif-recap" class="qualif-recap" aria-labelledby="qualif-recap-title">
+  <header class="qualif-recap__head">
+    <p class="qualif-recap__eyebrow">// votre profil — diagnostic</p>
+    <h3 id="qualif-recap-title">Profil <strong data-bind="profile-label">—</strong></h3>
+  </header>
+
+  <div class="qualif-recap__grid">
+    <figure class="qualif-recap__radar">
+      <svg viewBox="0 0 320 320" role="img" aria-labelledby="radar-title radar-desc">
+        <title id="radar-title">Radar du profil</title>
+        <desc id="radar-desc" data-bind="radar-desc">Aucun axe renseigné.</desc>
+        <g>
+          {grid_polys_html}
+          {axis_lines_html}
+        </g>
+        <path data-bind="profile-polygon" d=""/>
+        <path data-bind="user-polygon" d=""/>
+        <g>
+          {axis_labels_html}
+        </g>
+      </svg>
+      <figcaption data-bind="radar-caption">Complétez les blocs pour voir votre radar.</figcaption>
+    </figure>
+
+    <div class="qualif-recap__body">
+      <p class="qualif-recap__verdict is-empty" data-bind="verdict">Aucun axe renseigné. Complétez les blocs ci-dessus pour faire apparaître votre profil.</p>
+      <ul class="qualif-recap__recos" data-bind="recos"></ul>
+    </div>
+  </div>
+
+  <footer class="qualif-recap__foot">
+    <p class="qualif-recap__meta">
+      Profil établi le <time data-bind="ts">—</time> ·
+      <span data-bind="completeness">0 sur 6 axes renseignés</span>
+    </p>
+    <div class="qualif-recap__actions">
+      <button type="button" data-action="print" disabled>Imprimer le récap</button>
+      <button type="button" data-action="reset" class="is-quiet" disabled>Réinitialiser</button>
+    </div>
+  </footer>
+</aside>'''
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description='Inject qualification widget blocks into an app HTML.')
     ap.add_argument('--app', required=True, type=Path)
