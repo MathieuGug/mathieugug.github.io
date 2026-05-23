@@ -14,12 +14,21 @@
 /* dossier-app:patterns:start */
 
 /* ───────── Ancres : décalage sous la topbar fixe + style ¶ figcaption ───────── */
-/* La topbar fait 56 px ; ajouter ~24 px de respiration sous elle quand on saute à une ancre. */
+/* La topbar fait 56 px ; sur mobile, la 2e row (.topbar-tools) ajoute 40 px supplémentaires
+   quand visible. On garde 80 px desktop / 110 px mobile pour respirer sous les barres fixes. */
 main [id],
 main section[id],
 main figure[id],
 main h1[id], main h2[id], main h3[id], main h4[id], main h5[id], main h6[id] {
   scroll-margin-top: 80px;
+}
+@media (max-width: 1024px) {
+  main [id],
+  main section[id],
+  main figure[id],
+  main h1[id], main h2[id], main h3[id], main h4[id], main h5[id], main h6[id] {
+    scroll-margin-top: 110px;
+  }
 }
 /* ¶ anchor link inside a figcaption — petit, discret, accent au hover. Permet copier-lien-image. */
 .figure-caption .anchor {
@@ -50,6 +59,16 @@ main h1[id], main h2[id], main h3[id], main h4[id], main h5[id], main h6[id] {
       overflow-x: clip;
     }
     @media (min-width: 1025px) {
+      /* Toggle Sommaire (collapse left TOC sidebar). Symétrique avec sources-collapsed.
+         L'animation grid-template-columns + transform translateX gère l'apparition/disparition. */
+      .layout.toc-collapsed {
+        grid-template-columns: 0 minmax(0, 1fr) 320px;
+      }
+      .layout.toc-collapsed #toc {
+        transform: translateX(-100%);
+        opacity: 0;
+        pointer-events: none;
+      }
       .layout.sources-collapsed {
         grid-template-columns: 240px minmax(0, 1fr) 0;
       }
@@ -58,14 +77,16 @@ main h1[id], main h2[id], main h3[id], main h4[id], main h5[id], main h6[id] {
         opacity: 0;
         pointer-events: none;
       }
-      .layout.sources-collapsed #sources-collapse-btn {
-        visibility: hidden;
+      .layout.toc-collapsed.sources-collapsed {
+        grid-template-columns: 0 minmax(0, 1fr) 0;
       }
-      /* Topbar toggles Sommaire/Sources : utiles sur mobile (ouvrent un drawer)
-         mais sans effet sur desktop (sidebars déjà visibles dans le grid).
-         On les cache au-dessus de 1024 px. #toggle-qualif reste visible car
-         son drawer overlay est aussi utile sur desktop. */
-      #toggle-toc, #toggle-sources { display: none; }
+      /* État pressé sur les boutons quand leur sidebar est cachée — feedback visuel.
+         aria-expanded="false" est posé par setupSidebarsToggle dans la lib JS. */
+      #toggle-toc[aria-expanded="false"],
+      #toggle-sources[aria-expanded="false"] {
+        background: var(--paper-2);
+        color: var(--graphite);
+      }
     }
     @media (max-width: 1024px) {
       .layout { grid-template-columns: 1fr; }
@@ -84,14 +105,15 @@ main h1[id], main h2[id], main h3[id], main h4[id], main h5[id], main h6[id] {
     }
     .panel-close { display: none; }
     body { padding-top: 56px; }
+    @media (max-width: 1024px) { body { padding-top: 96px; } }
 
 /* ───────── Topbar sticky ───────── */
     /* ───────── Header ───────── */
-    /* === Sticky topbar — Mathieu / Hub / Accueil === */
+    /* === Sticky topbar — Mathieu / dossier-context / Sommaire-Sources-Profil / Hub-Accueil === */
     .topbar {
       position: fixed; top: 0; left: 0; right: 0; z-index: 60;
       height: 56px; padding: 12px 28px;
-      display: flex; align-items: center; justify-content: space-between; gap: 24px;
+      display: flex; align-items: center; gap: 24px;
       background: rgba(250,248,243,0.82);
       backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
       border-bottom: 1px solid transparent;
@@ -102,10 +124,11 @@ main h1[id], main h2[id], main h3[id], main h4[id], main h5[id], main h6[id] {
     .topbar em { font-style: italic; color: var(--carmine); }
     .topbar .back { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--graphite); text-decoration: none; }
     .topbar .back:hover { color: var(--carmine); }
-    .topbar .dossier-context { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase; opacity: 0.55; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px; flex-shrink: 1; min-width: 0; }
+    .topbar .dossier-context { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase; opacity: 0.55; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1 1 0; min-width: 0; }
     @media (max-width: 768px) { .topbar .dossier-context { display: none; } }
     .topbar .back-nav { display: inline-flex; align-items: center; gap: 14px; flex-shrink: 0; }
     .topbar .back-sep { font-family: var(--mono); font-size: 9.5px; color: var(--graphite); user-select: none; }
+    .topbar > #toggle-qualif { flex-shrink: 0; }
     @media (max-width: 560px) {
       .topbar { padding: 10px 14px; gap: 8px; }
       .topbar > a { font-size: 13px; }
@@ -115,6 +138,37 @@ main h1[id], main h2[id], main h3[id], main h4[id], main h5[id], main h6[id] {
     @media (max-width: 380px) {
       .topbar > a:first-child em { display: none; }
     }
+
+    /* === Topbar tools — cluster Sommaire/Sources (+ Profil quand qualif) === */
+    /* Desktop : flex child inline dans .topbar, packé à droite via la dossier-context qui absorbe le slack.
+       Mobile : pull-out en 2e row sous la topbar, auto-hide au scroll (style iOS Safari). */
+    .topbar-tools {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    @media (max-width: 1024px) {
+      .topbar-tools {
+        position: fixed;
+        top: 56px; left: 0; right: 0;
+        height: 40px;
+        z-index: 59;
+        background: rgba(250,248,243,0.94);
+        backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+        border-bottom: 1px solid var(--rule);
+        justify-content: center;
+        gap: 18px;
+        padding: 0 16px;
+        transition: transform 220ms ease;
+      }
+      /* Translate de 96 px = hauteur topbar (56) + hauteur tools (40) — sort
+         complètement de la viewport. Sinon, la topbar translucide laisse
+         transparaître les boutons malgré le translate -40 px. */
+      .topbar-tools.is-hidden { transform: translateY(-96px); }
+      .topbar-tools .menu-toggle { padding: 7px 16px; font-size: 0.82rem; }
+    }
+    @media print { .topbar-tools { display: none !important; } }
 
 /* ───────── Tooltipped terms ───────── */
     /* ───────── Tooltipped terms ───────── */
@@ -288,55 +342,6 @@ main h1[id], main h2[id], main h3[id], main h4[id], main h5[id], main h6[id] {
     .cite::before { content: '['; }
     .cite::after  { content: ']'; }
     .cite:hover { text-decoration: underline; }
-
-/* ───────── Sources sidebar (collapse btn only) ───────── */
-    /* ───────── Sidebar edge toggles ───────── */
-    .sidebar-edge-toggle {
-      width: 22px;
-      height: 60px;
-      background: var(--paper);
-      border: 1px solid var(--rule);
-      color: var(--graphite);
-      cursor: pointer;
-      font-family: var(--mono);
-      font-size: 14px;
-      line-height: 1;
-      padding: 0;
-      transition: background 140ms, color 140ms, border-color 140ms;
-    }
-    .sidebar-edge-toggle:hover {
-      background: var(--paper-2);
-      color: var(--ink);
-      border-color: var(--graphite);
-    }
-    .sidebar-edge-toggle:focus-visible {
-      outline: 2px solid var(--carmine);
-      outline-offset: 2px;
-    }
-    /* Pinned to viewport (NOT inside the panel's overflow scroll) so the
-       button stays in place when the inner sources list is long. Centered
-       vertically on the panel's left edge to read as a pull-tab. */
-    #sources-collapse-btn {
-      position: fixed;
-      top: 50%;
-      right: 320px;
-      transform: translate(50%, -50%);
-      border-radius: 4px;
-      z-index: 70;
-    }
-    #sources-expand-btn {
-      position: fixed;
-      top: 50%;
-      right: 0;
-      transform: translateY(-50%);
-      border-radius: 4px 0 0 4px;
-      border-right: none;
-      z-index: 70;
-    }
-    #sources-expand-btn[hidden] { display: none !important; }
-    @media (max-width: 1024px) {
-      .sidebar-edge-toggle { display: none !important; }
-    }
 
 /* ───────── Schema sigil ───────── */
     /* Schema sigil — MG monogram blason injected into each figure, links to author site.

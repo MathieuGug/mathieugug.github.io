@@ -81,7 +81,9 @@ for (const app of apps) {
       /#zoom-overlay\s*\{/,
       /#modal-root\s*\{/,
       /\.sigil-mark\s*\{/,
-      /#sources-collapse-btn\s*\{/,
+      /\.topbar-tools\s*\{/,
+      /\.sidebar-edge-toggle\s*\{/,
+      /#sources-expand-btn\s*\{/,
     ];
     const leaks = signatures.filter(re => re.test(html));
     assert.equal(leaks.length, 0,

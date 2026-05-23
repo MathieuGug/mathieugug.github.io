@@ -85,6 +85,10 @@ export function mountHeroIntro({ introContainer, bannerContainer }) {
   ledeEl.textContent = BEATS[0].lede;
   captionEl.style.opacity = '1';
 
+  // Expose le beat courant sur introContainer via data-current-beat — CSS l'utilise
+  // pour fader l'affordance scroll dès qu'on est sorti de beat 1.
+  introContainer.dataset.currentBeat = '1';
+
   // IO 1 : beat triggers — bande horizontale centrale du viewport (~1px de haut)
   const beatIO = new IntersectionObserver((entries) => {
     for (const e of entries) {
@@ -93,6 +97,7 @@ export function mountHeroIntro({ introContainer, bannerContainer }) {
       if (Number.isFinite(n) && n >= 1 && n <= 5) {
         heroIntro.setBeat(n);
         updateCaption(n);
+        introContainer.dataset.currentBeat = String(n);
       }
     }
   }, {

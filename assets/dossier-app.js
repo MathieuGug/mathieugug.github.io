@@ -19,7 +19,8 @@
     setupTooltips();
     setupTocObserver();
     setupMobilePanels();
-    setupSourcesToggle();
+    setupSidebarsToggle();
+    setupMobileToolsAutoHide();
     setupZoom();
     setupSigil();
     setupTopbarScroll();
@@ -160,18 +161,12 @@
   }
 
   // ──────────────────────────────────────────────────────────
-  // Mobile panels (TOC + Sources)
+  // Mobile panels — panel-close + Escape only.
+  // Le wire des boutons #toggle-toc / #toggle-sources est délégué à
+  // setupSidebarsToggle (qui dispatche desktop collapse vs mobile drawer).
   // ──────────────────────────────────────────────────────────
 
   function setupMobilePanels() {
-    document.getElementById('toggle-toc')?.addEventListener('click', () => {
-      document.getElementById('sources')?.classList.remove('open');
-      document.getElementById('toc')?.classList.toggle('open');
-    });
-    document.getElementById('toggle-sources')?.addEventListener('click', () => {
-      document.getElementById('toc')?.classList.remove('open');
-      document.getElementById('sources')?.classList.toggle('open');
-    });
     document.querySelectorAll('.panel-close').forEach(btn => {
       btn.addEventListener('click', () => {
         btn.closest('#toc, #sources')?.classList.remove('open');
@@ -189,32 +184,103 @@
   }
 
   // ──────────────────────────────────────────────────────────
-  // Sources sidebar — desktop collapse/expand
+  // Sidebars toggle — boutons #toggle-toc et #toggle-sources dans la topbar.
+  // Desktop (>1024 px) : toggle .layout.toc-collapsed / .sources-collapsed (persisté).
+  // Mobile (≤1024 px) : ouvre/ferme le drawer correspondant (#toc.open / #sources.open).
   // ──────────────────────────────────────────────────────────
 
-  function setupSourcesToggle() {
-    const layout      = document.querySelector('.layout');
-    const collapseBtn = document.getElementById('sources-collapse-btn');
-    const expandBtn   = document.getElementById('sources-expand-btn');
-    if (!layout || !collapseBtn || !expandBtn) return;
+  function setupSidebarsToggle() {
+    const layout    = document.querySelector('.layout');
+    const toggleToc = document.getElementById('toggle-toc');
+    const toggleSrc = document.getElementById('toggle-sources');
+    if (!toggleToc && !toggleSrc) return;
 
-    function setCollapsed(collapsed) {
-      layout.classList.toggle('sources-collapsed', collapsed);
-      expandBtn.hidden = !collapsed;
-      collapseBtn.setAttribute('aria-expanded', String(!collapsed));
-      expandBtn.setAttribute('aria-expanded', String(!collapsed));
-      try { localStorage.setItem('dossier-sources-collapsed', collapsed ? '1' : '0'); } catch (_) {}
+    function isDesktop() {
+      return window.matchMedia('(min-width: 1025px)').matches;
     }
 
-    collapseBtn.addEventListener('click', () => setCollapsed(true));
-    expandBtn.addEventListener('click', () => {
-      setCollapsed(false);
-      requestAnimationFrame(() => collapseBtn.focus({ preventScroll: true }));
-    });
+    function setCollapsed(side, collapsed) {
+      if (!layout) return;
+      const cls = side === 'toc' ? 'toc-collapsed' : 'sources-collapsed';
+      layout.classList.toggle(cls, collapsed);
+      const btn = side === 'toc' ? toggleToc : toggleSrc;
+      btn?.setAttribute('aria-expanded', String(!collapsed));
+      try { localStorage.setItem('dossier-' + side + '-collapsed', collapsed ? '1' : '0'); } catch (_) {}
+    }
 
-    try {
-      if (localStorage.getItem('dossier-sources-collapsed') === '1') setCollapsed(true);
-    } catch (_) {}
+    function toggleSidebar(side) {
+      if (isDesktop()) {
+        const cls = side === 'toc' ? 'toc-collapsed' : 'sources-collapsed';
+        const isCollapsed = layout?.classList.contains(cls);
+        setCollapsed(side, !isCollapsed);
+      } else {
+        const target = document.getElementById(side);
+        const other  = document.getElementById(side === 'toc' ? 'sources' : 'toc');
+        other?.classList.remove('open');
+        target?.classList.toggle('open');
+      }
+    }
+
+    toggleToc?.addEventListener('click', () => toggleSidebar('toc'));
+    toggleSrc?.addEventListener('click', () => toggleSidebar('sources'));
+
+    if (isDesktop() && layout) {
+      try {
+        if (localStorage.getItem('dossier-toc-collapsed') === '1')     setCollapsed('toc', true);
+        if (localStorage.getItem('dossier-sources-collapsed') === '1') setCollapsed('sources', true);
+      } catch (_) {}
+    }
+  }
+
+  // ──────────────────────────────────────────────────────────
+  // Mobile tools auto-hide — la 2e row (.topbar-tools) glisse sous la topbar
+  // quand l'utilisateur scrolle vers le bas (lecture) et redescend quand il
+  // scrolle vers le haut (pull). Pattern iOS Safari address bar.
+  // Inactif sur desktop : .topbar-tools y est un flex child de .topbar.
+  // ──────────────────────────────────────────────────────────
+
+  function setupMobileToolsAutoHide() {
+    const tools = document.querySelector('.topbar-tools');
+    if (!tools) return;
+
+    let lastY = window.scrollY;
+    let ticking = false;
+    const HIDE_AT = 80;       // scroll minimum avant de cacher (px depuis le top)
+    const DELTA   = 6;        // seuil de delta pour ignorer les micro-jitters
+
+    function update() {
+      // Ne s'active que sur viewport mobile/tablette.
+      if (window.matchMedia('(min-width: 1025px)').matches) {
+        tools.classList.remove('is-hidden');
+        ticking = false;
+        return;
+      }
+      const y = window.scrollY;
+      const dy = y - lastY;
+      if (y < HIDE_AT) {
+        tools.classList.remove('is-hidden');
+      } else if (dy > DELTA) {
+        tools.classList.add('is-hidden');
+      } else if (dy < -DELTA) {
+        tools.classList.remove('is-hidden');
+      }
+      lastY = y;
+      ticking = false;
+    }
+
+    window.addEventListener('scroll', () => {
+      if (!ticking) {
+        requestAnimationFrame(update);
+        ticking = true;
+      }
+    }, { passive: true });
+
+    // Au resize (passage desktop ↔ mobile) on remet la 2e row en état visible.
+    window.addEventListener('resize', () => {
+      if (window.matchMedia('(min-width: 1025px)').matches) {
+        tools.classList.remove('is-hidden');
+      }
+    }, { passive: true });
   }
 
   // ──────────────────────────────────────────────────────────
