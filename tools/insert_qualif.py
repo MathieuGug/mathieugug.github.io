@@ -174,7 +174,7 @@ def render_input(axis_id: str, inp: dict[str, Any]) -> str:
 def render_step(axis: dict[str, Any]) -> str:
     """Rend un <aside class="qualif-step"> complet."""
     inputs_html = '\n    '.join(render_input(axis['id'], inp) for inp in axis['inputs'])
-    return f'''<aside class="qualif-step" data-axis="{axis["id"]}">
+    return f'''<aside class="qualif-step" id="qualif-step-{axis["id"]}" data-axis="{axis["id"]}">
   <header class="qualif-step__head">
     <p class="qualif-step__eyebrow">// votre profil — {html.escape(axis["label"])}</p>
     <p class="qualif-step__intro">{html.escape(axis["intro"])}</p>
@@ -270,6 +270,33 @@ def render_recap(config: dict[str, Any]) -> str:
 </aside>'''
 
 
+def render_qualif_nav(config: dict[str, Any]) -> str:
+    """Rend la sidebar nav (liste des 6 axes + état)."""
+    items = []
+    for axis in config['axes']:
+        items.append(
+            f'    <li data-axis="{axis["id"]}" class="is-empty">'
+            f'<a href="#qualif-step-{axis["id"]}">'
+            f'<span class="qualif-nav__label">{html.escape(axis["label"])}</span>'
+            f'<span class="qualif-nav__state" data-bind="state">0 / {len(axis["inputs"])}</span>'
+            f'</a></li>'
+        )
+    items_html = '\n'.join(items)
+    return f'''<aside id="qualif-nav" class="qualif-nav" aria-labelledby="qualif-nav-title">
+  <header class="qualif-nav__head">
+    <p class="qualif-nav__eyebrow">// votre profil</p>
+    <h4 id="qualif-nav-title">Profil de qualif</h4>
+    <button class="panel-close" type="button" aria-label="Fermer le profil de qualif">Fermer ✕</button>
+  </header>
+  <ol class="qualif-nav__list">
+{items_html}
+  </ol>
+  <footer class="qualif-nav__foot">
+    <a href="#qualif-recap" class="qualif-nav__see-recap">Voir mon profil ↓</a>
+  </footer>
+</aside>'''
+
+
 # ─────────────────────────────────────────────────────────────────────────
 # Injection : replace si existant, sinon insert avant le heading
 # ─────────────────────────────────────────────────────────────────────────
@@ -301,7 +328,7 @@ def inject_step(html_src: str, axis: dict[str, Any], strict: bool = False) -> tu
     """Retourne (new_html, action) où action ∈ {'inserted', 'replaced', 'skipped'}."""
     rendered = render_step(axis)
     pat = re.compile(
-        rf'<aside class="qualif-step" data-axis="{re.escape(axis["id"])}">.*?</aside>',
+        rf'<aside class="qualif-step"(?: id="qualif-step-{re.escape(axis["id"])}")? data-axis="{re.escape(axis["id"])}">.*?</aside>',
         re.DOTALL,
     )
     if pat.search(html_src):
@@ -334,6 +361,32 @@ def inject_recap(html_src: str, config: dict[str, Any], strict: bool = False) ->
         return html_src, 'skipped'
     insert_pos = maybe_pull_before_hr(html_src, pos)
     indent = '\n\n'
+    new_html = html_src[:insert_pos] + rendered + indent + html_src[insert_pos:]
+    return new_html, 'inserted'
+
+
+ASIDE_QUALIF_NAV_RE = re.compile(
+    r'<aside id="qualif-nav"[^>]*>.*?</aside>',
+    re.DOTALL,
+)
+
+
+def inject_qualif_nav(html_src: str, config: dict[str, Any], strict: bool = False) -> tuple[str, str]:
+    """Inject (or replace) the qualif-nav sidebar before <aside id="sources"."""
+    rendered = render_qualif_nav(config)
+    if ASIDE_QUALIF_NAV_RE.search(html_src):
+        new_html = ASIDE_QUALIF_NAV_RE.sub(lambda m: rendered, html_src, count=1)
+        return new_html, 'replaced'
+    sources_pat = re.compile(r'<aside id="sources"', re.IGNORECASE)
+    m = sources_pat.search(html_src)
+    if not m:
+        msg = 'warning: <aside id="sources"> not found — cannot anchor qualif-nav'
+        if strict:
+            raise RuntimeError(msg)
+        print(msg, file=sys.stderr)
+        return html_src, 'skipped'
+    insert_pos = m.start()
+    indent = '\n\n    '
     new_html = html_src[:insert_pos] + rendered + indent + html_src[insert_pos:]
     return new_html, 'inserted'
 
@@ -379,6 +432,22 @@ def ensure_data_link(html_src: str, qualif_path: Path, app_path: Path) -> tuple[
     return html_src, 'inserted'
 
 
+def ensure_topbar_button(html_src: str) -> tuple[str, str]:
+    """Inject <button id="toggle-qualif"> after #toggle-sources in <header class="site">."""
+    if 'id="toggle-qualif"' in html_src:
+        return html_src, 'present'
+    btn = '<button id="toggle-qualif" class="menu-toggle" aria-label="Ouvrir le profil de qualif">Profil</button>'
+    pat = re.compile(
+        r'(<button id="toggle-sources"[^>]*>[^<]*</button>)',
+        re.IGNORECASE,
+    )
+    m = pat.search(html_src)
+    if not m:
+        return html_src, 'skipped (no toggle-sources anchor)'
+    new_html = pat.sub(lambda mt: mt.group(1) + '\n      ' + btn, html_src, count=1)
+    return new_html, 'inserted'
+
+
 def main(argv: list[str] | None = None) -> int:
     # Force utf-8 stdout pour les flèches '→' dans les logs (cp1252 sur Windows Bash).
     try:
@@ -419,6 +488,10 @@ def main(argv: list[str] | None = None) -> int:
     html_src, recap_action = inject_recap(html_src, config, strict=args.strict)
     actions.append(f'  recap → {recap_action}')
 
+    # Inject qualif-nav sidebar (right column, above #sources)
+    html_src, nav_action = inject_qualif_nav(html_src, config, strict=args.strict)
+    actions.append(f'  qualif-nav → {nav_action}')
+
     # Inject lib tags (link + script) if absent
     html_src, lib_action = ensure_lib_tags(html_src)
     actions.append(f'  lib tags → {lib_action}')
@@ -426,6 +499,10 @@ def main(argv: list[str] | None = None) -> int:
     # Inject <link rel="qualif-data"> pointing to the sidecar JSON
     html_src, data_link_action = ensure_data_link(html_src, args.qualif, args.app)
     actions.append(f'  data link → {data_link_action}')
+
+    # Inject the qualif topbar button
+    html_src, topbar_action = ensure_topbar_button(html_src)
+    actions.append(f'  topbar button → {topbar_action}')
 
     print(f'qualif JSON validated: {len(config["axes"])} axes, {len(config["profiles"])} profiles, {len(config.get("adjustments", []))} adjustments')
     print(f'app: {args.app}')

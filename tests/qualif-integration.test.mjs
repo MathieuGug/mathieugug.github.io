@@ -14,13 +14,13 @@ const CONFIG = JSON.parse(
 );
 
 test('GCP app contains exactly 6 qualif-step aside elements', () => {
-  const matches = APP.match(/<aside class="qualif-step" data-axis="[^"]+">/g) || [];
+  const matches = APP.match(/<aside class="qualif-step"(?: id="qualif-step-[^"]+")? data-axis="[^"]+">/g) || [];
   assert.equal(matches.length, 6, `expected 6 mini-blocs, got ${matches.length}`);
 });
 
 test('GCP app: each axis from JSON has a matching mini-bloc with data-axis', () => {
   for (const axis of CONFIG.axes) {
-    const re = new RegExp(`<aside class="qualif-step" data-axis="${axis.id}">`);
+    const re = new RegExp(`<aside class="qualif-step"(?: id="qualif-step-${axis.id}")? data-axis="${axis.id}">`);
     assert.ok(re.test(APP), `missing mini-bloc for axis "${axis.id}"`);
   }
 });
@@ -48,7 +48,7 @@ test('Recap has all expected data-bind hooks', () => {
 
 test('Each axis mini-bloc has the right number of inputs (3 fieldsets each)', () => {
   for (const axis of CONFIG.axes) {
-    const re = new RegExp(`<aside class="qualif-step" data-axis="${axis.id}">[\\s\\S]*?</aside>`);
+    const re = new RegExp(`<aside class="qualif-step"(?: id="qualif-step-${axis.id}")? data-axis="${axis.id}">[\\s\\S]*?</aside>`);
     const m = APP.match(re);
     assert.ok(m, `axis "${axis.id}" block not found`);
     const fieldsetCount = (m[0].match(/<fieldset class="qualif-input/g) || []).length;
@@ -58,7 +58,7 @@ test('Each axis mini-bloc has the right number of inputs (3 fieldsets each)', ()
 
 test('Mini-blocs sit before their target heading in document order', () => {
   for (const axis of CONFIG.axes) {
-    const asidePat = new RegExp(`<aside class="qualif-step" data-axis="${axis.id}">`);
+    const asidePat = new RegExp(`<aside class="qualif-step"(?: id="qualif-step-${axis.id}")? data-axis="${axis.id}">`);
     const headingPat = new RegExp(`<h[23] id="${axis.before_heading_id}"`);
     const asidePos = APP.search(asidePat);
     const headingPos = APP.search(headingPat);

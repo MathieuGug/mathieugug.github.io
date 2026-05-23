@@ -229,6 +229,7 @@
 
       wireSteps(handles);
       wireRecap(handles);
+      wireQualifNav(handles);
       renderAll(handles);
     }).catch(function (err) {
       console.error('[qualif]', err);
@@ -351,11 +352,12 @@
     rangeEl.setAttribute('aria-valuetext', closest.label);
   }
 
-  function updateStepWitness(step, axis, state) {
-    const witness = step.querySelector('.qualif-step__witness');
-    const seeRecap = step.querySelector('.qualif-step__see-recap');
-    if (!witness) return;
-
+  /**
+   * Helper pur : compte les inputs renseignés d'un axe.
+   * Retourne { filled: number, total: number, isComplete: boolean }.
+   * Réutilisé par updateStepWitness (mini-bloc inline) et updateNavState (sidebar).
+   */
+  function axisCompletion(axis, state) {
     const total = axis.inputs.length;
     let filled = 0;
     for (let i = 0; i < axis.inputs.length; i++) {
@@ -367,11 +369,20 @@
       if (typeof v === 'string' && v === '') continue;
       filled++;
     }
+    return { filled: filled, total: total, isComplete: filled === total };
+  }
+
+  function updateStepWitness(step, axis, state) {
+    const witness = step.querySelector('.qualif-step__witness');
+    const seeRecap = step.querySelector('.qualif-step__see-recap');
+    if (!witness) return;
+
+    const { filled, total, isComplete } = axisCompletion(axis, state);
 
     if (filled === 0) {
       witness.textContent = '— En attente de saisie';
       if (seeRecap) seeRecap.hidden = true;
-    } else if (filled < total) {
+    } else if (!isComplete) {
       witness.textContent = filled + ' sur ' + total + ' renseignés';
       if (seeRecap) seeRecap.hidden = false;
     } else {
@@ -426,6 +437,77 @@
     }
   }
 
+  function wireQualifNav(handles) {
+    const nav = document.querySelector('aside#qualif-nav');
+    if (!nav) return;
+
+    // Topbar toggle button (mobile)
+    const toggleBtn = document.querySelector('#toggle-qualif');
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', function () {
+        nav.classList.toggle('open');
+        document.body.classList.toggle('has-panel-open', nav.classList.contains('open'));
+      });
+    }
+
+    // Panel close button
+    const closeBtn = nav.querySelector('.panel-close');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', function () {
+        nav.classList.remove('open');
+        document.body.classList.remove('has-panel-open');
+      });
+    }
+
+    // ESC closes the drawer (mobile)
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && nav.classList.contains('open')) {
+        nav.classList.remove('open');
+        document.body.classList.remove('has-panel-open');
+      }
+    });
+
+    // Click on any axis link → close drawer (mobile) then native scroll
+    nav.querySelectorAll('a[href^="#qualif-step-"]').forEach(function (a) {
+      a.addEventListener('click', function () {
+        nav.classList.remove('open');
+        document.body.classList.remove('has-panel-open');
+      });
+    });
+    // Same for "Voir mon profil ↓"
+    const seeRecap = nav.querySelector('a[href="#qualif-recap"]');
+    if (seeRecap) {
+      seeRecap.addEventListener('click', function () {
+        nav.classList.remove('open');
+        document.body.classList.remove('has-panel-open');
+      });
+    }
+  }
+
+  function updateNavState(handles) {
+    const nav = document.querySelector('aside#qualif-nav');
+    if (!nav) return;
+
+    handles.config.axes.forEach(function (axis) {
+      const li = nav.querySelector('li[data-axis="' + axis.id + '"]');
+      if (!li) return;
+      const stateEl = li.querySelector('[data-bind="state"]');
+      const { filled, total, isComplete } = axisCompletion(axis, handles.state);
+
+      li.classList.remove('is-empty', 'is-partial', 'is-complete');
+      if (filled === 0) {
+        li.classList.add('is-empty');
+        if (stateEl) stateEl.textContent = '0 / ' + total;
+      } else if (isComplete) {
+        li.classList.add('is-complete');
+        if (stateEl) stateEl.textContent = '✓';
+      } else {
+        li.classList.add('is-partial');
+        if (stateEl) stateEl.textContent = filled + ' / ' + total;
+      }
+    });
+  }
+
   function renderAll(handles) {
     const config = handles.config;
     const state = handles.state;
@@ -449,6 +531,7 @@
 
     // 6. Render UI
     renderRecapUI(config, vec, filledCount, profile, adjRecos);
+    updateNavState(handles);
   }
 
   function renderRecapUI(config, vec, filledCount, profile, adjRecos) {
