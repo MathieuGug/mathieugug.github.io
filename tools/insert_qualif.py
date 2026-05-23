@@ -432,6 +432,22 @@ def ensure_data_link(html_src: str, qualif_path: Path, app_path: Path) -> tuple[
     return html_src, 'inserted'
 
 
+def ensure_topbar_button(html_src: str) -> tuple[str, str]:
+    """Inject <button id="toggle-qualif"> after #toggle-sources in <header class="site">."""
+    if 'id="toggle-qualif"' in html_src:
+        return html_src, 'present'
+    btn = '<button id="toggle-qualif" class="menu-toggle" aria-label="Ouvrir le profil de qualif">Profil</button>'
+    pat = re.compile(
+        r'(<button id="toggle-sources"[^>]*>[^<]*</button>)',
+        re.IGNORECASE,
+    )
+    m = pat.search(html_src)
+    if not m:
+        return html_src, 'skipped (no toggle-sources anchor)'
+    new_html = pat.sub(lambda mt: mt.group(1) + '\n      ' + btn, html_src, count=1)
+    return new_html, 'inserted'
+
+
 def main(argv: list[str] | None = None) -> int:
     # Force utf-8 stdout pour les flèches '→' dans les logs (cp1252 sur Windows Bash).
     try:
@@ -483,6 +499,10 @@ def main(argv: list[str] | None = None) -> int:
     # Inject <link rel="qualif-data"> pointing to the sidecar JSON
     html_src, data_link_action = ensure_data_link(html_src, args.qualif, args.app)
     actions.append(f'  data link → {data_link_action}')
+
+    # Inject the qualif topbar button
+    html_src, topbar_action = ensure_topbar_button(html_src)
+    actions.append(f'  topbar button → {topbar_action}')
 
     print(f'qualif JSON validated: {len(config["axes"])} axes, {len(config["profiles"])} profiles, {len(config.get("adjustments", []))} adjustments')
     print(f'app: {args.app}')
