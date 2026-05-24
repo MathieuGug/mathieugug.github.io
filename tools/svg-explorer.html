@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SVG Explorer — outil de diagnostic</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<style>
+:root {
+  --bg: #faf6ec;
+  --ink: #1a1a1a;
+  --text: #1e1e2a;
+  --text-mid: #6b6f7c;
+  --line: rgba(30,30,44,0.12);
+  --accent: #b8582e;
+  --carmine: #b7332c;
+  --teal: #1f5560;
+  --paper: #ffffff;
+  --grid: rgba(30,30,44,0.04);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'JetBrains Mono', 'Consolas', monospace;
+  font-size: 13px;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: 56px 1fr 32px;
+  grid-template-columns: 320px 1fr;
+  grid-template-areas: "topbar topbar" "sidebar stage" "statusbar statusbar";
+}
+
+/* ─── topbar ─────────────────────────────────────── */
+header.topbar {
+  grid-area: topbar;
+  background: rgba(250, 246, 236, 0.92);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 24px;
+}
+header.topbar h1 {
+  font-family: 'Cambria', Georgia, serif;
+  font-weight: 500;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+}
+header.topbar h1 em {
+  font-style: italic;
+  color: var(--accent);
+}
+header.topbar .badge {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-mid);
+  border: 1px solid var(--line);
+  padding: 4px 10px;
+  border-radius: 3px;
+}
+header.topbar .grow { flex: 1; }
+header.topbar input[type="file"] {
+  font-family: inherit;
+  font-size: 11px;
+  color: var(--text-mid);
+}
+header.topbar .hint {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-mid);
+}
+
+/* ─── sidebar ────────────────────────────────────── */
+aside.sidebar {
+  grid-area: sidebar;
+  background: var(--paper);
+  border-right: 1px solid var(--line);
+  overflow-y: auto;
+  padding: 18px 20px;
+}
+aside.sidebar h2 {
+  font-family: 'Cambria', Georgia, serif;
+  font-weight: 500;
+  font-size: 14px;
+  margin-bottom: 12px;
+  color: var(--text-mid);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+aside.sidebar dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 6px 14px;
+  font-size: 11.5px;
+  line-height: 1.4;
+  margin-bottom: 24px;
+}
+aside.sidebar dt {
+  color: var(--text-mid);
+  white-space: nowrap;
+}
+aside.sidebar dd {
+  font-weight: 500;
+  word-break: break-all;
+}
+aside.sidebar .controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+aside.sidebar button {
+  font-family: inherit;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 6px 10px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  cursor: pointer;
+  color: var(--text);
+}
+aside.sidebar button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+aside.sidebar .preset-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+aside.sidebar .preset-list button {
+  text-align: left;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 11px;
+  padding: 6px 10px;
+}
+aside.sidebar .hover-info {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--line);
+  font-size: 11px;
+  line-height: 1.5;
+}
+aside.sidebar .hover-info code {
+  background: var(--bg);
+  padding: 2px 5px;
+  border-radius: 2px;
+  font-size: 10.5px;
+}
+
+/* ─── stage ──────────────────────────────────────── */
+main.stage {
+  grid-area: stage;
+  position: relative;
+  background:
+    linear-gradient(0deg, var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px),
+    var(--bg);
+  background-size: 50px 50px;
+  overflow: hidden;
+  cursor: grab;
+}
+main.stage.dragging { cursor: grabbing; }
+main.stage svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  user-select: none;
+}
+main.stage .empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-mid);
+  font-family: 'Cambria', Georgia, serif;
+  font-style: italic;
+  font-size: 16px;
+  gap: 12px;
+  pointer-events: none;
+}
+main.stage .empty .arrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-style: normal;
+  color: var(--accent);
+}
+
+/* ─── highlight overlay on hovered element ──────── */
+main.stage svg .__hover_outline {
+  pointer-events: none;
+  stroke: var(--carmine);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+  fill: rgba(183, 51, 44, 0.06);
+}
+
+/* ─── status bar ─────────────────────────────────── */
+footer.statusbar {
+  grid-area: statusbar;
+  background: var(--ink);
+  color: var(--bg);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 24px;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+}
+footer.statusbar span { display: inline-flex; gap: 6px; }
+footer.statusbar .label { color: rgba(250, 246, 236, 0.55); }
+footer.statusbar .value { font-weight: 500; }
+footer.statusbar .grow { flex: 1; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <h1>SVG <em>Explorer</em></h1>
+  <span class="badge">Diagnostic interactif</span>
+  <span class="grow"></span>
+  <span class="hint">Drop a .svg file or pick a preset →</span>
+  <input type="file" id="file-input" accept=".svg,image/svg+xml">
+</header>
+
+<aside class="sidebar">
+  <h2>Vue actuelle</h2>
+  <dl>
+    <dt>fichier</dt><dd id="info-file">—</dd>
+    <dt>viewBox</dt><dd id="info-viewbox">—</dd>
+    <dt>zoom</dt><dd id="info-zoom">100%</dd>
+    <dt>pan</dt><dd id="info-pan">(0, 0)</dd>
+    <dt>éléments</dt><dd id="info-count">—</dd>
+  </dl>
+
+  <h2>Contrôles</h2>
+  <div class="controls">
+    <button id="ctl-reset">⤺ Reset</button>
+    <button id="ctl-fit">⤢ Fit</button>
+    <button id="ctl-zoom-in">+ Zoom</button>
+    <button id="ctl-zoom-out">− Zoom</button>
+    <button id="ctl-grid">Grille on/off</button>
+  </div>
+
+  <h2>Presets dossier eval</h2>
+  <div class="preset-list" id="preset-list">
+    <!-- populated by JS -->
+  </div>
+
+  <div class="hover-info" id="hover-info">
+    <strong>Survol un élément SVG</strong> pour voir son tag, ses attributs et sa bbox.
+    Au démarrage, la zone affiche cette aide. Les éléments interactifs (<code>data-card</code>, <code>data-node</code>) sont mis en évidence.
+  </div>
+</aside>
+
+<main class="stage" id="stage">
+  <div class="empty" id="empty-msg">
+    <div class="arrow">↑ choisis un fichier ou un preset ↑</div>
+    <div>Drag pour panner · Molette pour zoomer · Reset pour revenir</div>
+  </div>
+</main>
+
+<footer class="statusbar">
+  <span><span class="label">tool</span><span class="value">svg-explorer</span></span>
+  <span><span class="label">repo</span><span class="value">mathieugug.github.io</span></span>
+  <span class="grow"></span>
+  <span><span class="label">drag</span><span class="value">pan</span></span>
+  <span><span class="label">wheel</span><span class="value">zoom</span></span>
+  <span><span class="label">click</span><span class="value">inspect</span></span>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  // ─── DOM refs ────────────────────────────────────
+  const stage    = document.getElementById('stage');
+  const emptyMsg = document.getElementById('empty-msg');
+  const fileInput= document.getElementById('file-input');
+  const infoFile = document.getElementById('info-file');
+  const infoVB   = document.getElementById('info-viewbox');
+  const infoZoom = document.getElementById('info-zoom');
+  const infoPan  = document.getElementById('info-pan');
+  const infoCnt  = document.getElementById('info-count');
+  const hoverInfo= document.getElementById('hover-info');
+  const presetList=document.getElementById('preset-list');
+
+  // ─── State ───────────────────────────────────────
+  let svg          = null;       // current <svg> root in DOM
+  let originalVB   = null;       // { x, y, w, h } as loaded
+  let currentVB    = null;       // animated/transformed
+  let dragStart    = null;
+  let highlightEl  = null;       // overlay rect element
+
+  // ─── Helpers ─────────────────────────────────────
+  function parseViewBox(s) {
+    if (!s) return null;
+    const p = s.trim().split(/\s+/).map(Number);
+    if (p.length !== 4 || p.some(isNaN)) return null;
+    return { x: p[0], y: p[1], w: p[2], h: p[3] };
+  }
+
+  function viewBoxString(vb) {
+    return vb.x + ' ' + vb.y + ' ' + vb.w + ' ' + vb.h;
+  }
+
+  function setViewBox(vb) {
+    currentVB = vb;
+    if (svg) svg.setAttribute('viewBox', viewBoxString(vb));
+    updateInfoPanel();
+  }
+
+  function updateInfoPanel() {
+    if (!currentVB) return;
+    infoVB.textContent = viewBoxString(currentVB);
+    const z = originalVB ? Math.round((originalVB.w / currentVB.w) * 100) : 100;
+    infoZoom.textContent = z + '%';
+    const px = Math.round(currentVB.x - (originalVB ? originalVB.x : 0));
+    const py = Math.round(currentVB.y - (originalVB ? originalVB.y : 0));
+    infoPan.textContent = '(' + px + ', ' + py + ')';
+  }
+
+  // ─── Load SVG ────────────────────────────────────
+  function loadSvgText(text, label) {
+    // strip XML preamble if present
+    const cleaned = text.replace(/^<\?xml[^>]*\?>\s*/, '');
+    // parse and insert
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(cleaned, 'image/svg+xml');
+    const errNode = doc.querySelector('parsererror');
+    if (errNode) {
+      alert('SVG parse error : ' + errNode.textContent.slice(0, 200));
+      return;
+    }
+    const newSvg = doc.documentElement;
+    if (newSvg.nodeName.toLowerCase() !== 'svg') {
+      alert('Pas un SVG racine.');
+      return;
+    }
+
+    // clear stage and inject
+    if (svg) svg.remove();
+    if (emptyMsg) emptyMsg.style.display = 'none';
+    stage.appendChild(newSvg);
+    svg = newSvg;
+
+    // pick up viewBox
+    const vbAttr = svg.getAttribute('viewBox');
+    let vb = parseViewBox(vbAttr);
+    if (!vb) {
+      // fallback: use width/height
+      const w = parseFloat(svg.getAttribute('width')) || 1000;
+      const h = parseFloat(svg.getAttribute('height')) || 1000;
+      vb = { x: 0, y: 0, w: w, h: h };
+      svg.setAttribute('viewBox', viewBoxString(vb));
+    }
+    originalVB = Object.assign({}, vb);
+    currentVB  = Object.assign({}, vb);
+    // ensure svg fills the stage
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', '100%');
+    svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+
+    infoFile.textContent = label || 'inline';
+    const allElements = svg.querySelectorAll('*');
+    infoCnt.textContent = allElements.length + ' nodes';
+    updateInfoPanel();
+
+    attachHoverHandlers();
+  }
+
+  // ─── Hover / inspect ─────────────────────────────
+  function attachHoverHandlers() {
+    if (!svg) return;
+    svg.addEventListener('mouseover', onHover);
+    svg.addEventListener('mouseout', onHoverEnd);
+    svg.addEventListener('click', onInspect);
+  }
+
+  function onHover(e) {
+    const t = e.target;
+    if (!t || t === svg) return;
+    if (t.classList && t.classList.contains('__hover_outline')) return;
+    drawHighlight(t);
+    showElementInfo(t);
+  }
+
+  function onHoverEnd() {
+    clearHighlight();
+  }
+
+  function drawHighlight(el) {
+    clearHighlight();
+    if (!el || !el.getBBox) return;
+    let bb;
+    try { bb = el.getBBox(); } catch (err) { return; }
+    if (!bb || (bb.width === 0 && bb.height === 0)) return;
+    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect.setAttribute('x', bb.x - 1);
+    rect.setAttribute('y', bb.y - 1);
+    rect.setAttribute('width', bb.width + 2);
+    rect.setAttribute('height', bb.height + 2);
+    rect.setAttribute('class', '__hover_outline');
+    svg.appendChild(rect);
+    highlightEl = rect;
+  }
+
+  function clearHighlight() {
+    if (highlightEl && highlightEl.parentNode) {
+      highlightEl.parentNode.removeChild(highlightEl);
+    }
+    highlightEl = null;
+  }
+
+  function showElementInfo(el) {
+    const parts = [];
+    parts.push('<strong>&lt;' + el.nodeName + '&gt;</strong>');
+    const id = el.getAttribute('id');
+    if (id) parts.push('<div>id: <code>' + escapeHtml(id) + '</code></div>');
+    const cls = el.getAttribute('class');
+    if (cls) parts.push('<div>class: <code>' + escapeHtml(cls) + '</code></div>');
+    // data-* attributes
+    const dataAttrs = [];
+    for (const attr of el.attributes || []) {
+      if (attr.name.startsWith('data-')) {
+        dataAttrs.push(attr.name + '="' + escapeHtml(attr.value) + '"');
+      }
+    }
+    if (dataAttrs.length) parts.push('<div>' + dataAttrs.map(s => '<code>' + s + '</code>').join('<br>') + '</div>');
+    // bbox
+    try {
+      const bb = el.getBBox();
+      parts.push('<div>bbox: <code>' + Math.round(bb.x) + ',' + Math.round(bb.y) + ' ' + Math.round(bb.width) + '×' + Math.round(bb.height) + '</code></div>');
+    } catch (err) { /* noop */ }
+    hoverInfo.innerHTML = parts.join('');
+  }
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function onInspect(e) {
+    const t = e.target;
+    if (!t) return;
+    // Print element to console for inspector dive
+    console.log('Inspect:', t);
+  }
+
+  // ─── Pan & zoom ──────────────────────────────────
+  stage.addEventListener('mousedown', function (e) {
+    if (!svg) return;
+    if (e.button !== 0) return;
+    dragStart = { x: e.clientX, y: e.clientY, vbX: currentVB.x, vbY: currentVB.y };
+    stage.classList.add('dragging');
+  });
+
+  window.addEventListener('mousemove', function (e) {
+    if (!dragStart || !currentVB) return;
+    const rect = stage.getBoundingClientRect();
+    const pxPerUnit = rect.width / currentVB.w;
+    const dx = (e.clientX - dragStart.x) / pxPerUnit;
+    const dy = (e.clientY - dragStart.y) / pxPerUnit;
+    setViewBox({ x: dragStart.vbX - dx, y: dragStart.vbY - dy, w: currentVB.w, h: currentVB.h });
+  });
+
+  window.addEventListener('mouseup', function () {
+    dragStart = null;
+    stage.classList.remove('dragging');
+  });
+
+  stage.addEventListener('wheel', function (e) {
+    if (!currentVB) return;
+    e.preventDefault();
+    const rect = stage.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) / rect.width;   // 0..1
+    const my = (e.clientY - rect.top) / rect.height;
+    const cx = currentVB.x + currentVB.w * mx;          // svg coord under cursor
+    const cy = currentVB.y + currentVB.h * my;
+    const zoom = e.deltaY < 0 ? 0.88 : 1.13;
+    const newW = currentVB.w * zoom;
+    const newH = currentVB.h * zoom;
+    // keep cursor point stable
+    const newX = cx - newW * mx;
+    const newY = cy - newH * my;
+    setViewBox({ x: newX, y: newY, w: newW, h: newH });
+  }, { passive: false });
+
+  // ─── Controls ────────────────────────────────────
+  document.getElementById('ctl-reset').addEventListener('click', function () {
+    if (originalVB) setViewBox(Object.assign({}, originalVB));
+  });
+  document.getElementById('ctl-fit').addEventListener('click', function () {
+    if (originalVB) setViewBox(Object.assign({}, originalVB));
+  });
+  document.getElementById('ctl-zoom-in').addEventListener('click', function () {
+    if (!currentVB) return;
+    const cx = currentVB.x + currentVB.w / 2;
+    const cy = currentVB.y + currentVB.h / 2;
+    const newW = currentVB.w * 0.75;
+    const newH = currentVB.h * 0.75;
+    setViewBox({ x: cx - newW / 2, y: cy - newH / 2, w: newW, h: newH });
+  });
+  document.getElementById('ctl-zoom-out').addEventListener('click', function () {
+    if (!currentVB) return;
+    const cx = currentVB.x + currentVB.w / 2;
+    const cy = currentVB.y + currentVB.h / 2;
+    const newW = currentVB.w * 1.33;
+    const newH = currentVB.h * 1.33;
+    setViewBox({ x: cx - newW / 2, y: cy - newH / 2, w: newW, h: newH });
+  });
+  document.getElementById('ctl-grid').addEventListener('click', function () {
+    stage.style.backgroundImage =
+      stage.style.backgroundImage === 'none' ? '' : 'none';
+  });
+
+  // ─── File input ──────────────────────────────────
+  fileInput.addEventListener('change', function () {
+    const f = fileInput.files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = function () { loadSvgText(reader.result, f.name); };
+    reader.readAsText(f);
+  });
+
+  // ─── Drag and drop ───────────────────────────────
+  stage.addEventListener('dragover', function (e) { e.preventDefault(); });
+  stage.addEventListener('drop', function (e) {
+    e.preventDefault();
+    const f = e.dataTransfer.files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = function () { loadSvgText(reader.result, f.name); };
+    reader.readAsText(f);
+  });
+
+  // ─── Presets (relative URLs work when served via local server) ──
+  const PRESETS = [
+    { label: '01 — paradigmes',          path: '../evaluation-agentique/images/20260501-01-evolution-paradigmes.svg' },
+    { label: '02 — anatomie eval',       path: '../evaluation-agentique/images/20260501-02-anatomie-evaluation.svg' },
+    { label: '03 — taxonomie graders',   path: '../evaluation-agentique/images/20260501-03-taxonomie-graders.svg' },
+    { label: '04 — pyramide métriques',  path: '../evaluation-agentique/images/20260501-04-pyramide-metriques.svg' },
+    { label: '05 — llm as judge',        path: '../evaluation-agentique/images/20260501-05-llm-as-judge.svg' },
+    { label: '06 — user simulation',     path: '../evaluation-agentique/images/20260501-06-user-simulation.svg' },
+    { label: '06bis — TestCase formula', path: '../evaluation-agentique/images/20260501-06bis-testcase-formula.svg' },
+    { label: '07 — observabilité RCA',   path: '../evaluation-agentique/images/20260501-07-observabilite-rca.svg' },
+    { label: '08 — frameworks matrice',  path: '../evaluation-agentique/images/20260501-08-frameworks-matrice.svg' },
+    { label: '09 — coûts goulots',       path: '../evaluation-agentique/images/20260501-09-couts-goulots.svg' },
+    { label: '10 — playbook gruyère',    path: '../evaluation-agentique/images/20260501-10-playbook-gruyere.svg' },
+  ];
+
+  PRESETS.forEach(function (p) {
+    const b = document.createElement('button');
+    b.textContent = p.label;
+    b.addEventListener('click', function () {
+      fetch(p.path).then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status + ' on ' + p.path);
+        return r.text();
+      }).then(function (text) {
+        loadSvgText(text, p.path.split('/').pop());
+      }).catch(function (err) {
+        alert('Échec chargement preset.\n' + err.message + '\n\nLance avec un serveur local (python -m http.server) si tu ouvres l\'explorer en file://');
+      });
+    });
+    presetList.appendChild(b);
+  });
+
+})();
+</script>
+</body>
+</html>

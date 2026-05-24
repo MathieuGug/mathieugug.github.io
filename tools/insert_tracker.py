@@ -33,14 +33,15 @@ DATA = [
     ("17", 880, 15, "dim 17 mai"),
     ("18", 930, 14, "lun 18 mai"),
     ("19", 980, 5, "mar 19 mai"),
+    ("20", 1030, 5, "mer 20 mai"),
 ]
 
-# All 19 day positions for the X axis (the dim 10 mai stays labeled even with no bar)
+# All 20 day positions for the X axis (the dim 10 mai stays labeled even with no bar)
 DAY_X = [
     ("01", 80), ("02", 130), ("03", 180), ("04", 230), ("05", 280), ("06", 330),
     ("07", 380), ("08", 430), ("09", 480), ("10", 530), ("11", 580), ("12", 630),
     ("13", 680), ("14", 730), ("15", 780), ("16", 830), ("17", 880), ("18", 930),
-    ("19", 980),
+    ("19", 980), ("20", 1030),
 ]
 
 PLOT_TOP = 92        # y at 100 %
@@ -102,30 +103,30 @@ def tracker_svg(up_to_day):
 
     # Top-right badge: MUSK X% · ALTMAN Y%
     badge = (
-        f'<text x="1040" y="32" font-family="\'JetBrains Mono\', monospace" '
+        f'<text x="1080" y="32" font-family="\'JetBrains Mono\', monospace" '
         f'font-size="11" font-weight="600" letter-spacing="0.06em" '
         f'text-anchor="end">'
         f'<tspan fill="{COLOR_MUSK}">MUSK {latest_p}%</tspan>'
         f'<tspan fill="#6b6f7c"> · </tspan>'
         f'<tspan fill="{COLOR_ALTMAN}">ALTMAN {latest_altman}%</tspan>'
         f'</text>'
-        f'<text x="1040" y="50" font-family="\'JetBrains Mono\', monospace" '
+        f'<text x="1080" y="50" font-family="\'JetBrains Mono\', monospace" '
         f'font-size="9.5" fill="#9a9ca5" letter-spacing="0.18em" '
         f'text-anchor="end">AU {latest_lbl.upper()}</text>'
     )
 
     return f'''      <div class="tracker" aria-label="Probabilité estimée que Musk gagne en équité, au {latest_lbl}. Musk {latest_p} pour cent, Altman {latest_altman} pour cent.">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 320" role="img">
-          <rect width="1080" height="320" fill="#faf6ec"/>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 320" role="img">
+          <rect width="1120" height="320" fill="#faf6ec"/>
 
           <text x="40" y="32" font-family="'JetBrains Mono', monospace" font-size="10.5" font-weight="600" fill="#b8582e" letter-spacing="0.14em">PROBABILITÉ ESTIMÉE · MUSK VS ALTMAN EN ÉQUITÉ</text>
           <text x="40" y="52" font-family="'Fraunces', serif" font-size="13" font-style="italic" fill="#6b6f7c">estimation Mathieu Guglielmino · révisée chaque jour du procès</text>
           {badge}
-          <line x1="40" y1="64" x2="1040" y2="64" stroke="rgba(30,30,44,0.20)" stroke-width="1"/>
+          <line x1="40" y1="64" x2="1080" y2="64" stroke="rgba(30,30,44,0.20)" stroke-width="1"/>
 
-          <line x1="60" y1="92" x2="1020" y2="92" stroke="rgba(30,30,44,0.18)" stroke-width="1"/>
-          <line x1="60" y1="182" x2="1020" y2="182" stroke="rgba(30,30,44,0.18)" stroke-width="1" stroke-dasharray="3 4"/>
-          <line x1="60" y1="272" x2="1020" y2="272" stroke="rgba(30,30,44,0.30)" stroke-width="1"/>
+          <line x1="60" y1="92" x2="1060" y2="92" stroke="rgba(30,30,44,0.18)" stroke-width="1"/>
+          <line x1="60" y1="182" x2="1060" y2="182" stroke="rgba(30,30,44,0.18)" stroke-width="1" stroke-dasharray="3 4"/>
+          <line x1="60" y1="272" x2="1060" y2="272" stroke="rgba(30,30,44,0.30)" stroke-width="1"/>
 
           <text x="52" y="96" font-family="'JetBrains Mono', monospace" font-size="9" fill="#9a9ca5" text-anchor="end">100</text>
           <text x="52" y="186" font-family="'JetBrains Mono', monospace" font-size="9" fill="#9a9ca5" text-anchor="end">50</text>
@@ -139,7 +140,7 @@ def tracker_svg(up_to_day):
           <g font-family="'JetBrains Mono', monospace" font-size="10" fill="#9a9ca5" text-anchor="middle">
               {x_labels_block}
           </g>
-          <text x="540" y="312" font-family="'JetBrains Mono', monospace" font-size="9" fill="#9a9ca5" letter-spacing="0.18em" text-anchor="middle">MAI 2026</text>
+          <text x="560" y="312" font-family="'JetBrains Mono', monospace" font-size="9" fill="#9a9ca5" letter-spacing="0.18em" text-anchor="middle">MAI 2026</text>
         </svg>
       </div>
 '''

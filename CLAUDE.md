@@ -2,6 +2,22 @@
 
 Site personnel de Mathieu Guglielmino, hébergé sur GitHub Pages. Il publie des artefacts publics : articles interactifs, études, dossiers de veille.
 
+## Quick Reference
+
+**Publier un nouveau dossier** :
+1. Créer `<slug>/` avec son `index.html` (hub) + le(s) format(s) (app, slideshow, journal, scrolly, livre…).
+2. Ajouter la tuile dans `index.html` racine (typologie + date + lien vers `<slug>/`).
+3. `python tools/seo_dossiers.py --only <slug>` — génère `og.png` et injecte le bloc SEO dans toutes les pages du dossier (idempotent, à re-runner après modif titre/desc/date).
+4. App deep-research : embarquer `/assets/dossier-app.css` + `/assets/dossier-app.js`, la topbar 3-items, le favicon, et le contrat DOM (cf. section *Bibliothèque partagée*). Alternative : `python tools/extract_to_lib.py path/to/app.html`.
+5. Avant merge : vérifier la checklist mobile 7 points (section *Mobile-friendliness*) **sur device réel ou Chrome devtools en mode mobile** (pas "desktop site").
+6. (Optionnel) Si tu veux activer le widget de qualif : créer `<slug>/qualif.json` (6 axes, 5 profils, règles), puis `python tools/insert_qualif.py --app … --qualif …`. Cf. *Widget de qualification business* pour le calibrage.
+
+**Tests CI** : `node --test tests/lib-contract.test.mjs tests/apps-integration.test.mjs` (zéro dépendance, < 5 s).
+
+**Workflow git** : branche `claude/...` ou `journal/...` → commit → **diff review obligatoire** → push branche → PR via `mcp__github__create_pull_request` (owner/repo `mathieugug` / `mathieugug.github.io`). **Jamais `git push origin main`** (403 garanti). Mathieu merge à la main, sauf cas explicitement validé (voir *Push direct sur main*).
+
+**Trois règles non négociables** : (1) Lincoln uniquement en footer, jamais en hero / en-tête / sources de schémas. (2) Disclosure IA discrète sur chaque artefact. (3) Pas de tracker, analytics ni tiers (sauf Google Fonts).
+
 ## Cadrage éditorial
 
 - **Tout est publié au nom de Mathieu Guglielmino, à titre personnel.** Ces artefacts ne sont pas des livrables internes.
@@ -16,9 +32,9 @@ Site personnel de Mathieu Guglielmino, hébergé sur GitHub Pages. Il publie des
 - Palette définie en haut de `index.html` (`--bg #faf6ec`, `--accent #b8582e`, etc.). Réutiliser ces variables pour la cohérence visuelle.
 - Illustrations : SVG inline pour l'accessibilité et l'interactivité.
 - **Favicon** : `/favicon.svg` à la racine (monogramme MG italique sur fond accent). Toute nouvelle page HTML publiée doit inclure `<link rel="icon" type="image/svg+xml" href="/favicon.svg">` dans son `<head>`.
-- Pas de tracker, pas d'analytics, pas de tiers en dehors de Google Fonts.
-- **Surlignage stabilo (`<mark>`)** : signature visuelle du site, à utiliser pour les phrases-clés que je veux faire ressortir dans le corps narratif. En markdown : syntaxe Obsidian `==texte==` qui rend `<mark>texte</mark>`. Style : un dégradé qui ne tache que la moitié basse du texte, façon stylo feutre — `background: linear-gradient(transparent 58%, rgba(178, 59, 27, 0.14) 58%); color: inherit; padding: 0 2px;`. La règle CSS doit cibler `main mark` (apps `header.site` + `main#report`) ou **`.entry mark`** (journal/scrolly — **pas** `.entry .body mark`, qui rate les `<mark>` dans les bullets `<li>` de l'exec sum ; cas vu le 14 mai 2026 sur le journal Musk : un `<mark>` en bullet apparaissait en jaune browser-default au lieu du wash orange). Le pattern d'origine vient de `gouvernance/20260421-pitch-gouvernance-agentic.html:189`. Embarqué dans les huit apps deep-research, dans `proces-musk-altman/journal.html`, et dans les deux templates de la skill `illustrated-deep-research/assets/` (`app-template.html` et `slideshow-template.html`). Toute nouvelle app HTML longue (rapport, journal) doit l'embarquer.
-- **Hint de largeur Obsidian `|1300` sur les images des journaux markdown** : dans tout fichier journal `.md` (cas en cours : `proces-musk-altman/journal.md`), chaque image inline doit porter le suffixe `|1300` — syntaxe Obsidian `![alt|1300](path.svg)`. C'est purement un hint pour homogénéiser la prévisualisation Obsidian locale (sinon les schémas s'affichent à la largeur du wrap éditeur, trop étroite pour relire). **N'affecte pas le rendu HTML publié** : le `journal.html` est écrit/maintenu à la main, pas auto-généré depuis le `.md`. Toute nouvelle entrée journal qui ajoute un `![...](...)` doit l'embarquer dès sa rédaction.
+- Pas de tracker, pas d'analytics. **Tiers autorisés** : Google Fonts (toutes pages) + jsDelivr (Three.js via CDN ESM, restreint au dossier `evaluation-agentique/` pour la bannière `gruyere-hero.js`). Toute autre dépendance tierce doit être justifiée explicitement avant intégration.
+- **Surlignage stabilo (`<mark>`)** : signature visuelle du site, syntaxe Obsidian `==texte==`. Pattern complet (CSS, scope `.entry` vs `main`) : `.claude/skills/illustrated-deep-research/references/companion-app.md` § "Micro-patterns de style".
+- **Hint de largeur Obsidian `|1300`** sur les images des journaux markdown — voir `.claude/skills/illustrated-deep-research/references/workflow.md` § 3.4.
 
 ## SEO et social previews
 
@@ -39,196 +55,104 @@ python tools/seo_dossiers.py --only <slug>
 
 ## Schémas SVG
 
-- **Flèches → cibles** : laisser **un blanc visible** entre la pointe de la flèche et le bord de la boîte cible (≈ 12–18 px en unités SVG). Ne jamais terminer une flèche pile sur le bord d'un rectangle — avec `marker-end`, l'œil lit ça comme une pénétration dans la boîte.
-- **Origine des flèches issues d'une forme** (cercle, ellipse, hub) : démarrer la ligne **sur le périmètre de la forme**, dans la direction de la cible, pas depuis le centre ni depuis le haut/bas par défaut. Sinon la flèche traverse la forme et se chevauche avec son texte. Pour un cercle `(cx, cy, r)` visant `(tx, ty)` : `start = (cx + r·dx/L, cy + r·dy/L)` avec `(dx, dy) = (tx-cx, ty-cy)` et `L = √(dx²+dy²)`. Ajouter ~4 px de respiration au-delà du périmètre si la forme a un halo ou un stroke épais. Cas de référence corrigé : flèches du schéma « Partly » de `proces-musk-altman/journal.html` — départs `(492, 387)`, `(600, 452)`, `(708, 387)` autour d'un cercle `(600, 330, r=118)`.
-- **Alignement** : centrer la flèche sur le **milieu horizontal** de la boîte cible, pas sur une position arbitraire à l'intérieur. Pour une boîte `x=80, width=320`, viser `x=240`.
-- **Zoom obligatoire** : tout schéma SVG inline doit être agrandissable en plein écran (overlay + pan + zoom molette/pinch + Reset/Échap, bouton `⛶` au survol). Pattern de référence : `observabilite-agents-ia/20260430-observabilite-agents-ia-app.html` (CSS `.zoom-btn` + `#zoom-overlay`, IIFE `setupZoom()`). Pour une nouvelle page, copier le bloc et adapter les variables de couleur + le sélecteur (`.figure`, `.entry figure`, …) à la structure hôte.
-- **Full-bleed sur les pages narratives** (journal, livre, scrolly) : sur les layouts qui ont un wrap étroit (typiquement `.wrap { max-width: 760px }`), les schémas SVG **cassent** le wrap pour occuper toute la viewport — texte à 760px, schémas pleine largeur. Le `<figcaption>` reste re-centré à 760px sinon sa typographie devient illisible sur grand écran. **Petit padding latéral obligatoire** (`padding: 0 clamp(16px, 3vw, 48px)`) pour que le schéma ne touche pas les bords physiques de l'écran — 16px sur mobile, scale jusqu'à 48px sur large screen. Pattern CSS : `.entry figure { margin: 26px calc(50% - 50vw); padding: 0 clamp(16px, 3vw, 48px); position: relative; }` + `.entry figure svg { width: 100%; border-radius: 0; }` + `.entry figure figcaption { max-width: 760px; margin: 10px auto 0; padding: 0 5vw; }`. Préalable : `html, body { overflow-x: hidden }` (déjà dans le boilerplate mobile-friendliness ci-dessous) pour que les marges négatives ne déclenchent pas de scroll horizontal. Cas de référence : `proces-musk-altman/journal.html`.
-- **Layout pleine largeur — sidebars sur les bords de la viewport** (apps deep-research desktop, `header.site` + `main#report` + sidebars) : la grille `.layout` (`240px minmax(0, 1fr) 320px`) **n'est pas capée**, elle remplit toute la viewport — TOC ancré au bord gauche, Sources au bord droit, main-cell au milieu avec `main#report` centré (max-width 760 px). Sur écrans 1440+, ça évite les bandes vides à gauche/droite et place le bouton de repli des Sources pile sur le bord gauche du panneau (vu le 2026-05-04 : avant, `.layout { max-width: 1440px; margin: 0 auto }` centrait la grille → bandes vides + collapse button mal positionné sur grandes résolutions).
-- **Largeur des schémas adaptative selon l'état des sidebars** sur ces mêmes apps : sous `@media (min-width: 1025px)`, la `.figure` casse `main#report` (max-width 760 px) pour prendre **toute la place horizontale visible**, en s'arrêtant pile aux sidebars actuelles. **Deux états** :
-  - **Sources ouvertes (par défaut)** : figure couvre le main-cell entier `[TOC-right, Sources-left]`. À 1320 px : figure = 760 (= main). À 1440 px : 880. À 1920 px : 1360.
-  - **Sources repliées (`.layout.sources-collapsed`)** : figure s'étend `[TOC-right, viewport-right]`. À 1920 px : 1680.
+**Conventions complètes : voir la skill `svg-schemas`** (`.claude/skills/svg-schemas/SKILL.md`, versionnée force-add comme `illustrated-deep-research`). Elle couvre :
 
-  Formules : `.figure { margin-inline: calc(-1 * max(0px, (100vw - 1320px) / 2 + 48px)); width: auto }` (default) puis `.layout.sources-collapsed .figure { margin-inline: calc(-1 * max(0px, (100vw - 904px) / 2)) }`. Le `width: auto` + marges négatives symétriques absorbent à la fois le centrage de `main#report` dans le main-cell **et** son padding interne 48 px. Transition smoothe 280 ms alignée avec la transition `grid-template-columns` du layout. **Aucun chevauchement des sidebars visibles** (contrainte stricte : avec `width: 100vw`, le background `--paper` de la figure peint au-dessus des items du TOC et les masque visuellement). Pattern CSS et dérivation mathématique complète dans la skill `illustrated-deep-research` (`references/companion-app.md` § 5). Mobile (<1025 px) : la grille s'effondre en colonne unique, la figure remplit naturellement, pas d'override. Appliqué aux huit apps existantes ; tout nouveau rapport généré par la skill l'embarque par défaut.
+- **Géométrie des flèches** : blanc visible avant cible (12–18 px) ; origine sur le périmètre des cercles/hubs avec dérivation `(cx + r·dx/L, cy + r·dy/L)` ; alignement sur le milieu horizontal de la cible.
+- **Texte interne aux `<rect>`** : la `height` doit contenir tout le texte (rallonger + pousser les éléments en-dessous + viewBox global) ; pas d'auto-wrap dans `<text>` SVG, splitter à la main avec une table px/char par police.
+- **Intégration page** : zoom plein écran obligatoire (overlay + pan + Reset/Échap, bouton `⛶`) — fourni par `/assets/dossier-app.{js,css}` sur les apps deep-research, IIFE locale `setupZoom()` ailleurs.
+- **Anchor `¶` cliquable en figcaption** : toute `<figure id="fig-NN">` (schémas comme infographies) ouvre sa `<figcaption>` par `<a class="anchor" href="#fig-NN" title="Lien direct vers ce schéma">¶</a>` pour permettre le deep-link. Style déjà dans `dossier-app.css` (`.figure-caption .anchor`). Convention `fig-NN` zero-padded, suffixe `bis` autorisé.
+- **Full-bleed sur pages narratives** (journal, livre, scrolly) : cassent le wrap à 760 px avec `margin: … calc(50% - 50vw); padding: 0 clamp(16px, 3vw, 48px)` ; `<figcaption>` re-centré à 760 px.
+- **Apps deep-research** : grille `.layout` pleine viewport (sidebars sur les bords) ; figure adaptative aux deux états sidebar via `margin-inline: calc(-1 * max(0px, (100vw - 1320px) / 2 + 48px))` (formule dérivée pour un `main#report` container-capped à 760 px — prérequis load-bearing).
+- **Branches interactives (journal Musk)** : contrat `data-modal-id` obligatoire + entrée correspondante dans l'objet `modals`.
+- **Tracker probabilité Musk** : `tools/insert_tracker.py` idempotent, à re-runner à chaque nouvelle entrée après avoir mis à jour le tuple `DATA`.
+- **Échelle typographique** : titre 28pt / subtitle 18pt italic / body label 15pt / annotation 13pt / caption 12pt italic (calibrée sur `coding-agents/`, +2pt vs `illustrated-deep-research/references/svg-editorial-style.md`, à harmoniser progressivement sur les autres dossiers).
 
-  **Prérequis load-bearing : `main#report` doit être container-capped à 760 px** — pattern exact `main#report { padding: 56px 48px 96px; min-width: 0; max-width: 760px; margin: 0 auto; width: 100%; }`. Les deux constantes magiques de la formule (1320 et 904) sont dérivées en supposant `main#report` cappé à 760 et centré dans le main-cell ; si à la place `main#report` remplit toute la grid-cell (ancien pattern où chaque enfant `> .lead, > h1, > p…` était cappé individuellement à 760), la figure part de `240 + 48 = 288` au lieu de `(100vw - 520) / 2 + 48` et la formule de breakout calcule une marge négative beaucoup trop large → la figure recouvre le TOC à gauche et la sidebar Sources à droite. Cas corrigé le 2026-05-16 sur `llm-jailbreaking/20260428-…-app.html` (figure dépassait à `x=100` avec TOC right à `x=240`, soit 140 px de chevauchement). Pour toute nouvelle app ou audit d'une app existante : vérifier la règle `main#report` AVANT de faire confiance à la formule de breakout. Si l'app héberge un ancien pattern child-capped, **migrer vers container-capped** en supprimant la règle multi-sélecteur sur les enfants — elle devient redondante (main fait 760 wide, les enfants n'ont plus rien à capper) et tous les éléments narratifs sont déjà alignés correctement.
-- **Boîtes `<rect>` qui enveloppent du texte — la hauteur doit contenir TOUT le texte interne, pas seulement les premières sections.** Quand on ajoute une section supplémentaire en bas d'une boîte (ex. « CONSÉQUENCE » sous les prongs (i) et (ii)), il faut **rallonger la `height` du rect parent ET pousser tous les éléments en-dessous** (titres, sous-boîtes, sources, viewBox du SVG global). Sinon le texte interne déborde sous le rect, se chevauche avec la section suivante, et donne un schéma cassé visuellement. Méthode : calculer `y_dernier_texte + ~20 px` de padding bas pour la nouvelle `height`, puis appliquer le delta de shift à toute la suite. Cas corrigé : boîtes Lecture M / Lecture S du schéma du 14 mai dans `proces-musk-altman/journal.html` — height passée de 318 à 358, shift +40 appliqué à L'INVERSION header, dashed box TROIS PIÈCES MIROIR, sources line, et viewBox 860 → 900.
-- **Branches interactives (`<g class="branch">`) — contrat data-modal-id obligatoire dans `journal.html`.** Toute `<g class="branch" ...>` rendue dans le journal doit porter un attribut `data-modal-id="<id>"` ET avoir une entrée correspondante dans l'objet `modals` du `setupBranchModal` IIFE (cherchable via `grep "data-modal-id\|var modals = {" journal.html`). Sans `data-modal-id`, le sélecteur `.branch[data-modal-id]` ne matche pas et le clic ne fait rien — bug silencieux (la branche reste focusable et hover-stylable mais inerte). Format de l'entrée modale : `{ eyebrow, title, body: [paragraphes avec <em>/<strong>/<tspan> autorisés] }`. Convention de nommage des IDs : `<famille>-<n>` (ex. `lecture-molo`, `lecture-scott`, `strate-1-formation`, `voice-3-necessite`, `test-1`, `onde-2`). Le câblage des branches du journal Musk est complet à date 14 mai (lecture-molo/scott, strate-1/2, voice-1/2/3, test-1/2/3, lecture-1/2/3, onde-1/2/3, lock-1/2/3). Toute nouvelle branche doit suivre le contrat.
-- **Texte SVG long sur une ligne — pas d'auto-wrap dans `<text>`, splitter à la main si dépasse la largeur du conteneur.** L'élément `<text>` SVG ne fait pas de retour à la ligne automatique : une chaîne plus large que sa boîte parente dépasse silencieusement à droite, masquée ou non par `overflow: hidden` selon les cas. Règle de pouce : pour une `<rect>` de largeur W, la zone texte utilisable est `W - 2 * padding` (typiquement W − 40). Compter ~6.5 px/char pour Inter 13pt regular ; ~5.5 px/char pour Inter 11pt ; ~7 px/char pour Fraunces 14pt italic. Au-delà, splitter en plusieurs `<text>` empilés (gap typique 18-20 px en y pour Inter 13pt) — et **rallonger la rect parente + pousser les éléments en-dessous** (cf. règle Boîtes `<rect>` ci-dessus). Cas corrigé le 14 mai : `« Primarily, I was thinking about Reid Hoffman. He was the OpenAI donor I knew. »` (~80 chars Fraunces 14pt italic) splitté en 2 lignes dans la box Lecture S (520 px de large) ; le dashed box TROIS PIÈCES MIROIR a fait pareil sur ses 2 lignes initiales (~175 et ~218 chars chacune) en passant à 4 lignes plus courtes, height 96 → 138.
-- **Tracker probabilité Musk (journal Musk uniquement)** : chaque entrée du journal embarque, en fin d'article (juste avant `</article>`), un `<div class="tracker">` qui rend un **diagramme à barres stackées verticalement** (Musk en accent en bas, Altman en ink-mid en haut, chaque barre = 100 %) montrant l'évolution quotidienne de ma probabilité estimée que Musk gagne en équité, depuis l'ouverture du procès (1 mai 2026) **jusqu'au jour de l'entrée incluse**. Visuellement : viewBox 1080×320, plot zone [60, 1020]×[92, 272], 14 jours étiquetés sur axe X, bars de 40 px de large, dernière barre encadrée d'un stroke accent + label day en accent bold, badge top-right `MUSK X% · ALTMAN Y%` (avec MUSK en accent et ALTMAN en ink-mid pour servir de légende). Format choisi pour rester lisible sur mobile (les barres conservent leur impact visuel quand le SVG est réduit, contrairement à une line chart dont les dots et la ligne deviennent illisibles sub-400 px de viewport). Le script `tools/insert_tracker.py` (idempotent — détecte la présence de `class="tracker"` et la remplace) génère et injecte. À chaque **nouvelle entrée publiée**, mettre à jour le tuple `DATA` du script avec la nouvelle date + ma proba estimée, puis re-runner — il ré-écrit l'historique sur **chaque** entrée existante (pour que l'entrée du jour J' affiche les barres jusqu'au jour J'). La proba est une estimation éditoriale ; elle doit suivre les pivots de ma narration quotidienne, pas une formule. Pattern de référence : `proces-musk-altman/journal.html` (13 entrées, 1 → 14 mai 2026, avec saut du dimanche 10 mai matérialisé par une colonne vide).
-- **Convention typo des schémas (TODO design system unifié)** : à date (2026-05), les schémas du dossier `coding-agents/` ont été calibrés sur les tailles ci-dessous, +2pt par rapport à la table de `illustrated-deep-research/references/svg-editorial-style.md`. À harmoniser sur les autres dossiers progressivement (todo : audit complet + alignement) :
-  - Title : `.display` 28pt 600 weight letter-spacing -0.01em
-  - Subtitle : `.display` 18pt 400 italic
-  - Body label : `.body` 15pt 500 weight
-  - Annotation : `.body` 13pt
-  - Caption / source : `.body` 12pt italic
-  - Numeric callout : `.mono` 15pt 500 weight
-  - Marker (numéro / lettre) : `.mono` 12pt 600 weight
-  - Schema marker (SCHÉMA NN) : `.mono` 12pt 600 weight letter-spacing 0.16em CARMINE
-
-  **TODO** : (1) auditer les ~70 schémas SVG existants (`grep -lE 'font-size="[6-9]"|font-size="10"' */images/*.svg`) pour repérer ceux qui ont des polices < 11pt et les remettre aux tailles minimales ; (2) mettre à jour `illustrated-deep-research/references/svg-editorial-style.md` pour qu'il pointe sur cette nouvelle convention ; (3) optionnel : ajouter un test CI qui vérifie que les SVG ne contiennent pas de `font-size="<11"`. À cadrer une fois ce dossier publié.
+Toute nouvelle session qui touche à un schéma SVG doit invoquer la skill via `Skill svg-schemas` plutôt que de se référer uniquement aux bullets ci-dessus — les cas corrigés datés, les patterns CSS complets et la checklist sont dans la skill.
 
 ## Mobile-friendliness
 
-Tout artefact (hub + format[s]) **doit** être lisible sur petit écran (320–414 px). Avant de merger, vérifier ces 7 points :
+Checklist 7 points : `.claude/skills/illustrated-deep-research/references/mobile.md`.
 
-1. **`overflow-x: hidden` sur `html, body`** (ou `overflow-x: clip` sur la `.layout` racine, **doublé** d'un `overflow-x: hidden` sur `body` pour les apps avec sidebars — `clip` sur `.layout` ne suffit pas si un élément déborde du body). Protection défensive, pas une excuse pour laisser passer un vrai dépassement. **Cas particulier scrollytelling** : sur les pages qui dépendent de `position: sticky` pour pinner un élément pendant un long scroll (ex. `anatomie/scrolly.html` avec sa `.pin`), `overflow-x: hidden` sur `html, body` **casse le sticky** — le body devient un scroll container et l'élément sticky n'a plus la viewport comme ancrage, donc il défile avec le contenu (vu le 2026-05-04 sur scrolly : ça défilait avec contenu vide). Utiliser `overflow-x: clip` à la place (avec `overflow-x: hidden` en fallback déclaré juste avant pour Safari < 16) — `clip` n'établit pas de scroll container, le sticky retrouve la viewport.
-2. **Topbar fixe** (`Mathieu Guglielmino` à gauche, `← Retour aux dossiers` à droite) : sous `@media (max-width: 560px)` réduire le padding (`12px 16px`), descendre la taille du nom serif à `14px` et celle du back mono à `9px` avec `letter-spacing: 0.16em`. Sous `@media (max-width: 380px)`, masquer le `<em>Guglielmino</em>` (`.topbar a:first-child em { display: none; }`) — sinon les deux liens se chevauchent sur iPhone SE.
-3. **Apps `header.site` + `main#report`** : la typographie mobile doit vivre dans le **même `@media (max-width: 1024px)`** que l'effondrement de `.layout` en colonne unique (et non dans un `@media (max-width: 640px)` séparé — sinon Chrome en mode « desktop site » reporte une viewport ≥ 980 px qui ne déclenche pas la version mobile, et le rapport reste à la taille desktop). Y mettre : `header.site { padding: 14px 16px; gap: 10px }`, `header.site h1 { font-size: 1.05rem; min-width: 0; overflow-wrap: break-word; word-break: break-word }`, `main#report { padding: 28px 18px 56px; max-width: 100%; min-width: 0 }`, `h1.report-title { font-size: 1.8rem; word-break: break-word }`, `.lead { font-size: 1.02rem }`, `h2`/`h3` à `1.25rem`/`1.05rem` avec `word-break: break-word`, et `.figure { max-width: 100%; overflow: hidden }` + `.figure svg { width: 100%; max-width: 100%; height: auto }` pour que les schémas SVG ne forcent pas la largeur. Doubler aussi avec `html, body { max-width: 100vw }` en plus de l'overflow-x.
-4. **Schémas SVG** : `width: 100%; height: auto; max-width: 100%` sur le `<svg>`, et toujours fournir le bouton de zoom plein écran (cf. section ci-dessus). Sur mobile, le schéma rendu à 320 px de large devient illisible — le zoom est l'échappatoire.
-5. **Sidebars Sommaire/Sources** : pattern `panel-close` obligatoire (cf. section *Apps interactives*).
-6. **Blocs de code et formules (`<pre>`, `<code>` inline)** : un `<pre>` sans contrainte déborde la viewport sur mobile (formules, JSON, prompts XML — cas vu sur `evaluation-agentique` avec `TestCase = (Persona × Quest × Environment) → Expected Outcome`). Pattern obligatoire dans le bloc `main code` de chaque app : ajouter `overflow-wrap: anywhere` sur `main code` (casse les longs identifiants/URLs inline qui n'ont pas d'espace), puis une règle `main pre { margin: 1.5rem 0; padding: 14px 16px; background: var(--paper-2); border-radius: 4px; overflow-x: auto; max-width: 100%; font-size: 0.85em; line-height: 1.5; -webkit-overflow-scrolling: touch; }` qui rend le bloc scrollable horizontalement plutôt que de pousser la page, et un override `main pre code { background: transparent; padding: 0; border-radius: 0; font-size: 1em; overflow-wrap: normal; }` pour neutraliser le style inline et préserver les sauts de ligne du `<pre>`. Le `overflow-wrap: normal` interne empêche que le navigateur casse les lignes du bloc et fasse disparaître l'ascenseur horizontal. **Toute nouvelle app `header.site` + `main#report` doit embarquer ces trois règles**, même si elle ne contient pas encore de `<pre>` — la prochaine itération de contenu en aura.
-7. **Tableaux (`<table>`)** : par défaut un `<table>` avec `width: 100%` ne réduit pas en deçà de la largeur naturelle des colonnes — sur mobile, les cellules débordent et la dernière colonne est tronquée à droite (cas vu le 2026-05-04 sur `ia-et-travail` avec le tableau « Étape 5 — La conversion en impact », colonne *Exemple* coupée). Pattern obligatoire à embarquer dans le `@media (max-width: 1024px)` à côté des règles `<pre>` : `main table { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }` + `main th, main td { white-space: normal; }`. Mécanique : `display: block` sur le `<table>` génère une table anonyme à l'intérieur qui se dimensionne à son contenu ; combiné à `overflow-x: auto`, le débordement devient un scroll horizontal plutôt qu'une troncature. **Toute nouvelle app `header.site` + `main#report` doit embarquer ces deux règles**, même sans tableau présent — un comparatif arrive vite.
+**Override repo** : sur un scrolly avec `position: sticky` (ex. `anatomie/scrolly.html`), utiliser `overflow-x: clip` au lieu de `hidden` sur `html, body` — sinon le sticky casse (avec fallback `overflow-x: hidden` déclaré juste avant pour Safari < 16).
+
+Avant merge : vérifier la checklist **sur device réel ou Chrome devtools en mode mobile** (pas "desktop site").
 
 ## Topbar des pages internes (3 items)
 
-Toutes les pages **internes** d'un dossier (apps, slideshows, journal, scrollies, livre, gouvernance scrolly) embarquent une topbar sticky uniforme à 3 zones — pattern PR #29 :
+Pattern complet : `.claude/skills/illustrated-deep-research/references/topbar.md`.
 
-```
-[Mathieu Guglielmino]    [titre du dossier (mono caps)]    [← Hub  ·  Accueil]
-```
+**Outils repo** (idempotents, rejouables sur futurs dossiers) :
+- `tools/add_dossier_topbar.py` — injecte la topbar (CSS + HTML) dans les apps `header.site` qui n'en ont pas, ajuste TOC/Sources sticky, retire l'ancien `.back` du `header.site`. Pour ajouter un nouveau dossier app : ajouter le fichier dans la liste `APPS` et relancer.
+- `tools/add_topbar_dossier_title.py` — ajoute le `<span class="dossier-context">` à toute page qui a déjà une topbar. Lit l'`og:title` du hub.
 
-- **Gauche** : `<a href="../index.html">Mathieu <em>Guglielmino</em></a>` — identité + lien accueil. L'`em>Guglielmino</em>` se masque sous 380 px.
-- **Milieu** : `<span class="dossier-context">{titre}</span>` — mono caps, `opacity: 0.55`, `max-width: 320px` avec ellipsis. **Masqué sous 768 px.** Le titre vient de l'`og:title` du hub (`*/index.html`), suffixe `— N formats / — étude / — comprendre les enjeux` retiré.
-- **Droite** : `<nav class="back-nav" aria-label="Navigation retour">` à 2 liens — `← Hub` (→ `index.html` du dossier) et `Accueil` (→ `../index.html#series`), séparés par `<span class="back-sep" aria-hidden="true">·</span>`. Le `←` arrow n'est que sur "Hub" pour différencier visuellement le retour proche du retour lointain. `title=` donne la version longue ("Revenir au hub du dossier" / "Revenir à l'accueil").
-
-**Hubs ≠ pages internes** : les hubs `*/index.html` gardent leur topbar à 2 items (Mathieu + `← Retour aux dossiers`) — ils SONT le hub, pas besoin du lien `← Hub`. La grille de l'accueil garde aussi sa topbar à 2 items.
-
-### Constantes structurelles
-
-- **Hauteur** : 56 px partout (`height: 56px`, `padding: 12px 28px`)
-- **Z-index** : 60 par défaut, 70 sur le livre (au-dessus de `.toc-toggle`), 99 sur `proces-musk-altman/scrolly` (sous le `#progress` à 100)
-- **Background** : `rgba(<paper>, 0.82-0.85)` + `backdrop-filter: blur(10px)`
-- **Apps `header.site`** : la topbar est injectée AVANT la `.layout` (pas dedans), `body { padding-top: 56px }` libère la place. L'ancien lien `.back` du `<header class="site">` est retiré.
-
-### Ajustements obligatoires sur les sticky/fixed adjacents
-
-Toute page qui ajoute la topbar **doit** aussi ajuster ses éléments sticky/fixed pour ne pas être recouverts ou décalés :
-
-- **Apps** : `#toc` et `#sources` passent de `top: 0; height: 100vh` à `top: 56px; height: calc(100vh - 56px)`. Attention au CSS multi-ligne (`height: 100vh;\n overflow-y: auto;`) vs single-line (`height: 100vh; overflow-y: auto;`) — les deux variants existent dans le repo, le script `tools/add_dossier_topbar.py` gère les deux via un simple `replace("height: 100vh", "height: calc(100vh - 56px)")`.
-- **Scrolly avec `.pin`** (ex. `anatomie/scrolly`) : `top: 56px; height: calc(100vh - 56px); height: calc(100dvh - 56px)` — sinon le pin est recouvert par la topbar pendant le scroll.
-- **Livre interactif** (`anatomie/livre`) : `.stage` passe à `top: 56px; height: calc(100vh - 56px)` pour que le livre vive sous la topbar. Le `.toc-toggle` (Sommaire) descend de `top: 26px` à `top: 70px`.
-- **Scrolly proces-musk-altman** : le `#marker` éditorial est **retiré** (la topbar reprend la fonction d'identité, plus de redondance).
-
-### Vars CSS adaptatives selon le format hôte
-
-Chaque page a son propre système de variables. Le bloc topbar CSS doit respecter la convention locale :
-
-- **Apps** : `var(--ink)`, `var(--carmine)`, `var(--graphite)`, `var(--mono)`, `var(--serif)`, `var(--rule)`
-- **Slideshows / journal / `anatomie/scrolly`** : `var(--text)`, `var(--accent)`, `var(--text-mid)`, `var(--text-faint)`, `var(--line)` + `'Fraunces', serif` + `'JetBrains Mono', monospace` hardcodés
-- **Livre** : `var(--ink)`, `var(--ink-2)`, `var(--accent)` (pas de carmine)
-- **Gouvernance scrolly** : utilise sa **masthead** existante restructurée au pattern (gardée pour préserver le style éditorial), pas une `.topbar` séparée — sélecteurs `.masthead-left`, `.masthead .dossier-context`, `.masthead .back-nav`.
-
-### Pages hors scope (pas de topbar, intentionnel)
-
-- `anatomie/livre-print.html` — version imprimable, navigation hors propos
-- `gouvernance/20260421-pitch-gouvernance-agentic.html` — pitch interne non lié au hub
-
-### Outils
-
-Deux scripts idempotents sous `tools/` rendent l'opération rejouable et propagable aux futurs dossiers :
-
-- `tools/add_dossier_topbar.py` — injecte la topbar (CSS + HTML) dans les apps `header.site` qui n'en ont pas, ajuste TOC/Sources sticky, retire l'ancien `.back` du `header.site` et insère un petit JS pour la classe `.scrolled`. Pour ajouter un nouveau dossier app : ajouter le fichier dans la liste `APPS` et relancer.
-- `tools/add_topbar_dossier_title.py` — ajoute le `<span class="dossier-context">` à toute page qui a déjà une topbar (apps + slideshows + journal). Lit l'`og:title` du hub.
-
-Pour scrollies / livre / gouvernance scrolly : Edits manuels ciblés (chaque page a sa structure spécifique, voir PR #29 pour les patches de référence). À chaque **nouvelle page interne publiée**, embarquer le pattern dès la rédaction — les templates `illustrated-deep-research/assets/` doivent être maintenus en miroir.
+Pour scrollies / livre / gouvernance scrolly : edits manuels ciblés (chaque page a sa structure spécifique).
 
 ## Apps interactives — sidebars Sommaire/Sources
 
-Toute app long format avec sidebars `#toc` et `#sources` (les six études + tout nouvel app) **doit** embarquer le pattern de fermeture mobile :
+Pattern complet (structure HTML, sticky math `height` vs `max-height`, `panel-close` mobile, `sources-collapse-btn` `position: fixed`, format canonique `<li id="source-N">` bracketed + full URL) : `.claude/skills/illustrated-deep-research/references/sidebars.md`.
 
-- En CSS, dans `@media (max-width: 1024px)` : padding top de `64px` sur `#toc.open`/`#sources.open` (pour ne pas masquer le bouton), styles de `.panel-close` (`position: fixed; top:16px; right:16px; z-index:91`). Hors media query : `.panel-close { display: none; }`.
-- En HTML : un `<button class="panel-close" type="button" aria-label="Fermer le sommaire">Fermer ✕</button>` en première position dans `<nav id="toc">` ET dans `<aside id="sources">`.
-- En JS : (1) handler click sur `.panel-close` qui retire la classe `open` du parent ; (2) handler `keydown` global qui ferme tout panneau ouvert sur `Escape` (en s'effaçant si un `#zoom-overlay` ou un `#modal-root` est déjà ouvert, pour ne pas marcher sur leurs propres handlers Escape).
-- **Hauteur des panneaux desktop** : utiliser `height: calc(100vh - 56px)` (pas `max-height: …`) sur `#toc` et `#sources`, avec `top: 56px` pour le sticky — la topbar fixe (cf. section dédiée) consomme les 56 premiers pixels de la viewport. Avec `align-self: start` dans la grille, `max-height` n'impose pas la hauteur — le panneau se rétrécit à la hauteur de son contenu, ce qui laisse un trou en bas si la liste est plus courte qu'une viewport (cf. bug visible le 2026-05-04 sur la sidebar Sources d'`agents-computer-use` : la liste s'arrêtait à mi-écran). `height: calc(100vh - 56px)` force la hauteur ; `overflow-y: auto` reste là pour scroller le contenu interne.
-- **Bouton replier Sources (`#sources-collapse-btn`) : `position: fixed`, pas `position: absolute`**. En `absolute` à l'intérieur du panneau qui a `overflow-y: auto`, le bouton scrolle avec le contenu interne — quand la liste de sources dépasse une viewport, l'utilisateur doit remonter le panneau pour le retrouver. Pattern correct : `position: fixed; top: 50%; right: 320px; transform: translate(50%, -50%); z-index: 70;` — bouton centré verticalement sur le bord gauche du panneau Sources (qui fait 320px de large), ancré à la viewport, fixe au scroll. Le bouton miroir `#sources-expand-btn` est déjà en `fixed` à `right: 0; top: 50%` ; les deux occupent le même axe vertical milieu-droit, alternant via la classe `.layout.sources-collapsed`.
+## Quiz cards (vérification de compréhension)
 
-Pattern de référence : `proces-musk-altman/20260427-proces-musk-altman-app.html` (rechercher `panel-close`). **Nouvelle app = vérifier ces 3 points avant de merger**, sinon le panneau couvre tout l'écran sur mobile sans moyen de revenir en arrière. Le comportement (handler click + handler Escape) est désormais fourni par la bibliothèque partagée — voir section ci-dessous.
+Workflow JSON-first, spec complète : `.claude/skills/illustrated-deep-research/references/quiz-authoring.md`.
 
-### Convention des entrées de sources (`<li id="source-N">`)
-
-Le format canonique de chaque entrée du panneau Sources combine **numéro entre crochets** + **citation complète** + **URL complète affichée comme texte du lien** + **date d'accès**. Référence vivante : `llm-jailbreaking/20260428-…-app.html`. Pattern :
-
-```html
-<li id="source-1">
-  <span class="cite-num">[1]</span>OWASP Foundation, "OWASP Top 10 for LLM Applications 2025", v4.2.0a, 14 November 2024
-  <br><a href="https://owasp.org/.../OWASP-Top-10-for-LLMs-v2025.pdf" target="_blank" rel="noopener">https://owasp.org/.../OWASP-Top-10-for-LLMs-v2025.pdf</a><span class="accessed">Accessed 2026-04-28</span>
-</li>
+**Commande repo** (idempotent, à re-runner après chaque édition du JSON) :
+```
+python .claude/skills/illustrated-deep-research/assets/insert-quizzes.py \
+  --app <path/to/app.html> --quizzes <path/to/quizzes.json>
 ```
 
-Trois règles load-bearing :
+**Sidecars existants** (pattern reproductible) : `evaluation-agentique/quizzes.json`, `ia-frugale/quizzes.json`, `observabilite-agents-ia/quizzes.json`, `process-reward-models/quizzes.json`.
 
-1. **`[N]` avec crochets littéraux dans le HTML**, pas de pseudo-element `::before`/`::after`. Le lecteur scanne le panneau en cherchant le `[N]` cité depuis le corps du rapport — il doit lire à l'identique dans le source et le rendu.
-2. **URL complète = texte du lien**, pas un label de host raccourci type `arxiv.org ↗`. Le label court masque la destination réelle (abstract vs PDF vs section ancrée vs mirror) ; l'URL complète, c'est la vérité. Les navigateurs modernes cassent les URLs proprement aux `/`, et le CSS canonique ajoute `overflow-wrap: anywhere` sur `#sources li a` comme filet de sécurité pour les URLs sans séparateur.
-3. **`<br>` avant le `<a>`** force le lien sur sa propre ligne, séparé visuellement du texte de citation — l'œil tombe dessus immédiatement.
+**Apps quizzées sans sidecar** (legacy hand-rolled à migrer au passage si on les édite) : `surfaces-agentiques`, `agent-sdk`, `ia-et-travail`, `mcp-plateforme`, `benchmarks-contestes`, `measure-roi`, `analytics-agentique-gcp`.
 
-CSS canonique embarqué dans chaque app : voir le bloc `#sources li { ... }` de `llm-jailbreaking/20260428-…-app.html:548-583` (couleurs : numéro en `--carmine`, lien en `--teal`, accessed en `--mist`, taille 0.82/0.78/0.74 rem).
+## Encadrés de renvoi vers d'autres dossiers (callouts)
 
-Convention héritée à migrer au passage : les apps antérieures à mai 2026 utilisent parfois `<span class="cite-num">N</span>` sans crochets + `<a>host ↗</a>`. C'est legacy — toute édition d'une app sur ses sources (ajout, correction, refonte) doit en profiter pour basculer sur le pattern bracketed + full URL.
+Pattern complet : `.claude/skills/illustrated-deep-research/references/callouts.md`.
+
+**Quand l'utiliser dans ce repo** : à chaque charnière où un dossier voisin éclaire la section (obs ↔ eval, harness ↔ agent-sdk, etc.). Bordure gauche en `--teal` pour différencier visuellement des `.quiz-card` (bordure `--carmine`).
+
+## Widget de qualification business (qualif)
+
+Widget diégétique : 6 mini-blocs distribués au fil de la prose d'un dossier deep-research (axes Maturité IA, Environnement, Cas d'usage, Équipe, Budget, Gouvernance), + récap radar SVG en fin d'article avec verdict + recos. Pilote sur `analytics-agentique-gcp/`.
+
+**Source de vérité** : sidecar JSON par dossier (`<dossier>/qualif.json`) déclare axes, inputs, profils types et règles d'ajustement. La lib partagée rend les mini-blocs, calcule le profil dominant par distance euclidienne, peint le radar et persiste en localStorage.
+
+**Couleur sémantique** : `--qualif: #5b6d8a` (slate-blue), 3e couleur du fil après `--carmine` (quiz) et `--teal` (callout).
+
+**Commande repo** (idempotente, à re-runner après chaque édition du JSON) :
+
+```
+python tools/insert_qualif.py \
+  --app analytics-agentique-gcp/20260519-analytics-agentique-gcp-app.html \
+  --qualif analytics-agentique-gcp/qualif.json
+```
+
+Le script idempotent (`--check` pour dry-run, `--strict` pour failer sur missing heading) :
+- valide le JSON (6 axes, 5 profils, anchor de longueur 6, références d'ajustement)
+- injecte les 6 `<aside class="qualif-step" data-axis="...">` avant les `before_heading_id` du JSON
+- injecte le `<aside id="qualif-recap">` avant `meta.recap_before_heading_id`
+- ajoute `<link href="/assets/dossier-qualif.css">`, `<script src="/assets/dossier-qualif.js" defer>` et `<link rel="qualif-data" href="./qualif.json">` si absents
+
+**Spec & plan** : `docs/superpowers/specs/2026-05-23-business-qualification-widget-design.md`, `docs/superpowers/plans/2026-05-23-business-qualification-widget.md`.
+
+**Tests CI** : `tests/qualif-contract.test.mjs`, `tests/qualif-engine.test.mjs`, `tests/qualif-integration.test.mjs` (run dans le workflow `.github/workflows/test.yml`).
+
+**Print** : `@media print` dans `/assets/dossier-qualif.css` masque tout sauf le récap → one-pager A4 propre pour glisser dans un dossier RDV.
 
 ## Bibliothèque partagée `/assets/dossier-app.{js,css}`
 
-**Source unique de vérité** pour le comportement et le style des patterns récurrents des apps deep-research (`*/2026*-app.html`) : zoom plein écran, modal SCHEMAS, citations highlight, TOC observer, mobile panels, sources collapse desktop, sigil MG, topbar scroll, tooltips terms.
+Source unique de vérité pour le comportement + style des apps deep-research (`*/2026*-app.html`). **Doc complète co-localisée avec le code** : [`assets/README.md`](assets/README.md).
 
-- **`/assets/dossier-app.js`** (~440 lignes) — IIFE auto-bootstrap qui lit `window.SCHEMAS` et trouve les éléments DOM par ID conventionnel. Aucune API publique.
-- **`/assets/dossier-app.css`** (~410 lignes) — patterns structurels uniquement. Les variables de thème (`--paper`, `--accent`, `--ink`, `--carmine`…) restent définies par chaque page sur `:root`.
-
-### Inclusion dans une app
+**Inclusion minimale** (rappel) :
 
 ```html
-<!-- Dans <head>, après les Google Fonts -->
 <link rel="stylesheet" href="/assets/dossier-app.css">
-
-<!-- Dans <body>, juste avant </body> -->
 <script src="/assets/dossier-app.js" defer></script>
 ```
 
-### Contrat DOM
+**Tests CI repo** : `node --test tests/lib-contract.test.mjs tests/apps-integration.test.mjs` (workflow `.github/workflows/test.yml`, zéro dépendance, < 5 s).
 
-La page doit fournir ces IDs/sélecteurs, sinon le bloc concerné se désactive silencieusement :
-
-| Pattern | IDs / sélecteurs requis |
-|---|---|
-| Zoom | `#zoom-overlay`, `#zoom-stage`, `#zoom-content`, `.zoom-close`/`.zoom-in`/`.zoom-out`/`.zoom-reset` |
-| Modal | `#modal-root`, `#modal-eyebrow`, `#modal-title`, `#modal-body`, `[data-close]` |
-| TOC + Sources | `#toc`, `#sources`, `#toggle-toc`, `#toggle-sources`, `.panel-close` |
-| Sources collapse | `#sources-collapse-btn`, `#sources-expand-btn`, `.layout` |
-| Topbar | `#topbar` |
-| Citations | `.cite[data-cite="N"]` → `#source-N` (li dans `#sources`) |
-| Schémas | `figure.figure > svg`, `svg[data-schema-id]`, `.interactive[data-card="..."]` |
-| Tooltips | `.term` |
-
-### Donnée requise inline
-
-```html
-<script>
-  const SCHEMAS = { /* schema-id: { card-id: { title, body, eyebrow } } */ };
-  const SOURCES = [ /* { n, citation, url, accessed } */ ];
-  window.SCHEMAS = SCHEMAS;
-</script>
-```
-
-### Modifier la lib
-
-1. Éditer `/assets/dossier-app.js` ou `.css`.
-2. Si une nouvelle fonction publique est ajoutée, mettre à jour `tests/fixtures/expected-fns.json`.
-3. Idem pour les sélecteurs CSS / IDs : `tests/fixtures/expected-ids.json`.
-4. Re-run `node --test tests/lib-contract.test.mjs tests/apps-integration.test.mjs` localement.
-5. Sur PR, vérifier visuellement 2-3 apps représentatives (les patterns peuvent avoir des effets de bord visuels).
-
-### Migration d'une nouvelle app vers la lib
-
-Le script `tools/extract_to_lib.py` est idempotent et fait le boulot pour les apps qui suivent le pattern :
-
-```
-python tools/extract_to_lib.py path/to/app.html
-```
-
-Pour les apps qui dérivent du pattern → migration manuelle, voir le code de `migrate_app()` pour comprendre les étapes.
-
-### Tests CI
-
-`node --test tests/lib-contract.test.mjs tests/apps-integration.test.mjs` tourne sur PR + push à main via `.github/workflows/test.yml`. Zéro dépendance, run < 5 secondes. Les apps non-migrées (s'il en reste) sont auto-skippées via une regex sur la présence de `<script src="/assets/dossier-app.js">`.
+**Migration nouvelle app** : `python tools/extract_to_lib.py path/to/app.html` (idempotent).
 
 ## Structure du repo
 

@@ -36,105 +36,17 @@ Each schema also gets a **fullscreen zoom mode**: hovering a `.figure` reveals a
 
 ---
 
-## Mobile-friendliness & panel close (non-negotiable)
+## Mobile-friendliness & panel close
 
-Two failure modes have repeatedly bitten this template before being fixed in the upstream apps. Both must be prevented in every shipped HTML — they are also enforced by `CLAUDE.md` of the personal site (mathieugug.github.io).
+Pour la **checklist mobile complète des 7 points** (`overflow-x`, topbar responsive, typographie `@1024px`, SVG, panel close, `<pre>`/`<code>`, `<table>`), voir `references/mobile.md`.
 
-### 1. Panel close on mobile
+Pour le **pattern `panel-close` complet** (CSS + HTML + JS avec yield Escape sur zoom/modal), voir `references/sidebars.md` § "Pattern `panel-close` (mobile)".
 
-Below `1024px`, `#toc.open` and `#sources.open` cover the full viewport. Without an in-panel close button, a mobile reader who opens either panel has no way back to the report (no header is visible). The required pattern is **three-part**:
+### `← Retour aux dossiers` back link in the header (legacy — voir topbar)
 
-- **CSS** (inside `@media (max-width: 1024px)`): `.panel-close` becomes `position: fixed; top: 16px; right: 16px; z-index: 91`, displayed only when its parent panel is `.open`. The opened panel must use `padding: 64px 24px 24px` (top padding so content doesn't sit under the close button). Outside the media query, `.panel-close { display: none; }`.
-- **HTML**: a `<button class="panel-close" type="button" aria-label="Fermer le sommaire">Fermer ✕</button>` as the **first child** of `<nav id="toc">`, and the same with `aria-label="Fermer les sources"` as the first child of `<aside id="sources">`.
-- **JS** — two handlers:
-  ```js
-  // 1) The button itself
-  document.querySelectorAll('.panel-close').forEach(btn => {
-    btn.addEventListener('click', () => {
-      btn.closest('#toc, #sources')?.classList.remove('open');
-    });
-  });
-  // 2) Escape closes any open panel — but yields to zoom and modal,
-  // which have their own Esc handlers. Without these guards, pressing
-  // Esc inside a fullscreen schema would close both at once.
-  document.addEventListener('keydown', (e) => {
-    if (e.key !== 'Escape') return;
-    const zoom  = document.getElementById('zoom-overlay');
-    const modal = document.getElementById('modal-root');
-    if (zoom && !zoom.hidden) return;
-    if (modal && !modal.hidden) return;
-    const open = document.querySelector('#toc.open, #sources.open');
-    if (open) { e.preventDefault(); open.classList.remove('open'); }
-  });
-  ```
+> ⚠️ **Conditionnel.** Ce pattern décrit l'ancien lien `.back` du `<header class="site">`. Pour les apps qui hébergent une topbar 3-items (voir `references/topbar.md`), la nav retour vit dans la topbar à droite (`← Hub · Accueil`) — supprimer le `.back` du `header.site` pour éviter la redondance. Le pattern ci-dessous reste pertinent pour un deliverable standalone sans topbar (ex. ZIP claude.ai sans intégration repo).
 
-Reference implementation: `proces-musk-altman/20260427-proces-musk-altman-app.html` in the host repo (`grep -n panel-close`). The skill's `assets/app-template.html` already ships these three pieces — keep them in.
-
-### 2. Mobile typography lives in the **same** `@media (max-width: 1024px)` block
-
-Putting header/main mobile typography in a separate `@media (max-width: 640px)` block looks fine in a phone simulator but breaks in real life: Chrome's "Desktop site" mode on Android and iOS reports a viewport width of `≥ 980px`, so a `@640px` rule never fires and the report stays at desktop sizing — unreadable. Keep all of these rules inside the same `@1024px` block:
-
-```css
-@media (max-width: 1024px) {
-  .layout { grid-template-columns: minmax(0, 1fr); }
-  /* ... panel-close rules above ... */
-  header.site { padding: 14px 16px; gap: 10px; flex-wrap: wrap; }
-  header.site h1 { font-size: 1.05rem; min-width: 0; overflow-wrap: break-word; word-break: break-word; }
-  header.site .back { font-size: 0.7rem; letter-spacing: 0.08em; }
-  main#report { padding: 28px 18px 56px; max-width: 100%; min-width: 0; }
-  main h1.report-title { font-size: 1.8rem; word-break: break-word; }
-  main#report > .lead { font-size: 1.02rem; }
-  main h2 { font-size: 1.25rem; word-break: break-word; }
-  main h3 { font-size: 1.05rem; }
-  main p, main ul, main ol { overflow-wrap: break-word; word-break: break-word; }
-  .figure { max-width: 100%; overflow: hidden; }
-  .figure svg { width: 100%; max-width: 100%; height: auto; }
-}
-```
-
-Plus the defensive rule at the document root (outside any media query):
-
-```css
-html, body { margin: 0; padding: 0; max-width: 100vw; }
-body { overflow-x: hidden; /* ... */ }
-.layout { /* ... */ overflow-x: clip; }
-```
-
-`overflow-x: clip` on `.layout` alone is **not** enough when an absolute-positioned element (e.g., `#sources-expand-btn`) lives outside the layout grid — `body { overflow-x: hidden }` is the belt to the layout's suspenders.
-
-### 3. `<pre>` and inline `<code>` MUST scroll, not push
-
-Long formulas, JSON snippets, or XML prompts inside `<pre>` will push the page wider than the viewport on mobile if left unstyled. Long inline identifiers and URLs inside `<code>` do the same. Three rules to ship in every app, even if the current report has none of these elements (the next iteration will):
-
-```css
-main code { overflow-wrap: anywhere; /* + the existing inline code styling */ }
-main pre {
-  margin: 1.5rem 0; padding: 14px 16px;
-  background: var(--paper-2); border-radius: 4px;
-  overflow-x: auto; max-width: 100%;
-  font-size: 0.85em; line-height: 1.5;
-  -webkit-overflow-scrolling: touch;
-}
-main pre code {
-  background: transparent; padding: 0; border-radius: 0;
-  font-size: 1em;
-  overflow-wrap: normal;  /* override the inline rule — preserve <pre> line breaks so the horizontal scrollbar appears */
-}
-/* Stabilo / signature highlighter — markdown ==text== renders to <mark>. */
-main mark {
-  background: linear-gradient(transparent 58%, rgba(178, 59, 27, 0.14) 58%);
-  color: inherit;
-  padding: 0 2px;
-}
-```
-
-The `overflow-wrap: normal` reset on `pre code` is the subtle one: without it, the `anywhere` rule from `main code` cascades in, breaks every long line in the `<pre>`, and the horizontal scrollbar disappears (because nothing is wider than the viewport anymore — but the content is now an unreadable block).
-
-The `main mark` rule renders the site's signature stabilo: a soft carmine gradient that only tints the bottom half of the text, mimicking a felt-tip highlighter stroke. In markdown source, write `==text==` (Obsidian highlight syntax) — most markdown converters emit `<mark>text</mark>` and the rule kicks in. Use sparingly — one or two key claims per section, not every other sentence. Pattern of origin: `gouvernance/20260421-pitch-gouvernance-agentic.html`.
-
-### 4. `← Retour aux dossiers` back link in the header
-
-Per the host site's `CLAUDE.md`, every published page (hub, app, scrolly, livre, journal) embeds a back link pointing to `../index.html#series` with the label `← Retour aux dossiers`. For the companion app, it goes at the **very start** of `<header class="site">`, just before `<span class="marker">`, with class `.back`. The styling is mono, `letter-spacing: 0.08–0.12em`, `text-transform: uppercase`, dim color shifting to `--carmine` on hover. The skill's template already ships this — only delete it if the deliverable is meant to be a pure standalone download with no host site (rare).
+Every published page embeds a back link pointing to `../index.html#series` with the label `← Retour aux dossiers`. For the companion app, it goes at the **very start** of `<header class="site">`, just before `<span class="marker">`, with class `.back`. The styling is mono, `letter-spacing: 0.08–0.12em`, `text-transform: uppercase`, dim color shifting to `--carmine` on hover. The skill's template already ships this — only delete it if the deliverable is meant to be a pure standalone download with no host site (rare).
 
 ### 5. State-aware figure breakout on desktop (readability without sidebar overlap)
 
@@ -651,3 +563,27 @@ Field-by-field:
 - `{{SCHEMAS_DATA}}` — JS object: `SCHEMAS[schemaId][cardId] = {title, body, eyebrow}`
 - `{{TOOLTIPS_DATA}}` — JS object: `TOOLTIPS[term] = definition`
 - `{{SOURCES_DATA}}` — JS array: `SOURCES = [{n, citation, url, accessed}]`
+
+---
+
+## Micro-patterns de style
+
+### Surlignage `<mark>` (stabilo)
+
+Signature visuelle pour les phrases-clés du corps narratif. Syntaxe Obsidian `==texte==` qui rend `<mark>texte</mark>`. Style : dégradé qui ne tache que la moitié basse du texte, façon stylo feutre.
+
+```css
+main mark {
+  background: linear-gradient(transparent 58%, rgba(178, 59, 27, 0.14) 58%);
+  color: inherit;
+  padding: 0 2px;
+}
+```
+
+**Scope du sélecteur** :
+- Apps long-format type `header.site` + `main#report` (i.e. les apps deep-research) → `main mark`
+- Pages narratives qui utilisent un wrapper `.entry` (journal, scrolly, livre) → `.entry mark`
+
+Cas piégeux pour le scope `.entry` : éviter `.entry .body mark` qui rate les `<mark>` situés dans les `<li>` (bullets de synthèse exécutive par exemple) — l'exécutif vit souvent en-dehors d'un `.body` interne. Toujours scoper sur le wrapper le plus extérieur qui contient toute la prose.
+
+À embarquer dans toute app HTML longue (rapport, journal).
