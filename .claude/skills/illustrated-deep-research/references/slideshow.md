@@ -2,9 +2,7 @@
 
 A scenic full-screen slideshow that condenses the long-form study into 10-12 minutes. **Optional**: only build it when the user asks, or when the topic warrants a third entry door alongside the report.md and the long-form HTML app. Reuses the report's existing SVGs and modal cards — no new schemas, no new sources.
 
-**Always start from `assets/slideshow-template.html` in this skill — never clone an old slideshow file directly.** The V1 proto (`narrative-experiences/20260505-narrative-experiences-slideshow.html`) is **outdated**: it lacks the post-May-2026 engine improvements (focus zoom in CSS transform with `__schemaZoom`, recap synthétique `__pendingRecap`, modal floating over stage, toggle-on-reclick `__currentModalCardId`, combined-card aggregation, `step.fullView` opt-out). Cloning it produces a stale slideshow that has to be back-ported by hand (see `coding-agents/20260512-coding-agents-slideshow.html` → fixed on 2026-05-11 — this is exactly what NOT to repeat).
-
-The same warning applies if you choose to copy a recently shipped slideshow (e.g. `ia-et-travail/20260507-…-slideshow.html`) as a base — that's fine, but verify it ships the post-May-2026 engine: grep for `__schemaZoom`, `__pendingRecap`, `__currentModalCardId`, `combined-card`. If any is missing, the file is stale; use `assets/slideshow-template.html` instead.
+Reference proto: `narrative-experiences/20260505-narrative-experiences-slideshow.html` on `mathieugug.github.io`. ~2200 lines, single self-contained HTML. The proto is the source of truth — when in doubt about a CSS rule or a JS handler, read it there.
 
 ---
 
@@ -155,9 +153,9 @@ const SCENES = [
 
 A schema scene has 3-7 steps. Each step changes the visual state of the SVG and the caption. Three CSS primitives drive the reveal:
 
-- `.dim` → `opacity: 0.18` (visible but pushed back, contextual)
+- `.dim` → `opacity: 0.18` (visible but pushed back)
 - `.active` → `opacity: 1` (the focus)
-- `.hidden` → `opacity: 0; pointer-events: none` (gone)
+- `.hidden` → `opacity: 0; pointer-events: none` (not yet introduced)
 
 These are applied via `data-step-state="..."` attributes on SVG elements matching the selectors in `highlight` / `dim` / `hidden`.
 
@@ -165,163 +163,13 @@ These are applied via `data-step-state="..."` attributes on SVG elements matchin
 
 | Step | Pattern |
 |---|---|
-| 0 | Overview — show the structure, no focus (use `dim: []` OR set `fullView: true`, see §4.3) |
+| 0 | Overview — show the structure, no focus |
 | 1-N | Sequential focus — bring one element into the foreground at a time |
-| Last | Synthesis — empty `dim`/`hidden` so all elements are `.active` again, OR rely on synthetic recap (see §4.4) |
+| Last | Synthesis — bring everything back into `.active`, the reader sees the whole picture |
+
+**modalAuto:** A step can declare `modalAuto: 'card-id'`. The engine auto-opens that modal 220ms after the step's CSS transition. Once open, the next `→` keypress closes the modal AND advances to the next step (combo). Use sparingly — at most 1-2 modalAuto per schema scene. Reserve them for moments the narrative cannot afford to skip (a definition, a key citation, a counter-intuitive fact).
 
 **Required ids:** Most SVGs in the long-form app use `<g class="interactive" data-card="...">` for clickable regions. To enable per-step CSS selectors, you may need to add additional `id` attributes to non-interactive `<g>` elements that group "narrative blocks" (e.g. axis, columns, rows, layers). Modify only the local copy of the SVG inside the slideshow's `#schemas` container — never touch the app's source SVG.
-
-### 4.1 Focus zoom & auto-state
-
-When a step focuses (i.e. `dim` or `hidden` is non-empty AND `highlight` is non-empty), the engine does two things on top of the explicit state attributes:
-
-1. **CSS transform zoom on the SVG root** (not viewBox manipulation — the original viewBox-based approach broke on desktop with the modal panel). The `__schemaZoom` IIFE computes a `translate(tx, ty) scale(s)` in screen pixels:
-   - centre horizontalement le `highlight` dans la portion de stage encore disponible (en excluant la zone du modal panel quand `modalAuto` est set ou que `body.modal-open` est actif)
-   - scale up to `MAX_SCALE = 1.6` for small highlights, scale down if the highlight is wider than the available area
-   - keeps the highlight at its natural vertical position when `scale ≤ 1` (no push into caption area), recentres vertically only when `scale > 1` (zoom-in benefits from full vertical use)
-   - listens to `ResizeObserver` (window resize) and a `MutationObserver` on `body.classList` (modal toggle) to recompute on the fly
-
-2. **Auto-state on top-level non-active children** of the SVG, so the schema doesn't look "ridicule" with a single visible element on a sea of empty paper:
-   - loose `<text>` situated in the BOTTOM of the viewBox (`y >= viewBox.bottom − min(120, height·0.18)`) → `hidden` — these are sources / lecture / footer text the reader doesn't need during focus
-   - other loose `<text>` (axis labels, quadrant names, "EFFECTIFS" legend, annotations on curves like "Creux mesuré") → **left at full opacity** because they're the schema's reading marks; without them the focused element loses context
-   - everything else not already in `dim`/`hidden`/`active` (sibling cards, lines, arrows, paths, circles, background rects, untagged `<g>`) → `dim` — the reader still sees the rest of the schema as faded context, so the focused element doesn't float in a void
-
-You don't author this choreography per step — it kicks in automatically whenever a step has both `highlight` and (`dim` ∪ `hidden`) non-empty. The data only needs to declare what's ACTIVE and what's explicitly hidden; the rest is inferred.
-
-### 4.2 modalAuto and combined modals
-
-A step can declare `modalAuto: 'card-id'` (string) or `modalAuto: ['card-id-1', 'card-id-2', …]` (array). The engine auto-opens the corresponding modal(s) 220 ms after the step's CSS transition. Once open, the next `→` keypress closes the modal AND advances to the next step (combo).
-
-#### Anti-pattern: one step = one modal
-
-The naive shape — one step that focuses one card and opens its modal, repeated for every card on the schema — bloats the slideshow:
-
-| Schema | Cards | Naive step count |
-|---|---|---|
-| Anatomy (6 spokes) | 6 | 6 (+1 overview = 7) |
-| Comparative matrix (3 cols × 6 axes) | 18 | 18 (+1 overview = 19) |
-| Decision card (5 profiles) | 5 | 5 (+1 overview = 6) |
-
-For a typical dossier with 8 schemas, that yields **40–50 steps**. The narrative rhythm shatters: the audience can't keep the thread of the chapter under a barrage of single-card pop-ups. Cap the count.
-
-#### Pattern: one step = one focus + 1 to 4 modals stacked
-
-Group cards by thematic coherence and surface them in a single step. Pass an array to `modalAuto`; the engine renders all cards in one modal panel with a dashed separator between each. Optional `modalGroupEyebrow` + `modalGroupTitle` give the stack a shared header (otherwise the modal opens with an empty eyebrow/title and the substacks carry their own).
-
-```js
-{
-  caption: 'Trois rouages d\'infrastructure : un contexte versionné, un set de tools, des skills.',
-  highlight: ['[data-card="card-contexte"]', '[data-card="card-tools"]', '[data-card="card-skills"]'],
-  dim:       ['[data-card="card-subagents"]', '[data-card="card-hooks"]', '[data-card="card-permissions"]'],
-  hidden:    [],
-  modalAuto: ['card-contexte', 'card-tools', 'card-skills'],
-  modalGroupEyebrow: 'ROUAGES · INFRASTRUCTURE',
-  modalGroupTitle:   'Contexte, tools, skills — la matière partagée'
-}
-```
-
-The engine resolves the array via `SCHEMAS[scene.schemaId][cardId]` for each id and feeds the list to `openModalStack(cards, groupEyebrow, groupTitle)`. The DOM emitted inside `.modal-body` is:
-
-```
-<div class="modal-substack">
-  <p class="modal-substack-eyebrow">{card.eyebrow}</p>
-  <h4 class="modal-substack-title">{card.title}</h4>
-  <div class="modal-substack-body">{card.body}</div>
-</div>
-<hr class="modal-stack-sep" aria-hidden="true">
-<div class="modal-substack">…</div>
-…
-```
-
-Single-card arrays (`['card-id']`) work too and degrade to the single-card path. Mix freely: same scene can have a stacked step followed by a single-card step.
-
-#### Worked examples — typical reductions
-
-- **Anatomy schema (6 cards) → 3 steps**: overview + "infrastructure" stack (contexte + tools + skills) + "orchestration" stack (sub-agents + hooks + permissions).
-- **Comparative matrix (3 tools × 6 axes = 18 cells) → 3 steps**: one per column (full column stacked, 6 cards each).
-- **Decision card (5 profiles) → 3 steps**: overview + non-tech stack (consultant + analyst) + tech stack (eng + scientist + manager).
-- **Three-phase timeline (3 cells) → 2 steps**: overview + all 3 stacked in one narrative beat.
-
-#### Target totals and required coverage
-
-Aim for **~15–20 schema steps total** across the slideshow (plus intro + outro = 17–22 actual `→` presses). A 12-scene slideshow should rarely exceed 25 steps. The step should narrate ONE thing — not unroll a list.
-
-**Coverage constraint (mémoire `feedback_slideshow_scene_coverage`)** : every `data-card` that has a SCHEMAS entry MUST appear in `modalAuto` (string or array) at some point during linear playback. The combined-modal pattern preserves coverage while compressing steps — there is no trade-off. Audit script (Python one-liner) at the bottom of this section.
-
-#### Coverage audit
-
-```python
-# Run from repo root after editing the slideshow's SCENES array.
-import re
-with open('dossier-slug/YYYYMMDD-slug-slideshow.html', encoding='utf-8') as f:
-    text = f.read()
-m = re.search(r'const SCENES = \[(.*?)\];\s*\n\s*/\* .*? SCHEMAS', text, re.DOTALL)
-scenes_text = m.group(1)
-simple  = re.findall(r"modalAuto:\s*'([^']+)'", scenes_text)
-arrays  = re.findall(r"modalAuto:\s*\[([^\]]+)\]", scenes_text)
-covered = set(simple)
-for arr in arrays:
-    covered.update(re.findall(r"'([^']+)'", arr))
-print(f'modalAuto covers {len(covered)} cards')  # compare with SCHEMAS keys count
-```
-
-Reference implementation: `coding-agents/20260512-coding-agents-slideshow.html` (46 steps → 18 schema steps + intro + outro = 20 total, 36/36 cards covered).
-
-### 4.3 `step.fullView` — opt-out of focus
-
-Set `step.fullView: true` on a step that you authored with a non-empty `dim` (for visual emphasis only) but where you DON'T want the focus zoom or the auto-hide/dim of contextual elements. Use it when the step IS the overview:
-
-```js
-{
-  caption: 'Trois questions filtrent les huit méthodes…',
-  highlight: ['[data-card="q1"]', '[data-card="q2"]', '[data-card="q3"]'],
-  dim:       ['[data-card="m1"]', '[data-card="m2"]', …],   // visual emphasis only
-  hidden:    [],
-  fullView:  true                                            // ← skip focus zoom
-}
-```
-
-In `fullView` mode the explicit `dim`/`hidden`/`active` states still apply (so the methods are visibly faded), but no transform is applied, no auto-hide of footer, and no modalAuto fires. The schema looks normal.
-
-### 4.4 Synthetic recap before scene transition
-
-When the LAST step of a schema scene is itself a focus step (i.e. has `dim`/`hidden` non-empty AND there's a next scene), pressing → at that step does NOT immediately go to the next scene. Instead the engine:
-
-1. Closes the modal if open.
-2. Re-renders the same step with `step.fullView` forced to `true` — full schema, no zoom, no auto-hide. Internally a `__pendingRecap` flag tracks this synthetic state.
-3. Waits for the next → keypress to actually transition.
-
-This gives the reader a "view from above" moment before leaving the scene — useful when the last step had an aggressive zoom or an open modal. Pressing ← from the recap brings back the focus step with its modal.
-
-If the last step is already a true overview (empty `dim`/`hidden`), the recap is skipped — the step itself IS the recap.
-
-### 4.5 Modal floats over the stage
-
-The modal is **fixed** at `right: 0; top: 64px; bottom: 0; width: 480px` and slides in via `transform: translateX(...)`. The stage **does not shrink** when `body.modal-open` is added (no `right: 480px` rule). This avoids width jumps for the SVG between steps with/without modal — the SVG keeps its natural CSS size, and only the focus zoom transform recomputes (via MutationObserver) to centre the highlight in the still-visible portion.
-
-The right portion of the schema (typically non-focus content) is hidden behind the modal panel, but `__schemaZoom` ensures the highlighted/focused content stays fully in the visible portion.
-
-The bottom **caption** does adapt visually:
-- shifts left on desktop via `transform: translateX(-208px)` (= `(modal_w − timeline_w) / 2`) so it stays centred in the modal-free area
-- sits on top of `.stage::after`, a **`position: fixed; left: 0; right: 0; bottom: 0; height: 96px`** opaque band with `linear-gradient(to top, var(--bg) 0%, var(--bg) 55%, transparent 100%)`. This band spans the FULL viewport width (not just the stage which is `right: 64px`) and masks any SVG content that was transformed below its natural CSS box, so the italic caption text always sits on a clean opaque ground
-
-### 4.6 Toggle on click — same card closes
-
-Clicking on a region with `data-card="..."` opens its modal (single or aggregated). **Clicking the same card again closes the modal** — toggle behaviour. Internally a `__currentModalCardId` variable tracks which card opened the current modal:
-
-```js
-stage.addEventListener('click', (e) => {
-  const target = e.target.closest('[data-card]');
-  if (!target) return;
-  const cardId = target.dataset.card;
-  const modalOpen = !document.getElementById('modal-root').hidden;
-  if (modalOpen && __currentModalCardId === cardId) { closeModal(); return; }
-  // …open modal for cardId
-  __currentModalCardId = cardId;
-}, true);
-```
-
-`closeModal()` clears `__currentModalCardId` (so the next click on the same card opens the modal again). Clicking a different card while a modal is open closes the current modal AND opens the new one (via the standard open path — no special "switch" code, the toggle check just falls through).
 
 ## 5. Reusing assets from the long-form app
 
@@ -402,9 +250,7 @@ Three flex zones:
 
 ### Stage (the central scene container)
 
-`position: fixed; top: 64px; left: 0; right: 64px; bottom: 0; overflow: hidden`. The right offset (`64px`) reserves the timeline sidebar. The stage **does NOT shrink** when a modal opens — the modal floats over the stage's right portion. This avoids SVG width jumps between steps with/without modal. The focus zoom in `__schemaZoom.compute()` (§4.1) reads `body.classList.contains('modal-open')` and reserves the modal panel area in `availW`, so the highlight stays centred in the still-visible portion. The right portion of the SVG sits behind the modal — that's fine, it's not the focused content.
-
-`overflow: hidden` on the stage clips the transformed SVG (zoom-in extending past natural bounds, neighbours shifted off-screen, etc.) so nothing leaks into the timeline or the modal panel.
+`position: fixed; top: 64px; left: 0; right: 64px; bottom: 0`. The right offset (`64px`) reserves the timeline sidebar. When a modal is open (`body.modal-open`), the stage shrinks (`right: 480px`) via a 280ms cubic-bezier transition, sliding the SVG to the left without covering it.
 
 The stage is `flex column` with `align-items: center; justify-content: center`. Schema-host's `max-width: min(1400px, 92vw)`. SVG `max-height: calc(100vh - 170px)`.
 
@@ -484,7 +330,7 @@ These cost real iteration cycles when building the first slideshow on `narrative
 1. **SVG `<rect fill="#FAF8F3">` background** — creates a visible inset frame inside the page paper. Always switch to `fill="transparent"` on the local copy. (See §5 adaptation 1.)
 2. **Internal SVG title duplicates the external scene title** — wrap the header `<text>` block in `<g class="svg-header">` masked via CSS. (§5 adaptation 2.)
 3. **viewBox not cropped** — the SVG reserves 25-30% of vertical space for the now-hidden header. Always crop. (§5 adaptation 3.)
-4. **Modal centered overlapping the SVG** — the spec proposed centered modals, but in practice covering the SVG breaks the reader's mental model. The slideshow uses **right-sidebar modals** that slide in beside the SVG, but **the stage does NOT shrink** when the modal opens (no `body.modal-open .stage { right: 480px }` rule). Reason: shrinking creates jarring SVG width jumps between steps with/without modal. Instead, `__schemaZoom.compute()` reads `body.classList.contains('modal-open')` and reserves the modal panel area in `availW` so the focus zoom centres the highlight in the still-visible portion. The right portion of the SVG sits behind the modal panel — that's fine because by construction it's not the focused content. (§4.5, §6.)
+4. **Modal centered overlapping the SVG** — the spec proposed centered modals, but in practice covering the SVG breaks the reader's mental model. The slideshow uses **right-sidebar modals** that slide in beside the SVG with the stage shrinking via `body.modal-open`. (§6.)
 5. **Timeline at bottom stealing height** — the SVG needs vertical room. Move the timeline to a vertical right sidebar. Mobile flips back to horizontal bottom (touch ergonomics). (§6.)
 6. **Title in the stage stealing more height** — the spec had `.schema-host > .scene-title` inside the stage. Move it to the topbar (which grows from 48px to 64px) via `<div class="scene-title-bar">` updated by `updateSceneTitleBar(scene)` on every render. (§6.)
 7. **Centering content vertically with `justify-content: center` while content overflows** — when `max-height` of the SVG is too generous, the schema-host overflows the stage and gets pushed under the topbar. Either reduce SVG max-height, or switch to `justify-content: flex-start` with explicit margins.
@@ -493,27 +339,9 @@ These cost real iteration cycles when building the first slideshow on `narrative
 10. **`MODAL_CARDS` (flat) doesn't exist in the app — it's `SCHEMAS[schemaId][cardId]` (2-level)** — the slideshow's modal dispatcher must reconstruct the schema key from the SVG's `data-schema-id` and look up the card by its `data-card` attribute. Don't try to flatten.
 11. **`setupZoom()` from the app installs static `.zoom-btn` listeners at page-load** — but the slideshow renders schemas dynamically via `render()`. Refactor the IIFE to expose `__zoom.openZoom(svg)` and attach a `stage.click` listener in capture phase that catches `.zoom-btn` clicks.
 12. **Topbar height change cascades** — when you move the title to the topbar (48px → 64px), every dependent measurement must follow: stage `top`, modal `top`, mobile media queries, max-height calc.
-13. **Naïve viewBox-based focus zoom on desktop with the modal panel** — the original `__schemaZoom` IIFE animated the SVG's `viewBox` to fit the highlight bbox, padded to the original aspect ratio. On desktop with modal open, this consistently broke: a single tall card (e.g. a "potentiel" column 340 user wide × 480 tall) would get padded horizontally to match a 1.92 aspect viewBox → focus rectangle ~1075 wide → neighbours got pulled into frame, the highlight wasn't actually centred, and the right side ended up under the modal panel. The fix is **CSS transform on the SVG root** computed in screen pixels (§4.1), not viewBox manipulation: it gives full control over translate + scale, ignores aspect-ratio constraints, plays well with `overflow: hidden` on the stage, and recomputes via `ResizeObserver` + `MutationObserver(body.classList)` when the modal toggles.
-14. **Auto-state heuristic must distinguish footer text from reading marks** — when auto-dimming non-active elements during focus, hiding ALL loose `<text>` elements (early naïve heuristic) made schemas like the métiers map look "ridicule": no axis labels ("EXPOSITION À L'IA"), no quadrant names ("PEU TOUCHÉS"), no size legend, just orphan bubbles in a void. Fix: hide loose `<text>` only when its `y >= viewBox.bottom − min(120, height·0.18)` (i.e. genuinely the source/lecture/footer band). Keep the rest at full opacity — they're the schema's reading marks.
-15. **Stage shrinks on modal-open create width jumps** — first iteration set `body.modal-open .stage { right: 480px }` so the SVG resized to fit alongside the modal. Result: every modalAuto step jolted the SVG width down then back up at scene transition. Reader complaint: "sauts de width pénibles". Fix: stage stays full-width, focus zoom recomputes `availW = stageW − 480` to centre the highlight in the modal-free portion. The trade-off (right portion of the SVG hidden behind the modal) is acceptable because by construction it's not the focused area.
-16. **Caption overlapping the modal panel** — once the stage no longer shrinks, the caption (centred horizontally in `.schema-host`, max-width 720) extended into the modal area on smaller desktops. Fix: under `body.modal-open` desktop, shift the caption with `transform: translateX(-208px)` (= `(modal_w − timeline_w) / 2`) and clamp `max-width: min(720px, calc(100vw - 560px))`. Caption ends up centred in the modal-free portion of the viewport.
-17. **Caption transparent over the SVG** — the SVG transformed (especially with `scale > 1`) can render content below its natural CSS box, sometimes peeking through behind the italic caption text. Fix: caption gets `position: relative; z-index: 2; padding: 28px 24px 8px; background: linear-gradient(to bottom, rgba(250,246,236,0) 0%, var(--bg) 28px, var(--bg) 100%)` — opaque body, soft fade-in at top so the boundary with the schema is gentle.
-18. **`modalAuto` showing only one card when the highlight covers a group** — e.g. a "Famille A" step with `highlight: [Frey, Arntz, Eloundou]` and `modalAuto: 'frey'` would open a modal only about Frey. Reader: "modal chemin B mais focus sur chemin A et B en même temps, ça ne va pas". Fix: render() collects all `step.highlight` selectors that have a `SCHEMAS[schKey][cardId]` entry and stacks them in a single combined modal (§4.2). The data stays declarative — the engine handles the aggregation.
-19. **Last step with focus has the modal AND should also recap** — conflict: the modal carries information, but the reader needs a "view from above" before leaving the scene. Fix: `__pendingRecap` flag (§4.4). First → at a focus last step closes the modal and re-renders the same step in `fullView` (recap). Second → goes to the next scene. ← from recap brings back the modal step.
-20. **`fullView` was too timid** — first iteration, `step.fullView = true` only skipped the auto-state heuristic and the focus zoom transform, but `dim`/`hidden` from `step.dim`/`step.hidden` selectors were still applied, leaving "recap" steps with explicit dim cards visibly faded. The reader saw "Acemoglu in focus, others dim" instead of "everything visible". Fix: in `applyStepStyles`, when `step.fullView` is true, return early after clearing all `data-step-state` — no dim/hidden/active applied at all. Recap = truly full schema.
-21. **Caption opaque background bound to caption box width** — first iteration, the gradient was `background: linear-gradient(…)` directly on `.caption`, so it stopped at `max-width: 720px`. Schema content peeking through to the LEFT and RIGHT of the caption was still visible. Fix: move the band to `.stage::after` with `position: fixed; left: 0; right: 0; height: 96px` so it spans the full viewport width, with a soft fade-in at the top.
-22. **Click on a card has no toggle** — first iteration, clicking a card opened the modal; clicking the same card again opened it again (no-op visually). Reader expectation: re-clicking the same card closes the modal (like a tooltip toggle). Fix: track `__currentModalCardId` (§4.6) — set on open, cleared on close, compared on click.
 
 ## Summary
 
 The slideshow is the third entry door to a deep-research deliverable. It reuses the report's SVGs and modals with three light adaptations (transparent rect, hidden header, cropped viewBox), wraps them in a 11-scene narrative driven by a declarative `SCENES` table, and ships in a single self-contained HTML file. The persistent UI (topbar with scene title, vertical timeline sidebar, sliding modal sidebar) keeps the SVG visible at all times — the reader's mental model stays anchored on the schema, never covered by chrome.
 
-When in doubt, read `assets/slideshow-template.html` in this skill — it's kept current with every engine improvement. The V1 proto (`narrative-experiences/20260505-narrative-experiences-slideshow.html`) is **deprecated** as a starting point; it lacks the post-May-2026 engine (focus zoom CSS transform, recap synthétique, modal float, toggle-on-reclick, combined-card, `step.fullView`). Do NOT clone it.
-
-### Pitfall 23 — Caption "censée accrochée en bas" qui se retrouve au milieu du schéma
-
-**Symptom**: the caption appears partway down the screen, visually overlapping the SVG (rendered between rows of a matrix, or on top of cells). User feedback: "légende censée accrochée en bas".
-
-**Why**: when the focus zoom applies `transform: scale > 1` to the SVG, the *visual content* extends below the SVG's CSS box. With caption in flex flow (`position: relative`), the caption sits right after the SVG box in the DOM order — i.e. roughly where the box ends, which is *above* the actual visual bottom of the SVG. The transformed schema content paints on top of the caption area.
-
-**Fix**: caption goes `position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%)` (out of flex flow, always anchored to viewport bottom). `.stage::after` becomes a **160 px** tall opaque mask (gradient from `var(--bg)` to transparent at top) at `z-index: 2`, the caption at `z-index: 3` — so any SVG content below the SVG's natural bottom is masked behind the gradient before reaching the caption. Modal-open desktop variant adapts `transform: translateX(calc(-50% - 240px))`. Mobile under modal-open hides the caption (info is in the modal anyway). This pattern lives in `assets/slideshow-template.html` since 2026-05-11. Cross-verified with the `coding-agents` schema-04 matrix where the bug originally surfaced.
+When in doubt, read `narrative-experiences/20260505-narrative-experiences-slideshow.html` directly — it's the V1 proto and the source of truth for every CSS rule and JS handler.

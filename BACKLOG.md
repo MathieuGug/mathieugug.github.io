@@ -9,8 +9,8 @@ _Mis à jour par la routine `Illustrated deep research · mer + ven`._
 - observabilite-agents-ia : trace OpenTelemetry GenAI semconv en production
 - memoire-agentique : compaction et oubli sélectif
 - evaluation-agentique : benchmarks agentiques contestés (SWE-bench, GAIA)
-- mcp-plateforme : OWASP MCP Top 10, dissection des 10 vecteurs et matrice défensive
 - mcp-plateforme : MCP en production enterprise — patterns d'isolation, audit log OTel, OAuth 2.0 + PKCE
+- mcp-securite : suite — retex chiffrés post-spec MCP v2 (signature Sigstore en production, % adoption registries signés, incidents corrélés OTel)
 
 ## Sujets evergreen — backlog
 - AlphaProof / Lean / formal math — la branche démonstrations formelles du raisonnement
@@ -31,6 +31,7 @@ _Mis à jour par la routine `Illustrated deep research · mer + ven`._
 
 ## Déjà couverts (date · slug · angle)
 - 2026-05-22 · decode-speculative · anatomie draft/target/verify, taxonomie 4 familles (draft externe Leviathan/Chen, Medusa/Hydra, EAGLE 1/2/3, Lookahead Jacobi), théorème d'équivalence Leviathan 2022, piège acceptance rate selon domaine (code 80% / créatif 45% / drift sous 30% = perte nette), interaction batching dynamique avec point de bascule batch≈24, schedulers hybrides (vLLM 0.6, TRT-LLM 0.9 deux schedulers parallèles, SGLang speculation_threshold), matrice frameworks vLLM/SGLang/TensorRT-LLM/DeepSpeed-MII, horizon RL-guided drafting / multi-draft mixture / ensemble verification
+- 2026-05-20 · mcp-securite · deep dive sur `mcp-plateforme` — six trust boundaries, dix vecteurs en quatre familles (tool poisoning, prompt injection cross-document, cross-server confusion, OAuth/supply chain), matrice défensive 10×10 avec quatre patterns load-bearing (Sigstore + hash pinning, tool tagging, allowlist namespace, HITL writes), roadmap 12 mois (AI Act art. 15 août 2026, spec MCP v2 Sigstore automne 2026, registries signés janvier 2027, MCP × A2A printemps 2027)
 - 2026-05-15 · benchmarks-contestes · deep dive sur `evaluation-agentique` — SWE-bench, GAIA, OSWorld, τ-bench : quatre vecteurs de contamination (chevauchement temporel, version-tag, harness gaming, prompt leakage), industrialisation des « benchmark teams » dédiées, contre-mouvement vivant (SWE-bench Live, SWE-Lancer, MLE-bench, ARC-AGI 2), framework décision 2×2 contrôlé × ponctuel pour acheteurs
 - 2026-05-13 · process-reward-models · deep dive sur `modeles-raisonnement` — anatomie de la couche notateur, de Lightman/PRM800K (2023) au pivot DeepSeek-R1 RLVR (2025), generative verifiers (GenRM/ThinkPRM), reward hacking invisible (99 %/2 %), économie de l'annotation procédurale, 4 trajectoires 2027-2028 (RLVR / generative integré / PRM spécialisé / PRM-as-a-service)
 - 2026-05-12 · coding-agents · Claude Code / Codex CLI / Copilot, anatomie + pyramide d'usage 4 étages (transverse / data quotidien / data expert / produit-décideurs), retex chiffrés vs benchmarks publics
