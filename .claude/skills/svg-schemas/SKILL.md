@@ -76,7 +76,7 @@ Au-delà, splitter en plusieurs `<text>` empilés (gap typique 18–20 px en y p
 
 Tout schéma SVG inline **doit** être agrandissable en plein écran (overlay + pan + zoom molette/pinch + Reset/Échap, bouton `⛶` au survol).
 
-- **Apps deep-research** : fourni par la bibliothèque partagée `/assets/dossier-app.{js,css}` — pas d'IIFE locale, juste le contrat DOM `#zoom-overlay`/`#zoom-stage`/`#zoom-content` + boutons `.zoom-close`/`.zoom-in`/`.zoom-out`/`.zoom-reset`.
+- **Apps deep-research** : fourni par la bibliothèque partagée `/assets/dossier-app.{js,css}` — pas d'IIFE locale, juste le contrat DOM `#zoom-overlay`/`#zoom-stage`/`#zoom-content` + boutons `.zoom-close`/`.zoom-in`/`.zoom-out`/`.zoom-reset`. **Le même runtime gère aussi le modal zoom des infographies A4 portrait (`a.figure-portrait-link`) et des callouts inter-dossiers (`button.callout-thumb-link`)** via `setupPortraitZoom()` → `window.__dossierOpenZoom`. Ne PAS ajouter d'IIFE inline `setupFigurePortraitZoom` / `setupCalloutZoom` : c'était l'ancien pattern, dupliqué et facile à oublier (cas vu : memoire-agentique publié sans → infographie ouverte dans un onglet standalone au lieu du modal). Le test CI `apps-integration.test.mjs` interdit ces IIFE.
 - **Autres pages** (journal, scrolly, livre) : copier le bloc de `observabilite-agents-ia/20260430-observabilite-agents-ia-app.html` (CSS `.zoom-btn` + `#zoom-overlay`, IIFE `setupZoom()`) et adapter les variables de couleur + le sélecteur (`.figure`, `.entry figure`, …) à la structure hôte.
 
 Sur mobile, le schéma rendu à 320 px de large devient illisible — le zoom est l'échappatoire **non négociable**.

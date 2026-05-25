@@ -3116,50 +3116,5 @@ while response.stop_reason == "tool_use":
   </script>
   <script src="/assets/dossier-app.js" defer></script>
   <script src="/assets/dossier-qualif.js" defer></script>
-  <script>
-  // Callout thumb → modal zoom (réutilise #zoom-overlay)
-  (function setupCalloutZoom() {
-    const svgCache = new Map();
-    async function fetchSvg(src) {
-      if (svgCache.has(src)) return svgCache.get(src);
-      const res = await fetch(src);
-      const txt = await res.text();
-      const svg = new DOMParser().parseFromString(txt, 'image/svg+xml').documentElement;
-      svgCache.set(src, svg);
-      return svg;
-    }
-    async function openCalloutZoom(src, caption) {
-      const overlay = document.getElementById('zoom-overlay');
-      const content = document.getElementById('zoom-content');
-      const captionEl = document.getElementById('zoom-caption');
-      if (!overlay || !content) { window.open(src, '_blank', 'noopener'); return; }
-      try {
-        const svgSrc = await fetchSvg(src);
-        const clone = svgSrc.cloneNode(true);
-        const vb = clone.viewBox?.baseVal;
-        const w = (vb && vb.width)  || 1200;
-        const h = (vb && vb.height) || 800;
-        clone.setAttribute('width', w); clone.setAttribute('height', h);
-        clone.style.width = w + 'px';   clone.style.height = h + 'px';
-        content.innerHTML = '';
-        content.appendChild(clone);
-        if (captionEl) captionEl.textContent = caption || '';
-        overlay.hidden = false;
-        document.body.style.overflow = 'hidden';
-        overlay.querySelector('.zoom-reset')?.click();
-      } catch (err) {
-        console.warn('[callout zoom] fetch failed, fallback open in new tab', err);
-        window.open(src, '_blank', 'noopener');
-      }
-    }
-    document.querySelectorAll('button.callout-thumb-link').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const src = btn.getAttribute('data-svg-src');
-        const alt = btn.getAttribute('data-svg-alt') || '';
-        if (src) openCalloutZoom(src, alt);
-      });
-    });
-  })();
-  </script>
 </body>
 </html>

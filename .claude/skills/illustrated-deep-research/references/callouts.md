@@ -22,23 +22,9 @@ Pattern `main .callout` pour pointer vers un autre dossier en parallèle d'une s
 
 ## Mécanique du zoom
 
-La mini-vignette est un `<button>` (pas un `<a>`). Un IIFE inline en bas de page attache un click handler qui fetch le SVG et réutilise `window.__dossierOpenZoom` (exposé par la lib partagée `/assets/dossier-app.js` ou par l'IIFE locale `setupZoom()` selon le contexte).
+La mini-vignette est un `<button>` (pas un `<a>`). Le click est intercepté par `setupPortraitZoom()` dans `/assets/dossier-app.js` : il lit `data-svg-src` / `data-svg-alt`, fetche le SVG et l'injecte dans `#zoom-overlay` via `window.__dossierOpenZoom`.
 
-```js
-(function setupCalloutZoom() {
-  document.querySelectorAll('.callout-thumb-link').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const src = btn.dataset.svgSrc;
-      const alt = btn.dataset.svgAlt || '';
-      const res = await fetch(src);
-      const svgText = await res.text();
-      if (window.__dossierOpenZoom) {
-        window.__dossierOpenZoom(svgText, alt);
-      }
-    });
-  });
-})();
-```
+**Aucun script inline à ajouter.** Le seul prérequis est d'inclure la lib (`<script src="/assets/dossier-app.js" defer>`) — ce qui est déjà le contrat de base d'une app deep-research. Le test CI `apps-integration.test.mjs` interdit les IIFE inline qui ré-implémenteraient ce comportement (elles dédoubleraient les listeners et ouvriraient deux modals).
 
 ## Variantes
 

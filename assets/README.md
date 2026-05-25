@@ -1,6 +1,6 @@
 # Bibliothèque partagée — `dossier-app.{js,css}`
 
-Source unique de vérité pour le comportement et le style des patterns récurrents des apps deep-research du repo (`*/2026*-app.html`) : zoom plein écran, modal SCHEMAS, citations highlight, TOC observer, mobile panels, sources collapse desktop, sigil MG, topbar scroll, tooltips terms.
+Source unique de vérité pour le comportement et le style des patterns récurrents des apps deep-research du repo (`*/2026*-app.html`) : zoom plein écran, **zoom modal des infographies A4 portrait + thumbs de callouts inter-dossiers**, modal SCHEMAS, citations highlight, TOC observer, mobile panels, sources collapse desktop, sigil MG, topbar scroll, tooltips terms.
 
 ## Fichiers
 
@@ -24,6 +24,7 @@ La page doit fournir ces IDs/sélecteurs, sinon le bloc concerné se désactive 
 | Pattern | IDs / sélecteurs requis |
 |---|---|
 | Zoom | `#zoom-overlay`, `#zoom-stage`, `#zoom-content`, `.zoom-close`/`.zoom-in`/`.zoom-out`/`.zoom-reset` |
+| Portrait/thumb zoom | `a.figure-portrait-link` (infographie A4 ; `<img>` enfant fournit `src` + `alt`) ; `button.callout-thumb-link[data-svg-src][data-svg-alt]` (callouts inter-dossiers). Routés vers `#zoom-overlay` via `setupPortraitZoom`. **Aucun script inline à ajouter**, le `target="_blank"` du `<a>` reste comme fallback si fetch échoue. |
 | Modal | `#modal-root`, `#modal-eyebrow`, `#modal-title`, `#modal-body`, `[data-close]` |
 | TOC + Sources | `#toc`, `#sources`, `#toggle-toc`, `#toggle-sources`, `.panel-close` |
 | Sources collapse | `#sources-collapse-btn`, `#sources-expand-btn`, `.layout` |
