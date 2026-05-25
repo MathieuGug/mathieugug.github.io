@@ -286,6 +286,14 @@ main .figure--portrait .figure-caption { max-width: 100%; margin: 14px auto 0; p
 
 L'`<a class="figure-portrait-link" target="_blank">` est ce qui rend la SVG ouvrable en standalone (et donc les `<a>` cliquables internes du SVG fonctionnels).
 
+### Click → modal zoom : géré par la lib partagée
+
+Le click sur `a.figure-portrait-link` est intercepté par `setupPortraitZoom()` dans `/assets/dossier-app.js` : il fetche le SVG, l'injecte dans `#zoom-overlay` (pan + scroll + Reset/Échap) via `window.__dossierOpenZoom`. Le `target="_blank"` du `<a>` reste comme fallback si le fetch échoue (CORS, offline) ou si l'overlay manque.
+
+**Ne PAS ajouter d'IIFE inline `setupFigurePortraitZoom` en bas de page.** C'était l'ancien pattern, dupliqué dans chaque app, et facile à oublier sur les nouveaux dossiers (cas vu : `memoire-agentique`, `agent-sdk`, `analytics-agentique-gcp` ont été publiés sans → infographie ouverte dans un onglet standalone au lieu du modal zoom). La lib `dossier-app.js` gère désormais le câblage : le seul prérequis est d'inclure la lib (`<script src="/assets/dossier-app.js" defer>`) — ce qui est déjà le contrat de base d'une app deep-research.
+
+Le test CI `apps-integration.test.mjs` interdit les inlines `setupFigurePortraitZoom` (regex sur le nom de la fonction).
+
 ## Checklist de validation avant commit
 
 - [ ] viewBox `0 0 840 1188`

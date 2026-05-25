@@ -22,6 +22,7 @@
     setupSidebarsToggle();
     setupMobileToolsAutoHide();
     setupZoom();
+    setupPortraitZoom();
     setupSigil();
     setupTopbarScroll();
     setupQuizzes();
@@ -470,6 +471,60 @@
 
     // Expose openZoom to inline portrait-zoom handlers so they share state (drag, +/- buttons, etc.).
     window.__dossierOpenZoom = openZoom;
+  }
+
+  // ──────────────────────────────────────────────────────────
+  // Portrait (A4 exec sum) zoom + callout thumb zoom — intercepts
+  // <a class="figure-portrait-link"> and <button class="callout-thumb-link">
+  // and routes the click through the in-page zoom overlay instead of
+  // opening the standalone SVG in a new tab. Fallback to target="_blank"
+  // navigation if fetch fails or the zoom overlay isn't present.
+  // ──────────────────────────────────────────────────────────
+
+  function setupPortraitZoom() {
+    if (!window.__dossierOpenZoom) return;
+    const portraitLinks = document.querySelectorAll('a.figure-portrait-link');
+    const calloutThumbs = document.querySelectorAll('button.callout-thumb-link');
+    if (!portraitLinks.length && !calloutThumbs.length) return;
+
+    const svgCache = new Map();
+    async function fetchSvg(src) {
+      if (svgCache.has(src)) return svgCache.get(src);
+      const res = await fetch(src);
+      const txt = await res.text();
+      const svg = new DOMParser().parseFromString(txt, 'image/svg+xml').documentElement;
+      svgCache.set(src, svg);
+      return svg;
+    }
+
+    async function openPortraitZoom(src, caption) {
+      try {
+        const svg = await fetchSvg(src);
+        window.__dossierOpenZoom(svg, caption);
+      } catch (err) {
+        console.warn('[portrait zoom] fetch failed, fallback open in new tab', err);
+        window.open(src, '_blank', 'noopener');
+      }
+    }
+
+    portraitLinks.forEach((a) => {
+      a.addEventListener('click', (e) => {
+        const img = a.querySelector('img');
+        const src = img?.currentSrc || img?.src || a.getAttribute('href');
+        const alt = img?.getAttribute('alt') || '';
+        if (!src) return;
+        e.preventDefault();
+        openPortraitZoom(src, alt);
+      });
+    });
+
+    calloutThumbs.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const src = btn.getAttribute('data-svg-src');
+        const alt = btn.getAttribute('data-svg-alt') || '';
+        if (src) openPortraitZoom(src, alt);
+      });
+    });
   }
 
   // ──────────────────────────────────────────────────────────

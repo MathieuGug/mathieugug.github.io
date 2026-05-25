@@ -72,6 +72,18 @@ for (const app of apps) {
     }
   });
 
+  test(`${app}: does not inline portrait-zoom IIFE (handled by lib)`, () => {
+    // setupPortraitZoom in /assets/dossier-app.js intercepts clicks on
+    // a.figure-portrait-link and button.callout-thumb-link. An inline IIFE
+    // re-implementing this would attach a second listener and open the
+    // modal twice. Apps must rely on the lib.
+    const stale = ['setupFigurePortraitZoom', 'setupCalloutZoom'];
+    for (const name of stale) {
+      assert.doesNotMatch(html, new RegExp(`\\b${name}\\b`),
+        `${app} has an inline ${name} IIFE. Delete it — the lib's setupPortraitZoom handles a.figure-portrait-link and button.callout-thumb-link.`);
+    }
+  });
+
   test(`${app}: does not inline lib CSS rules (signatures)`, () => {
     // Si le bloc CSS pattern de la lib a été correctement extrait,
     // ces règles ne doivent plus apparaître dans le <style> inline.
