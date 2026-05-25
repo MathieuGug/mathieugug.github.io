@@ -1,0 +1,112 @@
+[
+  {
+    "id": "geometrie",
+    "title": "Pourquoi MCP n'est pas une API REST de plus",
+    "anchor": "section-1",
+    "before_heading_id": "section-2",
+    "questions": [
+      {
+        "mode": "single",
+        "stem": "Un attaquant veut faire exécuter une instruction non-autorisée par un agent via MCP. Sur une API REST classique avec un parseur strict, l'attaque échoue. Sur MCP, qu'est-ce qui change <em>fondamentalement</em> et donne sa chance à l'attaquant ?",
+        "options": [
+          {
+            "text": "MCP n'a pas encore de schémas JSON validés à l'install ; ils arrivent dans la spec d'automne 2026.",
+            "correct": false,
+            "explain": "Faux. MCP <em>a</em> des schémas JSON pour les outils et les arguments. Le pitfall n'est pas un manque de validation structurelle — c'est que la <em>description</em> en texte libre est lue par un LLM qui ne distingue pas instruction et donnée."
+          },
+          {
+            "text": "Le code qui décide quoi faire en aval n'est pas un parseur déterministe mais un réseau de neurones probabiliste — tout texte qui entre dans son contexte est <em>exécutable</em> au sens où il peut déclencher un tool call.",
+            "correct": true,
+            "explain": "Vrai. C'est l'asymétrie fondatrice du §1 : sur REST, la payload doit franchir un parseur strict puis exploiter un bug d'implémentation ; sur MCP, elle n'a qu'à <em>exister dans le contexte du modèle</em> pour avoir une chance d'être interprétée comme instruction. La nature probabiliste du LLM est ce qui rend la frontière contenu/instruction floue par construction.",
+            "back_link": "↗ relire §1"
+          },
+          {
+            "text": "MCP utilise stdio par défaut, qui n'offre aucune authentification — l'attaquant peut spoofer le serveur.",
+            "correct": false,
+            "explain": "Faux. stdio est utilisé pour les serveurs locaux lancés par le host ; l'authentification y est implicite (le host lance le binaire). HTTP/SSE utilise OAuth + PKCE. L'asymétrie REST/MCP ne dépend pas du transport — elle vient de l'interprétation sémantique en aval."
+          },
+          {
+            "text": "Le LLM exécute directement le code des outils sans isolation processus.",
+            "correct": false,
+            "explain": "Faux. Le LLM ne <em>exécute</em> pas le code ; il décide d'<em>appeler</em> un outil dont le serveur exécute le code. La distinction LLM-décide / serveur-exécute est nette. Le risque MCP n'est pas l'exécution arbitraire de code par le modèle, mais le déclenchement non-autorisé d'un tool call légitime à partir d'instructions cachées."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "oauth-dcr",
+    "title": "DCR : ce que ça change par rapport à OAuth « normal »",
+    "anchor": "section-5",
+    "before_heading_id": "section-6",
+    "questions": [
+      {
+        "mode": "single",
+        "stem": "Vous configurez un serveur MCP remote en HTTP/SSE avec OAuth 2.0 + PKCE + Dynamic Client Registration. Un consultant sécurité vous dit : « DCR ouvert, ça veut dire que n'importe qui peut s'enregistrer comme client — c'est un problème. » Quelle est la <em>meilleure</em> mitigation à mettre en face de ce risque ?",
+        "options": [
+          {
+            "text": "Désactiver DCR et passer en pre-registration manuelle de chaque client.",
+            "correct": false,
+            "explain": "Insuffisant pour MCP. Désactiver DCR casse l'ergonomie « <em>plug-and-play</em> » qui fait la valeur du protocole (un nouveau client Claude Desktop doit pouvoir s'inscrire sans intervention humaine). C'est un trade-off sécurité/UX que la spec automne 2026 résout avec DCR + scope-narrow + token court, pas en supprimant DCR."
+          },
+          {
+            "text": "DCR + tokens à durée de vie courte (≤ 15 min) avec <em>refresh rotation</em> systématique et <em>scope-narrow</em> par outil.",
+            "correct": true,
+            "explain": "Vrai. C'est exactement le combo recommandé par le §5 : DCR reste, mais on borne l'impact d'un client compromis. Token court → fenêtre d'attaque réduite. Refresh rotation → un refresh volé est invalidé après usage. Scope-narrow → un token leak ne donne accès qu'à un sous-ensemble d'outils, pas à toute la surface du serveur.",
+            "back_link": "↗ relire §5"
+          },
+          {
+            "text": "Ajouter un proxy entre le client et le serveur pour filtrer les requêtes suspectes.",
+            "correct": false,
+            "explain": "Faux pour ce risque précis. Un proxy ne change rien à DCR ouvert — l'attaquant légitime du point de vue du protocole continue à s'enregistrer normalement. Le proxy peut servir pour le rate limiting et l'audit (P9), mais ce n'est pas la défense structurelle contre DCR open registration."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "load-bearing",
+    "title": "Quels patterns défensifs sont vraiment <em>load-bearing</em> ?",
+    "anchor": "section-6",
+    "before_heading_id": "section-7",
+    "questions": [
+      {
+        "mode": "multi",
+        "stem": "Parmi les dix patterns de la matrice défensive, lesquels sont <em>load-bearing</em> — c'est-à-dire qu'on ne peut <em>pas</em> les remplacer par un cumul de patterns secondaires sans laisser un trou de couverture béant ? (Plusieurs réponses possibles.)",
+        "options": [
+          {
+            "text": "Signature Sigstore + hash pinning — pose la confiance à l'install plutôt qu'à l'audit.",
+            "correct": true,
+            "explain": "Vrai. P1 est le pivot structurel : il coupe la racine des familles A (TPA, rug pull, Unicode) et D (compromission upstream, dépendance transitive). Aucune combinaison runtime ne récupère un manifeste non signé après-coup.",
+            "back_link": "↗ relire §6"
+          },
+          {
+            "text": "Tool tagging au runtime (<code>read</code> / <code>write</code> / <code>external</code>) — dicte si un consent humain est requis.",
+            "correct": true,
+            "explain": "Vrai. P2 est ce qui fait fonctionner P4 (HITL) avec une friction supportable : sans tagging, soit on demande consent partout (UX explose), soit on ne demande nulle part (sécurité explose). Le tagging à l'install est la clé de voûte de la blast radius."
+          },
+          {
+            "text": "Allowlist namespace par serveur — élimine la famille C.",
+            "correct": true,
+            "explain": "Vrai. P3 supprime mécaniquement les namespace collisions et le tool shadowing. Cursor 0.45 l'a normalisé en imposant le préfixe serveur en mars 2026. Aucun pattern secondaire ne rattrape un shadowing si le préfixage n'est pas obligatoire."
+          },
+          {
+            "text": "Human-in-the-loop sur les <em>write</em> tools.",
+            "correct": true,
+            "explain": "Vrai. P4 est la défense ultime contre la famille B (cross-document injection) : un agent ne peut pas exfiltrer ou écrire à l'extérieur sans confirmation humaine explicite. C'est le mur final, qui prend le relais quand tout le reste a été contourné — au prix de la fluidité UX."
+          },
+          {
+            "text": "Audit log OTel standardisé (P8).",
+            "correct": false,
+            "explain": "Faux. P8 est un pattern <em>détectif</em> (defense-in-depth) précieux pour le post-mortem et la forensique, mais il n'<em>empêche</em> aucune attaque. Sans P1-P4 en amont, OTel ne fait que documenter le désastre — il ne le prévient pas."
+          },
+          {
+            "text": "Sandbox processus (P5, capabilities Linux restreintes).",
+            "correct": false,
+            "explain": "Faux. P5 limite la blast radius si un serveur compromis tente d'<em>exécuter</em> du code arbitraire au-delà de son scope déclaré — mais il ne défend pas contre une TPA qui détourne un outil <em>légitime</em>. C'est un filet de sécurité, pas un load-bearing."
+          }
+        ]
+      }
+    ]
+  }
+]
