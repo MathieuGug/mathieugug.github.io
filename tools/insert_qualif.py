@@ -308,8 +308,13 @@ ASIDE_RECAP_RE = re.compile(
 
 
 def heading_pos(html_src: str, heading_id: str) -> int:
-    """Retourne la position du <h2|h3 id="..."> dans html_src, ou -1."""
-    pat = re.compile(rf'<h[23] id="{re.escape(heading_id)}"[^>]*>')
+    """Retourne la position du <h2|h3|section id="..."> dans html_src, ou -1.
+
+    Accepte les deux conventions d'anchor utilisées dans le repo :
+    - `<h2 id="...">` (cas `analytics-agentique-gcp/`)
+    - `<section id="...">` (cas `surfaces-agentiques/`)
+    """
+    pat = re.compile(rf'<(?:h[23]|section) id="{re.escape(heading_id)}"[^>]*>')
     m = pat.search(html_src)
     return m.start() if m else -1
 
