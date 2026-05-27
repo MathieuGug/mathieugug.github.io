@@ -193,7 +193,7 @@ Trois observations transversales :
 
 ## 6. La surface d'attaque cachée
 
-[SCHEMA-06]
+![Le cycle d'attaque memory poisoning persistant à travers la compaction|1200](images/20260527-06-cycle-attaque.svg)
 
 ### 6.1 Le cycle d'attaque
 
