@@ -173,7 +173,7 @@ Le constat opérationnel est qu'**aucune équipe en 2026 ne peut viser les trois
 
 ## 5. Compaction en production
 
-[SCHEMA-05]
+![Matrice production : 5 produits × 4 dimensions|1200](images/20260527-05-matrice-production.svg)
 
 | Produit | Stratégie dominante | Trigger | Latence ajoutée | Oubliabilité |
 |---|---|---|---|---|
