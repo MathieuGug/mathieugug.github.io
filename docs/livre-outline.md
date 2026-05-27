@@ -43,6 +43,35 @@ Pour chaque chapitre du livre, on précise :
 7. **Piège classique** (un risque concret, traçable).
 8. **Sortie lecteur** : ce que la personne doit pouvoir faire après lecture.
 
+### 0.4 Type et calibrage des schémas — infographies A4 / A3
+
+Le livre **ne reprend pas** les ~200 schémas SVG produits sur le site. Il sélectionne et produit deux catégories d'**infographies imprimables** :
+
+| Catégorie | Format | Rôle | Quantité cible |
+| --- | --- | --- | --- |
+| **Récap chapitre** | A4 portrait (210×297 mm) en page de droite finale, ou A3 paysage double-page (420×297 mm) quand le schéma est dense (matrices, taxonomies à plus de 6 entrées) | Un par chapitre — synthèse de la matière. Le lecteur qui ne mémorise que cette page doit avoir la grille mentale du chapitre. | ~11 (un par chapitre standard + charnière) |
+| **Essentiels transverses** | A3 paysage double-page (sauf 1 cas portrait) | À connaître à tout prix, cité 2 à 4 fois dans le livre. Réunis dans un cahier central « 6 schémas pour tout retenir » qui peut être détaché / affiché. | ~6 |
+
+**Règle de fabrication** :
+- Toute infographie A3 doit pouvoir s'imprimer A4 par moitié sans perte critique (pour les versions de poche). Conséquence : pas de typographie sous 9 pt sur la maquette A3, pas d'élément critique qui chevauche le pli central.
+- Encres : palette du site (`--bg #faf6ec`, `--accent #b8582e`, `--carmine`, `--teal`, neutres) ; pas de gradient ; pas d'image bitmap.
+- Anchors `fig-NN` zero-padded (cohérent avec le repo) + caption avec lien direct depuis le livre web.
+- Source-de-vérité SVG dans le repo, export PDF/PNG haute résolution pour l'impression.
+
+Les schémas du livre **remplacent** parfois les schémas dossier source par une version fusionnée/recadrée (cf. annexe A). Les schémas non retenus pour le livre restent en ligne sur leur page d'origine — le livre n'est pas une encyclopédie, c'est une carte.
+
+### 0.5 Gabarits de longueur
+
+Trois gabarits d'écriture, à signaler en tête de chaque chapitre dans le manuscrit :
+
+| Gabarit | Pages cibles | Compte de mots | Usage |
+| --- | --- | --- | --- |
+| **Court / encart** | 8-12 | 2 500-4 000 | Bordures, contreforts, ouvertures. Ch. 1, 6, 8, 16-encart, 20, 25-encart, 26-narrative. |
+| **Standard** | 16-24 | 5 000-8 000 | La majorité des chapitres. Une thèse, 3-4 sections, 1 récap. |
+| **Charnière** | 28-40 | 10 000-14 000 | Chapitres-pivots qui fusionnent 3+ dossiers. Ch. 7 (boucle), 11 (orchestration), 17 (éval+benchmarks), 21 (ROI). |
+
+Total visé : ~440 pages corps + ~40 pages annexes = **~480 pages**. C'est un livre dense d'expert, pas un livre de transition.
+
 ---
 
 ## 1. Carte des 28 dossiers — clusters thématiques
@@ -122,7 +151,7 @@ Avant le plan détaillé, voici les **huit clusters** qui structurent la matièr
 
 ---
 
-## 2. Le squelette — 4 actes, ~22 chapitres
+## 2. Le squelette — 4 actes, 25 chapitres
 
 Vue d'avion. Le détail chapitre par chapitre suit en §3.
 
@@ -572,28 +601,152 @@ Chaque pari est documenté dans le dossier source (avec date d'observation), ave
 
 ---
 
-## 4. Annexes
+## 4. Vérification d'anatomie : exhaustivité, pertinence, actionnabilité
 
-### Annexe A — Schémas à fusionner (synthèse tabulaire)
+Trois passes de contrôle de l'outline avant d'engager la rédaction.
 
-| # | Schéma final (à produire) | Chapitre | Schémas source à fusionner / aligner | Note |
+### 4.1 Exhaustivité — les 28 dossiers sont-ils tous absorbés ?
+
+✓ Vérifié dossier par dossier. Tableau de couverture :
+
+| # | Dossier | Date | Absorbé en | Statut |
 | --- | --- | --- | --- | --- |
-| A1 | Boucle Reason · Act · Observe canonique + variantes | Ch. 7 | `anatomie/` 01, `harness-agentique/` (GAN 3 agents), `agent-sdk/` (gather/act/verify), `coding-agents/` | Une seule référence ; les variantes en figures dérivées avec citation. |
-| A2 | Capability vs Cost — second axe de scaling | Ch. 2/5 | `modeles-raisonnement/` (pivot o1) + `economie-inference/` (LLMflation) | Double-vue capability/cost sur même axe temps. |
-| A3 | 8 patterns canoniques d'orchestration | Ch. 11 | `orchestration-agentique/` (8 patterns) + `anatomie/` couche 04 (6 patterns Anthropic) | Garder le 8 (orchestration), souligner les 6 Anthropic en sous-encart. |
-| A4 | Threat model unifié 2026 | Ch. 19 (+ renvois Ch. 10, 13, 15) | `mcp-securite/` (10×10), `llm-jailbreaking/`, `compaction-agentique/` (SpAIware), `agents-computer-use/` (CVE/VPI), `memoire-agentique/` (MITRE ATLAS) | Schéma signature pour RSSI. À créer (n'existe pas dans le corpus actuel). |
-| A5 | Triangle fidélité × coût × oubliabilité | Ch. 10 | `compaction-agentique/` (existant) | Tel quel, schéma signature. |
-| A6 | Pile 7 couches d'optimisation inference | Ch. 5 | `economie-inference/` (existant) | Tel quel ; à citer en Ch. 22 sur les leviers frugaux. |
-| A7 | Playbook gruyère 8 étapes | Ch. 17 (+ Ch. 18, 19) | `evaluation-agentique/` `fig-10` (vérifier slug exact) | Schéma signature de l'Acte IV. |
-| A8 | 4 vecteurs de contamination benchmarks | Ch. 17 | `benchmarks-contestes/` (existant) | En regard du gruyère. |
-| A9 | Productivity J-curve vs LLMflation | Ch. 21 | `measure-roi/` + `economie-inference/` | Double-page « facture qui baisse vs valeur qui monte lentement ». |
-| A10 | 3 trajectoires énergétiques 2030 | Ch. 22 | `ia-frugale/` (existant) | Tel quel ; à mettre en regard de A6. |
-| A11 | 4 régimes d'accès + levels of autonomy Knight | Ch. 14 (+ renvois Ch. 11, 15, 23) | `surfaces-agentiques/` | Grille de cadrage transverse. |
-| A12 | Trinité protocoles MCP × A2A × AG-UI | Ch. 12 | `surfaces-agentiques/` + `mcp-plateforme/` | À unifier en un schéma de référence. |
-| A13 | 4 piliers mémoire × 5 architectures prod | Ch. 9 | `memoire-agentique/` (existant) + matrice prod `compaction-agentique/` | Page facing. |
-| A14 | Comparatif PRM vs LLM-as-judge vs human eval | Ch. 3 | À créer à partir de `process-reward-models/` + `evaluation-agentique/` | 3 lignes × 5 colonnes (coût, scalabilité, biais, fidélité, cas d'usage). |
-| A15 | 4 stades de maturité fabrique agent | Ch. 11 (sous-section équipe) | `fabrique-agent/` | Tel quel. |
-| A16 | Arbre de décision buy/build agent | Annexe (renvoi Ch. 11) | `orchestration-agentique/` | Annexe consultative. |
+| 1 | `anatomie/` | 14 mai | Squelette transverse (E1) + Ch. 1, 7, 8, 11, 18, 19, 20, 23 | ✓ os du livre |
+| 2 | `agent-sdk/` | 18 mai | Ch. 7 (boucle) + Ch. 20 (managed) | ✓ |
+| 3 | `agents-computer-use/` | 02 mai | Ch. 15 (chapitre dédié) | ✓ |
+| 4 | `analytics-agentique-gcp/` | 19 mai | Ch. 16 (chapitre dédié sectoriel) + renvoi Ch. 23 | ✓ |
+| 5 | `benchmarks-contestes/` | 15 mai | Ch. 17 (dyade avec eval) | ✓ |
+| 6 | `coding-agents/` | 12 mai | Ch. 7 sous-section + pyramide d'usage en encart | ⚠ voir §4.2 |
+| 7 | `compaction-agentique/` | 27 mai | Ch. 10 (chapitre dédié) + renvois Ch. 9, 18, 19, 23 | ✓ |
+| 8 | `decode-speculative/` | 22 mai | Ch. 4 (chapitre dédié) | ✓ |
+| 9 | `economie-inference/` | 05 mai | Ch. 5 (chapitre dédié) + E2 schéma le plus cité | ✓ |
+| 10 | `evaluation-agentique/` | 01 mai | Ch. 17 (dyade avec benchmarks) | ✓ |
+| 11 | `fabrique-agent/` | 15 mai | Ch. 11 sous-section équipe | ✓ |
+| 12 | `gouvernance/` | 21 avr | Ch. 23 (chapitre dédié) | ✓ |
+| 13 | `harness-agentique/` | 29 avr | Ch. 7 (charnière) | ✓ |
+| 14 | `ia-et-travail/` | 06 mai | Ch. 24 (chapitre dédié contrefort) | ✓ |
+| 15 | `ia-frugale/` | 13 mai | Ch. 22 (chapitre dédié) | ✓ |
+| 16 | `llm-jailbreaking/` | 28 avr | Ch. 19 (chapitre dédié sécurité globale) | ✓ |
+| 17 | `mcp-plateforme/` | 08 mai | Ch. 12 (dyade avec sécurité) | ✓ |
+| 18 | `mcp-securite/` | 20 mai | Ch. 13 (dyade avec plateforme) | ✓ |
+| 19 | `measure-roi/` | 07 mai | Ch. 21 (charnière) | ✓ |
+| 20 | `memoire-agentique/` | 30 avr | Ch. 9 (chapitre dédié) | ✓ |
+| 21 | `modeles-raisonnement/` | 06 mai | Ch. 2 (chapitre dédié) | ✓ |
+| 22 | `narrative-experiences/` | 05 mai | Encart fin Ch. 16 | ⚠ voir §4.2 |
+| 23 | `observabilite-agents-ia/` | 30 avr | Ch. 18 (chapitre dédié) | ✓ |
+| 24 | `orchestration-agentique/` | 27 mai | Ch. 11 (charnière) + E6 arbre buy/build | ✓ |
+| 25 | `proces-musk-altman/` | 27 avr | Ch. 25 (chapitre dédié contrefort) | ✓ |
+| 26 | `process-reward-models/` | 13 mai | Ch. 3 (chapitre dédié) | ✓ |
+| 27 | `surfaces-agentiques/` | 18 mai | Ch. 14 (chapitre dédié) | ✓ |
+| 28 | `world-models/` | 05 mai | Ch. 6 encart (bordure Acte I) | ⚠ voir §4.2 |
+
+**Conclusion** : 25/28 en chapitre plein, 3/28 en encart court (`coding-agents` partiel, `narrative-experiences`, `world-models`) — couverture **exhaustive** ; aucune perte de matière.
+
+### 4.2 Pertinence — les regroupements résistent-ils à la critique ?
+
+Trois zones de friction identifiées, à arbitrer **avant** la rédaction :
+
+**Friction 1 — `coding-agents` noyé en Ch. 7**
+Le dossier ne décrit pas que le harness du code ; il propose aussi une **pyramide d'usage 4 étages** (transverse / data quotidien / data expert / produit-décideurs) qui est un outil d'adoption à part entière. Le mettre en sous-section du Ch. 7 (boucle) gomme cet angle.
+Options :
+- **(a)** Garder en Ch. 7 sous-section + encart dédié à la pyramide d'usage. **Coût** : la pyramide perd en visibilité.
+- **(b)** Promouvoir en Ch. 7bis « Coding agents en pratique » (gabarit court, 10-12 p). **Coût** : un chapitre de plus, déséquilibre Acte II.
+- **(c)** Déplacer la pyramide d'usage en encart d'ouverture du livre (Prologue ou Ch. 1), traiter le reste en Ch. 7. **Coût** : décale le lecteur dès l'ouverture vers le cas code.
+
+Recommandation : **(a)** — pyramide d'usage en encart dédié + renvoi croisé Ch. 11 (orchestration → équipe → adoption).
+
+**Friction 2 — Ch. 13 (sécurité MCP) vs Ch. 19 (sécurité globale)**
+Risque de chevauchement matériel. Le Ch. 13 traite la **surface MCP** (10×10 matrice) ; le Ch. 19 reprend en **synthèse transverse** + OWASP ASI Top 10 + jailbreaking historique.
+Distinction à tenir strictement dans la rédaction :
+- Ch. 13 = matrice spécifique au protocole (R7), 4 patterns load-bearing nommés.
+- Ch. 19 = grille générale + threat model unifié (E4) + asymétrie attaque/défense.
+- **Règle d'écriture** : tout ce qui relève de MCP spécifiquement reste en Ch. 13, et **n'est pas redit** en Ch. 19 (renvoi seulement). Inversement, tout ce qui transcende MCP reste en Ch. 19.
+
+Recommandation : conserver la dyade, **noter en marge** de chaque chapitre la frontière éditoriale.
+
+**Friction 3 — Ch. 16 (analytics banque) vs Ch. 23 (gouvernance)**
+Le Ch. 16 traite déjà de l'AI Act + DORA + ACPR sur le cas banque française ; le Ch. 23 généralise.
+Distinction à tenir :
+- Ch. 16 = instanciation **sectorielle** (banque tier 1 française : DORA + EBA + ACPR + BCBS 239 + souveraineté Assured Workloads).
+- Ch. 23 = grille **réglementaire générale** (calendrier 2026-2027, machine unlearning, rôle DPO/RSSI/Sponsor).
+- **Règle d'écriture** : pas de redite des articles AI Act dans les deux chapitres ; le Ch. 23 traite le cadre, le Ch. 16 montre une application.
+
+Recommandation : conserver, **frontière claire**.
+
+### 4.3 Actionnabilité — un rédacteur peut-il s'y mettre tout de suite ?
+
+Pour chaque chapitre, le rédacteur doit pouvoir attaquer en 30 minutes. Check-list de complétude :
+
+| Critère | Présent dans l'outline | Action restante |
+| --- | --- | --- |
+| Dossier(s) source identifié(s) avec URL | ✓ (§3 chapitre par chapitre + annexe C) | — |
+| Concepts qui s'approfondissent ailleurs | ✓ (renvois Ch. X.Y) | — |
+| Schémas à fusionner / créer | ✓ (annexe A reclassée R/E A4P/A3L) | — |
+| Longueur cible | ✓ (§0.5 gabarits + indication par chapitre) | — |
+| Lecteur cible | ✓ (en-tête d'acte + tableau §0.2) | — |
+| Concepts canoniques vs renvois | ✓ (signalés explicitement) | — |
+| Piège classique | ✓ (un par chapitre) | — |
+| Sortie lecteur | ⚠ pas tous les chapitres | À compléter avant rédaction |
+| Sources premium à citer | ✗ | À extraire des dossiers source (regex `<li id="source-`) avant rédaction |
+
+**Action restante avant rédaction** :
+1. Pour chaque chapitre, ajouter la « sortie lecteur » manquante (1 phrase).
+2. Générer pour chaque chapitre la liste consolidée des sources (extraction automatique des `<li id="source-N">` des dossiers absorbés, dédoublonnée par DOI/URL).
+3. Trancher friction 1 (coding-agents) — recommandation (a).
+4. Acter les 9 schémas à créer ex nihilo / fusionner lourdement et leur budget (E3, E4, E5, R1, R6, R14, R15, R16, R18) — le total représente ~25 jours de travail SVG sur le seul livrable visuel.
+
+---
+
+## 5. Annexes
+
+### Annexe A — Schémas à fusionner ou créer
+
+Deux registres : **R** = récap chapitre (1 par chapitre) ; **E** = essentiel transverse (cahier central, cité 2-4 fois dans le livre).
+
+#### A.1 Essentiels transverses (E) — cahier central « 6 schémas pour tout retenir »
+
+| # | Schéma final | Format | Cité en | Source à fusionner | Note |
+| --- | --- | --- | --- | --- | --- |
+| **E1** | **Anatomie en 10 anneaux concentriques** | A3 paysage (déplié central) | Ouverture livre + renvois 4× | `anatomie/livre-schemas.js` schéma principal | Repris **tel quel**, c'est l'os du livre. Page de garde / dépliable. |
+| **E2** | **Pile 7 couches d'optimisation inference** | A3 paysage | Ch. 5 (principal), Ch. 22 (leviers frugaux), Ch. 21 (économie) | `economie-inference/` schéma 7-couches | Tel quel. Schéma le plus densément cité du livre. |
+| **E3** | **Capability vs Cost — second axe de scaling** | A4 portrait | Ch. 2 (principal), Ch. 5, Ch. 17 | `modeles-raisonnement/` (o1 pivot) + `economie-inference/` (LLMflation) | **À créer** par fusion : double-vue capabilities / coût sur axe temps 2020-2026. |
+| **E4** | **Threat model unifié 2026** (modèle / prompt / mémoire / outil / protocole / surface) | A3 paysage | Ch. 19 (principal), Ch. 10, 13, 15 | `mcp-securite/` (10×10), `llm-jailbreaking/`, `compaction-agentique/` (SpAIware), `agents-computer-use/` (CVE/VPI), `memoire-agentique/` (MITRE ATLAS) | **À créer** — n'existe pas dans le corpus. Schéma signature pour RSSI. Coûteux à produire (~4-6 j de travail SVG + revue sécurité). |
+| **E5** | **Comparatif PRM vs LLM-as-judge vs human eval** (3 lignes × 5 colonnes coût/scalabilité/biais/fidélité/cas d'usage) | A4 portrait | Ch. 3 (principal), Ch. 17 | `process-reward-models/` + `evaluation-agentique/` | **À créer** par fusion. Pivot du chapitre éval. |
+| **E6** | **Arbre de décision buy/build agent** | A3 paysage | Annexe consultative + renvois Ch. 11, 20 | `orchestration-agentique/` arbre buy/build | Tel quel, recadré pour impression. |
+
+#### A.2 Récaps chapitre (R) — un par chapitre standard/charnière
+
+| # | Récap | Format | Chapitre | Source | Note |
+| --- | --- | --- | --- | --- | --- |
+| R1 | Boucle Reason · Act · Observe canonique + 3 variantes (harness GAN, gather/act/verify, coding loop) | A3 paysage | Ch. 7 (charnière) | `anatomie/` 01, `harness-agentique/` (GAN 3 agents), `agent-sdk/` (gather/act/verify), `coding-agents/` | **À créer** par fusion. Une référence canonique + variantes dérivées en encarts latéraux. |
+| R2 | 4 piliers mémoire × 6 opérations × 5 architectures prod | A3 paysage | Ch. 9 | `memoire-agentique/` + matrice prod `compaction-agentique/` | Fusion de la grille existante + matrice prod. |
+| R3 | Triangle fidélité × coût × oubliabilité + 5 familles de compaction | A4 portrait | Ch. 10 | `compaction-agentique/` | Tel quel + légende détaillée. |
+| R4 | 8 patterns canoniques d'orchestration (Anthropic 6 + supervisor-workers + hierarchical + peer-to-peer) | A3 paysage | Ch. 11 (charnière) | `orchestration-agentique/` + `anatomie/` couche 04 | Tel quel ; sous-encart pour les 6 patterns Anthropic. |
+| R5 | 4 stades de maturité fabrique agent + 10 artefacts partagés | A4 portrait | Ch. 11 sous-section équipe | `fabrique-agent/` | Tel quel. |
+| R6 | Trinité protocoles MCP × A2A × AG-UI + layering avec function calling / OpenAPI | A4 portrait | Ch. 12 | `surfaces-agentiques/` + `mcp-plateforme/` | **À unifier** en un seul schéma de référence. |
+| R7 | Matrice défensive MCP 10×10 (vecteurs × patterns) | A3 paysage | Ch. 13 | `mcp-securite/` | Tel quel. |
+| R8 | 4 régimes d'accès + levels of autonomy (Knight) + graduated trust (Anthropic) | A3 paysage | Ch. 14 (+ renvois Ch. 11, 15, 23) | `surfaces-agentiques/` | Grille de cadrage transverse. À recadrer A3. |
+| R9 | Boucle computer use observe·plan·ground·act·verify + 3 architectures | A4 portrait | Ch. 15 | `agents-computer-use/` | Tel quel ; renvoyer à R1 pour la boucle générique. |
+| R10 | 3 surfaces analytics agentique × pile semantic layer | A4 portrait | Ch. 16 | `analytics-agentique-gcp/` | Tel quel, recadré sectoriel. |
+| R11 | Playbook gruyère 8 étapes (Build → Run → Govern) | A3 paysage | Ch. 17 (charnière, principal) + renvois Ch. 18, 19 | `evaluation-agentique/` fig gruyère | Tel quel — schéma signature de l'Acte IV. |
+| R12 | 4 vecteurs de contamination benchmarks publics | A4 portrait | Ch. 17 | `benchmarks-contestes/` | En page facing du gruyère. |
+| R13 | 6 piliers télémétrie OTel GenAI + cognitive audit trail | A3 paysage | Ch. 18 | `observabilite-agents-ia/` | Fusion 6 piliers + cognitive audit trail en un schéma. |
+| R14 | OWASP ASI Top 10 + asymétrie attaque/défense | A4 portrait | Ch. 19 | `llm-jailbreaking/` + OWASP ASI dec 2025 | À créer. En complément de E4 (threat model unifié). |
+| R15 | Vendor landscape runtimes managés (5 vendeurs × 8 dimensions) | A4 portrait | Ch. 20 | `orchestration-agentique/` matrice ADK + `agent-sdk/` managed | À créer par fusion. |
+| R16 | Productivity J-curve × LLMflation × paradoxe agentique | A3 paysage | Ch. 21 (charnière) | `measure-roi/` + `economie-inference/` | **À créer** : double-page « facture qui baisse vs valeur qui monte lentement ». |
+| R17 | 3 trajectoires énergétiques 2030 (laissez-faire / efficience / plafond) | A3 paysage | Ch. 22 | `ia-frugale/` | Tel quel. |
+| R18 | Calendrier réglementaire 2026-2027 (AI Act + DORA + RGPD + AAIF) | A4 portrait | Ch. 23 | À créer à partir de `gouvernance/`, `analytics-agentique-gcp/`, `compaction-agentique/`, `mcp-securite/` | Frise temporelle synthétique. |
+| R19 | 4 scénarios IA et travail 2035 + 6 leviers anti-catastrophe | A4 portrait | Ch. 24 | `ia-et-travail/` | Tel quel. |
+
+#### A.3 Bilan de production
+
+| Type | Nombre | Tel quel (recadrage léger) | À fusionner | À créer ex nihilo |
+| --- | --- | --- | --- | --- |
+| Essentiels (E) | 6 | 2 (E1, E2, E6) | 1 (E3) | 3 (E3 fusion, E4, E5) |
+| Récaps (R) | 19 | 9 | 8 | 6 (R1, R6, R14, R15, R16, R18) — dont 2 par fusion lourde |
+| **Total** | **25** | 11 | 9 | ~9 |
+
+**Schémas les plus coûteux à produire** : E4 (threat model unifié — ~4-6 jours SVG + revue sécurité externe), E3 et R16 (les deux double-vue capability/cost et J-curve/LLMflation — ~2-3 jours chacun).
 
 ### Annexe B — Glossaire (extension de `livre-data.js CONCEPT_DEFS`)
 
@@ -623,7 +776,7 @@ Exemple :
 
 ---
 
-## 5. Risques d'écriture identifiés
+## 6. Risques d'écriture identifiés
 
 À garder en tête pendant la rédaction du manuscrit :
 
@@ -636,7 +789,7 @@ Exemple :
 
 ---
 
-## 6. Prochain pas (suggestion)
+## 7. Prochain pas (suggestion)
 
 1. **Valider la structure 4-actes + 25 chapitres**. Si ajustement (fusionner/séparer un chapitre), corriger l'outline avant de partir en rédaction.
 2. **Acter la liste des schémas A1-A16** : lesquels sont à reprendre tels quels, lesquels à fusionner, lesquels à créer. Le schéma **A4 (threat model unifié)** est probablement le plus coûteux à produire et le plus utile au lecteur RSSI.
