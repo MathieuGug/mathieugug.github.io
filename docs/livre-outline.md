@@ -43,22 +43,30 @@ Pour chaque chapitre du livre, on précise :
 7. **Piège classique** (un risque concret, traçable).
 8. **Sortie lecteur** : ce que la personne doit pouvoir faire après lecture.
 
-### 0.4 Type et calibrage des schémas — infographies A4 / A3
+### 0.4 Type et calibrage des schémas
 
-Le livre **ne reprend pas** les ~200 schémas SVG produits sur le site. Il sélectionne et produit deux catégories d'**infographies imprimables** :
+**Principe directeur** : toute thèse importante du livre est reprise visuellement quelque part — pas de mur de texte sans appui graphique. Le corpus du site fournit déjà ~200 schémas SVG ; le livre s'appuie dessus massivement après **audit + fusion**.
 
-| Catégorie | Format | Rôle | Quantité cible |
+Trois registres de schémas dans le livre :
+
+| Catégorie | Format | Rôle | Quantité estimée |
 | --- | --- | --- | --- |
-| **Récap chapitre** | A4 portrait (210×297 mm) en page de droite finale, ou A3 paysage double-page (420×297 mm) quand le schéma est dense (matrices, taxonomies à plus de 6 entrées) | Un par chapitre — synthèse de la matière. Le lecteur qui ne mémorise que cette page doit avoir la grille mentale du chapitre. | ~11 (un par chapitre standard + charnière) |
-| **Essentiels transverses** | A3 paysage double-page (sauf 1 cas portrait) | À connaître à tout prix, cité 2 à 4 fois dans le livre. Réunis dans un cahier central « 6 schémas pour tout retenir » qui peut être détaché / affiché. | ~6 |
+| **Schémas au fil du texte (S)** | Variable : inline ½-page, pleine page, ou bandeau ¼ de page selon densité. Tous formats portrait. | Visualisent **les thèses au moment où elles tombent**. Repris des dossiers source avec recadrage léger ; certains fusionnent 2-3 figures voisines. C'est le gros du volume graphique. | ~60-90 (à déterminer par l'audit, cf. ci-dessous) |
+| **Récap chapitre (R)** | A4 portrait (210×297 mm) en page de droite finale du chapitre, ou A3 paysage double-page (420×297 mm) quand le schéma est dense (matrices, taxonomies à plus de 6 entrées) | Un par chapitre standard + charnière — synthèse mentale. Le lecteur qui ne mémorise que cette page doit avoir la grille du chapitre. | ~19 |
+| **Essentiels transverses (E)** | A3 paysage double-page (sauf 1 cas portrait) | À connaître à tout prix, cités 2 à 4 fois dans le livre. Réunis dans un cahier central « 6 schémas pour tout retenir » qui peut être détaché / affiché. | ~6 |
+
+**Démarche : audit puis fusion**.
+
+1. **Audit** des ~200 schémas existants (passe par dossier) : pour chaque schéma, on tague (a) le chapitre du livre où il s'insère, (b) sa catégorie cible (S / R / E / écarté), (c) le statut (tel quel / recadrer / fusionner avec X / refaire). Livrable : un index CSV `audit-schemas.csv` à la racine de `docs/` avec colonnes `dossier, fig_id, titre, chapitre, categorie, statut, notes`.
+2. **Fusion** : passe par chapitre où on identifie les doublons (ex. boucle ReAct illustrée dans 5 dossiers → on garde 1 référence canonique + 3 variantes en encarts latéraux). La fusion est ce qui produit les schémas R et E listés en annexe A.
+3. **Sélection finale** : les schémas S restants après audit/fusion sont intégrés au fil du texte ; ceux qui n'ont pas trouvé leur place restent **en ligne** sur leur dossier d'origine (le livre n'est pas une encyclopédie, c'est une carte).
 
 **Règle de fabrication** :
 - Toute infographie A3 doit pouvoir s'imprimer A4 par moitié sans perte critique (pour les versions de poche). Conséquence : pas de typographie sous 9 pt sur la maquette A3, pas d'élément critique qui chevauche le pli central.
+- Schémas S au fil du texte : largeur max 145 mm (zone de texte A4), hauteur libre, légende encadrée sous le schéma avec renvoi vers la source dossier.
 - Encres : palette du site (`--bg #faf6ec`, `--accent #b8582e`, `--carmine`, `--teal`, neutres) ; pas de gradient ; pas d'image bitmap.
 - Anchors `fig-NN` zero-padded (cohérent avec le repo) + caption avec lien direct depuis le livre web.
 - Source-de-vérité SVG dans le repo, export PDF/PNG haute résolution pour l'impression.
-
-Les schémas du livre **remplacent** parfois les schémas dossier source par une version fusionnée/recadrée (cf. annexe A). Les schémas non retenus pour le livre restent en ligne sur leur page d'origine — le livre n'est pas une encyclopédie, c'est une carte.
 
 ### 0.5 Gabarits de longueur
 
@@ -690,18 +698,21 @@ Pour chaque chapitre, le rédacteur doit pouvoir attaquer en 30 minutes. Check-l
 | Sources premium à citer | ✗ | À extraire des dossiers source (regex `<li id="source-`) avant rédaction |
 
 **Action restante avant rédaction** :
-1. Pour chaque chapitre, ajouter la « sortie lecteur » manquante (1 phrase).
-2. Générer pour chaque chapitre la liste consolidée des sources (extraction automatique des `<li id="source-N">` des dossiers absorbés, dédoublonnée par DOI/URL).
-3. Trancher friction 1 (coding-agents) — recommandation (a).
-4. Acter les 9 schémas à créer ex nihilo / fusionner lourdement et leur budget (E3, E4, E5, R1, R6, R14, R15, R16, R18) — le total représente ~25 jours de travail SVG sur le seul livrable visuel.
+1. **Audit des ~200 schémas existants** (livrable préalable, ~3 j) : tagger chaque schéma par chapitre cible, catégorie (S/R/E/écarté), statut (tel quel / recadrer / fusionner / refaire). Sortie : `docs/audit-schemas.csv`.
+2. Pour chaque chapitre, ajouter la « sortie lecteur » manquante (1 phrase).
+3. Générer pour chaque chapitre la liste consolidée des sources (extraction automatique des `<li id="source-N">` des dossiers absorbés, dédoublonnée par DOI/URL).
+4. Trancher friction 1 (coding-agents) — recommandation (a).
+5. Acter les 9 schémas R/E à créer ex nihilo / fusionner lourdement et leur budget (E3, E4, E5, R1, R6, R14, R15, R16, R18) — le total représente ~25 jours de travail SVG sur le seul livrable visuel R+E. Le budget S vient en plus, dépendant du volume retenu après audit.
 
 ---
 
 ## 5. Annexes
 
-### Annexe A — Schémas à fusionner ou créer
+### Annexe A — Audit, fusion, schémas R et E
 
-Deux registres : **R** = récap chapitre (1 par chapitre) ; **E** = essentiel transverse (cahier central, cité 2-4 fois dans le livre).
+Trois registres (cf. §0.4) : **S** = schémas au fil du texte (le gros du volume, à déterminer par audit) ; **R** = récap chapitre (1 par chapitre) ; **E** = essentiel transverse (cahier central, cité 2-4 fois dans le livre).
+
+L'annexe ci-dessous détaille seulement **R et E** — les S sortent de l'audit des ~200 schémas existants (cf. §0.4 démarche). L'audit est un livrable préalable à la rédaction.
 
 #### A.1 Essentiels transverses (E) — cahier central « 6 schémas pour tout retenir »
 
@@ -740,13 +751,16 @@ Deux registres : **R** = récap chapitre (1 par chapitre) ; **E** = essentiel tr
 
 #### A.3 Bilan de production
 
-| Type | Nombre | Tel quel (recadrage léger) | À fusionner | À créer ex nihilo |
+| Type | Nombre estimé | Tel quel (recadrage léger) | À fusionner | À créer ex nihilo |
 | --- | --- | --- | --- | --- |
-| Essentiels (E) | 6 | 2 (E1, E2, E6) | 1 (E3) | 3 (E3 fusion, E4, E5) |
+| Schémas fil-du-texte (S) | ~60-90 (audit) | majoritairement | quelques-uns | rarement |
 | Récaps (R) | 19 | 9 | 8 | 6 (R1, R6, R14, R15, R16, R18) — dont 2 par fusion lourde |
-| **Total** | **25** | 11 | 9 | ~9 |
+| Essentiels (E) | 6 | 2 (E1, E2, E6) | 1 (E3) | 3 (E3 fusion, E4, E5) |
+| **Total R+E** | **25** | 11 | 9 | ~9 |
 
 **Schémas les plus coûteux à produire** : E4 (threat model unifié — ~4-6 jours SVG + revue sécurité externe), E3 et R16 (les deux double-vue capability/cost et J-curve/LLMflation — ~2-3 jours chacun).
+
+**Pour les S** : le coût n'est pas dans la création mais dans l'**audit + recadrage** (~3 j pour la passe complète + ~5-10 j de recadrage selon volume retenu).
 
 ### Annexe B — Glossaire (extension de `livre-data.js CONCEPT_DEFS`)
 
@@ -792,6 +806,7 @@ Exemple :
 ## 7. Prochain pas (suggestion)
 
 1. **Valider la structure 4-actes + 25 chapitres**. Si ajustement (fusionner/séparer un chapitre), corriger l'outline avant de partir en rédaction.
-2. **Acter la liste des schémas A1-A16** : lesquels sont à reprendre tels quels, lesquels à fusionner, lesquels à créer. Le schéma **A4 (threat model unifié)** est probablement le plus coûteux à produire et le plus utile au lecteur RSSI.
-3. **Choisir le format de sortie** : livre print PDF (style `anatomie/livre-print.html`), livre web interactif (style `anatomie/livre.html` avec navigation au clavier), ou les deux. Implique un budget de mise en page différent.
-4. **Décider du calendrier de gel des contenus évolutifs** (procès, MCP v2, AI Act art. 15) — date d'arrêt-image dans le manuscrit, avec renvoi URL pour le vivant.
+2. **Lancer l'audit des ~200 schémas existants** (livrable `docs/audit-schemas.csv` — ~3 j). C'est le prérequis pour décider du volume S/R/E final et budgéter la production graphique. Sans audit, le bilan §A.3 reste indicatif.
+3. **Acter la liste des schémas R/E à fusionner ou créer** (annexe A, registres R et E) : 25 schémas dont ~9 lourds. Le schéma **E4 (threat model unifié)** est le plus coûteux et le plus utile au lecteur RSSI.
+4. **Choisir le format de sortie** : livre print PDF (style `anatomie/livre-print.html`), livre web interactif (style `anatomie/livre.html` avec navigation au clavier), ou les deux. Implique un budget de mise en page différent.
+5. **Décider du calendrier de gel des contenus évolutifs** (procès, MCP v2, AI Act art. 15) — date d'arrêt-image dans le manuscrit, avec renvoi URL pour le vivant.
