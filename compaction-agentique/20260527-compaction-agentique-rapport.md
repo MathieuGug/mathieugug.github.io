@@ -86,7 +86,7 @@ C'est cette explicitation de la policy qui permet le *A/B test* de compactors di
 
 ## 3. Cinq familles de stratégies
 
-[SCHEMA-03]
+![Cinq familles de stratégies de compaction|1200](images/20260527-03-cinq-familles.svg)
 
 ### 3.1 LLM-summarization
 
