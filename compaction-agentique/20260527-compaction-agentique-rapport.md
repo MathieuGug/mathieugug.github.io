@@ -242,7 +242,7 @@ L'**AI Act**[^12] (Règlement UE 2024/1689) ajoute une dimension : son **article
 
 ## 8. Horizon 2026-2028
 
-[SCHEMA-07]
+![Horizon 2026-2028 : trois trajectoires, un point de convergence|1200](images/20260527-07-horizon.svg)
 
 Trois trajectoires se dessinent et convergent vers la même contrainte : **rendre la compaction observable, contrôlable, et juridiquement défendable**.
 
