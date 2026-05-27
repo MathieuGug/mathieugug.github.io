@@ -9,9 +9,9 @@ Journal de production du livre (28 dossiers → 25 chapitres). Voir [`livre-outl
 | | Statut | Note |
 | --- | --- | --- |
 | Outline | ✅ v0 mergé (PR #127) | 4 actes, 25 chapitres, 3 catégories de schémas (S/R/E) |
-| Audit schémas | 🟡 partiel | Ch.7 + Ch.10 faits — les 26 autres en attente |
-| Manuscrit | 🟡 2/25 | **Ch.7 charnière : v1 livrée** + **Ch.10 standard : v1 livrée** |
-| Schémas R/E à produire | ⏳ | E4 (threat model), E3 (capability×cost), E5 (PRM comparatif), R1 (boucle ReAct + 3 variantes — récap Ch.7 traité par réutilisation, à refaire en fusion si édition print) — pas démarré |
+| Audit schémas | 🟡 partiel | Ch.7 + Ch.10 + Ch.11 faits — les 25 autres en attente |
+| Manuscrit | 🟡 3/25 | **Ch.7 charnière : v1 livrée** + **Ch.10 standard : v1 livrée** + **Ch.11 standard : v1 livrée** |
+| Schémas R/E à produire | ⏳ | E4 (threat model), E3 (capability×cost), E5 (PRM comparatif), R1 (boucle ReAct + 3 variantes — Ch.7 traité par réutilisation), R4 (8 patterns canoniques — Ch.11 traité par réutilisation de `patterns-canoniques.svg` tel quel), R5 (fabrique 4 stades — Ch.11 traité par tableau markdown faute de schéma fabrique-12 satisfaisant en gabarit récap) — pas démarré pour les schémas E |
 | Bugs SVG corrigés | ✅ 1 | `cinq-familles.svg` (balise XML malformée) |
 | Rendu print/web | ⏳ | non décidé |
 
@@ -242,6 +242,216 @@ Variété des `> [!TYPE]` Obsidian retenus :
 
 ---
 
+## Chapitre 11 — Patterns canoniques et orchestration multi-agents
+
+> **Acte II — La boucle · Gabarit standard 16-24 p · ~6 500 mots**
+> **Lecteur cible** : agent engineer, tech lead, architecte, sponsor IA.
+> **Sortie lecteur** : connaît les 4 régimes de contrôle et sait à quel moment basculer du workflow vers l'agent autonome ; maîtrise les 8 patterns canoniques (5 workflows Anthropic + 3 topologies multi-agents) ; distingue les 3 couches du stack (ADK / runtime / plateforme) et sait que « on utilise Bedrock » ne dit rien tant qu'on n'a pas précisé les briques ; reconnaît les 5 problèmes durs qui font crasher les agents en prod ; peut dérouler l'arbre buy/build à 4 questions ; et sait qu'une fabrique d'équipe en 4 stades × 10 artefacts est ce qui sépare 5 % de projets qui livrent des 95 % qui restent en pilote (MIT NANDA).
+
+### Statut
+
+| Étape | Statut |
+| --- | --- |
+| Audit schémas source (3 dossiers) | ✅ fait (cf. §Audit ci-dessous) |
+| Plan détaillé | ✅ fait |
+| Manuscrit | ✅ **v1 livrée** — `docs/livre/ch11-patterns-orchestration.md` (≈ 6 500 mots, 14 encadrés, 8 schémas intégrés) |
+| Schémas à créer | 0 v1 (R4 « 8 patterns canoniques » traité par réutilisation tel quel de `orchestration-04-patterns-canoniques.svg` ; R5 « fabrique 4 stades » traité par tableau markdown — le schéma `fabrique-12-recap-10x4.svg` reste optionnel pour le récap dédié si édition print l'exige) |
+| Frontière Ch.7 ↔ Ch.11 | ✅ respectée — Ch.7 garde le pattern GAN 3-agents (§7.4) ; Ch.11 déroule la taxonomie complète des 8 patterns et cite §7.4 comme cas particulier d'evaluator-optimizer enrichi d'un planner |
+| Renvois inter-chapitres | ✅ Ch. 5 (économie token), Ch. 7 (boucle, pattern GAN, RBAC), Ch. 9 (mémoire), Ch. 10 (compaction), Ch. 12 (MCP plateforme), Ch. 13 (MCP sécurité), Ch. 14 (surfaces + Knight levels), Ch. 15 (computer use / browser tool), Ch. 17 (eval pass^k), Ch. 18 (observabilité), Ch. 19 (threat model E4), Ch. 20 (runtime managé), Ch. 21 (ROI Klarna second usage), Ch. 24 (IA et travail réallocation) |
+
+### Sources matérielles
+
+Le Ch.11 est une **charnière à 3 dossiers**, ancré dans le dossier le plus récent de la série (`orchestration-agentique/` mergé via PR #126 le 27 mai 2026, source principale) qui structure les huit patterns, les quatre régimes, le stack en trois couches, les cinq problèmes durs et l'arbre buy/build. La couche fabrique d'équipe vient de `fabrique-agent/`. L'absorbé `anatomie/` couche 04 fournit les définitions canoniques.
+
+- **Dossier principal — [`orchestration-agentique/`](../orchestration-agentique/)** (27 mai 2026, dossier #28) — épine du chapitre : 4 régimes (§3), 8 patterns canoniques (§4), stack ADK/runtime/plateforme (§5), cartographie 2026 (§6), 5 problèmes prod (§7), arbre de décision buy/build (§8).
+  - [Rapport (.md, ~6 500 mots)](../orchestration-agentique/20260527-orchestration-agentique-rapport.md) · [App interactive](../orchestration-agentique/20260527-orchestration-agentique-app.html)
+  - 8 schémas SVG dans [`images/`](../orchestration-agentique/images/) — **tous** intégrés en Ch.11 (taux d'absorption maximal du corpus).
+- **Dossier sous-chapitre équipe — [`fabrique-agent/`](../fabrique-agent/)** (15 mai 2026, étude #21) — 4 stades de maturité (Prototype · Pilote · Production · Mature multi-agents) × 10 artefacts partagés, 5 cellules pivots.
+  - [Rapport (.md, ~14 000 mots)](../fabrique-agent/20260515-fabrique-agent-rapport.md) · [App interactive](../fabrique-agent/20260515-fabrique-agent-app.html)
+  - 13 schémas SVG dans [`images/`](../fabrique-agent/images/) — pas absorbés visuellement (le tableau §11.8.1 condense, fidèle à la discipline anti-mur-de-schéma)
+- **Source méta — [`anatomie/`](../anatomie/)** (14 mai 2026) — anneau 04 (patterns) de `livre-data.js`. Définitions canoniques mobilisées textuellement, pas de schéma autonome extrait.
+
+### Audit des schémas — Ch.11
+
+Au total, **21 schémas SVG** dans les 3 dossiers source. Classement S (au fil du texte Ch.11) / R (récap chapitre) / Ch.X (assigné à un autre chapitre) / écarté.
+
+#### Schémas du dossier `orchestration-agentique/` (8 — tous absorbés)
+
+| Fig | Slug | Aperçu | Catégorie Ch.11 | Statut |
+| --- | --- | --- | --- | --- |
+| 01 | [`shift-chat-systeme`](../orchestration-agentique/images/20260527-01-shift-chat-systeme.svg) | ![](../orchestration-agentique/images/20260527-01-shift-chat-systeme.svg) | **S §11.1.2** | tel quel — frise 2023→2026 qui pose le motif du chapitre |
+| 02 | [`anatomie-boucle`](../orchestration-agentique/images/20260527-02-anatomie-boucle.svg) | ![](../orchestration-agentique/images/20260527-02-anatomie-boucle.svg) | **S §11.2** | tel quel — 4 phases + 4 ressources + orchestrateur enveloppant |
+| 03 | [`spectre-controle`](../orchestration-agentique/images/20260527-03-spectre-controle.svg) | ![](../orchestration-agentique/images/20260527-03-spectre-controle.svg) | **S §11.3 + Récap §11.9** | tel quel — schéma signature du chapitre, utilisé **2×** |
+| 04 | [`patterns-canoniques`](../orchestration-agentique/images/20260527-04-patterns-canoniques.svg) | ![](../orchestration-agentique/images/20260527-04-patterns-canoniques.svg) | **R4 §11.4** | tel quel — couvre la bibliothèque des 8 patterns sans gap. Le R4 de l'outline (annexe A.2) est ainsi rempli sans fusion lourde. |
+| 05 | [`stack-trois-couches`](../orchestration-agentique/images/20260527-05-stack-trois-couches.svg) | ![](../orchestration-agentique/images/20260527-05-stack-trois-couches.svg) | **S §11.5** | tel quel — ADK / runtime / plateforme |
+| 06 | [`cartographie-2026`](../orchestration-agentique/images/20260527-06-cartographie-2026.svg) | ![](../orchestration-agentique/images/20260527-06-cartographie-2026.svg) | **S §11.5.4** | tel quel — 4 bandes + 2 protocoles |
+| 07 | [`problemes-prod`](../orchestration-agentique/images/20260527-07-problemes-prod.svg) | ![](../orchestration-agentique/images/20260527-07-problemes-prod.svg) | **S §11.6** | tel quel — 5 problèmes durs, ancrés en symptôme / signal / parade |
+| 08 | [`arbre-decision`](../orchestration-agentique/images/20260527-08-arbre-decision.svg) | ![](../orchestration-agentique/images/20260527-08-arbre-decision.svg) | **S §11.7 (+ E6 outline)** | tel quel — arbre 4 questions. C'est aussi le schéma essentiel transverse **E6** de l'outline, cité ici en source et à recadrer si l'annexe consultative print le réclame. |
+
+#### Schémas du dossier `fabrique-agent/` (13, aucun absorbé visuellement)
+
+Les 13 schémas de `fabrique-agent/` (atelier par stade, recap 10×4, ROI cards, etc.) sont **tous écartés** du Ch.11 v1 — non par jugement de qualité, mais par discipline éditoriale. Le chapitre Ch.11 est standard (16-24 p), il a déjà 8 schémas intégrés (tous d'`orchestration-agentique/`), et la matière fabrique est condensée en §11.8 par un **tableau markdown 4 stades × artefacts naissants** qui suffit à porter la thèse sans alourdir. Si une édition print exige un schéma de récap dédié à la fabrique (équivalent du R5 listé en annexe A.2 de l'outline), `fabrique-12-recap-10x4.svg` est le candidat naturel ; sa réutilisation en Ch.11 reste possible à coût zéro.
+
+Détail de classification pour mémoire (et pour le Ch.11 qui ne les absorbe pas) :
+
+| Fig | Slug | Catégorie | Note |
+| --- | --- | --- | --- |
+| 01 | `oignon-fabrique` | écarté Ch.11 | superposition oignon / fabrique — appartient à l'ouverture du livre ou au prologue |
+| 02-04, 07, 10 | `atelier-prototype` / `atelier-pilote` / `atelier-production` / `atelier-mature` | écarté Ch.11 | scènes d'atelier par stade — appartiennent à un éventuel sous-chapitre dédié `fabrique-agent` |
+| 05 | `testcase-anatomie` | **Ch.17** | format TestCase = (Persona × Quest × Environment) → Expected Outcome — appartient au chapitre éval |
+| 06 | `vallee-de-la-mort` | **Ch.21** | 95 %/70 % POC qui meurent — ROI/économie |
+| 08 | `gruyere-suisse` | **Ch.17** | Anthropic 5 couches d'évaluation — appartient au chapitre éval (renvoyé déjà via `agent-sdk ref-2` au Ch.7) |
+| 09 | `obo-vs-autonome` | **Ch.13/Ch.19/Ch.23** | régimes d'identité — sécurité MCP / threat model / gouvernance |
+| 11 | `coala-cycle` | **Ch.9** | 4 piliers CoALA + 6 opérations — appartient au chapitre mémoire |
+| 12 | `recap-10x4` | candidat **R5 Ch.11** (édition print) | matrice 10 artefacts × 4 stades — réservée pour récap fabrique si gabarit print le réclame. v1 du Ch.11 fait sans, par tableau markdown. |
+| 13 | `roi-cards` | **Ch.21** | 5 axes × 3 temporalités = 15 ROI cards — appartient au chapitre ROI |
+
+#### Schémas du dossier `anatomie/` (couche 04 patterns)
+
+Les anneaux concentriques de `livre.html` (rendus par `livre-render.js` à partir de `LAYERS` dans `livre-data.js`) ne sont pas exportés en SVG indépendants. La couche 04 (patterns) fournit en revanche la **discipline éditoriale** : c'est elle qui pose le principe que la taxonomie des 6 patterns Schluntz-Zhang est canonique et qu'elle s'étend en multi-agent par 3 topologies. Aucune image directement réutilisable — la matière est dans le SVG `orchestration-04-patterns-canoniques` qui couvre les 8 patterns en une bibliothèque visuelle.
+
+### Redondances et complémentarités entre les 3 dossiers
+
+**2 redondances majeures identifiées, déduplications opérées dans le chapitre :**
+
+| Sujet | `orchestration-agentique` | `fabrique-agent` | `anatomie` 04 | Décision Ch.11 |
+| --- | --- | --- | --- | --- |
+| **Boucle agentique 4 phases** | SCHÉMA 02 anatomie-boucle (perceive·decide·act·observe + 4 ressources) | TAOR mentionnée comme couche 01 de l'oignon | ReAct dans `livre-data.js` LAYERS[1] | **Définition canonique = Ch.7 §7.3** (déjà acquise). Ch.11 §11.2 réutilise le schéma 02 pour rappeler les 4 ressources sous l'angle « ce qu'on orchestre exactement », sans redécrire la mécanique. Pas de doublon vrai parce que l'angle change (orchestration vs harness). |
+| **8 patterns Anthropic + multi-agents** | SCHÉMA 04 patterns-canoniques (la bibliothèque complète) | non couvert visuellement | 6 patterns Schluntz-Zhang dans anneau 04 | **Définition canonique = Ch.11 §11.4** (objet propre du chapitre). Le Ch.7 a explicitement repoussé en Ch.11 (cf. son audit). Le Ch.11 cite §7.4 (pattern GAN à 3 agents) comme cas particulier d'evaluator-optimizer enrichi d'un planner, sans refaire la narration. |
+
+**Complémentarités assumées (pas de doublon vrai) :**
+
+| Apport unique du dossier | À conserver pour le Ch.11 |
+| --- | --- |
+| `orchestration-agentique` | 4 régimes de contrôle (§3) ; 8 patterns canoniques (§4) ; stack 3 couches ADK / runtime / plateforme (§5) ; cartographie 2026 4 bandes + 2 protocoles (§6) ; 5 problèmes durs en prod (§7) ; arbre de décision buy/build 4 questions (§8). C'est **le** dossier qui structure l'ensemble. |
+| `fabrique-agent` | Discipline « la maturité se lit dans les artefacts, pas dans le code » + 4 stades + 10 artefacts + 5 cellules pivots + chiffres MIT NANDA (95 %) / consensus POC (70 %). **L'angle équipe** que `orchestration-agentique` n'a pas. |
+| `anatomie/livre-data.js` couche 04 | Définitions canoniques des 6 patterns Schluntz-Zhang, risques par couche, rôles par couche. Sert de référence amont, pas d'absorption directe. |
+
+**Cohérence avec la frontière posée par Ch.7** : le Ch.7 a repoussé explicitement en Ch.11 (a) les 8 patterns canoniques, (b) l'arbre de décision buy/build, (c) la cartographie des 4 régimes étendue. Le Ch.7 garde (i) le principe `start simple` Schluntz-Zhang, (ii) le pattern GAN à 3 agents comme cas particulier traité en détail §7.4. Le Ch.11 respecte cette frontière sans la franchir : §11.4.1 mentionne le pattern à 3 agents comme cas particulier d'evaluator-optimizer + planner, renvoie au Ch.7 §7.4 pour l'économie et la narration, et ne refait pas le schéma `harness-02-boucle-gan.svg` (qui reste signature du Ch.7).
+
+**1 absence notable, non bloquante** : pas de **schéma fusionné R5** (matrice 4 stades fabrique × 10 artefacts). L'outline (annexe A.2) le liste comme « tel quel à partir de `fabrique-12-recap-10x4.svg` ». **Décision v1** : couvert par tableau markdown §11.8.1, plus condensé qu'un schéma 10 colonnes × 4 lignes qui demanderait une double-page A3 pour rester lisible. Si l'édition print réclame un récap visuel dédié, `fabrique-12-recap-10x4.svg` est le candidat naturel et son coût d'intégration est nul (réutilisation tel quel).
+
+### Plan détaillé du chapitre
+
+```
+> [!QUESTION] Question d'ouverture
+  Si plus de la moitié des projets multi-agents reviennent en workflow routé
+  en 6 mois (sans perte de qualité, ×10 facture, debug lisible),
+  à quel moment bascule-t-on dans le multi-agent — et qui pilote la boucle ?
+
+> [!TLDR] TL;DR décideur (6 bullets)
+
+§11.1  Pourquoi un chapitre dédié aux patterns
+       ├─ §11.1.1 La place de ce chapitre dans l'Acte II
+       │  └─ encadré [!INFO] Voir Ch.7 (boucle / pattern GAN)
+       └─ §11.1.2 Le glissement 2023 → 2026
+          └─ [SVG S] orchestration-01-shift-chat-systeme.svg
+
+§11.2  Ce qu'on orchestre exactement
+       ├─ [SVG S] orchestration-02-anatomie-boucle.svg
+       ├─ 4 ressources + 5 questions par tour
+       └─ encadré [!NOTE] La distinction workflow vs agent (Anthropic)
+
+§11.3  Quatre régimes de contrôle
+       ├─ [SVG S] orchestration-03-spectre-controle.svg
+       ├─ §11.3.1 Code-driven (workflow)
+       ├─ §11.3.2 LLM-driven (routines + handoffs) — OpenAI Swarm
+       │  └─ encadré [!EXAMPLE] signature minimale handoff Agents SDK
+       ├─ §11.3.3 Graphe déclaratif — LangGraph
+       └─ §11.3.4 Agent autonome (boucle libre)
+          └─ encadré [!ATTENTION] Recommandation Anthropic — réserver l'autonomie
+
+§11.4  Les huit patterns canoniques
+       ├─ [SVG R4] orchestration-04-patterns-canoniques.svg
+       ├─ §11.4.1 Cinq workflows Anthropic
+       │  └─ encadré [!INFO] Voir Ch.7 §7.4 — pattern à 3 agents
+       ├─ §11.4.2 Trois topologies multi-agents
+       ├─ encadré [!IMPORTANT] La maxime non-écrite — on compose
+       └─ encadré [!INFO] Voir Ch.14 (surfaces + Knight levels)
+
+§11.5  Le stack en trois couches — ADK ≠ runtime ≠ plateforme
+       ├─ [SVG S] orchestration-05-stack-trois-couches.svg
+       ├─ §11.5.1 Couche 1 — ADK (tableau 7 ADK)
+       ├─ §11.5.2 Couche 2 — Runtime
+       │  └─ encadré [!INFO] Voir Ch.20 (runtime managé)
+       ├─ §11.5.3 Couche 3 — Services de plateforme (6 briques AgentCore)
+       └─ §11.5.4 Cartographie 2026 — 4 bandes + 2 protocoles
+          ├─ [SVG S] orchestration-06-cartographie-2026.svg
+          └─ encadré [!INFO] Voir Ch.12 et Ch.13 (MCP plateforme + sécurité)
+
+§11.6  Les cinq problèmes durs en prod
+       ├─ [SVG S] orchestration-07-problemes-prod.svg
+       ├─ §11.6.1 Mémoire et contexte (renvoi Ch.9, Ch.10)
+       ├─ §11.6.2 Observabilité (renvoi Ch.18)
+       ├─ §11.6.3 Sécurité (renvoi Ch.7 §7.5.4, Ch.13, Ch.19)
+       ├─ §11.6.4 Idempotence et retry
+       ├─ §11.6.5 Coût et amplification de tokens (renvoi Ch.10)
+       └─ encadré [!WARNING] La cascade d'erreurs en multi-agents
+
+§11.7  L'arbre de décision — produit, ADK + runtime, ou tout construire ?
+       ├─ [SVG S] orchestration-08-arbre-decision.svg
+       ├─ §11.7.1 Q1 — Cas d'usage standard ?
+       │  └─ encadré [!QUOTE] L'angle Klarna — deux lectures, deux chapitres
+       ├─ §11.7.2 Q2 — Workflow + besoin prod ?
+       ├─ §11.7.3 Q3 — Spécificité forte + SRE ?
+       ├─ §11.7.4 Q4 — Contraintes uniques ?
+       ├─ §11.7.5 Si toutes les réponses sont « non »
+       └─ §11.7.6 Trois signaux de migration
+
+§11.8  La fabrique d'équipe — quatre stades, dix artefacts
+       ├─ §11.8.1 Quatre stades (tableau markdown)
+       │  └─ encadré [!IMPORTANT] La maturité d'une fabrique se lit
+       │     dans ses artefacts
+       └─ §11.8.2 Cinq cellules pivots (Entra Agent ID, memory_hit_rate,
+          pass^k, OBO vs Autonome, réallocation)
+
+§11.9  Récap chapitre — Quatre régimes, huit patterns, trois couches,
+       un arbre
+       └─ [SVG R] orchestration-03-spectre-controle.svg (réutilisé en récap
+          — c'est le schéma qui articule tout le reste)
+
+> [!WARNING] Trois pièges classiques (les trois sont 100 % traçables)
+  Multi-agent prématuré · mal nommer la zone du stack · sauter le stade 3
+  pour aller direct au stade 4
+
+Sources (22 footnotes : 3 dossiers + Anthropic Building Effective Agents
+        + OpenAI Cookbook/Agents SDK + AWS AgentCore + Google ADK +
+        MS Agent Framework + Stellagent A2A + Knowlee + GuruSup + Morph +
+        Claude Code docs + Sierra + Mem0 + Braintrust + OWASP ASI +
+        GitHub Engineering multi-agent failures + Klarna press/post-mortem)
+```
+
+### Encadrés prévus dans le chapitre
+
+Variété des `> [!TYPE]` Obsidian retenus :
+
+| Type | Usage | Compte |
+| --- | --- | --- |
+| `[!QUESTION]` | Ouverture chapitre | 1 |
+| `[!TLDR]` | Synthèse décideur 6 bullets | 1 |
+| `[!INFO]` | Renvois inter-chapitres (Ch.7, 12+13, 14, 20) | 4 |
+| `[!NOTE]` | Distinction workflow vs agent (maxime Anthropic) | 1 |
+| `[!EXAMPLE]` | Code pseudo-Python (signature handoff Agents SDK) | 1 |
+| `[!ATTENTION]` | Recommandation Anthropic — réserver l'autonomie | 1 |
+| `[!IMPORTANT]` | La maxime "on compose" + La maturité des artefacts | 2 |
+| `[!QUOTE]` | L'angle Klarna — deux lectures, deux chapitres (anticipe Ch.21) | 1 |
+| `[!WARNING]` | Cascade d'erreurs multi-agents + Trois pièges classiques clôture | 2 |
+| **Total** | | **14** |
+
+### Tâches restantes Ch.11
+
+- [x] Rédiger le manuscrit `docs/livre/ch11-patterns-orchestration.md` (~6 500 mots)
+- [x] Audit des 21 schémas SVG des 3 dossiers source (8 absorbés sur 8 d'`orchestration-agentique` ; 0 sur 13 absorbés visuellement de `fabrique-agent` mais 6 réassignés à d'autres chapitres)
+- [ ] Relecture Mathieu — passes critiques suggérées :
+  - **(a) La frontière Ch.7 ↔ Ch.11** : vérifier que §11.4.1 (mention pattern à 3 agents comme cas particulier d'evaluator-optimizer) renvoie correctement au Ch.7 §7.4 sans rejouer l'économie 9 $/200 $ ni redécrire la mécanique. Statut v1 : renvoi unique sans répétition.
+  - **(b) La fabrique d'équipe §11.8** : choix éditorial fort — table markdown plutôt que `fabrique-12-recap-10x4.svg`. Risque : sous-représentation visuelle du sous-chapitre. Alternative : insérer le schéma en récap dédié si édition print l'exige, ou créer un sous-chapitre `fabrique-agent` autonome (cf. friction 1 outline §4.2).
+  - **(c) Le récap §11.9** : décision de réutiliser `orchestration-03-spectre-controle.svg` plutôt que `orchestration-04-patterns-canoniques.svg`. Justification : le spectre articule tout le reste (régimes → patterns → stack → problèmes → arbre) alors que le schéma 04 est une bibliothèque. Si Mathieu préfère le 04, swap trivial.
+  - **(d) L'angle Klarna §11.7.1** : double usage explicite avec Ch.21 (ROI). Vérifier que les deux lectures restent complémentaires, pas redondantes.
+  - **(e) La frontière Ch.11 ↔ Ch.20** : §11.5.2 (runtime) introduit AgentCore Runtime, Vertex Agent Engine, Foundry Service. Le Ch.20 dédié va creuser la matrice vendor. À ne pas refaire en Ch.20 — règle d'écriture posée.
+- [ ] Si validation : copier-coller la matière vers le futur format de sortie (print HTML / PDF) quand décidé
+
+---
+
 ## Chapitre 10 — Compaction et oubli stratégique
 
 > **Acte II — La boucle · Gabarit standard 16-24 p · ~5 500-6 500 mots**
@@ -414,7 +624,7 @@ Variété des `> [!TYPE]` Obsidian retenus :
 
 ### Tâches restantes globales livre
 
-- [ ] Auditer les 24 dossiers restants (priorité : `evaluation-agentique` Ch.17, `economie-inference` Ch.5, `modeles-raisonnement` Ch.2, `mcp-plateforme` + `mcp-securite` Ch.12-13)
+- [ ] Auditer les 22 dossiers restants (priorité : `evaluation-agentique` Ch.17, `economie-inference` Ch.5, `modeles-raisonnement` Ch.2, `mcp-plateforme` + `mcp-securite` Ch.12-13)
 - [ ] Créer le schéma E4 (threat model unifié 2026) — ~4-6 jours, schéma le plus coûteux
 - [ ] Créer E3 (capability × cost) et R16 (J-curve × LLMflation) — ~2-3 j chacun
 - [ ] Créer R1 (boucle ReAct canonique + 3 variantes) si édition print le demande — ~3-5 j (v1 du Ch.7 fait sans, par superposition textuelle)
