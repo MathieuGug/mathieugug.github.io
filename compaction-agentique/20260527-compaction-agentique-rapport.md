@@ -14,7 +14,7 @@
 - **La surface d'attaque cachée est la *persistance* du payload à travers la compaction.** Une injection introduite à l'étape *t* peut survivre au résumé fait à *t+10* (l'instruction malveillante est paraphrasée mais préservée comme « intention de l'utilisateur ») puis ressurgir à *t+20* dans un nouveau prompt[^10][^11]. Les filtres input/output classiques ne voient rien : l'attaque traverse le compactor.
 - **==L'observabilité agentique 2026 ignore largement le compactor.==** Les bus OpenTelemetry GenAI semconv loggent les `tool_call`, `model_response`, `token_count`, mais rarement le *delta* (`tokens_dropped`, `compaction_ratio`, `summary_hash`). On audite ce que l'agent a fait, pas ce qu'il a choisi d'oublier. C'est le prochain pilier de la télémétrie production.
 
-[SCHEMA-01]
+![Le mur de la fenêtre : pourquoi 1 M tokens ne suffit pas|1200](images/20260527-01-mur-fenetre.svg)
 
 ---
 
