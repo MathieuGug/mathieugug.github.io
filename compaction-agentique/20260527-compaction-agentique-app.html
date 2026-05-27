@@ -1,0 +1,1672 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#faf6ec">
+  <title>Compaction agentique et oubli sélectif — compaction-agentique · dossier</title>
+  <meta name="description" content="Pourquoi 1 M tokens ne suffit pas. Cinq familles de stratégies, le triangle fidélité × coût × oubliabilité, et la surface d'attaque cachée du compactor.">
+  <!-- og:start -->
+<meta name="author" content="Mathieu Guglielmino">
+<link rel="canonical" href="https://mathieugug.github.io/surfaces-agentiques/20260518-surfaces-agentiques-app.html">
+<meta name="keywords" content="IA agentique, Mathieu Guglielmino, agents IA, étude, surfaces, agentiques">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Mathieu Guglielmino">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:url" content="https://mathieugug.github.io/surfaces-agentiques/20260518-surfaces-agentiques-app.html">
+<meta property="og:title" content="Surfaces agentiques — surfaces-agentiques · étude">
+<meta property="og:description" content="Du chatbot au copilot on-behalf-of — comment l'utilisateur final accède à un agent.">
+<meta property="og:image" content="https://mathieugug.github.io/surfaces-agentiques/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Surfaces agentiques — surfaces-agentiques · étude — couverture social">
+<meta property="article:published_time" content="2026-05-18">
+<meta property="article:author" content="Mathieu Guglielmino">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Surfaces agentiques — surfaces-agentiques · étude">
+<meta name="twitter:description" content="Du chatbot au copilot on-behalf-of — comment l'utilisateur final accède à un agent.">
+<meta name="twitter:image" content="https://mathieugug.github.io/surfaces-agentiques/og.png">
+<script type="application/ld+json">
+{"@context": "https://schema.org","@type": "Article","headline": "Surfaces agentiques — surfaces-agentiques · étude","description": "Du chatbot au copilot on-behalf-of — comment l'utilisateur final accède à un agent.","image": "https://mathieugug.github.io/surfaces-agentiques/og.png","url": "https://mathieugug.github.io/surfaces-agentiques/20260518-surfaces-agentiques-app.html","datePublished": "2026-05-18","inLanguage": "fr-FR","author": {"@type": "Person","name": "Mathieu Guglielmino","url": "https://mathieugug.github.io/"},"publisher": {"@type": "Person","name": "Mathieu Guglielmino","url": "https://mathieugug.github.io/"}}
+</script>
+<!-- og:end -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/dossier-app.css">
+  <style>
+    :root {
+      --paper:    #faf6ec;
+      --paper-2:  #f3eedf;
+      --ink:      #1e1e2a;
+      --ink-mid:  #6b6f7c;
+      --ink-soft: #9a9ca5;
+      --carmine:  #a83e55;
+      --accent:   #b8582e;
+      --rule:     rgba(30,30,44,0.18);
+      --serif:    'Fraunces', serif;
+      --mono:     'JetBrains Mono', monospace;
+      --sans:     'Inter', system-ui, sans-serif;
+      --graphite: #6b6f7c;
+      --mist:     #9a9ca5;
+      --teal:     #1a5c6b;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; max-width: 100vw; overflow-x: clip; }
+    body { background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 1.65; -webkit-font-smoothing: antialiased; }
+
+    /* Interactive SVG regions (modals) */
+    .figure svg .interactive { cursor: pointer; transition: filter 140ms; }
+    .figure svg .interactive:focus { outline: none; }
+    .figure svg .interactive:hover rect, .figure svg .interactive:focus-visible rect,
+    .figure svg .interactive:hover circle, .figure svg .interactive:focus-visible circle {
+      stroke: var(--carmine); stroke-width: 2.5;
+    }
+    .figure svg .interactive:focus-visible { filter: drop-shadow(0 0 2px var(--carmine)); }
+
+    /* Topbar */
+    .topbar.scrolled { border-bottom-color: var(--rule); }
+    .topbar > a { font-family: var(--serif); font-weight: 500; font-size: 15.5px; letter-spacing: -0.01em; text-decoration: none; color: var(--ink); flex-shrink: 0; }
+    .topbar em { font-style: italic; color: var(--accent); }
+    .topbar .dossier-context { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase; opacity: 0.55; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px; flex-shrink: 1; min-width: 0; }
+    @media (max-width: 768px) { .topbar .dossier-context { display: none; } }
+    .topbar .back-nav { display: inline-flex; align-items: center; gap: 14px; flex-shrink: 0; }
+    .topbar .back-nav a { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--graphite); text-decoration: none; }
+    .topbar .back-nav a:hover { color: var(--accent); }
+    .topbar .back-sep { font-family: var(--mono); font-size: 9.5px; color: var(--graphite); user-select: none; }
+    @media (max-width: 560px) { .topbar > a { font-size: 13px; } .topbar .back-nav { gap: 10px; } .topbar .back-nav a { font-size: 9px; letter-spacing: 0.16em; } }
+    @media (max-width: 380px) { .topbar > a:first-child em { display: none; } }
+
+    /* Layout */
+    @media (min-width: 1025px) {
+      .layout.sources-collapsed { grid-template-columns: 240px minmax(0,1fr) 0; }
+      .layout.sources-collapsed #sources { transform: translateX(100%); opacity: 0; pointer-events: none; }
+    }
+    @media (max-width: 1024px) {
+      #toc, #sources { display: none; }
+      #toc.open, #sources.open { display: block; position: fixed; inset: 0; z-index: 90; background: var(--paper); overflow-y: auto; padding: 64px 24px 24px; }
+      #toc.open .panel-close, #sources.open .panel-close { display: inline-flex; align-items: center; gap: 6px; position: fixed; top: 16px; right: 16px; z-index: 91; background: var(--paper); border: 1px solid var(--rule); border-radius: 4px; padding: 8px 14px; font-family: var(--mono); font-size: 0.85rem; cursor: pointer; color: var(--ink); }
+      .quiz-card { padding: 14px 16px; margin: 1.6rem 0 2rem; }
+      .quiz-card__head { gap: 0.6rem; }
+      .quiz-card__title { flex-basis: 100%; overflow-wrap: break-word; }
+      .quiz-card__toggle { width: 100%; padding: 12px; min-height: 44px; font-size: 0.82rem; }
+      .quiz-q__check { width: 100%; padding: 12px; min-height: 44px; font-size: 0.82rem; }
+      .quiz-q__options li { padding: 10px 0; }
+      .quiz-q__options label { padding: 8px 0; min-height: 44px; align-items: center; }
+      .quiz-q__explain { margin: 0.5rem 0 0 0; padding: 10px 12px; }
+      .quiz-q__retry { padding: 10px 0; min-height: 44px; }
+
+    }
+    .panel-close { display: none; }
+
+    /* Header.site */
+    header.site { grid-column: 1 / -1; padding: 20px 32px; border-bottom: 1px solid var(--rule); display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+    header.site h1 { font-family: var(--serif); font-weight: 600; font-size: 1.3rem; margin: 0; letter-spacing: -0.01em; }
+    header.site h1 a { color: var(--ink); text-decoration: none; }
+    header.site h1 a:hover { color: var(--accent); }
+    .menu-toggle { background: none; border: 1px solid var(--rule); padding: 6px 12px; border-radius: 4px; cursor: pointer; font-family: var(--mono); font-size: 0.8rem; color: var(--ink); }
+    .menu-toggle:hover { background: var(--paper-2); }
+
+    /* TOC */
+    #toc { padding: 32px 24px; border-right: 1px solid var(--rule); position: sticky; top: 56px; align-self: start; height: calc(100vh - 56px); overflow-y: auto; }
+    #toc h2 { font-family: var(--mono); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--graphite); margin: 0 0 16px; }
+    #toc ol { list-style: none; padding: 0; margin: 0; counter-reset: toc-counter; }
+    #toc li { counter-increment: toc-counter; margin: 0 0 12px; font-size: 0.92rem; line-height: 1.4; }
+    #toc li::before { content: counter(toc-counter, decimal-leading-zero) "."; font-family: var(--mono); font-size: 0.78rem; color: var(--mist); margin-right: 8px; }
+    #toc a { color: var(--ink); text-decoration: none; border-bottom: 1px solid transparent; }
+    #toc a:hover, #toc a.active { color: var(--accent); border-bottom-color: currentColor; }
+
+    /* Main */
+    main#report { padding: 56px 48px 96px; min-width: 0; max-width: 760px; margin: 0 auto; width: 100%; }
+    main h1.report-title { font-family: var(--serif); font-weight: 600; font-size: 2.6rem; line-height: 1.1; letter-spacing: -0.025em; margin: 0 0 16px; }
+    main .lead { font-family: var(--serif); font-style: italic; font-size: 1.2rem; color: var(--graphite); line-height: 1.5; margin: 0 0 48px; padding-bottom: 24px; border-bottom: 1px solid var(--rule); }
+    .report-header { margin-bottom: 2rem; }
+    .report-header .eyebrow { font-family: var(--mono); font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 12px; }
+    main h2 { font-family: var(--serif); font-weight: 600; font-size: 1.55rem; letter-spacing: -0.01em; margin: 3.5rem 0 1rem; padding-bottom: 0.4rem; border-bottom: 1px solid var(--rule); }
+    main h2 .anchor { color: var(--mist); text-decoration: none; font-size: 1rem; margin-right: 6px; }
+    main h2 .anchor:hover { color: var(--accent); }
+    main h3 { font-family: var(--serif); font-weight: 600; font-size: 1.18rem; margin: 2rem 0 0.6rem; }
+    main p { margin: 0 0 1.1rem; }
+    main ul, main ol { margin: 0 0 1.1rem; padding-left: 1.4rem; }
+    main li { margin-bottom: 0.4rem; }
+    main blockquote { margin: 1.5rem 0; padding: 12px 20px; border-left: 3px solid var(--accent); background: var(--paper-2); font-style: italic; color: var(--graphite); }
+    main code { font-family: var(--mono); font-size: 0.88em; background: var(--paper-2); padding: 2px 5px; border-radius: 3px; overflow-wrap: anywhere; }
+    main pre { margin: 1.5rem 0; padding: 14px 16px; background: var(--paper-2); border-radius: 4px; overflow-x: auto; max-width: 100%; font-size: 0.85em; line-height: 1.5; -webkit-overflow-scrolling: touch; }
+    main pre code { background: transparent; padding: 0; border-radius: 0; font-size: 1em; overflow-wrap: normal; }
+    main mark { background: linear-gradient(transparent 58%, rgba(178,59,27,0.14) 58%); color: inherit; padding: 0 2px; }
+    main table { width: 100%; border-collapse: collapse; margin: 1.4rem 0; font-size: 0.92rem; }
+    main th, main td { padding: 8px 12px; border-bottom: 1px solid var(--rule); text-align: left; vertical-align: top; }
+    main th { font-family: var(--mono); font-size: 0.78rem; letter-spacing: 0.04em; color: var(--graphite); border-bottom: 1.5px solid var(--ink); }
+
+    /* Figure */
+    .figure { margin: 3rem 0; padding: 24px 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); position: relative; }
+    .figure svg { width: 100%; height: auto; display: block; margin: 0 auto; }
+    @media (min-width: 1025px) {
+      .figure { margin-left: calc(-1 * max(0px,(100vw - 1320px)/2 + 48px)); margin-right: calc(-1 * max(0px,(100vw - 1320px)/2 + 48px)); transition: margin-left 280ms ease, margin-right 280ms ease; padding-left: clamp(16px,3vw,48px); padding-right: clamp(16px,3vw,48px); border-radius: 0; }
+      .layout.sources-collapsed .figure { margin-left: calc(-1 * max(0px,(100vw - 904px)/2)); margin-right: calc(-1 * max(0px,(100vw - 904px)/2)); }
+      .figure-caption { max-width: 760px; margin-left: auto; margin-right: auto; padding: 0 48px; }
+    }
+    .figure-caption { font-size: 0.88rem; color: var(--graphite); font-style: italic; margin-top: 12px; padding: 0 8px; }
+    .figure svg .interactive { cursor: pointer; transition: filter 120ms; }
+    .figure svg .interactive:hover rect:not([fill="none"]), .figure svg .interactive:focus-visible rect:not([fill="none"]) { stroke: var(--accent); stroke-width: 2.5; }
+
+    /* Sources panel */
+    #sources { padding: 32px 24px; border-left: 1px solid var(--rule); background: var(--paper-2); position: sticky; top: 56px; align-self: start; height: calc(100vh - 56px); overflow-y: auto; transition: transform 280ms ease, opacity 200ms ease; }
+    #sources h2 { font-family: var(--mono); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--graphite); margin: 0 0 16px; }
+    #sources ol { list-style: none; padding: 0; margin: 0; }
+    #sources li { font-size: 0.82rem; line-height: 1.5; margin: 0 0 16px; padding: 12px 14px; border-radius: 4px; border: 1px solid transparent; transition: border-color 220ms, background 220ms; }
+    #sources li .cite-num { display: inline-block; font-family: var(--mono); font-size: 0.8rem; font-weight: 600; color: var(--accent); margin-right: 6px; }
+    #sources li a { display: inline-block; margin-top: 4px; color: var(--teal); text-decoration: none; font-size: 0.78rem; }
+    #sources li a:hover { text-decoration: underline; }
+    #sources li .accessed { display: block; margin-top: 4px; color: var(--mist); font-style: italic; font-size: 0.74rem; }
+    #sources li.highlight { background: var(--paper); border-color: var(--accent); }
+
+    sup.cite { font-family: var(--mono); font-size: 0.7em; }
+    sup.cite a { color: var(--accent); text-decoration: none; }
+    sup.cite a:hover { text-decoration: underline; }
+
+    #sources-block ol { list-style: decimal; padding-left: 1.4rem; }
+    #sources-block li { margin-bottom: 0.6rem; font-size: 0.9rem; }
+
+    .footer-disclosure { font-size: 0.78rem; color: var(--mist); font-style: italic; text-align: center; margin: 64px 0 24px; padding-top: 24px; border-top: 1px solid var(--rule); }
+
+    /* Mobile */
+    @media (max-width: 1024px) {
+      header.site { padding: 14px 16px; gap: 10px; }
+      header.site h1 { font-size: 1.05rem; min-width: 0; overflow-wrap: break-word; word-break: break-word; }
+      main#report { padding: 28px 18px 56px; max-width: 100%; min-width: 0; }
+      main h1.report-title { font-size: 1.8rem; word-break: break-word; }
+      main .lead { font-size: 1.02rem; }
+      main h2 { font-size: 1.25rem; word-break: break-word; }
+      main h3 { font-size: 1.05rem; word-break: break-word; }
+      .figure { margin: 2rem 0; padding: 16px 0; max-width: 100%; overflow: hidden; }
+      .figure svg { width: 100%; max-width: 100%; height: auto; }
+      main code { overflow-wrap: anywhere; }
+      main table { display: block; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      main th, main td { white-space: normal; }
+      html, body { max-width: 100vw; }
+    }
+    @media print { #toc, #sources, #modal-root, #zoom-overlay, .menu-toggle { display: none; } main#report { max-width: none; padding: 0; } .figure { page-break-inside: avoid; } }
+  
+    /* === quiz cards (vérification de compréhension) === */
+    .quiz-card { margin: 2rem 0 2.4rem; padding: 18px 22px; background: var(--paper-2); border-left: 3px solid var(--carmine); border-radius: 2px; }
+    .quiz-card__head { display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap; }
+    .quiz-card__eyebrow { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--graphite); flex-basis: 100%; margin: 0 0 0.25rem; }
+    .quiz-card__title { font-family: var(--serif); font-size: 1.05rem; font-weight: 600; margin: 0; flex: 1 1 auto; color: var(--ink); }
+    .quiz-card__toggle { font-family: var(--mono); font-size: 0.78rem; letter-spacing: 0.06em; background: transparent; border: 1px solid var(--mist); color: var(--ink); padding: 6px 14px; border-radius: 2px; cursor: pointer; transition: color .15s, border-color .15s; }
+    .quiz-card__toggle:hover, .quiz-card__toggle:focus-visible { color: var(--carmine); border-color: var(--carmine); outline: none; }
+    .quiz-card__body { margin-top: 1.2rem; padding-top: 1rem; border-top: 1px dashed var(--rule); }
+    .quiz-card__body[hidden] { display: none; }
+    .quiz-q { margin: 0; padding: 0; }
+    .quiz-q + .quiz-q { margin-top: 1.6rem; padding-top: 1.6rem; border-top: 1px dashed var(--rule); }
+    .quiz-q fieldset { border: 0; padding: 0; margin: 0; }
+    .quiz-q__stem { font-family: var(--serif); font-size: 1rem; font-weight: 600; color: var(--ink); padding: 0; margin: 0 0 0.9rem; }
+    .quiz-q__options { list-style: none; padding: 0; margin: 0 0 1rem; }
+    .quiz-q__options li { margin: 0; padding: 8px 0; border-top: 1px solid var(--rule); }
+    .quiz-q__options li:last-child { border-bottom: 1px solid var(--rule); }
+    .quiz-q__options label { display: flex; align-items: flex-start; gap: 10px; cursor: pointer; padding: 4px 0; }
+    .quiz-q__options input { margin: 0.3em 0 0; flex: 0 0 auto; accent-color: var(--carmine); }
+    .quiz-q__options label > span { flex: 1; line-height: 1.5; }
+    .quiz-q__explain { font-size: 0.92rem; margin: 0.5rem 0 0 1.7rem; padding: 8px 12px; background: var(--paper); border-left: 2px solid var(--mist); color: var(--graphite); }
+    .quiz-q__explain[hidden] { display: none; }
+    .quiz-q__options li.is-correct .quiz-q__explain, .quiz-q__options li.expected .quiz-q__explain { border-left-color: var(--teal); }
+    .quiz-q__options li.is-wrong .quiz-q__explain { border-left-color: var(--carmine); }
+    .quiz-q__options li.is-correct > label > span, .quiz-q__options li.expected > label > span { background-image: linear-gradient(transparent 60%, rgba(31, 85, 96, 0.14) 60%); background-size: 100% 1.5em; background-repeat: repeat-y; }
+    .quiz-q__options li.is-wrong > label > span { background-image: linear-gradient(transparent 60%, rgba(178, 59, 27, 0.14) 60%); background-size: 100% 1.5em; background-repeat: repeat-y; }
+    .quiz-q__check { font-family: var(--mono); font-size: 0.78rem; letter-spacing: 0.04em; background: var(--ink); color: var(--paper); border: 0; padding: 8px 16px; border-radius: 2px; cursor: pointer; transition: background .15s; }
+    .quiz-q__check:hover, .quiz-q__check:focus-visible { background: var(--carmine); outline: none; }
+    .quiz-q__check:disabled { background: var(--mist); cursor: not-allowed; }
+    .quiz-q__verdict { font-family: var(--mono); font-size: 0.78rem; letter-spacing: 0.04em; margin: 1rem 0 0; padding: 8px 12px; border-left: 2px solid var(--graphite); }
+    .quiz-q__verdict[hidden] { display: none; }
+    .quiz-q__verdict.is-correct { border-left-color: var(--teal); color: var(--teal); }
+    .quiz-q__verdict.is-wrong { border-left-color: var(--carmine); color: var(--carmine); }
+    .quiz-q__retry { font-family: var(--mono); font-size: 0.74rem; letter-spacing: 0.06em; background: transparent; border: 0; color: var(--graphite); padding: 6px 0; margin: 0.6rem 0 0; cursor: pointer; text-decoration: underline; text-decoration-color: var(--mist); text-underline-offset: 3px; }
+    .quiz-q__retry:hover, .quiz-q__retry:focus-visible { color: var(--ink); text-decoration-color: var(--carmine); outline: none; }
+    .quiz-q__retry[hidden] { display: none; }
+
+    /* === infographie A4 portrait (exec sum visuelle) — pattern partagé === */
+    main .figure.figure--portrait,
+    .layout main .figure.figure--portrait,
+    .layout.sources-collapsed main .figure.figure--portrait {
+      margin-top: 3rem; margin-bottom: 3rem;
+      padding: 0 !important; border: none !important;
+      border-top: none !important; border-bottom: none !important;
+      width: auto;
+    }
+    @media (max-width: 1024px) {
+      main .figure.figure--portrait {
+        margin-left: auto !important; margin-right: auto !important;
+        max-width: 100%;
+      }
+    }
+    @media (min-width: 1025px) {
+      main .figure.figure--portrait,
+      .layout main .figure.figure--portrait,
+      .layout.sources-collapsed main .figure.figure--portrait {
+        margin-left: -60px !important; margin-right: -60px !important;
+        max-width: calc(100% + 120px);
+      }
+    }
+    @media (min-width: 1440px) {
+      main .figure.figure--portrait,
+      .layout main .figure.figure--portrait,
+      .layout.sources-collapsed main .figure.figure--portrait {
+        margin-left: -100px !important; margin-right: -100px !important;
+        max-width: calc(100% + 200px);
+      }
+    }
+    main .figure--portrait .figure-portrait-link { display: block; width: 100%; border: 1px solid var(--rule); background: var(--paper); border-radius: 2px; cursor: zoom-in; transition: box-shadow 220ms ease, border-color 220ms ease; overflow: hidden; }
+    main .figure--portrait .figure-portrait-link:hover { box-shadow: 0 8px 28px rgba(30,30,42,0.14); border-color: var(--accent); }
+    main .figure--portrait img { display: block; width: 100%; height: auto; }
+    main .figure--portrait .figure-caption { max-width: 100%; margin: 14px auto 0; padding: 0 8px; text-align: center; }
+    /* Sigil MG remonté sur les A4 portrait (au-dessus du header SVG, pas sur le titre) */
+    main .figure--portrait .schema-sigil {
+      top: 10px !important;
+      right: 14px !important;
+      width: 30px !important; height: 30px !important;
+      opacity: 0.60 !important;
+    }
+    @media (max-width: 640px) {
+      main .figure--portrait .schema-sigil { top: 8px !important; right: 10px !important; width: 24px !important; height: 24px !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="topbar" id="topbar">
+    <a href="../index.html">Mathieu <em>Guglielmino</em></a>
+    <span class="dossier-context">Compaction agentique</span>
+    <div class="topbar-tools">
+      <button id="toggle-toc" class="menu-toggle" aria-label="Ouvrir le sommaire">Sommaire</button>
+      <button id="toggle-sources" class="menu-toggle" aria-label="Ouvrir les sources">Sources</button>
+    </div>
+    <nav class="back-nav" aria-label="Navigation retour">
+      <a href="./index.html" title="Revenir au hub du dossier">← Hub</a>
+      <span class="back-sep" aria-hidden="true">·</span>
+      <a href="../index.html#series" title="Revenir à l’accueil">Accueil</a>
+    </nav>
+  </header>
+
+  <div class="layout">
+
+    <header class="site">
+      <h1><a href="./index.html">Compaction agentique et oubli sélectif</a></h1>
+    </header>
+
+    <nav id="toc" aria-label="Sommaire">
+      <button class="panel-close" type="button" aria-label="Fermer le sommaire">Fermer ✕</button>
+      <h2>Sommaire</h2>
+      <ol>
+        <li><a href="#synthese">Synthèse exécutive</a></li>
+        <li><a href="#section-1">1 · Pourquoi 1 M tokens ne suffit pas</a></li>
+        <li><a href="#section-2">2 · Anatomie de la compaction</a></li>
+        <li><a href="#section-3">3 · Cinq familles de stratégies</a></li>
+        <li><a href="#section-4">4 · Le triangle fidélité × coût × oubli</a></li>
+        <li><a href="#section-5">5 · Compaction en production</a></li>
+        <li><a href="#section-6">6 · La surface d'attaque cachée</a></li>
+        <li><a href="#section-7">7 · RGPD, AI Act et l'oubli prouvable</a></li>
+        <li><a href="#section-8">8 · Horizon 2026-2028</a></li>
+        <li><a href="#sources-block">Sources</a></li>
+      </ol>
+    </nav>
+
+    <main id="report">
+<article>
+        <header class="report-header">
+          <span class="eyebrow">Dossier · 22 mai 2026 · Mathieu Guglielmino</span>
+          <h1 class="report-title">Décode spéculative en production</h1>
+          <p class="lead"><em>Du papier (2023) à l'option par défaut des frameworks (2026). 2× à 4× sur le temps par token — quand l'<span class="term" data-tooltip="Acceptance rate (α) : fraction des tokens proposés par le draft qui passent le test de Leviathan et sont commités sans rééchantillonnage. Détermine directement le speedup réel.">acceptance rate</span> tient.</em></p>
+        </header>
+
+        <section id="synthese">
+          <h2><a class="anchor" href="#synthese">¶</a> Synthèse exécutive</h2>
+          <ul>
+            <li><strong>Le théorème d'équivalence tient.</strong> Leviathan, Kalman et Matias (Google Research) le démontrent en 2022 : si l'on accepte chaque token spéculatif avec probabilité <code>min(1, p_target/p_draft)</code> et qu'on rééchantillonne le rejet sur <code>max(0, p_target − p_draft)</code>, la distribution de sortie est <strong>strictement identique</strong> à celle d'une décode autoregressive standard<a class="cite" href="#source-1" data-cite="1">1</a>. La décode spéculative ne dégrade ni la qualité, ni la calibration, ni les benchmarks. C'est une optimisation de latence, pas un compromis de qualité.</li>
+            <li><mark><strong>Les gains observés en production sont entre 2× et 4× sur le temps par token.</strong></mark> Les chiffres convergent en 2025-2026 : ~2,3× pour la décode spéculative naïve avec draft model externe<a class="cite" href="#source-2" data-cite="2">2</a>, 2,2-3,6× pour Medusa-2 selon le domaine<a class="cite" href="#source-3" data-cite="3">3</a>, 3,0-4,5× pour <span class="term" data-tooltip="EAGLE : Extrapolation Algorithm for Greater Language-model Efficiency. Famille de drafts feature-level (Li et al., Microsoft Research). EAGLE-3 est l'état de l'art 2026.">EAGLE-3</span> sur les modèles Llama 3.1 / 3.3<a class="cite" href="#source-4" data-cite="4">4</a>. <span class="term" data-tooltip="Lookahead Decoding : décode parallèle de type Jacobi qui se passe complètement d'un draft model (Fu et al., LMSYS/UCSD, 2024).">Lookahead Decoding</span> atteint 1,5-2,3× sans aucun draft model, ce qui le rend particulièrement attractif quand le déploiement d'un second poids GPU est coûteux<a class="cite" href="#source-5" data-cite="5">5</a>.</li>
+            <li><strong>L'acceptance rate est le paramètre caché.</strong> Une décode spéculative ne va vite que si le draft model prédit ce que le target aurait prédit. En code, le taux d'acceptance dépasse souvent 80 % (vocabulaire restreint, structures répétitives) ; en génération créative, il chute à 40-50 % ; sur un domaine <em>out-of-distribution</em> pour le draft, il s'effondre sous 30 % et la spéculation devient <strong>plus lente</strong> que la décode standard<a class="cite" href="#source-7" data-cite="7">7</a>.</li>
+            <li><mark><strong>Le piège du batching dynamique.</strong> Le speedup spéculatif est maximal à <code>batch_size=1</code> (decode memory-bound). À <code>batch_size=32</code> ou plus, le serveur sature les unités compute du GPU et le surcoût du draft annule le gain. vLLM, SGLang et TensorRT-LLM ont intégré en 2025-2026 des politiques d'activation conditionnelle qui désactivent la spéculation dynamiquement passé un seuil de batch</mark><a class="cite" href="#source-6" data-cite="6">6</a><a class="cite" href="#source-9" data-cite="9">9</a><a class="cite" href="#source-10" data-cite="10">10</a>.</li>
+            <li><strong>L'état du marché s'est consolidé.</strong> vLLM (UC Berkeley), SGLang (sgl-project), TensorRT-LLM (NVIDIA) et DeepSpeed-MII (Microsoft) supportent désormais en GA au moins une variante spéculative chacun. EAGLE-3 est devenu le défaut sur Llama 3.x / Qwen 2.5 en 2026 ; Medusa reste populaire chez ceux qui ne veulent pas reentraîner ; Lookahead garde sa niche en zero-train deployment<a class="cite" href="#source-4" data-cite="4">4</a><a class="cite" href="#source-5" data-cite="5">5</a><a class="cite" href="#source-10" data-cite="10">10</a>.</li>
+          </ul>
+          <hr style="border:none;border-top:1px solid var(--rule);margin:3rem 0;">
+        </section>
+
+        <section id="section-1">
+          <h2><a class="anchor" href="#section-1">¶</a> 1. Pourquoi décoder est sériel</h2>
+          <p>L'inférence LLM se découpe en deux phases asymétriques. La <strong>prefill</strong> traite le prompt complet en un seul forward parallèle : 1 000 tokens d'entrée = 1 forward, compute-bound, le GPU sature ses tensor cores. La <strong>decode</strong> génère les tokens de sortie <em>un par un</em>, chaque token dépendant du précédent : 100 tokens de sortie = 100 forwards séquentiels<a class="cite" href="#source-6" data-cite="6">6</a>. Cette deuxième phase est <strong>memory-bound</strong> — le goulot n'est pas le compute, c'est le débit de lecture du <span class="term" data-tooltip="KV cache : tenseur des clés (K) et valeurs (V) calculés pour les tokens précédents, mis en cache pour éviter de les recalculer à chaque nouveau token. Sa taille croît linéairement avec la longueur de séquence × nombre de couches × heads.">KV cache</span> et des poids du modèle depuis la HBM vers les registres.</p>
+          <p>Une seule décode autoregressive d'un Llama-3 70B sur un H100 lit environ 140 Go de poids et 2-30 Go de KV cache par token généré, sur une bande passante HBM3 de ~3,35 To/s — ce qui plafonne théoriquement à ~24 tokens/seconde. Le GPU passe l'essentiel de son temps à attendre la mémoire ; ses tensor cores sont sous-utilisés (souvent à 5-15 % de leur peak FLOPS pendant la décode)<a class="cite" href="#source-6" data-cite="6">6</a>. C'est ce <em>slack compute</em> qui rend la spéculation possible : il y a de la puissance de calcul disponible si l'on trouve un moyen d'évaluer plusieurs tokens en parallèle.</p>
+          <p>D'où l'idée fondatrice. Plutôt que d'attendre que le target produise le token N pour ensuite produire le token N+1, on demande à un <strong>petit modèle rapide</strong> (le <em>draft</em>) de produire spéculativement les K tokens suivants. Le <em>target</em> — le gros modèle — les valide tous en <strong>un seul forward parallèle</strong> (compute-bound, comme un mini-prefill). Si le draft a bien deviné, on a généré K tokens en un seul aller-retour HBM au lieu de K. Si le draft a mal deviné, on retombe sur la décode normale à partir du dernier token accepté.</p>
+        </section>
+
+        <section id="section-2">
+          <h2><a class="anchor" href="#section-2">¶</a> 2. Anatomie de la décode spéculative</h2>
+          <p>La boucle se décompose en trois étapes (voir Schéma 1).</p>
+          <p><strong>Étape 1 — Drafting.</strong> Un modèle léger (typiquement 10-100× plus petit que le target : Llama-3.2-1B pour drafter Llama-3.1-70B, par exemple) génère K tokens autoregressifs. Ce coût est faible — le draft est petit, sa décode est rapide même séquentielle. K varie typiquement entre 4 et 8 ; au-delà, l'acceptance rate chute trop vite pour que ça paie.</p>
+          <p><strong>Étape 2 — Verification.</strong> Le target reçoit la séquence préfixe + les K tokens proposés en <em>un seul forward</em>. Cela produit les distributions <code>p_target</code> aux positions 1 à K+1. Cette étape utilise le <span class="term" data-tooltip="Tree attention mask : masque d'attention spécialisé qui permet à plusieurs branches d'hypothèses spéculatives de coexister dans un même forward sans que leurs Q·Kᵀ ne se contaminent mutuellement. Voir Schéma 2.">tree attention mask</span> (voir Schéma 2) : un masque qui permet à plusieurs branches d'hypothèses de coexister dans le même forward sans interférence.</p>
+          <p><strong>Étape 3 — Accept / Reject.</strong> Pour chaque position i, on compare <code>p_target[i]</code> à <code>p_draft[i]</code>. Le critère d'acceptation est <code>accept_with_prob(min(1, p_target[i] / p_draft[i]))</code>. Si tous les K tokens sont acceptés, on a généré K+1 tokens en un forward target (le +1 vient de la position K+1, qui est échantillonnée fraîche depuis <code>p_target[K+1]</code>). Si le token i est rejeté, on échantillonne un token de remplacement depuis la distribution <code>max(0, p_target[i] − p_draft[i])</code> (normalisée), on tronque tout ce qui suit, et on relance le drafting au prochain cycle<a class="cite" href="#source-1" data-cite="1">1</a><a class="cite" href="#source-2" data-cite="2">2</a>.</p>
+          <p>Le point théorique clé — celui qui rend la technique adoptable sans débat de qualité — est l'<strong>équivalence de distribution</strong>. Leviathan et al. prouvent que ce schéma produit des séquences indistinguables d'une décode standard du target : même distribution marginale, même comportement de sampling, même reproductibilité à seed fixe. Pas de <em>trade-off qualité/vitesse</em> — c'est ce qui distingue la décode spéculative d'autres optimisations agressives (quantification 4-bit, pruning, distillation) qui dégradent toutes mesurablement les benchmarks<a class="cite" href="#source-1" data-cite="1">1</a>. C'est aussi pourquoi l'industrie a basculé : <mark>aucune justification produit n'est nécessaire, la sortie est bit-identique en sampling stochastique</mark>.</p>
+
+          <figure class="figure" id="fig-01">
+            <svg data-schema-id="schema-01" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="title-01">
+  <title id="title-01">Décode séquentielle vs spéculative : anatomie temporelle</title>
+  <defs>
+    <style>
+      .serif{font-family:'Fraunces',serif}
+      .sans{font-family:'Inter',sans-serif}
+      .mono{font-family:'JetBrains Mono',monospace;letter-spacing:0.04em}
+      .title{font:600 28px/1.1 'Fraunces',serif;letter-spacing:-0.01em;fill:#1e1e2a}
+      .subtitle{font:400 italic 18px/1.3 'Fraunces',serif;fill:#6b6f7c}
+      .marker{font:600 12px/1 'JetBrains Mono',monospace;letter-spacing:0.16em;fill:#a83e55}
+      .col-eyebrow{font:600 11px/1 'JetBrains Mono',monospace;letter-spacing:0.18em;fill:#a83e55}
+      .col-title{font:600 22px/1.1 'Fraunces',serif;letter-spacing:-0.01em;fill:#1e1e2a}
+      .body-label{font:500 15px/1.3 'Inter',sans-serif;fill:#1e1e2a}
+      .annotation{font:400 13px/1.4 'Inter',sans-serif;fill:#6b6f7c}
+      .tick{font:500 11px/1 'JetBrains Mono',monospace;letter-spacing:0.08em;fill:#9a9ca5}
+      .axis-label{font:500 11px/1.2 'JetBrains Mono',monospace;letter-spacing:0.16em;fill:#6b6f7c;text-transform:uppercase}
+      .caption{font:400 italic 12px/1.4 'Inter',sans-serif;fill:#9a9ca5}
+      .frame{fill:#fdfaf0;stroke:rgba(30,30,44,0.18);stroke-width:1.2}
+      .frame-spec{fill:#fbf3e5;stroke:rgba(30,30,44,0.22);stroke-width:1.2}
+      .token-target{fill:#b8582e}
+      .token-draft{fill:rgba(184,88,46,0.32);stroke:#b8582e;stroke-width:1}
+      .token-accepted{fill:#1a5c6b}
+      .token-rejected{fill:#a83e55;opacity:0.55}
+      .arrow{stroke:rgba(30,30,44,0.55);stroke-width:1.2;fill:none}
+      .axis{stroke:rgba(30,30,44,0.30);stroke-width:1;fill:none}
+    </style>
+    <marker id="ar01" markerWidth="9" markerHeight="7" refX="6" refY="3.5" orient="auto">
+      <path d="M0,0 L9,3.5 L0,7 z" fill="rgba(30,30,44,0.55)"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="760" fill="#faf6ec"/>
+
+  <text x="80" y="34" class="marker">SCHÉMA 01</text>
+  <text x="80" y="62" class="title">Décoder un token à la fois — ou en paquet</text>
+  <text x="80" y="92" class="subtitle">À gauche, la décode autoregressive standard. À droite, la version spéculative : un draft propose K tokens, le target les valide en un seul forward.</text>
+
+  <!-- Colonne gauche : séquentielle -->
+  <g class="interactive" data-region="seq-loop">
+    <rect x="80" y="140" width="510" height="520" rx="6" class="frame"/>
+    <text x="100" y="172" class="col-eyebrow">A · DÉCODE AUTOREGRESSIVE</text>
+    <text x="100" y="206" class="col-title">Un token, un forward target</text>
+    <text x="100" y="234" class="annotation">Chaque token N exige la sortie du token N−1.</text>
+    <text x="100" y="252" class="annotation">Memory-bound : la HBM est le goulot, les tensor cores sous-utilisés.</text>
+
+    <!-- Axe temps vertical -->
+    <text x="106" y="290" class="axis-label">TEMPS</text>
+    <line x1="138" y1="298" x2="138" y2="618" class="axis" marker-end="url(#ar01)"/>
+
+    <!-- 6 forwards target en séquence -->
+    <g>
+      <rect x="160" y="305" width="380" height="38" rx="3" class="token-target"/>
+      <text x="180" y="329" class="body-label" fill="#faf6ec">forward target · token 1</text>
+      <text x="552" y="329" class="tick" text-anchor="end" fill="#faf6ec">≈ 40 ms</text>
+    </g>
+    <g>
+      <rect x="160" y="355" width="380" height="38" rx="3" class="token-target"/>
+      <text x="180" y="379" class="body-label" fill="#faf6ec">forward target · token 2</text>
+      <text x="552" y="379" class="tick" text-anchor="end" fill="#faf6ec">≈ 40 ms</text>
+    </g>
+    <g>
+      <rect x="160" y="405" width="380" height="38" rx="3" class="token-target"/>
+      <text x="180" y="429" class="body-label" fill="#faf6ec">forward target · token 3</text>
+      <text x="552" y="429" class="tick" text-anchor="end" fill="#faf6ec">≈ 40 ms</text>
+    </g>
+    <g>
+      <rect x="160" y="455" width="380" height="38" rx="3" class="token-target"/>
+      <text x="180" y="479" class="body-label" fill="#faf6ec">forward target · token 4</text>
+      <text x="552" y="479" class="tick" text-anchor="end" fill="#faf6ec">≈ 40 ms</text>
+    </g>
+    <g>
+      <rect x="160" y="505" width="380" height="38" rx="3" class="token-target"/>
+      <text x="180" y="529" class="body-label" fill="#faf6ec">forward target · token 5</text>
+      <text x="552" y="529" class="tick" text-anchor="end" fill="#faf6ec">≈ 40 ms</text>
+    </g>
+    <g>
+      <rect x="160" y="555" width="380" height="38" rx="3" class="token-target"/>
+      <text x="180" y="579" class="body-label" fill="#faf6ec">forward target · token 6</text>
+      <text x="552" y="579" class="tick" text-anchor="end" fill="#faf6ec">≈ 40 ms</text>
+    </g>
+
+    <text x="100" y="625" class="annotation"><tspan font-weight="600" fill="#1e1e2a">Total · 6 tokens ≈ 240 ms</tspan></text>
+    <text x="100" y="645" class="caption">Llama 3.1 70B, H100, batch 1, FP16. Ordres de grandeur.</text>
+  </g>
+
+  <!-- Colonne droite : spéculative -->
+  <g>
+    <rect x="610" y="140" width="510" height="520" rx="6" class="frame-spec"/>
+    <text x="630" y="172" class="col-eyebrow">B · DÉCODE SPÉCULATIVE</text>
+    <text x="630" y="206" class="col-title">K tokens drafted, 1 forward target</text>
+    <text x="630" y="234" class="annotation">Le draft (10–100× plus petit) propose K tokens rapides.</text>
+    <text x="630" y="252" class="annotation">Le target les vérifie tous en un seul forward parallèle.</text>
+
+    <text x="636" y="290" class="axis-label">TEMPS</text>
+    <line x1="668" y1="298" x2="668" y2="618" class="axis" marker-end="url(#ar01)"/>
+
+    <!-- Étape 1 : drafting -->
+    <g class="interactive" data-region="spec-draft">
+      <rect x="690" y="305" width="60" height="22" rx="2" class="token-draft"/>
+      <text x="720" y="320" class="tick" text-anchor="middle">draft 1</text>
+      <rect x="755" y="305" width="60" height="22" rx="2" class="token-draft"/>
+      <text x="785" y="320" class="tick" text-anchor="middle">draft 2</text>
+      <rect x="820" y="305" width="60" height="22" rx="2" class="token-draft"/>
+      <text x="850" y="320" class="tick" text-anchor="middle">draft 3</text>
+      <rect x="885" y="305" width="60" height="22" rx="2" class="token-draft"/>
+      <text x="915" y="320" class="tick" text-anchor="middle">draft 4</text>
+      <rect x="950" y="305" width="60" height="22" rx="2" class="token-draft"/>
+      <text x="980" y="320" class="tick" text-anchor="middle">draft 5</text>
+      <text x="1085" y="320" class="annotation" text-anchor="end" fill="#6b6f7c">≈ 8 ms total</text>
+    </g>
+
+    <text x="690" y="358" class="annotation">↓ envoi des K=5 tokens au target</text>
+
+    <!-- Étape 2 : verification -->
+    <g class="interactive" data-region="spec-verify">
+      <rect x="690" y="375" width="395" height="42" rx="3" class="token-target"/>
+      <text x="710" y="402" class="body-label" fill="#faf6ec">forward target unique · vérifie 6 positions en parallèle</text>
+    </g>
+    <text x="1085" y="402" class="annotation" text-anchor="end" fill="#6b6f7c">≈ 45 ms</text>
+
+    <!-- Étape 3 : accept/reject -->
+    <g class="interactive" data-region="spec-accept">
+      <text x="690" y="450" class="body-label">Accept/Reject (Leviathan rule)</text>
+      <text x="690" y="470" class="annotation">accept_with_prob(min(1, p_target / p_draft))</text>
+
+      <!-- Bandeau résultat -->
+      <rect x="690" y="490" width="60" height="22" rx="2" class="token-accepted"/>
+      <text x="720" y="505" class="tick" text-anchor="middle" fill="#faf6ec">accept</text>
+      <rect x="755" y="490" width="60" height="22" rx="2" class="token-accepted"/>
+      <text x="785" y="505" class="tick" text-anchor="middle" fill="#faf6ec">accept</text>
+      <rect x="820" y="490" width="60" height="22" rx="2" class="token-accepted"/>
+      <text x="850" y="505" class="tick" text-anchor="middle" fill="#faf6ec">accept</text>
+      <rect x="885" y="490" width="60" height="22" rx="2" class="token-accepted"/>
+      <text x="915" y="505" class="tick" text-anchor="middle" fill="#faf6ec">accept</text>
+      <rect x="950" y="490" width="60" height="22" rx="2" class="token-rejected"/>
+      <text x="980" y="505" class="tick" text-anchor="middle" fill="#faf6ec">reject</text>
+
+      <text x="690" y="540" class="annotation">α = 4/5 = 80 % d'acceptance ; le token 5 est rééchantillonné.</text>
+      <text x="690" y="558" class="annotation">Le token 6 (bonus) est tiré frais depuis la sortie target à la position K+1.</text>
+    </g>
+
+    <text x="630" y="610" class="annotation"><tspan font-weight="600" fill="#1e1e2a">Total · 5 tokens utiles ≈ 53 ms</tspan></text>
+    <text x="630" y="630" class="annotation"><tspan font-weight="600" fill="#b8582e">Speedup ≈ 3,8× sur cet exemple.</tspan></text>
+    <text x="630" y="645" class="caption">Speedup réel : (1 + α + α² + … + α^K) × (T_target / (T_target + K·T_draft + T_verify)).</text>
+  </g>
+
+  <text x="80" y="700" class="caption">Lecture : la spéculation transforme K forwards memory-bound en 1 forward compute-bound. Elle exploite le slack compute du GPU pendant la décode.</text>
+  <text x="80" y="718" class="caption">Le théorème d'équivalence (Leviathan 2022) garantit que la distribution de sortie est strictement identique à la décode autoregressive standard.</text>
+  <text x="80" y="745" class="caption">Sources — Leviathan, Kalman, Matias (Google Research, 2022) ; Chen et al. (DeepMind, 2023) ; documentation vLLM speculative decoding.</text>
+</svg>
+
+            <figcaption class="figure-caption"><a class="anchor" href="#fig-01" title="Lien direct vers ce schéma">¶</a>Schéma 1 — À gauche, la décode autoregressive : un forward target par token, la HBM est le goulot. À droite, la spéculation : K tokens proposés par le draft (petits forwards rapides) puis un forward target unique qui les valide en parallèle. Le coût ne croît qu'en proportion de l'acceptance rate.</figcaption>
+          </figure>
+
+          <figure class="figure" id="fig-02">
+            <svg data-schema-id="schema-02" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="title-02">
+  <title id="title-02">L'arbre de tokens spéculatifs et la vérification parallèle</title>
+  <defs>
+    <style>
+      .title{font:600 28px/1.1 'Fraunces',serif;letter-spacing:-0.01em;fill:#1e1e2a}
+      .subtitle{font:400 italic 18px/1.3 'Fraunces',serif;fill:#6b6f7c}
+      .marker{font:600 12px/1 'JetBrains Mono',monospace;letter-spacing:0.16em;fill:#a83e55}
+      .col-eyebrow{font:600 11px/1 'JetBrains Mono',monospace;letter-spacing:0.18em;fill:#a83e55}
+      .col-title{font:600 20px/1.1 'Fraunces',serif;letter-spacing:-0.01em;fill:#1e1e2a}
+      .body-label{font:500 15px/1.3 'Inter',sans-serif;fill:#1e1e2a}
+      .annotation{font:400 13px/1.4 'Inter',sans-serif;fill:#6b6f7c}
+      .nodelabel{font:500 12px/1 'JetBrains Mono',monospace;letter-spacing:0.02em;fill:#1e1e2a}
+      .caption{font:400 italic 12px/1.4 'Inter',sans-serif;fill:#9a9ca5}
+      .axis-label{font:500 11px/1.2 'JetBrains Mono',monospace;letter-spacing:0.16em;fill:#6b6f7c;text-transform:uppercase}
+      .frame{fill:#fdfaf0;stroke:rgba(30,30,44,0.18);stroke-width:1.2}
+      .frame-spec{fill:#fbf3e5;stroke:rgba(30,30,44,0.22);stroke-width:1.2}
+      .branch{stroke:rgba(30,30,44,0.35);stroke-width:1.4;fill:none}
+      .branch-accepted{stroke:#1a5c6b;stroke-width:2.6;fill:none}
+      .node-root{fill:#b8582e;stroke:#7d3a1a;stroke-width:1.4}
+      .node-cand{fill:#fdfaf0;stroke:rgba(30,30,44,0.55);stroke-width:1.2}
+      .node-accept{fill:#1a5c6b;stroke:#0e3f4a;stroke-width:1.6}
+      .grid-cell{stroke:rgba(30,30,44,0.18);stroke-width:0.8}
+      .grid-mask{fill:#1e1e2a}
+      .grid-attend{fill:rgba(184,88,46,0.5)}
+      .grid-self{fill:#1a5c6b}
+    </style>
+    <marker id="ar02" markerWidth="9" markerHeight="7" refX="6" refY="3.5" orient="auto">
+      <path d="M0,0 L9,3.5 L0,7 z" fill="rgba(30,30,44,0.55)"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="760" fill="#faf6ec"/>
+
+  <text x="80" y="34" class="marker">SCHÉMA 02</text>
+  <text x="80" y="62" class="title">Tree attention : vérifier plusieurs hypothèses en un seul forward</text>
+  <text x="80" y="92" class="subtitle">Au lieu d'une seule séquence linéaire, le draft propose un arbre de continuations. Un masque d'attention spécialisé les vérifie toutes en parallèle.</text>
+
+  <!-- Bloc gauche : l'arbre -->
+  <g class="interactive" data-region="tree-branch">
+    <rect x="80" y="140" width="580" height="520" rx="6" class="frame"/>
+    <text x="100" y="172" class="col-eyebrow">A · L'ARBRE DE CANDIDATS</text>
+    <text x="100" y="200" class="col-title">Le draft propose plusieurs continuations</text>
+    <text x="100" y="226" class="annotation">Largeur 2 × profondeur 3 = 7 nœuds candidats + 1 racine.</text>
+
+    <!-- Racine -->
+    <g class="interactive" data-region="tree-root">
+      <circle cx="170" cy="380" r="32" class="node-root"/>
+      <text x="170" y="385" class="nodelabel" text-anchor="middle" fill="#faf6ec">racine</text>
+      <text x="170" y="430" class="annotation" text-anchor="middle">dernier token confirmé</text>
+    </g>
+
+    <!-- Niveau 1 : 2 branches -->
+    <line x1="202" y1="380" x2="288" y2="290" class="branch-accepted"/>
+    <line x1="202" y1="380" x2="288" y2="470" class="branch"/>
+
+    <circle cx="320" cy="290" r="26" class="node-accept"/>
+    <text x="320" y="295" class="nodelabel" text-anchor="middle" fill="#faf6ec">A1</text>
+    <circle cx="320" cy="470" r="26" class="node-cand"/>
+    <text x="320" y="475" class="nodelabel" text-anchor="middle">B1</text>
+
+    <!-- Niveau 2 : depuis A1 et B1 -->
+    <line x1="346" y1="290" x2="430" y2="240" class="branch-accepted"/>
+    <line x1="346" y1="290" x2="430" y2="340" class="branch"/>
+    <line x1="346" y1="470" x2="430" y2="430" class="branch"/>
+    <line x1="346" y1="470" x2="430" y2="520" class="branch"/>
+
+    <circle cx="462" cy="240" r="26" class="node-accept"/>
+    <text x="462" y="245" class="nodelabel" text-anchor="middle" fill="#faf6ec">A2a</text>
+    <circle cx="462" cy="340" r="26" class="node-cand"/>
+    <text x="462" y="345" class="nodelabel" text-anchor="middle">A2b</text>
+    <circle cx="462" cy="430" r="26" class="node-cand"/>
+    <text x="462" y="435" class="nodelabel" text-anchor="middle">B2a</text>
+    <circle cx="462" cy="520" r="26" class="node-cand"/>
+    <text x="462" y="525" class="nodelabel" text-anchor="middle">B2b</text>
+
+    <!-- Niveau 3 : depuis A2a, A2b, B2a, B2b -->
+    <line x1="488" y1="240" x2="572" y2="220" class="branch-accepted"/>
+    <line x1="488" y1="340" x2="572" y2="320" class="branch"/>
+    <line x1="488" y1="430" x2="572" y2="410" class="branch"/>
+    <line x1="488" y1="520" x2="572" y2="500" class="branch"/>
+
+    <circle cx="604" cy="220" r="26" class="node-accept"/>
+    <text x="604" y="225" class="nodelabel" text-anchor="middle" fill="#faf6ec">A3</text>
+    <circle cx="604" cy="320" r="26" class="node-cand"/>
+    <text x="604" y="325" class="nodelabel" text-anchor="middle">A3'</text>
+    <circle cx="604" cy="410" r="26" class="node-cand"/>
+    <text x="604" y="415" class="nodelabel" text-anchor="middle">B3</text>
+    <circle cx="604" cy="500" r="26" class="node-cand"/>
+    <text x="604" y="505" class="nodelabel" text-anchor="middle">B3'</text>
+
+    <!-- Légende chemin retenu -->
+    <g class="interactive" data-region="commit-path">
+      <rect x="98" y="580" width="544" height="58" rx="4" fill="#fbf3e5" stroke="#1a5c6b" stroke-width="1.2"/>
+      <text x="118" y="603" class="body-label"><tspan fill="#1a5c6b" font-weight="600">Chemin accepté ·</tspan> racine → A1 → A2a → A3</text>
+      <text x="118" y="623" class="annotation">3 tokens accumulés en 1 forward target. Les 4 autres branches sont jetées.</text>
+    </g>
+  </g>
+
+  <!-- Bloc droit : masque d'attention -->
+  <g class="interactive" data-region="verify-mask">
+    <rect x="680" y="140" width="440" height="520" rx="6" class="frame-spec"/>
+    <text x="700" y="172" class="col-eyebrow">B · MASQUE D'ATTENTION ARBORESCENT</text>
+    <text x="700" y="200" class="col-title">Chaque nœud ne voit que ses ancêtres</text>
+    <text x="700" y="226" class="annotation">Une seule matrice Q·Kᵀ, un masque spécifique : les branches</text>
+    <text x="700" y="242" class="annotation">parallèles ne se contaminent pas mutuellement.</text>
+
+    <!-- Matrice 8×8 : racine + A1 + A2a + A3 + B1 + B2a + B2b + A2b -->
+    <g transform="translate(750 290)">
+      <!-- Labels colonnes (Keys) -->
+      <text x="0" y="-12" class="nodelabel" fill="#6b6f7c">K →</text>
+      <text x="40" y="-8" class="nodelabel" text-anchor="middle">R</text>
+      <text x="80" y="-8" class="nodelabel" text-anchor="middle">A1</text>
+      <text x="120" y="-8" class="nodelabel" text-anchor="middle">A2a</text>
+      <text x="160" y="-8" class="nodelabel" text-anchor="middle">A3</text>
+      <text x="200" y="-8" class="nodelabel" text-anchor="middle">B1</text>
+      <text x="240" y="-8" class="nodelabel" text-anchor="middle">A2b</text>
+      <text x="280" y="-8" class="nodelabel" text-anchor="middle">B2a</text>
+      <text x="320" y="-8" class="nodelabel" text-anchor="middle">B2b</text>
+
+      <!-- Labels lignes (Queries) -->
+      <text x="-12" y="20" class="nodelabel" fill="#6b6f7c" text-anchor="end">R</text>
+      <text x="-12" y="48" class="nodelabel" text-anchor="end">A1</text>
+      <text x="-12" y="76" class="nodelabel" text-anchor="end">A2a</text>
+      <text x="-12" y="104" class="nodelabel" text-anchor="end">A3</text>
+      <text x="-12" y="132" class="nodelabel" text-anchor="end">B1</text>
+      <text x="-12" y="160" class="nodelabel" text-anchor="end">A2b</text>
+      <text x="-12" y="188" class="nodelabel" text-anchor="end">B2a</text>
+      <text x="-12" y="216" class="nodelabel" text-anchor="end">B2b</text>
+
+      <!-- Cellules : 1 = attend (orange), 0 = masqué (sombre), diagonale = self -->
+      <!-- Ligne R : voit elle-même seulement -->
+      <rect x="20" y="6" width="40" height="28" class="grid-self"/>
+      <rect x="60" y="6" width="40" height="28" class="grid-mask"/>
+      <rect x="100" y="6" width="40" height="28" class="grid-mask"/>
+      <rect x="140" y="6" width="40" height="28" class="grid-mask"/>
+      <rect x="180" y="6" width="40" height="28" class="grid-mask"/>
+      <rect x="220" y="6" width="40" height="28" class="grid-mask"/>
+      <rect x="260" y="6" width="40" height="28" class="grid-mask"/>
+      <rect x="300" y="6" width="40" height="28" class="grid-mask"/>
+
+      <!-- Ligne A1 : voit R + A1 -->
+      <rect x="20" y="34" width="40" height="28" class="grid-attend"/>
+      <rect x="60" y="34" width="40" height="28" class="grid-self"/>
+      <rect x="100" y="34" width="40" height="28" class="grid-mask"/>
+      <rect x="140" y="34" width="40" height="28" class="grid-mask"/>
+      <rect x="180" y="34" width="40" height="28" class="grid-mask"/>
+      <rect x="220" y="34" width="40" height="28" class="grid-mask"/>
+      <rect x="260" y="34" width="40" height="28" class="grid-mask"/>
+      <rect x="300" y="34" width="40" height="28" class="grid-mask"/>
+
+      <!-- Ligne A2a : voit R + A1 + A2a -->
+      <rect x="20" y="62" width="40" height="28" class="grid-attend"/>
+      <rect x="60" y="62" width="40" height="28" class="grid-attend"/>
+      <rect x="100" y="62" width="40" height="28" class="grid-self"/>
+      <rect x="140" y="62" width="40" height="28" class="grid-mask"/>
+      <rect x="180" y="62" width="40" height="28" class="grid-mask"/>
+      <rect x="220" y="62" width="40" height="28" class="grid-mask"/>
+      <rect x="260" y="62" width="40" height="28" class="grid-mask"/>
+      <rect x="300" y="62" width="40" height="28" class="grid-mask"/>
+
+      <!-- Ligne A3 : voit R + A1 + A2a + A3 -->
+      <rect x="20" y="90" width="40" height="28" class="grid-attend"/>
+      <rect x="60" y="90" width="40" height="28" class="grid-attend"/>
+      <rect x="100" y="90" width="40" height="28" class="grid-attend"/>
+      <rect x="140" y="90" width="40" height="28" class="grid-self"/>
+      <rect x="180" y="90" width="40" height="28" class="grid-mask"/>
+      <rect x="220" y="90" width="40" height="28" class="grid-mask"/>
+      <rect x="260" y="90" width="40" height="28" class="grid-mask"/>
+      <rect x="300" y="90" width="40" height="28" class="grid-mask"/>
+
+      <!-- Ligne B1 : voit R + B1 -->
+      <rect x="20" y="118" width="40" height="28" class="grid-attend"/>
+      <rect x="60" y="118" width="40" height="28" class="grid-mask"/>
+      <rect x="100" y="118" width="40" height="28" class="grid-mask"/>
+      <rect x="140" y="118" width="40" height="28" class="grid-mask"/>
+      <rect x="180" y="118" width="40" height="28" class="grid-self"/>
+      <rect x="220" y="118" width="40" height="28" class="grid-mask"/>
+      <rect x="260" y="118" width="40" height="28" class="grid-mask"/>
+      <rect x="300" y="118" width="40" height="28" class="grid-mask"/>
+
+      <!-- Ligne A2b : voit R + A1 + A2b -->
+      <rect x="20" y="146" width="40" height="28" class="grid-attend"/>
+      <rect x="60" y="146" width="40" height="28" class="grid-attend"/>
+      <rect x="100" y="146" width="40" height="28" class="grid-mask"/>
+      <rect x="140" y="146" width="40" height="28" class="grid-mask"/>
+      <rect x="180" y="146" width="40" height="28" class="grid-mask"/>
+      <rect x="220" y="146" width="40" height="28" class="grid-self"/>
+      <rect x="260" y="146" width="40" height="28" class="grid-mask"/>
+      <rect x="300" y="146" width="40" height="28" class="grid-mask"/>
+
+      <!-- Ligne B2a : voit R + B1 + B2a -->
+      <rect x="20" y="174" width="40" height="28" class="grid-attend"/>
+      <rect x="60" y="174" width="40" height="28" class="grid-mask"/>
+      <rect x="100" y="174" width="40" height="28" class="grid-mask"/>
+      <rect x="140" y="174" width="40" height="28" class="grid-mask"/>
+      <rect x="180" y="174" width="40" height="28" class="grid-attend"/>
+      <rect x="220" y="174" width="40" height="28" class="grid-mask"/>
+      <rect x="260" y="174" width="40" height="28" class="grid-self"/>
+      <rect x="300" y="174" width="40" height="28" class="grid-mask"/>
+
+      <!-- Ligne B2b : voit R + B1 + B2b -->
+      <rect x="20" y="202" width="40" height="28" class="grid-attend"/>
+      <rect x="60" y="202" width="40" height="28" class="grid-mask"/>
+      <rect x="100" y="202" width="40" height="28" class="grid-mask"/>
+      <rect x="140" y="202" width="40" height="28" class="grid-mask"/>
+      <rect x="180" y="202" width="40" height="28" class="grid-attend"/>
+      <rect x="220" y="202" width="40" height="28" class="grid-mask"/>
+      <rect x="260" y="202" width="40" height="28" class="grid-mask"/>
+      <rect x="300" y="202" width="40" height="28" class="grid-self"/>
+
+      <!-- Grille -->
+      <g stroke="rgba(30,30,44,0.18)" stroke-width="0.8" fill="none">
+        <rect x="20" y="6" width="320" height="224"/>
+      </g>
+    </g>
+
+    <!-- Légende couleurs -->
+    <g transform="translate(700 555)">
+      <rect x="0" y="0" width="16" height="16" class="grid-self"/>
+      <text x="22" y="13" class="annotation">position courante (self)</text>
+      <rect x="0" y="24" width="16" height="16" class="grid-attend"/>
+      <text x="22" y="37" class="annotation">attendu (ancêtre dans l'arbre)</text>
+      <rect x="0" y="48" width="16" height="16" class="grid-mask"/>
+      <text x="22" y="61" class="annotation">masqué (branche concurrente)</text>
+    </g>
+  </g>
+
+  <text x="80" y="700" class="caption">Lecture : Medusa, EAGLE et TensorRT-LLM utilisent ce schéma. Le tree mask est calculé une fois par étape, partagé entre toutes les têtes.</text>
+  <text x="80" y="718" class="caption">Le tree dynamique (EAGLE-2/3) ajuste la largeur et la profondeur à la confiance courante du draft.</text>
+  <text x="80" y="745" class="caption">Sources — Cai et al. <tspan font-style="italic">Medusa</tspan> (ICML 2024) ; Li et al. <tspan font-style="italic">EAGLE-2</tspan> (2024) ; documentation TensorRT-LLM tree decoding.</text>
+</svg>
+
+            <figcaption class="figure-caption"><a class="anchor" href="#fig-02" title="Lien direct vers ce schéma">¶</a>Schéma 2 — Les variantes modernes (Medusa, EAGLE, TensorRT-LLM tree decoding) proposent un arbre de continuations plutôt qu'une seule séquence linéaire. Un masque d'attention spécialisé permet de vérifier toutes les branches dans un seul forward target ; le serveur retient le plus long préfixe accepté.</figcaption>
+          </figure>
+        </section>
+
+        <section id="section-3">
+          <h2><a class="anchor" href="#section-3">¶</a> 3. Quatre familles de variantes</h2>
+          <p>Le paysage des variantes s'est structuré entre 2023 et 2025 autour de quatre approches qui répondent toutes au même problème — <em>où trouver le draft model ?</em> — par des stratégies différentes (voir Schéma 3).</p>
+          <p><strong>Famille 1 — Draft model externe (Leviathan, Chen).</strong> L'approche originale : on entraîne ou on télécharge un petit modèle de la même famille (Llama-3.2-1B pour drafter Llama-3.1-70B). Avantages : zéro modification du target, draft réutilisable sur plusieurs tailles, sampling stochastique propre. Inconvénients : il faut héberger et charger un second modèle (occupation VRAM, latence de chargement), et le draft doit avoir été pré-entraîné sur une distribution proche du target sinon l'acceptance rate s'effondre<a class="cite" href="#source-1" data-cite="1">1</a><a class="cite" href="#source-2" data-cite="2">2</a>.</p>
+          <p><strong>Famille 2 — Têtes additionnelles (<span class="term" data-tooltip="Medusa : framework qui ajoute K têtes de décode supplémentaires sur le target. Chaque tête prédit le token i+k depuis la même couche cachée. Cai et al., Together AI/Princeton, ICML 2024.">Medusa</span>, Hydra).</strong> Tianle Cai et al. (Together AI, Princeton) proposent en 2024 d'<strong>ajouter K têtes de décode sur le target lui-même</strong> — chaque tête prédit le token à i+1, i+2, …, i+K en parallèle, à partir de la même couche cachée<a class="cite" href="#source-3" data-cite="3">3</a>. Avantage majeur : pas de second modèle, pas de second poids à charger. Inconvénient : le draft n'est plus autoregressif (chaque tête voit la même couche cachée, pas la prédiction de la tête précédente), donc l'acceptance rate des tokens lointains chute vite. Hydra corrige partiellement en réintroduisant une dépendance séquentielle entre têtes<a class="cite" href="#source-12" data-cite="12">12</a>. Medusa-2 (2024) augmente le nombre de têtes et combine avec tree attention pour atteindre 2,8× sur Vicuna 7B<a class="cite" href="#source-3" data-cite="3">3</a>.</p>
+          <p><strong>Famille 3 — Feature-level autoregression (EAGLE).</strong> Yuhui Li et al. (Microsoft Research, Vector Institute) repèrent en 2024 un défaut de Medusa : prédire les tokens directement est intrinsèquement bruité. EAGLE prédit la <strong>feature</strong> (l'embedding intermédiaire de la couche pénultième) au lieu du token, puis applique la couche LM finale séparément. La feature étant un signal plus stable que le token, EAGLE atteint des acceptance rates 30-40 % plus élevés que Medusa sur les mêmes K<a class="cite" href="#source-4" data-cite="4">4</a>. EAGLE-2 (mi-2024) introduit un mécanisme de <strong>dynamic draft tree</strong> qui adapte la profondeur et la largeur du tree à la confiance courante. EAGLE-3 (2025) supprime l'entraînement de la feature loss au profit d'une nouvelle fonction d'objective basée sur la sequence-level acceptance — atteignant 4,5-5× sur Llama 3.1 8B et 3,0-4,5× sur Llama 3.3 70B<a class="cite" href="#source-4" data-cite="4">4</a>. <strong>EAGLE-3 est en 2026 l'état de l'art de la décode spéculative entraînée.</strong></p>
+          <p><strong>Famille 4 — Jacobi parallel decoding (Lookahead).</strong> Yichao Fu et al. (LMSYS, UCSD) proposent en 2024 une approche radicalement différente : <strong>pas de draft model du tout</strong>. Lookahead Decoding utilise un solver Jacobi pour résoudre en parallèle un système d'équations fixe-points sur les futurs tokens, en exploitant le fait que le target lui-même peut servir de critique. Acceptance rate plus faible (35-55 %), mais zéro overhead de drafting, zéro entraînement supplémentaire, zéro VRAM additionnelle. Speedup mesuré : 1,5-2,3× selon les modèles<a class="cite" href="#source-5" data-cite="5">5</a>. <strong>C'est la variante de choix pour les déploiements zero-training où l'on ne veut ni gérer un second poids ni reentraîner le target.</strong></p>
+          <p>À ces quatre familles s'ajoute un raffinement orthogonal : la <strong>décode spéculative en ligne</strong> (Liu et al., ICML 2024) qui adapte le draft à la distribution observée en production, via fine-tuning continu sur les rejets<a class="cite" href="#source-8" data-cite="8">8</a>. C'est techniquement compatible avec les familles 1 et 3 (où le draft existe comme entité entraînable séparément). En pratique, peu de déploiements l'activent — la complexité opérationnelle (qui ré-entraîne ? sur quelles données ? avec quelle gouvernance ?) freine l'adoption hors des labs de recherche.</p>
+
+          <figure class="figure" id="fig-03">
+            <svg data-schema-id="schema-03" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="title-03">
+  <title id="title-03">Taxonomie des variantes de décode spéculative</title>
+  <defs>
+    <style>
+      .title{font:600 28px/1.1 'Fraunces',serif;letter-spacing:-0.01em;fill:#1e1e2a}
+      .subtitle{font:400 italic 18px/1.3 'Fraunces',serif;fill:#6b6f7c}
+      .marker{font:600 12px/1 'JetBrains Mono',monospace;letter-spacing:0.16em;fill:#a83e55}
+      .col-eyebrow{font:600 11px/1 'JetBrains Mono',monospace;letter-spacing:0.18em;fill:#a83e55}
+      .col-title{font:600 19px/1.15 'Fraunces',serif;letter-spacing:-0.01em;fill:#1e1e2a}
+      .body-label{font:500 14px/1.4 'Inter',sans-serif;fill:#1e1e2a}
+      .annotation{font:400 12.5px/1.4 'Inter',sans-serif;fill:#6b6f7c}
+      .tick{font:500 11px/1 'JetBrains Mono',monospace;letter-spacing:0.06em;fill:#9a9ca5}
+      .caption{font:400 italic 12px/1.4 'Inter',sans-serif;fill:#9a9ca5}
+      .family-frame-1{fill:#fdfaf0;stroke:rgba(30,30,44,0.18);stroke-width:1.2}
+      .family-frame-2{fill:#fbf3e5;stroke:rgba(30,30,44,0.22);stroke-width:1.2}
+      .family-frame-3{fill:#f7eed8;stroke:rgba(30,30,44,0.26);stroke-width:1.2}
+      .family-frame-4{fill:#f2e6c8;stroke:rgba(30,30,44,0.30);stroke-width:1.2}
+      .badge{fill:#1a5c6b;rx:3}
+      .badge-text{font:500 10.5px/1 'JetBrains Mono',monospace;letter-spacing:0.08em;fill:#faf6ec}
+      .target-box{fill:#b8582e;stroke:#7d3a1a;stroke-width:1.2}
+      .draft-box{fill:#fdfaf0;stroke:#b8582e;stroke-width:1.4;stroke-dasharray:4 3}
+      .head-box{fill:#fdfaf0;stroke:#1a5c6b;stroke-width:1.4}
+      .arrow{stroke:rgba(30,30,44,0.6);stroke-width:1.2;fill:none}
+      .arrow-feature{stroke:#1a5c6b;stroke-width:1.6;fill:none}
+    </style>
+    <marker id="ar03" markerWidth="9" markerHeight="7" refX="6" refY="3.5" orient="auto">
+      <path d="M0,0 L9,3.5 L0,7 z" fill="rgba(30,30,44,0.6)"/>
+    </marker>
+    <marker id="ar03b" markerWidth="9" markerHeight="7" refX="6" refY="3.5" orient="auto">
+      <path d="M0,0 L9,3.5 L0,7 z" fill="#1a5c6b"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="760" fill="#faf6ec"/>
+
+  <text x="80" y="34" class="marker">SCHÉMA 03</text>
+  <text x="80" y="62" class="title">Quatre stratégies pour trouver un draft</text>
+  <text x="80" y="92" class="subtitle">D'un modèle externe à pas de modèle du tout : où trouver le draft qui propose les K tokens spéculatifs.</text>
+
+  <!-- Famille 1 — Draft externe -->
+  <g class="interactive" data-region="family-draft">
+    <rect x="80" y="140" width="260" height="480" rx="6" class="family-frame-1"/>
+    <text x="100" y="172" class="col-eyebrow">FAMILLE 1 · 2022</text>
+    <text x="100" y="200" class="col-title">Draft model</text>
+    <text x="100" y="222" class="col-title">externe</text>
+    <text x="100" y="252" class="annotation">Un petit modèle de la même famille</text>
+    <text x="100" y="270" class="annotation">(10–100× plus petit) propose K tokens.</text>
+
+    <!-- Visuel : target (gros) + draft (petit) -->
+    <rect x="115" y="305" width="100" height="80" rx="3" class="target-box"/>
+    <text x="165" y="338" class="body-label" text-anchor="middle" fill="#faf6ec">target</text>
+    <text x="165" y="358" class="tick" text-anchor="middle" fill="#faf6ec">70B</text>
+    <text x="165" y="376" class="tick" text-anchor="middle" fill="#faf6ec">FP16</text>
+
+    <rect x="240" y="335" width="60" height="50" rx="3" class="draft-box"/>
+    <text x="270" y="358" class="body-label" text-anchor="middle" fill="#b8582e">draft</text>
+    <text x="270" y="376" class="tick" text-anchor="middle" fill="#b8582e">1B</text>
+
+    <!-- Bullets -->
+    <text x="100" y="425" class="body-label" font-weight="600">✓ Zéro modif du target</text>
+    <text x="100" y="445" class="annotation">Pas de fine-tuning, sampling propre.</text>
+
+    <text x="100" y="475" class="body-label" font-weight="600">✗ Second poids à charger</text>
+    <text x="100" y="495" class="annotation">VRAM additionnelle ; matching de</text>
+    <text x="100" y="511" class="annotation">distribution requis.</text>
+
+    <rect x="100" y="552" width="120" height="22" class="badge"/>
+    <text x="160" y="567" class="badge-text" text-anchor="middle">2,2× LLAMA-2 70B</text>
+    <text x="100" y="595" class="annotation">Leviathan ; Chen et al. (DeepMind).</text>
+  </g>
+
+  <!-- Famille 2 — Medusa -->
+  <g class="interactive" data-region="family-medusa">
+    <rect x="360" y="140" width="260" height="480" rx="6" class="family-frame-2"/>
+    <text x="380" y="172" class="col-eyebrow">FAMILLE 2 · 2024</text>
+    <text x="380" y="200" class="col-title">Têtes additionnelles</text>
+    <text x="380" y="222" class="col-title">(Medusa, Hydra)</text>
+    <text x="380" y="252" class="annotation">K têtes de décode ajoutées sur le</text>
+    <text x="380" y="270" class="annotation">target ; chaque tête prédit i+k.</text>
+
+    <!-- Visuel -->
+    <rect x="395" y="305" width="100" height="80" rx="3" class="target-box"/>
+    <text x="445" y="338" class="body-label" text-anchor="middle" fill="#faf6ec">target</text>
+    <text x="445" y="358" class="tick" text-anchor="middle" fill="#faf6ec">+ K têtes</text>
+    <text x="445" y="376" class="tick" text-anchor="middle" fill="#faf6ec">MLP</text>
+
+    <rect x="515" y="315" width="42" height="20" rx="2" class="head-box"/>
+    <text x="536" y="329" class="tick" text-anchor="middle" fill="#1a5c6b">h+1</text>
+    <rect x="515" y="338" width="42" height="20" rx="2" class="head-box"/>
+    <text x="536" y="352" class="tick" text-anchor="middle" fill="#1a5c6b">h+2</text>
+    <rect x="515" y="361" width="42" height="20" rx="2" class="head-box"/>
+    <text x="536" y="375" class="tick" text-anchor="middle" fill="#1a5c6b">h+3</text>
+
+    <line x1="495" y1="325" x2="515" y2="325" class="arrow" marker-end="url(#ar03)"/>
+    <line x1="495" y1="348" x2="515" y2="348" class="arrow" marker-end="url(#ar03)"/>
+    <line x1="495" y1="371" x2="515" y2="371" class="arrow" marker-end="url(#ar03)"/>
+
+    <!-- Bullets -->
+    <text x="380" y="425" class="body-label" font-weight="600">✓ Pas de second poids</text>
+    <text x="380" y="445" class="annotation">Têtes attachées au target.</text>
+
+    <text x="380" y="475" class="body-label" font-weight="600">✗ Têtes non-autoregressives</text>
+    <text x="380" y="495" class="annotation">L'acceptance chute pour les têtes</text>
+    <text x="380" y="511" class="annotation">lointaines. Hydra corrige partiellement.</text>
+
+    <rect x="380" y="552" width="120" height="22" class="badge"/>
+    <text x="440" y="567" class="badge-text" text-anchor="middle">2,8× VICUNA 7B</text>
+    <text x="380" y="595" class="annotation">Cai et al. ; Yan et al. (Hydra).</text>
+  </g>
+
+  <!-- Famille 3 — EAGLE -->
+  <g class="interactive" data-region="family-eagle">
+    <rect x="640" y="140" width="260" height="480" rx="6" class="family-frame-3"/>
+    <text x="660" y="172" class="col-eyebrow">FAMILLE 3 · 2024–2025</text>
+    <text x="660" y="200" class="col-title">Feature-level</text>
+    <text x="660" y="222" class="col-title">(EAGLE 1/2/3)</text>
+    <text x="660" y="252" class="annotation">Prédit la feature (embedding</text>
+    <text x="660" y="270" class="annotation">pénultième), pas le token.</text>
+
+    <!-- Visuel -->
+    <rect x="675" y="305" width="100" height="80" rx="3" class="target-box"/>
+    <text x="725" y="338" class="body-label" text-anchor="middle" fill="#faf6ec">target</text>
+    <text x="725" y="358" class="tick" text-anchor="middle" fill="#faf6ec">layers</text>
+    <text x="725" y="376" class="tick" text-anchor="middle" fill="#faf6ec">1..L−1</text>
+
+    <rect x="795" y="335" width="80" height="22" rx="2" class="head-box"/>
+    <text x="835" y="350" class="tick" text-anchor="middle" fill="#1a5c6b">feature head</text>
+    <line x1="775" y1="345" x2="795" y2="345" class="arrow-feature" marker-end="url(#ar03b)"/>
+
+    <rect x="675" y="395" width="100" height="22" rx="2" class="head-box"/>
+    <text x="725" y="410" class="tick" text-anchor="middle" fill="#1a5c6b">LM head (target)</text>
+    <line x1="835" y1="357" x2="780" y2="395" class="arrow-feature" marker-end="url(#ar03b)"/>
+
+    <!-- Bullets -->
+    <text x="660" y="450" class="body-label" font-weight="600">✓ Acceptance +30–40 %</text>
+    <text x="660" y="470" class="annotation">La feature est plus stable que le token.</text>
+
+    <text x="660" y="498" class="body-label" font-weight="600">✓ Tree dynamique (EAGLE-2)</text>
+    <text x="660" y="518" class="annotation">EAGLE-3 : loss sequence-level.</text>
+
+    <rect x="660" y="552" width="160" height="22" class="badge"/>
+    <text x="740" y="567" class="badge-text" text-anchor="middle">3,0–4,5× LLAMA-3 70B</text>
+    <text x="660" y="595" class="annotation">Li, Wei, Zhang × 3. État de l'art 2026.</text>
+  </g>
+
+  <!-- Famille 4 — Lookahead -->
+  <g class="interactive" data-region="family-lookahead">
+    <rect x="920" y="140" width="200" height="480" rx="6" class="family-frame-4"/>
+    <text x="940" y="172" class="col-eyebrow">FAMILLE 4 · 2024</text>
+    <text x="940" y="200" class="col-title">Jacobi parallel</text>
+    <text x="940" y="222" class="col-title">(Lookahead)</text>
+    <text x="940" y="252" class="annotation">Aucun draft. Solver Jacobi sur</text>
+    <text x="940" y="270" class="annotation">fixe-points en parallèle.</text>
+
+    <!-- Visuel -->
+    <rect x="965" y="305" width="110" height="80" rx="3" class="target-box"/>
+    <text x="1020" y="338" class="body-label" text-anchor="middle" fill="#faf6ec">target</text>
+    <text x="1020" y="358" class="tick" text-anchor="middle" fill="#faf6ec">solo</text>
+    <text x="1020" y="376" class="tick" text-anchor="middle" fill="#faf6ec">(Jacobi)</text>
+
+    <!-- Bullets -->
+    <text x="940" y="425" class="body-label" font-weight="600">✓ Zero VRAM additionnelle</text>
+    <text x="940" y="445" class="annotation">Pas de second poids, pas</text>
+    <text x="940" y="461" class="annotation">d'entraînement.</text>
+
+    <text x="940" y="491" class="body-label" font-weight="600">✗ Acceptance plus basse</text>
+    <text x="940" y="511" class="annotation">35–55 % sans tree dédié.</text>
+
+    <rect x="940" y="552" width="130" height="22" class="badge"/>
+    <text x="1005" y="567" class="badge-text" text-anchor="middle">1,5–2,3× LLAMA-2</text>
+    <text x="940" y="595" class="annotation">Fu et al. (LMSYS, UCSD).</text>
+  </g>
+
+  <text x="80" y="660" class="caption">Lecture : EAGLE-3 domine la qualité par token gagné ; Lookahead domine le coût de déploiement (zero training, zero VRAM additionnelle).</text>
+  <text x="80" y="678" class="caption">Medusa garde sa place quand on veut éviter de gérer un second poids GPU mais accepte de fine-tuner les têtes sur le target.</text>
+  <text x="80" y="708" class="caption">Une stratégie orthogonale, la décode spéculative en ligne (Liu et al., ICML 2024), ré-entraîne le draft sur les rejets observés en production.</text>
+  <text x="80" y="735" class="caption">Sources — Leviathan (2022) ; Chen et al. (2023) ; Cai et al. (ICML 2024) ; Li et al. EAGLE 1/2/3 (2024–2025) ; Fu et al. Lookahead (2024) ; Yan et al. Hydra (COLM 2024).</text>
+</svg>
+
+            <figcaption class="figure-caption"><a class="anchor" href="#fig-03" title="Lien direct vers ce schéma">¶</a>Schéma 3 — Quatre familles, classées par stratégie de drafting. À gauche, le draft model externe (papier fondateur) ; au centre, Medusa et EAGLE qui collent au target ; à droite, Lookahead qui s'en passe complètement. EAGLE-3 domine la qualité, Lookahead domine le coût de déploiement.</figcaption>
+          </figure>
+        </section>
+
+        <section id="section-4">
+          <h2><a class="anchor" href="#section-4">¶</a> 4. Le piège de l'acceptance rate</h2>
+          <p>Tous les chiffres marketing des frameworks (« 2× », « 3× », « jusqu'à 5× ») masquent une dépendance forte au <strong>domaine de la séquence générée</strong>. Le speedup réel d'une décode spéculative est gouverné par la formule (Leviathan et al., 2022) :</p>
+          <pre><code>speedup ≈ (1 + α + α² + … + α^K) × (T_target / (T_target + K · T_draft + T_verify))</code></pre>
+          <p>où <code>α</code> est l'acceptance rate par token et K le nombre de tokens proposés. Pour α = 0,8 et K = 5, le facteur géométrique vaut ~3,4. Pour α = 0,4, il chute à ~1,6. Sous α = 0,3, le surcoût du drafting et de la vérification dépasse le gain — la spéculation devient nette perte.</p>
+          <p><strong>Trois facteurs gouvernent α en production</strong> (voir Schéma 4).</p>
+          <p><strong>Le domaine.</strong> Le code source affiche des acceptance rates très élevés (75-85 %) : vocabulaire restreint, structures syntaxiques répétitives, tokens prévisibles (<code>(</code>, <code>{</code>, <code>return</code>, indentation). Les résumés et la réponse Q&amp;A factuelle se situent autour de 60-70 % : prévisibilité moyenne. La génération créative ouverte (fiction, poésie, brainstorming) tombe à 40-50 % : variabilité lexicale, températures élevées (0,8-1,2) qui aplatissent les distributions et désynchronisent draft et target. La traduction varie selon la paire de langues — élevée dans les langues européennes, plus basse pour les langues à morphologie riche (finnois, hongrois, turc).</p>
+          <p><strong>La température et la stratégie de sampling.</strong> À température 0 (greedy), draft et target convergent vers les mêmes argmax si leurs top-1 coïncident — α monte mécaniquement. À température 0,7-1,0, la divergence stochastique des deux distributions fait chuter α de 10-15 points. <span class="term" data-tooltip="Top-p (nucleus sampling) : on ne tire qu'au sein des tokens dont la masse cumulée atteint p. Top-k : on ne tire qu'au sein des k tokens les plus probables. Désaccord entre draft et target sur ces filtres cause un effondrement silencieux de α.">Top-p et top-k filtering</span> compliquent l'analyse : Together AI a documenté en 2024 des cas où top-p = 0,95 sur le draft mais 0,9 sur le target causait un effondrement silencieux de α (le draft proposait des tokens hors-top-p du target, systématiquement rejetés)<a class="cite" href="#source-11" data-cite="11">11</a>. <strong>Garder le sampling cohérent entre draft et target est une condition de production trop souvent oubliée.</strong></p>
+          <p><strong>Le drift de distribution.</strong> Un draft entraîné sur les données pré-2024 et appelé en 2026 sur des prompts agentiques (chaînes JSON longues, calls de tools, code generation contemporaine) verra son α s'effondrer. C'est le scénario silencieux : le SLA latence se dégrade graduellement sans erreur, sans alerte ; seul un monitoring explicite de l'acceptance rate par requête permet de détecter le drift. <mark>En 2026, l'instrumentation de α est devenue un indicateur de premier rang dans les dashboards d'inference, au même titre que <code>p99 latency</code> ou <code>tokens/second</code></mark><a class="cite" href="#source-9" data-cite="9">9</a><a class="cite" href="#source-10" data-cite="10">10</a>.</p>
+          <p>EAGLE-3 et Medusa-2 incluent des mécanismes de <strong>draft tree dynamique</strong> qui adaptent la profondeur K et la largeur (nombre de branches dans le tree) à la confiance courante : sur une zone à haute prédictibilité (génération de code structuré), le tree pousse à K=8 et largeur 4 ; sur une zone créative, il retombe à K=3 et largeur 1 — voire désactive temporairement la spéculation. Cette adaptativité est ce qui distingue une intégration GA mature (vLLM 0.6+, TensorRT-LLM 0.9+) d'un prototype académique<a class="cite" href="#source-4" data-cite="4">4</a><a class="cite" href="#source-9" data-cite="9">9</a><a class="cite" href="#source-10" data-cite="10">10</a>.</p>
+
+          <figure class="figure" id="fig-04">
+            <svg data-schema-id="schema-04" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 740" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="title-04">
+  <title id="title-04">Acceptance rate selon le domaine</title>
+  <defs>
+    <style>
+      .title{font:600 28px/1.1 'Fraunces',serif;letter-spacing:-0.01em;fill:#1e1e2a}
+      .subtitle{font:400 italic 18px/1.3 'Fraunces',serif;fill:#6b6f7c}
+      .marker{font:600 12px/1 'JetBrains Mono',monospace;letter-spacing:0.16em;fill:#a83e55}
+      .col-eyebrow{font:600 11px/1 'JetBrains Mono',monospace;letter-spacing:0.18em;fill:#a83e55}
+      .col-title{font:600 18px/1.15 'Fraunces',serif;letter-spacing:-0.01em;fill:#1e1e2a}
+      .body-label{font:500 14px/1.4 'Inter',sans-serif;fill:#1e1e2a}
+      .annotation{font:400 12.5px/1.4 'Inter',sans-serif;fill:#6b6f7c}
+      .tick{font:500 11px/1 'JetBrains Mono',monospace;letter-spacing:0.06em;fill:#9a9ca5}
+      .caption{font:400 italic 12px/1.4 'Inter',sans-serif;fill:#9a9ca5}
+      .axis-label{font:500 11px/1.2 'JetBrains Mono',monospace;letter-spacing:0.16em;fill:#6b6f7c;text-transform:uppercase}
+      .frame{fill:#fdfaf0;stroke:rgba(30,30,44,0.18);stroke-width:1.2}
+      .axis{stroke:rgba(30,30,44,0.30);stroke-width:1;fill:none}
+      .bar-high{fill:#1a5c6b}
+      .bar-mid{fill:#b8582e}
+      .bar-low{fill:rgba(184,88,46,0.5)}
+      .bar-loss{fill:#a83e55}
+      .ref-line{stroke:#a83e55;stroke-width:1.4;stroke-dasharray:5 4;fill:none}
+    </style>
+    <marker id="ar04" markerWidth="9" markerHeight="7" refX="6" refY="3.5" orient="auto">
+      <path d="M0,0 L9,3.5 L0,7 z" fill="rgba(30,30,44,0.55)"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="740" fill="#faf6ec"/>
+
+  <text x="80" y="34" class="marker">SCHÉMA 04</text>
+  <text x="80" y="62" class="title">Le speedup paie plein pot — ou pas du tout</text>
+  <text x="80" y="92" class="subtitle">Acceptance rate α et speedup effectif par domaine. Sous α ≈ 30 %, la spéculation devient perte nette.</text>
+
+  <!-- Cadre graphique -->
+  <rect x="80" y="140" width="1040" height="430" rx="6" class="frame"/>
+
+  <!-- Axes -->
+  <line x1="170" y1="510" x2="1080" y2="510" class="axis"/>
+  <line x1="170" y1="180" x2="170" y2="510" class="axis"/>
+
+  <!-- Y-axis ticks (acceptance rate, 0 → 100%) -->
+  <g>
+    <text x="160" y="514" class="tick" text-anchor="end">0 %</text>
+    <text x="160" y="447" class="tick" text-anchor="end">25 %</text>
+    <text x="160" y="380" class="tick" text-anchor="end">50 %</text>
+    <text x="160" y="313" class="tick" text-anchor="end">75 %</text>
+    <text x="160" y="246" class="tick" text-anchor="end">100 %</text>
+
+    <line x1="165" y1="510" x2="170" y2="510" class="axis"/>
+    <line x1="165" y1="443" x2="170" y2="443" class="axis"/>
+    <line x1="165" y1="376" class="axis" x2="170" y2="376"/>
+    <line x1="165" y1="309" x2="170" y2="309" class="axis"/>
+    <line x1="165" y1="242" x2="170" y2="242" class="axis"/>
+
+    <text x="92" y="345" class="axis-label" transform="rotate(-90 92 345)" text-anchor="middle">α — ACCEPTANCE RATE</text>
+  </g>
+
+  <!-- Reference line at α = 0.30 (perte nette) -->
+  <line x1="170" y1="429" x2="1080" y2="429" class="ref-line"/>
+  <text x="1086" y="433" class="annotation" fill="#a83e55">α = 30 % · seuil perte nette</text>
+
+  <!-- Reference line at α = 0.50 (gain marginal) -->
+  <line x1="170" y1="376" x2="1080" y2="376" class="ref-line" stroke="rgba(107,111,124,0.5)"/>
+  <text x="1086" y="380" class="annotation" fill="#9a9ca5">α = 50 %</text>
+
+  <!-- Bars : 6 domaines -->
+  <!-- 1. Code -->
+  <g class="interactive" data-region="domain-code">
+    <rect x="220" y="296" width="100" height="214" class="bar-high"/>
+    <text x="270" y="288" class="body-label" text-anchor="middle" fill="#1a5c6b" font-weight="600">α ≈ 80 %</text>
+    <text x="270" y="525" class="annotation" text-anchor="middle">CODE</text>
+    <text x="270" y="542" class="tick" text-anchor="middle">3,8× speedup</text>
+  </g>
+
+  <!-- 2. Q&A factuel / résumé -->
+  <g class="interactive" data-region="domain-summary">
+    <rect x="356" y="336" width="100" height="174" class="bar-high"/>
+    <text x="406" y="328" class="body-label" text-anchor="middle" fill="#1a5c6b" font-weight="600">α ≈ 65 %</text>
+    <text x="406" y="525" class="annotation" text-anchor="middle">RÉSUMÉ / Q&amp;A</text>
+    <text x="406" y="542" class="tick" text-anchor="middle">2,8× speedup</text>
+  </g>
+
+  <!-- 3. Traduction -->
+  <g>
+    <rect x="492" y="349" width="100" height="161" class="bar-mid"/>
+    <text x="542" y="341" class="body-label" text-anchor="middle" fill="#b8582e" font-weight="600">α ≈ 60 %</text>
+    <text x="542" y="525" class="annotation" text-anchor="middle">TRADUCTION</text>
+    <text x="542" y="542" class="tick" text-anchor="middle">2,4× speedup</text>
+  </g>
+
+  <!-- 4. Créatif (haute T°) -->
+  <g class="interactive" data-region="domain-creative">
+    <rect x="628" y="389" width="100" height="121" class="bar-low"/>
+    <text x="678" y="381" class="body-label" text-anchor="middle" fill="#b8582e" font-weight="600">α ≈ 45 %</text>
+    <text x="678" y="525" class="annotation" text-anchor="middle">CRÉATIF (T° 0,9)</text>
+    <text x="678" y="542" class="tick" text-anchor="middle">1,5× speedup</text>
+  </g>
+
+  <!-- 5. Drift / cold -->
+  <g class="interactive" data-region="domain-cold">
+    <rect x="764" y="436" width="100" height="74" class="bar-loss"/>
+    <text x="814" y="428" class="body-label" text-anchor="middle" fill="#a83e55" font-weight="600">α ≈ 28 %</text>
+    <text x="814" y="525" class="annotation" text-anchor="middle">DRIFT DOMAINE</text>
+    <text x="814" y="542" class="tick" text-anchor="middle">0,9× — perte nette</text>
+  </g>
+
+  <!-- 6. Adversarial / OOD -->
+  <g>
+    <rect x="900" y="463" width="100" height="47" class="bar-loss"/>
+    <text x="950" y="455" class="body-label" text-anchor="middle" fill="#a83e55" font-weight="600">α ≈ 18 %</text>
+    <text x="950" y="525" class="annotation" text-anchor="middle">OUT-OF-DIST.</text>
+    <text x="950" y="542" class="tick" text-anchor="middle">0,7× — fort coût</text>
+  </g>
+
+  <text x="600" y="565" class="axis-label" text-anchor="middle">DOMAINE DE LA RÉPONSE GÉNÉRÉE</text>
+
+  <!-- Annotations latérales -->
+  <g>
+    <text x="80" y="600" class="body-label" font-weight="600">Trois facteurs gouvernent α en production :</text>
+    <text x="80" y="624" class="annotation"><tspan fill="#1e1e2a" font-weight="600">1 · Le domaine</tspan> — code &gt;&gt; prose informative &gt;&gt; génération créative.</text>
+    <text x="80" y="644" class="annotation"><tspan fill="#1e1e2a" font-weight="600">2 · La température et le sampling</tspan> — T° élevée + top-p désaccordé entre draft et target = effondrement silencieux.</text>
+    <text x="80" y="664" class="annotation"><tspan fill="#1e1e2a" font-weight="600">3 · Le drift</tspan> — un draft pré-2024 sur prompts agentiques 2026 perd 15–25 points d'α en quelques mois.</text>
+  </g>
+
+  <text x="80" y="700" class="caption">Lecture : sous α ≈ 30 %, le surcoût du drafting et de la vérification dépasse le gain. La spéculation devient perte nette.</text>
+  <text x="80" y="718" class="caption">Sources — chiffres calibrés sur Together AI benchmarks ; EAGLE-3 paper (2025) ; vLLM telemetry guides ; Xia et al. survey (ACL 2024).</text>
+</svg>
+
+            <figcaption class="figure-caption"><a class="anchor" href="#fig-04" title="Lien direct vers ce schéma">¶</a>Schéma 4 — La spéculation paie plein pot sur le code, paie mais moins sur la prose informative, casse sur la génération créative à haute température. Sous α ≈ 0,3 (domaine drifté, hors-distribution), la spéculation devient perte nette par rapport à la décode standard.</figcaption>
+          </figure>
+        </section>
+
+        <section id="section-5">
+          <h2><a class="anchor" href="#section-5">¶</a> 5. Spéculation × batching dynamique : où ça casse</h2>
+          <p>Le second piège — celui que la littérature académique a longtemps esquivé et que la mise en production a forcé à regarder en face — est l'interaction entre spéculation et <strong>batching dynamique</strong>.</p>
+          <p>La décode est memory-bound à <code>batch_size = 1</code> : un seul utilisateur, le GPU lit les poids et le KV cache pour une seule séquence, les tensor cores sont sous-employés. C'est précisément le régime où la spéculation brille : le surcoût compute du forward de vérification (qui traite K+1 positions au lieu de 1) est absorbé par les cores inutilisés. Le speedup mesuré est maximal — proche du 4-5× annoncé par EAGLE-3 sur les benchmarks single-batch.</p>
+          <p>Mais en production multi-tenant, un serveur d'inference n'opère pas à batch 1. vLLM, SGLang et TensorRT-LLM agrègent dynamiquement les requêtes concurrentes en un batch unique pour amortir le coût de chargement des poids (le <span class="term" data-tooltip="Continuous batching (ou inflight batching) : technique qui agrège dynamiquement les requêtes en cours plutôt que de les traiter par batch statique. Introduit par Orca, popularisé par vLLM (PagedAttention).">continuous batching</span> introduit par Orca et popularisé par vLLM)<a class="cite" href="#source-6" data-cite="6">6</a>. À batch 32 ou 64, le GPU repasse en régime compute-bound : les tensor cores sont saturés par le batch lui-même, le slack compute disparaît, et le surcoût de la vérification spéculative (K+1 positions × batch_size) devient un coût net.</p>
+          <p>Le point de bascule (voir Schéma 5) dépend du modèle, du GPU, et de la variante de spéculation choisie. Sur Llama-3.1-70B en FP16 sur H100, le point d'équilibre se situe autour de <code>batch_size ≈ 24-32</code> pour EAGLE-3 et <code>batch_size ≈ 16-20</code> pour Medusa-2 (qui paie plus cher en compute par tête)<a class="cite" href="#source-9" data-cite="9">9</a><a class="cite" href="#source-10" data-cite="10">10</a>. Au-delà de ce seuil, la spéculation <strong>dégrade le throughput agrégé</strong> : on traite moins de tokens/seconde total avec spéculation activée que sans.</p>
+          <p>D'où la sophistication récente des serveurs. vLLM 0.6 (juin 2025) introduit un <strong>scheduler hybride</strong> : il active la spéculation par requête, en fonction de la charge instantanée. Quand le batch courant est &lt; 16, la spéculation est activée ; quand le batch dépasse un seuil (configurable, défaut 24), elle est désactivée pour les nouvelles requêtes du batch. TensorRT-LLM 0.9 (octobre 2025) va plus loin : il maintient deux schedulers parallèles, un avec spéculation et un sans, et migre dynamiquement les requêtes entre les deux selon une heuristique combinant <code>batch_size</code>, <code>α observé sur les 100 derniers tokens</code> et <code>SLA configuré</code><a class="cite" href="#source-10" data-cite="10">10</a>. SGLang propose une approche similaire via son <code>runtime_config.speculation_threshold</code><a class="cite" href="#source-9" data-cite="9">9</a>.</p>
+          <p>L'implication pratique : <mark><strong>l'optimisation d'un déploiement spéculatif en production n'est plus le choix de la variante (EAGLE-3 vs Medusa-2), c'est le calibrage du seuil de désactivation par batch</strong></mark>. Un seuil trop bas laisse du speedup sur la table aux heures creuses ; un seuil trop haut dégrade le throughput aux heures de pointe. La métrique à optimiser n'est pas le <code>tokens/second peak</code> mais le <code>p95 time-to-first-token</code> sous charge représentative, qui capture les deux régimes.</p>
+
+          <figure class="figure" id="fig-05">
+            <svg data-schema-id="schema-05" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="title-05">
+  <title id="title-05">Le point de bascule speedup vs batch size</title>
+  <defs>
+    <style>
+      .title{font:600 28px/1.1 'Fraunces',serif;letter-spacing:-0.01em;fill:#1e1e2a}
+      .subtitle{font:400 italic 18px/1.3 'Fraunces',serif;fill:#6b6f7c}
+      .marker{font:600 12px/1 'JetBrains Mono',monospace;letter-spacing:0.16em;fill:#a83e55}
+      .body-label{font:500 14px/1.4 'Inter',sans-serif;fill:#1e1e2a}
+      .annotation{font:400 12.5px/1.4 'Inter',sans-serif;fill:#6b6f7c}
+      .tick{font:500 11px/1 'JetBrains Mono',monospace;letter-spacing:0.06em;fill:#9a9ca5}
+      .caption{font:400 italic 12px/1.4 'Inter',sans-serif;fill:#9a9ca5}
+      .axis-label{font:500 11px/1.2 'JetBrains Mono',monospace;letter-spacing:0.16em;fill:#6b6f7c;text-transform:uppercase}
+      .frame{fill:#fdfaf0;stroke:rgba(30,30,44,0.18);stroke-width:1.2}
+      .axis{stroke:rgba(30,30,44,0.30);stroke-width:1;fill:none}
+      .grid{stroke:rgba(30,30,44,0.10);stroke-width:0.6;fill:none}
+      .curve-spec{stroke:#b8582e;stroke-width:2.8;fill:none}
+      .curve-baseline{stroke:#1a5c6b;stroke-width:2.2;stroke-dasharray:6 4;fill:none}
+      .zone-win{fill:rgba(26,92,107,0.10)}
+      .zone-loss{fill:rgba(168,62,85,0.10)}
+      .point{fill:#a83e55;stroke:#faf6ec;stroke-width:2}
+    </style>
+  </defs>
+
+  <rect width="1200" height="720" fill="#faf6ec"/>
+
+  <text x="80" y="34" class="marker">SCHÉMA 05</text>
+  <text x="80" y="62" class="title">Le speedup spéculatif s'effondre avec la charge</text>
+  <text x="80" y="92" class="subtitle">À batch 1, le GPU a du slack compute. À batch 32+, il sature — le surcoût de la vérification annule le gain.</text>
+
+  <!-- Cadre -->
+  <rect x="80" y="135" width="1040" height="430" rx="6" class="frame"/>
+
+  <!-- Zones de fond -->
+  <g class="interactive" data-region="batch-1">
+    <rect x="170" y="160" width="370" height="380" class="zone-win"/>
+    <text x="355" y="186" class="body-label" text-anchor="middle" fill="#1a5c6b" font-weight="600">ZONE GAIN — memory-bound</text>
+  </g>
+  <g class="interactive" data-region="batch-cross">
+    <rect x="540" y="160" width="220" height="380" fill="rgba(184,88,46,0.07)"/>
+    <text x="650" y="186" class="body-label" text-anchor="middle" fill="#b8582e" font-weight="600">ZONE INDIFFÉRENCE</text>
+  </g>
+  <g class="interactive" data-region="batch-loss">
+    <rect x="760" y="160" width="320" height="380" class="zone-loss"/>
+    <text x="920" y="186" class="body-label" text-anchor="middle" fill="#a83e55" font-weight="600">ZONE PERTE — compute-bound</text>
+  </g>
+
+  <!-- Axes -->
+  <line x1="170" y1="540" x2="1080" y2="540" class="axis"/>
+  <line x1="170" y1="540" x2="170" y2="200" class="axis"/>
+
+  <!-- Y ticks (speedup) -->
+  <g>
+    <text x="160" y="544" class="tick" text-anchor="end">0,5×</text>
+    <text x="160" y="471" class="tick" text-anchor="end">1,0×</text>
+    <text x="160" y="398" class="tick" text-anchor="end">2,0×</text>
+    <text x="160" y="325" class="tick" text-anchor="end">3,0×</text>
+    <text x="160" y="252" class="tick" text-anchor="end">4,0×</text>
+
+    <line x1="165" y1="540" x2="170" y2="540" class="axis"/>
+    <line x1="165" y1="468" x2="170" y2="468" class="axis"/>
+    <line x1="165" y1="395" x2="170" y2="395" class="axis"/>
+    <line x1="165" y1="322" x2="170" y2="322" class="axis"/>
+    <line x1="165" y1="249" x2="170" y2="249" class="axis"/>
+
+    <text x="100" y="370" class="axis-label" transform="rotate(-90 100 370)" text-anchor="middle">SPEEDUP EFFECTIF</text>
+  </g>
+
+  <!-- X ticks (batch size, log-like) -->
+  <g>
+    <text x="220" y="558" class="tick" text-anchor="middle">1</text>
+    <text x="320" y="558" class="tick" text-anchor="middle">4</text>
+    <text x="430" y="558" class="tick" text-anchor="middle">8</text>
+    <text x="540" y="558" class="tick" text-anchor="middle">16</text>
+    <text x="650" y="558" class="tick" text-anchor="middle">24</text>
+    <text x="760" y="558" class="tick" text-anchor="middle">32</text>
+    <text x="870" y="558" class="tick" text-anchor="middle">48</text>
+    <text x="980" y="558" class="tick" text-anchor="middle">64</text>
+    <text x="1060" y="558" class="tick" text-anchor="middle">96</text>
+
+    <text x="620" y="585" class="axis-label" text-anchor="middle">BATCH SIZE (continuous batching)</text>
+  </g>
+
+  <!-- Ligne baseline (speedup = 1) -->
+  <line x1="170" y1="468" x2="1080" y2="468" class="curve-baseline"/>
+  <text x="1085" y="463" class="annotation" fill="#1a5c6b" font-weight="600">décode standard (1,0×)</text>
+
+  <!-- Courbe speedup spéculatif (descend de ~4× à ~0,9×) -->
+  <path d="M 220,252 C 280,260 320,275 360,295 C 400,318 430,338 470,365 C 500,390 530,415 570,440 C 600,455 640,465 680,470 C 720,473 760,475 800,478 C 840,484 870,494 910,505 C 950,514 980,519 1020,524 C 1050,527 1070,528 1080,528" class="curve-spec"/>
+
+  <!-- Annotation pic de speedup -->
+  <circle cx="220" cy="252" r="6" class="point"/>
+  <text x="240" y="248" class="body-label" font-weight="600" fill="#b8582e">3,8× à batch 1</text>
+
+  <!-- Annotation point de croisement (zone à ~batch 24) -->
+  <line x1="650" y1="200" x2="650" y2="540" class="grid" stroke-dasharray="4 3" stroke="rgba(184,88,46,0.45)"/>
+  <text x="650" y="206" class="annotation" text-anchor="middle" fill="#b8582e" font-weight="600">point d'équilibre</text>
+  <text x="650" y="222" class="annotation" text-anchor="middle" fill="#b8582e">≈ batch 24 (EAGLE-3, H100)</text>
+
+  <!-- Annotation perte nette -->
+  <circle cx="980" cy="519" r="5" class="point"/>
+  <text x="970" y="510" class="annotation" text-anchor="end" fill="#a83e55" font-weight="600">0,9× à batch 64</text>
+
+  <!-- Légende courbes -->
+  <g transform="translate(900 260)">
+    <line x1="0" y1="6" x2="40" y2="6" class="curve-spec"/>
+    <text x="48" y="10" class="annotation">spéculation activée</text>
+    <line x1="0" y1="30" x2="40" y2="30" class="curve-baseline"/>
+    <text x="48" y="34" class="annotation">décode standard</text>
+  </g>
+
+  <!-- Policy adaptative -->
+  <g class="interactive" data-region="policy-adapt">
+    <rect x="80" y="600" width="1040" height="70" rx="4" fill="#fbf3e5" stroke="#1a5c6b" stroke-width="1.2"/>
+    <text x="100" y="622" class="body-label" font-weight="600" fill="#1a5c6b">Politique d'activation conditionnelle (vLLM 0.6+, TensorRT-LLM 0.9+, SGLang)</text>
+    <text x="100" y="643" class="annotation">Le scheduler désactive la spéculation au-delà d'un seuil de batch_size configurable (typiquement 16–24).</text>
+    <text x="100" y="660" class="annotation">TensorRT-LLM maintient deux schedulers parallèles et migre les requêtes selon batch_size + α observé + SLA.</text>
+  </g>
+
+  <text x="80" y="700" class="caption">Sources — vLLM 0.6 release notes ; TensorRT-LLM 0.9 speculative decoding guide ; benchmarks SGLang sur H100/B200 ; Together AI engineering blog.</text>
+</svg>
+
+            <figcaption class="figure-caption"><a class="anchor" href="#fig-05" title="Lien direct vers ce schéma">¶</a>Schéma 5 — Le speedup spéculatif est maximal à batch 1 (memory-bound), s'effondre au-delà d'un seuil (compute-bound), et peut devenir perte nette à très haut batch. Les serveurs modernes activent la spéculation conditionnellement selon la charge instantanée.</figcaption>
+          </figure>
+        </section>
+
+        <section id="section-6">
+          <h2><a class="anchor" href="#section-6">¶</a> 6. Le marché des frameworks en 2026</h2>
+          <p>Quatre frameworks dominent l'inference LLM open-source en 2026, et tous quatre intègrent au moins une variante spéculative en GA. Le choix entre eux dépend moins de la disponibilité d'une variante que de la <strong>maturité de son intégration avec le scheduler et le batching dynamique</strong> (voir Schéma 6).</p>
+          <p><strong>vLLM (UC Berkeley, sky-lab).</strong> La référence de fait depuis la publication SOSP 2023<a class="cite" href="#source-6" data-cite="6">6</a>. Architecture <span class="term" data-tooltip="PagedAttention : structure de données qui gère le KV cache en pages de taille fixe (à la manière de la VM des OS), évitant la fragmentation et permettant le partage entre requêtes concurrentes. Innovation centrale de vLLM (SOSP 2023).">PagedAttention</span> + continuous batching. Support spéculatif en GA : draft model externe (depuis 0.4), Medusa et MLP-speculator (depuis 0.5), EAGLE et EAGLE-3 (depuis 0.6, ajouté mi-2025), Lookahead (expérimental). Scheduler hybride avec activation conditionnelle par batch depuis 0.6. License Apache 2.0. <strong>Choix par défaut pour qui veut un déploiement spéculatif éprouvé sur Llama / Qwen / Mistral</strong>.</p>
+          <p><strong>SGLang (sgl-project, fondé par Lianmin Zheng, ex-LMSYS).</strong> Né en 2024 comme alternative académique à vLLM, ciblant initialement les workloads multi-tour structurés (<span class="term" data-tooltip="RadixAttention : gestion du KV cache via un arbre radix qui maximise le prefix sharing entre requêtes concurrentes. Particulièrement efficace pour les workloads agentiques où les prompts partagent des préfixes longs.">RadixAttention</span> pour le prefix caching agressif). Support spéculatif aligné sur vLLM : draft externe, Medusa, EAGLE-1/2/3. RadixAttention + spéculation = particulièrement efficace pour les workloads agentiques où les prompts partagent des préfixes longs (system prompt, contexte conversationnel)<a class="cite" href="#source-9" data-cite="9">9</a>. License Apache 2.0. <strong>Choix montant pour workloads agentiques et multi-tour conversationnels.</strong></p>
+          <p><strong>TensorRT-LLM (NVIDIA).</strong> L'implémentation propriétaire NVIDIA, optimisée pour H100 / H200 / B200. Support spéculatif : draft target, Medusa, ReDrafter (variante NVIDIA), EAGLE-2/3. Particularité : intégration avec le <span class="term" data-tooltip="Inflight batching : variante NVIDIA du continuous batching, intégrée au runtime TensorRT-LLM avec optimisations bas niveau (CUDA graphs, fused MoE kernels).">inflight batching</span> propre à NVIDIA, et avec les optimisations bas niveau (FP8 attention, KV cache quantization, fused MoE kernels). Le scheduler à deux étages (avec/sans spéculation) est documenté<a class="cite" href="#source-10" data-cite="10">10</a>. License : Apache 2.0 côté code, mais lié à l'écosystème CUDA. <strong>Choix par défaut sur GPU NVIDIA récents quand on veut la performance compute pure ; moins flexible sur GPU non-NVIDIA.</strong></p>
+          <p><strong>DeepSpeed-MII (Microsoft).</strong> L'inference fork de DeepSpeed, intégré aux pipelines Azure ML. Support spéculatif plus limité : draft externe et Medusa, pas d'EAGLE-3 en GA au S1 2026. Avantage : intégration native ZeRO-Inference (sharding agressif des poids sur multi-GPU). License Apache 2.0. <strong>Choix de niche pour déploiements multi-GPU à très grande échelle ; moins de variantes spéculatives matures.</strong></p>
+          <p>À ces quatre frameworks s'ajoutent les solutions managées : <strong>Together AI</strong>, <strong>Fireworks</strong>, <strong>Anyscale</strong>, <strong>Modal</strong>, <strong>Replicate</strong> — qui exposent les mêmes variantes sous forme d'API, en ayant fait les calibrations de seuils pour leurs clients. Together AI a publié en 2024 un benchmark croisé public qui reste une référence — EAGLE atteignait alors 2,5× sur Llama-2 70B à charge moyenne, Medusa 2,1×, Lookahead 1,7×<a class="cite" href="#source-11" data-cite="11">11</a>. Les chiffres ont depuis augmenté avec EAGLE-3 (3,0-4,5×) et les optimisations B200.</p>
+
+          <figure class="figure" id="fig-06">
+            <svg data-schema-id="schema-06" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 740" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="title-06">
+  <title id="title-06">Matrice frameworks × variantes spéculatives (2026)</title>
+  <defs>
+    <style>
+      .title{font:600 28px/1.1 'Fraunces',serif;letter-spacing:-0.01em;fill:#1e1e2a}
+      .subtitle{font:400 italic 18px/1.3 'Fraunces',serif;fill:#6b6f7c}
+      .marker{font:600 12px/1 'JetBrains Mono',monospace;letter-spacing:0.16em;fill:#a83e55}
+      .col-eyebrow{font:600 11px/1 'JetBrains Mono',monospace;letter-spacing:0.18em;fill:#a83e55}
+      .col-title{font:600 19px/1.15 'Fraunces',serif;letter-spacing:-0.01em;fill:#1e1e2a}
+      .row-title{font:600 14px/1.2 'Fraunces',serif;letter-spacing:-0.01em;fill:#1e1e2a}
+      .body-label{font:500 13px/1.4 'Inter',sans-serif;fill:#1e1e2a}
+      .annotation{font:400 12px/1.4 'Inter',sans-serif;fill:#6b6f7c}
+      .tick{font:500 11px/1 'JetBrains Mono',monospace;letter-spacing:0.06em;fill:#9a9ca5}
+      .caption{font:400 italic 12px/1.4 'Inter',sans-serif;fill:#9a9ca5}
+      .axis-label{font:500 11px/1.2 'JetBrains Mono',monospace;letter-spacing:0.16em;fill:#6b6f7c;text-transform:uppercase}
+      .cell-frame{fill:#fdfaf0;stroke:rgba(30,30,44,0.18);stroke-width:1}
+      .cell-header{fill:#f3eedf;stroke:rgba(30,30,44,0.22);stroke-width:1}
+      .ga{fill:#1a5c6b}
+      .ga-text{fill:#faf6ec}
+      .preview{fill:rgba(184,88,46,0.55);stroke:#b8582e;stroke-width:1}
+      .none{fill:#fdfaf0;stroke:rgba(30,30,44,0.18);stroke-width:1}
+      .badge-ga{font:600 10px/1 'JetBrains Mono',monospace;letter-spacing:0.06em;fill:#faf6ec}
+      .badge-preview{font:600 10px/1 'JetBrains Mono',monospace;letter-spacing:0.06em;fill:#b8582e}
+      .badge-none{font:600 10px/1 'JetBrains Mono',monospace;letter-spacing:0.06em;fill:#9a9ca5}
+    </style>
+  </defs>
+
+  <rect width="1200" height="740" fill="#faf6ec"/>
+
+  <text x="80" y="34" class="marker">SCHÉMA 06</text>
+  <text x="80" y="62" class="title">Quel framework supporte quelle variante</text>
+  <text x="80" y="92" class="subtitle">Disponibilité et maturité d'intégration scheduler (avec activation conditionnelle par batch) au S1 2026.</text>
+
+  <!-- Headers : colonnes = variantes -->
+  <g>
+    <!-- Coin haut-gauche (vide) -->
+    <rect x="120" y="150" width="200" height="60" class="cell-header"/>
+    <text x="140" y="178" class="col-eyebrow">FRAMEWORK</text>
+    <text x="140" y="200" class="annotation">↓ vs variantes →</text>
+
+    <!-- Variante 1 : Draft externe -->
+    <rect x="320" y="150" width="160" height="60" class="cell-header"/>
+    <text x="400" y="174" class="row-title" text-anchor="middle">Draft externe</text>
+    <text x="400" y="194" class="annotation" text-anchor="middle">Leviathan / Chen</text>
+
+    <!-- Variante 2 : Medusa -->
+    <rect x="480" y="150" width="160" height="60" class="cell-header"/>
+    <text x="560" y="174" class="row-title" text-anchor="middle">Medusa</text>
+    <text x="560" y="194" class="annotation" text-anchor="middle">Têtes additionnelles</text>
+
+    <!-- Variante 3 : EAGLE-2 -->
+    <rect x="640" y="150" width="160" height="60" class="cell-header"/>
+    <text x="720" y="174" class="row-title" text-anchor="middle">EAGLE-2</text>
+    <text x="720" y="194" class="annotation" text-anchor="middle">Feature + tree dyn.</text>
+
+    <!-- Variante 4 : EAGLE-3 -->
+    <rect x="800" y="150" width="160" height="60" class="cell-header"/>
+    <text x="880" y="174" class="row-title" text-anchor="middle">EAGLE-3</text>
+    <text x="880" y="194" class="annotation" text-anchor="middle">SOTA 2025</text>
+
+    <!-- Variante 5 : Lookahead -->
+    <rect x="960" y="150" width="160" height="60" class="cell-header"/>
+    <text x="1040" y="174" class="row-title" text-anchor="middle">Lookahead</text>
+    <text x="1040" y="194" class="annotation" text-anchor="middle">Jacobi parallel</text>
+  </g>
+
+  <!-- Lignes : 4 frameworks -->
+  <!-- vLLM -->
+  <g class="interactive" data-region="fw-vllm">
+    <rect x="120" y="210" width="200" height="100" class="cell-frame"/>
+    <text x="140" y="240" class="col-eyebrow">UC BERKELEY · APACHE 2.0</text>
+    <text x="140" y="266" class="col-title">vLLM</text>
+    <text x="140" y="288" class="annotation">PagedAttention. Référence de fait.</text>
+    <text x="140" y="303" class="annotation">Scheduler hybride depuis 0.6.</text>
+
+    <rect x="320" y="210" width="160" height="100" class="ga"/>
+    <text x="400" y="248" class="row-title" text-anchor="middle" fill="#faf6ec">GA</text>
+    <text x="400" y="270" class="annotation" text-anchor="middle" fill="rgba(250,246,236,0.85)">depuis 0.4</text>
+    <text x="400" y="286" class="annotation" text-anchor="middle" fill="rgba(250,246,236,0.7)">Llama / Qwen / Mistral</text>
+
+    <rect x="480" y="210" width="160" height="100" class="ga"/>
+    <text x="560" y="248" class="row-title" text-anchor="middle" fill="#faf6ec">GA</text>
+    <text x="560" y="270" class="annotation" text-anchor="middle" fill="rgba(250,246,236,0.85)">depuis 0.5</text>
+    <text x="560" y="286" class="annotation" text-anchor="middle" fill="rgba(250,246,236,0.7)">+ MLP-speculator</text>
+
+    <rect x="640" y="210" width="160" height="100" class="ga"/>
+    <text x="720" y="248" class="row-title" text-anchor="middle" fill="#faf6ec">GA</text>
+    <text x="720" y="270" class="annotation" text-anchor="middle" fill="rgba(250,246,236,0.85)">depuis 0.6</text>
+    <text x="720" y="286" class="annotation" text-anchor="middle" fill="rgba(250,246,236,0.7)">tree dynamique</text>
+
+    <rect x="800" y="210" width="160" height="100" class="ga"/>
+    <text x="880" y="248" class="row-title" text-anchor="middle" fill="#faf6ec">GA</text>
+    <text x="880" y="270" class="annotation" text-anchor="middle" fill="rgba(250,246,236,0.85)">depuis 0.6 (mi-2025)</text>
+    <text x="880" y="286" class="annotation" text-anchor="middle" fill="rgba(250,246,236,0.7)">défaut Llama 3.x</text>
+
+    <rect x="960" y="210" width="160" height="100" class="preview"/>
+    <text x="1040" y="248" class="row-title" text-anchor="middle" fill="#1e1e2a">Preview</text>
+    <text x="1040" y="270" class="annotation" text-anchor="middle">expérimental</text>
+    <text x="1040" y="286" class="annotation" text-anchor="middle">depuis 0.7</text>
+  </g>
+
+  <!-- SGLang -->
+  <g class="interactive" data-region="fw-sglang">
+    <rect x="120" y="310" width="200" height="100" class="cell-frame"/>
+    <text x="140" y="340" class="col-eyebrow">SGL-PROJECT · APACHE 2.0</text>
+    <text x="140" y="366" class="col-title">SGLang</text>
+    <text x="140" y="388" class="annotation">RadixAttention + prefix cache.</text>
+    <text x="140" y="403" class="annotation">Spéculation × multi-tour : excellent.</text>
+
+    <rect x="320" y="310" width="160" height="100" class="ga"/>
+    <text x="400" y="348" class="row-title" text-anchor="middle" fill="#faf6ec">GA</text>
+    <text x="400" y="370" class="annotation" text-anchor="middle" fill="rgba(250,246,236,0.85)">depuis 0.2</text>
+    <text x="400" y="386" class="annotation" text-anchor="middle" fill="rgba(250,246,236,0.7)">aligné vLLM</text>
+
+    <rect x="480" y="310" width="160" height="100" class="ga"/>
+    <text x="560" y="348" class="row-title" text-anchor="middle" fill="#faf6ec">GA</text>
+    <text x="560" y="370" class="annotation" text-anchor="middle" fill="rgba(250,246,236,0.85)">depuis 0.3</text>
+    <text x="560" y="386" class="annotation" text-anchor="middle" fill="rgba(250,246,236,0.7)">multi-tour optimisé</text>
+
+    <rect x="640" y="310" width="160" height="100" class="ga"/>
+    <text x="720" y="348" class="row-title" text-anchor="middle" fill="#faf6ec">GA</text>
+    <text x="720" y="370" class="annotation" text-anchor="middle" fill="rgba(250,246,236,0.85)">depuis 0.4</text>
+    <text x="720" y="386" class="annotation" text-anchor="middle" fill="rgba(250,246,236,0.7)">tree natif</text>
+
+    <rect x="800" y="310" width="160" height="100" class="ga"/>
+    <text x="880" y="348" class="row-title" text-anchor="middle" fill="#faf6ec">GA</text>
+    <text x="880" y="370" class="annotation" text-anchor="middle" fill="rgba(250,246,236,0.85)">depuis 0.4 (fin 2025)</text>
+    <text x="880" y="386" class="annotation" text-anchor="middle" fill="rgba(250,246,236,0.7)">workloads agentiques</text>
+
+    <rect x="960" y="310" width="160" height="100" class="none"/>
+    <text x="1040" y="348" class="row-title" text-anchor="middle" fill="#9a9ca5">—</text>
+    <text x="1040" y="370" class="annotation" text-anchor="middle" fill="#9a9ca5">non prioritaire</text>
+    <text x="1040" y="386" class="annotation" text-anchor="middle" fill="#9a9ca5">community fork</text>
+  </g>
+
+  <!-- TensorRT-LLM -->
+  <g class="interactive" data-region="fw-trtllm">
+    <rect x="120" y="410" width="200" height="100" class="cell-frame"/>
+    <text x="140" y="440" class="col-eyebrow">NVIDIA · APACHE 2.0 / CUDA</text>
+    <text x="140" y="466" class="col-title">TensorRT-LLM</text>
+    <text x="140" y="488" class="annotation">FP8 attention + KV quantization.</text>
+    <text x="140" y="503" class="annotation">Deux schedulers parallèles 0.9+.</text>
+
+    <rect x="320" y="410" width="160" height="100" class="ga"/>
+    <text x="400" y="448" class="row-title" text-anchor="middle" fill="#faf6ec">GA</text>
+    <text x="400" y="470" class="annotation" text-anchor="middle" fill="rgba(250,246,236,0.85)">draft target</text>
+    <text x="400" y="486" class="annotation" text-anchor="middle" fill="rgba(250,246,236,0.7)">inflight batching</text>
+
+    <rect x="480" y="410" width="160" height="100" class="ga"/>
+    <text x="560" y="448" class="row-title" text-anchor="middle" fill="#faf6ec">GA</text>
+    <text x="560" y="470" class="annotation" text-anchor="middle" fill="rgba(250,246,236,0.85)">+ ReDrafter</text>
+    <text x="560" y="486" class="annotation" text-anchor="middle" fill="rgba(250,246,236,0.7)">variante NVIDIA</text>
+
+    <rect x="640" y="410" width="160" height="100" class="ga"/>
+    <text x="720" y="448" class="row-title" text-anchor="middle" fill="#faf6ec">GA</text>
+    <text x="720" y="470" class="annotation" text-anchor="middle" fill="rgba(250,246,236,0.85)">depuis 0.8</text>
+    <text x="720" y="486" class="annotation" text-anchor="middle" fill="rgba(250,246,236,0.7)">H100 / H200 / B200</text>
+
+    <rect x="800" y="410" width="160" height="100" class="ga"/>
+    <text x="880" y="448" class="row-title" text-anchor="middle" fill="#faf6ec">GA</text>
+    <text x="880" y="470" class="annotation" text-anchor="middle" fill="rgba(250,246,236,0.85)">depuis 0.10</text>
+    <text x="880" y="486" class="annotation" text-anchor="middle" fill="rgba(250,246,236,0.7)">optimisé B200</text>
+
+    <rect x="960" y="410" width="160" height="100" class="none"/>
+    <text x="1040" y="448" class="row-title" text-anchor="middle" fill="#9a9ca5">—</text>
+    <text x="1040" y="470" class="annotation" text-anchor="middle" fill="#9a9ca5">non roadmap</text>
+    <text x="1040" y="486" class="annotation" text-anchor="middle" fill="#9a9ca5">2026</text>
+  </g>
+
+  <!-- DeepSpeed-MII -->
+  <g class="interactive" data-region="fw-deepspeed">
+    <rect x="120" y="510" width="200" height="100" class="cell-frame"/>
+    <text x="140" y="540" class="col-eyebrow">MICROSOFT · APACHE 2.0</text>
+    <text x="140" y="566" class="col-title">DeepSpeed-MII</text>
+    <text x="140" y="588" class="annotation">ZeRO-Inference, multi-GPU.</text>
+    <text x="140" y="603" class="annotation">Intégration Azure ML native.</text>
+
+    <rect x="320" y="510" width="160" height="100" class="ga"/>
+    <text x="400" y="548" class="row-title" text-anchor="middle" fill="#faf6ec">GA</text>
+    <text x="400" y="570" class="annotation" text-anchor="middle" fill="rgba(250,246,236,0.85)">draft externe</text>
+    <text x="400" y="586" class="annotation" text-anchor="middle" fill="rgba(250,246,236,0.7)">ZeRO-3 compatible</text>
+
+    <rect x="480" y="510" width="160" height="100" class="ga"/>
+    <text x="560" y="548" class="row-title" text-anchor="middle" fill="#faf6ec">GA</text>
+    <text x="560" y="570" class="annotation" text-anchor="middle" fill="rgba(250,246,236,0.85)">basique</text>
+    <text x="560" y="586" class="annotation" text-anchor="middle" fill="rgba(250,246,236,0.7)">sans tree dynamique</text>
+
+    <rect x="640" y="510" width="160" height="100" class="preview"/>
+    <text x="720" y="548" class="row-title" text-anchor="middle" fill="#1e1e2a">Preview</text>
+    <text x="720" y="570" class="annotation" text-anchor="middle">community PR</text>
+    <text x="720" y="586" class="annotation" text-anchor="middle">non Azure-validated</text>
+
+    <rect x="800" y="510" width="160" height="100" class="none"/>
+    <text x="880" y="548" class="row-title" text-anchor="middle" fill="#9a9ca5">—</text>
+    <text x="880" y="570" class="annotation" text-anchor="middle" fill="#9a9ca5">retard de phase</text>
+    <text x="880" y="586" class="annotation" text-anchor="middle" fill="#9a9ca5">S1 2026</text>
+
+    <rect x="960" y="510" width="160" height="100" class="none"/>
+    <text x="1040" y="548" class="row-title" text-anchor="middle" fill="#9a9ca5">—</text>
+    <text x="1040" y="570" class="annotation" text-anchor="middle" fill="#9a9ca5">absent</text>
+    <text x="1040" y="586" class="annotation" text-anchor="middle" fill="#9a9ca5">roadmap</text>
+  </g>
+
+  <!-- Légende -->
+  <g transform="translate(80 632)">
+    <rect x="0" y="0" width="22" height="16" class="ga"/>
+    <text x="30" y="13" class="annotation"><tspan font-weight="600" fill="#1e1e2a">GA</tspan> · intégration mature, activable en production</text>
+
+    <rect x="320" y="0" width="22" height="16" class="preview"/>
+    <text x="350" y="13" class="annotation"><tspan font-weight="600" fill="#1e1e2a">Preview</tspan> · expérimental, sans garantie</text>
+
+    <rect x="600" y="0" width="22" height="16" class="none"/>
+    <text x="630" y="13" class="annotation"><tspan font-weight="600" fill="#1e1e2a">—</tspan> · non supporté</text>
+  </g>
+
+  <text x="80" y="688" class="caption">Lecture : vLLM et SGLang couvrent le plus large ; TensorRT-LLM optimise le plus profond sur stack NVIDIA ; DeepSpeed-MII garde un retard de phase sur EAGLE-3.</text>
+  <text x="80" y="718" class="caption">Sources — release notes vLLM 0.4-0.7 ; SGLang GitHub README et blog ; TensorRT-LLM Advanced Speculative Decoding docs ; DeepSpeed-MII changelog 2024-2026.</text>
+</svg>
+
+            <figcaption class="figure-caption"><a class="anchor" href="#fig-06" title="Lien direct vers ce schéma">¶</a>Schéma 6 — Disponibilité des variantes spéculatives et maturité de leur intégration scheduler dans les quatre frameworks open-source dominants. vLLM et SGLang couvrent le plus large ; TensorRT-LLM optimise le plus profond sur stack NVIDIA ; DeepSpeed-MII garde un retard de phase sur EAGLE-3.</figcaption>
+          </figure>
+        </section>
+
+        <section id="section-7">
+          <h2><a class="anchor" href="#section-7">¶</a> 7. Horizon 2026-2028</h2>
+          <p>Trois directions de recherche structurent l'avenir court de la décode spéculative.</p>
+          <p><strong>RL-guided drafting.</strong> Plutôt qu'entraîner le draft par cross-entropy classique sur des corpus généraux, l'approche RL optimise directement l'acceptance rate observé contre le target sur une distribution représentative. Premiers résultats publics fin 2025 : +5 à +8 points d'α sur des draft models de même taille, pour un coût d'entraînement marginal (quelques milliers d'heures GPU). EAGLE-3 utilise déjà partiellement cette stratégie via son loss sequence-level. Attendu en GA dans vLLM et SGLang fin 2026.</p>
+          <p><strong>Multi-draft mixture.</strong> Au lieu d'un seul draft, plusieurs drafts spécialisés (un pour code, un pour prose, un pour JSON) tournent en parallèle et le serveur route chaque requête vers le bon draft selon une classification du prompt. Le surcoût VRAM est multiplié par le nombre de drafts (3-5× le poids d'un draft standard), mais l'acceptance rate moyen pondéré peut atteindre 75-80 % en multi-tenant — bien au-dessus du 50-60 % d'un draft généraliste sur la même distribution mixte. Première implémentation publique : Together AI MoSpec, papier attendu été 2026.</p>
+          <p><strong>Ensemble verification.</strong> Symétrique de l'idée précédente : au lieu de proposer plusieurs drafts, on vérifie une seule proposition avec plusieurs <em>targets</em> (typiquement deux instances quantifiées différemment). Si les deux targets s'accordent, on accepte avec haute confiance ; sinon, on remonte au target full-precision. Permet de combiner la latence d'un modèle 4-bit avec la qualité d'un modèle FP16 sans dégradation mesurable. Encore en phase recherche.</p>
+          <p>À horizon plus lointain (2027-2028), les pistes intéressantes sont la <strong>spéculation hiérarchique</strong> (cascade draft 1B → draft 7B → target 70B, chaque étage filtrant pour le suivant), la <strong>co-entraînement draft/target</strong> (le target est explicitement régularisé pour produire des distributions faciles à draft), et l'<strong>intégration MoE-spéculation</strong> (chaque expert MoE a son propre draft, exploitant la routing sparsity). Ces directions restent expérimentales : <mark>aucune n'a encore franchi le seuil de maturité pour un déploiement production en 2026</mark>.</p>
+        </section>
+
+        <section id="section-8">
+          <h2><a class="anchor" href="#section-8">¶</a> 8. Pour aller plus loin</h2>
+          <p>Pour le décor économique de l'inference LLM dans lequel s'inscrit la décode spéculative (LLMflation, pile logicielle, désagrégation prefill/decode, MoE, mix matériel), voir <a href="../economie-inference/"><em>Économie de l'inference LLM</em></a>. Pour l'orchestration multi-modèle (planner / executor / verifier) qui consomme cette inference accélérée, voir <a href="../harness-agentique/"><em>Harness agentiques</em></a>. Pour les évaluations qui mesurent si la qualité reste intacte une fois la spéculation activée, voir <a href="../evaluation-agentique/"><em>Évaluation agentique</em></a>.</p>
+        </section>
+
+        <section id="sources-block">
+          <h2><a class="anchor" href="#sources-block">¶</a> Sources</h2>
+          <p>Les 12 sources de ce rapport sont listées dans le panneau de droite. Cliquer une citation <code>[N]</code> dans le texte ouvre la source correspondante.</p>
+        </section>
+
+        <p class="footer-disclosure">Format co-écrit avec l'aide d'une IA · Mathieu Guglielmino · Practice Manager Lincoln</p>
+      </article>
+    </main>
+
+    <aside id="sources" aria-label="Sources">
+      <button class="panel-close" type="button" aria-label="Fermer les sources">Fermer ✕</button>
+      <h2>Sources</h2>
+      <ol id="sources-list">
+<li id="source-1"><span class="cite-num">[1]</span>Yaniv Leviathan, Matan Kalman, Yossi Matias (Google Research), "Fast Inference from Transformers via Speculative Decoding", ICML 2023
+            <br><a href="https://arxiv.org/abs/2211.17192" target="_blank" rel="noopener">https://arxiv.org/abs/2211.17192</a><span class="accessed">consulté 2026-05-22</span></li>
+          <li id="source-2"><span class="cite-num">[2]</span>Charlie Chen, Sebastian Borgeaud, Geoffrey Irving, Jean-Baptiste Lespiau, Laurent Sifre, John Jumper (DeepMind), "Accelerating Large Language Model Decoding with Speculative Sampling", 2023
+            <br><a href="https://arxiv.org/abs/2302.01318" target="_blank" rel="noopener">https://arxiv.org/abs/2302.01318</a><span class="accessed">consulté 2026-05-22</span></li>
+          <li id="source-3"><span class="cite-num">[3]</span>Tianle Cai, Yuhong Li, Zhengyang Geng, Hongwu Peng, Jason D. Lee, Deming Chen, Tri Dao, "Medusa: Simple LLM Inference Acceleration Framework with Multiple Decoding Heads", ICML 2024
+            <br><a href="https://arxiv.org/abs/2401.10774" target="_blank" rel="noopener">https://arxiv.org/abs/2401.10774</a><span class="accessed">consulté 2026-05-22</span></li>
+          <li id="source-4"><span class="cite-num">[4]</span>Yuhui Li, Fangyun Wei, Chao Zhang, Hongyang Zhang, "EAGLE: Speculative Sampling Requires Rethinking Feature Uncertainty" (ICML 2024) + EAGLE-2 (arXiv 2406.16858) + EAGLE-3 (arXiv 2503.01840)
+            <br><a href="https://arxiv.org/abs/2401.15077" target="_blank" rel="noopener">https://arxiv.org/abs/2401.15077</a><span class="accessed">consulté 2026-05-22</span></li>
+          <li id="source-5"><span class="cite-num">[5]</span>Yichao Fu, Peter Bailis, Ion Stoica, Hao Zhang (LMSYS, UCSD), "Break the Sequential Dependency of LLM Inference Using Lookahead Decoding", 2024
+            <br><a href="https://arxiv.org/abs/2402.02057" target="_blank" rel="noopener">https://arxiv.org/abs/2402.02057</a><span class="accessed">consulté 2026-05-22</span></li>
+          <li id="source-6"><span class="cite-num">[6]</span>Woosuk Kwon, Zhuohan Li, Siyuan Zhuang, Ying Sheng, Lianmin Zheng, Cody Hao Yu, Joseph Gonzalez, Hao Zhang, Ion Stoica (UC Berkeley), "Efficient Memory Management for Large Language Model Serving with PagedAttention", SOSP 2023 + vLLM speculative decoding docs
+            <br><a href="https://arxiv.org/abs/2309.06180" target="_blank" rel="noopener">https://arxiv.org/abs/2309.06180</a><span class="accessed">consulté 2026-05-22</span></li>
+          <li id="source-7"><span class="cite-num">[7]</span>Heming Xia et al., "Unlocking Efficiency in Large Language Model Inference: A Comprehensive Survey of Speculative Decoding", ACL 2024 Findings
+            <br><a href="https://arxiv.org/abs/2401.07851" target="_blank" rel="noopener">https://arxiv.org/abs/2401.07851</a><span class="accessed">consulté 2026-05-22</span></li>
+          <li id="source-8"><span class="cite-num">[8]</span>Xiaoxuan Liu, Lanxiang Hu, Peter Bailis, Alvin Cheung, Zhijie Deng, Ion Stoica, Hao Zhang, "Online Speculative Decoding", ICML 2024
+            <br><a href="https://arxiv.org/abs/2310.07177" target="_blank" rel="noopener">https://arxiv.org/abs/2310.07177</a><span class="accessed">consulté 2026-05-22</span></li>
+          <li id="source-9"><span class="cite-num">[9]</span>SGLang Team (sgl-project, Lianmin Zheng et al.), documentation et blog d'ingénierie, 2024-2026
+            <br><a href="https://github.com/sgl-project/sglang" target="_blank" rel="noopener">https://github.com/sgl-project/sglang</a><span class="accessed">consulté 2026-05-22</span></li>
+          <li id="source-10"><span class="cite-num">[10]</span>NVIDIA, "TensorRT-LLM Speculative Decoding documentation" (draft target, Medusa, ReDrafter, EAGLE), versions 0.8-0.10, 2024-2026
+            <br><a href="https://nvidia.github.io/TensorRT-LLM/advanced/speculative-decoding.html" target="_blank" rel="noopener">https://nvidia.github.io/TensorRT-LLM/advanced/speculative-decoding.html</a><span class="accessed">consulté 2026-05-22</span></li>
+          <li id="source-11"><span class="cite-num">[11]</span>Together AI Engineering Blog, "Speculative decoding: better, faster, cheaper LLM inference", 2024
+            <br><a href="https://www.together.ai/blog/specdec" target="_blank" rel="noopener">https://www.together.ai/blog/specdec</a><span class="accessed">consulté 2026-05-22</span></li>
+          <li id="source-12"><span class="cite-num">[12]</span>Zhuoming Chen, Avner May, Ruslan Svirschevski, Yuhsun Huang, Max Ryabinin, Zhihao Jia, Beidi Chen, "Hydra: Sequentially-Dependent Draft Heads for Medusa Decoding", COLM 2024
+            <br><a href="https://arxiv.org/abs/2402.05109" target="_blank" rel="noopener">https://arxiv.org/abs/2402.05109</a><span class="accessed">consulté 2026-05-22</span></li>
+        </ol>
+    </aside>
+  </div>
+
+  <div id="zoom-overlay" hidden role="dialog" aria-modal="true" aria-label="Schéma agrandi">
+    <div id="zoom-header">
+      <span id="zoom-caption"></span>
+      <div class="zoom-controls">
+        <button class="zoom-out" type="button" aria-label="Dézoomer">−</button>
+        <button class="zoom-reset" type="button" aria-label="Réinitialiser">Reset</button>
+        <button class="zoom-in" type="button" aria-label="Zoomer">+</button>
+        <button class="zoom-close" type="button" aria-label="Fermer">×</button>
+      </div>
+    </div>
+    <div id="zoom-stage" tabindex="-1">
+      <div id="zoom-content"></div>
+      <div id="zoom-hint">molette / pinch pour zoomer · clic-glisser pour déplacer · Esc pour fermer</div>
+    </div>
+  </div>
+
+  <div id="modal-root" hidden role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card">
+      <button class="modal-close" data-close aria-label="Fermer">×</button>
+      <p class="modal-eyebrow" id="modal-eyebrow"></p>
+      <h3 class="modal-title" id="modal-title"></h3>
+      <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <script>
+  const SCHEMAS = {
+    "schema-01": {
+      "seq-loop": {
+        eyebrow: "Décode autoregressive",
+        title: "Un token, un forward target",
+        body: "<p>Chaque token N dépend du token N−1 : la boucle est <strong>strictement séquentielle</strong>. Sur Llama 3.1 70B (H100, FP16, batch 1), un forward target prend ~40 ms. Pour 6 tokens, ~240 ms.</p><p>Le GPU est <em>memory-bound</em> : il passe l'essentiel de son temps à attendre la HBM pour lire les 140 Go de poids + le KV cache. Les tensor cores sont sous-utilisés (5-15 % du peak FLOPS). C'est ce slack compute qui rend la spéculation possible<a class='cite' href='#source-6' data-cite='6'>6</a>.</p>"
+      },
+      "spec-draft": {
+        eyebrow: "Étape 1 · Drafting",
+        title: "K tokens proposés vite",
+        body: "<p>Un modèle léger (10-100× plus petit que le target — typiquement Llama-3.2-1B pour drafter Llama-3.1-70B) génère K tokens autoregressifs. K varie typiquement entre 4 et 8.</p><p>Le coût est faible : le draft est petit, sa décode est rapide même séquentielle (~1-2 ms par token). Total pour K=5 : ~8 ms.</p>"
+      },
+      "spec-verify": {
+        eyebrow: "Étape 2 · Verification",
+        title: "Un seul forward target",
+        body: "<p>Le target reçoit le préfixe + les K tokens proposés en <strong>un seul forward parallèle</strong>. Cela produit <code>p_target[i]</code> aux positions 1 à K+1.</p><p>Ce forward coûte légèrement plus cher qu'un forward normal (K+1 positions au lieu de 1), mais reste compute-bound : ~45 ms pour K=5, contre 40 ms pour 1 position.</p><p>C'est ici qu'intervient le <em>tree attention mask</em> (Schéma 2), si l'on propose un arbre plutôt qu'une séquence linéaire.</p>"
+      },
+      "spec-accept": {
+        eyebrow: "Étape 3 · Accept / Reject",
+        title: "La règle de Leviathan",
+        body: "<p>Pour chaque position i : <code>accept_with_prob(min(1, p_target[i] / p_draft[i]))</code>.</p><p>Si tous les K tokens sont acceptés, on a généré <strong>K+1 tokens en un forward target</strong> (le +1 vient de la position bonus K+1, échantillonnée fraîche depuis p_target).</p><p>Si le token i est rejeté, on tire un remplaçant depuis <code>max(0, p_target[i] − p_draft[i])</code> normalisé, on tronque ce qui suit, on relance le drafting. <strong>La distribution de sortie est strictement identique à la décode standard</strong><a class='cite' href='#source-1' data-cite='1'>1</a>.</p>"
+      }
+    },
+    "schema-02": {
+      "tree-root": {
+        eyebrow: "Tree attention · racine",
+        title: "Le dernier token confirmé",
+        body: "<p>Le nœud racine est le dernier token commité de la séquence. Toutes les branches candidates partent de là.</p><p>Sa <em>position attention</em> est unique : tous les autres nœuds (candidats) le voient comme contexte, mais lui ne voit qu'eux par les Q·Kᵀ — c'est le pivot du masque.</p>"
+      },
+      "tree-branch": {
+        eyebrow: "Tree attention · branches",
+        title: "Chaque branche = une hypothèse",
+        body: "<p>Le draft propose plusieurs continuations parallèles. Ici, 2 branches au niveau 1 (A vs B), 2 à chaque niveau, profondeur 3 = 7 nœuds candidats.</p><p>EAGLE-2 introduit le <strong>dynamic draft tree</strong> : la largeur et la profondeur sont calibrées par le draft à chaque étape selon la confiance courante. Sur un terrain prévisible (code structuré), l'arbre pousse à profondeur 8 ; sur du créatif, il se replie à profondeur 2-3<a class='cite' href='#source-4' data-cite='4'>4</a>.</p>"
+      },
+      "verify-mask": {
+        eyebrow: "Masque d'attention",
+        title: "Triangulaire — mais arborescent",
+        body: "<p>Au lieu du masque triangulaire causal classique, on construit un masque <em>arborescent</em> : chaque nœud voit ses ancêtres dans l'arbre, jamais les nœuds de branches concurrentes.</p><p>Les cellules orange dans la grille sont les attendances autorisées ; les cellules sombres sont masquées (−∞ ajouté avant softmax). Le résultat : <strong>une seule matrice Q·Kᵀ, plusieurs hypothèses vérifiées en parallèle, zéro contamination entre branches</strong>.</p>"
+      },
+      "commit-path": {
+        eyebrow: "Sortie · chemin retenu",
+        title: "Le plus long préfixe accepté",
+        body: "<p>Après le forward target, on parcourt l'arbre depuis la racine et on retient le plus long préfixe dont tous les tokens passent le test de Leviathan.</p><p>Dans l'exemple : <code>racine → A1 → A2a → A3</code> = 3 tokens accumulés. Les 4 autres branches sont jetées (leur coût n'a pas été nul, mais il est amorti).</p><p>Le serveur écrit ces 3 tokens dans le KV cache, met à jour le pointeur de séquence, et relance un nouveau cycle de drafting.</p>"
+      }
+    },
+    "schema-03": {
+      "family-draft": {
+        eyebrow: "Famille 1 · 2022",
+        title: "Draft model externe",
+        body: "<p>L'approche fondatrice (Leviathan, Chen). Un petit modèle de la même famille pré-entraîné (Llama-3.2-1B pour Llama-3.1-70B) propose K tokens.</p><p><strong>✓ Zéro modif du target.</strong> Sampling stochastique propre, draft réutilisable.</p><p><strong>✗ Second poids à charger.</strong> +VRAM, latence de chargement, matching de distribution requis (sinon α s'effondre).</p><p>Performance : ~2,2× sur Llama-2 70B<a class='cite' href='#source-1' data-cite='1'>1</a><a class='cite' href='#source-2' data-cite='2'>2</a>.</p>"
+      },
+      "family-medusa": {
+        eyebrow: "Famille 2 · 2024",
+        title: "Têtes additionnelles (Medusa, Hydra)",
+        body: "<p>Cai et al. ajoutent K têtes de décode sur le target lui-même. Chaque tête prédit le token i+k depuis la même couche cachée<a class='cite' href='#source-3' data-cite='3'>3</a>.</p><p><strong>✓ Pas de second poids à charger.</strong> Têtes attachées au target.</p><p><strong>✗ Têtes non-autoregressives.</strong> Acceptance chute pour les têtes lointaines. <em>Hydra</em> corrige partiellement en réintroduisant une dépendance séquentielle entre têtes<a class='cite' href='#source-12' data-cite='12'>12</a>.</p><p>Performance : 2,8× sur Vicuna 7B (Medusa-2).</p>"
+      },
+      "family-eagle": {
+        eyebrow: "Famille 3 · 2024–2025",
+        title: "Feature-level (EAGLE)",
+        body: "<p>Yuhui Li et al. prédisent la <em>feature</em> (embedding pénultième), pas le token. La feature étant plus stable, l'acceptance monte de 30-40 % vs Medusa<a class='cite' href='#source-4' data-cite='4'>4</a>.</p><p><strong>EAGLE-2</strong> : dynamic draft tree adaptatif. <strong>EAGLE-3</strong> : loss sequence-level, ~3,0-4,5× sur Llama-3 70B.</p><p><strong>État de l'art 2026.</strong> Défaut sur Llama 3.x et Qwen 2.5 dans vLLM et SGLang.</p>"
+      },
+      "family-lookahead": {
+        eyebrow: "Famille 4 · 2024",
+        title: "Jacobi parallel (Lookahead)",
+        body: "<p>Fu et al. (LMSYS, UCSD) : <strong>pas de draft du tout</strong>. Un solver Jacobi résout en parallèle un système d'équations fixe-points sur les futurs tokens<a class='cite' href='#source-5' data-cite='5'>5</a>.</p><p><strong>✓ Zero VRAM additionnelle, zero entraînement.</strong> Idéal en zero-training deployment.</p><p><strong>✗ Acceptance plus basse</strong> (35-55 %). Performance : 1,5-2,3× selon les modèles.</p>"
+      }
+    },
+    "schema-04": {
+      "domain-code": {
+        eyebrow: "Haute acceptance",
+        title: "Code source — α ≈ 80 %",
+        body: "<p>Vocabulaire restreint, structures syntaxiques répétitives, tokens prévisibles (<code>(</code>, <code>{</code>, <code>return</code>, indentation). Le draft devine juste très souvent.</p><p>Speedup typique : <strong>~3,8×</strong> avec EAGLE-3 K=6, T° 0,2. C'est le domaine sur lequel les benchmarks marketing sont calibrés.</p>"
+      },
+      "domain-summary": {
+        eyebrow: "Acceptance moyenne",
+        title: "Résumé / Q&A — α ≈ 65 %",
+        body: "<p>Prévisibilité moyenne. Le draft tient sur les structures fixes (introductions, transitions, conclusions) et décroche sur les contenus spécifiques.</p><p>Speedup typique : <strong>~2,8×</strong>. C'est le régime sur lequel la plupart des dashboards d'usage agentique tournent.</p>"
+      },
+      "domain-creative": {
+        eyebrow: "Acceptance basse",
+        title: "Génération créative — α ≈ 45 %",
+        body: "<p>Variabilité lexicale, T° élevée (0,8-1,2) qui aplatit les distributions et désynchronise draft et target.</p><p>Speedup typique : <strong>~1,5×</strong>. Le gain reste positif mais marginal — les frameworks peuvent décider de désactiver la spéculation pour ce profil de requête.</p>"
+      },
+      "domain-cold": {
+        eyebrow: "Perte nette",
+        title: "Drift domaine — α ≈ 28 %",
+        body: "<p>Un draft entraîné pré-2024 sur des prompts agentiques 2026 (JSON longs, tool calls, code contemporain) perd 15-25 points d'α en quelques mois.</p><p>Sous α ≈ 30 %, le surcoût du drafting et de la vérification dépasse le gain. <strong>Speedup &lt; 1× — la spéculation devient perte nette.</strong></p><p>Le scénario silencieux : pas d'erreur, pas d'alerte — juste un SLA qui se dégrade. D'où l'importance de monitorer α par requête<a class='cite' href='#source-7' data-cite='7'>7</a>.</p>"
+      }
+    },
+    "schema-05": {
+      "batch-1": {
+        eyebrow: "Zone gain · memory-bound",
+        title: "À batch 1-16 : la spéculation paie",
+        body: "<p>À petit batch, le GPU lit les poids et le KV cache pour quelques séquences seulement — les tensor cores sont sous-utilisés. Le surcoût compute du forward de vérification est <strong>absorbé par le slack compute</strong>.</p><p>Speedup mesuré : 3-4× pour EAGLE-3 sur Llama 3.1 70B (H100, FP16, batch 1-8).</p>"
+      },
+      "batch-cross": {
+        eyebrow: "Zone d'indifférence",
+        title: "Point d'équilibre ≈ batch 24",
+        body: "<p>Le seuil exact dépend du modèle, du GPU, de la variante. Sur Llama-3.1-70B H100 :</p><ul><li><strong>EAGLE-3</strong> : équilibre vers batch 24-32</li><li><strong>Medusa-2</strong> : équilibre vers batch 16-20 (coût compute par tête plus élevé)</li></ul><p>Dans cette zone, spéculer ou non donne le même throughput agrégé.</p>"
+      },
+      "batch-loss": {
+        eyebrow: "Zone perte · compute-bound",
+        title: "Au-delà : ça coûte plus",
+        body: "<p>À batch 32+, les tensor cores sont saturés par le batch lui-même. Le surcoût de la vérification spéculative (K+1 positions × batch_size) devient un coût net.</p><p><strong>0,9× à batch 64 — la spéculation dégrade le throughput agrégé.</strong> C'est pour cela que les schedulers modernes la désactivent dynamiquement passé un seuil<a class='cite' href='#source-9' data-cite='9'>9</a><a class='cite' href='#source-10' data-cite='10'>10</a>.</p>"
+      },
+      "policy-adapt": {
+        eyebrow: "Politique d'activation",
+        title: "Le seuil à calibrer",
+        body: "<p>vLLM 0.6+ : scheduler hybride qui active la spéculation par requête selon la charge instantanée (seuil défaut : 24).</p><p>TensorRT-LLM 0.9+ : <strong>deux schedulers parallèles</strong> (avec / sans spéculation), migration des requêtes selon <code>batch_size</code> + <code>α observé sur les 100 derniers tokens</code> + <code>SLA configuré</code>.</p><p>SGLang : <code>runtime_config.speculation_threshold</code>.</p><p>La métrique à optimiser : <strong><code>p95 time-to-first-token</code> sous charge représentative</strong>, pas le <code>peak tokens/second</code>.</p>"
+      }
+    },
+    "schema-06": {
+      "fw-vllm": {
+        eyebrow: "UC Berkeley · Apache 2.0",
+        title: "vLLM",
+        body: "<p>La référence de fait depuis SOSP 2023<a class='cite' href='#source-6' data-cite='6'>6</a>. PagedAttention + continuous batching.</p><p><strong>Support spéculatif :</strong> draft externe (0.4+), Medusa / MLP-speculator (0.5+), EAGLE / EAGLE-3 (0.6+, mi-2025), Lookahead (preview).</p><p><strong>Scheduler hybride</strong> avec activation conditionnelle par batch depuis 0.6.</p><p>Choix par défaut pour Llama / Qwen / Mistral. Communauté la plus active sur les variantes.</p>"
+      },
+      "fw-sglang": {
+        eyebrow: "sgl-project · Apache 2.0",
+        title: "SGLang",
+        body: "<p>Fondé par Lianmin Zheng (ex-LMSYS) en 2024. RadixAttention pour le prefix caching agressif.</p><p><strong>Support spéculatif</strong> aligné vLLM : draft externe, Medusa, EAGLE-1/2/3. Excellent sur les <em>workloads multi-tour structurés</em>.</p><p>RadixAttention × spéculation = combo gagnant pour les workloads agentiques (system prompt + contexte conversationnel partagés)<a class='cite' href='#source-9' data-cite='9'>9</a>.</p>"
+      },
+      "fw-trtllm": {
+        eyebrow: "NVIDIA · Apache 2.0 / CUDA",
+        title: "TensorRT-LLM",
+        body: "<p>L'implémentation NVIDIA, optimisée H100/H200/B200. FP8 attention, KV cache quantization, fused MoE kernels.</p><p><strong>Support spéculatif :</strong> draft target, Medusa, ReDrafter (variante maison), EAGLE-2/3 (0.10+, optimisé B200).</p><p><strong>Scheduler à deux étages</strong> : avec/sans spéculation, migration dynamique des requêtes selon <code>batch_size</code> + <code>α observé</code> + <code>SLA</code><a class='cite' href='#source-10' data-cite='10'>10</a>.</p><p>Choix par défaut sur GPU NVIDIA récents quand on veut la performance compute pure.</p>"
+      },
+      "fw-deepspeed": {
+        eyebrow: "Microsoft · Apache 2.0",
+        title: "DeepSpeed-MII",
+        body: "<p>Inference fork de DeepSpeed, intégré aux pipelines Azure ML.</p><p><strong>Support spéculatif plus limité :</strong> draft externe (GA), Medusa (GA basique), EAGLE-2 en preview communautaire, <strong>pas d'EAGLE-3 en GA au S1 2026</strong>.</p><p>Avantage : intégration native ZeRO-Inference (sharding agressif des poids multi-GPU).</p><p>Choix de niche pour déploiements multi-GPU à très grande échelle. Garde un retard de phase sur EAGLE-3.</p>"
+      }
+    }
+  };
+  const SOURCES = [
+    { n: 1, citation: "Thariq Shihipar, <em>Workshop Claude Code + Agent SDK</em>, Anthropic, mai 2026.", url: "", accessed: "" },
+    { n: 2, citation: "Anthropic, <em>Claude Agent SDK overview</em>.", url: "https://code.claude.com/docs/en/agent-sdk/overview", accessed: "2026-05-18" },
+    { n: 3, citation: "Anthropic, <em>Claude Code overview</em>.", url: "https://code.claude.com/docs/en/overview", accessed: "2026-05-18" },
+    { n: 4, citation: "Aakash Gupta, <em>« 2025 was agents, 2026 is agent harnesses »</em>, essai janvier 2026.", url: "", accessed: "" }
+  ];
+  window.SCHEMAS = SCHEMAS;
+  </script>
+  <script src="/assets/dossier-app.js" defer></script>
+</body>
+</html>
