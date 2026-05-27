@@ -143,12 +143,6 @@ While drafting, use placeholder lines:
 
 Replace these in Phase 5 with the actual `![alt|width](images/...svg)` tags.
 
-### 3.4 Obsidian preview hints on images
-
-If the Markdown report will be opened in Obsidian (typical for journals or any `.md` you'll re-read locally), add a width hint to every image reference using Obsidian's pipe syntax: `![alt|1300](images/foo.svg)`. Without the hint, Obsidian renders the image at the editor wrap width — often too narrow to actually read a schema.
-
-The hint is **purely for Obsidian local preview** and does not affect the published HTML render (which is either generated separately or hand-maintained from a different source). Use `|1300` as a sensible default for landscape schemas; adjust for square or portrait artwork. Apply consistently across the document so previews are uniform.
-
 ---
 
 ## Phase 4 — Schema design
