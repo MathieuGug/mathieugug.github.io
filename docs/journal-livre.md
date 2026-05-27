@@ -9,11 +9,236 @@ Journal de production du livre (28 dossiers → 25 chapitres). Voir [`livre-outl
 | | Statut | Note |
 | --- | --- | --- |
 | Outline | ✅ v0 mergé (PR #127) | 4 actes, 25 chapitres, 3 catégories de schémas (S/R/E) |
-| Audit schémas | 🟡 partiel | Ch.10 fait — les 27 autres en attente |
-| Manuscrit | 🟡 1/25 | **Ch.10 : v1 livrée** — `docs/livre/ch10-compaction.md` |
-| Schémas R/E à produire | ⏳ | E4 (threat model), E3 (capability×cost), E5 (PRM comparatif) — pas démarré |
+| Audit schémas | 🟡 partiel | Ch.7 + Ch.10 faits — les 26 autres en attente |
+| Manuscrit | 🟡 2/25 | **Ch.7 charnière : v1 livrée** + **Ch.10 standard : v1 livrée** |
+| Schémas R/E à produire | ⏳ | E4 (threat model), E3 (capability×cost), E5 (PRM comparatif), R1 (boucle ReAct + 3 variantes — récap Ch.7 traité par réutilisation, à refaire en fusion si édition print) — pas démarré |
 | Bugs SVG corrigés | ✅ 1 | `cinq-familles.svg` (balise XML malformée) |
 | Rendu print/web | ⏳ | non décidé |
+
+---
+
+## Chapitre 7 — Reason · Act · Observe : le harness et ce qu'il enveloppe
+
+> **Acte II — La boucle · Gabarit charnière 28-40 p · ~9 800 mots**
+> **Lecteur cible** : agent engineer, tech lead, architecte, acheteur AI.
+> **Sortie lecteur** : comprend la grille à 7 couches d'un harness, sait pourquoi la boucle ReAct invariante porte trois noms (TAOR / Gather-Act-Verify / GAN 3 agents) selon le contexte, distingue tools / bash / codegen et leurs zones de pertinence, sait choisir entre Client SDK / Agent SDK / Claude Code / Managed Agents, peut calibrer un budget POC vs prod multi-agent, et a identifié les trois pièges 100 % traçables (loop infinie, exfil via tool non scopé, multi-agent prématuré).
+
+### Statut
+
+| Étape | Statut |
+| --- | --- |
+| Audit schémas source (4 dossiers) | ✅ fait (cf. §Audit ci-dessous) |
+| Plan détaillé | ✅ fait |
+| Manuscrit | ✅ **v1 livrée** — `docs/livre/ch07-boucle-agentique.md` (≈ 9 800 mots, 12 encadrés, 8 schémas intégrés) |
+| Schémas à créer | 0 v1 (R1 « boucle ReAct + 3 variantes » traité par **superposition** des 4 schémas source ; à refaire en fusion lourde si édition print) |
+| Renvois inter-chapitres | ✅ Ch. 1 (cœur stochastique), Ch. 9 (mémoire), Ch. 10 (compaction), Ch. 11 (orchestration multi-agent), Ch. 13 (MCP sécurité), Ch. 18 (observabilité), Ch. 19 (threat model E4), Ch. 20 (runtime managé), Ch. 21 (ROI) |
+
+### Sources matérielles
+
+Le Ch.7 est une **charnière à 4 dossiers** — c'est le chapitre qui dédouble la matière du corpus sur la « boucle agentique » avec la discipline éditoriale stricte d'une seule description canonique.
+
+- **Dossier principal #1 — [`harness-agentique/`](../harness-agentique/)** (29 avr 2026, étude #04) — l'anatomie 7 couches + pattern GAN + cartographie 3 couches + observabilité 6 piliers + effort de dev. **C'est l'épine** du chapitre.
+  - [Rapport (.md, ~7 500 mots)](../harness-agentique/20260429-harness-agentique-rapport.md) · [App interactive](../harness-agentique/20260429-harness-agentique-app.html)
+  - 9 schémas SVG dans [`images/`](../harness-agentique/images/)
+- **Dossier principal #2 — [`agent-sdk/`](../agent-sdk/)** (18 mai 2026) — Claude Code + Agent SDK, *bash is all you need*, Gather/Act/Verify, hooks, skills, sub-agents, gruyère sécurité, 3 voies de build.
+  - [Rapport (.md, ~7 000 mots)](../agent-sdk/20260518-agent-sdk-rapport.md) · [App interactive](../agent-sdk/20260518-agent-sdk-app.html)
+  - 11 schémas SVG dans [`images/`](../agent-sdk/images/) (dont 3 `ref-*` qui pointent déjà vers harness/coding-agents)
+- **Dossier principal #3 — [`coding-agents/`](../coding-agents/)** (12 mai 2026, outils #17) — instanciation Claude Code/Codex/Copilot + **pyramide d'usage 4 étages** + gains/coûts/risques + carte de décision par profil.
+  - [Rapport (.md, ~12 000 mots)](../coding-agents/20260512-coding-agents-rapport.md) · [App](../coding-agents/20260512-coding-agents-app.html) · [Slideshow](../coding-agents/20260512-coding-agents-slideshow.html)
+  - 9 schémas SVG dans [`images/`](../coding-agents/images/)
+- **Source méta — [`anatomie/`](../anatomie/)** (14 mai 2026) — anneaux 01 (boucle) + 04 (patterns) de `livre-data.js`. **Sert de définition canonique** pour ReAct, `stop_reason`, harness, et les 6 patterns Schluntz-Zhang qui sont étendus en Ch.11.
+
+### Audit des schémas — Ch.7
+
+Au total, **29 schémas SVG** dans les 4 dossiers source. Classement S (au fil du texte du Ch.7) / R (récap chapitre) / E (essentiel transverse) / Ch.X (assigné à un autre chapitre) / écarté.
+
+#### Schémas du dossier `harness-agentique/` (9)
+
+| Fig | Slug | Aperçu | Catégorie Ch.7 | Statut |
+| --- | --- | --- | --- | --- |
+| 00 | [`exec-sum-a4`](../harness-agentique/images/20260429-00-exec-sum-a4.svg) | A4 portrait synthèse | écarté (livre) | annexe rapport |
+| 01 | [`anatomie-harness`](../harness-agentique/images/20260429-01-anatomie-harness.svg) | ![](../harness-agentique/images/20260429-01-anatomie-harness.svg) | **S §7.2 + Récap §7** | tel quel — schéma signature du chapitre, utilisé **2×** (S §7.2 + récap) |
+| 01b | [`architecture-systeme`](../harness-agentique/images/20260429-01b-architecture-systeme.svg) | ![](../harness-agentique/images/20260429-01b-architecture-systeme.svg) | **S §7.2.3** | tel quel — 4 zones + bus observabilité, complète anatomie-harness |
+| 02 | [`boucle-gan`](../harness-agentique/images/20260429-02-boucle-gan.svg) | ![](../harness-agentique/images/20260429-02-boucle-gan.svg) | **S §7.4** | tel quel — planner/generator/evaluator |
+| 03 | [`trois-couches`](../harness-agentique/images/20260429-03-trois-couches.svg) | ![](../harness-agentique/images/20260429-03-trois-couches.svg) | **Ch.20** (runtime managé) | renvoi Ch.20 — la cartographie API/SDK/Managed appartient au chapitre runtime |
+| 04 | [`secteurs-maturite`](../harness-agentique/images/20260429-04-secteurs-maturite.svg) | ![](../harness-agentique/images/20260429-04-secteurs-maturite.svg) | **Ch.21** (ROI) | renvoi Ch.21 — matrice secteurs × maturité |
+| 05 | [`effort-developpement`](../harness-agentique/images/20260429-05-effort-developpement.svg) | ![](../harness-agentique/images/20260429-05-effort-developpement.svg) | **S §7.11** | tel quel — trois trajectoires POC / mid / multi-agent |
+| 06 | [`observabilite-piliers`](../harness-agentique/images/20260429-06-observabilite-piliers.svg) | ![](../harness-agentique/images/20260429-06-observabilite-piliers.svg) | **S §7.7** | tel quel — 6 piliers (renvoi Ch.18 pour détail) |
+| 07 | [`trajectoire`](../harness-agentique/images/20260429-07-trajectoire.svg) | ![](../harness-agentique/images/20260429-07-trajectoire.svg) | **Ch.20** (horizon runtime) | renvoi Ch.20 |
+
+#### Schémas du dossier `agent-sdk/` (11, dont 3 ref)
+
+| Fig | Slug | Aperçu | Catégorie Ch.7 | Statut |
+| --- | --- | --- | --- | --- |
+| 00 | [`exec-sum-a4`](../agent-sdk/images/20260518-00-exec-sum-a4.svg) | A4 portrait | écarté (livre) | annexe rapport |
+| 01 | [`evolution-agents`](../agent-sdk/images/20260518-01-evolution-agents.svg) | ![](../agent-sdk/images/20260518-01-evolution-agents.svg) | **Prologue/Ch.1** (LLM features → workflows → agents) | écarté Ch.7 — trop méta, mieux placé en intro générale |
+| 02 | [`anatomie-claude-code`](../agent-sdk/images/20260518-02-anatomie-claude-code.svg) | ![](../agent-sdk/images/20260518-02-anatomie-claude-code.svg) | écarté Ch.7 (redondant avec harness-01) | mieux placé en encart "vue produit" du Ch.7 si édition print le réclame |
+| 03 | [`cc-vs-sdk`](../agent-sdk/images/20260518-03-cc-vs-sdk.svg) | ![](../agent-sdk/images/20260518-03-cc-vs-sdk.svg) | écarté Ch.7 (couverte textuellement §7.10) | optionnel pour zoom produit |
+| 04 | [`trois-voies`](../agent-sdk/images/20260518-04-trois-voies.svg) | ![](../agent-sdk/images/20260518-04-trois-voies.svg) | **S §7.10** (envisagé) | tel quel — mais §7.10 a privilégié la matrice tabulaire pour densité d'info |
+| 05 | [`pokeapi-variantes`](../agent-sdk/images/20260518-05-pokeapi-variantes.svg) | ![](../agent-sdk/images/20260518-05-pokeapi-variantes.svg) | écarté Ch.7 (cas spécifique) | gardé en ligne sur dossier source |
+| 06 | [`bash-funnel`](../agent-sdk/images/20260518-06-bash-funnel.svg) | ![](../agent-sdk/images/20260518-06-bash-funnel.svg) | **S §7.5.2** (envisagé) | non retenu v1 — texte du scénario rideshare suffit ; à réintroduire si édition print veut une illustration |
+| 07 | [`matrice-tools-bash-codegen`](../agent-sdk/images/20260518-07-matrice-tools-bash-codegen.svg) | ![](../agent-sdk/images/20260518-07-matrice-tools-bash-codegen.svg) | **S §7.5** | tel quel — matrice trois paradigmes |
+| 08 | [`agent-loop`](../agent-sdk/images/20260518-08-agent-loop.svg) | ![](../agent-sdk/images/20260518-08-agent-loop.svg) | candidat **S §7.3** | non retenu v1 — la formulation TAOR + variante GAN suffit textuellement ; à réintégrer si édition print veut un schéma boucle dédié |
+| 09 | [`securite-couches`](../agent-sdk/images/20260518-09-securite-couches.svg) | ![](../agent-sdk/images/20260518-09-securite-couches.svg) | **S §7.8** | tel quel — gruyère 3 couches |
+| ref-1 | [`ref-coding-agents-anatomie`](../agent-sdk/images/ref-coding-agents-anatomie.svg) | (copie de coding-agents-02) | — | source originale en coding-agents/ |
+| ref-2 | [`ref-gruyere-suisse`](../agent-sdk/images/ref-gruyere-suisse.svg) | (parallèle évaluation) | **Ch.17** (gruyère évaluation) | renvoi Ch.17 — c'est la fig signature playbook eval 8 étapes |
+| ref-3 | [`ref-harness-7-couches`](../agent-sdk/images/ref-harness-7-couches.svg) | (copie de harness-01) | — | source originale en harness-agentique/ |
+
+#### Schémas du dossier `coding-agents/` (9)
+
+| Fig | Slug | Aperçu | Catégorie Ch.7 | Statut |
+| --- | --- | --- | --- | --- |
+| 00 | [`exec-sum-a4`](../coding-agents/images/20260512-00-exec-sum-a4.svg) | A4 portrait | écarté (livre) | annexe rapport |
+| 01 | [`trois-regimes`](../coding-agents/images/20260512-01-trois-regimes.svg) | ![](../coding-agents/images/20260512-01-trois-regimes.svg) | écarté Ch.7 (trop coding-spé) | gardé en ligne sur dossier source |
+| 02 | [`anatomie`](../coding-agents/images/20260512-02-anatomie.svg) | ![](../coding-agents/images/20260512-02-anatomie.svg) | écarté Ch.7 (redondant avec harness-01 + sdk-02) | gardé en ligne ; signe la redondance massive identifiée |
+| 03 | [`cycle-skill`](../coding-agents/images/20260512-03-cycle-skill.svg) | ![](../coding-agents/images/20260512-03-cycle-skill.svg) | candidat §7.6.1 | non retenu v1 — descriptions textuelles des skills suffisent ; à réintroduire en print si nécessaire |
+| 04 | [`comparatif`](../coding-agents/images/20260512-04-comparatif.svg) | ![](../coding-agents/images/20260512-04-comparatif.svg) | écarté Ch.7 (comparatif produits trop coding-spé) | gardé en ligne |
+| 05 | [`pyramide`](../coding-agents/images/20260512-05-pyramide.svg) | ![](../coding-agents/images/20260512-05-pyramide.svg) | **S §7.9** | tel quel — schéma signature de §7.9 |
+| 06 | [`gains`](../coding-agents/images/20260512-06-gains.svg) | ![](../coding-agents/images/20260512-06-gains.svg) | **Ch.21** (ROI/gains) | renvoi Ch.21 |
+| 07 | [`couts`](../coding-agents/images/20260512-07-couts.svg) | ![](../coding-agents/images/20260512-07-couts.svg) | **Ch.21** (ROI/coûts) | renvoi Ch.21 |
+| 08 | [`carte-decision`](../coding-agents/images/20260512-08-carte-decision.svg) | ![](../coding-agents/images/20260512-08-carte-decision.svg) | écarté Ch.7 (matrice tabulaire §7.10.5 suffit) | gardé en ligne |
+
+#### Schémas du dossier `anatomie/` (méta)
+
+Les anneaux concentriques de `livre.html` (rendus par `livre-render.js` à partir de `LAYERS` dans `livre-data.js`) ne sont pas exportés en SVG indépendants. Les anneaux 01 (boucle), 02 (outils), 03 (contexte), 04 (patterns) constituent le **squelette conceptuel** mais ne fournissent pas d'images directement réutilisables ; ils nourrissent en revanche la **discipline éditoriale** (définitions canoniques, risques par couche, rôles par couche). Le schéma E1 (anatomie 10 anneaux concentriques) sera dérivé pour l'ouverture du livre.
+
+### Redondances et complémentarités entre les 4 dossiers
+
+**3 redondances majeures identifiées, déduplications opérées dans le chapitre :**
+
+| Sujet | `harness-agentique` | `agent-sdk` | `coding-agents` | `anatomie` | Décision Ch.7 |
+| --- | --- | --- | --- | --- | --- |
+| **Anatomie d'un harness** | 7 couches verticales + 2 plans (le plus dense, vue système) | 9 satellites autour du modèle (vue produit Claude Code) | 6 rouages (vue coding agent) | 10 anneaux concentriques (vue stratégique) | **Définition canonique = harness-01 (7 couches)**. Sdk-02 et coding-02 cités en mémoire, anatomie en référence amont. Évite 3 schémas redondants. |
+| **Boucle Reason · Act · Observe** | TAOR (Think-Act-Observe-Repeat) | Gather · Act · Verify (Anthropic Agent SDK) | « itère en boucle » (description narrative) | ReAct (formalisation académique) | **Définition canonique = §7.3 avec 3 variantes nommées**. Une seule description, 3 noms reconnus, 1 pivot (`stop_reason`). Le R1 « boucle + 3 variantes » de l'outline est rempli par superposition textuelle dans §7.3 — pas de schéma fusionné v1, à créer si édition print. |
+| **6 patterns canoniques Anthropic** | mention rapide | non couvert | mention rapide | 6 patterns détaillés (anneau 04 livre-data.js) | **Définition canonique = Ch.11**, pas Ch.7. Le Ch.7 fixe le principe (start simple, règle Schluntz-Zhang), Ch.11 déroule la taxonomie complète. |
+
+**Complémentarités assumées (pas de doublon vrai) :**
+
+| Apport unique du dossier | À conserver pour le Ch.7 |
+| --- | --- |
+| `harness-agentique` | Anatomie 7 couches, pattern GAN, observabilité 6 piliers, effort de dev (les 4 schémas signature) |
+| `agent-sdk` | Matrice tools/bash/codegen, gruyère 3 couches sécurité, matrice 4 voies de build, hooks 6 points d'interception |
+| `coding-agents` | Pyramide d'usage 4 étages (le seul angle qui structure l'adoption transverse), retex chiffrés (Stripe, METR), pyramide d'adoption |
+| `anatomie/livre-data.js` | Définitions canoniques (ReAct, stop_reason, harness, runner, graph execution, function calling, tool_use…), risques par couche |
+
+**1 absence notable, non bloquante** : pas de **schéma fusionné R1** (boucle ReAct canonique + 3 variantes harness GAN / gather-act-verify / coding loop). L'outline (annexe A.2) le liste comme « à créer par fusion ». **Décision v1** : couvert textuellement dans §7.3 (3 variantes nommées, une seule description), et le récap chapitre réutilise harness-01 (7 couches) qui couvre déjà la boucle comme couche 2. Si l'édition print réclame un récap fusionné dédié, le coût est ~3-5 jours SVG.
+
+### Plan détaillé du chapitre
+
+```
+> [!QUESTION] Question d'ouverture
+  Si l'écart inter-modèles tombe sous 1,3pt mais que le scaffold pèse 22pt,
+  où passe le levier d'ingénierie 2026 ?
+
+> [!TLDR] TL;DR décideur (6 bullets)
+
+§7.1  Pourquoi 2026 est l'année du harness (3 faits empiriques)
+      └─ encadré [!INFO] Voir Ch.1 (cœur stochastique)
+
+§7.2  Anatomie d'un harness — sept couches
+      ├─ §7.2.1 Modèle, boucle, contexte, outils, mémoire
+      │  └─ encadré [!INFO] Voir Ch.9 (mémoire agentique)
+      ├─ §7.2.2 Observabilité, gouvernance (plans horizontaux)
+      └─ §7.2.3 Du conceptuel au système
+         ├─ [SVG S] harness-01-anatomie-harness.svg
+         └─ [SVG S] harness-01b-architecture-systeme.svg
+
+§7.3  La boucle Reason · Act · Observe et son pivot stop_reason
+      ├─ encadré [!EXAMPLE] boucle minimale Anthropic Client SDK
+      ├─ §7.3.1 Trois variantes d'une même boucle (TAOR / Gather-Act-Verify / GAN)
+      └─ §7.3.2 Pourquoi la boucle mono-agent s'effondre
+         └─ encadré [!QUOTE] Rajasekaran Anthropic Labs
+
+§7.4  Le pattern à trois agents (GAN-inspiré)
+      ├─ [SVG S] harness-02-boucle-gan.svg
+      ├─ §7.4.1 Anatomie (planner / generator / evaluator)
+      ├─ §7.4.2 L'économie du pattern (mono 20min/9$ vs trois agents 6h/200$)
+      └─ §7.4.3 Trois leçons d'ingénierie
+         └─ encadré [!ATTENTION] Le pattern n'est pas la seule architecture
+
+§7.5  Outils, bash et codegen — les trois paradigmes d'action
+      ├─ [SVG S] sdk-07-matrice-tools-bash-codegen.svg
+      ├─ §7.5.1 Tools — actions structurées
+      ├─ §7.5.2 Bash — composition, filesystem, mémoire (scénario rideshare)
+      ├─ §7.5.3 Codegen — flexibilité, deep research
+      │  └─ encadré [!EXAMPLE] codegen avec hooks
+      └─ §7.5.4 La règle de combinaison
+         └─ encadré [!IMPORTANT] RBAC passe par l'infra, pas le prompt
+
+§7.6  Skills, hooks, sub-agents — leviers de fiabilité déterministe
+      ├─ §7.6.1 Les skills — objet partageable
+      ├─ §7.6.2 Les hooks — rattrapage déterministe
+      └─ §7.6.3 Les sub-agents — déléguer dans la délégation
+         └─ encadré [!INFO] Voir Ch.11 (orchestration multi-agent)
+
+§7.7  Observabilité — six piliers, et pourquoi l'APM est aveugle
+      ├─ [SVG S] harness-06-observabilite-piliers.svg
+      └─ encadré [!INFO] Voir Ch.18 (observabilité agentique)
+
+§7.8  Gouvernance — gruyère suisse, sandbox, RBAC
+      ├─ [SVG S] sdk-09-securite-couches.svg
+      ├─ encadré [!WARNING] Piège classique de la couche outils (execute_sql + injection)
+      └─ encadré [!INFO] Voir Ch.13 et Ch.19 (sécurité MCP + threat model E4)
+
+§7.9  La pyramide d'adoption — qui s'en sert pour quoi
+      ├─ [SVG S] coding-05-pyramide.svg
+      ├─ 4 étages (transverse / data quotidien / data expert / produit-décideurs)
+      └─ encadré [!NOTE] Le sommet n'est pas mieux que la base
+
+§7.10 Trois voies pour builder + une — matrice de décision
+      ├─ §7.10.1 Client SDK
+      ├─ §7.10.2 Agent SDK
+      ├─ §7.10.3 Claude Code comme plateforme d'extension
+      ├─ §7.10.4 Managed Agents
+      ├─ §7.10.5 Matrice transverse (8 cas d'usage × voie × mix × surveillance)
+      └─ encadré [!INFO] Voir Ch.20 (runtime managé)
+
+§7.11 Effort de développement — combien, combien de temps, avec qui
+      ├─ [SVG S] harness-05-effort-developpement.svg
+      ├─ 3 trajectoires (POC 50-100k€ / mid 150-300k€ / multi-agent 500k-2M€+)
+      ├─ Distribution effort (data prep 60-75%, intégration 40-60%, safety +20-30%)
+      └─ encadré [!INFO] Voir Ch.21 (ROI + paradoxe agentique)
+
+Récap chapitre — Sept couches, une boucle, trois voies
+       └─ [SVG R] harness-01-anatomie-harness.svg (réutilisé en récap)
+
+> [!WARNING] Trois pièges classiques (les trois sont 100% traçables)
+  Loop infinie sans budget de tours · execute_sql sans sandbox ·
+  multi-agent prématuré (×10-15 tokens, mois vs semaines, debug exponentiel)
+
+Sources (23 footnotes : 4 dossiers source + Anthropic engineering blog +
+        Microsoft Tech Community + ReAct paper + Coinbase + McKinsey + OWASP +
+        Stack Overflow Survey + METR)
+```
+
+### Encadrés prévus dans le chapitre
+
+Variété des `> [!TYPE]` Obsidian retenus :
+
+| Type | Usage | Compte |
+| --- | --- | --- |
+| `[!QUESTION]` | Ouverture chapitre | 1 |
+| `[!TLDR]` | Synthèse décideur 6 bullets | 1 |
+| `[!INFO]` | Renvois inter-chapitres (Ch.1, 9, 11, 13/19, 18, 20, 21) | 7 |
+| `[!EXAMPLE]` | Code pseudo-Python (Client SDK loop + Agent SDK hooks) | 2 |
+| `[!QUOTE]` | Citation Rajasekaran (Anthropic Labs) | 1 |
+| `[!ATTENTION]` | Le pattern n'est pas la seule architecture (renvoi Ch.11) | 1 |
+| `[!IMPORTANT]` | RBAC passe par l'infra | 1 |
+| `[!NOTE]` | Le sommet n'est pas mieux que la base (pyramide §7.9) | 1 |
+| `[!WARNING]` | Piège exec_sql + trois pièges classiques en clôture | 2 |
+| **Total** | | **17** |
+
+### Tâches restantes Ch.7
+
+- [x] Rédiger le manuscrit `docs/livre/ch07-boucle-agentique.md` (~9 800 mots)
+- [x] Audit des 29 schémas SVG des 4 dossiers source
+- [ ] Relecture Mathieu — passes critiques suggérées :
+  - **(a) La discipline anti-redondance** : vérifier que les 3 redondances majeures (anatomie / boucle / 6 patterns) sont effectivement déduplicéés sans perte de matière utile.
+  - **(b) Le récap §Récap** : décider si on garde la réutilisation du schéma harness-01 ou si on commande la fusion R1 (boucle ReAct + 3 variantes).
+  - **(c) Le §7.5.2 bash** : le scénario rideshare est cité textuellement sans schéma ; valider que ça passe ou réintégrer sdk-06-bash-funnel.svg.
+  - **(d) Le §7.9 pyramide** : c'est l'angle unique du dossier coding-agents — vérifier qu'il n'est pas dilué par l'absorption en charnière.
+  - **(e) La frontière Ch.7 ↔ Ch.11** : règle d'écriture posée (§7.4 trois agents = Ch.7 ; 8 patterns canoniques + topologies multi-agents + arbre buy/build = Ch.11). À valider pendant la rédaction du Ch.11.
+- [ ] Si validation : copier-coller la matière vers le futur format de sortie (print HTML / PDF) quand décidé
 
 ---
 
@@ -189,8 +414,9 @@ Variété des `> [!TYPE]` Obsidian retenus :
 
 ### Tâches restantes globales livre
 
-- [ ] Auditer les 27 autres dossiers (priorité : `evaluation-agentique` Ch.17, `harness-agentique` Ch.7, `economie-inference` Ch.5)
+- [ ] Auditer les 24 dossiers restants (priorité : `evaluation-agentique` Ch.17, `economie-inference` Ch.5, `modeles-raisonnement` Ch.2, `mcp-plateforme` + `mcp-securite` Ch.12-13)
 - [ ] Créer le schéma E4 (threat model unifié 2026) — ~4-6 jours, schéma le plus coûteux
 - [ ] Créer E3 (capability × cost) et R16 (J-curve × LLMflation) — ~2-3 j chacun
+- [ ] Créer R1 (boucle ReAct canonique + 3 variantes) si édition print le demande — ~3-5 j (v1 du Ch.7 fait sans, par superposition textuelle)
 - [ ] Décider du format de sortie (print PDF / web interactif / les deux)
 - [ ] Décider du calendrier de gel des contenus évolutifs
