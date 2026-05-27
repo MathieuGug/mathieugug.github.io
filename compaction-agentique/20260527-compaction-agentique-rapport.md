@@ -44,7 +44,7 @@ La compaction n'est donc pas une optimisation « nice-to-have » : c'est la cond
 
 ## 2. Anatomie de la compaction
 
-[SCHEMA-02]
+![Anatomie de la compaction : contrat I/O et quatre rôles|1200](images/20260527-02-contrat-io.svg)
 
 ### 2.1 Le contrat I/O
 
