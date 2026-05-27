@@ -151,7 +151,7 @@ C'est cette explicitation de la policy qui permet le *A/B test* de compactors di
 
 ## 4. Le triangle fidélité × coût × oubli
 
-[SCHEMA-04]
+![Le triangle fidélité × coût × oubliabilité|1200](images/20260527-04-triangle-tradeoff.svg)
 
 Les trois axes sont en tension irréductible :
 
