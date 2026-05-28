@@ -9,8 +9,8 @@ Journal de production du livre (28 dossiers → 25 chapitres). Voir [`livre-outl
 | | Statut | Note |
 | --- | --- | --- |
 | Outline | ✅ v0 mergé (PR #127) | 4 actes, 25 chapitres, 3 catégories de schémas (S/R/E) |
-| Audit schémas | 🟡 partiel | Ch.7-13 + Ch.14-16 (Acte III complet) + Ch.17-18-19-20 + **Ch.21-22-23 audités 2026-05-28** — les 8 autres en attente |
-| Manuscrit | 🟡 **14/25** | **Acte II** : Ch.7 (charnière) + Ch.8 + Ch.9 + Ch.10 + Ch.11 — tous v1. **Acte III complet** : Ch.12 + Ch.13 + Ch.14 + Ch.15 + Ch.16 v1. **Acte IV** : Ch.17 (charnière) + Ch.18 + Ch.19 (charnière) + Ch.20 v1 livrés 2026-05-28. **Prochaine vague : Ch.21 (charnière ROI) + Ch.22 (frugalité) + Ch.23 (gouvernance) — audits livrés 2026-05-28, manuscrits à écrire.** |
+| Audit schémas | 🟡 partiel | Ch.7-13 + Ch.14-16 (Acte III complet) + Ch.17-20 + **Ch.21-22-23 audités + manuscrits v1 livrés 2026-05-28** — les 8 autres en attente |
+| Manuscrit | 🟡 **17/25** | **Acte II** : Ch.7 (charnière) + Ch.8 + Ch.9 + Ch.10 + Ch.11 — tous v1. **Acte III complet** : Ch.12 + Ch.13 + Ch.14 + Ch.15 + Ch.16 v1. **Acte IV** : Ch.17 (charnière) + Ch.18 + Ch.19 (charnière) + Ch.20 v1 + **Ch.21 (charnière ROI) + Ch.22 (frugalité) + Ch.23 (gouvernance) v1 livrés 2026-05-28**. Restent à écrire : Ch.1-6 (Acte I) + Prologue + Ch.24 (IA et travail) + Ch.25 (procès Musk) + Épilogue. |
 | Schémas R/E à produire | ⏳ | E3 (capability×cost) et E5 (PRM comparatif) restent à créer. E4 (threat model unifié 2026) **textualisé en Ch.19 §19.10**. R1-R15 traités par réutilisation. **R16 (J-curve × LLMflation × paradoxe agentique)** à créer par fusion lourde — brief détaillé Ch.21 §Schémas. **R17 (3 trajectoires énergétiques 2030)** traité par réutilisation tel quel de `ia-frugale-08-trajectoires-2030.svg`. **R18 (calendrier réglementaire 2026-2028 unifié)** à créer ex nihilo — brief détaillé Ch.23 §Schémas. |
 | Bugs SVG corrigés | ✅ 1 | `cinq-familles.svg` (balise XML malformée) |
 | Rendu print/web | ⏳ | non décidé |
@@ -29,8 +29,8 @@ Journal de production du livre (28 dossiers → 25 chapitres). Voir [`livre-outl
 | --- | --- |
 | Audit schémas source (1 dossier principal + annexes JSON) | ✅ fait — `measure-roi/` (9 schémas SVG tous absorbés) + 4 fichiers complémentaires (`7-axes-roi.md`, `roi-calculation-methods.md`, `note-cigref-vs-roi-cards.md`, `roi-cards.json`, `roi-metrics.json`) |
 | Plan détaillé | ✅ fait (audit du 2026-05-28) |
-| Manuscrit | ⏳ à rédiger — `docs/livre/ch21-roi-paradoxe-agentique.md` (~10-12 000 mots, ~17 encadrés, 9 schémas + R16 fusion) |
-| Schémas à créer | **R16** (Productivity J-curve × LLMflation × paradoxe agentique) — fusion lourde des SVG `measure-roi-06-j-curve.svg` + `measure-roi-08-stack-roi-agentique.svg` + `economie-inference` LLMflation. Brief détaillé ci-dessous. |
+| Manuscrit | ✅ **v1 livrée** — `docs/livre/ch21-roi-paradoxe-agentique.md` (~8 500 mots, 440 lignes, 15 footnotes, 9 schémas réutilisés, 17 encadrés Obsidian) |
+| Schémas à créer | **R16** (Productivity J-curve × LLMflation × paradoxe agentique) — reporté à session ultérieure. Le manuscrit v1 fonctionne par juxtaposition des SVG existants `measure-roi-06-j-curve.svg` (§21.2.3) et `measure-roi-08-stack-roi-agentique.svg` (§21.7). Brief détaillé ci-dessous reste valide pour la fusion lourde (~2-3 j SVG) si édition print A3 le réclame. |
 | Frontière Ch.21 ↔ Ch.5 | À tenir — Ch.5 = physique du coût/token (7 couches d'optim) ; Ch.21 = valeur métier (J-curve, outcome, paradoxe agentique). Renvoi `[!INFO]` croisé. Le schéma 7 couches de Ch.5 ré-apparaît en regard de R16 dans une double-page éco. |
 | Frontière Ch.21 ↔ Ch.17 | À tenir — Ch.17 cite déjà le token cost trap (Klaus Hofenbitzer 0,14 $→130 k$/mois) en illustration intra-chapitre ; Ch.21 ne refait pas cette illustration mais déroule la stack à 4 niveaux. |
 | Frontière Ch.21 ↔ Ch.22 | À tenir — Ch.22 = externalité énergétique (TWh, gCO₂eq, eau). Ch.21 mesure la valeur métier directe. Triptyque tarifaire explicite : Ch.5 coût token / Ch.21 valeur outcome / Ch.22 externalité environnementale. |
@@ -127,7 +127,7 @@ Au total, **9 schémas SVG** dans le dossier source, tous absorbés tels quels (
 | --- | --- |
 | Audit schémas source (1 dossier) | ✅ fait — `ia-frugale/` (12 schémas SVG : 1 exec-sum annexe + 11 narratifs absorbés) |
 | Plan détaillé | ✅ fait (audit du 2026-05-28) |
-| Manuscrit | ⏳ à rédiger — `docs/livre/ch22-ia-frugale.md` (~7 500-8 000 mots, ~14 encadrés, 11 schémas) |
+| Manuscrit | ✅ **v1 livrée** — `docs/livre/ch22-ia-frugale.md` (~8 100 mots, 437 lignes, 24 footnotes équilibrées, 11 schémas réutilisés tels quels, 14 encadrés Obsidian) |
 | Schémas à créer | **0 ex nihilo**. R17 (3 trajectoires énergétiques 2030) traité par réutilisation tel quel de `20260513-08-trajectoires-2030.svg`. Tous les schémas du dossier source sont absorbables sans retouche. |
 | Frontière Ch.22 ↔ Ch.5 | À tenir — Ch.5 = 7 couches d'optim inference côté direct cost ; Ch.22 = leviers structurels énergétiques (MoE / distillation / cooling / geo-aware / nucléaire dédié / pré-KV cache routing) côté externalité. **Mêmes leviers**, deux angles. Renvoi explicite Ch.5 §7 couches en parallèle. |
 | Frontière Ch.22 ↔ Ch.21 | À tenir — triptyque tarifaire complet : Ch.5 coût token, Ch.21 valeur outcome, Ch.22 externalité. Cohérence intro §22.1 à poser explicitement. |
@@ -294,8 +294,8 @@ Sources (~23 footnotes : ACL Strubell 2019, Joule de Vries 2023,
 | --- | --- |
 | Audit dossiers source (1 principal + 4 rappels) | ✅ fait — `gouvernance/` (principal) + rappels `analytics-agentique-gcp` (Ch.16), `compaction-agentique` (Ch.10), `mcp-securite` (Ch.13), `memoire-agentique` (Ch.9) |
 | Plan détaillé | ✅ fait (audit du 2026-05-28) |
-| Manuscrit | ⏳ à rédiger — `docs/livre/ch23-gouvernance-ai-act.md` (~6 500-7 500 mots, ~14 encadrés) |
-| Schémas à créer | ✅ **R18 (calendrier réglementaire 2026-2028 unifié) livré** — `gouvernance/images/20260421-r18-calendrier-reglementaire.svg` (viewBox 1600×1100, 7 référentiels × 7 fenêtres temporelles, code couleur 4 statuts + 4 rôles, bandeau bas 6 dépendances critiques). 2 schémas restants à produire : 3 lignes de défense (extraction depuis `gouvernance/gouvernance-agents-ia.html`) + matrice 6 référentiels × stack générique (adaptation Ch.16). |
+| Manuscrit | ✅ **v1 livrée** — `docs/livre/ch23-gouvernance-ai-act.md` (~7 500 mots dans le corps + sources, 404 lignes, 51 footnotes équilibrées, 14 encadrés Obsidian) |
+| Schémas | ✅ **R18 intégré** (§23.2 + §23.10) — `gouvernance/images/20260421-r18-calendrier-reglementaire.svg`. **S23.1** (3 lignes de défense) et **S23.2** (matrice 6 réf × 9 couches stack générique) restent en placeholders avec descriptions narratives — à créer en session ultérieure si édition print l'exige (~2-3 j SVG chacun). Narration tient sans eux. |
 | Frontière Ch.23 ↔ Ch.16 | À tenir — Ch.16 = instanciation **sectorielle banque française GCP** (Looker semantic, BigQuery, Dataplex, Assured Workloads, S3NS) ; Ch.23 = grille réglementaire **générique** applicable à tout déployeur. Encadré §23.7 explicite : « *lire Ch.16 pour la profondeur banque* ». |
 | Frontière Ch.23 ↔ Ch.10 | À tenir — Ch.10 = mécanique compaction (5 familles, triangle, surface attaque) ; Ch.23 = angle réglementaire RGPD art. 17 + AI Act art. 25 transparence sur limites. Pas de redite mécanique. |
 | Frontière Ch.23 ↔ Ch.9 | À tenir — Ch.9 = architecture mémoire (4 piliers) ; Ch.23 = distinction opérationnel/paramétrique sous angle régulation. 2-3 paragraphes seulement. |
