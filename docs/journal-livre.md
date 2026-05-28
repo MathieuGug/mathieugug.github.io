@@ -9,8 +9,8 @@ Journal de production du livre (28 dossiers → 25 chapitres). Voir [`livre-outl
 | | Statut | Note |
 | --- | --- | --- |
 | Outline | ✅ v0 mergé (PR #127) | 4 actes, 25 chapitres, 3 catégories de schémas (S/R/E) |
-| Audit schémas | 🟡 partiel | Ch.7 + Ch.9 + Ch.10 + Ch.11 + Ch.17 faits — les 19 autres en attente |
-| Manuscrit | 🟡 5/25 | **Ch.7 charnière : v1 livrée** + **Ch.9 standard : v1 livrée** + **Ch.10 standard : v1 livrée** + **Ch.11 standard : v1 livrée** + **Ch.17 charnière : v1 livrée** |
+| Audit schémas | 🟡 partiel | Ch.4 + Ch.7 + Ch.9 + Ch.10 + Ch.11 + Ch.17 faits — les 18 autres en attente |
+| Manuscrit | 🟡 6/25 | **Ch.4 standard : v1 livrée** + **Ch.7 charnière : v1 livrée** + **Ch.9 standard : v1 livrée** + **Ch.10 standard : v1 livrée** + **Ch.11 standard : v1 livrée** + **Ch.17 charnière : v1 livrée** |
 | Schémas R/E à produire | ⏳ | E4 (threat model), E3 (capability×cost), E5 (PRM comparatif), R1 (boucle ReAct + 3 variantes — Ch.7 traité par réutilisation), R2 (4 piliers × 6 opérations × 5 architectures — Ch.9 traité par réutilisation tel quel de `taxonomie-piliers.svg` en récap, complétion par matrice prod à demander pour print), R4 (8 patterns canoniques — Ch.11 traité par réutilisation de `patterns-canoniques.svg` tel quel), R5 (fabrique 4 stades — Ch.11 traité par tableau markdown faute de schéma fabrique-12 satisfaisant en gabarit récap), R11 (playbook gruyère — Ch.17 traité par réutilisation tel quel de `playbook-gruyere.svg` en récap), R12 (4 vecteurs contamination — Ch.17 traité par réutilisation tel quel de `vecteurs-contamination.svg`) — pas démarré pour les schémas E |
 | Bugs SVG corrigés | ✅ 1 | `cinq-familles.svg` (balise XML malformée) |
 | Rendu print/web | ⏳ | non décidé |
@@ -1052,9 +1052,85 @@ Variété des `> [!TYPE]` Obsidian retenus :
 - [ ] Relecture Mathieu — passe critique sur le triangle (positionnement des familles relativement aux sommets) et sur l'encadré SpAIware
 - [ ] Si validation : copier-coller la matière vers le futur format de sortie (print HTML / PDF) quand décidé
 
+---
+
+## Chapitre 4 — Décode spéculative et la course au token/sec
+
+> **Acte I — Les moteurs · Gabarit standard 16-24 p · ~6 500-7 500 mots**
+> **Lecteur cible** : agent engineer, plateforme ML, FinOps / acheteur infra, sponsor IA technique.
+> **Sortie lecteur** : comprend pourquoi la décode est sériel et memory-bound (HBM/KV cache lus à chaque token, tensor cores sous-employés) ; lit l'anatomie draft / verify / accept-reject et sait pourquoi le théorème d'équivalence Leviathan-Kalman-Matias (ICML 2023) rend la spec acceptable sans débat qualité ; situe les 4 familles de variantes (draft externe Leviathan/Chen — têtes Medusa/Hydra — feature-level EAGLE 1/2/3 — Jacobi Lookahead) et le critère de choix entre elles ; comprend que l'acceptance rate α est **le** paramètre invisible — 75-85 % code, 60-70 % Q&A factuel, 40-50 % créatif, &lt; 30 % out-of-distribution → perte nette ; sait pourquoi l'instrumentation de α est devenue un indicateur de premier rang en 2026 (au même titre que p99 latency) ; identifie le second piège — l'interaction avec batching dynamique : maximal à batch 1 (memory-bound), s'effondre au-dessus de batch ≈ 24 (compute-bound saturé) ; lit la sophistication des schedulers hybrides 2025-2026 (vLLM 0.6 activation conditionnelle, TensorRT-LLM 0.9 deux schedulers parallèles, SGLang `speculation_threshold`) ; choisit entre les 4 frameworks dominants (vLLM / SGLang / TensorRT-LLM / DeepSpeed-MII) sur la maturité d'intégration scheduler, pas sur la disponibilité de variante ; reconnaît trois pièges 100 % traçables (activer la spec partout sans monitoring α / RFP au speedup peak / signature contrat 3 ans sur tokens/sec batch 1).
+
+### Statut
+
+| Étape | Statut |
+| --- | --- |
+| Audit schémas source (1 dossier) | ✅ fait — `decode-speculative/` (6 schémas SVG tous absorbés tels quels) |
+| Plan détaillé | ✅ fait (audit du 2026-05-29) |
+| Manuscrit | ✅ **v1 livrée** — `docs/livre/ch04-decode-speculative.md` (~6 800 mots, 6 schémas réutilisés, 14 encadrés Obsidian, 12 footnotes) |
+| Schémas à créer | **0 ex nihilo**. Tous les schémas du dossier source sont absorbables tels quels avec hint Obsidian `\|1300` (full-bleed). |
+| Frontière Ch.4 ↔ Ch.2 | À tenir — Ch.2 explique **pourquoi** on a besoin de compute à l'inférence (second axe de scaling, reasoning models) ; Ch.4 explique **comment** on regagne le débit perdu. Renvoi `[!INFO]` croisé en §4.1. |
+| Frontière Ch.4 ↔ Ch.5 | À tenir — Ch.5 = pile 7 couches d'optim inference (PagedAttention, FlashAttention-3, batching continu, FP8/FP4, désagrégation, MoE) côté économie globale ; Ch.4 = zoom monographique sur **une** couche (la décode spéculative). Renvoi vers la matrice frameworks de Ch.5 + complément Ch.4 (matrice variantes × frameworks, **côte à côte**, **pas fusionnée** — décision outline). |
+| Frontière Ch.4 ↔ Ch.21 | Légère — la spec n'a pas d'impact ROI direct, mais elle conditionne la mesure du *tokens/sec* utilisée comme proxy de coût. Renvoi non explicite. |
+| Frontière Ch.4 ↔ Ch.18 | À tenir — l'instrumentation de α (acceptance rate par requête) entre dans le **cognitive audit trail** au sens Ch.18 (OTel GenAI semconv `gen_ai.speculative.acceptance_rate`, WG en cours fin 2026). Renvoi `[!INFO]` en §4.4. |
+
+### Sources matérielles
+
+Le Ch.4 est un **chapitre standard à un seul dossier source dense et techniquement homogène**. Pas de redondance externe massive — `decode-speculative` est le seul dossier qui traite la spéculation, et il le fait de bout en bout (théorème, anatomie, taxonomie, deux pièges, marché, horizon).
+
+- **Dossier principal — [`decode-speculative/`](../decode-speculative/)** (22 mai 2026, étude #25) — théorème d'équivalence Leviathan-Kalman-Matias (ICML 2023), anatomie en 3 étapes (drafting / verification / accept-reject), 4 familles de variantes, formule du speedup conditionnée à α, 3 facteurs gouvernant α (domaine / température / drift), interaction batching, point de bascule batch ≈ 24, schedulers hybrides 2025-2026, matrice frameworks 4 vendeurs × variantes, 3 directions horizon 2026-2028 (RL-guided drafting / multi-draft mixture / ensemble verification).
+  - [Rapport (.md, ~3 500 mots)](../decode-speculative/20260522-decode-speculative-rapport.md) · [App interactive](../decode-speculative/20260522-decode-speculative-app.html)
+  - 6 schémas SVG dans [`images/`](../decode-speculative/images/), tous narratifs, tous absorbables
+
+### Audit des schémas — Ch.4
+
+| Fig | Slug | viewBox | Catégorie Ch.4 | Insertion | Statut |
+| --- | --- | --- | --- | --- | --- |
+| 01 | [`decode-sequentielle-vs-speculative`](../decode-speculative/images/20260522-01-decode-sequentielle-vs-speculative.svg) | 1200×760 | **S §4.2** | Anatomie temporelle : à gauche K forwards séquentiels (1 token/forward), à droite drafting + 1 verify parallèle | tel quel — **schéma d'ouverture mécanique** |
+| 02 | [`arbre-tokens-tree-attention`](../decode-speculative/images/20260522-02-arbre-tokens-tree-attention.svg) | 1200×760 | **S §4.2.2** | Tree attention mask : matrice causale standard à gauche, masque tree à droite (branches concurrentes dans un même forward) | tel quel |
+| 03 | [`taxonomie-variantes-speculation`](../decode-speculative/images/20260522-03-taxonomie-variantes-speculation.svg) | 1200×760 | **S §4.3 + Récap** | 4 familles côte à côte : draft externe / Medusa-Hydra / EAGLE / Lookahead, avec stratégie de drafting et trade-off VRAM × acceptance × entraînement | tel quel — **schéma signature** |
+| 04 | [`acceptance-rate-domaine`](../decode-speculative/images/20260522-04-acceptance-rate-domaine.svg) | 1200×740 | **S §4.4** | α par domaine (code 75-85 / Q&A 60-70 / créatif 40-50 / OOD &lt; 30) avec seuil de perte nette à 30 % | tel quel |
+| 05 | [`point-bascule-batch`](../decode-speculative/images/20260522-05-point-bascule-batch.svg) | 1200×720 | **S §4.5** | Speedup vs batch_size : pic à batch 1, dégradation autour de batch 24-32, perte nette à batch &gt; 48 | tel quel |
+| 06 | [`matrice-frameworks`](../decode-speculative/images/20260522-06-matrice-frameworks.svg) | 1200×740 | **S §4.6** | vLLM × SGLang × TensorRT-LLM × DeepSpeed-MII contre 4 variantes spéculatives + maturité scheduler hybride | tel quel — **carte de décision frameworks** |
+
+**Bilan audit Ch.4** : 6/6 schémas absorbés tels quels. 0 schéma écarté. 0 schéma à créer ex nihilo. Densité finale : ~1 schéma par 1 100 mots — rythme typique d'un chapitre standard à matière visuelle dense. ViewBox déjà standardisés (1200×~720-760), hint Obsidian `|1300` aligne sur la convention CLAUDE.md pour full-bleed.
+
+### Redondances et complémentarités
+
+**Pas de redondance interne** — un seul dossier, pas de chevauchement de matière. La discipline éditoriale numéro 1 est de **tenir la frontière avec Ch.5** : la spec est **une** couche de la pile 7-couches d'optim de Ch.5, mais elle mérite son propre chapitre parce qu'elle (a) repose sur un théorème mathématique qui mérite d'être explicité, (b) condense les deux pièges les plus traîtres de l'inference moderne (acceptance rate + batching), et (c) est devenue l'option par défaut des serveurs en 2026 — ce qui change la grille de mesure du tokens/sec.
+
+**Décision outline réaffirmée** : matrice frameworks de Ch.4 (variantes spéculatives × 4 vendeurs) **ne pas fusionner** avec matrice frameworks d'`orchestration-agentique` (ADK ouverts vs vendeurs Ch.11/Ch.20). Couches différentes. À mettre **côte à côte** dans la version print, **séparées** en web.
+
+### Encadrés prévus dans le chapitre
+
+| Type | Usage | Compte |
+| --- | --- | --- |
+| `[!QUESTION]` | Ouverture | 1 |
+| `[!TLDR]` | Synthèse décideur 5 bullets | 1 |
+| `[!INFO]` | Renvois inter-chapitres (Ch.2, Ch.5, Ch.18) | 3 |
+| `[!QUOTE]` | Citation Leviathan et al. ICML 2023 + 1 doc framework | 2 |
+| `[!IMPORTANT]` | Le théorème d'équivalence + l'instrumentation α | 2 |
+| `[!ATTENTION]` | Sampling cohérent draft/target + drift silencieux | 2 |
+| `[!EXAMPLE]` | Formule de speedup + calcul (α=0.8 K=5 → 3.4×) | 1 |
+| `[!NOTE]` | Pourquoi *zero-train* fait gagner Lookahead | 1 |
+| `[!WARNING]` | Trois pièges classiques en clôture | 1 |
+| **Total** | | **~14** |
+
+### Tâches restantes Ch.4
+
+- [x] Rédiger le manuscrit `docs/livre/ch04-decode-speculative.md` (~6 500-7 500 mots)
+- [x] Audit schémas source (6/6 absorbables tels quels — pas de retouche nécessaire)
+- [ ] Relecture Mathieu — passes critiques suggérées :
+  - **(a) Formule de speedup §4.4** : la dérivation Leviathan est-elle assez explicite pour qu'un agent engineer puisse l'appliquer à son cas ?
+  - **(b) Le piège batching §4.5** : le point de bascule batch ≈ 24-32 est-il bien dérivable depuis le memory-bound vs compute-bound ? Faut-il un encadré « calcul de seuil pour Llama-3.1-70B sur H100 » ?
+  - **(c) Matrice frameworks §4.6** : la grille d'achat est-elle exploitable pour un FinOps qui négocie un contrat 12 mois sans connaître les détails d'EAGLE-3 ?
+  - **(d) Pièges en clôture** : les trois pièges sont-ils tous traçables à des incidents/contrats observés en 2025-2026 ?
+- [ ] Si validation : matière transposable vers le futur format de sortie (print HTML / PDF) quand décidé
+
+---
+
 ### Tâches restantes globales livre
 
-- [ ] Auditer les 19 dossiers restants (priorité : `economie-inference` Ch.5, `modeles-raisonnement` Ch.2, `mcp-plateforme` + `mcp-securite` Ch.12-13, `process-reward-models` Ch.3)
+- [ ] Auditer les 18 dossiers restants (priorité : `economie-inference` Ch.5, `modeles-raisonnement` Ch.2, `mcp-plateforme` + `mcp-securite` Ch.12-13, `process-reward-models` Ch.3)
 - [ ] Créer le schéma E4 (threat model unifié 2026) — ~4-6 jours, schéma le plus coûteux. **La verticale mémoire du Ch.9 §9.7 fournit déjà un cycle d'attaque + 4 niveaux mitigation utilisables pour le tronc commun.**
 - [ ] Créer E3 (capability × cost) et R16 (J-curve × LLMflation) — ~2-3 j chacun
 - [ ] Créer R1 (boucle ReAct canonique + 3 variantes) si édition print le demande — ~3-5 j (v1 du Ch.7 fait sans, par superposition textuelle)
