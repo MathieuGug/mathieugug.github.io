@@ -9,11 +9,183 @@ Journal de production du livre (28 dossiers → 25 chapitres). Voir [`livre-outl
 | | Statut | Note |
 | --- | --- | --- |
 | Outline | ✅ v0 mergé (PR #127) | 4 actes, 25 chapitres, 3 catégories de schémas (S/R/E) |
-| Audit schémas | 🟡 partiel | Ch.7 + Ch.10 + Ch.11 faits — les 25 autres en attente |
-| Manuscrit | 🟡 3/25 | **Ch.7 charnière : v1 livrée** + **Ch.10 standard : v1 livrée** + **Ch.11 standard : v1 livrée** |
-| Schémas R/E à produire | ⏳ | E4 (threat model), E3 (capability×cost), E5 (PRM comparatif), R1 (boucle ReAct + 3 variantes — Ch.7 traité par réutilisation), R4 (8 patterns canoniques — Ch.11 traité par réutilisation de `patterns-canoniques.svg` tel quel), R5 (fabrique 4 stades — Ch.11 traité par tableau markdown faute de schéma fabrique-12 satisfaisant en gabarit récap) — pas démarré pour les schémas E |
+| Audit schémas | 🟡 partiel | Ch.7 + Ch.9 + Ch.10 + Ch.11 faits — les 24 autres en attente |
+| Manuscrit | 🟡 4/25 | **Ch.7 charnière : v1 livrée** + **Ch.9 standard : v1 livrée** + **Ch.10 standard : v1 livrée** + **Ch.11 standard : v1 livrée** |
+| Schémas R/E à produire | ⏳ | E4 (threat model), E3 (capability×cost), E5 (PRM comparatif), R1 (boucle ReAct + 3 variantes — Ch.7 traité par réutilisation), R2 (4 piliers × 6 opérations × 5 architectures — Ch.9 traité par réutilisation tel quel de `taxonomie-piliers.svg` en récap, complétion par matrice prod à demander pour print), R4 (8 patterns canoniques — Ch.11 traité par réutilisation de `patterns-canoniques.svg` tel quel), R5 (fabrique 4 stades — Ch.11 traité par tableau markdown faute de schéma fabrique-12 satisfaisant en gabarit récap) — pas démarré pour les schémas E |
 | Bugs SVG corrigés | ✅ 1 | `cinq-familles.svg` (balise XML malformée) |
 | Rendu print/web | ⏳ | non décidé |
+
+---
+
+## Chapitre 9 — Mémoire agentique : quatre piliers, six opérations, cinq architectures
+
+> **Acte II — La boucle · Gabarit standard 16-24 p · ~6 200 mots**
+> **Lecteur cible** : agent engineer, tech lead, architecte, DPO, RSSI.
+> **Sortie lecteur** : maîtrise la grille canonique CoALA (4 piliers travail/sémantique/épisodique/procédurale × 6 opérations) ; sait quand choisir Letta vs Mem0 vs Zep vs file-based Anthropic vs Generative Agents ; comprend le rôle pivot du context engineering (Karpathy, Martin Write/Select/Compress/Isolate) ; distingue la mémoire opérationnelle (effacement RGPD techniquement faisable aujourd'hui) de la mémoire paramétrique (machine unlearning émergent) ; reconnaît le pattern d'attaque MITRE ATLAS AML.T0080 et sait l'instrumenter à 4 niveaux (infra / modèle / utilisateur / org) ; peut dérouler la feuille de route 6/12/18 mois pour son organisation.
+
+### Statut
+
+| Étape | Statut |
+| --- | --- |
+| Audit schémas source (1 dossier) | ✅ fait (cf. §Audit ci-dessous) |
+| Plan détaillé | ✅ fait |
+| Manuscrit | ✅ **v1 livrée** — `docs/livre/ch09-memoire-agentique.md` (≈ 6 200 mots, 13 encadrés, 8 schémas intégrés) |
+| Schémas à créer | 0 v1 (R2 « 4 piliers × 6 opérations × 5 architectures » traité par **réutilisation tel quel** de `taxonomie-piliers.svg` en récap ; matrice prod 5 architectures déjà rendue par tableau markdown § 9.4. La fusion R2 « grille 4 piliers × 5 archi × 6 op » de l'outline annexe A.2 n'est pas livrée v1 — si édition print l'exige, fusion `taxonomie-piliers` + `frameworks-matrice` + `cycle-de-vie` en un seul triptyque, coût ~3-4 j SVG) |
+| Renvois inter-chapitres | ✅ Ch. 7 (boucle / 7 couches harness, couche mémoire = n°5), Ch. 10 (compaction = sous-pilier travail / scratchpad), Ch. 18 (observabilité, futurs attributs `gen_ai.memory.*` WG GenAI), Ch. 19 (threat model E4 — verticale mémoire), Ch. 23 (gouvernance RGPD/AI Act, machine unlearning) |
+
+### Sources matérielles
+
+Le Ch.9 est un **chapitre standard à un seul dossier source** — c'est l'absorption la plus propre du livre : un dossier → un chapitre, audit linéaire des 8 schémas, 100 % des schémas non-annexe absorbés.
+
+- **Dossier principal — [`memoire-agentique/`](../memoire-agentique/)** (30 avril 2026, étude #07) — la cartographie complète : déficit d'apprentissage (MIT NANDA + Gartner + reasoning-in-haystack), 4 piliers CoALA, 6 opérations du cycle de vie, 5 architectures de production (MemGPT/Letta, Generative Agents, A-MEM, Zep/Graphiti, Mem0), context engineering (Karpathy + Martin), paysage OpenAI/Anthropic/Google, surface d'attaque (SpAIware, MITRE ATLAS AML.T0080), feuille de route 18 mois.
+  - [Rapport (.md, ~10 000 mots)](../memoire-agentique/20260430-memoire-agentique-rapport.md) · [App interactive](../memoire-agentique/20260430-memoire-agentique-app.html)
+  - 8 schémas SVG dans [`images/`](../memoire-agentique/images/) (hors `exec-sum-a4` réservé annexe)
+
+### Audit des schémas — Ch.9
+
+Au total, **9 schémas SVG** dans le dossier source (1 `exec-sum-a4` + 8 schémas narratifs). Classement S (au fil du texte Ch.9) / R (récap chapitre) / écarté.
+
+| Fig | Slug | Aperçu | Catégorie Ch.9 | Statut |
+| --- | --- | --- | --- | --- |
+| 00 | [`exec-sum-a4`](../memoire-agentique/images/20260430-00-exec-sum-a4.svg) | A4 portrait synthèse | écarté (livre) | annexe rapport |
+| 01 | [`cadrage-strategique`](../memoire-agentique/images/20260430-01-cadrage-strategique.svg) | ![](../memoire-agentique/images/20260430-01-cadrage-strategique.svg) | **S §9.1.2** | tel quel — pose le diagnostic chiffré MIT NANDA + Gartner + reasoning-in-haystack |
+| 02 | [`taxonomie-piliers`](../memoire-agentique/images/20260430-02-taxonomie-piliers.svg) | ![](../memoire-agentique/images/20260430-02-taxonomie-piliers.svg) | **S §9.2 + Récap §9** | tel quel — schéma signature du chapitre, utilisé **2×** (S §9.2 + récap). Tient lieu de R2 v1. |
+| 03 | [`cycle-de-vie`](../memoire-agentique/images/20260430-03-cycle-de-vie.svg) | ![](../memoire-agentique/images/20260430-03-cycle-de-vie.svg) | **S §9.3** | tel quel — 6 opérations (récupération, consolidation, mise à jour, indexation, compression, oubli) |
+| 04 | [`frameworks-matrice`](../memoire-agentique/images/20260430-04-frameworks-matrice.svg) | ![](../memoire-agentique/images/20260430-04-frameworks-matrice.svg) | **S §9.4** | tel quel — matrice 5 frameworks ; complété par tableau markdown récap (force/limite) en bas de §9.4 |
+| 05 | [`context-engineering`](../memoire-agentique/images/20260430-05-context-engineering.svg) | ![](../memoire-agentique/images/20260430-05-context-engineering.svg) | **S §9.5** | tel quel — grille Lance Martin Write/Select/Compress/Isolate |
+| 06 | [`vendors-comparison`](../memoire-agentique/images/20260430-06-vendors-comparison.svg) | ![](../memoire-agentique/images/20260430-06-vendors-comparison.svg) | **S §9.6** | tel quel — OpenAI/Anthropic/Google ; complété par tableau markdown des 5 dimensions |
+| 07 | [`surface-attaque`](../memoire-agentique/images/20260430-07-surface-attaque.svg) | ![](../memoire-agentique/images/20260430-07-surface-attaque.svg) | **S §9.7.1** | tel quel — cycle 5 étapes + cas SpAIware/Delayed Tool/ShadowLeak + 4 couches mitigation. Source clé pour le futur E4 du Ch.19. |
+| 08 | [`roadmap`](../memoire-agentique/images/20260430-08-roadmap.svg) | ![](../memoire-agentique/images/20260430-08-roadmap.svg) | **S §9.8** | tel quel — 3 horizons × 3 pistes (architecture / gouvernance / adoption) |
+
+**Bilan audit Ch.9** : 8/8 schémas narratifs absorbés (taux d'absorption maximal avec Ch.11). 0 schéma écarté pour redondance, 0 schéma à fixer, 0 schéma réassigné à un autre chapitre. C'est l'audit le plus propre du livre — signe que le dossier source était structuré dès l'origine comme un seul chapitre, sans dispersion.
+
+### Redondances et complémentarités avec les chapitres voisins
+
+**0 redondance vraie dans Ch.9 lui-même** (chapitre à un seul dossier). **3 frontières inter-chapitres à tenir strictement** :
+
+| Sujet | Couvert où ? | Décision Ch.9 |
+| --- | --- | --- |
+| **Mémoire de travail / scratchpad → compaction** | Posée en Ch.9 §9.2.1 comme pilier ; approfondie en Ch.10 (compaction = première politique d'éviction active de ce pilier) | Définition canonique du pilier = §9.2.1 (4 lignes) ; la mécanique compaction (5 familles, triangle non-dégénéré) reste au Ch.10. Renvoi `[!INFO] Voir Ch. 10`. |
+| **Surface d'attaque mémoire** | Posée en Ch.9 §9.7 comme verticale ; agrégée en Ch.19 dans le threat model E4 unifié 2026 (modèle / prompt / mémoire / outil / protocole / surface) | Ch.9 décrit le cycle d'attaque mémoire + 4 couches de mitigation. Le Ch.19 ré-agrège avec les 5 autres verticales. Pas de doublon, deux profondeurs. |
+| **RGPD art. 17 + machine unlearning** | Effleuré en Ch.9 §9.7.3 (deux régimes opérationnel/paramétrique) ; déroulé en Ch.23 (calendrier 2026-2027, sous-puits unlearning, rôle DPO/RSSI/Sponsor) | Ch.9 pose la distinction des deux régimes (3-4 phrases). Le détail réglementaire reste Ch.23. Renvoi `[!INFO] Voir Ch. 23`. |
+
+**Cohérence avec la frontière posée par Ch.10** (`docs/livre/ch10-compaction.md` §10.1) : le Ch.10 ouvre par *« Le chapitre précédent a posé la grille des quatre piliers de la mémoire agentique… »*. Le Ch.9 §9.2 pose effectivement cette grille (4 piliers CoALA). Le Ch.10 §10.1 renvoie vers *« Ch. 9 §3-§5 »* pour les piliers long-terme et architectures de production — dans le numérotage Ch.9 livré (§9.3 = 6 opérations, §9.4 = 5 architectures, §9.5 = context engineering), la correspondance fonctionne. Aucune édition rétro-active du Ch.10 nécessaire.
+
+**1 absence notable, non bloquante** : pas de **schéma fusionné R2** (matrice 4 piliers × 6 opérations × 5 architectures en un seul triptyque). L'outline (annexe A.2) le liste comme « fusion de la grille existante + matrice prod ». **Décision v1** : couvert par 3 schémas distincts (taxonomie-piliers en §9.2, cycle-de-vie en §9.3, frameworks-matrice en §9.4) + tableau markdown récap des 5 architectures (force/limite) en bas de §9.4. Le récap chapitre réutilise `taxonomie-piliers.svg` (le pilier conceptuel qui ancre tout le reste). Si l'édition print réclame un récap fusionné dédié, le coût est ~3-4 jours SVG.
+
+### Plan détaillé du chapitre
+
+```
+> [!QUESTION] Question d'ouverture
+  95 % d'échec MIT NANDA, 40 % d'abandons Gartner — pour un même learning gap.
+  Pourquoi empiler du contexte au lieu d'investir dans une mémoire gouvernée ?
+
+> [!TLDR] TL;DR décideur (6 bullets)
+
+§9.1   Le déficit d'apprentissage : pourquoi la mémoire est devenue le goulot
+       ├─ §9.1.1 La place de ce chapitre dans l'Acte II
+       ├─ §9.1.2 L'amnésie comme signature opérationnelle
+       │   └─ [SVG S] cadrage-strategique.svg
+       ├─ §9.1.3 Le contexte long ne résout pas le problème (Shang et al.)
+       └─ encadré [!INFO] Voir Ch. 7 (7 couches harness)
+
+§9.2   Quatre piliers : la grille canonique CoALA
+       ├─ [SVG S] taxonomie-piliers.svg
+       ├─ §9.2.1 Mémoire de travail
+       ├─ §9.2.2 Mémoire sémantique
+       ├─ §9.2.3 Mémoire épisodique
+       ├─ §9.2.4 Mémoire procédurale
+       └─ encadré [!NOTE] La grille n'est pas un découpage physique
+
+§9.3   Six opérations du cycle de vie
+       ├─ [SVG S] cycle-de-vie.svg
+       ├─ §9.3.1 Récupération
+       ├─ §9.3.2 Consolidation
+       ├─ §9.3.3 Mise à jour
+       ├─ §9.3.4 Indexation
+       ├─ §9.3.5 Compression (renvoi Ch.10)
+       ├─ §9.3.6 Oubli
+       └─ encadré [!IMPORTANT] Triage cognitif (IMA)
+
+§9.4   Cinq architectures de référence
+       ├─ [SVG S] frameworks-matrice.svg
+       ├─ §9.4.1 MemGPT/Letta — OS-like
+       ├─ §9.4.2 Generative Agents — memory stream + reflection
+       ├─ §9.4.3 A-MEM — Zettelkasten
+       ├─ §9.4.4 Zep/Graphiti — knowledge graph temporel
+       ├─ §9.4.5 Mem0 — production
+       ├─ encadré [!ATTENTION] Aucune dominante en 2026
+       └─ tableau markdown force/limite des 5 architectures
+
+§9.5   Le context engineering : la discipline d'orchestration (Karpathy/Martin)
+       ├─ [SVG S] context-engineering.svg
+       ├─ §9.5.1 Write
+       ├─ §9.5.2 Select
+       ├─ §9.5.3 Compress (renvoi Ch.10)
+       ├─ §9.5.4 Isolate
+       └─ encadré [!QUOTE] Karpathy — la bascule modèle ↔ contexte
+
+§9.6   Paysage fournisseurs : trois philosophies
+       ├─ [SVG S] vendors-comparison.svg
+       ├─ §9.6.1 OpenAI ChatGPT — `bio` + Chat History Reference
+       ├─ §9.6.2 Anthropic Claude — file-based hiérarchique + Memory Tool
+       ├─ §9.6.3 Google Gemini — Personal Context + 2 M tokens
+       └─ tableau markdown comparatif 5 dimensions
+
+§9.7   Surface d'attaque : memory poisoning et MITRE ATLAS AML.T0080
+       ├─ [SVG S] surface-attaque.svg
+       ├─ §9.7.1 SpAIware, Delayed Tool, ShadowLeak (Rehberger)
+       │   └─ encadré [!WARNING] Cycle d'attaque en 5 étapes
+       ├─ §9.7.2 Mitigations à 4 niveaux
+       │   └─ encadré [!INFO] Voir Ch. 19 (threat model E4)
+       └─ §9.7.3 RGPD, AI Act et le machine unlearning
+           ├─ encadré [!IMPORTANT] Gouvernance tactique en 3 actions
+           └─ encadré [!INFO] Voir Ch. 23 (gouvernance)
+
+§9.8   Feuille de route 6/12/18 mois
+       ├─ [SVG S] roadmap.svg
+       ├─ §9.8.1 0–6 mois : auditer, prototyper, gouverner
+       ├─ §9.8.2 6–12 mois : industrialiser, mesurer
+       ├─ §9.8.3 12–18 mois : autonomiser, partenariser
+       └─ encadré [!INFO] Voir Ch. 18 (observabilité, `gen_ai.memory.*`)
+
+Récap chapitre — La grille des quatre piliers
+       └─ [SVG R2] taxonomie-piliers.svg (réutilisé en récap)
+
+> [!WARNING] Trois pièges classiques (les trois sont 100 % traçables)
+  Pas de dashboard mémoire · confondre long-contexte et mémoire structurée ·
+  différer la conformité RGPD/AI Act sur la mémoire opérationnelle
+
+Sources (28 footnotes : 1 dossier source + 27 références premium)
+```
+
+### Encadrés prévus dans le chapitre
+
+Variété des `> [!TYPE]` Obsidian retenus :
+
+| Type | Usage | Compte |
+| --- | --- | --- |
+| `[!QUESTION]` | Ouverture chapitre | 1 |
+| `[!TLDR]` | Synthèse décideur 6 bullets | 1 |
+| `[!INFO]` | Renvois inter-chapitres (Ch.7, 10, 18, 19, 23) | 5 |
+| `[!NOTE]` | La grille n'est pas un découpage physique | 1 |
+| `[!IMPORTANT]` | Triage cognitif IMA + Gouvernance tactique en 3 actions | 2 |
+| `[!ATTENTION]` | Aucune dominante en 2026 | 1 |
+| `[!QUOTE]` | Karpathy — la bascule modèle ↔ contexte | 1 |
+| `[!WARNING]` | Cycle d'attaque 5 étapes + trois pièges classiques en clôture | 2 |
+| **Total** | | **14** |
+
+### Tâches restantes Ch.9
+
+- [x] Rédiger le manuscrit `docs/livre/ch09-memoire-agentique.md` (~6 200 mots)
+- [x] Audit des 9 schémas SVG du dossier source (8/8 narratifs absorbés)
+- [ ] Relecture Mathieu — passes critiques suggérées :
+  - **(a) La frontière Ch.9 ↔ Ch.10** : vérifier que §9.2.1 (mémoire de travail) reste bref et renvoie correctement vers Ch.10 pour la mécanique compaction ; que §9.3.5 (compression) ne refait pas la taxonomie des 5 familles. Statut v1 : 4 lignes pour §9.2.1, 3 lignes pour §9.3.5, renvois explicites.
+  - **(b) La frontière Ch.9 ↔ Ch.19** : vérifier que §9.7 décrit la verticale mémoire sans empiéter sur la matrice E4 transverse (Ch.19). Statut v1 : §9.7 traite cycle d'attaque + 4 niveaux mitigation + RGPD ; renvoi unique `[!INFO]` vers Ch.19 pour le threat model agrégé.
+  - **(c) La frontière Ch.9 ↔ Ch.23** : vérifier que §9.7.3 (RGPD/AI Act/unlearning) reste à 3-4 phrases + 1 encadré + renvoi vers Ch.23 pour le calendrier complet. Statut v1 : OK, §9.7.3 fait ~12 lignes total.
+  - **(d) Le récap §Récap** : décider si la réutilisation de `taxonomie-piliers.svg` suffit, ou si on commande la fusion R2 (4 piliers × 6 op × 5 archi en un seul triptyque). Statut v1 : réutilisation tel quel, la grille des 4 piliers est ce qu'on veut graver dans la tête du lecteur.
+  - **(e) Le triage cognitif (IMA) §9.3** : c'est un angle original IMA qui mérite vérification éditoriale (citation correcte du livre blanc, ne pas surcharger l'encadré).
+- [ ] Si validation : copier-coller la matière vers le futur format de sortie (print HTML / PDF) quand décidé
 
 ---
 
@@ -624,9 +796,10 @@ Variété des `> [!TYPE]` Obsidian retenus :
 
 ### Tâches restantes globales livre
 
-- [ ] Auditer les 22 dossiers restants (priorité : `evaluation-agentique` Ch.17, `economie-inference` Ch.5, `modeles-raisonnement` Ch.2, `mcp-plateforme` + `mcp-securite` Ch.12-13)
-- [ ] Créer le schéma E4 (threat model unifié 2026) — ~4-6 jours, schéma le plus coûteux
+- [ ] Auditer les 21 dossiers restants (priorité : `evaluation-agentique` Ch.17, `economie-inference` Ch.5, `modeles-raisonnement` Ch.2, `mcp-plateforme` + `mcp-securite` Ch.12-13)
+- [ ] Créer le schéma E4 (threat model unifié 2026) — ~4-6 jours, schéma le plus coûteux. **La verticale mémoire du Ch.9 §9.7 fournit déjà un cycle d'attaque + 4 niveaux mitigation utilisables pour le tronc commun.**
 - [ ] Créer E3 (capability × cost) et R16 (J-curve × LLMflation) — ~2-3 j chacun
 - [ ] Créer R1 (boucle ReAct canonique + 3 variantes) si édition print le demande — ~3-5 j (v1 du Ch.7 fait sans, par superposition textuelle)
+- [ ] Créer R2 (4 piliers × 6 op × 5 archi triptyque fusionné) si édition print le demande — ~3-4 j (v1 du Ch.9 fait sans, par 3 schémas distincts + tableau récap markdown)
 - [ ] Décider du format de sortie (print PDF / web interactif / les deux)
 - [ ] Décider du calendrier de gel des contenus évolutifs
