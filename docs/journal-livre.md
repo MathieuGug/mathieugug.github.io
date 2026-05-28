@@ -9,11 +9,269 @@ Journal de production du livre (28 dossiers → 25 chapitres). Voir [`livre-outl
 | | Statut | Note |
 | --- | --- | --- |
 | Outline | ✅ v0 mergé (PR #127) | 4 actes, 25 chapitres, 3 catégories de schémas (S/R/E) |
-| Audit schémas | 🟡 partiel | Ch.7 + Ch.9 + Ch.10 + Ch.11 faits — les 24 autres en attente |
-| Manuscrit | 🟡 4/25 | **Ch.7 charnière : v1 livrée** + **Ch.9 standard : v1 livrée** + **Ch.10 standard : v1 livrée** + **Ch.11 standard : v1 livrée** |
-| Schémas R/E à produire | ⏳ | E4 (threat model), E3 (capability×cost), E5 (PRM comparatif), R1 (boucle ReAct + 3 variantes — Ch.7 traité par réutilisation), R2 (4 piliers × 6 opérations × 5 architectures — Ch.9 traité par réutilisation tel quel de `taxonomie-piliers.svg` en récap, complétion par matrice prod à demander pour print), R4 (8 patterns canoniques — Ch.11 traité par réutilisation de `patterns-canoniques.svg` tel quel), R5 (fabrique 4 stades — Ch.11 traité par tableau markdown faute de schéma fabrique-12 satisfaisant en gabarit récap) — pas démarré pour les schémas E |
+| Audit schémas | 🟡 partiel | Ch.7 + Ch.9 + Ch.10 + Ch.11 + Ch.17 faits — les 19 autres en attente |
+| Manuscrit | 🟡 5/25 | **Ch.7 charnière : v1 livrée** + **Ch.9 standard : v1 livrée** + **Ch.10 standard : v1 livrée** + **Ch.11 standard : v1 livrée** + **Ch.17 charnière : v1 livrée** |
+| Schémas R/E à produire | ⏳ | E4 (threat model), E3 (capability×cost), E5 (PRM comparatif), R1 (boucle ReAct + 3 variantes — Ch.7 traité par réutilisation), R2 (4 piliers × 6 opérations × 5 architectures — Ch.9 traité par réutilisation tel quel de `taxonomie-piliers.svg` en récap, complétion par matrice prod à demander pour print), R4 (8 patterns canoniques — Ch.11 traité par réutilisation de `patterns-canoniques.svg` tel quel), R5 (fabrique 4 stades — Ch.11 traité par tableau markdown faute de schéma fabrique-12 satisfaisant en gabarit récap), R11 (playbook gruyère — Ch.17 traité par réutilisation tel quel de `playbook-gruyere.svg` en récap), R12 (4 vecteurs contamination — Ch.17 traité par réutilisation tel quel de `vecteurs-contamination.svg`) — pas démarré pour les schémas E |
 | Bugs SVG corrigés | ✅ 1 | `cinq-familles.svg` (balise XML malformée) |
 | Rendu print/web | ⏳ | non décidé |
+
+---
+
+## Chapitre 17 — Évaluer un agent (et débunker les leaderboards)
+
+> **Acte IV — Mesures et garde-fous · Gabarit charnière 28-40 p · ~10 700 mots**
+> **Lecteur cible** : acheteur enterprise, tech lead, sponsor IA, RSSI, DPO, agent engineer.
+> **Sortie lecteur** : maîtrise les trois ruptures qui ont rendu obsolètes F1/BLEU/ROUGE ; distingue task / trial / grader / transcript / outcome et les trois familles de graders ; comprend pourquoi pass^k > pass@k pour un agent client-facing ; connaît la grille CLEAR (Cost, Latency, Efficacy, Assurance, Reliability) et ses deux métriques composites CNA et CPS ; sait calibrer un LLM-as-a-judge (cinq biais, cinq correctifs, échelle 0-5 max) ; maîtrise la grammaire `TestCase = (Persona × Quest × Environment) → Outcome` et la chute dual-control de τ²-bench ; identifie les quatre vecteurs de fuite des benchmarks publics (chevauchement temporel, version-tag, gaming du harnais, leakage de prompt) et reconnaît qu'aucun n'est résolu par SWE-bench Verified ; sait situer une mesure dans le 2×2 contrôlé × ponctuel ; peut dérouler le playbook gruyère en 8 étapes ; reconnaît les trois pièges 100 % traçables (RFP au score SWE-bench, score brut sans inspection des transcripts, juge LLM unique non calibré).
+
+### Statut
+
+| Étape | Statut |
+| --- | --- |
+| Audit schémas source (2 dossiers) | ✅ fait (cf. §Audit ci-dessous) |
+| Plan détaillé | ✅ fait |
+| Manuscrit | ✅ **v1 livrée** — `docs/livre/ch17-evaluation-benchmarks.md` (≈ 10 700 mots, 17 encadrés, 16 schémas intégrés) |
+| Schémas à créer | 0 v1 (R11 « playbook gruyère 8 étapes » traité par **réutilisation tel quel** de `evaluation-10-playbook-gruyere.svg` en page de section §17.14 + récap ; R12 « 4 vecteurs contamination » traité par **réutilisation tel quel** de `benchmarks-02-vecteurs-contamination.svg` en §17.9. Le 2×2 contrôlé × ponctuel d'annexe (cf. outline annexe A) est couvert par `benchmarks-06-framework-decision.svg`.) |
+| Frontière Ch.17 ↔ Ch.18 | ✅ respectée — Ch.17 garde les graders, juges, simulation, playbook ; Ch.18 dédié à OTel GenAI semconv, cognitive audit trail, vendor landscape obs. Le schéma `evaluation-07-observabilite-rca.svg` est **réassigné Ch.18** depuis le dossier `evaluation-agentique`. |
+| Frontière Ch.17 ↔ Ch.19 | ✅ respectée — Ch.17 traite l'éval (qualité, biais, contamination) ; Ch.19 traite la sécurité (OWASP ASI, jailbreaking, threat model E4 unifié). Pas de redite. |
+| Frontière Ch.17 ↔ Ch.21 | ✅ respectée — Ch.17 mentionne le token cost trap et CNA/CPS pour la cohérence intra-chapitre, mais le déroulé ROI complet (frameworks Cigref/McKinsey/BCG/MIT NANDA/Forrester TEI, J-curve, Klarna) reste Ch.21. |
+| Renvois inter-chapitres | ✅ Ch. 7 (boucle / harness produit la trajectoire évaluée), Ch. 9 (mémoire — benchmarks MemoryCD/Mem2ActBench/Letta), Ch. 10 (compaction — token cost trap renvoyé), Ch. 18 (OTel GenAI semconv comme matériau d'éval continue), Ch. 19 (threat model), Ch. 21 (ROI / paradoxe agentique). |
+
+### Sources matérielles
+
+Le Ch.17 est une **charnière à 2 dossiers** — la dyade structurante évaluation × benchmarks contestés. La discipline éditoriale est forte : le dossier `evaluation-agentique/` construit le playbook (gruyère 8 étapes, taxonomie graders, LLM-as-judge calibré, τ-bench), le dossier `benchmarks-contestes/` démolit la lecture des leaderboards publics (4 vecteurs de fuite, benchmark teams, contre-mouvement vivant). Lus ensemble = grille d'achat complète.
+
+- **Dossier principal #1 — [`evaluation-agentique/`](../evaluation-agentique/)** (1ᵉʳ mai 2026, étude #08) — le playbook complet : trois ruptures (F1 → BLEU → trajectoire), vocabulaire task/trial/grader/transcript/outcome, taxonomie 3 familles de graders, pass@k vs pass^k, grille CLEAR à 5 dimensions, LLM-as-judge (4 modes × 5 biais × 5 correctifs), TestCase = (Persona × Quest × Environment) → Outcome, τ-bench et τ²-bench dual-control, observabilité OTel (renvoyé Ch.18), frameworks 4 quadrants, coûts à 6 postes, playbook gruyère 8 étapes (R11 — schéma signature de l'Acte IV).
+  - [Rapport (.md, ~14 000 mots)](../evaluation-agentique/20260501-evaluation-agentique-rapport.md) · [App interactive](../evaluation-agentique/20260501-evaluation-agentique-app.html) · [Canvas](../evaluation-agentique/20260501-evaluation-agentique-rapport.md)
+  - 11 schémas SVG dans [`images/`](../evaluation-agentique/images/) (10 narratifs + 1 `exec-sum-a4` annexe)
+- **Dossier principal #2 — [`benchmarks-contestes/`](../benchmarks-contestes/)** (15 mai 2026, étude #19) — l'anti-playbook : écart 78 % → 26 %, anatomie SWE-bench 4 étapes, 4 vecteurs de fuite croisés en 2×2 (R12), trajectoire 2024-2026 GAIA/OSWorld/τ-bench/SWE-bench Verified, anatomie d'une benchmark team (5 leviers cumulés multiplicatif +15-25 pts), contre-mouvement vivant (SWE-bench Live / SWE-Lancer / CORE-Bench / MLE-bench / ARC-AGI 2), framework décision 2×2 contrôlé × ponctuel pour acheteurs.
+  - [Rapport (.md, ~6 000 mots)](../benchmarks-contestes/20260515-benchmarks-contestes-rapport.md) · [App interactive](../benchmarks-contestes/20260515-benchmarks-contestes-app.html)
+  - 6 schémas SVG dans [`images/`](../benchmarks-contestes/images/)
+
+### Audit des schémas — Ch.17
+
+Au total, **17 schémas SVG** dans les 2 dossiers source. Classement S (au fil du texte Ch.17) / R (récap chapitre) / Ch.X (réassigné) / écarté.
+
+#### Schémas du dossier `evaluation-agentique/` (11)
+
+| Fig | Slug | Catégorie Ch.17 | Statut |
+| --- | --- | --- | --- |
+| 00 | `exec-sum-a4` | écarté (livre) | annexe rapport |
+| 01 | `evolution-paradigmes` | **S §17.2** | tel quel — pose les trois ruptures F1 → BLEU → trajectoire |
+| 02 | `anatomie-evaluation` | **S §17.3.1** | tel quel — task / trial / grader / transcript / outcome |
+| 03 | `taxonomie-graders` | **S §17.3.2** | tel quel — trois familles code / model / human |
+| 04 | `pyramide-metriques` | **S §17.5** | tel quel — RAG → agent → CLEAR enterprise |
+| 05 | `llm-as-judge` | **S §17.6** | tel quel — 4 modes × 5 biais × 5 correctifs |
+| 06 | `user-simulation` | **S §17.7.2** | tel quel — τ-bench single-control → τ²-bench dual-control → multi-agent persona |
+| 06bis | `testcase-formula` | **S §17.7.1** | tel quel — grammaire opérationnelle (Persona × Quest × Environment) |
+| 07 | `observabilite-rca` | **Ch.18** (observabilité) | réassigné Ch.18 — OTel GenAI + cognitive audit trail + RCA (AgentRx, AgentTrace, AgentDebug). Frontière Ch.17/Ch.18 respectée. |
+| 08 | `frameworks-matrice` | **S §17.17** | tel quel — cartographie 4 quadrants (offline/online × OSS/SaaS) |
+| 09 | `couts-goulots` | **S §17.16** | tel quel — 6 postes de coût + 7 goulots organisationnels |
+| 10 | `playbook-gruyere` | **R11 §17.14 + récap §Récap** | tel quel — **schéma signature de l'Acte IV**, utilisé **2×** (§17.14 + récap). Tient lieu de R11 v1. |
+
+**Bilan dossier 1** : 10/10 schémas narratifs absorbés (07 réassigné Ch.18 par discipline éditoriale, pas écarté). Taux d'absorption maximal.
+
+#### Schémas du dossier `benchmarks-contestes/` (6)
+
+| Fig | Slug | Catégorie Ch.17 | Statut |
+| --- | --- | --- | --- |
+| 01 | `anatomie-swe-bench` | **S §17.8.2** | tel quel — pipeline 4 étages SWE-bench |
+| 02 | `vecteurs-contamination` | **R12 §17.9** | tel quel — **schéma signature démolition**, 4 vecteurs croisés en 2×2 (explicite/implicite × données/protocole). Tient lieu de R12 v1. |
+| 03 | `trajectoire-scores` | **S §17.10** | tel quel — trajectoires SWE-bench Verified / GAIA / OSWorld / τ-bench 2024-2026 |
+| 04 | `chaine-optimisation` | **S §17.11** | tel quel — 5 leviers cumulés d'une benchmark team |
+| 05 | `benchmarks-vivants` | **S §17.12** | tel quel — comparatif SWE-bench Live / SWE-Lancer / CORE-Bench / MLE-bench / ARC-AGI 2 |
+| 06 | `framework-decision` | **S §17.13** | tel quel — 2×2 contrôlé × ponctuel × écologique × longitudinal |
+
+**Bilan dossier 2** : 6/6 schémas absorbés. Taux d'absorption maximal.
+
+**Bilan global audit Ch.17** : **16/17 schémas narratifs absorbés** (1 réassigné Ch.18 par discipline éditoriale). 0 schéma écarté pour redondance, 0 schéma à fixer. Audit aussi propre que Ch.9 (8/8) et Ch.11 (8/8 + 6 réassignés) — signe que les deux dossiers source étaient structurés dès l'origine comme une dyade complémentaire sans redondance.
+
+### Redondances et complémentarités entre les 2 dossiers
+
+**0 redondance vraie entre `evaluation-agentique` et `benchmarks-contestes`**. Les deux dossiers sont **strictement complémentaires** — c'est exactement la thèse du chapitre. Le premier construit, le second démolit, et lus ensemble forment la grille d'achat complète.
+
+| Sujet | `evaluation-agentique` | `benchmarks-contestes` | Décision Ch.17 |
+| --- | --- | --- | --- |
+| Méthodologie d'éval | Playbook gruyère 8 étapes (§17.14), taxonomie graders, LLM-as-judge calibré, simulation utilisateur | non couvert | Reste §17.2-§17.7, §17.14-§17.17 |
+| Critique des benchmarks publics | Mentionne « 50× variation de coût », CORE-Bench bug 42 %→95 % | Démolition systémique : 4 vecteurs, benchmark teams, contre-mouvement | Reste §17.8-§17.13. Le passage entre les deux mouvements (§17.8) cite l'écart 78 %/26 % comme pivot narratif. |
+| τ-bench et τ²-bench | Cas méthodologique (§17.7.2) | Cas de contamination (§17.10) | **Deux angles distincts** sur le même benchmark. §17.7.2 traite le simulateur comme outil ; §17.10 traite la baisse v1→v2 comme signal de contamination. Pas de doublon. |
+| SWE-bench | Mention rapide CORE-Bench bug | Analyse complète anatomie + 4 vecteurs | Reste §17.8-§17.11. La dyade est l'objet du chapitre. |
+
+**3 frontières inter-chapitres à tenir strictement** :
+
+| Sujet | Couvert où ? | Décision Ch.17 |
+| --- | --- | --- |
+| **OTel GenAI Semantic Conventions** | Mentionné en §17.7.2 simulation et §17.17 frameworks comme fondation ; déroulé complet (6 piliers + cognitive audit trail + WG `gen_ai.memory.*` / `gen_ai.compaction.*`) en Ch.18 | Ch.17 traite la convergence comme contexte ; le schéma `evaluation-07-observabilite-rca.svg` est réassigné Ch.18. Renvoi `[!INFO] Voir Ch. 18` en §17.17. |
+| **OWASP ASI Top 10 + jailbreaking** | Mentionné en §17.3.2 grader safety-critique ; déroulé Ch.19 (threat model E4 unifié) | Ch.17 ne reprend ni la matrice OWASP ASI ni l'asymétrie attaque/défense. Pas de renvoi explicite (Ch.19 viendra ré-encrer la sécurité comme verticale). |
+| **Token cost trap + ROI** | Mentionné en §17.16.2 comme illustration de la rupture POC→prod ; déroulé Ch.21 (5 frameworks Cigref/McKinsey/BCG/MIT NANDA/Forrester TEI, J-curve Brynjolfsson, paradoxe agentique, Klarna) | Ch.17 cite l'exemple Klaus Hofenbitzer (0,14 $ → 130 000 $/mois) comme illustration intra-chapitre. Pas de doublon, deux profondeurs. |
+
+**Cohérence avec la frontière posée par Ch.9 §9.7 (surface d'attaque mémoire) et Ch.10 §10.7 (cycle d'attaque compaction)** : le Ch.17 ne traite ni la verticale mémoire ni la compaction sous l'angle threat model — il traite la **mesure** de la qualité d'un agent, dont la sécurité est une des dimensions (CLEAR pillar "Assurance", grader safety-critique). Pas de réinjection. Le threat model unifié reste E4 / Ch.19.
+
+**1 absence notable, non bloquante** : pas de **schéma A4 récap dédié au framework 2×2 contrôlé × ponctuel**. L'outline (annexe A.2) listait ce 2×2 comme « grille d'achat » à recadrer en annexe consultative. **Décision v1** : couvert par `benchmarks-06-framework-decision.svg` (réutilisé tel quel en §17.13). Si l'édition print réclame un récap dédié pleine page, l'élément existe déjà et son coût d'intégration est nul.
+
+### Plan détaillé du chapitre
+
+```
+> [!QUESTION] Question d'ouverture
+  78,2 % SWE-bench Verified (Anthropic, 14 mai 2026) vs 26 % terrain
+  (banque européenne, même jour). Trois fois moins. Qu'est-ce qu'on mesure ?
+
+> [!TLDR] TL;DR décideur (8 bullets)
+
+§17.1   Pourquoi un seul chapitre éval ET benchmarks
+        ├─ §17.1.1 La place du chapitre dans l'Acte IV
+        ├─ §17.1.2 Le double mouvement — construire et démolir
+        └─ encadré [!INFO] Voir Ch. 7, 18, 21
+
+§17.2   Trois ruptures qui ont rendu obsolètes les métriques classiques
+        ├─ [SVG S] evaluation-01-evolution-paradigmes.svg
+        ├─ §17.2.1 IA classique — F1, précision, rappel
+        ├─ §17.2.2 IA générative — la déroute des n-grammes
+        └─ §17.2.3 IA agentique — la trajectoire comme objet
+            └─ encadré [!QUOTE] Anthropic — outcome ≠ transcript
+
+§17.3   Anatomie d'une éval agentique
+        ├─ §17.3.1 Vocabulaire (7 termes)
+        │   └─ [SVG S] evaluation-02-anatomie-evaluation.svg
+        ├─ §17.3.2 Trois familles de graders (code / model / human)
+        │   └─ [SVG S] evaluation-03-taxonomie-graders.svg
+        └─ §17.3.3 Capability evals vs régression evals
+            └─ encadré [!IMPORTANT] La graduation des evals
+
+§17.4   Pass@k vs pass^k — le non-déterminisme comme attribut produit
+        └─ encadré [!ATTENTION] Le choix de métrique est un choix produit
+
+§17.5   La grille CLEAR — cinq dimensions pour l'enterprise
+        ├─ [SVG S] evaluation-04-pyramide-metriques.svg
+        └─ CNA (Cost-Normalized Accuracy) + CPS (Cost Per Success)
+
+§17.6   LLM-as-a-judge — modes, biais, calibration
+        ├─ [SVG S] evaluation-05-llm-as-judge.svg
+        ├─ §17.6.1 Quatre modes opératoires (pointwise/reference-based/pairwise/listwise)
+        ├─ §17.6.2 Cinq biais systématiques (position/verbosity/self-enhancement/authority/format)
+        ├─ §17.6.3 Pipeline correctif en 5 couches
+        │   └─ encadré [!EXAMPLE] Rubrique discrète + reasoning-first + porte de sortie
+        ├─ §17.6.4 Quand NE PAS utiliser un juge LLM (4 cas)
+        └─ §17.6.5 SLM-judges spécialisés (Galileo Luna-2, Pearson > 0,85)
+
+§17.7   Simulation utilisateur — TestCase = (Persona × Quest × Environment) → Outcome
+        ├─ §17.7.1 La grammaire opérationnelle
+        │   └─ [SVG S] evaluation-06bis-testcase-formula.svg
+        ├─ §17.7.2 τ-bench et τ²-bench (dual-control)
+        │   └─ [SVG S] evaluation-06-user-simulation.svg
+        └─ §17.7.3 Le Sim2Real gap — qualité du simulateur
+
+──────────────────────────────────────────────────────────────────
+                       BASCULEMENT NARRATIF
+──────────────────────────────────────────────────────────────────
+
+§17.8   LE BASCULEMENT — pourquoi les benchmarks publics ne tiennent plus
+        ├─ §17.8.1 L'écart qui s'élargit (78 % vs 26 %)
+        │   └─ encadré [!QUOTE] L'écart entre les deux courbes
+        └─ §17.8.2 Anatomie de SWE-bench (4 étages)
+            └─ [SVG S] benchmarks-01-anatomie-swe-bench.svg
+
+§17.9   Les quatre vecteurs de fuite (R12 — schéma signature démolition)
+        ├─ [SVG R12] benchmarks-02-vecteurs-contamination.svg
+        ├─ §17.9.1 Chevauchement temporel (vecteur i, 8-15 pts)
+        ├─ §17.9.2 Fuite par version-tag (vecteur ii, ~18 %)
+        ├─ §17.9.3 Gaming du harnais (vecteur iii, +5 à +10 pts)
+        ├─ §17.9.4 Leakage de prompt (vecteur iv)
+        └─ encadré [!WARNING] Aucun n'est résolu par "Verified"
+
+§17.10  GAIA, OSWorld, τ-bench — même pathologie, déclinée
+        └─ [SVG S] benchmarks-03-trajectoire-scores.svg
+
+§17.11  Le score est un produit — anatomie d'une "benchmark team"
+        ├─ [SVG S] benchmarks-04-chaine-optimisation.svg
+        ├─ 5 leviers cumulés (checkpoint / harness / prompt / RL / retries)
+        └─ encadré [!IMPORTANT] Le contre-exemple ARC-AGI (private eval, compute capé)
+
+§17.12  Le contre-mouvement — benchmarks vivants
+        ├─ [SVG S] benchmarks-05-benchmarks-vivants.svg
+        └─ SWE-bench Live / SWE-Lancer / CORE-Bench / MLE-bench / ARC-AGI 2
+
+§17.13  Mesurer pour quoi faire — framework 2×2 contrôlé × ponctuel
+        ├─ [SVG S] benchmarks-06-framework-decision.svg
+        ├─ Chercheur / acheteur / régulateur / journaliste
+        └─ encadré [!IMPORTANT] L'éval interne datée bat tous les scores publics
+
+──────────────────────────────────────────────────────────────────
+                       RETOUR CONSTRUCTION
+──────────────────────────────────────────────────────────────────
+
+§17.14  Le playbook gruyère en 8 étapes (R11 — schéma signature Acte IV)
+        ├─ [SVG R11] evaluation-10-playbook-gruyere.svg
+        ├─ §17.14.1 Démarrer tôt (20-50 tasks, règle 80/20)
+        ├─ §17.14.2 Partir du manuel (bug → test case)
+        ├─ §17.14.3 Tasks unambiguës avec ref solutions (test-or test, 0 % pass@100 = task cassée)
+        ├─ §17.14.4 Problem sets équilibrés (class balance)
+        ├─ §17.14.5 Eval harness robuste (isolation par trial)
+        ├─ §17.14.6 Graders thoughtfully designés (déterministe d'abord, partial credit, porte de sortie "Unknown")
+        ├─ §17.14.7 Lire les transcripts (cas Opus 4.5 CORE-Bench 42 % → 95 %)
+        ├─ §17.14.8 Monitorer la saturation (graduation capability → régression)
+        └─ §17.14.9 Ownership et contribution (evals = unit tests)
+
+§17.15  Le modèle gruyère — combiner les couches
+        ├─ tableau 6 méthodes (auto / monitoring / A/B / feedback / review / studies)
+        └─ encadré [!QUOTE] Anthropic — frameworks valent ce que valent les eval tasks
+
+§17.16  Coûts et goulots de l'éval mature
+        ├─ [SVG S] evaluation-09-couts-goulots.svg
+        ├─ §17.16.1 6 postes de coût (modèle / juges / synthétique / humain / infra / maintenance)
+        ├─ §17.16.2 Token cost trap (0,14 $ → 130 000 $/mois)
+        └─ §17.16.3 Les vrais goulots ne sont pas techniques (qualité tasks, calibration, lecture transcripts, ownership)
+
+§17.17  Frameworks et outils — cartographie 4 quadrants
+        ├─ [SVG S] evaluation-08-frameworks-matrice.svg
+        ├─ Quadrant offline × OSS (Promptfoo, DeepEval, Ragas, OpenAI Evals, MLflow)
+        ├─ Quadrant offline × SaaS (Braintrust, LangSmith, Galileo, Maxim, Vals.ai)
+        ├─ Quadrant online × OSS (Langfuse, Arize Phoenix, Agenta)
+        ├─ Quadrant online × SaaS (Microsoft Foundry, AWS Strands, Datadog, AgentEvals)
+        ├─ Le rôle des graders SDK fondeurs (OpenAI, Anthropic, Google ADK, AWS Strands, Microsoft Foundry)
+        ├─ Étude Arena CAIS 2026 (modèle/prompt > framework)
+        └─ encadré [!INFO] Voir Ch. 18 — OTel GenAI
+
+Récap chapitre — Construire et démolir simultanément
+        ├─ [SVG R11] evaluation-10-playbook-gruyere.svg (réutilisé en récap)
+        └─ 3 investissements à fort ROI (golden suite 50 tasks / OTel natif / persona-based)
+
+> [!WARNING] Trois pièges classiques (100 % traçables)
+  RFP au score SWE-bench · score brut sans inspection des transcripts ·
+  juge LLM unique non calibré
+
+Sources (32 footnotes : 2 dossiers + Anthropic engineering + Sierra Research +
+        OpenAI + Microsoft Foundry + Google ADK + AWS + ARC Prize +
+        Princeton + papers arXiv 2023-2026 + Galileo + Hofenbitzer Medium)
+```
+
+### Encadrés prévus dans le chapitre
+
+Variété des `> [!TYPE]` Obsidian retenus :
+
+| Type | Usage | Compte |
+| --- | --- | --- |
+| `[!QUESTION]` | Ouverture chapitre | 1 |
+| `[!TLDR]` | Synthèse décideur 8 bullets | 1 |
+| `[!INFO]` | Renvois inter-chapitres (Ch.7, 18, 21) | 2 |
+| `[!QUOTE]` | Anthropic outcome≠transcript + L'écart entre les deux courbes + Anthropic frameworks ne valent que ce que valent les eval tasks | 3 |
+| `[!IMPORTANT]` | Graduation evals + Contre-exemple ARC-AGI + L'éval interne datée bat tout | 3 |
+| `[!ATTENTION]` | Pass@k vs pass^k = choix produit | 1 |
+| `[!EXAMPLE]` | Rubrique discrète + reasoning-first + porte de sortie | 1 |
+| `[!WARNING]` | Aucun vecteur n'est résolu par "Verified" + Trois pièges classiques clôture | 2 |
+| **Total** | | **14** |
+
+### Tâches restantes Ch.17
+
+- [x] Rédiger le manuscrit `docs/livre/ch17-evaluation-benchmarks.md` (~10 700 mots)
+- [x] Audit des 17 schémas SVG des 2 dossiers source (16 absorbés + 1 réassigné Ch.18)
+- [ ] Relecture Mathieu — passes critiques suggérées :
+  - **(a) Le basculement narratif §17.8** : le chapitre charnière repose sur la bascule construction → démolition autour de l'écart 78 %/26 %. Vérifier que la transition est lisible et que le double mouvement TLDR (8 bullets) reste fidèle au mouvement effectif du manuscrit.
+  - **(b) La frontière Ch.17 ↔ Ch.18** : §17.7.2, §17.17 mentionnent OTel GenAI comme fondation ; le déroulé 6 piliers + cognitive audit trail reste Ch.18. Vérifier qu'aucun bout d'observabilité ne fuite (notamment §17.16 coûts qui pourrait empiéter sur le monitoring production).
+  - **(c) La frontière Ch.17 ↔ Ch.21** : §17.16.2 cite le token cost trap (Klaus Hofenbitzer, 0,14 $ → 130 000 $/mois) en illustration. Vérifier que le chapitre ROI (Ch.21) ne refera pas cette illustration sous le même angle.
+  - **(d) Le récap §Récap** : décision de réutiliser `playbook-gruyere.svg` (R11) comme schéma de récap, plutôt que de placer côte-à-côte le playbook + les 4 vecteurs (R12) en double page A3 facing. L'outline (annexe A.2) le listait comme `playbook gruyère 8 étapes / matrice 4 vecteurs en page facing`. Si l'édition print réclame le facing A3, le coût est nul (les deux schémas existent déjà tels quels).
+  - **(e) Le single-responsibility principle des juges §17.7.1** : c'est un angle original repris du dossier `evaluation-agentique` §6.0 (formule TestCase). Vérifier que la grammaire opérationnelle est restituée fidèlement et que le décideur peut s'en servir comme grille.
+  - **(f) Le contre-exemple ARC-AGI §17.11** : encadré [!IMPORTANT] qui sert de boussole méthodologique. Vérifier qu'il ne survend pas ARC (la barre humaine reste à 85 %, les modèles autour de 55 % début 2026).
+- [ ] Si validation : copier-coller la matière vers le futur format de sortie (print HTML / PDF) quand décidé
 
 ---
 
@@ -796,7 +1054,7 @@ Variété des `> [!TYPE]` Obsidian retenus :
 
 ### Tâches restantes globales livre
 
-- [ ] Auditer les 21 dossiers restants (priorité : `evaluation-agentique` Ch.17, `economie-inference` Ch.5, `modeles-raisonnement` Ch.2, `mcp-plateforme` + `mcp-securite` Ch.12-13)
+- [ ] Auditer les 19 dossiers restants (priorité : `economie-inference` Ch.5, `modeles-raisonnement` Ch.2, `mcp-plateforme` + `mcp-securite` Ch.12-13, `process-reward-models` Ch.3)
 - [ ] Créer le schéma E4 (threat model unifié 2026) — ~4-6 jours, schéma le plus coûteux. **La verticale mémoire du Ch.9 §9.7 fournit déjà un cycle d'attaque + 4 niveaux mitigation utilisables pour le tronc commun.**
 - [ ] Créer E3 (capability × cost) et R16 (J-curve × LLMflation) — ~2-3 j chacun
 - [ ] Créer R1 (boucle ReAct canonique + 3 variantes) si édition print le demande — ~3-5 j (v1 du Ch.7 fait sans, par superposition textuelle)
