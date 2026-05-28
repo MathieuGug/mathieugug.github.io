@@ -234,6 +234,167 @@ const SCHEMAS = [
     ]
   },
 
+  // ───── SCHÉMA · COUCHE 05 · Trois protocoles ─────
+  {
+    layerIdx: 5,
+    layerLabel: 'Couche 05 · Protocoles',
+    title: "Trois protocoles pour <em>un écosystème ouvert</em>",
+    subtitle: "<strong>MCP</strong> relie l'agent à ses outils, <strong>A2A</strong> à ses pairs, <strong>AG-UI</strong> à son frontend. Sans cette trinité, chaque SDK enferme ses outils dans sa chapelle — le jour de la migration, on paie en trimestres. Une gouvernance neutre (Linux Foundation AAIF, déc. 2025) garantit qu'aucun standard n'appartient plus à son créateur.",
+    source: "Anthropic · Google · CopilotKit — Linux Foundation AAIF (déc. 2025)",
+    svg: `<svg viewBox="0 0 620 540" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="pr-arrow-end" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M 0 1 L 9 5 L 0 9 z" fill="#3b3f4d"/>
+        </marker>
+        <marker id="pr-arrow-start" viewBox="0 0 10 10" refX="1" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 1 L 9 5 L 0 9 z" fill="#3b3f4d"/>
+        </marker>
+      </defs>
+      <style>
+        .pr-col-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; fill: #8a8e99; }
+        .pr-box { fill: #faf6ec; stroke: #1e1e2a; stroke-width: 1; }
+        .pr-box-agent { fill: #e8f0ea; stroke: #4B9466; stroke-width: 1.6; }
+        .pr-lbl { font-family: 'Fraunces', serif; font-size: 14px; fill: #1e1e2a; text-anchor: middle; font-weight: 500; }
+        .pr-sub { font-family: 'Inter', sans-serif; font-size: 9.5px; fill: #6b6f7c; text-anchor: middle; font-weight: 300; }
+        .pr-mono-mini { font-family: 'JetBrains Mono', monospace; font-size: 8px; fill: #8a8e99; text-anchor: middle; letter-spacing: 0.14em; }
+        .pr-arrow { stroke: #3b3f4d; stroke-width: 1.1; fill: none; }
+        .pr-pill rect { fill: #4B9466; }
+        .pr-pill text { fill: #fff; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; font-weight: 500; letter-spacing: 0.16em; text-anchor: middle; }
+        .pr-head-pill rect { fill: #4B9466; }
+        .pr-head-pill text { fill: #fff; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.18em; text-anchor: middle; }
+        .pr-row-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.20em; fill: #8a8e99; font-weight: 500; }
+        .pr-cell { font-family: 'Inter', sans-serif; font-size: 10.5px; fill: #1e1e2a; text-anchor: middle; }
+        .pr-cell-mono { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; fill: #1e1e2a; text-anchor: middle; }
+        .pr-subname { font-family: 'Fraunces', serif; font-style: italic; font-size: 11px; fill: #3b3f4d; text-anchor: middle; }
+        .pr-divider { stroke: rgba(30,30,44,0.15); stroke-width: 0.8; }
+        .pr-col-div { stroke: rgba(30,30,44,0.08); stroke-width: 0.5; }
+      </style>
+
+      <!-- ─── TRINITY ZONE ─── -->
+      <text class="pr-col-label" x="310" y="22" text-anchor="middle">L'agent et ses trois interfaces</text>
+
+      <!-- Peer Agent (top) -->
+      <rect class="pr-box" x="250" y="32" width="120" height="44" rx="6"/>
+      <text class="pr-lbl" x="310" y="52">Peer agent</text>
+      <text class="pr-sub" x="310" y="68">distant · stateful</text>
+
+      <!-- Agent (center) -->
+      <circle class="pr-box-agent" cx="310" cy="160" r="44"/>
+      <text x="310" y="160" font-family="Fraunces, serif" font-style="italic" font-size="22" fill="#1e1e2a" text-anchor="middle" font-weight="500">Agent</text>
+      <text class="pr-mono-mini" x="310" y="180">RUNTIME</text>
+
+      <!-- Tools (bottom-left) -->
+      <rect class="pr-box" x="30" y="232" width="180" height="56" rx="6"/>
+      <text class="pr-lbl" x="120" y="252">Outils · Data</text>
+      <text class="pr-sub" x="120" y="268">resources · prompts</text>
+      <text class="pr-mono-mini" x="120" y="282">SQL · CODE · FILE · API</text>
+
+      <!-- Frontend (bottom-right) -->
+      <rect class="pr-box" x="410" y="232" width="180" height="56" rx="6"/>
+      <text class="pr-lbl" x="500" y="252">Frontend · User</text>
+      <text class="pr-sub" x="500" y="268">UI events · streaming</text>
+      <text class="pr-mono-mini" x="500" y="282">REASONING · STATE · UI</text>
+
+      <!-- A2A connector (vertical, bidirectional) -->
+      <line class="pr-arrow" x1="310" y1="76" x2="310" y2="116"
+        marker-start="url(#pr-arrow-start)" marker-end="url(#pr-arrow-end)"/>
+      <g class="pr-pill">
+        <rect x="286" y="86" width="48" height="20" rx="10"/>
+        <text x="310" y="100">A2A</text>
+      </g>
+
+      <!-- MCP connector (diagonal agent → tools, bidirectional) -->
+      <line class="pr-arrow" x1="279" y1="191" x2="200" y2="232"
+        marker-start="url(#pr-arrow-start)" marker-end="url(#pr-arrow-end)"/>
+      <g class="pr-pill">
+        <rect x="216" y="201" width="48" height="20" rx="10"/>
+        <text x="240" y="215">MCP</text>
+      </g>
+
+      <!-- AG-UI connector (diagonal agent → frontend, bidirectional) -->
+      <line class="pr-arrow" x1="341" y1="191" x2="420" y2="232"
+        marker-start="url(#pr-arrow-start)" marker-end="url(#pr-arrow-end)"/>
+      <g class="pr-pill">
+        <rect x="356" y="201" width="54" height="20" rx="10"/>
+        <text x="383" y="215">AG-UI</text>
+      </g>
+
+      <!-- ─── DIVIDER ─── -->
+      <line class="pr-divider" x1="20" y1="306" x2="600" y2="306"/>
+
+      <!-- ─── COMPARISON TABLE ─── -->
+      <text class="pr-col-label" x="20" y="326">Comparaison · les trois standards</text>
+
+      <!-- Header pills -->
+      <g class="pr-head-pill">
+        <rect x="120" y="340" width="140" height="24" rx="12"/>
+        <text x="190" y="356">MCP</text>
+      </g>
+      <g class="pr-head-pill">
+        <rect x="270" y="340" width="140" height="24" rx="12"/>
+        <text x="340" y="356">A2A</text>
+      </g>
+      <g class="pr-head-pill">
+        <rect x="420" y="340" width="140" height="24" rx="12"/>
+        <text x="490" y="356">AG-UI</text>
+      </g>
+
+      <!-- Subnames (italic full forms) -->
+      <text class="pr-subname" x="190" y="378">Model Context Protocol</text>
+      <text class="pr-subname" x="340" y="378">Agent-to-Agent</text>
+      <text class="pr-subname" x="490" y="378">Agent-User Interaction</text>
+
+      <!-- Column dividers -->
+      <line class="pr-col-div" x1="115" y1="385" x2="115" y2="490"/>
+      <line class="pr-col-div" x1="265" y1="385" x2="265" y2="490"/>
+      <line class="pr-col-div" x1="415" y1="385" x2="415" y2="490"/>
+
+      <!-- Row 1: ORIGINE -->
+      <text class="pr-row-label" x="20" y="404">ORIGINE</text>
+      <text class="pr-cell" x="190" y="404">Anthropic · nov. 2024</text>
+      <text class="pr-cell" x="340" y="404">Google · avr. 2025</text>
+      <text class="pr-cell" x="490" y="404">CopilotKit · 2025</text>
+
+      <!-- Row 2: RÔLE -->
+      <text class="pr-row-label" x="20" y="426">RÔLE</text>
+      <text class="pr-cell" x="190" y="426">agent ↔ outils &amp; data</text>
+      <text class="pr-cell" x="340" y="426">agent ↔ agent</text>
+      <text class="pr-cell" x="490" y="426">agent ↔ frontend</text>
+
+      <!-- Row 3: TRANSPORT -->
+      <text class="pr-row-label" x="20" y="448">TRANSPORT</text>
+      <text class="pr-cell-mono" x="190" y="448">JSON-RPC stdio/HTTP</text>
+      <text class="pr-cell-mono" x="340" y="448">JSON-RPC sur HTTP</text>
+      <text class="pr-cell-mono" x="490" y="448">SSE · 16 events</text>
+
+      <!-- Row 4: PRIMITIVE -->
+      <text class="pr-row-label" x="20" y="470">PRIMITIVE</text>
+      <text class="pr-cell" x="190" y="470">tools · resources · prompts</text>
+      <text class="pr-cell" x="340" y="470">Agent Card · tasks</text>
+      <text class="pr-cell" x="490" y="470">events · state · UI</text>
+
+      <!-- Row 5: ADOPTION -->
+      <text class="pr-row-label" x="20" y="492">ADOPTION</text>
+      <text class="pr-cell" x="190" y="492">97 M dl/mois (SDK)</text>
+      <text class="pr-cell" x="340" y="492">100+ supporters</text>
+      <text class="pr-cell" x="490" y="492">croissante · 2026</text>
+
+      <!-- Footer -->
+      <text x="310" y="518" text-anchor="middle" font-family="Fraunces, serif" font-style="italic" font-size="13" fill="#3b3f4d">
+        Gouvernance neutre — Linux Foundation AAIF, décembre 2025.
+      </text>
+      <text x="310" y="534" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="0.16em" fill="#8a8e99">
+        AUCUN PROTOCOLE N'APPARTIENT PLUS À SON CRÉATEUR
+      </text>
+    </svg>`,
+    legend: [
+      { code: 'MCP', label: "Model Context Protocol — agent ↔ outils &amp; data" },
+      { code: 'A2A', label: "Agent-to-Agent — agent ↔ agent pair, stateful" },
+      { code: 'AG-UI', label: "Agent-User Interaction — agent ↔ frontend en SSE" },
+      { code: 'AAIF', label: "Linux Foundation Agentic AI Industry Forum (gouvernance neutre)" }
+    ]
+  },
+
   // ───── SCHÉMA · COUCHE 06 · OWASP ASI risks ─────
   {
     layerIdx: 6,
@@ -552,7 +713,7 @@ function renderSchemasOpener(leftFolio, rightFolio) {
           <div class="sch-opener-eyebrow">Troisième partie</div>
           <h2 class="sch-opener-title">Planches <em>&amp; schémas</em></h2>
           <div class="sch-opener-rule"></div>
-          <p class="sch-opener-lede">Quatre schémas de référence, un par discipline-clé. Chacun est conçu pour être extrait du livre et affiché au mur&nbsp;: boucle ReAct, six patterns Anthropic, carte des risques OWASP, trace OpenTelemetry GenAI.</p>
+          <p class="sch-opener-lede">Cinq schémas de référence, un par discipline-clé. Chacun est conçu pour être extrait du livre et affiché au mur&nbsp;: boucle ReAct, six patterns Anthropic, trinité des protocoles ouverts, carte des risques OWASP, trace OpenTelemetry GenAI.</p>
           <div class="planche-list">
             ${items}
           </div>
@@ -562,8 +723,8 @@ function renderSchemasOpener(leftFolio, rightFolio) {
       <div class="page right">
         <div class="sch-opener-right">
           <div class="sch-opener-right-inner">
-            <div class="sch-opener-right-eyebrow">Quatre planches</div>
-            <div class="sch-opener-right-big">04</div>
+            <div class="sch-opener-right-eyebrow">Cinq planches</div>
+            <div class="sch-opener-right-big">05</div>
             <div class="sch-opener-right-cap">schémas de référence<br>à annoter, imprimer, afficher</div>
           </div>
         </div>
