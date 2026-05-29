@@ -171,8 +171,10 @@ Deux familles émergent en 2025-2026. **PRIME** (Cui et al.)[^10] propose un *im
 
 Trois mécaniques cohabitent en 2026 pour noter la qualité d'un raisonnement ou d'une réponse : le PRM (entraîné), le LLM-as-judge (prompté), et l'évaluation humaine (SME ou crowdsourcing). Aucune des trois ne suffit seule ; le pattern dominant en production combine les trois. Le tableau ci-dessous synthétise leurs économies respectives.
 
+![Schéma E5 — Comparatif PRM vs LLM-as-judge vs human eval (A4 portrait, matrice 3×5 + bandeau trajectoires)|900](../../livre/images/20260601-04-prm-vs-judge-vs-human-e5.svg)
+
 > [!NOTE] À propos du schéma E5
-> Le schéma E5 — *Comparatif PRM vs LLM-as-judge vs human eval*, A4 portrait — reste à produire par fusion légère (~2 jours de SVG) avec ingrédients Ch.3 (économie cachée, chiffres bench) et Ch.17 (taxonomie graders code/model/human, calibration judge-humain). Le tableau ci-dessous tient lieu de v1 textuelle ; la version visuelle E5 reprendra cette matrice et y ajoutera un bandeau bas illustrant les quatre trajectoires d'évolution (cf. §3.8) alignées sur les trois lignes.
+> Version v1 — matrice 3 lignes × 5 colonnes (coût, scalabilité, biais, fidélité, cas d'usage) + bandeau bas sur les 4 trajectoires d'évolution 2027-2028 alignées sur les 3 mécaniques (cf. §3.8). Le tableau markdown ci-dessous reste accessible pour la lecture détaillée et l'extraction de chiffres.
 
 | | **PRM** (entraîné) | **LLM-as-judge** (prompté) | **Human eval** (SME / crowdsourcing) |
 | --- | --- | --- | --- |

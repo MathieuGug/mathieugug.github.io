@@ -113,12 +113,14 @@ Un modèle qui apprend seul à se vérifier — *raisonne*-t-il au sens fort, ou
 
 ## 2.4 Le second axe de scaling (Snell et al.)
 
-> [!NOTE] À propos des deux schémas ci-dessous
-> Le Schéma 3 final du livre — « Capability × Cost (E3) », A4 portrait pour l'édition imprimée — reste à produire par fusion lourde (~2-3 j SVG) du Schéma 3a (panel capability, dossier `modeles-raisonnement/`) et du Schéma 3b (panel coût, dossier `economie-inference/`). Le manuscrit v1 fonctionne par juxtaposition en attendant. La lecture combinée est strictement équivalente à ce que portera le E3 final.
+![Schéma 3 — E3 Capability × Cost : la seconde courbe de scaling (A4 portrait)|900](../../livre/images/20260601-03-capability-vs-cost-e3.svg)
 
-![Schéma 3a — Diptyque scaling : pretraining FLOPs vs test-time tokens + 4 stratégies test-time|1300](../../modeles-raisonnement/images/20260506-03-diptyque-scaling.svg)
+> [!NOTE] À propos du Schéma 3 (E3)
+> Version v1 — fusion lourde du panel capability (depuis `modeles-raisonnement/03-diptyque-scaling.svg`) et du panel coût (depuis `economie-inference/07-reasoning-cost.svg`), avec bandeau bas sur les 3 régimes tarifaires vendor 2026. Les deux ingrédients source restent visibles ci-dessous pour la lecture détaillée. La version finale print pourra élargir les annotations selon le format physique retenu.
 
-![Schéma 3b — Coût par résolution AIME : reasoning vs non-reasoning, ×10-74 (ingrédient E3)|1300](../../economie-inference/images/20260506-07-reasoning-cost.svg)
+![Schéma 3a (ingrédient E3, panel capability) — Diptyque scaling : pretraining FLOPs vs test-time tokens + 4 stratégies test-time|1300](../../modeles-raisonnement/images/20260506-03-diptyque-scaling.svg)
+
+![Schéma 3b (ingrédient E3, panel coût) — Coût par résolution AIME : reasoning vs non-reasoning, ×10-74|1300](../../economie-inference/images/20260506-07-reasoning-cost.svg)
 
 ### 2.4.1 Pretraining qui sature, test-time qui ouvre
 

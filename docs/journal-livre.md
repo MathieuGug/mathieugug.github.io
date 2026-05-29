@@ -11,7 +11,7 @@ Journal de production du livre (28 dossiers → 25 chapitres). Voir [`livre-outl
 | Outline | ✅ v0 mergé (PR #127) | 4 actes, 25 chapitres, 3 catégories de schémas (S/R/E) |
 | Audit schémas | 🟡 partiel | Ch.7-13 + Ch.14-16 (Acte III complet) + Ch.17-20 + **Ch.21-22-23 audités + manuscrits v1 livrés 2026-05-28** + **Ch.4 audité + manuscrit v1 livré 2026-05-29** + **Ch.1-3 + Ch.5-6 audités + manuscrits v1 livrés 2026-05-29** — Acte I complet (sauf prologue), Acte II/III complets, Acte IV à 4/5. Restent : Prologue + Ch.24-25 + Épilogue. |
 | Manuscrit | 🟢 **23/25** | **Acte I complet** : Ch.1 (cœur stochastique) + Ch.2 (raisonnement) + Ch.3 (PRM) + Ch.4 (décode spéculative) + Ch.5 (économie inférence) + Ch.6 (encart world models) — tous v1 livrés 2026-05-29. **Acte II complet** : Ch.7 (charnière) + Ch.8 + Ch.9 + Ch.10 + Ch.11 v1. **Acte III complet** : Ch.12 + Ch.13 + Ch.14 + Ch.15 + Ch.16 v1. **Acte IV** : Ch.17 (charnière) + Ch.18 + Ch.19 (charnière) + Ch.20 v1 + **Ch.21 (charnière ROI) + Ch.22 (frugalité) + Ch.23 (gouvernance) v1 livrés 2026-05-28**. Restent à écrire : Prologue + Ch.24 (IA et travail) + Ch.25 (procès Musk) + Épilogue. |
-| Schémas R/E à produire | ⏳ | E3 (capability×cost) et E5 (PRM comparatif) restent à créer. E4 (threat model unifié 2026) **textualisé en Ch.19 §19.10**. R1-R15 traités par réutilisation. **R16 (J-curve × LLMflation × paradoxe agentique)** à créer par fusion lourde — brief détaillé Ch.21 §Schémas. **R17 (3 trajectoires énergétiques 2030)** traité par réutilisation tel quel de `ia-frugale-08-trajectoires-2030.svg`. **R18 (calendrier réglementaire 2026-2028 unifié)** à créer ex nihilo — brief détaillé Ch.23 §Schémas. |
+| Schémas R/E à produire | 🟡 | **S1.1 (softmax→T→top-p→tirage) + S1.2 (faisceau 1 000 trajectoires) v1 livrés 2026-05-29** (Ch.1). **E3 (capability×cost A4 portrait) v1 livré 2026-05-29** (Ch.2, fusion `modeles-raisonnement/03` + `economie-inference/07` + bandeau 3 régimes vendor). **E5 (PRM vs LLM-judge vs human eval A4 portrait) v1 livré 2026-05-29** (Ch.3, matrice 3×5 + bandeau 4 trajectoires). E4 (threat model unifié 2026) **textualisé en Ch.19 §19.10**. R1-R15 traités par réutilisation. **R16 (J-curve × LLMflation × paradoxe agentique)** à créer par fusion lourde — brief détaillé Ch.21 §Schémas. **R17 (3 trajectoires énergétiques 2030)** traité par réutilisation tel quel de `ia-frugale-08-trajectoires-2030.svg`. **R18 (calendrier réglementaire 2026-2028 unifié)** à créer ex nihilo — brief détaillé Ch.23 §Schémas. |
 | Bugs SVG corrigés | ✅ 1 | `cinq-familles.svg` (balise XML malformée) |
 | Rendu print/web | ⏳ | non décidé |
 
@@ -1973,7 +1973,7 @@ L'Acte IV a maintenant son **squelette en place** : Ch.17 (éval+benchmarks, cha
 | Audit schémas source | ✅ fait — `anatomie/` couche 00 : **0 schéma SVG dédié**. Le cœur est rendu uniquement comme **disque central de l'oignon** (`livre-render.js`, `coreR=52`, radial gradient `#coreGrad`). Pas de schéma narratif standalone dans `livre-schemas.js` (SCHEMAS[] commence à `layerIdx: 1` ReAct). |
 | Plan détaillé | ✅ fait (audit du 2026-05-29) |
 | Manuscrit | ✅ **v1 livrée** — `docs/livre/ch01-coeur-stochastique.md` (~4 750 mots, 12 footnotes Tier-A, ~10 encadrés Obsidian, 2 schémas S1.1+S1.2 référencés à créer en SVG ultérieurement) |
-| Schémas à créer | **2 ex nihilo** — S1.1 (softmax→T→top-p→tirage chain, ~1-1,5 j SVG) + S1.2 (faisceau 1 000 trajectoires `T=0,7`, ~1-1,5 j SVG). Couche 00 d'`anatomie/` n'a pas de matière SVG narrative — le disque central de l'oignon ne suffit pas à un chapitre standalone. |
+| Schémas à créer | ✅ **S1.1 + S1.2 v1 livrés** 2026-05-29 — `livre/images/20260601-01-softmax-temperature-sampling-chain.svg` (4 panneaux chaîne mécanique + strip comparaison 3 T) et `livre/images/20260601-02-variance-trajectoire-1000-rejouages.svg` (100 trajectoires affichées + 3 surlignées). Générateur Python `tools/gen_ch01_s12.py` (idempotent, seed fixe). |
 | Frontière Ch.1 ↔ Ch.2 | À tenir — Ch.2 dit *quoi se passe quand on dépense du compute à l'inférence pour raisonner* (CoT, RLVR, GRPO, second axe de scaling Snell). Ch.1 reste **strictement en amont** : ce qui se passe à **chaque token** indépendamment de la longueur du raisonnement. Règle d'écriture : Ch.1 ne parle pas de chain-of-thought, ne nomme pas o1/R1, ne mentionne pas RLVR. Renvoi `[!INFO]` en clôture §1.5. |
 | Frontière Ch.1 ↔ Ch.4 | À tenir — Ch.4 (décode spéculative) est l'**optimisation** qui calque le sampling : le théorème d'équivalence Leviathan/Kalman/Matias 2023 prouve que `accept(min(1, p_target/p_draft))` + resample sur `max(0, p_target − p_draft)` produit une distribution **strictement identique** à la décode standard. Ch.1 introduit la mécanique du softmax/sampling **sans** mentionner la spec ; Ch.4 démontre que c'est précisément cette mécanique qui rend la spec contractuellement neutre. Renvoi `[!INFO]` en §1.4. |
 | Frontière Ch.1 ↔ Ch.7 | À tenir — Ch.7 montre comment la variance **s'accumule à chaque tour** (boucle ReAct, `stop_reason`, harness défensif). Ch.1 pose la variance **à un seul token** ; le multiplicateur agentique (la variance qui explose avec le nombre de tool calls) est nommé une phrase et renvoyé. Pas de boucle ReAct ici. |
@@ -2126,8 +2126,8 @@ Le Ch.1 est un **chapitre encart à dossier source unique mais maigre** : la mat
 ### Tâches restantes Ch.1
 
 - [ ] Rédiger le manuscrit `docs/livre/ch01-coeur-stochastique.md` (~3 000-4 000 mots)
-- [ ] Créer **S1.1** (softmax→T→top-p→tirage chain, ~1-1,5 j SVG) — `livre/images/20260601-01-softmax-temperature-sampling-chain.svg`, viewBox 1200×720
-- [ ] Créer **S1.2** (faisceau 1 000 trajectoires, ~1-1,5 j SVG) — `livre/images/20260601-02-variance-trajectoire-1000-rejouages.svg`, viewBox 1200×640
+- [x] Créer **S1.1** (softmax→T→top-p→tirage chain) — `livre/images/20260601-01-softmax-temperature-sampling-chain.svg` ✅ 2026-05-29
+- [x] Créer **S1.2** (faisceau 1 000 trajectoires) — `livre/images/20260601-02-variance-trajectoire-1000-rejouages.svg` ✅ 2026-05-29 (générateur `tools/gen_ch01_s12.py`)
 - [ ] Tenir la frontière Ch.1 ↔ Ch.2 strictement : zéro mention de o1, R1, RLVR, GRPO, *aha moment*, interleaved/parallel thinking
 - [ ] Tenir la frontière Ch.1 ↔ Ch.18 strictement : OTel GenAI nommé **une seule fois**, en renvoi, jamais défini
 - [ ] Sourcer les 5 paramètres API mentionnés (`temperature`, `top_p`, `top_k`, `seed`, `system_fingerprint`) sur **trois docs vendeurs frontière** (OpenAI / Anthropic / Google)
@@ -2148,7 +2148,7 @@ Le Ch.1 est un **chapitre encart à dossier source unique mais maigre** : la mat
 | Audit schémas source (1 dossier principal) | ✅ fait — `modeles-raisonnement/` (6 schémas SVG narratifs absorbés intégralement, viewBox uniforme `0 0 1200 800`) |
 | Plan détaillé | ✅ fait (audit du 2026-05-29) |
 | Manuscrit | ✅ **v1 livrée** — `docs/livre/ch02-modeles-raisonnement.md` (~7 620 mots, 12 footnotes Tier-A, 14 encadrés Obsidian, 6 schémas réutilisés + ingrédient E3 juxtaposé) |
-| Schémas à créer | **E3** (Capability vs Cost, A4 portrait) — fusion lourde `modeles-raisonnement-03-diptyque-scaling.svg` + `economie-inference-07-reasoning-cost.svg` (~2-3 j SVG). Manuscrit v1 peut fonctionner par **juxtaposition** des deux SVG existants en attendant la fusion E3 print. |
+| Schémas à créer | ✅ **E3 v1 livré** 2026-05-29 — `livre/images/20260601-03-capability-vs-cost-e3.svg` (A4 portrait 900×1280 ; panel A capability×temps 2020-2026 avec pivot o1 + courbes pretraining vs test-time + 6 modèles markers, panel B coût×perf log scale avec 2 nuages distincts + écart ×10-74, bandeau 3 régimes vendor). Générateur Python `tools/gen_ch02_e3.py`. Les 2 ingrédients sources restent affichés en Ch.2 §2.4 pour la lecture détaillée. |
 | Frontière Ch.2 ↔ Ch.1 | À tenir — Ch.1 = cœur stochastique. Ch.2 = couche au-dessus : le raisonneur greffe une boucle de recherche/vérification sur le sampling de Ch.1. Pas de redéfinition de la variance. |
 | Frontière Ch.2 ↔ Ch.3 | À tenir — Ch.2 dit **quoi** (RLVR comme mécanique d'entraînement avec vérifieur booléen). Ch.3 dit **qui note les étapes** (PRM800K, GenRM/ThinkPRM, generative verifiers). §2.3 mentionne PRM uniquement comme l'une des 4 stratégies test-time de Snell, renvoi `[!INFO]` Ch.3. |
 | Frontière Ch.2 ↔ Ch.4 | À tenir — Ch.4 = décode spéculative. Ch.2 explique **pourquoi** on dépense plus de tokens à l'inférence ; Ch.4 explique **comment** on regagne la latence. Frontière déjà posée en miroir dans Ch.4 §4.1.1 — Ch.2 §2.8 pose la réciproque. |
@@ -2292,8 +2292,8 @@ Le Ch.2 est un **chapitre standard à un seul dossier source dense** (10 sources
 
 ### Tâches restantes Ch.2
 
-- [ ] Rédiger `docs/livre/ch02-modeles-raisonnement.md` (~7 000-7 500 mots)
-- [ ] Créer E3 (~2-3 j SVG, optionnel pour v1)
+- [x] Rédiger `docs/livre/ch02-modeles-raisonnement.md` (~7 620 mots) ✅ 2026-05-29
+- [x] Créer **E3** (Capability vs Cost, A4 portrait) — `livre/images/20260601-03-capability-vs-cost-e3.svg` ✅ 2026-05-29 (générateur `tools/gen_ch02_e3.py`)
 - [ ] Confirmer footnote METR août 2025 sur distingo fidélité/informativité
 - [ ] Valider échappement `&lt;thinking&gt;` quand bloc Anthropic apparaît dans `<code>` HTML
 - [ ] Tenir frontière Ch.2 ↔ Ch.3 : zéro description PRM800K, GenRM, ThinkPRM ici
@@ -2313,7 +2313,7 @@ Le Ch.2 est un **chapitre standard à un seul dossier source dense** (10 sources
 | Audit schémas source (1 dossier) | ✅ fait — `process-reward-models/` (7 SVG narratifs tous absorbés + ingrédient E5) |
 | Plan détaillé | ✅ fait (audit du 2026-05-29) |
 | Manuscrit | ✅ **v1 livrée** — `docs/livre/ch03-process-reward-models.md` (~7 550 mots, 14 footnotes Tier-A, 13 encadrés Obsidian, 7 schémas réutilisés + tableau E5 textualisé en attendant SVG) |
-| Schémas à créer | **E5** (comparatif PRM vs LLM-as-judge vs human eval, A4 portrait) — fusion légère `process-reward-models` + `evaluation-agentique` (~2 j SVG). Principal en Ch.3 §3.7, renvoyé depuis Ch.17 §graders. |
+| Schémas à créer | ✅ **E5 v1 livré** 2026-05-29 — `livre/images/20260601-04-prm-vs-judge-vs-human-e5.svg` (A4 portrait 900×1280 ; matrice 3×5 colorée par mécanique avec faits-clés + détails par cellule, bandeau bas 4 trajectoires d'évolution 2027-2028 alignées sur les 3 mécaniques, encadré « pattern dominant prod » en bas). Générateur Python `tools/gen_ch03_e5.py`. Renvoi `[!INFO]` depuis Ch.17 §graders. |
 | Frontière Ch.3 ↔ Ch.2 | À tenir — Ch.2 dit *quoi* (raisonneur, RLVR/GRPO, faithfulness 25/39 %) ; Ch.3 dit *qui note* (économie 2-4 Md$, reward hacking 99/2). Définition canonique RLVR **en Ch.2** ; Ch.3 la mobilise sous l'angle « élimination du PRM ». |
 | Frontière Ch.3 ↔ Ch.5 | À tenir — Triptyque économique : Ch.3 (notateur) → Ch.5 (token) → Ch.21 (outcome). Renvoi `[!INFO]` croisé. |
 | Frontière Ch.3 ↔ Ch.17 | À tenir — Ch.17 = playbook gruyère + LLM-as-judge en eval/CI. E5 créé ici **renvoyé** depuis Ch.17 §graders. La taxonomie code/model/human reste en Ch.17. |
@@ -2435,8 +2435,8 @@ Le Ch.3 est un **chapitre standard à un seul dossier source**, dense visuelleme
 
 ### Tâches restantes Ch.3
 
-- [ ] Rédiger `docs/livre/ch03-process-reward-models.md` (~6 500-7 500 mots, 14-16 footnotes)
-- [ ] Créer **E5** (~2 j SVG)
+- [x] Rédiger `docs/livre/ch03-process-reward-models.md` (~7 550 mots) ✅ 2026-05-29
+- [x] Créer **E5** (PRM vs LLM-judge vs human eval, A4 portrait) — `livre/images/20260601-04-prm-vs-judge-vs-human-e5.svg` ✅ 2026-05-29 (générateur `tools/gen_ch03_e5.py`)
 - [ ] Compléter sources 12 → 14-20 par ajouts E5
 - [ ] Vérifier triptyque économique Ch.3 → Ch.5 → Ch.21 explicite §3.1 + §3.9
 - [ ] Tester pont §3.6 → Ch.19 (reward hacking comme vecteur jailbreak silencieux)
