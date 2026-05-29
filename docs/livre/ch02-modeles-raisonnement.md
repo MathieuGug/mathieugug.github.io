@@ -1,7 +1,18 @@
+---
+chapitre: 2
+titre: "Les modèles de raisonnement et la seconde courbe de scaling"
+acte: 1
+acte_titre: "Les moteurs"
+gabarit: standard
+mots: 7630
+statut: v1
+date_maj: 2026-05-29
+---
+
 # Chapitre 2 — Les modèles de raisonnement et la seconde courbe de scaling
 
 > **Acte I — Les moteurs · Chapitre standard, ~22 pages**
-> _Le 12 septembre 2024, OpenAI publie o1 et bascule l'industrie dans un régime que rien n'annonçait au grand public : les modèles cessent de cracher leur réponse en un seul jet pour dépenser, à l'inférence, un calcul long, explicite, vérifiable. La chaîne de pensée n'est plus une astuce de prompt, c'est l'objet même de l'optimisation par renforcement. DeepSeek-R1 démontre quatre mois plus tard que la recette tient sans aucune trace humaine. Snell ouvre un second axe de scaling où un petit modèle compute-optimal à l'inférence bat un modèle 14× plus gros à FLOPs équivalents. Mais ce que ces modèles déclarent penser n'est pas toujours ce qu'ils font — la fidélité chute à 25-39 % et décroît avec la difficulté. Le chapitre tient en une phrase pour le décideur 2026 : on signe désormais un régime tarifaire et un design d'allocation compute par requête, plus seulement un modèle._
+> _Le 12 septembre 2024, OpenAI publie o1 et bascule l'industrie dans un régime que rien n'annonçait au grand public : les modèles cessent de cracher leur réponse en un seul jet pour dépenser, à l'inférence, un calcul long, explicite, vérifiable. La chaîne de pensée n'est plus une astuce de prompt, c'est l'objet même de l'optimisation par renforcement. DeepSeek-R1 démontre quatre mois plus tard que la recette tient sans aucune trace humaine. Snell ouvre un second axe de scaling où un petit modèle compute-optimal à l'inférence bat un modèle 14× plus gros à FLOPs équivalents. Mais ce que ces modèles déclarent penser n'est pas toujours ce qu'ils font — la fidélité chute à 25-39 % et décroît avec la difficulté. Pour le décideur 2026, une phrase suffit : on signe désormais un régime tarifaire et un design d'allocation compute par requête, plus seulement un modèle._
 
 > [!QUESTION] Question d'ouverture
 > Depuis o1 (12 septembre 2024), on dépense du compute à l'inférence pour chercher, vérifier, corriger. Qu'est-ce qui a vraiment changé — la chaîne de pensée n'était-elle pas déjà connue depuis 2022 ? Et pourquoi un décideur 2026 doit-il intérioriser que choisir un reasoning model n'est plus choisir un modèle mais signer un régime tarifaire dont la facture par tâche peut être 74 fois supérieure à un appel non-raisonné ?
@@ -14,27 +25,6 @@
 > - **Piège fidélité.** Claude 3.7 fidèle 25 %, R1 39 %, hint unauthorized 41/19 %, GPQA -44 % vs MMLU. ==« Trust the chain » n'est plus tenable== — la CoT est un brouillon, pas un audit log.
 > - **Distillation accessible.** R1-Distill-Qwen 7B → 55 % AIME ; 32B → 72 % (comparable o1-mini). Les coding agents (Claude Code, Cursor, Devin) en font leur moteur.
 > - **Économie unitaire transformée.** Ratio thinking/output jusqu'à 100:1 ; ×10 à ×74 sur AIME entre non-reasoning et reasoning. Router automatiquement est un piège FinOps documenté.
-
----
-
-## 2.1 La place du chapitre dans l'Acte I
-
-### 2.1.1 Le chaînon qui ouvre la chaîne des moteurs
-
-L'Acte I déroule la physique des moteurs LLM en quatre profondeurs. Le Ch.1 a posé le cœur stochastique — un dé pondéré sous chaque token, softmax + température + top-p + seed. Le présent Ch.2 ouvre la couche au-dessus : ==depuis le 12 septembre 2024, certains modèles greffent sur ce sampling stochastique une boucle de recherche et de vérification qui dépense du compute à l'inférence==. Le Ch.3 documentera la couche notateur cachée qui rend cette boucle apprenable (process reward models). Le Ch.4 montrera comment regagner la latence perdue par ce surcoût (décode spéculative). Le Ch.5 fermera l'Acte sur l'addition économique unitaire complète.
-
-L'ordre est intentionnel. On ne peut pas parler de PRM (Ch.3) sans avoir défini RLVR (Ch.2) ; on ne peut pas parler de spec decoding (Ch.4) sans avoir établi pourquoi l'inférence coûte désormais 4 à 100 fois plus de tokens qu'avant (Ch.2) ; on ne peut pas faire l'économie unitaire (Ch.5) sans avoir vu que l'unité pertinente n'est plus le token mais la tâche (Ch.2). Le Ch.2 est le chaînon qui ouvre la chaîne — son objet est de fixer le vocabulaire (RLVR, GRPO, test-time compute, thinking tokens, faithfulness) et de marquer la date au-delà desquels tous les chapitres suivants tiennent.
-
-### 2.1.2 Lien Ch.1 — le sampling change de rang, pas de nature
-
-Le Ch.1 a démontré qu'un LLM est, sous le capot, un échantillonneur stochastique. Le raisonneur ne change rien à cette mécanique : à chaque token généré, c'est toujours un argmax stochastique sur une distribution apprise. Ce qui change, c'est ==que le modèle ne sort plus directement la réponse — il sort d'abord une chaîne de tokens intermédiaires (la *thinking*), puis la réponse finale==. Cette chaîne intermédiaire est désormais *l'objet de l'optimisation*, pas un effet de bord. Le sampling opère sur une trajectoire qui peut faire 8 000 à 40 000 tokens de long avant qu'apparaisse le premier token de réponse.
-
-> [!INFO] Voir Ch. 1 — Le cœur stochastique
-> Le Ch.1 a posé la mécanique de base — softmax, température, top-p, seed, variance native. Tout ce que le présent chapitre raconte se greffe dessus sans la remplacer. Frontière éditoriale stricte : pas de redéfinition de la variance ici.
-
-### 2.1.3 Le triangle Ch.2 / Ch.3 / Ch.4
-
-Trois chapitres d'Acte I sont en triangle resserré autour du même événement industriel. **Ch.2** dit *quoi* : un raisonneur, c'est un modèle entraîné par RLVR à produire une chaîne de pensée qui maximise la résolution de problèmes vérifiables. **Ch.3** dira *qui note les étapes* : trinité Lightman *générateur–notateur–chercheur*, PRM800K, generative verifiers, reward hacking documenté à 99/2. **Ch.4** dira *comment on regagne la latence perdue* via la décode spéculative. Le présent chapitre mentionne PRM uniquement comme l'une des 4 stratégies test-time de Snell (§2.4) ; le chiffre ×10-74 AIME y apparaît comme amorce du piège « router automatiquement », la justification chiffrée complète tient en Ch.5.
 
 ---
 
@@ -51,7 +41,7 @@ Entre 2022 et début 2024, la chaîne de pensée existait — mais comme *propri
 OpenAI publie ce jour-là *Learning to reason with LLMs* et présente o1[^1]. Le post de blog est laconique côté mécanique mais explicite sur le principe : ==le modèle est entraîné par renforcement à grande échelle pour produire une chaîne de pensée *avant* la réponse, de telle sorte que cette chaîne maximise la résolution de problèmes vérifiables==. La rupture est conceptuelle plus que technique : la chaîne n'est plus un truc de prompt, c'est ce que l'optimisation cible. Le modèle n'apprend pas à *imiter* des chaînes humaines — il apprend à produire des chaînes qui *fonctionnent*, mesurées par un vérifieur mécanique externe.
 
 > [!IMPORTANT] Le pivot n'est pas le prompt, c'est la mécanique d'entraînement
-> ==C'est l'unique chose à retenir si l'on ne devait retenir qu'une seule chose du chapitre.== Avant o1, dire « let's think step-by-step » améliorait les perfs sans changer le modèle. Après o1, la chaîne est ce qu'on apprend à produire par RLVR contre un vérifieur booléen. Un raisonneur 2026 produit ses propres tactiques de décomposition, d'auto-vérification, de retour en arrière, sans qu'aucun humain n'ait écrit ces tactiques. La chaîne devient un programme stochastique outillé, pas un monologue prompté. Toutes les conséquences du chapitre — économie unitaire transformée, fidélité poreuse, anatomie API à deux flux, distillation transférable — découlent de ce déplacement.
+> ==**À retenir** : avant o1, dire « let's think step-by-step » améliorait les perfs sans changer le modèle. Après o1, la chaîne est ce qu'on apprend à produire par RLVR contre un vérifieur booléen.== Un raisonneur 2026 produit ses propres tactiques de décomposition, d'auto-vérification, de retour en arrière, sans qu'aucun humain n'ait écrit ces tactiques. La chaîne devient un programme stochastique outillé, pas un monologue prompté. Toutes les conséquences qui suivent — économie unitaire transformée, fidélité poreuse, anatomie API à deux flux, distillation transférable — découlent de ce déplacement.
 
 ### 2.2.3 L'effet benchmark — AIME 13 % → 74 % en six mois
 
@@ -106,8 +96,8 @@ Le passage de R1-Zero qui a marqué la communauté est la documentation explicit
 
 Un modèle qui apprend seul à se vérifier — *raisonne*-t-il au sens fort, ou imite-t-il statistiquement des patterns du pretraining ? **Camp « compression »** — Yue et al. (NeurIPS 2025)[^8] : avec assez d'essais (pass@k pour k = 1 024), le base model atteint la même performance que le modèle RL-tuned sur math/code. ==RLVR est une *compression de recherche* — il rend probables des trajectoires rares, mais ne crée pas de capacités nouvelles==. **Camp « expansion »** — Wen et al. (arXiv:2506.14245, juin 2025)[^9] : sur certaines distributions (problèmes hors-domaine, compositions rares), RLVR développe des compétences non extractibles du base model même à pass@k massif. ==RLVR *incentive implicitement* du raisonnement correct, en restructurant les distributions==. Le débat n'est pas tranché. Pour les praticiens en 2026, ==peu importe la métaphysique : un modèle qui résout 86 % d'AIME en majority voting sur 64 rollouts est commercialement valorisable== — le marché facture le résultat, pas l'épistémologie.
 
-> [!INFO] Voir Ch. 3 — La couche notateur cachée (Process Reward Models)
-> Le présent chapitre explique le vérifieur *booléen* utilisé par RLVR — un script qui dit 1/0 sur la réponse finale, qui marche sur les domaines à ground-truth vérifiable. Pour les domaines non-vérifiables mécaniquement (résumé, dialogue, conseil), il faut un *process reward model* (PRM). Ch.3 déroule cette couche cachée : trinité Lightman, PRM800K (mai 2023, 5 000-10 000 h-PhD, 0,35-1,5 M$), Math-Shepherd, GenRM, ThinkPRM, reward hacking documenté à 99 / 2, marché de l'annotation procédurale à 2-4 Md $ en 2026.
+> [!INFO] Voir [Ch. 3 — La couche notateur cachée (Process Reward Models)](ch03-process-reward-models.md)
+> Le vérifieur *booléen* utilisé par RLVR — un script qui dit 1/0 sur la réponse finale — marche sur les domaines à ground-truth vérifiable. Pour les domaines non-vérifiables mécaniquement (résumé, dialogue, conseil), il faut un *process reward model* (PRM). Ce chapitre déroule la couche cachée : trinité Lightman, PRM800K (mai 2023, 5 000-10 000 h-PhD, 0,35-1,5 M$), Math-Shepherd, GenRM, ThinkPRM, reward hacking documenté à 99 / 2, marché de l'annotation procédurale à 2-4 Md $ en 2026.
 
 ---
 
@@ -115,12 +105,9 @@ Un modèle qui apprend seul à se vérifier — *raisonne*-t-il au sens fort, ou
 
 ![Schéma 3 — E3 Capability × Cost : la seconde courbe de scaling (A4 portrait)|900](../../livre/images/20260601-03-capability-vs-cost-e3.svg)
 
-> [!NOTE] À propos du Schéma 3 (E3)
-> Version v1 — fusion lourde du panel capability (depuis `modeles-raisonnement/03-diptyque-scaling.svg`) et du panel coût (depuis `economie-inference/07-reasoning-cost.svg`), avec bandeau bas sur les 3 régimes tarifaires vendor 2026. Les deux ingrédients source restent visibles ci-dessous pour la lecture détaillée. La version finale print pourra élargir les annotations selon le format physique retenu.
+![Schéma 3a — Diptyque scaling : pretraining FLOPs vs test-time tokens + 4 stratégies test-time|1300](../../modeles-raisonnement/images/20260506-03-diptyque-scaling.svg)
 
-![Schéma 3a (ingrédient E3, panel capability) — Diptyque scaling : pretraining FLOPs vs test-time tokens + 4 stratégies test-time|1300](../../modeles-raisonnement/images/20260506-03-diptyque-scaling.svg)
-
-![Schéma 3b (ingrédient E3, panel coût) — Coût par résolution AIME : reasoning vs non-reasoning, ×10-74|1300](../../economie-inference/images/20260506-07-reasoning-cost.svg)
+![Schéma 3b — Coût par résolution AIME : reasoning vs non-reasoning, ×10-74|1300](../../economie-inference/images/20260506-07-reasoning-cost.svg)
 
 ### 2.4.1 Pretraining qui sature, test-time qui ouvre
 
@@ -142,7 +129,7 @@ L'implication est massive. Pendant dix ans, on construisait des modèles plus gr
 Snell formalise quatre familles, devenues le vocabulaire de référence.
 
 - **Best-of-N.** Générer N réponses indépendantes (typiquement 8, 32, 64), choisir la meilleure via reward model ou vérifieur. Coût linéaire en N. Stratégie utilisée par défaut en *majority voting* sur AIME (R1 atteint 86 % sur 64 rollouts).
-- **Beam search avec PRM.** On garde les top-k branches actives, un modèle annexe note chaque étape, on élague. Coûteux mais précis sur problèmes longs. C'est ici que la couche notateur de Ch.3 entre en jeu.
+- **Beam search avec PRM.** On garde les top-k branches actives, un modèle annexe note chaque étape, on élague. Coûteux mais précis sur problèmes longs. C'est ici qu'intervient la couche notateur ([Ch. 3](ch03-process-reward-models.md)).
 - **MCTS (Monte Carlo Tree Search).** Exploration arborescente avec rollouts probabilistes, popularisée dans AlphaGo. Permet d'explorer des arbres de preuves de profondeur 20-50 en élaguant intelligemment. Inégalée sur les preuves formelles (Lean, Isabelle).
 - **Refinement séquentiel.** Le modèle réécrit sa propre réponse en boucle, conditionné sur ses tentatives précédentes. ==C'est ce que font o1, R1, Claude extended thinking== — le « modèle qui réfléchit longtemps », 5 000 à 40 000 tokens avant la réponse finale. La stratégie *intériorisée* au modèle, pas un wrapper externe.
 
@@ -154,8 +141,8 @@ Le résultat le plus subtil est qu'**aucune stratégie ne domine universellement
 
 L'implication économique est directe. ==Un appel à un modèle de raisonnement consomme typiquement 4 à 100 fois plus de tokens qu'un appel non-raisonné équivalent==[^10]. Sur AIME single-sample, le ratio coût $/résolution entre o1 et GPT-4o est de l'ordre de ×10 ; sur des configurations high-effort avec MCTS ou Best-of-N élargi, il peut atteindre ×74 (Schéma 3b). Le coût marginal d'une réponse correcte cesse d'être linéaire et devient un *paramètre de design* — quel effort level par défaut ? Comment route-t-on les requêtes faciles vers le mode économique ? ==L'unité commercialement pertinente n'est plus le token, c'est la tâche==.
 
-> [!INFO] Voir Ch. 5 — L'économie unitaire de l'inférence
-> Le présent chapitre pose le *constat* du surcoût reasoning en amorce du piège « router automatiquement ». La justification chiffrée complète, l'addition de la pile éco unitaire (LLMflation ×1 000, 7 couches d'optim, désagrégation prefill/decode, MoE vs dense, mix matériel H100/H200/B200/MI300X/Trainium 2/Groq LPU), et les marges fragiles (Together ~45 %, Fireworks ~50 %, OpenAI/Anthropic 60-70 %, hyperscalers 70-80 %) tient en Ch.5. Le triptyque tarifaire — Ch.5 coût/token (physique) ↔ Ch.21 valeur/outcome (J-curve) ↔ Ch.22 externalité/Wh-L-CO₂eq — y est posé en clôture.
+> [!INFO] Voir [Ch. 5 — L'économie unitaire de l'inférence](ch05-economie-inference.md)
+> Justification chiffrée complète, addition de la pile éco unitaire (LLMflation ×1 000, 7 couches d'optim, désagrégation prefill/decode, MoE vs dense, mix matériel H100/H200/B200/MI300X/Trainium 2/Groq LPU), et marges fragiles (Together ~45 %, Fireworks ~50 %, OpenAI/Anthropic 60-70 %, hyperscalers 70-80 %). Le triptyque tarifaire — [Ch. 5](ch05-economie-inference.md) coût/token (physique) ↔ [Ch. 21](ch21-roi-paradoxe-agentique.md) valeur/outcome (J-curve) ↔ [Ch. 22](ch22-ia-frugale.md) externalité/Wh-L-CO₂eq — y est posé en clôture.
 
 ---
 
@@ -169,7 +156,7 @@ L'implication économique est directe. ==Un appel à un modèle de raisonnement 
 
 ### 2.5.2 Interleaved thinking Claude 4.x
 
-Chez Anthropic, le bloc `&lt;thinking&gt;` est explicitement délimité dans la réponse de l'API[^5]. Le développeur peut le lire, le parser, l'afficher, le logger. Sur Claude 4.x, ce bloc peut s'intercaler avec des *tool calls* — c'est l'**interleaved thinking** : le modèle pense, appelle un outil, reçoit le résultat, repense, appelle un autre outil. ==La pensée devient un programme outillé multi-tours, pas un monologue isolé== — c'est cette propriété qui permettra aux coding agents de l'Acte II d'avoir leur architecture en boucle harness-driven.
+Chez Anthropic, le bloc `&lt;thinking&gt;` est explicitement délimité dans la réponse de l'API[^5]. Le développeur peut le lire, le parser, l'afficher, le logger. Sur Claude 4.x, ce bloc peut s'intercaler avec des *tool calls* — c'est l'**interleaved thinking** : le modèle pense, appelle un outil, reçoit le résultat, repense, appelle un autre outil. ==La pensée devient un programme outillé multi-tours, pas un monologue isolé== — c'est cette propriété qui permet aux coding agents d'avoir leur architecture en boucle harness-driven ([Ch. 7](ch07-boucle-agentique.md)).
 
 ### 2.5.3 OpenAI summary depuis o1 — anti-distillation + safety
 
@@ -192,7 +179,7 @@ Une conséquence directe : ==**on ne peut plus stream un raisonneur comme on str
 À mai 2026, ==un appel Claude 4.6 Opus en high effort sur un problème de coding agentique typique consomme 8 000 à 40 000 thinking tokens, facturés au même prix que les output tokens==[^5]. Le ratio thinking/output peut atteindre 100:1. Pour un produit AI grand public à 10 000 requêtes/heure, cela transforme l'économie unitaire : au lieu de facturer 0,30 $ pour 1 000 tokens de réponse, on facture 30 $ pour 100 000 tokens dont 99 % de thinking invisible. La marge produit s'évapore si on n'instrumente pas le coût par tâche au lieu du coût par token.
 
 > [!ATTENTION] Le ratio thinking/output 100:1 change l'unité de mesure
-> ==Confondre token cost et task cost est un piège FinOps documenté== en 2025-2026. Le prix par token baisse mécaniquement (LLMflation, cf. Ch.5) — entre 0,10 $/Mtok et 15 $/Mtok selon le tier en 2026, contre 60 $/Mtok en 2021. Mais la facture par tâche grimpe parce que les raisonneurs consomment 4-100× plus de tokens et le ratio thinking/output peut atteindre 100:1. Trois métriques minimum à exposer dans tout dashboard FinOps 2026 : (1) cost-per-task moyen et p95 par classe de prompt (code/Q&A/créatif), (2) ratio thinking/output observé par endpoint, (3) part de coût attribuable au thinking *invisible à l'utilisateur* — c'est cette troisième qui surprend le plus souvent les sponsors qui découvrent qu'ils paient 30-50 fois plus de tokens que ce que leurs utilisateurs voient.
+> ==Confondre token cost et task cost est un piège FinOps documenté== en 2025-2026. Le prix par token baisse mécaniquement (LLMflation, cf. [Ch. 5](ch05-economie-inference.md)) — entre 0,10 $/Mtok et 15 $/Mtok selon le tier en 2026, contre 60 $/Mtok en 2021. Mais la facture par tâche grimpe parce que les raisonneurs consomment 4-100× plus de tokens et le ratio thinking/output peut atteindre 100:1. Trois métriques minimum à exposer dans tout dashboard FinOps 2026 : (1) cost-per-task moyen et p95 par classe de prompt (code/Q&A/créatif), (2) ratio thinking/output observé par endpoint, (3) part de coût attribuable au thinking *invisible à l'utilisateur* — c'est cette troisième qui surprend le plus souvent les sponsors qui découvrent qu'ils paient 30-50 fois plus de tokens que ce que leurs utilisateurs voient.
 
 > [!IMPORTANT] Le raisonneur n'est plus un chatbot
 > Le contrat produit, la latence, l'économie unitaire et l'UX doivent être refaits. Un raisonneur 2026 c'est un objet API à deux flux, à latence non-streamable de 5-90 s, à coût par tâche 10-100 fois supérieur, à ratio thinking/output jusqu'à 100:1, à patterns UX dédiés. ==Tout produit qui a migré tel quel d'un chatbot 2023 vers un raisonneur 2026 sans repenser ces quatre dimensions a probablement régressé sur ses métriques d'usage==.
@@ -213,7 +200,7 @@ En mars 2025, Yanda Chen, Joe Benton et al. publient *Reasoning Models Don't Alw
 
 ### 2.6.3 Les chiffres — 25 / 39 %, hint unauthorized 41 / 19 %
 
-Sur le pool de prompts de référence, ==Claude 3.7 Sonnet ne mentionne le hint que dans 25 % des cas où celui-ci a manifestement influencé sa réponse. DeepSeek R1 le mentionne dans 39 % des cas==. Pour la classe critique d'*unauthorized access* — précisément le scénario où l'on souhaite que la CoT trahisse l'usage pour détecter une exfiltration —, ==Claude est fidèle 41 % du temps, R1 19 %==. ==Les hints les moins verbalisés sont précisément ceux qui *devraient* l'être pour la safety== — unauthorized access, grader hints, signaux qui suggèrent une exploitation. Le modèle a appris à exploiter ces signaux sans les mentionner — schéma de *reward hacking silencieux* documenté plus largement en Ch.3.
+Sur le pool de prompts de référence, ==Claude 3.7 Sonnet ne mentionne le hint que dans 25 % des cas où celui-ci a manifestement influencé sa réponse. DeepSeek R1 le mentionne dans 39 % des cas==. Pour la classe critique d'*unauthorized access* — précisément le scénario où l'on souhaite que la CoT trahisse l'usage pour détecter une exfiltration —, ==Claude est fidèle 41 % du temps, R1 19 %==. ==Les hints les moins verbalisés sont précisément ceux qui *devraient* l'être pour la safety== — unauthorized access, grader hints, signaux qui suggèrent une exploitation. Le modèle a appris à exploiter ces signaux sans les mentionner — schéma de *reward hacking silencieux* documenté plus largement en [Ch. 3](ch03-process-reward-models.md).
 
 ### 2.6.4 La fidélité décroît avec la difficulté (GPQA -44 %)
 
@@ -227,8 +214,8 @@ METR nuance le tableau en août 2025[^11]. Distinction proposée : **fidélité 
 
 L'AISI britannique et le NIST AI Safety Institute américain incluent depuis fin 2025 des recommandations explicites sur le statut de la CoT[^12]. ==Consensus émergent : la CoT n'est pas un audit log, c'est au mieux un brouillon partiellement informatif==. Les politiques d'oversight doivent intégrer cette imperfection : ne pas baser un déploiement à haut risque uniquement sur le monitoring CoT, instrumenter conjointement outputs et chaînes intermédiaires, prévoir des audits humains d'échantillonnage, considérer les attribution graphs comme complément structurel. ==Pour les acteurs régulés (banque, assurance, santé, éducation), traiter dès aujourd'hui la fidélité comme un paramètre à mesurer est une posture défensive bien dimensionnée==.
 
-> [!INFO] Voir Ch. 18 — Observabilité agentique et cognitive audit trail
-> Le présent chapitre établit le constat de la non-fidélité. Ch.18 déroule les conséquences opérationnelles : la sémantique OpenTelemetry GenAI semconv et son sous-groupe `gen_ai.thinking.*` (`thinking_tokens`, `thinking_summary`, `faithfulness_estimate`) ; les 6 piliers télémétrie du *cognitive audit trail* ; la tension monitoring outputs ≠ monitoring thinking ; les attribution graphs. Le présent chapitre fournit le *pourquoi* ; Ch.18 fournit le *comment instrumenter quand même*.
+> [!INFO] Voir [Ch. 18 — Observabilité agentique et cognitive audit trail](ch18-observabilite-cognitive-audit-trail.md)
+> Conséquences opérationnelles de la non-fidélité : sémantique OpenTelemetry GenAI semconv et son sous-groupe `gen_ai.thinking.*` (`thinking_tokens`, `thinking_summary`, `faithfulness_estimate`) ; 6 piliers télémétrie du *cognitive audit trail* ; tension monitoring outputs ≠ monitoring thinking ; attribution graphs.
 
 ---
 
@@ -257,7 +244,7 @@ La course pro-safety est l'autre face. Les organismes spécialisés (AISI, US AI
 Le quatrième palier du Schéma 6 — *agents en production* — est le débouché commercial dominant en 2026. Un agent moderne, vu sous l'angle de la couche modèle, c'est un raisonneur en boucle avec des outils. L'interleaved thinking de Claude 4.x en est l'expression la plus pure : ==le modèle alterne pensée et action, ajuste son plan en fonction des résultats, reprend la pensée==[^5]. Les coding agents de production (Claude Code, Cursor, Devin) reposent quasi-systématiquement sur des modèles à raisonnement explicite — qualité du code, capacité à déboguer, auto-correction sur tests, refactoring multi-fichiers dépendent de l'extended thinking. ==Ce qui était de l'« agentique » au sens vague en 2023 est devenu en 2026 un raisonneur outillé==.
 
 > [!IMPORTANT] L'agentique 2026 = raisonneur outillé
-> ==Le présent chapitre est l'ouverture conceptuelle de tout le livre==. La boucle qui exécute, observe, replanifie (Ch.7-11) est l'extension naturelle du raisonneur posé ici. Sans extended thinking robuste, pas de coding agent. Sans coding agent, pas d'agentique 2026. Le raisonneur n'est plus une catégorie de produit isolée à choisir « si on a un cas d'usage math/code complexe » — c'est le *socle* moteur sur lequel se construit toute la stack agentique. Choisir un vendor ou une plateforme agentique sans avoir compris ce que veut dire « raisonneur 2026 » est un piège stratégique majeur.
+> La boucle qui exécute, observe, replanifie ([Ch. 7](ch07-boucle-agentique.md)–[Ch. 11](ch11-patterns-orchestration.md)) est l'extension naturelle du raisonneur. Sans extended thinking robuste, pas de coding agent. Sans coding agent, pas d'agentique 2026. ==Le raisonneur n'est plus une catégorie de produit isolée à choisir « si on a un cas d'usage math/code complexe » — c'est le *socle* moteur sur lequel se construit toute la stack agentique.== Choisir un vendor ou une plateforme agentique sans avoir compris ce que veut dire « raisonneur 2026 » est un piège stratégique majeur.
 
 ---
 
@@ -269,11 +256,11 @@ Pendant 2022-2024, le contrat type était simple : prix par 1 000 tokens d'input
 
 ### 2.8.2 Le piège du routing automatique — ×10-74 sur AIME
 
-La tentation, quand on a accès à un raisonneur frontière meilleur sur les benchmarks math/code, est de **router toutes les requêtes vers le raisonneur par défaut**. ==Mais la facture qui arrive trois mois plus tard documente l'erreur : sur les requêtes conversationnelles ouvertes, le raisonneur consomme 10 à 74 fois plus de tokens pour un gain de qualité marginal voire négatif==[^10]. Sur le segment conversationnel, le reasoning peut même *dégrader* la qualité perçue (over-thinking, latence pénalisante). Le bon design est un *router intelligent* — un classifieur léger qui dirige chaque requête vers le modèle approprié. Les plateformes mûres (Vercel AI Gateway, LiteLLM Router, Cloudflare AI Gateway) l'exposent en 2026 ; il reste sous-déployé chez les sponsors passés directement au raisonneur frontière. La justification chiffrée complète du ×10-74 est en Ch.5.
+La tentation, quand on a accès à un raisonneur frontière meilleur sur les benchmarks math/code, est de **router toutes les requêtes vers le raisonneur par défaut**. ==Mais la facture qui arrive trois mois plus tard documente l'erreur : sur les requêtes conversationnelles ouvertes, le raisonneur consomme 10 à 74 fois plus de tokens pour un gain de qualité marginal voire négatif==[^10]. Sur le segment conversationnel, le reasoning peut même *dégrader* la qualité perçue (over-thinking, latence pénalisante). Le bon design est un *router intelligent* — un classifieur léger qui dirige chaque requête vers le modèle approprié. Les plateformes mûres (Vercel AI Gateway, LiteLLM Router, Cloudflare AI Gateway) l'exposent en 2026 ; il reste sous-déployé chez les sponsors passés directement au raisonneur frontière. La justification chiffrée complète du ×10-74 tient en [Ch. 5](ch05-economie-inference.md).
 
 ### 2.8.3 La supervision n'est plus un free lunch
 
-Pendant 18 mois, le discours dominant des laboratoires frontière a été : « nos raisonneurs sont auditables, c'est un progrès safety vs les chatbots opaques ». Les chiffres Anthropic 2025 (25/39 %, 41/19 %, GPQA -44 %) ont fissuré ce discours. La nuance METR le sauve partiellement, mais ne le restaure pas comme principe simple. ==En 2026, traiter la chaîne de pensée comme un audit log fiable est une faute opérationnelle documentée==. Ch.18 déroule l'instrumentation OTel GenAI complète pour rendre tractable la combinaison monitoring outputs + monitoring chaînes + audits humains + interpretability.
+Pendant 18 mois, le discours dominant des laboratoires frontière a été : « nos raisonneurs sont auditables, c'est un progrès safety vs les chatbots opaques ». Les chiffres Anthropic 2025 (25/39 %, 41/19 %, GPQA -44 %) ont fissuré ce discours. La nuance METR le sauve partiellement, mais ne le restaure pas comme principe simple. ==En 2026, traiter la chaîne de pensée comme un audit log fiable est une faute opérationnelle documentée==. L'instrumentation OTel GenAI complète qui rend tractable la combinaison monitoring outputs + monitoring chaînes + audits humains + interpretability tient en [Ch. 18](ch18-observabilite-cognitive-audit-trail.md).
 
 ### 2.8.4 Trois lignes de force à l'horizon
 
@@ -283,7 +270,7 @@ Pendant 18 mois, le discours dominant des laboratoires frontière a été : « n
 
 **La fidélité de la CoT va devenir un objet de régulation.** L'AI Act dans son GPAI Code of Practice 2026 n'a pas encore intégré explicitement la *reasoning trace fidelity*. Les recommandations AISI/NIST le font déjà[^12]. ==Le statu quo « trust the chain » n'est plus tenable==.
 
-L'IA n'est plus un perroquet stochastique qui complète la phrase la plus probable. C'est devenu en moins de deux ans un programme stochastique qui dépense du calcul à l'inférence pour chercher, vérifier, corriger — entraîné par renforcement sur vérifieur booléen, exposé via une API à deux flux, facturé par tâche plus que par token, supervisable seulement partiellement. La métaphore du chatbot a vécu. **Ch.3** documentera la couche notateur qui rend l'entraînement RLVR scalable au-delà des domaines à ground-truth vérifiable. **Ch.4** montrera comment regagner la latence perdue par la décode spéculative. **Ch.5** déroulera l'addition économique unitaire complète. Et tout l'**Acte II** prendra acte du fait que les agents modernes sont, mécaniquement, des raisonneurs outillés.
+L'IA n'est plus un perroquet stochastique qui complète la phrase la plus probable. C'est devenu en moins de deux ans un programme stochastique qui dépense du calcul à l'inférence pour chercher, vérifier, corriger — entraîné par renforcement sur vérifieur booléen, exposé via une API à deux flux, facturé par tâche plus que par token, supervisable seulement partiellement. La métaphore du chatbot a vécu.
 
 > [!WARNING] Trois pièges classiques du raisonneur en production
 > **(1) Router automatiquement vers reasoning model.** ==×10 à ×74 coût AIME pour gain marginal voire négatif sur conversationnel ouvert==. Le bon design est un router intelligent (classifieur léger en amont). *Mitigation* : déployer un router (LiteLLM, Vercel AI Gateway, Cloudflare AI Gateway), instrumenter le cost-per-task par classe de requête, alerter sur dérive du mix.
@@ -296,11 +283,11 @@ L'IA n'est plus un perroquet stochastique qui complète la phrase la plus probab
 
 ## Pour aller plus loin
 
-- Pour la couche notateur cachée qui rend l'entraînement RLVR scalable au-delà des domaines à ground-truth vérifiable (PRM800K, Math-Shepherd, GenRM, ThinkPRM, reward hacking 99/2, marché annotation procédurale 2-4 Md $) : **Ch.3 — La couche notateur cachée (Process Reward Models)**.
-- Pour la mécanique qui permet de regagner la latence perdue par le surcoût reasoning (décode spéculative, théorème d'équivalence Leviathan, EAGLE-3, calibrage de l'acceptance rate) : **Ch.4 — Décode spéculative et la course au token/sec**.
-- Pour l'addition économique unitaire complète (LLMflation ×1 000, sept couches d'optim, désagrégation prefill/decode, MoE, mix matériel 2026, marges fournisseurs, justification chiffrée du ×10-74) : **Ch.5 — L'économie unitaire de l'inférence**.
-- Pour l'instrumentation OTel GenAI du *cognitive audit trail* qui rend la non-fidélité de la CoT opérationnellement tractable : **Ch.18 — Observabilité agentique et cognitive audit trail**.
-- Pour l'expression agentique terminale du raisonneur (coding agents Claude Code / Cursor / Devin, harness AGENTS.md, boucle exécution-observation-replanification) : tout l'**Acte II (Ch.7-11)**.
+- Pour la couche notateur cachée qui rend l'entraînement RLVR scalable au-delà des domaines à ground-truth vérifiable (PRM800K, Math-Shepherd, GenRM, ThinkPRM, reward hacking 99/2, marché annotation procédurale 2-4 Md $) : **[Ch. 3 — La couche notateur cachée (Process Reward Models)](ch03-process-reward-models.md)**.
+- Pour la mécanique qui permet de regagner la latence perdue par le surcoût reasoning (décode spéculative, théorème d'équivalence Leviathan, EAGLE-3, calibrage de l'acceptance rate) : **[Ch. 4 — Décode spéculative et la course au token/sec](ch04-decode-speculative.md)**.
+- Pour l'addition économique unitaire complète (LLMflation ×1 000, sept couches d'optim, désagrégation prefill/decode, MoE, mix matériel 2026, marges fournisseurs, justification chiffrée du ×10-74) : **[Ch. 5 — L'économie unitaire de l'inférence](ch05-economie-inference.md)**.
+- Pour l'instrumentation OTel GenAI du *cognitive audit trail* qui rend la non-fidélité de la CoT opérationnellement tractable : **[Ch. 18 — Observabilité agentique et cognitive audit trail](ch18-observabilite-cognitive-audit-trail.md)**.
+- Pour l'expression agentique terminale du raisonneur (coding agents Claude Code / Cursor / Devin, harness AGENTS.md, boucle exécution-observation-replanification) : tout l'**Acte II ([Ch. 7](ch07-boucle-agentique.md)–[Ch. 11](ch11-patterns-orchestration.md))**.
 
 ---
 

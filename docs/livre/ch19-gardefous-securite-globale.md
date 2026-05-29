@@ -1,7 +1,18 @@
+---
+chapitre: 19
+titre: "Garde-fous, jailbreaking et sécurité globale"
+acte: 4
+acte_titre: "Mesures et garde-fous"
+gabarit: charnière
+mots: 6720
+statut: v1
+date_maj: 2026-05-29
+---
+
 # Chapitre 19 — Garde-fous, jailbreaking et sécurité globale
 
 > **Acte IV — Mesures et garde-fous · Chapitre charnière, ~30 pages**
-> _Trois ans après les premiers jailbreaks ChatGPT, l'asymétrie attaque/défense reste structurelle : attaques automatisées à 90-99 % de succès sur les modèles open-weights, 50-90 % sur les modèles frontière fermés, **aucune défense en production au-delà de ~95 % de fiabilité**. Le chapitre absorbe le manuel `llm-jailbreaking/` (28 avril 2026) et la couche 06 d'`anatomie` (guardrails, HITL, sécurité), avec renvois forts vers Ch. 10 (memory poisoning), Ch. 13 (MCP 10×10), Ch. 15 (computer use VPI). Il construit la **synthèse menaces 2026** — six surfaces (modèle, prompt, mémoire, outil, protocole, surface) — qui sert d'objet transverse de l'Acte IV._
+> _Trois ans après les premiers jailbreaks ChatGPT, l'asymétrie attaque/défense reste structurelle : attaques automatisées à 90-99 % de succès sur les modèles open-weights, 50-90 % sur les modèles frontière fermés, **aucune défense en production au-delà de ~95 % de fiabilité**. Synthèse du paysage 2026 — guardrails, HITL, sécurité — avec renvois forts vers [Ch. 10](ch10-compaction.md) (memory poisoning), [Ch. 13](ch13-mcp-securite.md) (MCP 10×10), [Ch. 15](ch15-computer-use.md) (computer use VPI). La **synthèse menaces 2026** — six surfaces (modèle, prompt, mémoire, outil, protocole, surface) — sert d'objet transverse de l'Acte IV._
 
 > [!QUESTION] Question d'ouverture
 > 48 % des professionnels cybersécurité placent l'agentique en **top vecteur d'attaque 2026** ; 34 % seulement ont des contrôles dédiés. Sur l'écart de 14 points, c'est-à-dire sur ==une entreprise sur sept qui sait qu'elle est exposée et qui a installé une réponse==, qu'est-ce qu'on a appris depuis DAN 2022, GCG 2023, Crescendo 2024, Policy Puppetry 2025 ? Et surtout — sachant qu'il n'y a pas de *silver bullet* au niveau du modèle, **où place-t-on les couches qui marchent vraiment**, et qui dans l'organisation porte la décision quand l'agent est admin + l'injection est indirecte + la facture du post-mortem est sur la table ?
@@ -10,7 +21,7 @@
 > - ==Trois ans d'escalade ont produit un constat opérationnel net : il n'y a pas de défense parfaite au niveau du modèle.== Le **problème originel** — un transformer qui lit un flux de tokens ne distingue pas *instructions* et *données* — reste structurel en 2026. La sécurité agentique n'est donc pas une compétence de prompt engineering : c'est de la défense en profondeur classique, héritée du software security, appliquée à un système non-déterministe.
 > - **Cinq couches** s'empilent : alignement modèle (RLHF + Constitutional Classifiers + circuit breakers) · classifiers input/output (Llama Guard, ShieldGemma, Prompt Shields) · *system prompt hardening* + spotlighting · ==**isolation architecturale**== (StruQ/SecAlign, CaMeL, Dual-LLM, sandbox d'outils) · monitoring opérationnel et HITL. ==Les couches 4-5 portent l'essentiel de la défense ; les couches 1-3 sont nécessaires mais jamais suffisantes==.
 > - **Agents ≠ chatbots.** Les benchmarks AgentDojo et AgentHarm montrent que des modèles qui refusent une requête nuisible directe **acceptent la même intention** quand elle est emballée dans un workflow multi-étapes. L'injection indirecte via outputs d'outils atteint 24 %+ ASR sur GPT-4 ReAct sans aucun jailbreak explicite[^injecagent].
-> - **Quatre vecteurs structurels** orchestrent les incidents 2025-2026 : *tool poisoning* sur MCP (jusqu'à 72 % ASR — MCPTox[^mcptox]), *indirect prompt injection* via emails/docs/calendrier (EchoLeak CVE-2025-32711, Reprompt CVE-2026-24307), ==*memory poisoning* persistant== (SpAIware, MINJA — cf. Ch. 10), et *cross-server confusion* (cf. Ch. 13).
+> - **Quatre vecteurs structurels** orchestrent les incidents 2025-2026 : *tool poisoning* sur MCP (jusqu'à 72 % ASR — MCPTox[^mcptox]), *indirect prompt injection* via emails/docs/calendrier (EchoLeak CVE-2025-32711, Reprompt CVE-2026-24307), ==*memory poisoning* persistant== (SpAIware, MINJA — cf. [Ch. 10](ch10-compaction.md)), et *cross-server confusion* (cf. [Ch. 13](ch13-mcp-securite.md)).
 > - **Principe directeur OWASP ASI Top 10 (décembre 2025) — *least agency*.** Ne jamais donner plus d'autonomie que la tâche ne l'exige. Sandboxing, permission modes scopés, HITL sur écritures via `interrupt()`. ==Une couche qui coûte au débit, qui se paie au centuple en incident évité.==
 > - **Synthèse menaces 2026** = six surfaces empilées (modèle, prompt, mémoire, outil, protocole, surface utilisateur). Toute fiche de sécurité d'un agent doit nommer **les six**, dire qui porte le risque, et inventorier les défenses choisies. Un agent admin sans HITL plus une injection indirecte égale l'incident post-mortem que personne ne veut signer.
 > - **Trois pièges 100 % traçables.** Confondre alignement et sécurité — un Claude 3.7 calé sur RLHF tombe sur Policy Puppetry en cinq minutes · trust des descriptions de tools MCP — OX Security a poisoné 9 registres sur 11 d'un seul payload · *single-layer defense* — un classifier seul est à un bug du bypass total.
@@ -39,8 +50,8 @@ Trois phénomènes sont souvent regroupés sous le terme *jailbreak* mais qu'il 
 
 Les trois exploitent la même cause racine : ==l'absence de séparation native entre instructions et données==. C'est exactement le constat que Mark Russinovich résume par une métaphore opérationnelle : *« un agent LLM est un junior employee très intelligent, très enthousiaste »*[^russinovich-junior]. Connaissances vastes, jugement réel proche de zéro, susceptible à l'ingénierie sociale. En 2026, ce junior a accès à l'email.
 
-> [!INFO] Voir Ch. 8 — Outils · Ch. 13 — MCP sécurité · Ch. 10 — Compaction
-> Ce chapitre est **le tronc commun** de la sécurité agentique. Le Ch. 8 a posé l'outil comme « décision d'architecture la plus chargée de la stack ». Le Ch. 13 détaille la matrice 10×10 spécifique à MCP. Le Ch. 10 décrit la couche cachée memory poisoning à travers la compaction. Lus ensemble, ils donnent les vecteurs ; ce chapitre donne le **threat model unifié** et les couches qui marchent vraiment.
+> [!INFO] Voir [Ch. 8 — Outils de l'agent](ch08-outils-de-lagent.md) · [Ch. 13 — MCP sécurité](ch13-mcp-securite.md) · [Ch. 10 — Compaction](ch10-compaction.md)
+> Le tronc commun de la sécurité agentique. Le [Ch. 8](ch08-outils-de-lagent.md) a posé l'outil comme « décision d'architecture la plus chargée de la stack ». Le [Ch. 13](ch13-mcp-securite.md) détaille la matrice 10×10 spécifique à MCP. Le [Ch. 10](ch10-compaction.md) décrit la couche cachée memory poisoning à travers la compaction. Lus ensemble, ils donnent les vecteurs ; le **threat model unifié** et les couches qui marchent vraiment se construisent ici.
 
 ---
 
@@ -120,21 +131,21 @@ Défenses qui marchent : **spotlighting** (delimiting + datamarking + base64 enc
 
 ### 19.5.2 Tool poisoning sur MCP
 
-==Le Ch. 13 détaille la matrice 10×10. On n'y revient pas==. Le résumé : trois familles — description poisoning, Full-Schema Poisoning, Advanced Tool Poisoning (output) — auxquels s'ajoutent rug pulls (mutation post-approval) et cross-server exfiltration. MCPTox (août 2025) : jusqu'à 72 % ASR sur leading LLM agents[^mcptox]. OX Security a poisoné 9 sur 11 MCP registries d'un seul payload, confirmant l'exécution de commandes sur six plateformes production live (LiteLLM, LangChain, IBM LangFlow)[^oxsec-mcp].
+==Le [Ch. 13](ch13-mcp-securite.md) détaille la matrice 10×10==. Résumé : trois familles — description poisoning, Full-Schema Poisoning, Advanced Tool Poisoning (output) — auxquels s'ajoutent rug pulls (mutation post-approval) et cross-server exfiltration. MCPTox (août 2025) : jusqu'à 72 % ASR sur leading LLM agents[^mcptox]. OX Security a poisoné 9 sur 11 MCP registries d'un seul payload, confirmant l'exécution de commandes sur six plateformes production live (LiteLLM, LangChain, IBM LangFlow)[^oxsec-mcp].
 
-### 19.5.3 Memory poisoning (cf. Ch. 10)
+### 19.5.3 Memory poisoning (cf. [Ch. 10](ch10-compaction.md))
 
 Une instruction plantée en session 1, activée en session 2 — ou 5 semaines plus tard — quand une query non liée la déclenche. **MINJA** (Dong et al. 2025) atteint 95 % d'injection success, 70 % de downstream attack success en interactions query-only[^minja]. **MemoryGraft** (décembre 2025) plante des *« successful experiences »* malveillantes plutôt que des jailbreaks directs[^memorygraft]. **SpAIware** (Rehberger, mai 2024) et la démonstration ChatGPT memory hacking (septembre 2024) ont montré le hijack du tool *« bio »*. **Morris-II** (arXiv 2403.02817) étend le memory poisoning à la propagation multi-agent via prompts auto-réplicatifs dans RAG partagé[^morris-ii].
 
-==Le Ch. 10 traite le cas spécifique de la compaction — un attaquant qui plante une injection à t, le résumé à t+10 la promeut au statut d'instruction utilisateur, et à t+20 elle s'exécute.== Les défenses : memory provenance tagging, sandbox de staging pour memory writes, contrôles d'accès explicites, confirmations out-of-band avant action.
+==Le [Ch. 10](ch10-compaction.md) traite le cas spécifique de la compaction — un attaquant qui plante une injection à t, le résumé à t+10 la promeut au statut d'instruction utilisateur, et à t+20 elle s'exécute.== Les défenses : memory provenance tagging, sandbox de staging pour memory writes, contrôles d'accès explicites, confirmations out-of-band avant action.
 
 ### 19.5.4 Cross-prompt injection (XPIA) et A2A
 
 Dans les systèmes multi-agents et les protocoles agent-to-agent, un agent compromis peut injecter des prompts dans d'autres agents via les messages inter-agents. Le contexte partagé de MCP — tous les outputs de tools atterrissent dans le même contexte agent — signifie qu'un tool empoisonné peut influencer le raisonnement sur d'autres tools (*infection attack* dans la littérature MCP)[^mcp-systematic]. Défenses immatures ; front actif de recherche en 2026.
 
-### 19.5.5 Visual Prompt Injection (VPI) sur computer use (cf. Ch. 15)
+### 19.5.5 Visual Prompt Injection (VPI) sur computer use (cf. [Ch. 15](ch15-computer-use.md))
 
-==Le Ch. 15 détaille==. Surface inédite des agents qui pilotent un écran : une image rendue par l'OS, un screenshot du browser, un bouton qui dit *« cliquez ici pour annuler »* — l'agent observe, plan, ground, act. La VPI ajoute un calque adversarial à n'importe quel rendu. CVE-2025-55322 documente le cas. Profil de latence dégradé, surface d'attaque inédite.
+==Le [Ch. 15](ch15-computer-use.md) détaille==. Surface inédite des agents qui pilotent un écran : une image rendue par l'OS, un screenshot du browser, un bouton qui dit *« cliquez ici pour annuler »* — l'agent observe, plan, ground, act. La VPI ajoute un calque adversarial à n'importe quel rendu. CVE-2025-55322 documente le cas. Profil de latence dégradé, surface d'attaque inédite.
 
 ---
 
@@ -239,7 +250,7 @@ Le threat model détermine quels layers sont **obligatoires** vs **optionnels**.
 6. **Pour agents : capability isolation enforced.** Un agent prod ne devrait pas avoir raw tool access ; tools wrappés en policy gates. CaMeL ou Dual-LLM pour high-impact actions.
 7. **Output filtering.** Llama Guard ou Constitutional Classifiers au stage output.
 8. **HITL pour high-impact actions.** Email, écriture base, transactions, déploiements code — confirmation user avec full action transparency (pattern Claude Code *« tool-call transparency »*).
-9. **Logger tout.** Chaque prompt, tool call, response. Provenance tags sur data flowing. Anomaly detection sur action patterns. ==C'est le cognitive audit trail du Ch. 18==.
+9. **Logger tout.** Chaque prompt, tool call, response. Provenance tags sur data flowing. Anomaly detection sur action patterns. ==C'est le cognitive audit trail du [Ch. 18](ch18-observabilite-cognitive-audit-trail.md)==.
 10. **Red-team continuously.** AgentDojo et AgentHarm sur le déploiement spécifique, mensuellement. Subscribe aux CVE disclosed. Bug-bounty avec explicit jailbreak rewards.
 
 ### 19.9.3 Anti-patterns documentés en post-mortems
@@ -253,14 +264,14 @@ Le threat model détermine quels layers sont **obligatoires** vs **optionnels**.
 
 ### 19.9.4 Régulation et compliance
 
-- **EU AI Act** — Art. 15 (cybersecurity, accuracy) applique aux haute-risque à partir d'août 2026. Documentation jailbreak resistance dans la technical file. Renvoi Ch. 23.
+- **EU AI Act** — Art. 15 (cybersecurity, accuracy) applique aux haute-risque à partir d'août 2026. Documentation jailbreak resistance dans la technical file. Renvoi [Ch. 23](ch23-gouvernance-ai-act.md).
 - **NIST AI RMF + Generative AI Profile (NIST AI 600-1)** — adversarial robustness comme Trustworthy AI characteristic ; prompt injection explicitement adressé.
 - **ISO/IEC 42001** (AI Management Systems, 2023) — risk-based controls pour menaces AI-specific.
 - **OWASP Top 10 for LLM Applications 2025 + Agentic Top 10 (déc. 2025)**[^owasp2025][^owasp-asi] — référence community-vetted pour contrôles requis. LLM01 (prompt injection) et LLM06 (excessive agency) les plus directement liés.
 - **France/UE** — CNIL guidance sur déploiement LLM sous RGPD (minimisation, finalité, base légale). ANSSI publie des recommandations techniques sur sécurité systèmes IA.
 
-> [!INFO] Voir Ch. 23 — Gouvernance · Ch. 16 — Analytics agentique banque
-> Le Ch. 23 reprend les calendriers AI Act art. 12/13/15 + DORA + machine unlearning. Le Ch. 16 a posé l'instanciation sectorielle banque tier 1 française (DORA + EBA + ACPR + BCBS 239 + souveraineté + Assured Workloads SecNumCloud). Pour chaque obligation, **quel rôle porte la signature** — DPO, RSSI, sponsor, CDO.
+> [!INFO] Voir [Ch. 23 — Gouvernance : AI Act, banque, machine unlearning](ch23-gouvernance-ai-act.md) · [Ch. 16 — Analytics agentique banque](ch16-analytics-agentique-banque.md)
+> Le [Ch. 23](ch23-gouvernance-ai-act.md) reprend les calendriers AI Act art. 12/13/15 + DORA + machine unlearning. Le [Ch. 16](ch16-analytics-agentique-banque.md) a posé l'instanciation sectorielle banque tier 1 française (DORA + EBA + ACPR + BCBS 239 + souveraineté + Assured Workloads SecNumCloud). Pour chaque obligation, **quel rôle porte la signature** — DPO, RSSI, sponsor, CDO.
 
 ---
 
@@ -271,16 +282,16 @@ L'angle propre du chapitre, et l'objet **transverse** de l'Acte IV : un threat m
 ![Schéma E4 — Threat model unifié 2026 : six surfaces, six familles, quatre parades load-bearing|1400](../../livre/images/20260601-e4-threat-model-unifie-2026.svg)
 
 > [!NOTE] À propos du Schéma E4
-> Version v1 — schéma transverse RSSI agrégeant les vecteurs identifiés en silos dans Ch.10 (memory poisoning SpAIware), Ch.13 (matrice MCP 10×10), Ch.15 (VPI + CVE-2025-55322), Ch.2 §2.6 (faithfulness CoT), Ch.3 §3.6 (reward hacking). Six cartes-surfaces en grille 3×2 avec, pour chacune, trois vecteurs typiques + parade dominante + renvoi chapitre. Bandeau bas : quatre parades load-bearing transverses (Sigstore + hash pinning · tool tagging · allowlist namespace · HITL writes irréversibles). Cité 4× dans le livre : Ch.19 (principal), Ch.10, Ch.13, Ch.15.
+> Version v1 — schéma transverse RSSI agrégeant les vecteurs identifiés en silos dans [Ch. 10](ch10-compaction.md) (memory poisoning SpAIware), [Ch. 13](ch13-mcp-securite.md) (matrice MCP 10×10), [Ch. 15](ch15-computer-use.md) (VPI + CVE-2025-55322), [Ch. 2](ch02-modeles-raisonnement.md) §2.6 (faithfulness CoT), [Ch. 3](ch03-process-reward-models.md) §3.6 (reward hacking). Six cartes-surfaces en grille 3×2 avec, pour chacune, trois vecteurs typiques + parade dominante + renvoi chapitre. Bandeau bas : quatre parades load-bearing transverses (Sigstore + hash pinning · tool tagging · allowlist namespace · HITL writes irréversibles).
 
 | Surface | Cible primaire | Vecteurs principaux | Défense load-bearing | Owner |
 | --- | --- | --- | --- | --- |
 | **(i) Modèle** | poids, refus, alignement | GCG, PAIR, Crescendo, MSJ, Policy Puppetry | Constitutional Classifiers v2 + circuit breakers | provider modèle + AI Safety Lead |
 | **(ii) Prompt** | system prompt, instructions | persona swap, encoding cipher, instruction override | spotlighting + StruQ/SecAlign | agent engineer |
-| **(iii) Mémoire** *(Ch. 10)* | scratchpad, long-term, compaction summary | SpAIware, MINJA, MemoryGraft, Morris-II | provenance tagging + sandboxed staging + signed compactions | platform engineer + DPO |
-| **(iv) Outil** *(Ch. 8 + 13)* | tool descriptions, schémas, outputs | Tool poisoning, FSP, ATPA, rug pull, cross-server exfil | Sigstore + hash pinning + tool tagging + HITL writes | platform engineer + RSSI |
-| **(v) Protocole** *(Ch. 12 + 13)* | MCP, A2A, AG-UI | namespace shadowing, OAuth+supply chain, infection attack | allowlist namespace + signed registries + per-user auth | integrations engineer + RSSI |
-| **(vi) Surface utilisateur** *(Ch. 15)* | écran, browser, copilote, on-behalf-of | VPI (CVE-2025-55322), typographic injection, social engineering UI | OCR + classifier + HITL + confirmation transparency | product manager + RSSI |
+| **(iii) Mémoire** *([Ch. 10](ch10-compaction.md))* | scratchpad, long-term, compaction summary | SpAIware, MINJA, MemoryGraft, Morris-II | provenance tagging + sandboxed staging + signed compactions | platform engineer + DPO |
+| **(iv) Outil** *([Ch. 8](ch08-outils-de-lagent.md) + [13](ch13-mcp-securite.md))* | tool descriptions, schémas, outputs | Tool poisoning, FSP, ATPA, rug pull, cross-server exfil | Sigstore + hash pinning + tool tagging + HITL writes | platform engineer + RSSI |
+| **(v) Protocole** *([Ch. 12](ch12-mcp-plateforme.md) + [13](ch13-mcp-securite.md))* | MCP, A2A, AG-UI | namespace shadowing, OAuth+supply chain, infection attack | allowlist namespace + signed registries + per-user auth | integrations engineer + RSSI |
+| **(vi) Surface utilisateur** *([Ch. 15](ch15-computer-use.md))* | écran, browser, copilote, on-behalf-of | VPI (CVE-2025-55322), typographic injection, social engineering UI | OCR + classifier + HITL + confirmation transparency | product manager + RSSI |
 
 ==Toute fiche de sécurité d'un agent **doit nommer les six** == — pas l'une, pas trois. Si un layer est absent, le justifier explicitement par le threat model (cf. §19.9.1) — typiquement *« cet agent n'a pas de mémoire long terme, surface (iii) inapplicable »*. Si un layer est présent sans défense load-bearing nommée, c'est un trou que le post-mortem viendra documenter.
 
@@ -309,9 +320,7 @@ Ce qui **n'arrive pas**, dans le jugement de l'auteur : un silver bullet au laye
 
 ## 19.12 Récap chapitre — six règles pour security engineer 2026
 
-Si le lecteur ne retient qu'une page de ce chapitre, c'est celle-ci.
-
-==**Six règles opérationnelles** pour qui déploie un LLM en 2026==.
+==**À retenir** : six règles opérationnelles pour qui déploie un LLM en 2026==.
 
 1. **Traiter chaque input, output, tool description, memory entry comme untrusted.** Software security classique ; les LLMs ne changent rien à ça.
 2. **Defense-in-depth ou rien.** Single-layer defenses tombent. Cinq layers est le consensus opératoire : alignement modèle, classifier input, system prompt hardening, isolation architecturale, output monitoring.

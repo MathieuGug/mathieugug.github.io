@@ -1,7 +1,18 @@
+---
+chapitre: 10
+titre: "Compaction et oubli stratégique"
+acte: 2
+acte_titre: "La boucle"
+gabarit: standard
+mots: 4880
+statut: v1
+date_maj: 2026-05-29
+---
+
 # Chapitre 10 — Compaction et oubli stratégique
 
 > **Acte II — La boucle · Chapitre standard, ~22 pages**
-> _Comment fait-on **oublier** un agent sans détruire sa cohérence ? Le chapitre traite la compaction du contexte comme **première politique d'oubli** d'un système agentique — angle mort de l'observabilité 2026, futur sujet réglementaire de l'AI Act._
+> _Comment fait-on **oublier** un agent sans détruire sa cohérence ? La compaction du contexte est la **première politique d'oubli** d'un système agentique — angle mort de l'observabilité 2026, futur sujet réglementaire de l'AI Act._
 
 > [!QUESTION] Question d'ouverture
 > Pourquoi 1 M tokens de fenêtre ne suffisent pas en pratique ? Et comment décide-t-on, dans un agent qui tourne quatre heures, **ce qui doit être oublié** — sans casser la suite de la trajectoire et sans laisser passer une instruction malveillante de t–3 heures à t+0 ?
@@ -16,12 +27,12 @@
 
 ## 10.1 De la mémoire à la compaction
 
-Le chapitre précédent a posé la **grille des quatre piliers** de la mémoire agentique : *travail* (scratchpad de l'instant présent), *sémantique* (règles et faits, l'encyclopédie de l'agent), *épisodique* (cas vécus, journal de bord), *procédurale* (savoir-faire, séquences d'actions). Trois de ces piliers s'externalisent volontiers (RAG sur base de connaissances, embeddings horodatés, workflows induits). Un seul reste intrinsèquement contraint par le modèle : **la mémoire de travail**, qui vit dans la fenêtre de contexte — et qui sature à mesure que la trajectoire avance.
+La mémoire agentique s'organise selon quatre piliers : *travail* (scratchpad de l'instant présent), *sémantique* (règles et faits, l'encyclopédie de l'agent), *épisodique* (cas vécus, journal de bord), *procédurale* (savoir-faire, séquences d'actions). Trois de ces piliers s'externalisent volontiers (RAG sur base de connaissances, embeddings horodatés, workflows induits). Un seul reste intrinsèquement contraint par le modèle : **la mémoire de travail**, qui vit dans la fenêtre de contexte — et qui sature à mesure que la trajectoire avance.
 
 C'est cette mémoire de travail que la **compaction** gouverne. Ce n'est pas un détail d'implémentation : c'est la politique qui décide, à chaque seuil de saturation, ce que l'agent **continue à voir** et ce qu'il **cesse d'avoir** sous les yeux. À l'échelle d'un agent qui tourne plus de vingt minutes, c'est la couche la plus négligée — et la plus coûteuse quand elle est mal faite.
 
-> [!INFO] Voir Ch. 9 — Mémoire agentique
-> Le présent chapitre approfondit le pilier *travail* / scratchpad. Les piliers long-terme (sémantique, épisodique, procédurale) sont traités en Ch. 9 §3-§5, avec leurs architectures de production respectives (Letta, Mem0, Zep, A-MEM, Generative Agents).
+> [!INFO] Voir [Ch. 9 — Mémoire agentique : 4 piliers, 6 opérations, 5 architectures](ch09-memoire-agentique.md)
+> Le pilier *travail* / scratchpad est approfondi ici. Les piliers long-terme (sémantique, épisodique, procédurale) sont traités en [Ch. 9](ch09-memoire-agentique.md) §3-§5, avec leurs architectures de production respectives (Letta, Mem0, Zep, A-MEM, Generative Agents).
 
 ---
 
@@ -249,8 +260,8 @@ La mitigation suit trois pistes :
 - **Compactor sandbox** : le compactor tourne dans un sandbox sans accès aux outils, et son output passe par un filtre dédié qui détecte les promotions d'instruction.
 - **Ledger transparent** : chaque compaction produit un hash auditable du contenu jeté et du résumé produit, permettant un *replay* offline pour la sécurité.
 
-> [!INFO] Voir Ch. 19 — Sécurité globale et threat model unifié
-> Le vecteur SpAIware est l'un des six axes du **schéma E4 (threat model unifié 2026)** qui agrège, en Ch. 19, les vecteurs modèle / prompt / mémoire / outil / protocole / surface. Le présent chapitre traite la verticale mémoire ; le Ch. 19 fournit la matrice transverse.
+> [!INFO] Voir [Ch. 19 — Garde-fous et sécurité globale](ch19-gardefous-securite-globale.md)
+> Le vecteur SpAIware est l'un des six axes du **schéma E4 (threat model unifié 2026)** qui agrège, en [Ch. 19](ch19-gardefous-securite-globale.md), les vecteurs modèle / prompt / mémoire / outil / protocole / surface. La verticale mémoire est traitée ici ; le [Ch. 19](ch19-gardefous-securite-globale.md) fournit la matrice transverse.
 
 ---
 
@@ -273,8 +284,8 @@ Trois cas de figure :
 >
 > Conséquence directe pour la compaction : ==le *ledger* — l'historique des compactions, le résumé produit, les pointeurs vers le contenu jeté — devient une obligation documentaire pour les déployeurs en production.== Un compactor non instrumenté = un risque réglementaire à dix-huit mois.
 
-> [!INFO] Voir Ch. 23 — Gouvernance, machine unlearning et AI Act
-> Le Ch. 23 traite la grille réglementaire dans son ensemble (calendrier 2026-2027, sous-puits *machine unlearning*, rôle DPO/RSSI/Sponsor). La présente section instancie sur le cas spécifique de la compaction.
+> [!INFO] Voir [Ch. 23 — Gouvernance, machine unlearning et AI Act](ch23-gouvernance-ai-act.md)
+> [Ch. 23](ch23-gouvernance-ai-act.md) traite la grille réglementaire dans son ensemble (calendrier 2026-2027, sous-puits *machine unlearning*, rôle DPO/RSSI/Sponsor). Le cas compaction est instancié ici.
 
 ---
 
@@ -298,8 +309,8 @@ Au lieu d'un résumé unique, plusieurs résolutions cohabitent : un *abstract* 
 
 L'AI Act art. 25 transformera cette observabilité en *obligation*. Un déployeur qui ne peut pas démontrer ce qu'il a oublié, et quand, ne pourra pas démontrer sa conformité.
 
-> [!INFO] Voir Ch. 18 — Observabilité agentique
-> Le WG OpenTelemetry GenAI semconv actif fin 2026 sur les attributs `gen_ai.compaction.*` est tracé en Ch. 18 §4.3 comme *front actif* de la télémétrie production. Le Ch. 18 décrit la grille complète à six piliers ; ici, on instancie sur la compaction.
+> [!INFO] Voir [Ch. 18 — Observabilité agentique et cognitive audit trail](ch18-observabilite-cognitive-audit-trail.md)
+> Le WG OpenTelemetry GenAI semconv actif fin 2026 sur les attributs `gen_ai.compaction.*` est tracé en [Ch. 18](ch18-observabilite-cognitive-audit-trail.md) §4.3 comme *front actif* de la télémétrie production. La grille complète à six piliers est en [Ch. 18](ch18-observabilite-cognitive-audit-trail.md).
 
 ---
 
@@ -307,7 +318,7 @@ L'AI Act art. 25 transformera cette observabilité en *obligation*. Un déployeu
 
 ![Le triangle fidélité × coût × oubliabilité — récap chapitre|1300](../../compaction-agentique/images/20260527-04-triangle-tradeoff.svg)
 
-Si le lecteur ne retient qu'une page de ce chapitre, c'est celle-ci. ==Trois sommets, deux maximisables, un sacrifié.== Choisir lequel sacrifier n'est pas une décision technique : c'est un arbitrage régulatoire (RGPD/AI Act) ET économique (B2C grand volume vs B2B SLA audit) qui engage le DPO autant que le tech lead. C'est pourquoi la compaction sort, en 2026-2027, du périmètre des équipes plateforme pour entrer dans celui de la gouvernance.
+==**À retenir** : trois sommets — fidélité × coût × oubliabilité —, deux maximisables, un sacrifié.== Choisir lequel sacrifier n'est pas une décision technique : c'est un arbitrage régulatoire (RGPD/AI Act) ET économique (B2C grand volume vs B2B SLA audit) qui engage le DPO autant que le tech lead. C'est pourquoi la compaction sort, en 2026-2027, du périmètre des équipes plateforme pour entrer dans celui de la gouvernance.
 
 ---
 

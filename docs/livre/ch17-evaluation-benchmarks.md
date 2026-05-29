@@ -1,7 +1,18 @@
+---
+chapitre: 17
+titre: "Évaluer un agent (et débunker les leaderboards)"
+acte: 4
+acte_titre: "Mesures et garde-fous"
+gabarit: charnière
+mots: 11050
+statut: v1
+date_maj: 2026-05-29
+---
+
 # Chapitre 17 — Évaluer un agent (et débunker les leaderboards)
 
 > **Acte IV — Mesures et garde-fous · Chapitre charnière, ~32 pages**
-> _Comment passe-t-on du F1 classique aux trajectoires multi-tours — et pourquoi un score SWE-bench impressionnant ne survit pas à un audit d'entreprise ? Ce chapitre fusionne deux dossiers source (`evaluation-agentique/`, `benchmarks-contestes/`) en une grille à deux mouvements simultanés : construire son éval interne datée (playbook gruyère en 8 étapes, LLM-as-judge calibré, τ-bench dual-control, pass@k vs pass^k, OTel) ; refuser de signer sur les benchmarks publics (quatre vecteurs de contamination, benchmark teams industrialisées, contre-mouvement vivant)._
+> _Comment passe-t-on du F1 classique aux trajectoires multi-tours — et pourquoi un score SWE-bench impressionnant ne survit pas à un audit d'entreprise ? Deux objets épistémiques se lisent rarement ensemble — l'évaluation construite (graders, trajectoires, pass^k) et la démolition (contaminations qui rendent les leaderboards illisibles) — et forment pourtant une grille à deux mouvements simultanés : construire son éval interne datée (playbook gruyère en 8 étapes, LLM-as-judge calibré, τ-bench dual-control, pass@k vs pass^k, OTel) ; refuser de signer sur les benchmarks publics (quatre vecteurs de contamination, benchmark teams industrialisées, contre-mouvement vivant)._
 
 > [!QUESTION] Question d'ouverture
 > Le 14 mai 2026, Anthropic annonce Claude Opus 4.7 à **78,2 %** sur SWE-bench Verified[^11]. Le même jour, une banque européenne qui a accepté la mesure interne rapporte **26 %** de réparations correctes sur 120 issues fermées de son monorepo[^11]. Trois fois moins. ==Si l'écart entre le score publié et le rendement terrain atteint un facteur 3, qu'est-ce qu'on mesure exactement — et que doit-on construire en parallèle pour décider d'acheter, déployer, ou tuer un agent ?==
@@ -18,26 +29,20 @@
 
 ---
 
-## 17.1 Pourquoi un seul chapitre éval ET benchmarks
+## 17.1 Pourquoi tenir éval ET benchmarks ensemble
 
-### 17.1.1 La place de ce chapitre dans l'Acte IV
-
-L'**Acte II** du livre a construit la boucle (Ch. 7 harness, Ch. 9 mémoire, Ch. 10 compaction, Ch. 11 patterns). L'**Acte III** a habillé l'agent d'interfaces (Ch. 12-13 MCP, Ch. 14 surfaces, Ch. 15 computer use). L'**Acte IV** prend le problème dans le sens inverse : qu'est-ce qui permet de **savoir** si l'agent fonctionne, à quel coût, sans dériver. Trois chapitres tiennent ce mouvement : ici, l'évaluation et les benchmarks ; au Ch. 18, l'observabilité production et le cognitive audit trail ; au Ch. 19, les garde-fous et le threat model unifié.
-
-Ce chapitre est la **charnière** qui ouvre l'Acte IV. Il fusionne deux dossiers (`evaluation-agentique/`, `benchmarks-contestes/`) qui se lisent rarement ensemble dans la littérature 2026, et qui forment pourtant un seul objet épistémique. ==Le premier construit ; le second démolit. Lus séparément, on optimise un proxy ; lus ensemble, on prépare la décision.==
-
-### 17.1.2 Le double mouvement — construire et démolir
+### 17.1.1 Le double mouvement — construire et démolir
 
 La discipline qui sépare une équipe qui sait déployer un agent en production d'une équipe qui restera en pilote tient en une phrase : tenir **simultanément** les deux mouvements.
 
-D'un côté, **bâtir une éval interne vivante** — c'est la matière du dossier `evaluation-agentique/`, à laquelle Anthropic, Sierra Research, OpenAI ADK, AWS Strands et Microsoft Foundry consacrent un investissement industriel en 2025-2026. L'outillage existe ; les métriques convergent (faithfulness, tool call accuracy, goal completion, CLEAR à cinq dimensions) ; les frameworks se cartographient en quatre quadrants. C'est tractable.
+D'un côté, **bâtir une éval interne vivante**, à laquelle Anthropic, Sierra Research, OpenAI ADK, AWS Strands et Microsoft Foundry consacrent un investissement industriel en 2025-2026. L'outillage existe ; les métriques convergent (faithfulness, tool call accuracy, goal completion, CLEAR à cinq dimensions) ; les frameworks se cartographient en quatre quadrants. C'est tractable.
 
-De l'autre, **refuser le narrative public** — c'est la matière du dossier `benchmarks-contestes/`. Tous les benchmarks centraux de l'évaluation agentique en 2026 (SWE-bench, GAIA, OSWorld, τ-bench) présentent la même pathologie déclinée : indexés sur des distributions fixes, contaminés par le pré-entraînement, hackés par des équipes dédiées, comparés entre eux sur des objets de natures différentes. ==Un acheteur qui décide sur un leaderboard public achète l'effort d'optimisation d'une équipe inconnue sur une distribution qu'il n'utilisera pas.==
+De l'autre, **refuser le narrative public**. Tous les benchmarks centraux de l'évaluation agentique en 2026 (SWE-bench, GAIA, OSWorld, τ-bench) présentent la même pathologie déclinée : indexés sur des distributions fixes, contaminés par le pré-entraînement, hackés par des équipes dédiées, comparés entre eux sur des objets de natures différentes. ==Un acheteur qui décide sur un leaderboard public achète l'effort d'optimisation d'une équipe inconnue sur une distribution qu'il n'utilisera pas.==
 
-Tenir les deux est la compétence rare. C'est aussi ce qui rend ce chapitre charnière : il faut la double lecture pour décider.
+Tenir les deux est la compétence rare : il faut la double lecture pour décider.
 
-> [!INFO] Voir Ch. 7 — Boucle et harness · Ch. 18 — Observabilité · Ch. 21 — ROI
-> Le harness (Ch. 7) est ce qui produit la trajectoire qu'on évalue. L'observabilité (Ch. 18) est ce qui rend la trajectoire visible en production. Le ROI (Ch. 21) est ce qui agrège l'outcome en valeur métier. Ce chapitre tient le **maillon central** : transformer une trajectoire en signal de décision — et ne pas confondre signal de décision avec score de leaderboard.
+> [!INFO] Voir [Ch. 7 — Boucle et harness](ch07-boucle-agentique.md) · [Ch. 18 — Observabilité](ch18-observabilite-cognitive-audit-trail.md) · [Ch. 21 — ROI](ch21-roi-paradoxe-agentique.md)
+> Le harness ([Ch. 7](ch07-boucle-agentique.md)) est ce qui produit la trajectoire qu'on évalue. L'observabilité ([Ch. 18](ch18-observabilite-cognitive-audit-trail.md)) est ce qui rend la trajectoire visible en production. Le ROI ([Ch. 21](ch21-roi-paradoxe-agentique.md)) est ce qui agrège l'outcome en valeur métier. ==Le maillon central== : transformer une trajectoire en signal de décision — et ne pas confondre signal de décision avec score de leaderboard.
 
 ---
 
@@ -71,7 +76,7 @@ Trois implications majeures.
 
 **L'agent peut trouver des chemins non prévus.** Anthropic rapporte le cas d'Opus 4.5 résolvant un problème de τ²-bench en exploitant une faille de la *policy* — il « échoue » au sens de l'eval écrite, mais propose une meilleure solution pour l'utilisateur[^3]. Évaluer le chemin (sequence de tool calls attendus) plutôt que l'outcome **punit la créativité**.
 
-**La mémoire et le contexte ouvrent une nouvelle surface d'évaluation.** Les benchmarks MemoryCD, Mem2ActBench et Letta Memory Benchmark mesurent la capacité d'un agent à *décider* quoi récupérer en mémoire et à l'appliquer sous contrainte d'outils — compétence absente du paradigme RAG simple. Ce sujet revient en Ch. 9 et Ch. 10 sous l'angle architecture ; ici, il est un objet d'évaluation à part entière.
+**La mémoire et le contexte ouvrent une nouvelle surface d'évaluation.** Les benchmarks MemoryCD, Mem2ActBench et Letta Memory Benchmark mesurent la capacité d'un agent à *décider* quoi récupérer en mémoire et à l'appliquer sous contrainte d'outils — compétence absente du paradigme RAG simple. Ce sujet revient en [Ch. 9](ch09-memoire-agentique.md) et [Ch. 10](ch10-compaction.md) sous l'angle architecture ; ici, il est un objet d'évaluation à part entière.
 
 > [!QUOTE] Anthropic Engineering — janvier 2026
 > *« Un agent qui annonce "votre vol est réservé" sans avoir réellement créé la réservation en base échoue sur l'outcome, pas sur le transcript. »*[^3] La distinction transcript ≠ outcome est la rupture épistémique de l'agentique. Une eval qui se contente du transcript valide un agent qui ment poliment.
@@ -96,7 +101,7 @@ L'industrie a convergé sur un lexique partagé, formalisé notamment par Anthro
 - **Evaluation harness** — l'infrastructure qui orchestre les evals end-to-end (parallélisation, isolation, grading, agrégation).
 - **Eval suite** — collection de tasks partageant un objectif (ex : refunds, cancellations, escalations pour un agent support).
 
-Ce vocabulaire est désormais commun à Anthropic, OpenAI[^4], Google ADK[^9], AWS Strands[^10] et Microsoft Foundry[^7]. La normalisation autour d'OpenTelemetry GenAI (cf. Ch. 18) renforce cette convergence en standardisant les attributs de span (`invoke_agent`, `gen_ai.tool.call`, etc.).
+Ce vocabulaire est désormais commun à Anthropic, OpenAI[^4], Google ADK[^9], AWS Strands[^10] et Microsoft Foundry[^7]. La normalisation autour d'OpenTelemetry GenAI (cf. [Ch. 18](ch18-observabilite-cognitive-audit-trail.md)) renforce cette convergence en standardisant les attributs de span (`invoke_agent`, `gen_ai.tool.call`, etc.).
 
 ### 17.3.2 Trois familles de graders
 
@@ -527,7 +532,7 @@ Au-delà du coût, l'inventaire des points de blocage récurrents — confirmé 
 - **Eval saturation invisible.** Une suite saturée à 100 % donne une fausse confiance. Sans nouvelle suite plus difficile en parallèle, les progrès du modèle deviennent invisibles dans le bruit.
 - **Benchmark hacking et data contamination.** Des audits récents ont identifié des taux d'erreur d'annotation > 50 % sur des benchmarks text-to-SQL populaires.
 
-Cinq leviers d'optimisation à fort retour valent la peine d'être nommés[^23][^30] : **SLM-judges spécialisés** (Luna-2, fine-tuned classifiers) pour réduire le coût juge de 90 % tout en maintenant la corrélation humaine ; **routage adaptatif** juge frontière / juge SLM / check programmatic ; **evals sur traces production** plutôt que rerun complet (cf. Ch. 18) ; **Code Mode pour le harness** (dynamic tool loading) ; **discipline de saturation** — retirer les tasks saturées vers la régression suite, libérer le budget eval.
+Cinq leviers d'optimisation à fort retour valent la peine d'être nommés[^23][^30] : **SLM-judges spécialisés** (Luna-2, fine-tuned classifiers) pour réduire le coût juge de 90 % tout en maintenant la corrélation humaine ; **routage adaptatif** juge frontière / juge SLM / check programmatic ; **evals sur traces production** plutôt que rerun complet (cf. [Ch. 18](ch18-observabilite-cognitive-audit-trail.md)) ; **Code Mode pour le harness** (dynamic tool loading) ; **discipline de saturation** — retirer les tasks saturées vers la régression suite, libérer le budget eval.
 
 ---
 
@@ -553,14 +558,14 @@ Les fondeurs offrent leur propre couche d'évaluation, à comprendre comme un *f
 
 L'étude Arena (CAIS 2026) mesure six frameworks (Claude Agent SDK, LangChain, LangGraph, AWS Strands, CrewAI, Google ADK) à modèle fixé[^32]. Conclusion notable : sur des tâches simples, tous les frameworks performent de manière comparable ; à mesure que la complexité augmente, ==les frameworks traditionnels exigent 2 à 4× plus de code d'orchestration scenario-spécifique sans gain de correctness==. Implication pour l'évaluation : le *modèle* et le *prompt* portent l'essentiel du signal ; le *framework* est largement substituable.
 
-> [!INFO] Voir Ch. 18 — Observabilité agentique
-> Le standard **OpenTelemetry GenAI Semantic Conventions** (spans `invoke_agent`, attributs `gen_ai.*`) est la fondation sur laquelle s'appuient tous les outils online (Langfuse, Phoenix, Foundry, AgentCore). Le Ch. 18 déroule la grille à six piliers et le **cognitive audit trail** (réponse à AI Act art. 12-13-15 + RGPD art. 22). Ici, on retient que les traces deviennent *le matériau d'évaluation continue* — c'est ce qui permet d'évaluer le trafic réel plutôt qu'un dataset reconstitué.
+> [!INFO] Voir [Ch. 18 — Observabilité agentique](ch18-observabilite-cognitive-audit-trail.md)
+> Le standard **OpenTelemetry GenAI Semantic Conventions** (spans `invoke_agent`, attributs `gen_ai.*`) est la fondation sur laquelle s'appuient tous les outils online (Langfuse, Phoenix, Foundry, AgentCore). Le [Ch. 18](ch18-observabilite-cognitive-audit-trail.md) déroule la grille à six piliers et le **cognitive audit trail** (réponse à AI Act art. 12-13-15 + RGPD art. 22). Ici, on retient que les traces deviennent *le matériau d'évaluation continue* — c'est ce qui permet d'évaluer le trafic réel plutôt qu'un dataset reconstitué.
 
 ---
 
 ## Récap chapitre — Construire et démolir simultanément
 
-Si le lecteur ne retient que deux pages de ce chapitre, ce sont celles-ci : le **playbook gruyère en 8 étapes** côté construction, et la **carte 2×2 des quatre vecteurs de contamination** côté démolition. Lues ensemble, elles forment la grille d'achat complète.
+==**À retenir** : deux pages-clés== — le **playbook gruyère en 8 étapes** côté construction, et la **carte 2×2 des quatre vecteurs de contamination** côté démolition. Lues ensemble, elles forment la grille d'achat complète.
 
 ![Roadmap de mise en place et modèle gruyère suisse de l'évaluation|1300](../../evaluation-agentique/images/20260501-10-playbook-gruyere.svg)
 
@@ -609,7 +614,7 @@ L'investissement marginal au-delà (ensemble de juges, simulateur multi-agent, R
 
 [^10]: AWS, *Simulate realistic users to evaluate multi-turn AI agents in Strands Evals*, AWS Machine Learning Blog, mars 2026. <https://aws.amazon.com/blogs/machine-learning/simulate-realistic-users-to-evaluate-multi-turn-ai-agents-in-strands-evals/>
 
-[^11]: Audit de terrain banque européenne (mai 2026) cité dans : *Benchmarks agentiques contestés*, Mathieu Guglielmino, dossier site, 15 mai 2026 ; et Anthropic, *Claude Opus 4.7 — model card and benchmarks*, mai 2026.
+[^11]: Audit de terrain banque européenne (mai 2026) cité dans : Mathieu Guglielmino, *Benchmarks agentiques contestés*, 15 mai 2026 ; et Anthropic, *Claude Opus 4.7 — model card and benchmarks*, mai 2026.
 
 [^12]: Jimenez C. E. et al., *SWE-bench : Can Language Models Resolve Real-World GitHub Issues ?*, Princeton NLP, octobre 2023 (publié ICLR 2024). <https://arxiv.org/abs/2310.06770>
 

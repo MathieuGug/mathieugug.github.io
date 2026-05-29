@@ -1,7 +1,18 @@
+---
+chapitre: 15
+titre: "Computer use : le régime extrême"
+acte: 3
+acte_titre: "Les interfaces"
+gabarit: standard
+mots: 7530
+statut: v1
+date_maj: 2026-05-29
+---
+
 # Chapitre 15 — Computer use : le régime extrême
 
 > **Acte III — Les interfaces · Chapitre standard, ~18 pages**
-> _Le Ch.14 a posé les quatre régimes d'accès et cadré l'on-behalf-of comme régime UX. Ce chapitre zoome sur le sous-régime extrême : **le pilotage d'écran**. Quand l'agent voit ce que voit l'humain, et clique comme cliquerait l'humain, la boucle change de forme, l'économie change de profil, et la surface d'attaque change qualitativement. La saturation symbolique d'OSWorld par OSAgent en octobre 2025 — premier système au-dessus du baseline humain — coexiste avec le cliff UI-CUBE (87 % → 32 % sur les workflows enterprise complexes) ; ce chapitre tient les deux courbes en même temps._
+> _Le [Ch. 14](ch14-surfaces-agentiques.md) a posé les quatre régimes d'accès et cadré l'on-behalf-of comme régime UX. Voici le sous-régime extrême : **le pilotage d'écran**. Quand l'agent voit ce que voit l'humain, et clique comme cliquerait l'humain, la boucle change de forme, l'économie change de profil, et la surface d'attaque change qualitativement. La saturation symbolique d'OSWorld par OSAgent en octobre 2025 — premier système au-dessus du baseline humain — coexiste avec le cliff UI-CUBE (87 % → 32 % sur les workflows enterprise complexes) ; les deux courbes tiennent ensemble._
 
 > [!QUESTION] Question d'ouverture
 > Anthropic inaugure la catégorie en publiant *computer use* sur Claude 3.5 Sonnet le 22 octobre 2024[^1] ; en dix-huit mois, le score état de l'art OSWorld passe de 12,2 % (avril 2024) à **76,26 %** (OSAgent, octobre 2025) — premier dépassement du baseline humain ~72 %[^4][^5]. Au même moment, UI-CUBE (UiPath, novembre 2025) mesure une chute de 68–87 % à **15–32 %** entre tâches simples et tâches enterprise complexes — *« limitation architecturale fondamentale »*, pas un déficit de prompting[^6]. Et un même agent, rejoué dix fois sur la même tâche, produit dix trajectoires divergentes[^42]. Si la promesse a tenu sur le benchmark et craqué sur le terrain au même trimestre, qu'est-ce qu'on industrialise vraiment ?
@@ -11,22 +22,11 @@
 > - **Cinq phases dans la boucle**, pas quatre. Observe · plan · ground · act · **verify** — le cinquième nœud, longtemps optionnel, est ce qui explique le résultat superhumain d'OSAgent (auto-vérification temps réel + retry sur étape ratée). Sans verify, les erreurs se composent catastrophiquement.
 > - ==Trois architectures concurrentes en 2026.== *(i)* vision pure (Claude computer use, UI-TARS-1.5), *(ii)* vision + parseur dédié (OmniParser + LLM, Agent S2), *(iii)* agent intégré perception-action (UI-TARS-2, Magma Microsoft). Aucune ne domine — convergence prévue 18-24 mois vers (iii).
 > - **La latence est le coût caché plus que la précision.** 30 s humain vs 12 min Agent S2 = **ratio 24×**, dont 75–94 % consommés par les appels LLM de planification/réflexion[^7]. L'usage dominant en prod est l'automatisation arrière-plan (66 % tolèrent minutes, 17 % no limit selon enquête prod 2026[^43]) — pas l'interaction temps-réel.
-> - ==Surface d'attaque qualitativement inédite.== VPI (Visual Prompt Injection) jusqu'à **51 % de succès contre les CUA et 100 % contre les BUA** sur certaines plateformes[^8]. CVE-2025-55322 OmniParser (septembre 2025) : le control plane qui pilote la VM devient un vecteur RCE[^9]. Ces deux verticales nouvelles s'ajoutent au threat model unifié E4 du Ch.19 — la matrice MCP du Ch.13 ne les couvre pas.
+> - ==Surface d'attaque qualitativement inédite.== VPI (Visual Prompt Injection) jusqu'à **51 % de succès contre les CUA et 100 % contre les BUA** sur certaines plateformes[^8]. CVE-2025-55322 OmniParser (septembre 2025) : le control plane qui pilote la VM devient un vecteur RCE[^9]. Ces deux verticales nouvelles s'ajoutent au threat model unifié E4 du [Ch. 19](ch19-gardefous-securite-globale.md) — la matrice MCP du [Ch. 13](ch13-mcp-securite.md) ne les couvre pas.
 
 ---
 
-## 15.1 La place de ce chapitre — le sous-régime extrême de l'on-behalf-of
-
-### 15.1.1 Du régime 4 (Ch.14) au pilotage écran
-
-Le Ch.14 a posé quatre régimes d'accès — chat, copilote inline, canvas génératif, agent on-behalf-of. Le régime 4 a quatre sous-familles : browser agents, engineering agents, vertical agents, enterprise workflow agents. Ce chapitre traite **une fraction précise** de la première sous-famille : ==les agents qui pilotent un écran *comme un humain*, sans API métier intermédiaire, via les primitives standard d'un système d'exploitation ou d'un navigateur (curseur, clics, clavier, scroll, zoom)==.
-
-C'est la frontière qui définit la catégorie *computer use* (CUA, pour *Computer-Using Agent*). Un agent qui appelle une API REST n'est pas un CUA ; un agent qui clique dans une UI Salesforce sans connecteur dédié l'est. La distinction est consequentielle : un CUA hérite **toutes** les fragilités d'une UI graphique (icônes minuscules, libellés ambigus, hover states, modaux qui changent le DOM), et il dispose, en retour, de la propriété structurelle qui justifie son existence — il fonctionne sur **n'importe quel** logiciel sans intégration sur-mesure.
-
-> [!INFO] Voir Ch. 14 — Surfaces agentiques §14.6
-> Le Ch.14 a cadré l'on-behalf-of comme régime UX, avec les quatre questions critiques (qu'est-ce qu'il fait / comment interrompre / valider l'irréversible / pourquoi), les chiffres business (Cursor, Devin, Sierra, Harvey, Agentforce), et la double bascule économique 2026 (coût 0,05–0,15 $/tâche × précision GUI > 90 %). Le présent chapitre déroule le sous-régime extrême — pilotage écran — avec sa boucle à cinq phases, ses trois architectures, sa surface d'attaque et son économie. La grille **Knight five-tier** du Ch.14 §14.8 s'applique : un agent computer use en prod est typiquement **approver** (Plan Mode + confirmation contextuelle) ou **observer** (activity panel + audit log), **jamais operator** au sens strict (l'opérateur est l'agent, pas l'humain).
-
-### 15.1.2 Pourquoi un chapitre dédié
+## 15.1 Définition et taxonomie
 
 Trois propriétés font du computer use un sous-régime qualitativement différent des autres on-behalf-of :
 
@@ -34,15 +34,12 @@ Trois propriétés font du computer use un sous-régime qualitativement différe
 2. ==**L'économie unitaire est dégradée.**== L'overhead d'un appel computer use est non négligeable (466–499 tokens système chez Anthropic[^28]), la latence est de plusieurs secondes par étape, et la précision GUI nécessaire requiert un modèle haut de gamme. Le ratio coût/valeur n'est positif que sur des cas d'usage à fort volume ou à fort coût humain.
 3. ==**La surface d'attaque est insolite.**== Un attaquant peut cacher des instructions *dans des pixels* — VPI (Visual Prompt Injection) — ou compromettre le *control plane* qui pilote la VM (CVE-2025-55322 sur OmniParser). Aucun pattern défensif MCP classique ne couvre ces vecteurs.
 
-Ce sont ces trois propriétés que le chapitre déroule. Il ne refait pas l'inventaire concurrentiel du Ch.14 (Cursor, Devin, Sierra) — il ajoute la couche d'industrialisation propre à la catégorie CUA.
+> [!INFO] Voir [Ch. 14 — Surfaces agentiques](ch14-surfaces-agentiques.md) §14.6
+> Le [Ch. 14](ch14-surfaces-agentiques.md) a cadré l'on-behalf-of comme régime UX, avec les quatre questions critiques (qu'est-ce qu'il fait / comment interrompre / valider l'irréversible / pourquoi), les chiffres business (Cursor, Devin, Sierra, Harvey, Agentforce), et la double bascule économique 2026 (coût 0,05–0,15 $/tâche × précision GUI > 90 %). Ici, le sous-régime extrême — pilotage écran — avec sa boucle à cinq phases, ses trois architectures, sa surface d'attaque et son économie. La grille **Knight five-tier** du [Ch. 14](ch14-surfaces-agentiques.md) §14.8 s'applique : un agent computer use en prod est typiquement **approver** (Plan Mode + confirmation contextuelle) ou **observer** (activity panel + audit log), **jamais operator** au sens strict (l'opérateur est l'agent, pas l'humain).
 
----
+### 15.1.1 Anatomie d'une famille en cours de structuration
 
-## 15.2 Définition et taxonomie
-
-### 15.2.1 Anatomie d'une famille en cours de structuration
-
-Un **agent computer use** (CUA) est un système qui perçoit l'interface graphique d'un ordinateur (capture d'écran, accessibility tree, ou DOM) et agit dessus via les primitives standard d'un humain : déplacement de curseur, clics, saisie clavier, raccourcis. Il ne dépend ni d'API métiers ni de connecteurs spécialisés — c'est ce qui le distingue des agents de tool-use classiques. Anthropic a formalisé cette ligne dans son annonce d'octobre 2024 : *« Claude a été entraîné à des compétences informatiques générales, lui permettant d'utiliser un large éventail d'outils standard et de logiciels »*[^1].
+Un **agent computer use** (CUA) est un système qui perçoit l'interface graphique d'un ordinateur (capture d'écran, accessibility tree, ou DOM) et agit dessus via les primitives standard d'un humain : déplacement de curseur, clics, saisie clavier, raccourcis. Il ne dépend ni d'API métiers ni de connecteurs spécialisés — c'est ce qui le distingue des agents de tool-use classiques. Anthropic a formalisé cette ligne dans son annonce d'octobre 2024 : « Claude a été entraîné à des compétences informatiques générales, lui permettant d'utiliser un large éventail d'outils standard et de logiciels »[^1].
 
 ![Taxonomie des agents pilotant une interface : périmètre, modalités d'observation, primitives d'action|1300](../../agents-computer-use/images/20260502-01-taxonomie-cua.svg)
 
@@ -53,12 +50,12 @@ La famille comprend plusieurs sous-classes qu'il vaut mieux ne pas confondre :
 - **Mobile Agent** — Android ou iOS via des primitives tactiles (long-press, press-back). Catégorie émergente.
 - **Cross-app Agent** — combinaison des trois, parfois orchestrée (Stagehand v3 expose un `mode: "cua"` qui permet de plugger Claude, Gemini ou OpenAI CUA derrière la même interface[^13]).
 
-La terminologie reste mouvante. OpenAI parle de **Computer-Using Agent (CUA)** pour son modèle, *Operator* pour son produit[^14] ; Anthropic parle de *computer use* comme d'un *outil* exposé via l'API ; ByteDance parle d'**agent natif GUI**[^15]. Pour ce chapitre, *CUA* désigne la classe technique (modèle + capacités), tandis que *agent computer use* désigne le système complet (modèle + harness + sandbox + observabilité).
+La terminologie reste mouvante. OpenAI parle de **Computer-Using Agent (CUA)** pour son modèle, *Operator* pour son produit[^14] ; Anthropic parle de *computer use* comme d'un *outil* exposé via l'API ; ByteDance parle d'**agent natif GUI**[^15]. *CUA* désigne ici la classe technique (modèle + capacités), tandis que *agent computer use* désigne le système complet (modèle + harness + sandbox + observabilité).
 
 > [!NOTE] La distinction *assistant conversationnel* ↔ *CUA*
 > Un agent computer use n'est *pas* une extension fonctionnelle d'un assistant conversationnel. C'est un **changement de mode opératoire**. L'assistant répond à une requête ; le CUA *exécute une intention* — souvent sur dizaines, parfois sur centaines d'étapes — avec une boucle fermée d'observation, planification, action, vérification. Cette boucle introduit des problèmes nouveaux : composabilité d'erreurs, dérive de plan, manipulation par contenu visuel — qu'aucun benchmark de réponse ne capture. Lire un score OSWorld comme on lit un score MMLU est une erreur de catégorie.
 
-### 15.2.2 Quatre lignées chronologiques
+### 15.1.2 Quatre lignées chronologiques
 
 Quatre lignées coexistent à mai 2026, chacune avec son point d'entrée historique :
 
@@ -69,62 +66,62 @@ Quatre lignées coexistent à mai 2026, chacune avec son point d'entrée histori
 
 ![Frise chronologique : émergence et industrialisation des agents computer use entre 2023 et 2026|1300](../../agents-computer-use/images/20260502-02-timeline-cua.svg)
 
-Microsoft entre dans la danse en février 2026 en exposant des **computer-using agents** dans Copilot Studio avec choix entre OpenAI CUA et Claude Sonnet 4.5[^23]. C'est la première convergence enterprise : un client final ne choisit plus le vendeur de modèle, il choisit l'orchestrateur — l'orchestrateur choisit le modèle selon le cas d'usage. Pattern qui se retrouve dans Vertex Agent Engine (Ch.16).
+Microsoft entre dans la danse en février 2026 en exposant des **computer-using agents** dans Copilot Studio avec choix entre OpenAI CUA et Claude Sonnet 4.5[^23]. C'est la première convergence enterprise : un client final ne choisit plus le vendeur de modèle, il choisit l'orchestrateur — l'orchestrateur choisit le modèle selon le cas d'usage. Pattern qui se retrouve dans Vertex Agent Engine ([Ch. 16](ch16-analytics-agentique-banque.md)).
 
-==L'inflexion 2026 n'est plus celle des capacités brutes mais celle de l'économie unitaire.== La conversation produit se déplace : non plus *que peut faire un agent*, mais *combien coûte une tâche réussie de bout en bout, et avec quelle variance*. Les sections §15.9 et §15.10 développent ces deux questions.
+==L'inflexion 2026 n'est plus celle des capacités brutes mais celle de l'économie unitaire.== La conversation produit se déplace : non plus *que peut faire un agent*, mais *combien coûte une tâche réussie de bout en bout, et avec quelle variance*. Les sections §15.8 et §15.9 développent ces deux questions.
 
 ---
 
-## 15.3 Architecture canonique — la boucle à cinq phases
+## 15.2 Architecture canonique — la boucle à cinq phases
 
-Tout agent computer use opérationnel implémente une boucle à **cinq phases** : **observer**, **planifier**, **ancrer (ground)**, **agir**, **vérifier**. Le dernier maillon, longtemps optionnel, est devenu standard depuis 2025 — c'est la clé de la performance d'OSAgent, *« entraîné à auto-vérifier ses actions en temps réel et corriger au tour suivant quand une étape échoue »*[^27].
+Tout agent computer use opérationnel implémente une boucle à **cinq phases** : **observer**, **planifier**, **ancrer (ground)**, **agir**, **vérifier**. Le dernier maillon, longtemps optionnel, est devenu standard depuis 2025 — c'est la clé de la performance d'OSAgent, « entraîné à auto-vérifier ses actions en temps réel et corriger au tour suivant quand une étape échoue »[^27].
 
 ![Architecture canonique d'un agent computer use : boucle observer-planifier-ancrer-agir-vérifier avec sandbox, contrôle d'accès et bus d'observabilité|1300](../../agents-computer-use/images/20260502-03-architecture.svg)
 
-### 15.3.1 Observer
+### 15.2.1 Observer
 
-L'observation combine généralement une capture d'écran (ce que voit l'humain) avec des structures complémentaires — accessibility tree pour le desktop, DOM ou Chrome Accessibility Tree pour le navigateur. La capture d'écran seule a longtemps été insuffisante : **OmniParser** de Microsoft a démontré qu'un modèle dédié de détection (YOLOv8 fine-tuné sur des icônes) couplé à un modèle de captioning (Florence-2 fine-tuné) faisait passer GPT-4o de ==**0,8 % à 39,6 %**== sur ScreenSpot Pro[^29]. C'est ce résultat qui définit les deux écoles d'architecture (§15.4) : *vision pure* versus *vision + parseur dédié*.
+L'observation combine généralement une capture d'écran (ce que voit l'humain) avec des structures complémentaires — accessibility tree pour le desktop, DOM ou Chrome Accessibility Tree pour le navigateur. La capture d'écran seule a longtemps été insuffisante : **OmniParser** de Microsoft a démontré qu'un modèle dédié de détection (YOLOv8 fine-tuné sur des icônes) couplé à un modèle de captioning (Florence-2 fine-tuné) faisait passer GPT-4o de ==**0,8 % à 39,6 %**== sur ScreenSpot Pro[^29]. C'est ce résultat qui définit les deux écoles d'architecture (§15.3) : *vision pure* versus *vision + parseur dédié*.
 
-### 15.3.2 Planifier — le goulot de la latence
+### 15.2.2 Planifier — le goulot de la latence
 
-La planification décompose l'intention en sous-objectifs. Sur OSWorld, l'analyse temporelle d'Agent S2 montre que ==la planification et la réflexion consomment 75 à 94 % de la latence totale d'une tâche==[^7]. Ce coût explique pourquoi les architectures multi-modèles deviennent dominantes : un modèle large pour planifier (GPT-4o, Claude Opus, Gemini 2.5 Pro), un modèle petit pour ancrer les coordonnées (UI-TARS-7B-DPO sur GPU local). C'est le pattern *planner / grounder* d'Agent S2 et de Jedi[^7]. Le Ch.5 (économie de l'inférence) avait déjà identifié la désagrégation comme levier ; on la retrouve ici, instanciée sur le CUA.
+La planification décompose l'intention en sous-objectifs. Sur OSWorld, l'analyse temporelle d'Agent S2 montre que ==la planification et la réflexion consomment 75 à 94 % de la latence totale d'une tâche==[^7]. Ce coût explique pourquoi les architectures multi-modèles deviennent dominantes : un modèle large pour planifier (GPT-4o, Claude Opus, Gemini 2.5 Pro), un modèle petit pour ancrer les coordonnées (UI-TARS-7B-DPO sur GPU local). C'est le pattern *planner / grounder* d'Agent S2 et de Jedi[^7]. Le [Ch. 5](ch05-economie-inference.md) (économie de l'inférence) avait déjà identifié la désagrégation comme levier ; on la retrouve ici, instanciée sur le CUA.
 
-### 15.3.3 Ancrer (grounding)
+### 15.2.3 Ancrer (grounding)
 
-L'**ancrage** est la traduction d'une intention abstraite (*« cliquer sur le bouton submit »*) en coordonnées (x, y) sur l'écran courant. C'est techniquement le maillon le plus fragile. Anthropic le notait dès le launch : *« Claude peut faire des erreurs ou halluciner en générant des coordonnées précises »*[^28]. C'est aussi pourquoi le **ScreenSpot Pro** benchmark, qui mesure l'ancrage sur écrans haute résolution avec icônes minuscules, est devenu central — il isole la compétence critique du reste de la boucle.
+L'**ancrage** est la traduction d'une intention abstraite (« cliquer sur le bouton submit ») en coordonnées (x, y) sur l'écran courant. C'est techniquement le maillon le plus fragile. Anthropic le notait dès le launch : « Claude peut faire des erreurs ou halluciner en générant des coordonnées précises »[^28]. C'est aussi pourquoi le **ScreenSpot Pro** benchmark, qui mesure l'ancrage sur écrans haute résolution avec icônes minuscules, est devenu central — il isole la compétence critique du reste de la boucle.
 
-### 15.3.4 Agir
+### 15.2.4 Agir
 
 L'action est traduite en primitives bas niveau : `pyautogui.click(x, y)`, `keypress`, `scroll`, `drag`. Les modèles récents enrichissent cette grammaire : Anthropic a ajouté une action `zoom` dans la version `computer_20251124`, qui permet à Claude de demander une vue agrandie d'une région avant d'agir, réduisant les erreurs d'ancrage sur petits éléments[^28]. C'est une réponse directe au problème ScreenSpot Pro.
 
-### 15.3.5 Vérifier — le cinquième nœud qui change tout
+### 15.2.5 Vérifier — le cinquième nœud qui change tout
 
 ==La vérification ferme la boucle.== Sans elle, les erreurs se composent de manière catastrophique : une mauvaise interprétation de la première étape rend toute la suite vaine. Avec elle — comme le montre la performance superhumaine d'OSAgent — l'agent gagne la capacité de détecter une dérive et de relancer une sous-séquence. Le coût en tokens est non négligeable, ce qui pousse vers des vérificateurs spécialisés (modèles plus petits, parfois déterministes via XPath ou hash visuel).
 
 Le verify a aussi une vertu architecturale qu'on n'imaginait pas il y a un an : il **rend la trajectoire reproductible** au niveau d'une sous-séquence. Si l'agent vérifie après chaque étape critique, la trajectoire devient un graphe de checkpoints au lieu d'un fil linéaire qu'on doit rejouer depuis le début en cas d'échec. ==C'est ce qui transforme le CUA d'un système *one-shot* en un système *resumable*== — propriété nécessaire pour les workflows enterprise longs.
 
-> [!INFO] Voir Ch. 7 — Reason · Act · Observe
-> La boucle TAOR à quatre phases du Ch.7 (Reason · Act · Observe + harness) est le **cas général**. La boucle à cinq phases du CUA est sa spécialisation pour le pilotage écran : *observe* devient screenshot+OCR, *reason* devient *plan*, l'*action* devient *ground+act*, et *observe* gagne un nœud *verify* explicite parce que la composabilité des erreurs y est plus brutale qu'en tool-use classique. Le Ch.7 pose le principe ; ce chapitre l'instancie sur la spécificité GUI.
+> [!INFO] Voir [Ch. 7 — La boucle agentique](ch07-boucle-agentique.md)
+> La boucle TAOR à quatre phases du [Ch. 7](ch07-boucle-agentique.md) (Reason · Act · Observe + harness) est le **cas général**. La boucle à cinq phases du CUA est sa spécialisation pour le pilotage écran : *observe* devient screenshot+OCR, *reason* devient *plan*, l'*action* devient *ground+act*, et *observe* gagne un nœud *verify* explicite parce que la composabilité des erreurs y est plus brutale qu'en tool-use classique. Le [Ch. 7](ch07-boucle-agentique.md) pose le principe ; ici, l'instanciation sur la spécificité GUI.
 
 ---
 
-## 15.4 Trois architectures concurrentes
+## 15.3 Trois architectures concurrentes
 
 Le marché 2026 se structure autour de trois architectures qui n'ont pas convergé. Aucune ne domine, et le choix entre elles est encore largement déterminé par les contraintes opérationnelles (souveraineté, latence, coût) plutôt que par la performance pure.
 
-### 15.4.1 Architecture (i) — vision pure
+### 15.3.1 Architecture (i) — vision pure
 
 Un seul modèle prend en entrée le screenshot et émet directement les actions. Pas de parseur intermédiaire, pas de représentation symbolique de l'UI. C'est l'architecture d'**Anthropic computer use** (Claude Opus 4.5/4.7), d'**UI-TARS-1.5/2** côté open source[^15], et de la première version du modèle CUA d'OpenAI.
 
 Force : simplicité opérationnelle, un seul appel par étape. Faiblesse : la précision d'ancrage dépend entièrement de la résolution de perception du modèle — sur écrans 4K avec icônes 16×16 px, les meilleurs modèles peinent (cf. ScreenSpot Pro).
 
-### 15.4.2 Architecture (ii) — vision + parseur dédié
+### 15.3.2 Architecture (ii) — vision + parseur dédié
 
 Un modèle de détection spécialisé (YOLOv8 fine-tuné, OmniParser) annote le screenshot avec les coordonnées des éléments cliquables et leurs descriptions textuelles ; un LLM généraliste lit cette représentation enrichie et planifie. C'est **Agent S2** (open source), c'est **OmniParser + LLM** chez Microsoft, c'est le pattern multi-modèles le plus déployé en académique.
 
 Force : précision d'ancrage radicalement améliorée (GPT-4o de 0,8 % à 39,6 % ScreenSpot Pro), composabilité (on peut changer le LLM sans toucher au parseur). Faiblesse : pipeline plus lourd, deux modèles à maintenir, latence cumulée.
 
-### 15.4.3 Architecture (iii) — agent intégré perception-action
+### 15.3.3 Architecture (iii) — agent intégré perception-action
 
 Un modèle unique, mais **entraîné spécifiquement** pour la perception-action GUI (pas un généraliste fine-tuné). C'est **UI-TARS-2** chez ByteDance, c'est **Magma** chez Microsoft. La différence avec (i) est subtile mais structurelle : ces modèles sont entraînés sur des séquences {screenshot, action, screenshot, action} avec des fonctions de loss spécifiques au pilotage, pas sur du langage généraliste avec du fine-tuning GUI en surcouche.
 
@@ -135,91 +132,91 @@ Force : meilleure compression du *prior* GUI (ce qu'un humain sait quand il voit
 
 ---
 
-## 15.5 Paysage concurrentiel — quatre couches
+## 15.4 Paysage concurrentiel — quatre couches
 
-Le paysage début 2026 se structure en quatre couches. Le Ch.14 a déjà nommé les acteurs côté business (Operator, Computer Use, Devin, Sierra, Harvey, Agentforce) ; on s'intéresse ici à la **stack technique**.
+Le paysage début 2026 se structure en quatre couches. Le [Ch. 14](ch14-surfaces-agentiques.md) a déjà nommé les acteurs côté business (Operator, Computer Use, Devin, Sierra, Harvey, Agentforce) ; ici, la **stack technique**.
 
 ![Matrice acteurs × capacités : positionnement comparé des principaux agents computer use sur sept dimensions|1300](../../agents-computer-use/images/20260502-04-paysage-concurrentiel.svg)
 
-### 15.5.1 Couche modèle
+### 15.4.1 Couche modèle
 
 Six acteurs sérieux : Anthropic (Claude Opus 4.5/4.6/4.7, Sonnet 4.5/4.6 avec computer use natif), OpenAI (modèle CUA basé sur o3, intégré dans ChatGPT agent), Google DeepMind (Gemini 2.5 Pro pour Mariner), ByteDance (UI-TARS-1.5 / UI-TARS-2 open source), Microsoft (Magma + OmniParser dans Copilot Studio), et l'écosystème ouvert chinois (Doubao, Qwen 2.5VL).
 
-### 15.5.2 Couche orchestration et harness
+### 15.4.2 Couche orchestration et harness
 
 Le tissu se densifie : **Stagehand v3** (Browserbase, MIT, TS/Python/Go) avec ses primitives `act`/`extract`/`observe`/`agent` ; **Browser Use** (Python, écosystème data science) ; **Agent S2** (open source, état de l'art académique). Microsoft propose Copilot Studio comme couche d'orchestration enterprise, intégrant à la fois OpenAI CUA et Claude Sonnet 4.5 selon le cas d'usage[^23]. Anthropic et OpenAI livrent leurs propres SDK et samples (`anthropic-quickstarts/computer-use-demo`, `openai-cua-sample-app`).
 
-### 15.5.3 Couche infrastructure
+### 15.4.3 Couche infrastructure
 
 **Browserbase**, **Steel** et **AnchorBrowser** proposent des navigateurs cloud orchestrables, une *agent identity*, du *session replay*, du contournement CAPTCHA. C'est l'équivalent moderne d'une couche Selenium/Playwright managée pour agents. Sans cette couche, on déploie son propre Docker Ubuntu avec Chromium et on gère soi-même session, replay, et CAPTCHA — viable pour le PoC, lourd pour la prod.
 
-### 15.5.4 Couche enterprise
+### 15.4.4 Couche enterprise
 
-**Copilot Studio**, **Salesforce Agentforce**, et les grandes ESN (Accenture, Capgemini, Deloitte) emballent ces primitives dans des offres conformes (gouvernance, audit, isolation). C'est la couche qui matérialise la conformité DORA / AI Act que le Ch.23 cadrera génériquement et que le Ch.16 instancie sur la banque française.
+**Copilot Studio**, **Salesforce Agentforce**, et les grandes ESN (Accenture, Capgemini, Deloitte) emballent ces primitives dans des offres conformes (gouvernance, audit, isolation). C'est la couche qui matérialise la conformité DORA / AI Act que le [Ch. 23](ch23-gouvernance-ai-act.md) cadrera génériquement et que le [Ch. 16](ch16-analytics-agentique-banque.md) instancie sur la banque française.
 
-### 15.5.5 Souveraineté — la voie UI-TARS
+### 15.4.5 Souveraineté — la voie UI-TARS
 
 L'écosystème ouvert chinois mérite attention. UI-TARS-1.5-7B est sous Apache 2.0, déployable sur un seul GPU, et a démontré des résultats à la fois sur OSWorld, ScreenSpot Pro et — point de différenciation — sur des tâches de jeu vidéo (14 mini-jeux Poki, environnement Minecraft via MineRL)[^15]. ==C'est le seul vecteur sérieux de souveraineté== pour des organisations qui refusent la dépendance aux trois acteurs US. Mistral et OVH ont annoncé des intentions sans produit live début 2026. Pour une banque française, c'est l'option *self-host on GPU on-prem* qui s'ouvre — au prix de la qualité (UI-TARS reste 5-10 points sous Claude Opus 4.7 sur OSWorld-Verified à pondération équivalente).
 
 ---
 
-## 15.6 Benchmarks — savoir ce qu'on mesure
+## 15.5 Benchmarks — savoir ce qu'on mesure
 
 Le paysage des benchmarks s'est structuré autour de cinq familles. **Desktop** : OSWorld (369 tâches Linux Ubuntu, baseline humain ~72 %)[^4]. **Web** : WebArena (812 tâches multi-pages, humain ~78 %)[^16], VisualWebArena (910 tâches multimodales, humain ~89 %)[^17], WebVoyager (tâches live sur 15 sites réels, juge GPT-4V)[^18]. **Ancrage** : ScreenSpot et ScreenSpot Pro[^29]. **Robustesse à l'attaque** : AgentDojo (97 tâches, 629 cas de test prompt injection)[^34], VPI-Bench (306 cas d'injection visuelle sur 5 plateformes)[^8]. **Enterprise** : UI-CUBE (UiPath, 226 tâches en deux tiers de difficulté)[^6], CUB (Computer Use Benchmark).
 
 ![Évolution des scores OSWorld et WebArena entre Q2 2024 et Q2 2026 : chronologie de la rattrapage du baseline humain|1300](../../agents-computer-use/images/20260502-05-evolution-benchmarks.svg)
 
-### 15.6.1 La trajectoire OSWorld — convexe mais piégée
+### 15.5.1 La trajectoire OSWorld — convexe mais piégée
 
 La courbe OSWorld a une dynamique convexe : 12,2 % avril 2024, 38,1 % janvier 2025 (Operator), 44 % octobre 2025 (Computer Use ×3 en un an), 66,26 % novembre 2025 (Opus 4.5), **76,26 %** octobre 2025 (OSAgent — premier dépassement humain ~72 %)[^27]. La WebArena suit une dynamique parallèle. ==Trois précautions méthodologiques s'imposent pour lire ces chiffres honnêtement.==
 
-**Première précaution — les benchmarks ne sont pas immobiles.** OSWorld a connu une refonte majeure en juillet 2025 (**OSWorld-Verified**, infrastructure AWS, 50× parallélisation), avec corrections de plus de 300 tâches — l'équipe XLANG note elle-même que cette pratique *« réduit le caractère significatif des comparaisons dans le temps »*[^5]. ==Comparer un score 2024 à un score 2026 sur OSWorld revient parfois à comparer des tâches différentes.== Le Ch.17 a déjà documenté ce vecteur de contamination *par version-tag* dans la grille des 4 vecteurs de fuite — ici, il s'applique au cas spécifique du CUA.
+**Première précaution — les benchmarks ne sont pas immobiles.** OSWorld a connu une refonte majeure en juillet 2025 (**OSWorld-Verified**, infrastructure AWS, 50× parallélisation), avec corrections de plus de 300 tâches — l'équipe XLANG note elle-même que cette pratique « réduit le caractère significatif des comparaisons dans le temps »[^5]. ==Comparer un score 2024 à un score 2026 sur OSWorld revient parfois à comparer des tâches différentes.== Le [Ch. 17](ch17-evaluation-benchmarks.md) a déjà documenté ce vecteur de contamination *par version-tag* dans la grille des 4 vecteurs de fuite — ici, il s'applique au cas spécifique du CUA.
 
 **Deuxième précaution — code execution court-circuite l'épreuve GUI.** L'analyse d'Epoch AI sur OSWorld montre que ==les modèles outillés en code execution scorent bien plus haut, en utilisant openpyxl pour manipuler des spreadsheets plutôt qu'en cliquant dans LibreOffice== — ce qui n'est pas la compétence mesurée[^35]. Le score n'est pas trompeur si l'on sait ce qu'on mesure ; il l'est si on l'interprète comme « capacité GUI ».
 
 **Troisième précaution — SELF vs 3RD party.** Les scores publiés sont souvent auto-déclarés (`SELF`) et non indépendamment vérifiés (`3RD`). La plateforme **Steel.dev** maintient un index avec cette distinction explicite — y privilégier les scores tiers est devenu une hygiène d'analyse[^36]. Pour OSWorld, la voie officielle est désormais le track *Public Evaluation* sur AWS, qui exécute le harness sous environnement contrôlé.
 
 > [!QUOTE] Anthropic, *System Card Claude Opus 4.5*, novembre 2025
-> *« Le modèle revendique l'état de l'art **parmi systèmes single-agent**, en notant que des systèmes multi-agents avec prompts site-spécifiques et outils avancés scorent plus haut « mais ne sont pas directement comparables »*[^25]. L'aveu est honnête et cadre la différence entre **capacité brute de modèle** et **performance d'un système d'agent complet**.
+> « Le modèle revendique l'état de l'art **parmi systèmes single-agent**, en notant que des systèmes multi-agents avec prompts site-spécifiques et outils avancés scorent plus haut mais ne sont pas directement comparables »[^25]. L'aveu est honnête et cadre la différence entre **capacité brute de modèle** et **performance d'un système d'agent complet**.
 
-### 15.6.2 Le verdict UI-CUBE — le cliff enterprise
+### 15.5.2 Le verdict UI-CUBE — le cliff enterprise
 
 Le benchmark UI-CUBE de UiPath est probablement le signal le plus inconfortable de 2025. Sur 226 tâches enterprise réparties en deux tiers de difficulté, les CUA actuels atteignent ==**68–87 %** de la performance humaine sur le tier simple, mais s'effondrent à **15–32 %** sur le tier complexe==[^6]. Les auteurs caractérisent ce profil comme une **« limitation architecturale fondamentale en gestion mémoire, planification hiérarchique, et coordination d'état »** — pas un déficit incrémental qu'on rattraperait avec plus d'entraînement.
 
-==Les benchmarks académiques mesurent ce que les agents savent faire ; UI-CUBE mesure ce qu'on attend d'eux en production.== C'est la grille à présenter au sponsor IA d'un projet CUA avant la signature d'un RFP. Le delta 87→32 sur une tâche enterprise réaliste est le chiffre qui dit *« ne déployez pas en autonomous mode sans le filet humain »*.
+==Les benchmarks académiques mesurent ce que les agents savent faire ; UI-CUBE mesure ce qu'on attend d'eux en production.== C'est la grille à présenter au sponsor IA d'un projet CUA avant la signature d'un RFP. Le delta 87→32 sur une tâche enterprise réaliste est le chiffre qui dit « ne déployez pas en autonomous mode sans le filet humain ».
 
-### 15.6.3 Robustesse à l'attaque — chiffres alarmants
+### 15.5.3 Robustesse à l'attaque — chiffres alarmants
 
-Sur la robustesse, les chiffres sont alarmants. **VPI-Bench** mesure la susceptibilité à l'injection de prompt visuelle — un attaquant qui cache une instruction dans un élément visuel rendu (banner, infobulle, image manipulée). Le résultat : ==**51 % de succès** contre les CUA et **jusqu'à 100 %** contre les BUA sur certaines plateformes==[^8]. **AgentDojo** enfonce le clou : sur 97 tâches × 629 cas de test, les défenses existantes améliorent peu la situation[^34]. La §15.9 développe les patterns d'attaque, et §15.11 fait le pont avec le threat model unifié E4 du Ch.19.
+Sur la robustesse, les chiffres sont alarmants. **VPI-Bench** mesure la susceptibilité à l'injection de prompt visuelle — un attaquant qui cache une instruction dans un élément visuel rendu (banner, infobulle, image manipulée). Le résultat : ==**51 % de succès** contre les CUA et **jusqu'à 100 %** contre les BUA sur certaines plateformes==[^8]. **AgentDojo** enfonce le clou : sur 97 tâches × 629 cas de test, les défenses existantes améliorent peu la situation[^34]. La §15.7 développe les patterns d'attaque, et §15.10 fait le pont avec le threat model unifié E4 du [Ch. 19](ch19-gardefous-securite-globale.md).
 
-> [!INFO] Voir Ch. 17 — Évaluer un agent et débunker les leaderboards
-> Le Ch.17 a posé la grille générique : 4 vecteurs de fuite des benchmarks publics (chevauchement temporel / version-tag / harness gaming / prompt leakage), le 2×2 contrôlé × ponctuel pour acheteurs, le playbook gruyère 8 étapes. Le présent chapitre instancie sur OSWorld et UI-CUBE — il **ne refait pas** la démolition générique. La frontière éditoriale : Ch.17 = grille d'achat et démolition leaderboards ; Ch.15 = lecture honnête des chiffres CUA *en supposant* que le lecteur connaît la grille.
+> [!INFO] Voir [Ch. 17 — Évaluation et benchmarks](ch17-evaluation-benchmarks.md)
+> Le [Ch. 17](ch17-evaluation-benchmarks.md) a posé la grille générique : 4 vecteurs de fuite des benchmarks publics (chevauchement temporel / version-tag / harness gaming / prompt leakage), le 2×2 contrôlé × ponctuel pour acheteurs, le playbook gruyère 8 étapes. Ici, instanciation sur OSWorld et UI-CUBE — **pas** de redémonstration générique. La frontière éditoriale : [Ch. 17](ch17-evaluation-benchmarks.md) = grille d'achat et démolition leaderboards ; ici, lecture honnête des chiffres CUA *en supposant connue* la grille.
 
 ---
 
-## 15.7 Cas d'usage et frameworks
+## 15.6 Cas d'usage et frameworks
 
 Les cas d'usage se répartissent en quatre quadrants selon deux axes : *valeur business* (faible-élevée) et *maturité technologique* (pilote-production). Le quadrant *production / valeur élevée* reste mince.
 
 ![Matrice secteur × maturité : cartographie des cas d'usage computer use observés en production début 2026|1300](../../agents-computer-use/images/20260502-06-cas-usage.svg)
 
-### 15.7.1 Les déploiements nominatifs
+### 15.6.1 Les déploiements nominatifs
 
-Quelques exemples avec données chiffrées : **Replit** utilise les capacités computer use de Claude pour évaluer des apps en cours de construction dans son produit Agent[^1] ; **The Browser Company** automatise des workflows web avec Claude (*« supérieur à tous les modèles testés »*[^1]) ; **Bridgewater Associates** déploie Claude Opus 4 comme *Investment Analyst Assistant* sur Amazon Bedrock, avec une **réduction de 50–70 % du time-to-insight** sur rapports complexes equity, FX, fixed-income[^32] ; **Tines** automatise des workflows de cybersécurité 120 étapes en une étape, avec un facteur de gain revendiqué de 100×[^32].
+Quelques exemples avec données chiffrées : **Replit** utilise les capacités computer use de Claude pour évaluer des apps en cours de construction dans son produit Agent[^1] ; **The Browser Company** automatise des workflows web avec Claude (« supérieur à tous les modèles testés »[^1]) ; **Bridgewater Associates** déploie Claude Opus 4 comme *Investment Analyst Assistant* sur Amazon Bedrock, avec une **réduction de 50–70 % du time-to-insight** sur rapports complexes equity, FX, fixed-income[^32] ; **Tines** automatise des workflows de cybersécurité 120 étapes en une étape, avec un facteur de gain revendiqué de 100×[^32].
 
-### 15.7.2 E-commerce et booking — le terrain le moins convaincant
+### 15.6.2 E-commerce et booking — le terrain le moins convaincant
 
-Les e-commerce et booking étaient les premiers terrains présumés (Operator avec DoorDash, Instacart, OpenTable, Priceline, StubHub, Thumbtack, Uber[^2] ; Mariner avec Ticketmaster, StubHub, Resy, Vagaro[^3]). En pratique, l'expérience reste lente : Leon Furze concluait dès février 2025 qu'*« il est souvent plus rapide d'effectuer ces tâches manuellement que de superviser l'IA »*[^37]. Le cas d'usage existe surtout pour les volumes (procurement automatique, comparateurs).
+Les e-commerce et booking étaient les premiers terrains présumés (Operator avec DoorDash, Instacart, OpenTable, Priceline, StubHub, Thumbtack, Uber[^2] ; Mariner avec Ticketmaster, StubHub, Resy, Vagaro[^3]). En pratique, l'expérience reste lente : Leon Furze concluait dès février 2025 qu'« il est souvent plus rapide d'effectuer ces tâches manuellement que de superviser l'IA »[^37]. Le cas d'usage existe surtout pour les volumes (procurement automatique, comparateurs).
 
-### 15.7.3 Back-office et ITSM — le sweet spot
+### 15.6.3 Back-office et ITSM — le sweet spot
 
 Les back-office et ITSM sont le terrain le plus mature. AtomicWork, ServiceNow, Microsoft Copilot Studio en production proposent des agents de catégorisation de tickets, de résolution L1, de gestion d'assets, avec des gains documentés de **25–60 %** sur les call times et transferts[^38]. ==Le sweet spot : tâches répétitives, à faible coût d'erreur, avec systèmes legacy sans API moderne (où le CUA évite des intégrations sur mesure).==
 
-### 15.7.4 Customer-service voix — exclus
+### 15.6.4 Customer-service voix — exclus
 
 Le service client voix-vidéo reste un cas d'usage à part : la latence sub-seconde requise (≤300 ms) exclut les boucles agent-LLM-screenshot actuelles qui tournent en dizaines de secondes voire minutes[^39]. Les déploiements voix ne sont *pas* des CUA au sens strict — c'est du vertical agent (Sierra, Vapi, Retell), pas du computer use.
 
-### 15.7.5 Frameworks — trois approches
+### 15.6.5 Frameworks — trois approches
 
 ![Stack technique d'un agent computer use de production : couches de la fondation modèle à la gouvernance enterprise|1300](../../agents-computer-use/images/20260502-07-stack-frameworks.svg)
 
@@ -230,69 +227,69 @@ Le choix se fait sur trois axes :
 - **Maintenance** : auto-healing > sélecteurs hardcodés (un site change, l'agent doit s'adapter)
 - **Gouvernance** : cloud managé > local (audit log natif, conformité par défaut)
 
-Le pattern Stagehand v3 est emblématique d'une convergence : *« le seul framework open source de browser AI conçu spécifiquement pour les agents… À utiliser quand il n'y a pas d'API. À utiliser quand le site change sans préavis »*[^40]. La promesse — *« écris une fois, run forever »* via auto-caching et self-healing — est l'horizon que toute la couche orchestration tente d'atteindre. Avec demi-million de téléchargements hebdomadaires en octobre 2025 et 44 % de gain de performance sur v3, le pattern *atomic primitives + agent on top* gagne du terrain face au monolithique.
+Le pattern Stagehand v3 est emblématique d'une convergence : « le seul framework open source de browser AI conçu spécifiquement pour les agents… À utiliser quand il n'y a pas d'API. À utiliser quand le site change sans préavis »[^40]. La promesse — « écris une fois, run forever » via auto-caching et self-healing — est l'horizon que toute la couche orchestration tente d'atteindre. Avec demi-million de téléchargements hebdomadaires en octobre 2025 et 44 % de gain de performance sur v3, le pattern *atomic primitives + agent on top* gagne du terrain face au monolithique.
 
 ---
 
-## 15.8 Surface d'attaque qualitativement inédite
+## 15.7 Surface d'attaque qualitativement inédite
 
 La surface de risque d'un agent computer use est qualitativement différente de celle d'un LLM conversationnel. Quatre familles se distinguent : **manipulation par contenu** (prompt injection), **dérive d'exécution** (loop sans terminaison, action accidentelle), **fuite de données** (l'agent envoie un contenu sensible vers un tiers), **vulnérabilités du *control plane*** (l'API qui permet à l'agent d'agir devient elle-même un vecteur).
 
 ![Surface de risque et profil de latence des agents computer use : carte des vulnérabilités et des coûts cachés|1300](../../agents-computer-use/images/20260502-08-risques-latence.svg)
 
-### 15.8.1 VPI — l'injection visuelle qui n'a pas d'équivalent défensif
+### 15.7.1 VPI — l'injection visuelle qui n'a pas d'équivalent défensif
 
-Le **prompt injection** est classé numéro 1 par OWASP dans son Top 10 des vulnérabilités LLM, et caractérisé par le NIST comme *« le défaut de sécurité majeur de l'IA générative »*[^41]. Pour les agents computer use, la vulnérabilité prend une forme inédite : l'**injection visuelle** (Visual Prompt Injection, VPI). ==Un attaquant cache une instruction — visuellement subtile mais OCR-lisible — dans une page web, un avis de cookie, une infobulle, une image.== Le modèle, en regardant l'écran, transcrit l'instruction dans son contexte et l'exécute.
+Le **prompt injection** est classé numéro 1 par OWASP dans son Top 10 des vulnérabilités LLM, et caractérisé par le NIST comme « le défaut de sécurité majeur de l'IA générative »[^41]. Pour les agents computer use, la vulnérabilité prend une forme inédite : l'**injection visuelle** (Visual Prompt Injection, VPI). ==Un attaquant cache une instruction — visuellement subtile mais OCR-lisible — dans une page web, un avis de cookie, une infobulle, une image.== Le modèle, en regardant l'écran, transcrit l'instruction dans son contexte et l'exécute.
 
-VPI-Bench mesure 306 cas sur 5 plateformes : **succès jusqu'à 51 % contre les CUA et 100 % contre les BUA** sur certaines surfaces[^8]. Les défenses existantes (filtrage texte, sandboxes DOM) sont structurellement inopérantes — ==elles ne couvrent pas le canal pixel==. C'est précisément ce que le Ch.13 ne pouvait pas couvrir : la matrice MCP 10×10 traite les vecteurs textuels (description empoisonnée, prompt injection cross-document, cross-server confusion, OAuth+supply chain) ; le canal pixel d'un screenshot interprété par un VLM est une **verticale orthogonale**.
+VPI-Bench mesure 306 cas sur 5 plateformes : **succès jusqu'à 51 % contre les CUA et 100 % contre les BUA** sur certaines surfaces[^8]. Les défenses existantes (filtrage texte, sandboxes DOM) sont structurellement inopérantes — ==elles ne couvrent pas le canal pixel==. C'est précisément ce que le [Ch. 13](ch13-mcp-securite.md) ne pouvait pas couvrir : la matrice MCP 10×10 traite les vecteurs textuels (description empoisonnée, prompt injection cross-document, cross-server confusion, OAuth+supply chain) ; le canal pixel d'un screenshot interprété par un VLM est une **verticale orthogonale**.
 
-> [!IMPORTANT] La verticale VPI s'ajoute à E4 (Ch.19)
-> Le threat model unifié E4 du Ch.19 agrège six axes : modèle / prompt / mémoire / outil / protocole / **surface**. ==Le canal VPI est ce qui peuple l'axe « surface »== — il n'apparaît pas dans la matrice MCP du Ch.13 parce qu'il ne passe pas par le tuyau JSON-RPC ; il passe par le canal d'observation du modèle. La défense en profondeur agentique 2026 doit donc additionner : signature Sigstore + hash pinning (couche tool, Ch.13), classifieurs de prompt injection visuelle (couche surface, ici), et human-in-the-loop sur les actions irréversibles (couche action, Ch.14 §14.6.3).
+> [!IMPORTANT] La verticale VPI s'ajoute à E4 ([Ch. 19](ch19-gardefous-securite-globale.md))
+> Le threat model unifié E4 du [Ch. 19](ch19-gardefous-securite-globale.md) agrège six axes : modèle / prompt / mémoire / outil / protocole / **surface**. ==Le canal VPI est ce qui peuple l'axe « surface »== — il n'apparaît pas dans la matrice MCP du [Ch. 13](ch13-mcp-securite.md) parce qu'il ne passe pas par le tuyau JSON-RPC ; il passe par le canal d'observation du modèle. La défense en profondeur agentique 2026 doit donc additionner : signature Sigstore + hash pinning (couche tool, [Ch. 13](ch13-mcp-securite.md)), classifieurs de prompt injection visuelle (couche surface, ici), et human-in-the-loop sur les actions irréversibles (couche action, [Ch. 14](ch14-surfaces-agentiques.md) §14.6.3).
 
-### 15.8.2 Dérive d'exécution
+### 15.7.2 Dérive d'exécution
 
 La dérive d'exécution se manifeste sur les workflows longs. UI-CUBE quantifie le phénomène : sur tâches complexes, les agents passent de 87 % à 32 % de la performance humaine[^6]. La cause technique probable : ==les longs traces saturent le contexte, ce qui dégrade la planification==. Les contre-mesures émergentes — *context compaction* (Anthropic), *tool result clearing* (effacer les anciens screenshots), *interleaved scratchpads* — sont incrémentales et réduisent le phénomène sans l'éliminer[^25].
 
-> [!INFO] Voir Ch. 10 — Compaction et oubli stratégique
-> Le Ch.10 a documenté les 5 familles de compaction (summarization, eviction, hiérarchique, retrieval, compactors appris) et le triangle fidélité × coût × oubliabilité. Ici, le tool result clearing — effacer les anciens screenshots pour ne garder que les N derniers — est un cas particulier d'**eviction LIFO** sur un canal très lourd en tokens (un screenshot 1080p compressé représente quelques milliers de tokens visuels). Anthropic recommande explicitement le pattern dans la doc computer use ; c'est l'instanciation pratique de §10.3 pour le CUA.
+> [!INFO] Voir [Ch. 10 — Compaction](ch10-compaction.md)
+> Le [Ch. 10](ch10-compaction.md) a documenté les 5 familles de compaction (summarization, eviction, hiérarchique, retrieval, compactors appris) et le triangle fidélité × coût × oubliabilité. Ici, le tool result clearing — effacer les anciens screenshots pour ne garder que les N derniers — est un cas particulier d'**eviction LIFO** sur un canal très lourd en tokens (un screenshot 1080p compressé représente quelques milliers de tokens visuels). Anthropic recommande explicitement le pattern dans la doc computer use ; c'est l'instanciation pratique de §10.3 pour le CUA.
 
-### 15.8.3 Fuites de données
+### 15.7.3 Fuites de données
 
 Les fuites de données sont une préoccupation enterprise majeure. Anthropic note que les outils computer use sont *client-side* : les screenshots et actions transitent par l'API mais ne sont pas retenus côté Anthropic après la réponse — l'agent est ZDR-éligible si l'application le permet[^28]. OpenAI applique une logique différente avec Operator : le modèle CUA cherche confirmation pour les actions sensibles (login, paiement, CAPTCHA)[^14]. ==Cette confirmation humaine *in-the-loop* est devenue la norme défensive, et figure dans 70 % des architectures produites== — au prix d'une perte sensible d'autonomie.
 
-### 15.8.4 CVE-2025-55322 — quand le control plane devient le vecteur
+### 15.7.4 CVE-2025-55322 — quand le control plane devient le vecteur
 
 La vulnérabilité du control plane est plus traîtresse. Le 25 septembre 2025, le chercheur Aonan Guan a publié une RCE critique sur OmniParser/OmniTool de Microsoft (**CVE-2025-55322**) : ==l'interface HTTP qui permet à l'agent d'exécuter des actions sur la VM était joignable sans authentification dans la configuration par défaut==[^9]. Microsoft a publié OmniParser v2.0.1 avec un correctif.
 
-La leçon est formulée par l'auteur lui-même : *« dans un stack d'agent, chaque port HTTP qui peut faire des choses est une paire de mains. Assurez-vous qu'elles sont les vôtres. »*[^9]. C'est la formulation la plus dense de la doctrine défensive 2026 pour le computer use : **tout endpoint HTTP qui pilote la VM est un endpoint d'attaque**.
+La leçon est formulée par l'auteur lui-même : « dans un stack d'agent, chaque port HTTP qui peut faire des choses est une paire de mains. Assurez-vous qu'elles sont les vôtres. »[^9]. C'est la formulation la plus dense de la doctrine défensive 2026 pour le computer use : **tout endpoint HTTP qui pilote la VM est un endpoint d'attaque**.
 
 > [!QUOTE] Aonan Guan, *Click, Parse, Execute*, septembre 2025
-> *« In an agent stack, every HTTP port that can do things is a pair of hands. Make sure they are yours. »* — la formulation canonique de la doctrine défensive control-plane pour les agents computer use[^9].
+> « In an agent stack, every HTTP port that can do things is a pair of hands. Make sure they are yours. » — la formulation canonique de la doctrine défensive control-plane pour les agents computer use[^9].
 
-### 15.8.5 Reliability — runs divergents
+### 15.7.5 Reliability — runs divergents
 
-Côté fiabilité, le problème est plus prosaïque mais aussi plus universel. L'étude *On the Reliability of Computer Use Agents* (avril 2026) montre qu'un même agent, exécuté à plusieurs reprises sur la même tâche, produit des trajectoires divergentes liées à trois sources : stochasticité du modèle, ambiguïté des instructions, variabilité de la planification[^42]. ==Pour la production, cela signifie qu'un test unique ne suffit pas — il faut des *runs* répétés, idéalement avec mécanismes de guidance par exécutions précédentes== (in-context examples). C'est la justification opérationnelle de la métrique *repro rate* que le Ch.16 §16.9.2 réinjecte dans la grille d'évaluation data-spécifique.
+Côté fiabilité, le problème est plus prosaïque mais aussi plus universel. L'étude *On the Reliability of Computer Use Agents* (avril 2026) montre qu'un même agent, exécuté à plusieurs reprises sur la même tâche, produit des trajectoires divergentes liées à trois sources : stochasticité du modèle, ambiguïté des instructions, variabilité de la planification[^42]. ==Pour la production, cela signifie qu'un test unique ne suffit pas — il faut des *runs* répétés, idéalement avec mécanismes de guidance par exécutions précédentes== (in-context examples). C'est la justification opérationnelle de la métrique *repro rate* que le [Ch. 16](ch16-analytics-agentique-banque.md) §16.9.2 réinjecte dans la grille d'évaluation data-spécifique.
 
 ---
 
-## 15.9 La latence — le coût caché plus que la précision
+## 15.8 La latence — le coût caché plus que la précision
 
 OSWorld-Human et OSWorld-Gold ont annoté des trajectoires humaines minimales : changer l'interligne de deux paragraphes prend ==**12 minutes** à un agent S2 contre **moins de 30 secondes** pour un humain — un rapport 24×==[^7]. Les phases planification et réflexion (75–94 % de la latence totale) sont les coupables. Les architectures multi-modèles avec grounder local mitigent le problème, comme le cache de Stagehand qui élimine les ré-inférences sur actions répétées[^40].
 
 Une enquête en production conduite en 2026 (*Measuring Agents in Production*) tempère le tableau : **66 % des déploiements tolèrent des temps de réponse en minutes, et 17 % n'imposent aucune limite** — l'usage dominant est l'**automatisation arrière-plan**, pas l'interaction temps-réel[^43].
 
 > [!IMPORTANT] L'usage dominant n'est pas l'interaction temps-réel
-> Pour ces usages, un agent qui prend 12 minutes mais bat un humain par 10× sur le coût *total* (incluant disponibilité 24/7, parallélisation, absence de pauses) reste rationnel économiquement. ==Le cas d'usage CUA réaliste 2026 n'est pas le *« assistant temps-réel qui aide le commercial pendant son rendez-vous »*, c'est le *« worker arrière-plan qui traite cinq cents tickets ITSM pendant la nuit »*.== Cette inversion de cadrage est ce qui transforme un projet CUA en cas business viable : on ne cherche pas la latence sub-seconde, on cherche le throughput nuit/week-end avec sandbox isolée et audit log par run.
+> Pour ces usages, un agent qui prend 12 minutes mais bat un humain par 10× sur le coût *total* (incluant disponibilité 24/7, parallélisation, absence de pauses) reste rationnel économiquement. ==Le cas d'usage CUA réaliste 2026 n'est pas l'« assistant temps-réel qui aide le commercial pendant son rendez-vous », c'est le « worker arrière-plan qui traite cinq cents tickets ITSM pendant la nuit ».== Cette inversion de cadrage est ce qui transforme un projet CUA en cas business viable : on ne cherche pas la latence sub-seconde, on cherche le throughput nuit/week-end avec sandbox isolée et audit log par run.
 
 ---
 
-## 15.10 Marché 2026-2030 et inflexions
+## 15.9 Marché 2026-2030 et inflexions
 
 Les estimations de marché doivent être lues avec prudence — elles agrègent des catégories hétérogènes (chatbots, RPA, copilotes, CUA stricts). MarketsandMarkets projette le marché global des agents IA à **52,62 G$ en 2030** depuis 7,84 G$ en 2025 (TCAC 46,3 %)[^10]. GMI Insights donne une fourchette différente : 5,9 G$ en 2024 → 105,6 G$ en 2034 (TCAC 38,5 %)[^44]. Les ordres de grandeur convergent ; les périmètres pas tout à fait.
 
 Sur la portion CUA strict, les chiffres sont absents — la catégorie est trop jeune et trop imbriquée dans les offres généralistes. Un repère indirect : les revenus annualisés d'Anthropic sont passés de 1 G$ fin 2024 à **14 G$** début 2026[^31] — Claude Code à lui seul génère 2,5 G$, et la part attribuable aux usages computer use et agentic est non publique mais probablement à deux chiffres en pourcentage. La levée de Série G de **30 G$** (380 G$ valorisation) en février 2026, deuxième plus grand round privé de l'histoire tech[^31], est un proxy de la conviction du marché.
 
-### 15.10.1 Les trois prédictions Gartner à dater
+### 15.9.1 Les trois prédictions Gartner à dater
 
 Les prévisions stratégiques de Gartner valent d'être citées avec leur fourchette de fiabilité :
 
@@ -302,7 +299,7 @@ Les prévisions stratégiques de Gartner valent d'être citées avec leur fourch
 
 ==Ces trois projections, prises ensemble, suggèrent une dynamique de polarisation== : forte croissance brute, forte mortalité projet, et émergence d'une couche de méta-agents de gouvernance.
 
-### 15.10.2 Trois lignes de fracture
+### 15.9.2 Trois lignes de fracture
 
 Trois lignes de fracture définissent la fenêtre 2026–2027 :
 
@@ -310,9 +307,9 @@ Trois lignes de fracture définissent la fenêtre 2026–2027 :
 
 **La deuxième est sécuritaire.** L'industrialisation à grande échelle requiert une couche de défense contre VPI et contre les vulnérabilités de control plane qui n'existe pas encore en mature. Anthropic a déployé ASL-3 avec classifieurs en temps réel sur Sonnet 4.5[^24], mais l'écart entre ce qui est annoncé et ce qui est testé indépendamment reste large.
 
-**La troisième est régulatoire.** Gartner prédit que des lois IA fragmentées couvriront la moitié de l'économie mondiale d'ici 2027, induisant ~5 G$ de dépenses de conformité[^11]. L'EU AI Act, l'AI Office et les *deployer obligations* pour les systèmes à haut risque structureront le déploiement européen. Le Ch.16 instancie sur la banque française tier 1 ; le Ch.23 généralise.
+**La troisième est régulatoire.** Gartner prédit que des lois IA fragmentées couvriront la moitié de l'économie mondiale d'ici 2027, induisant ~5 G$ de dépenses de conformité[^11]. L'EU AI Act, l'AI Office et les *deployer obligations* pour les systèmes à haut risque structureront le déploiement européen. Le [Ch. 16](ch16-analytics-agentique-banque.md) instancie sur la banque française tier 1 ; le [Ch. 23](ch23-gouvernance-ai-act.md) généralise.
 
-### 15.10.3 Trois inflexions à dater 18-24 mois
+### 15.9.3 Trois inflexions à dater 18-24 mois
 
 **(i) Convergence partielle des architectures vers (iii)** — perception-action dans un seul réseau, à la UI-TARS — les architectures multi-modèles seront optimisées plutôt que rejetées.
 
@@ -320,28 +317,28 @@ Trois lignes de fracture définissent la fenêtre 2026–2027 :
 
 **(iii) Standardisation de la couche *guardian*** — agents qui supervisent, valident, bloquent — comme nouvelle ligne d'investissement, en miroir de ce que les WAF ont été pour le web applicatif des années 2010.
 
-> [!INFO] Voir Ch. 18 — Observabilité agentique
-> L'inflexion (ii) — standard d'observabilité agent — est précisément ce que le Ch.18 documente comme la convergence 2026 autour d'OpenTelemetry GenAI Semantic Conventions et du *cognitive audit trail*. Les traces UI (screenshots, coordonnées d'action, états DOM) sont la prochaine extension naturelle des semconv — front actif fin 2026, mentionné comme `gen_ai.computer_use.*` dans les early draft WG.
+> [!INFO] Voir [Ch. 18 — Observabilité agentique et cognitive audit trail](ch18-observabilite-cognitive-audit-trail.md)
+> L'inflexion (ii) — standard d'observabilité agent — est précisément ce que le [Ch. 18](ch18-observabilite-cognitive-audit-trail.md) documente comme la convergence 2026 autour d'OpenTelemetry GenAI Semantic Conventions et du *cognitive audit trail*. Les traces UI (screenshots, coordonnées d'action, états DOM) sont la prochaine extension naturelle des semconv — front actif fin 2026, mentionné comme `gen_ai.computer_use.*` dans les early draft WG.
 
 L'agent computer use de fin 2027 ressemblera moins à une bête de concours sur OSWorld qu'à un *worker* enterprise contraint par sandbox, observable par une stack EDR-équivalent, déclenchable par workflow, audité par un guardian. ==C'est l'industrialisation, pas l'intelligence, qui définit la décennie qui s'ouvre.==
 
 ---
 
-## 15.11 Récap chapitre — Boucle, archis, surface, économie
+## 15.10 Récap chapitre — Boucle, archis, surface, économie
 
-Quatre points à retenir pour fermer le chapitre :
+Quatre points à retenir :
 
 1. **La boucle à cinq phases** (observe · plan · ground · act · **verify**) — le cinquième nœud est ce qui explique le résultat superhumain d'OSAgent et ce qui transforme le CUA d'un système one-shot en système resumable.
 2. **Les trois architectures concurrentes** (vision pure / vision+parseur / agent intégré) — aucune ne domine en 2026, convergence prévue vers (iii) à 18-24 mois.
-3. **La surface d'attaque qualitativement inédite** — VPI (51 % CUA / 100 % BUA) + CVE-2025-55322 control plane. Ces deux verticales s'ajoutent au threat model E4 du Ch.19 et ne sont pas couvertes par la matrice MCP du Ch.13.
+3. **La surface d'attaque qualitativement inédite** — VPI (51 % CUA / 100 % BUA) + CVE-2025-55322 control plane. Ces deux verticales s'ajoutent au threat model E4 du [Ch. 19](ch19-gardefous-securite-globale.md) et ne sont pas couvertes par la matrice MCP du [Ch. 13](ch13-mcp-securite.md).
 4. **La latence comme coût caché** — ratio 24× humain, mais ==l'usage dominant en prod (66 % minutes, 17 % no limit) est l'automatisation arrière-plan, pas l'interaction temps-réel==.
 
 > [!WARNING] Trois pièges classiques (100 % traçables)
-> **Piège 1 — RFP au score OSWorld brut.** Sans inspecter (a) la version du benchmark (Verified ou non), (b) si le système utilise code execution comme raccourci, (c) SELF vs 3RD party — un score OSWorld brut n'est pas un signal d'achat. Le Ch.17 a déjà nommé le pattern ; ici, il s'instancie.
-> **Piège 2 — POC sans test reliability répété.** Une même tâche rejouée dix fois produit dix trajectoires divergentes. Tester une fois est un POC ; tester N fois avec mesure de variance est une éval. La métrique *repro rate* (Ch.16 §16.9.2) doit figurer dans le gating de release.
-> **Piège 3 — Skipper le control plane audit.** Tout endpoint HTTP qui pilote la VM agent est un endpoint d'attaque. CVE-2025-55322 sur OmniParser est l'exemple canonique ; il s'en publiera d'autres. La revue sécurité doit inclure le control plane ET le canal pixel — la matrice MCP du Ch.13 ne suffit pas.
+> **Piège 1 — RFP au score OSWorld brut.** Sans inspecter (a) la version du benchmark (Verified ou non), (b) si le système utilise code execution comme raccourci, (c) SELF vs 3RD party — un score OSWorld brut n'est pas un signal d'achat. Le [Ch. 17](ch17-evaluation-benchmarks.md) a déjà nommé le pattern ; ici, il s'instancie.
+> **Piège 2 — POC sans test reliability répété.** Une même tâche rejouée dix fois produit dix trajectoires divergentes. Tester une fois est un POC ; tester N fois avec mesure de variance est une éval. La métrique *repro rate* ([Ch. 16](ch16-analytics-agentique-banque.md) §16.9.2) doit figurer dans le gating de release.
+> **Piège 3 — Skipper le control plane audit.** Tout endpoint HTTP qui pilote la VM agent est un endpoint d'attaque. CVE-2025-55322 sur OmniParser est l'exemple canonique ; il s'en publiera d'autres. La revue sécurité doit inclure le control plane ET le canal pixel — la matrice MCP du [Ch. 13](ch13-mcp-securite.md) ne suffit pas.
 
-L'Acte III a maintenant traité : la plomberie tool (Ch.12), son coût sécurité (Ch.13), les régimes d'accès utilisateur (Ch.14), et le sous-régime extrême (Ch.15). Le Ch.16 ferme l'Acte sur l'instanciation sectorielle — trois surfaces agentiques GCP, banque française tier 1, pivot sémantique, régulation 2 août 2026.
+Le [Ch. 16](ch16-analytics-agentique-banque.md) ferme l'Acte sur l'instanciation sectorielle — trois surfaces agentiques GCP, banque française tier 1, pivot sémantique, régulation 2 août 2026.
 
 ---
 

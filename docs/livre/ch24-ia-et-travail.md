@@ -1,7 +1,18 @@
+---
+chapitre: 24
+titre: "Société : IA et travail"
+acte: 4
+acte_titre: "Mesures et garde-fous"
+gabarit: standard
+mots: 10115
+statut: v1
+date_maj: 2026-05-29
+---
+
 # Chapitre 24 — Société : IA et travail
 
 > **Acte IV — Mesures et garde-fous · Chapitre standard, ~22 pages**
-> _Trois chiffres ont structuré la conversation mondiale sur l'IA et le travail depuis 2013. **47 %** d'emplois américains à haut risque d'automatisation (Frey & Osborne). **300 millions** d'équivalents temps plein exposés sur dix ans (Goldman Sachs). **0,55 %** de productivité totale des facteurs sur dix ans (Acemoglu). Ils ne se contredisent pas frontalement — ils ne se comparent pas. Chacun mesure une chose différente, sous des conventions méthodologiques distinctes, dans des cadres théoriques qui ne tranchent pas la même question. L'écart entre 300 millions d'ETP et 0,55 % de PTF n'est pas un débat technique d'économètres : c'est un choix politique sur la **direction** que la technologie prendra. Ce chapitre cartographie la littérature qui sépare le récit médiatique du débat scientifique, démonte les frameworks d'estimation, convoque la pause d'Engels comme analogie historique load-bearing, et formalise les **quatre scénarios à 2035** et les **six leviers anti-catastrophe** que la stratégie publique peut actionner — ou pas. Le Ch.21 a mesuré le ROI agent par agent ; le Ch.23 a posé les obligations légales ; ce chapitre prend la question à l'étage au-dessus : qui produit, qui en bénéficie, et combien de temps reste-t-il aux institutions pour décider._
+> _Trois chiffres ont structuré la conversation mondiale sur l'IA et le travail depuis 2013. **47 %** d'emplois américains à haut risque d'automatisation (Frey & Osborne). **300 millions** d'équivalents temps plein exposés sur dix ans (Goldman Sachs). **0,55 %** de productivité totale des facteurs sur dix ans (Acemoglu). Ils ne se contredisent pas frontalement — ils ne se comparent pas. Chacun mesure une chose différente, sous des conventions méthodologiques distinctes, dans des cadres théoriques qui ne tranchent pas la même question. L'écart entre 300 millions d'ETP et 0,55 % de PTF n'est pas un débat technique d'économètres : c'est un choix politique sur la **direction** que la technologie prendra. Cartographie de la littérature qui sépare le récit médiatique du débat scientifique, démonte les frameworks d'estimation, convoque la pause d'Engels comme analogie historique load-bearing, et formalise les **quatre scénarios à 2035** et les **six leviers anti-catastrophe** que la stratégie publique peut actionner — ou pas. Le [Ch. 21](ch21-roi-paradoxe-agentique.md) a mesuré le ROI agent par agent ; le [Ch. 23](ch23-gouvernance-ai-act.md) a posé les obligations légales ; ici, la question monte d'un étage : qui produit, qui en bénéficie, et combien de temps reste-t-il aux institutions pour décider._
 
 > [!QUESTION] Question d'ouverture
 > Entre les pronostics de catastrophe — Goldman Sachs : 300 millions d'équivalents temps plein exposés à l'automatisation — et les estimations modestes — Acemoglu : 0,55 % de productivité totale des facteurs sur dix ans — la littérature économique sur l'IA et le travail paraît irréconciliable. Elle ne l'est pas. ==Quel cadre méthodologique choisir pour estimer l'impact emploi, et qu'est-ce que la « pause d'Engels » d'Allen 2009 suggère du calendrier de redistribution dans une économie où les gains de productivité ne se diffusent pas mécaniquement aux salaires médians ?==
@@ -18,20 +29,8 @@
 
 ---
 
-## 24.1 Place du chapitre — du ROI agent-par-agent au choix politique de société
-
-L'Acte IV a déroulé les **mesures et garde-fous** dans l'ordre où une organisation les rencontre — Ch.17-18 pour évaluer et observer, Ch.19-20 pour cadrer et déployer, Ch.21 pour mesurer le ROI, Ch.22 pour la facture énergétique, Ch.23 pour la conformité réglementaire. Les chapitres précédents traitaient les agents *à l'intérieur* d'une organisation — comment les évaluer, les opérer, les sécuriser, les amortir. Le Ch.24 ouvre les fenêtres : ==que produit-on, qui le fait, qui en bénéficie — et combien de temps reste-t-il aux institutions pour orienter la trajectoire avant que le palier soit franchi ?==
-
-Trois raisons justifient un chapitre dédié à cette question sociétale dans un livre qui se voulait, pour l'essentiel, technique.
-
-**Première raison** : la trajectoire technique décrite dans les Actes I-III a une **conséquence sociétale qui n'est plus marginale**. Le Ch.5 a montré que l'inférence est devenue une ressource industrielle dont la courbe LLMflation crée un nouveau régime de coût ; le Ch.7 a montré que la boucle agentique pilote désormais des tâches qu'aucun LLM en chat ne savait toucher en 2022 ; le Ch.15 a montré que `computer use` enlève la dernière frontière (la souris et le clavier). Cumulés, ces trois résultats déplacent la frontière entre tâches *exposées* et tâches *automatisables* à un rythme que les frameworks économiques de 2023 — calibrés sur les LLM en chat — peinent à intégrer. Un livre qui traite la stack agentique sans poser la question du travail laisse un angle mort.
-
-**Deuxième raison** : le ROI agent-par-agent du Ch.21 et l'externalité énergétique du Ch.22 sont des **composants partiels** d'une équation politique plus large. Un agent peut être très rentable en hard savings (sortie 2026 typique : −30 à −50 % de coût opérationnel sur un cas standard) sans que ses gains se redistribuent au-delà de l'organisation qui le déploie. La littérature économique appelle ce phénomène la **dissociation des gains de productivité et des salaires médians** ; le Ch.24 montre qu'elle n'est pas un accident de marché mais le résultat d'un rapport de force.
-
-**Troisième raison** : sans cette mise en perspective, le Ch.25 — *Politique : procès Musk v. Altman* — perd la moitié de son sens. Le Ch.25 décrit le contentieux juridique qui cristallise *qui contrôle la direction de l'IA*. Sans le Ch.24 qui pose les enjeux de cette direction, le Ch.25 se réduit à une querelle de cofondateurs. Avec lui, il devient le test contentieux d'une question politique — qui décide ce que l'IA doit faire, et au bénéfice de qui.
-
-> [!INFO] Voir Ch. 5 — Économie inférence · Ch. 21 — ROI agent · Ch. 22 — IA frugale · Ch. 23 — Gouvernance · Ch. 25 — Procès Musk v. Altman
-> Le Ch.5 a posé le coût unitaire de l'inférence ; le Ch.21 a mesuré ce que vaut un agent pour qui le déploie ; le Ch.22 a chiffré l'externalité énergétique ; le Ch.23 a posé les obligations légales. Le Ch.24 fait un saut d'échelle : il pose la question macroéconomique et politique de la trajectoire. Le Ch.25 le prolonge en regardant comment le contentieux juridique cristallise les positions doctrinales — *safety hard*, *scaling efficient*, *governance-as-service*. ==Pris ensemble, Ch.24 et Ch.25 forment le contrefort sociétal du livre== — sans eux, l'analyse technique reste cohérente mais socialement incomplète.
+> [!INFO] Voir [Ch. 5 — Économie de l'inférence](ch05-economie-inference.md) · [Ch. 21 — ROI](ch21-roi-paradoxe-agentique.md) · [Ch. 22 — IA frugale](ch22-ia-frugale.md) · [Ch. 23 — Gouvernance](ch23-gouvernance-ai-act.md) · [Ch. 25 — Procès Musk v. Altman](ch25-proces-musk-altman.md)
+> Le [Ch. 5](ch05-economie-inference.md) a posé le coût unitaire de l'inférence ; le [Ch. 21](ch21-roi-paradoxe-agentique.md) a mesuré ce que vaut un agent pour qui le déploie ; le [Ch. 22](ch22-ia-frugale.md) a chiffré l'externalité énergétique ; le [Ch. 23](ch23-gouvernance-ai-act.md) a posé les obligations légales. Saut d'échelle ici : la question macroéconomique et politique de la trajectoire. Le [Ch. 25](ch25-proces-musk-altman.md) prolongera en regardant comment le contentieux juridique cristallise les positions doctrinales — *safety hard*, *scaling efficient*, *governance-as-service*. ==Pris ensemble, ces deux chapitres forment le contrefort sociétal du livre== — sans eux, l'analyse technique reste cohérente mais socialement incomplète.
 
 ---
 
@@ -88,10 +87,10 @@ Trois hypothèses circulent sur ce qui pourrait distinguer l'IA des GPT précéd
 
 **(b) Nature cognitive.** Les GPT précédentes augmentaient le travail physique. L'IA générative augmente — et potentiellement automatise — le travail cognitif. McKinsey parle de « *reverse skill bias* » : pour la première fois, ==une technologie d'automatisation a un impact disproportionné sur les emplois à fort capital humain== (cadres, juristes, consultants, journalistes, développeurs)[^mckinsey-2023]. Cette inversion n'est pas neutre politiquement : la coalition socialement bénéficiaire/perdante n'est pas celle des révolutions précédentes — et la classe moyenne cognitive, qui a porté les Trente Glorieuses, devient l'éventuelle perdante.
 
-**(c) Capacité d'auto-amélioration.** Les modèles d'IA participent à leur propre développement (génération de code, RLHF, agents autonomes ; cf. Ch.7 et Ch.15). Si cette boucle se referme — *self-improving AI* — le rythme de progrès pourrait s'accélérer, raccourcissant le palier d'adoption. C'est l'argument central des chercheurs en sécurité de l'IA (Geoffrey Hinton, Yoshua Bengio, Stuart Russell)[^bengio-hinton]. La littérature économique mainstream traite cette hypothèse avec scepticisme ; ==elle n'est plus marginale==, et elle constitue la pierre angulaire du scénario D développé au §24.7.
+**(c) Capacité d'auto-amélioration.** Les modèles d'IA participent à leur propre développement (génération de code, RLHF, agents autonomes ; cf. [Ch. 7](ch07-boucle-agentique.md) et [Ch. 15](ch15-computer-use.md)). Si cette boucle se referme — *self-improving AI* — le rythme de progrès pourrait s'accélérer, raccourcissant le palier d'adoption. C'est l'argument central des chercheurs en sécurité de l'IA (Geoffrey Hinton, Yoshua Bengio, Stuart Russell)[^bengio-hinton]. La littérature économique mainstream traite cette hypothèse avec scepticisme ; ==elle n'est plus marginale==, et elle constitue la pierre angulaire du scénario D développé au §24.7.
 
-> [!INFO] Voir Ch. 7 — Boucle agentique · Ch. 15 — Computer use
-> Les chapitres 7 et 15 documentent une trajectoire technique tangible : l'IA n'est plus un outil amnésique de réponse en un coup, c'est un système qui pilote des écrans (Ch.15), persiste (Ch.9), capitalise (Ch.10) et orchestre d'autres agents (Ch.11). Cette transformation technique est un ==multiplicateur d'exposition== que les frameworks économiques de 2023 — basés sur les LLM en chat — commencent à peine à intégrer. Pour un économiste qui calibrait son taux d'automatisation en 2023, le fait qu'un agent moderne sache cliquer dans un CRM, lire une feuille Excel, exécuter du code et boucler entre les trois change la base de calcul — pas marginalement, structurellement.
+> [!INFO] Voir [Ch. 7 — Boucle agentique](ch07-boucle-agentique.md) · [Ch. 15 — Computer use](ch15-computer-use.md)
+> Les [Ch. 7](ch07-boucle-agentique.md) et [Ch. 15](ch15-computer-use.md) documentent une trajectoire technique tangible : l'IA n'est plus un outil amnésique de réponse en un coup, c'est un système qui pilote des écrans ([Ch. 15](ch15-computer-use.md)), persiste ([Ch. 9](ch09-memoire-agentique.md)), capitalise ([Ch. 10](ch10-compaction.md)) et orchestre d'autres agents ([Ch. 11](ch11-patterns-orchestration.md)). Cette transformation technique est un ==multiplicateur d'exposition== que les frameworks économiques de 2023 — basés sur les LLM en chat — commencent à peine à intégrer. Pour un économiste qui calibrait son taux d'automatisation en 2023, le fait qu'un agent moderne sache cliquer dans un CRM, lire une feuille Excel, exécuter du code et boucler entre les trois change la base de calcul — pas marginalement, structurellement.
 
 ---
 
@@ -193,7 +192,7 @@ Tous ces résultats portent sur des **adoptions précoces, dans des contextes co
 2. **Effet de nouveauté** — les premiers gains peuvent venir de tâches faciles ; le profil de gain à mesure que l'usage mature est inconnu.
 3. **Effets d'équilibre général** — un développeur qui produit deux fois plus de code peut soit doubler le marché, soit le faire à effectifs moitié moindres. La littérature empirique observée ne distingue pas ces deux régimes.
 
-C'est précisément ce que dit Goldman Sachs en mars 2025 : malgré la prolifération massive de l'IA générative, ==aucun effet discernable sur les indicateurs majeurs du marché du travail== au niveau agrégé[^goldman-2025]. Le palier de la GPT, encore une fois. Pour le sponsor IA qui prépare un investissement à trois ans, ce non-signal agrégé est le rappel utile que les gains de productivité mesurés en pilote (Ch.21) ne deviennent une dynamique macro qu'après un délai institutionnel et organisationnel non-compressible.
+C'est précisément ce que dit Goldman Sachs en mars 2025 : malgré la prolifération massive de l'IA générative, ==aucun effet discernable sur les indicateurs majeurs du marché du travail== au niveau agrégé[^goldman-2025]. Le palier de la GPT, encore une fois. Pour le sponsor IA qui prépare un investissement à trois ans, ce non-signal agrégé est le rappel utile que les gains de productivité mesurés en pilote ([Ch. 21](ch21-roi-paradoxe-agentique.md)) ne deviennent une dynamique macro qu'après un délai institutionnel et organisationnel non-compressible.
 
 ---
 
@@ -223,7 +222,7 @@ L'analogie avec Engels n'est pas mécanique. Trois différences importantes mér
 2. **Cible** — la révolution industrielle frappait les ouvriers ; l'IA frappe d'abord les cols blancs, dont le pouvoir politique et économique est différent (et dont la coalition électorale traverse les partis traditionnels).
 3. **Élasticité de la demande** — pour la machine à vapeur, la demande mondiale de textile a explosé ; pour l'IA, l'élasticité de la demande pour les services cognitifs est moins claire.
 
-Mais l'enseignement structurel reste : ==les gains de productivité ne se redistribuent pas automatiquement. C'est une conquête institutionnelle==. Le Ch.21, en mesurant le ROI agent par agent, donne le numérateur ; ce chapitre rappelle qu'il n'y a pas de mécanisme automatique qui transforme ce numérateur en bien-être médian.
+Mais l'enseignement structurel reste : ==les gains de productivité ne se redistribuent pas automatiquement. C'est une conquête institutionnelle==. Le [Ch. 21](ch21-roi-paradoxe-agentique.md), en mesurant le ROI agent par agent, donne le numérateur ; ici, on rappelle qu'il n'y a pas de mécanisme automatique qui transforme ce numérateur en bien-être médian.
 
 ### 24.6.3 Le palier électrique — pourquoi il faut être patient
 
@@ -265,9 +264,9 @@ Pour beaucoup d'organisations, ce scénario est en fait ==le moins déstabilisan
 
 ### 24.7.4 Scénario D — La rupture agentique
 
-Le palier IA se franchit en moins de cinq ans, porté par les **agents autonomes** capables de piloter des écrans (Ch.15), persister (Ch.9), capitaliser. La courbe d'amélioration s'auto-renforce (les agents génèrent du code et des données qui améliorent les modèles). Une fraction significative des emplois cognitifs est automatisée en moins d'une décennie : juniors juridiques, supports administratifs, premiers niveaux de codage, certaines parties du conseil et de l'audit. Les gains de productivité dépassent ==3-4 % par an== en macroéconomie.
+Le palier IA se franchit en moins de cinq ans, porté par les **agents autonomes** capables de piloter des écrans ([Ch. 15](ch15-computer-use.md)), persister ([Ch. 9](ch09-memoire-agentique.md)), capitaliser. La courbe d'amélioration s'auto-renforce (les agents génèrent du code et des données qui améliorent les modèles). Une fraction significative des emplois cognitifs est automatisée en moins d'une décennie : juniors juridiques, supports administratifs, premiers niveaux de codage, certaines parties du conseil et de l'audit. Les gains de productivité dépassent ==3-4 % par an== en macroéconomie.
 
-C'est le scénario que les chercheurs en sécurité de l'IA (Hinton, Bengio, Russell) tiennent pour plausible[^bengio-hinton]. Il pose deux problèmes simultanés : un **choc de transition extrême** sur le marché du travail (sans précédent depuis la transition agricole-industrie), et la **question de la gouvernance des systèmes autonomes**, traitée au Ch.23 sous l'angle légal et au Ch.25 sous l'angle politique. ==La discussion sur le revenu universel, marginalisée jusque-là, redeviendrait centrale== — non comme utopie progressiste, mais comme nécessité technique.
+C'est le scénario que les chercheurs en sécurité de l'IA (Hinton, Bengio, Russell) tiennent pour plausible[^bengio-hinton]. Il pose deux problèmes simultanés : un **choc de transition extrême** sur le marché du travail (sans précédent depuis la transition agricole-industrie), et la **question de la gouvernance des systèmes autonomes**, traitée au [Ch. 23](ch23-gouvernance-ai-act.md) sous l'angle légal et au [Ch. 25](ch25-proces-musk-altman.md) sous l'angle politique. ==La discussion sur le revenu universel, marginalisée jusque-là, redeviendrait centrale== — non comme utopie progressiste, mais comme nécessité technique.
 
 ### 24.7.5 Le point commun aux quatre scénarios
 
@@ -325,11 +324,11 @@ C'est le débat le plus politiquement chargé. Trois familles d'instruments :
 
 ### 24.8.5 Levier 5 — Gouvernance des modèles
 
-Ce levier est techniquement le plus complexe et politiquement le plus instable. Il concerne la régulation des grands modèles d'IA eux-mêmes : transparence d'entraînement, évaluation préalable, audit, responsabilité. C'est l'objet du **Ch.23** dans ce livre — l'AI Act européen (entré en application graduelle 2024-2026), les *executive orders* américains successifs, et les codes de conduite volontaires.
+Ce levier est techniquement le plus complexe et politiquement le plus instable. Il concerne la régulation des grands modèles d'IA eux-mêmes : transparence d'entraînement, évaluation préalable, audit, responsabilité. C'est l'objet du **[Ch. 23](ch23-gouvernance-ai-act.md)** — l'AI Act européen (entré en application graduelle 2024-2026), les *executive orders* américains successifs, et les codes de conduite volontaires.
 
 Le point essentiel pour le débat travail : ==plus la gouvernance est faible, plus le risque de scénarios B et D dominants augmente==. La gouvernance technique et la politique du travail ne sont pas deux questions séparées. ==Une gouvernance forte oriente la R&D vers la complémentarité ; une gouvernance faible laisse les incitations privées orienter la R&D vers la substitution==.
 
-Le Ch.25 — *Politique : procès Musk v. Altman* — pose explicitement la question : à qui appartient le contrôle de la direction de l'IA ? Au-delà de la querelle entre fondateurs d'OpenAI, c'est cette question qui détermine si l'IA s'orientera vers la complémentarité (avec une exigence de bien public) ou vers la maximisation de la rente privée.
+Le [Ch. 25](ch25-proces-musk-altman.md) — *Politique : procès Musk v. Altman* — pose explicitement la question : à qui appartient le contrôle de la direction de l'IA ? Au-delà de la querelle entre fondateurs d'OpenAI, c'est cette question qui détermine si l'IA s'orientera vers la complémentarité (avec une exigence de bien public) ou vers la maximisation de la rente privée.
 
 ### 24.8.6 Levier 6 — Revitalisation territoriale
 
@@ -396,7 +395,7 @@ Ce que le débat français pourrait gagner à intégrer plus clairement : **les 
 
 ## 24.10 Récap chapitre — trois propositions load-bearing
 
-L'argument que ce chapitre a déroulé tient en trois propositions :
+==**Trois propositions** :==
 
 1. ==L'IA est une general-purpose technology== au sens de Bresnahan-Trajtenberg, comparable à l'électricité ou aux TIC. Sa diffusion sera rapide en termes d'adoption logicielle, lente en termes d'impact macroéconomique. Le palier de productivité sera franchi entre 2027 et 2035, selon les estimations crédibles.
 
@@ -411,7 +410,7 @@ L'IA suivra la même règle. Les chiffres conservateurs d'Acemoglu (0,55 % de PT
 > [!WARNING] Trois pièges classiques (100 % traçables)
 > **Citer un chiffre sans son framework** — « 47 % d'emplois menacés » et « 0,55 % de PTF » sont compatibles avec deux récits radicalement différents ; sans le framework, la conversation se réduit à un échange de chiffres incommensurables. **Traiter le scénario A (productivité partagée) comme mécanique** — il suppose trois conditions politiques fortes ; sans elles, le scénario B s'installe par défaut. **Sous-estimer la lenteur du palier** — la décennie 2026-2035 verra des effets locaux concentrés (déclassement de cohortes juniors) avant que les gains agrégés ne se matérialisent ; la fenêtre politique d'adhésion à la technologie se joue dans cet intervalle.
 
-Le Ch.25 prend la suite en regardant **comment cette question politique se cristallise dans un contentieux judiciaire concret** — le procès Musk v. Altman, dont la phase 1 s'est ouverte à Oakland le 27 avril 2026 et dont le verdict du 18 mai 2026 a redistribué le dossier sur trois arènes parallèles. Le procès ne tranche pas la question politique ; il en pose les positions doctrinales en termes juridiquement opposables. ==Le Ch.24 a posé la question (qui contrôle la direction) ; le Ch.25 montre qui tente d'y répondre devant un jury, et avec quelle issue.==
+Le [Ch. 25](ch25-proces-musk-altman.md) prend la suite en regardant **comment cette question politique se cristallise dans un contentieux judiciaire concret** — le procès Musk v. Altman, dont la phase 1 s'est ouverte à Oakland le 27 avril 2026 et dont le verdict du 18 mai 2026 a redistribué le dossier sur trois arènes parallèles. Le procès ne tranche pas la question politique ; il en pose les positions doctrinales en termes juridiquement opposables. ==La question (qui contrôle la direction) est posée ici ; le [Ch. 25](ch25-proces-musk-altman.md) montre qui tente d'y répondre devant un jury, et avec quelle issue.==
 
 ---
 
@@ -475,4 +474,4 @@ Le Ch.25 prend la suite en regardant **comment cette question politique se crist
 
 [^insee-2025]: INSEE. *Les technologies de l'information et de la communication dans les entreprises en 2024*. Insee Première n° 2061, 2025. [insee.fr](https://www.insee.fr/fr/statistiques/8604126). Consulté le 28 mai 2026.
 
-[^ia-et-travail-dossier]: Guglielmino, M. *L'IA et le travail — frameworks d'estimation, pause d'Engels, quatre scénarios 2035, six leviers anti-catastrophe*. Dossier publié le 4 mai 2026. Source primaire de ce chapitre. Consulté le 28 mai 2026.
+[^ia-et-travail-dossier]: Guglielmino, M. *L'IA et le travail — frameworks d'estimation, pause d'Engels, quatre scénarios 2035, six leviers anti-catastrophe*. 4 mai 2026.

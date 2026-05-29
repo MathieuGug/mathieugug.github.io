@@ -1,7 +1,18 @@
+---
+chapitre: 6
+titre: "Bordure : world models et physique apprise"
+acte: 1
+acte_titre: "Les moteurs"
+gabarit: encart
+mots: 3340
+statut: v1
+date_maj: 2026-05-29
+---
+
 # Chapitre 6 (encart court) — Bordure : world models et physique apprise
 
 > **Acte I — Les moteurs · Encart court, ~7 pages**
-> _On parle beaucoup de world models en 2026. Genie 3 chez DeepMind, V-JEPA 2 chez Meta, Cosmos chez NVIDIA, GAIA-3 chez Wayve, Marble chez World Labs, AMI Labs qui lève un milliard pour LeCun en janvier — un mot qui circulait entre chercheurs depuis 2018 est devenu mot d'ordre stratégique en douze mois. Cet encart ferme l'Acte I sur une question simple : qu'est-ce qu'on appelle vraiment world model, où est-ce mûr, où est-ce que ça reste de la recherche, et pourquoi le sujet revient dans tous les pipelines de pilotage d'écran et de robotique. Bordure pour le décideur, pas produit mûr — sauf sur les 5 % où c'est central._
+> _On parle beaucoup de world models en 2026. Genie 3 chez DeepMind, V-JEPA 2 chez Meta, Cosmos chez NVIDIA, GAIA-3 chez Wayve, Marble chez World Labs, AMI Labs qui lève un milliard pour LeCun en janvier — un mot qui circulait entre chercheurs depuis 2018 est devenu mot d'ordre stratégique en douze mois. Une question simple : qu'est-ce qu'on appelle vraiment world model, où est-ce mûr, où est-ce que ça reste de la recherche, et pourquoi le sujet revient dans tous les pipelines de pilotage d'écran et de robotique. Bordure pour le décideur, pas produit mûr — sauf sur les 5 % où c'est central._
 
 > [!QUESTION] Question d'ouverture
 > Si un LLM est un modèle du langage, qu'est-ce qu'un *world model* — et pourquoi est-ce que la question revient dans tous les pipelines de computer use et de robotique en 2026 ?
@@ -10,7 +21,7 @@
 > - ==Un world model, c'est une fonction apprise `f(état, action) → état suivant`== : il prédit ce qui va se passer, pas ce qu'il faut dire. Différent en nature d'un LLM, qui prédit le mot suivant dans un espace symbolique discret.
 > - **Trois architectures concurrentes en 2026**, aucune n'a gagné : V/M/C → RSSM/Dreamer (pixel-prédictif, lignée Ha-Schmidhuber-DeepMind), JEPA (latent, école LeCun), autoregressif latent (Genie 3, Cosmos). Le débat pixel vs latent est technique, pas religieux.
 > - ==Pour 95 % des cas d'usage agentiques 2026, ce n'est pas votre problème.== C'est une bordure de recherche, pas un produit mûr — six verrous durs (mémoire courte, physique imparfaite, compute, données vidéo bornées, évaluation immature, sécurité) tiennent encore les déploiements à l'écart.
-> - Pour les 5 % restants — pilotage écran avancé (Ch.15), robotique humanoïde, conduite autonome, simulation 3D — c'est central. Un *language-conditioned world model* devient l'architecture de référence dans ces niches.
+> - Pour les 5 % restants — pilotage écran avancé ([Ch. 15](ch15-computer-use.md)), robotique humanoïde, conduite autonome, simulation 3D — c'est central. Un *language-conditioned world model* devient l'architecture de référence dans ces niches.
 > - Signal faible à 18-36 mois. Ce qu'il faut surveiller : les benchmarks robotiques 2027 (V-JEPA 3 vs Cosmos+SIMA) et le coût marginal d'inférence d'un world model temps réel.
 
 ---
@@ -19,15 +30,13 @@
 
 Un LLM, même excellent, tombe en panne dès qu'on lui demande d'anticiper précisément une trajectoire physique. Décrire un verre qui se renverse, oui — c'est du langage. Anticiper exactement où la flaque va s'étaler, à quelle vitesse, dans quelle forme : non. La grammaire ne fournit pas les contraintes de la gravité, et la statistique des phrases n'apprend pas la cohérence d'un objet à travers le temps.
 
-On pourrait s'en accommoder pour la plupart des cas 2026 — un agent qui rédige un mail, planifie une tournée commerciale, résume un dossier client n'a pas besoin de simuler la physique. Mais la liste des cas où il en faudrait *quand même* s'allonge : pilotage d'écran avancé, robotique manipulatrice, conduite autonome, création d'environnements 3D, agents qui apprennent par essai-erreur dans un simulateur. À chaque fois, le même besoin — prédire l'état suivant, pas le mot suivant.
+On pourrait s'en accommoder pour la plupart des cas 2026 — un agent qui rédige un mail, planifie une tournée commerciale, résume un dossier client n'a pas besoin de simuler la physique. Mais la liste des cas où il en faudrait *quand même* s'allonge : pilotage d'écran avancé ([Ch. 15](ch15-computer-use.md)), robotique manipulatrice, conduite autonome, création d'environnements 3D, agents qui apprennent par essai-erreur dans un simulateur. À chaque fois, le même besoin — prédire l'état suivant, pas le mot suivant.
 
 L'idée n'est pas neuve. David Ha et Jürgen Schmidhuber publient en mars 2018 un article fondateur, *World Models*, où ils montrent qu'un agent peut être entraîné *entièrement à l'intérieur de son propre rêve* — un modèle interne génère les futurs, l'agent y apprend une politique, puis on le transfère dans l'environnement réel sans dégradation[^1]. « Apprendre en rêvant », disent-ils. Le terme circulait depuis les années 1990 dans la tradition du *model-based RL* ; 2018 a fixé l'objet dans le deep learning moderne.
 
 ![Schéma 1 — Anatomie fonctionnelle d'un world model : 3 entrées (observation / action / état latent) → 3 fonctions (comprendre / prédire / planifier) → 2 sorties + boucle|1300](../../world-models/images/20260505-02-anatomie-world-model.svg)
 
 La définition opérationnelle tient en une ligne : `f(état_t, action_t) → état_{t+1}`. Trois usages se cachent dedans, qu'il faut séparer. ==Comprendre== — condenser l'observation visuelle en une représentation latente compacte. ==Prédire== — étant donné un état et une action envisagée, dérouler un futur. ==Planifier== — utiliser ce modèle comme simulateur interne pour évaluer plusieurs séquences d'actions avant d'agir dans le réel. Les trois partagent la même fonction `f` mais ne sortent pas le même produit. Un world model qui comprend sans prédire sert à la perception ; un world model qui prédit sans planifier devient un générateur de vidéos. C'est la combinaison des trois qui ouvre la boucle agentique physique.
-
-Le rapport complet `world-models/` détaille la chronologie 2018-2026, la cartographie des dix acteurs, les quatre boucles d'usage et les trois scénarios 2026-2028[^renvoi-dossier]. L'encart se concentre sur ce qui compte pour fermer l'Acte I et ouvrir l'Acte II.
 
 ---
 
@@ -76,8 +85,8 @@ Pourquoi « bordure de recherche » et non « produit mûr » ? Parce que six ve
 
 **Compute coûteux.** GAIA-3 a demandé cinq fois plus de compute que GAIA-2, qui demandait déjà des semaines sur des dizaines de milliers de GPU. Cosmos repose sur 9 000 milliards de tokens d'entraînement. Sans capacité hyperscale, le ticket d'entrée est hors de portée — d'où la concentration sur quelques laboratoires.
 
-> [!INFO] Voir Ch.5 — L'économie unitaire de l'inférence
-> Les world models constituent un autre régime de scaling que la pile 7 couches du Ch.5 ne capture pas. La LLMflation × 1 000 mesure la déflation tokens/sec sur du texte ; elle ne s'applique pas tel quel à un modèle qui doit prédire 720p × 24 fps en temps réel. Un palier d'inférence world model — sa propre courbe de coût marginal — reste à écrire. Cousin, pas identique.
+> [!INFO] Voir [Ch. 5 — L'économie unitaire de l'inférence](ch05-economie-inference.md)
+> Les world models constituent un autre régime de scaling que la pile 7 couches ne capture pas. La LLMflation × 1 000 mesure la déflation tokens/sec sur du texte ; elle ne s'applique pas tel quel à un modèle qui doit prédire 720p × 24 fps en temps réel. Un palier d'inférence world model — sa propre courbe de coût marginal — reste à écrire. Cousin, pas identique.
 
 **Données vidéo bornées.** Les world models pixel ont déjà consommé une part importante de la vidéo internet réellement utilisable. La prochaine décennie de scaling supposera des données synthétiques, captées par des flottes ou des robots — boucle fermée qui pose ses propres questions méthodologiques.
 
@@ -85,18 +94,18 @@ Pourquoi « bordure de recherche » et non « produit mûr » ? Parce que six ve
 
 **Sécurité et désalignement.** Un world model crédible peut servir à entraîner des agents qui agissent dans le monde réel — y compris ceux qu'on ne souhaiterait pas voir déployés. La question de l'audit, de la provenance des données, de la sécurité des poids n'a pas reçu l'attention qu'elle mérite.
 
-Ces six verrous structurent les quatre boucles d'application que le rapport complet détaille — robotique (verrou de généralisation), conduite (fidélité physique), création 3D (qualité esthétique), agent virtuel (mémoire longue). Aucun modèle actuel n'est compétitif sur les quatre. C'est ce qui rend tentant le marketing de la convergence — et invraisemblable son arrivée avant 2027-2028.
+Ces six verrous structurent quatre boucles d'application — robotique (verrou de généralisation), conduite (fidélité physique), création 3D (qualité esthétique), agent virtuel (mémoire longue). Aucun modèle actuel n'est compétitif sur les quatre. C'est ce qui rend tentant le marketing de la convergence — et invraisemblable son arrivée avant 2027-2028.
 
 ---
 
 ## 6.5 Pourquoi la question revient en computer use et robotique
 
-Si c'est encore une bordure pour 95 % des cas, pourquoi est-ce que tout le monde en parle ? Parce que pour les 5 % restants, c'est central — et ces 5 % touchent deux fronts qui structurent l'Acte III du livre.
+Si c'est encore une bordure pour 95 % des cas, pourquoi est-ce que tout le monde en parle ? Parce que pour les 5 % restants, c'est central — et ces 5 % touchent deux fronts qui structurent l'Acte III.
 
 **Front 1 — Le pilotage d'écran.** Un agent qui clique dans une UI Salesforce sans connecteur dédié partage un substrat avec les world models pixel : il faut comprendre une scène visuelle, prédire ce que produira un clic, planifier une séquence d'actions sur un environnement dont la physique (le DOM, les modaux, les hover states) est apprise empiriquement. La frontière est mince entre un système de *computer use* avancé et un world model spécialisé sur les interfaces.
 
-> [!INFO] Voir Ch.15 — Computer use : le régime extrême
-> Le Ch.15 couvre le traitement applicatif des modèles vision-action — Claude computer use, OmniParser, Agent S2, UI-TARS, Magma, OSAgent. Trois architectures concurrentes (vision pure, vision + parseur dédié, agent intégré perception-action), saturation OSWorld à 76,26 % en octobre 2025, cliff UI-CUBE 87 % → 32 % sur les workflows enterprise complexes. Ch.6 reste à dessein **conceptuel** ; Ch.15 prend le relais sur l'applicatif.
+> [!INFO] Voir [Ch. 15 — Computer use : le régime extrême](ch15-computer-use.md)
+> Traitement applicatif des modèles vision-action — Claude computer use, OmniParser, Agent S2, UI-TARS, Magma, OSAgent. Trois architectures concurrentes (vision pure, vision + parseur dédié, agent intégré perception-action), saturation OSWorld à 76,26 % en octobre 2025, cliff UI-CUBE 87 % → 32 % sur les workflows enterprise complexes.
 
 **Front 2 — La robotique humanoïde.** 1X a ouvert en octobre 2025 les précommandes de NEO Gamma — son robot consommateur — sur un modèle commercial mixte : 20 000 dollars d'accès anticipé ou 499 dollars par mois en abonnement. En janvier 2026, l'entreprise publie son 1X World Model, qui ne mappe pas directement texte+images vers commandes motrices (la voie *vision-language-action*) mais ==génère d'abord une vidéo de ce qui devrait se passer dans la scène, puis convertit cette imagination en mouvement réel==. C'est l'architecture *language-conditioned world model* — un LLM injecté à la fois en entrée (instructions) et comme signal de supervision auxiliaire dans le world model. Pas un add-on : un changement de boucle.
 
@@ -111,9 +120,9 @@ Trois affirmations sous la formule : les LLM, malgré leur scaling continu, n'ap
 
 Mais la voie majoritaire en 2026 n'est ni purement langagière ni purement world-model. C'est **hybride**. Le LLM gère le raisonnement symbolique de haut niveau, le world model gère les trajectoires physiques fines, un planificateur arbitre. La pièce manquante ne manquera plus d'ici quelques années — ce qui ne signifie pas, attention, qu'on aura atteint l'AGI.
 
-Pour le décideur qui referme cet encart en mai 2026, le signal est calibré : **bordure à 18-36 mois**, pas chantier immédiat. Trois variables à surveiller — les benchmarks robotiques 2027 (qui trancheront probablement pixel vs latent), le coût marginal d'inférence d'un world model temps réel, et l'attention naissante des régulateurs. Une question à se poser franchement : *est-ce que ce que j'industrialise touche au pilotage d'écran avancé, à la robotique manipulatrice, à la conduite autonome ou à la création 3D ?* Si non, le Ch.7 ouvre l'Acte II avec ce qu'il faut pour vous.
+Pour le décideur en mai 2026, le signal est calibré : **bordure à 18-36 mois**, pas chantier immédiat. Trois variables à surveiller — les benchmarks robotiques 2027 (qui trancheront probablement pixel vs latent), le coût marginal d'inférence d'un world model temps réel, et l'attention naissante des régulateurs. Une question à se poser franchement : *est-ce que ce que j'industrialise touche au pilotage d'écran avancé, à la robotique manipulatrice, à la conduite autonome ou à la création 3D ?* Si non, l'Acte II ([Ch. 7](ch07-boucle-agentique.md)) ouvre avec ce qu'il faut.
 
-Question que l'Acte II prolonge : un agent purement langage peut-il faire le même travail qu'un agent avec un world model interne ? Pour la grande majorité des cas 2026, oui. C'est précisément ce qui rend le Ch.7 — la boucle agentique, ReAct, le harness — utilisable dès maintenant, sans attendre que la pièce manquante arrive.
+Question prolongée par l'Acte II : un agent purement langage peut-il faire le même travail qu'un agent avec un world model interne ? Pour la grande majorité des cas 2026, oui. C'est précisément ce qui rend la boucle agentique, ReAct, le harness ([Ch. 7](ch07-boucle-agentique.md)) utilisables dès maintenant, sans attendre que la pièce manquante arrive.
 
 > [!WARNING] Deux pièges classiques
 > - **Croire que GPT-4 ou Claude-class est un world model parce qu'il décrit bien une scène.** Décrire n'est pas prédire. Un LLM peut raconter ce qui devrait se passer si vous lâchez un verre ; il ne planifie pas une trajectoire physique avec la précision qu'il faut pour qu'un robot l'exécute. La plausibilité textuelle n'est pas la justesse prédictive.
@@ -122,8 +131,6 @@ Question que l'Acte II prolonge : un agent purement langage peut-il faire le mê
 ---
 
 ## Sources
-
-[^renvoi-dossier]: Dossier complet : [`world-models/`](../../world-models/) — chronologie 2018-2026, cartographie 10 acteurs, 4 boucles d'usage, 3 scénarios 2026-2028.
 
 [^1]: Ha, D. & Schmidhuber, J. *World Models*. NeurIPS 2018, arXiv:1803.10122. <https://arxiv.org/abs/1803.10122> et version interactive <https://worldmodels.github.io/>. Article fondateur de la lignée V/M/C : l'agent peut être entraîné entièrement à l'intérieur de son propre rêve.
 

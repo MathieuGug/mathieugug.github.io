@@ -1,7 +1,18 @@
+---
+chapitre: 21
+titre: "Mesurer le ROI (et le paradoxe agentique)"
+acte: 4
+acte_titre: "Mesures et garde-fous"
+gabarit: charnière
+mots: 8530
+statut: v1
+date_maj: 2026-05-29
+---
+
 # Chapitre 21 — Mesurer le ROI (et le paradoxe agentique)
 
 > **Acte IV — Mesures et garde-fous · Chapitre charnière, ~30 pages**
-> _Le débat sur le ROI de l'IA générative se joue sur deux malentendus tenaces — mesurer ce qui est facile à compter plutôt que ce qui crée de la valeur, et importer les méthodes IT classiques sur des projets qui n'ont plus la même structure de coûts ni la même temporalité de bénéfices. Le chapitre absorbe le dossier `measure-roi/` (07 mai 2026) : diagnostic chiffré du paradoxe 2026, trois ruptures structurelles (auxquelles s'ajoute la rupture agentique), cinq frameworks lus côte à côte, grille analytique à cinq axes, discipline hard vs soft, huit méthodes de calcul, stack à quatre niveaux du paradoxe agentique, cinq études empiriques, checklist en sept questions de signature. Le chapitre tient une **double promesse** : donner au sponsor IA la grille de décision dont le COMEX a besoin, et donner à l'agent engineer la lecture honnête de ce qui se mesure vraiment quand un agent monte la pile token → tâche → processus → outcome._
+> _Le débat sur le ROI de l'IA générative se joue sur deux malentendus tenaces — mesurer ce qui est facile à compter plutôt que ce qui crée de la valeur, et importer les méthodes IT classiques sur des projets qui n'ont plus la même structure de coûts ni la même temporalité de bénéfices. Diagnostic chiffré du paradoxe 2026, trois ruptures structurelles (auxquelles s'ajoute la rupture agentique), cinq frameworks lus côte à côte, grille analytique à cinq axes, discipline hard vs soft, huit méthodes de calcul, stack à quatre niveaux du paradoxe agentique, cinq études empiriques, checklist en sept questions de signature. Une **double promesse** : donner au sponsor IA la grille de décision dont le COMEX a besoin, et donner à l'agent engineer la lecture honnête de ce qui se mesure vraiment quand un agent monte la pile token → tâche → processus → outcome._
 
 > [!QUESTION] Question d'ouverture
 > McKinsey chiffre à **2 600-4 400 milliards de dollars** par an la valeur économique mondiale potentielle de l'IA générative. La même étude indique pourtant que **39 % des organisations seulement** parviennent à relier un quelconque impact EBIT à l'IA — et pour la majorité, cet impact reste sous les 5 %. Le rapport MIT NANDA *State of AI in Business 2025* enfonce le clou : ==95 % des pilotes d'IA générative en entreprise n'ont pas démontré d'impact mesurable sur le P&L==[^mit-nanda]. Quatre chiffres, une question : si la valeur potentielle est aussi massive et la matérialisation aussi rare, **qu'est-ce qui distingue les 5 % qui captent la valeur des 95 % qui restent en pilote** — et comment construit-on un business case qui résiste au CFO sans renier la valeur diffuse que l'IA produit vraiment ?
@@ -34,8 +45,8 @@ L'écart entre le potentiel et la réalisation n'est pas un défaut de technolog
 
 Cigref, dans sa note de janvier 2026, formule le diagnostic de manière brutale : ==justifier un projet d'IA générative comme on le ferait pour une migration de serveur est une impasse==[^cigref]. Les méthodes comptables classiques — payback en 18 mois, NPV sur 5 ans avec hypothèses tenables, attribution claire d'un revenu — buttent sur trois caractéristiques nouvelles, auxquelles l'arrivée des agents ajoute une quatrième.
 
-> [!INFO] Voir Ch. 5 — Économie unitaire de l'inférence · Ch. 17 — Évaluer un agent · Ch. 22 — IA frugale · Ch. 23 — Gouvernance
-> Ce chapitre est la **face métier** du triptyque tarifaire qui traverse l'Acte IV. Le Ch.5 a posé la physique du coût par token (sept couches d'optimisation, LLMflation ×1000 entre 2022 et 2025) ; le Ch.17 a posé la mesure de la qualité ; le Ch.21 mesure la valeur métier ; le Ch.22 mesurera l'externalité énergétique. Trois lectures complémentaires de la même facture. Le Ch.23 consommera la checklist en sept questions §21.9 comme entrée des *gates* de gouvernance.
+> [!INFO] Voir [Ch. 5 — Économie de l'inférence](ch05-economie-inference.md) · [Ch. 17 — Évaluer un agent (et débunker les leaderboards)](ch17-evaluation-benchmarks.md) · [Ch. 22 — Externalité énergétique : IA frugale](ch22-ia-frugale.md) · [Ch. 23 — Gouvernance : AI Act, banque, machine unlearning](ch23-gouvernance-ai-act.md)
+> La **face métier** du triptyque tarifaire qui traverse l'Acte IV. Le [Ch. 5](ch05-economie-inference.md) a posé la physique du coût par token (sept couches d'optimisation, LLMflation ×1000 entre 2022 et 2025) ; le [Ch. 17](ch17-evaluation-benchmarks.md) a posé la mesure de la qualité ; ici, la valeur métier ; le [Ch. 22](ch22-ia-frugale.md) mesurera l'externalité énergétique. Trois lectures complémentaires de la même facture. Le [Ch. 23](ch23-gouvernance-ai-act.md) consommera la checklist en sept questions §21.9 comme entrée des *gates* de gouvernance.
 
 ---
 
@@ -43,7 +54,7 @@ Cigref, dans sa note de janvier 2026, formule le diagnostic de manière brutale 
 
 ### 21.2.1 Première rupture — le coût marginal tend vers zéro, le coût total explose
 
-Une inférence sur un modèle frontière coûte aujourd'hui une fraction de centime. C'est la donnée à laquelle s'arrête le décideur qui *lit* le sujet : *« le token est devenu gratuit »*. La réalité est ailleurs. Une organisation qui industrialise une centaine d'agents internes génère des millions de tokens par jour, et le **coût total d'usage** devient une variable difficile à anticiper — surtout sur les modèles de raisonnement, où une seule tâche AIME peut consommer 10-74× plus de tokens qu'une conversation ordinaire (voir Ch.2 et Ch.5).
+Une inférence sur un modèle frontière coûte aujourd'hui une fraction de centime. C'est la donnée à laquelle s'arrête le décideur qui *lit* le sujet : *« le token est devenu gratuit »*. La réalité est ailleurs. Une organisation qui industrialise une centaine d'agents internes génère des millions de tokens par jour, et le **coût total d'usage** devient une variable difficile à anticiper — surtout sur les modèles de raisonnement, où une seule tâche AIME peut consommer 10-74× plus de tokens qu'une conversation ordinaire (voir [Ch. 2](ch02-modeles-raisonnement.md) et [Ch. 5](ch05-economie-inference.md)).
 
 Cigref recense les coûts à intégrer dans un business case sérieux : ingénierie, infrastructures cloud, licences, consommation énergétique, inférence — auxquels s'ajoutent ==30 à 40 % de coûts de transformation cachés== (conduite du changement, gouvernance, formation, FinOps)[^cigref]. La règle empirique pour un dossier ROI 2026 : tout chiffre de coût qui n'a pas additionné explicitement ces 30-40 % est sous-estimé.
 
@@ -65,7 +76,7 @@ Les économistes Erik Brynjolfsson, Daniel Rock et Chad Syverson ont formalisé 
 ![Schéma R16 — Double-page éco : LLMflation × paradoxe agentique × J-curve|1400](../../livre/images/20260601-r16-jcurve-llmflation-paradoxe.svg)
 
 > [!NOTE] À propos du Schéma R16
-> Version v1 — fusion lourde en A3 paysage du triptyque tarifaire : (A) LLMflation `economie-inference/01-llmflation-curve.svg`, (B) stack 4 niveaux paradoxe agentique `measure-roi/08-stack-roi-agentique.svg`, (C) J-curve Brynjolfsson `measure-roi/06-j-curve.svg`. Bandeau bas : 3 régimes temporels (court / moyen / long terme) alignés sur les trois panels. Réutilisé en §21.7 (récap) + référencé Ch.5 §5.10 (clôture triptyque). Manuscrit v1 conserve les schémas sources affichés ci-dessus pour la lecture détaillée.
+> Version v1 — fusion lourde en A3 paysage du triptyque tarifaire : (A) LLMflation, (B) stack 4 niveaux paradoxe agentique, (C) J-curve Brynjolfsson. Bandeau bas : 3 régimes temporels (court / moyen / long terme) alignés sur les trois panels. Réutilisé en §21.7 (récap) + référencé [Ch. 5](ch05-economie-inference.md) §5.10 (clôture triptyque). Le manuscrit conserve les schémas sources affichés ci-dessus pour la lecture détaillée.
 
 Trois phases se succèdent. **Phase 1 (0-3 ans)** : dépense visible, actifs intangibles invisibles, productivité mesurée *en dessous* du baseline. C'est exactement la phase qui produit les *95 % de pilotes au point mort* de MIT NANDA — non pas parce que les projets sont mauvais, mais parce qu'on les mesure trop tôt. **Phase 2 (3-5 ans)** : la masse critique d'intangibles atteinte ; la productivité remonte et croise le baseline. **Phase 3 (5-7 ans et au-delà)** : les actifs intangibles produisent leurs effets, la productivité dépasse durablement le niveau initial.
 
@@ -108,7 +119,7 @@ L'apport BCG est de positionner une organisation dans une cohorte de pairs. *« 
 
 **MIT NANDA** (*State of AI in Business 2025*, août 2025) documente le *GenAI Divide* : derrière le chiffre choc des 95 % de pilotes au point mort se cache une mécanique précise. ==Les déploiements achetés à des éditeurs spécialisés réussissent dans 67 % des cas, contre un tiers pour les développements internes==[^mit-nanda]. Le facteur structurant n'est pas la technologie, c'est l'apprentissage continu : la majorité des systèmes GenAI ne mémorisent pas le feedback, ne s'adaptent pas au contexte, ne progressent pas dans le temps.
 
-L'apport MIT NANDA est de pointer **où ça casse** : ce n'est pas le modèle qui est insuffisant, c'est la mémoire et la boucle d'apprentissage de l'organisation qui ne se forment pas. Le lien avec le Ch.9 (mémoire agentique) et le Ch.7 (boucle) est ici direct — le diagnostic ROI rejoint le diagnostic technique.
+L'apport MIT NANDA est de pointer **où ça casse** : ce n'est pas le modèle qui est insuffisant, c'est la mémoire et la boucle d'apprentissage de l'organisation qui ne se forment pas. Le lien avec le [Ch. 9](ch09-memoire-agentique.md) (mémoire agentique) et le [Ch. 7](ch07-boucle-agentique.md) (boucle) est ici direct — le diagnostic ROI rejoint le diagnostic technique.
 
 ### 21.3.5 Forrester TEI — la méthode de chiffrage
 
@@ -128,7 +139,7 @@ L'apport Forrester est la méthode : un *Total Economic Impact* discipliné forc
 
 ## 21.4 Une grille en cinq axes pour cartographier la valeur
 
-Les quatre catégories Cigref et l'indicateur EBIT McKinsey sont des cadres de **bilan** — ils servent à présenter les résultats au COMEX. Ils sont moins utiles pour **cadrer un cas d'usage en amont** : par où commencer, quelle métrique choisir, quel poste de bénéfice cibler ? La grille analytique propriétaire à cinq axes que ce chapitre propose comble cet écart de cadrage opérationnel.
+Les quatre catégories Cigref et l'indicateur EBIT McKinsey sont des cadres de **bilan** — ils servent à présenter les résultats au COMEX. Ils sont moins utiles pour **cadrer un cas d'usage en amont** : par où commencer, quelle métrique choisir, quel poste de bénéfice cibler ? La grille analytique propriétaire à cinq axes ci-dessous comble cet écart de cadrage opérationnel.
 
 ![Grille 5 axes — Coût, Bien-être, Vitesse, Volume, Qualité|1300](../../measure-roi/images/20260507-03-grille-5-axes.svg)
 
@@ -274,13 +285,13 @@ L'arrivée des agents — entités logicielles capables de planifier, d'appeler 
 ![Stack ROI agentique — token → tâche → processus → outcome|1300](../../measure-roi/images/20260507-08-stack-roi-agentique.svg)
 
 > [!INFO] Voir le schéma R16 (double-page éco) en §21.2.3
-> R16 met la stack ci-dessus en regard de la courbe LLMflation (Ch.5) et de la J-curve Brynjolfsson, avec un bandeau bas alignant les trois sur trois régimes temporels (court / moyen / long). C'est l'image à montrer en COMEX quand on défend un horizon outcome plutôt qu'un horizon token.
+> R16 met la stack ci-dessus en regard de la courbe LLMflation ([Ch. 5](ch05-economie-inference.md)) et de la J-curve Brynjolfsson, avec un bandeau bas alignant les trois sur trois régimes temporels (court / moyen / long). C'est l'image à montrer en COMEX quand on défend un horizon outcome plutôt qu'un horizon token.
 
 ### 21.7.1 La stack à quatre niveaux
 
 Le déplacement se joue sur quatre niveaux d'unité de mesure, chacun avec ses métriques propres :
 
-1. **Token** — l'unité de coût directe de l'inférence. Métrique : coût par mille tokens en entrée et en sortie. Décroissance d'environ ×1000 entre 2022 et 2025 sur les modèles frontières (LLMflation, voir Ch.5). C'est la dimension la plus visible mais la moins discriminante au niveau du business case.
+1. **Token** — l'unité de coût directe de l'inférence. Métrique : coût par mille tokens en entrée et en sortie. Décroissance d'environ ×1000 entre 2022 et 2025 sur les modèles frontières (LLMflation, voir [Ch. 5](ch05-economie-inference.md)). C'est la dimension la plus visible mais la moins discriminante au niveau du business case.
 2. **Tâche** — une étape atomique réalisée par l'agent (résoudre un ticket, générer un brouillon, requêter une base). Métrique : coût par tâche, taux de succès, qualité. C'est l'unité où la productivité GenAI se mesure au mieux dans la littérature empirique (§21.8).
 3. **Processus** — l'enchaînement de tâches qui produit un résultat métier (un cas client résolu de bout en bout, un mémo livré, un dossier préqualifié). Métrique : **taux d'autonomie** (% de processus terminés sans intervention humaine), taux d'escalade, coût total processus.
 4. **Outcome** — l'effet métier final (rétention client, marge, conformité, croissance). C'est le seul niveau qui parle vraiment au COMEX, et le plus difficile à attribuer.
@@ -293,8 +304,8 @@ Le cas Klarna illustre la difficulté de cette remontée. En 2024, l'entreprise 
 
 **Pourtant, en mai 2025, Klarna a réembauché des agents humains et basculé vers un modèle hybride** — l'IA faisant le triage et les requêtes simples, les humains traitant les cas nuancés, avec escalade automatique quand la confiance baisse ou qu'une émotion est détectée[^klarna]. L'outcome (la qualité globale du service, la confiance client) ne suivait pas le rythme.
 
-> [!INFO] Voir Ch. 11 — Patterns et orchestration multi-agents
-> Le cas Klarna apparaît deux fois dans le livre. **Ch.11 §11.7.1** le traite comme illustration de la décision multi-agent et de l'arbre buy/build — *« on a sorti l'artillerie multi-agent pour un besoin qu'un workflow aurait résolu »*. **Ch.21 §21.7.2** le traite comme illustration de la remontée échouée dans la stack à quatre niveaux — *« excellents KPI tâche et processus, outcome dégradé »*. Deux profondeurs, deux leçons complémentaires. La signature commune : ne pas confondre l'optimum local (taux d'autonomie) avec l'optimum global (qualité du service).
+> [!INFO] Voir [Ch. 11 — Patterns d'orchestration](ch11-patterns-orchestration.md)
+> Le cas Klarna apparaît deux fois dans le livre. **[Ch. 11](ch11-patterns-orchestration.md) §11.7.1** le traite comme illustration de la décision multi-agent et de l'arbre buy/build — *« on a sorti l'artillerie multi-agent pour un besoin qu'un workflow aurait résolu »*. **§21.7.2** ici le traite comme illustration de la remontée échouée dans la stack à quatre niveaux — *« excellents KPI tâche et processus, outcome dégradé »*. Deux profondeurs, deux leçons complémentaires. La signature commune : ne pas confondre l'optimum local (taux d'autonomie) avec l'optimum global (qualité du service).
 
 ### 21.7.3 La règle Cigref de l'alignement stratégique
 
@@ -313,9 +324,9 @@ Quand un projet agentique sous-performe, le diagnostic ne se fait pas au niveau 
 
 | Niveau | Symptôme typique | Cause probable | Cible de remédiation |
 |---|---|---|---|
-| **Token** | Facture x3 vs prévision | Reasoning models routés par défaut, pas de KV cache | Smart routing, prompt + KV caching, SLM on certains tours (voir Ch.5) |
-| **Tâche** | Taux de succès stagne à 60-70 % | Tools mal scopés, grader pas calibré, instructions ambiguës | Refactor des tools, calibration LLM-as-judge (voir Ch.17), simplification prompts |
-| **Processus** | Taux d'autonomie bloqué autour de 40 % | Escalades non instrumentées, agents en boucle, mémoire insuffisante | Trajectoire monitoring (voir Ch.18), mémoire architecturée (voir Ch.9), patterns orchestration (voir Ch.11) |
+| **Token** | Facture x3 vs prévision | Reasoning models routés par défaut, pas de KV cache | Smart routing, prompt + KV caching, SLM on certains tours (voir [Ch. 5](ch05-economie-inference.md)) |
+| **Tâche** | Taux de succès stagne à 60-70 % | Tools mal scopés, grader pas calibré, instructions ambiguës | Refactor des tools, calibration LLM-as-judge (voir [Ch. 17](ch17-evaluation-benchmarks.md)), simplification prompts |
+| **Processus** | Taux d'autonomie bloqué autour de 40 % | Escalades non instrumentées, agents en boucle, mémoire insuffisante | Trajectoire monitoring (voir [Ch. 18](ch18-observabilite-cognitive-audit-trail.md)), mémoire architecturée (voir [Ch. 9](ch09-memoire-agentique.md)), patterns orchestration (voir [Ch. 11](ch11-patterns-orchestration.md)) |
 | **Outcome** | Métier neutre ou négatif malgré succès tâche/processus | Optimum local capté, optimum global manqué — *cas Klarna* | Re-cibler la fonction objective : qualité métier comme contrainte dure, pas comme bonus |
 
 Cette grille de diagnostic est ce qui permet de transformer un *« le projet ne fonctionne pas »* en *« le projet bloque au niveau processus à cause d'escalades non instrumentées »*. ==C'est la différence entre un projet qu'on coupe et un projet qu'on corrige.==
@@ -395,8 +406,8 @@ Les pièges les plus fréquents sur un dossier ROI IA générative ou agentique 
 6. **Quelle preuve de réallocation** est attendue pour les FTE économisés ? Sans preuve nommée (le projet à plus haute valeur ajoutée que la personne va porter), le gain reste Soft.
 7. **Quel test causal** confirme l'attribution sur un effet de Volume ? A/B test, déploiement progressif, étude contrefactuelle. Pas de test ⇒ pas d'attribution.
 
-> [!INFO] Voir Ch. 23 — Gouvernance
-> Ces sept questions sont les entrées des *gates* de gouvernance du Ch.23. Un projet qui n'a pas répondu aux sept ne devrait pas franchir la première ligne de défense (équipes opérationnelles). Le rôle pivot *Sponsor IA* (cf. Ch.23 §23.5) est porteur de cette discipline.
+> [!INFO] Voir [Ch. 23 — Gouvernance : AI Act, banque, machine unlearning](ch23-gouvernance-ai-act.md)
+> Ces sept questions sont les entrées des *gates* de gouvernance du [Ch. 23](ch23-gouvernance-ai-act.md). Un projet qui n'a pas répondu aux sept ne devrait pas franchir la première ligne de défense (équipes opérationnelles). Le rôle pivot *Sponsor IA* (cf. [Ch. 23](ch23-gouvernance-ai-act.md) §23.5) est porteur de cette discipline.
 
 ---
 
@@ -411,7 +422,7 @@ C'est la grille minimale qui suffit à tenir une conversation crédible avec la 
 > [!WARNING] Trois pièges classiques (100 % traçables)
 > **Compter les Soft Savings sans triangulation** — produit un récit que la finance refuse · **Mesurer un projet agentique au niveau token uniquement** — manque la dégradation possible de l'outcome (cas Klarna) · **Lire le ROI à 12 mois sur un projet plateforme** — mesure le creux de la J-curve et coupe avant la remontée.
 
-Le Ch.22 (frugalité énergétique) ferme le triptyque tarifaire : prix par token qui baisse (Ch.5), valeur par outcome qui monte lentement (Ch.21), externalité énergétique qui n'est jamais sur la facture (Ch.22). Trois lectures complémentaires d'une même facture — et la facture environnementale est, comme la facture J-curve, retardée et invisible jusqu'au moment où elle ne l'est plus.
+Le [Ch. 22](ch22-ia-frugale.md) (frugalité énergétique) ferme le triptyque tarifaire : prix par token qui baisse ([Ch. 5](ch05-economie-inference.md)), valeur par outcome qui monte lentement (ici), externalité énergétique qui n'est jamais sur la facture ([Ch. 22](ch22-ia-frugale.md)). Trois lectures complémentaires d'une même facture — et la facture environnementale est, comme la facture J-curve, retardée et invisible jusqu'au moment où elle ne l'est plus.
 
 ---
 

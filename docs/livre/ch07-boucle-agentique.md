@@ -1,7 +1,18 @@
+---
+chapitre: 7
+titre: "Reason · Act · Observe : le harness et ce qu'il enveloppe"
+acte: 2
+acte_titre: "La boucle"
+gabarit: charnière
+mots: 9510
+statut: v1
+date_maj: 2026-05-29
+---
+
 # Chapitre 7 — Reason · Act · Observe : le harness et ce qu'il enveloppe
 
 > **Acte II — La boucle · Chapitre charnière, ~36 pages**
-> _Qu'est-ce qui transforme un LLM bavard en agent capable d'enchaîner plusieurs tours sans se perdre — et pourquoi le différenciant migre-t-il, en 2026, du modèle vers le code qui l'enveloppe ? Ce chapitre fusionne quatre dossiers source (`harness-agentique/`, `agent-sdk/`, `coding-agents/`, `anatomie/` couches 01-04) en une seule grille d'ingénierie : sept couches, une boucle invariante, un pattern à trois agents quand la tâche s'étend, et une pyramide d'adoption qui décide qui s'en sert pour quoi._
+> _Qu'est-ce qui transforme un LLM bavard en agent capable d'enchaîner plusieurs tours sans se perdre — et pourquoi le différenciant migre-t-il, en 2026, du modèle vers le code qui l'enveloppe ? Sept couches, une boucle invariante, un pattern à trois agents quand la tâche s'étend, et une pyramide d'adoption qui décide qui s'en sert pour quoi._
 
 > [!QUESTION] Question d'ouverture
 > Six modèles frontières tiennent en avril 2026 dans **1,3 point** sur SWE-bench Verified[^1]. Sur **le même** modèle, le scaffold qui l'enveloppe peut faire bouger le score de **22 points**[^2]. Si l'écart de capacité tombe sous le bruit de mesure et que le scaffold pèse autant, où passe le levier d'ingénierie ? Et comment instrumente-t-on un agent qui peut, sans budget de tours, brûler **4 $ par minute** dans une boucle infinie qu'aucune métrique APM ne signale ?
@@ -11,22 +22,14 @@
 > - **Une seule boucle invariante** sous toutes les variantes : *Reason · Act · Observe* (Yao 2022, formalisée ReAct[^4]), instanciée comme *Gather · Act · Verify* dans l'Agent SDK Anthropic et comme *TAOR* dans les SDK vendor. Le harness pivote sur un champ — `stop_reason` — et c'est lui, pas le modèle, qui décide quand rendre la main, quand replanifier, quand demander une approbation humaine.
 > - **Sept couches** structurent un harness production-grade : modèle, boucle de contrôle, contexte, outils & sandbox, mémoire, observabilité, gouvernance. **Aucune couche n'est optionnelle** une fois passé le POC — mais leur **complexité doit décroître** à mesure que les modèles s'améliorent (règle Anthropic : *which scaffolding is still load-bearing ?*).
 > - **Architecture canonique des tâches longues** : pattern à trois agents inspiré des GAN (planner / generator / evaluator). Sur un build full-stack de 6 heures : mono-agent = 20 min, 9 $, livrables non fonctionnels ; trois agents séparés = 6 h, 200 $, application livrée et testée[^5]. ==La séparation des rôles crée un signal correctif que l'auto-critique ne fournit pas.==
-> - **Une pyramide d'adoption à 4 étages** (Ch. 7.9) distribue qui s'en sert : transverse (knowledge workers), data quotidien, data expert, produit/décideurs. Le sommet n'est pas mieux que la base — il est **plus stratégique**, parce qu'il cadre les permissions et les SLA pour les autres étages.
+> - **Une pyramide d'adoption à 4 étages** (§7.9) distribue qui s'en sert : transverse (knowledge workers), data quotidien, data expert, produit/décideurs. Le sommet n'est pas mieux que la base — il est **plus stratégique**, parce qu'il cadre les permissions et les SLA pour les autres étages.
 > - **Trois pièges à 100 % traçables** : laisser tourner la boucle sans budget de tours (loop infinie), exposer `execute_sql` sans scoping ni sandbox (exfiltration en 3 tours), sortir l'artillerie multi-agent pour un besoin qu'un workflow aurait résolu (×10-15 tokens, mois vs semaines, debug exponentiel).
 
 ---
 
 ## 7.1 Pourquoi 2026 est l'année du harness
 
-### 7.1.1 La place de ce chapitre dans l'Acte II
-
-L'**Acte I** du livre a posé les moteurs : le cœur stochastique (Ch. 1), les modèles de raisonnement et la seconde courbe de scaling (Ch. 2), la couche notateur cachée des PRM (Ch. 3), la décode spéculative (Ch. 4), l'économie unitaire de l'inférence (Ch. 5). Tout ce qui est *à l'intérieur* du modèle, et la pile de 7 couches d'optimisation qui le sert. L'**Acte II** prend le problème dans l'autre sens : tout ce qui est *autour* du modèle. Et il commence ici — par la boucle qui transforme un LLM bavard en agent capable d'enchaîner plusieurs tours sans se perdre.
-
-Ce chapitre est la **charnière** qui ouvre l'Acte II. Il fusionne quatre dossiers (`harness-agentique/`, `agent-sdk/`, `coding-agents/`, anneaux 01-04 d'`anatomie/`) en une grille unique : sept couches verticales, une boucle invariante, un pattern à trois agents quand la tâche s'étend, et une pyramide d'adoption qui décide qui s'en sert pour quoi. Les chapitres suivants approfondissent les sous-systèmes : le Ch. 8 traite **les outils** (couche 2 de la grille — function calling, MCP, tool poisoning), le Ch. 9 traite **la mémoire** (couche 5 — quatre piliers, cinq architectures de production), le Ch. 10 traite **la compaction** (sous-pilier travail — cinq familles, triangle non-dégénéré), le Ch. 11 traite **l'orchestration multi-agent** (couche patterns — 8 patterns canoniques, arbre de décision buy/build).
-
-==Tenir ce chapitre, c'est tenir l'épine dorsale de l'Acte II.== Les sous-chapitres qui suivent s'y rattachent comme des verticales sur l'horizontale.
-
-### 7.1.2 La bascule modèle ↔ harness
+### 7.1.1 La bascule modèle ↔ harness
 
 La question opérationnelle de 2026, c'est moins *quel modèle prendre* que *quelle couche d'orchestration construire autour de lui*. La bascule est récente et nette.
 
@@ -34,8 +37,8 @@ En avril 2026, six modèles frontières tiennent dans 1,3 point sur SWE-bench Ve
 
 Aakash Gupta a formulé la bascule dans un essai de janvier 2026 qui est resté[^3] : *« 2025 was agents, 2026 is agent harnesses »*. La métaphore est explicite : si le modèle est le moteur, le harness est la voiture. Le moteur le plus puissant ne va nulle part sans direction, freins, châssis, instruments de bord.
 
-> [!INFO] Voir Ch. 1 — Le cœur stochastique
-> La nature probabiliste du tirage LLM (anneau 00 d'`anatomie/livre-data.js`) est la raison structurelle pour laquelle le harness existe. À `T = 0,7`, rejouer mille fois produit mille trajectoires distinctes : la reproductibilité bit-à-bit n'existe pas. Le harness est ce qui rend cette variance tractable sans la tuer — et la stochasticité accumulée à chaque tool call est exactement ce que les sections 7.3 (boucle), 7.6 (mémoire) et 7.7 (observabilité) doivent maîtriser.
+> [!INFO] Voir [Ch. 1 — Le cœur stochastique](ch01-coeur-stochastique.md)
+> La nature probabiliste du tirage LLM est la raison structurelle pour laquelle le harness existe. À `T = 0,7`, rejouer mille fois produit mille trajectoires distinctes : la reproductibilité bit-à-bit n'existe pas. Le harness est ce qui rend cette variance tractable sans la tuer — et la stochasticité accumulée à chaque tool call est exactement ce que les sections 7.3 (boucle), 7.6 (mémoire) et 7.7 (observabilité) doivent maîtriser.
 
 Trois faits empiriques justifient le pivot 2026.
 
@@ -63,15 +66,15 @@ La **gestion du contexte** est la couche que les équipes sous-estiment systéma
 
 - **wide tools** — peu d'outils généralistes plutôt que des dizaines de spécialistes ;
 - **code execution comme outil universel** — un seul outil capable de tout au lieu d'une API par cas ;
-- **compaction continue** — résumé incrémental + état structuré (renvoie à Ch. 10) ;
+- **compaction continue** — résumé incrémental + état structuré (renvoie à [Ch. 10](ch10-compaction.md)) ;
 - **file-based handoff** — les sous-agents communiquent par fichiers, pas par message-passing.
 
 La **couche outils & sandbox** isole l'exécution. La leçon de l'Azure SRE Agent vaut au-delà de Microsoft : un appel d'outil ne doit jamais réinjecter directement sa réponse dans le contexte. Une requête `SELECT *` sur une table de 3 000 colonnes peut produire 200 k tokens et tuer la session[^8]. La discipline : interception session-based, écriture en fichier sandboxé, lecture sélective.
 
 La **mémoire** distingue trois plans — épisodique (l'historique de cette session), sémantique (faits durables sur le projet, l'utilisateur, l'environnement), procédurale (patterns de résolution déjà éprouvés). Les implémentations vont du fichier `CLAUDE.md` versionné dans un repo à la mémoire persistante de Claude Managed Agents (beta avril 2026) en passant par le `SessionService` de Google ADK et les Durable Objects de Cloudflare Agents.
 
-> [!INFO] Voir Ch. 9 — Mémoire agentique
-> Les quatre piliers (travail, sémantique, épisodique, procédurale) et les cinq architectures de production (Letta, A-MEM, Zep, Mem0, file-based) sont traités en Ch. 9. Le présent chapitre instancie sur le harness — *où* la mémoire vit dans la pile, pas *comment* elle est organisée. Le Ch. 10 approfondit le sous-pilier *travail* (compaction et oubli stratégique).
+> [!INFO] Voir [Ch. 9 — Mémoire agentique : 4 piliers, 6 opérations, 5 architectures](ch09-memoire-agentique.md)
+> Les quatre piliers (travail, sémantique, épisodique, procédurale) et les cinq architectures de production (Letta, A-MEM, Zep, Mem0, file-based) y sont traités en détail — *comment* la mémoire est organisée, en complément de ce qui est posé ici (*où* elle vit dans la pile). Le [Ch. 10](ch10-compaction.md) approfondit le sous-pilier *travail* (compaction et oubli stratégique).
 
 ### 7.2.2 Observabilité, gouvernance — les plans horizontaux
 
@@ -123,13 +126,13 @@ La boucle existe sous trois formulations qui décrivent **la même mécanique** 
 
 **Variante 3 — Pattern à trois agents (GAN-inspiré).** Quand la tâche s'étend au-delà de 30 minutes wall-clock, la boucle mono-agent s'effondre — c'est l'objet de la §7.4.
 
-Toutes trois pivotent sur le même champ — `stop_reason` — et toutes trois sont *défensives par défaut*. Sans budget de tours, sans détection de cycle, sans plafond de tokens, un agent entre dans une **loop infinie à 4 $/minute**. C'est le piège classique de l'anneau 01 d'`anatomie/`, et c'est non négociable : un harness sans plafond n'est pas un harness, c'est un risque opérationnel.
+Toutes trois pivotent sur le même champ — `stop_reason` — et toutes trois sont *défensives par défaut*. Sans budget de tours, sans détection de cycle, sans plafond de tokens, un agent entre dans une **loop infinie à 4 $/minute**. C'est le piège classique de la boucle de contrôle, et c'est non négociable : un harness sans plafond n'est pas un harness, c'est un risque opérationnel.
 
 ### 7.3.2 Pourquoi la boucle mono-agent s'effondre
 
 Anthropic a documenté l'effondrement en mars 2026[^5]. Deux modes d'échec dominent.
 
-**La dégradation contextuelle**, d'abord : à mesure que la fenêtre se remplit, la cohérence chute non-linéairement. Sonnet 4.5 manifestait même une *« anxiété de contexte »* — le modèle accélérait sa conclusion en pressentant les limites, livrant des features non testées. La courbe en U de Liu et al. (TACL 2024, traitée en Ch. 10 §10.2) frappe en milieu de fenêtre.
+**La dégradation contextuelle**, d'abord : à mesure que la fenêtre se remplit, la cohérence chute non-linéairement. Sonnet 4.5 manifestait même une *« anxiété de contexte »* — le modèle accélérait sa conclusion en pressentant les limites, livrant des features non testées. La courbe en U de Liu et al. (TACL 2024, traitée en [Ch. 10](ch10-compaction.md) §10.2) frappe en milieu de fenêtre.
 
 **La complaisance auto-évaluative**, ensuite : un agent qui juge son propre travail le surévalue systématiquement. Sur les tâches subjectives (design d'interface, qualité éditoriale), aucun test binaire ne corrige cette indulgence ; sur les tâches objectives, le biais persiste mais devient plus subtil[^5].
 
@@ -174,7 +177,7 @@ Le rapport coût/qualité est instructif. Sur l'exemple d'un *retro game maker* 
 **L'evaluator capture les bugs de last-mile.** Même quand le generator est excellent, c'est l'evaluator qui détecte les routes mal câblées, les états cassés, les états initiaux manquants. La critique externalisée force le système à converger sur du fonctionnel, pas sur du *« semble fonctionner »*.
 
 > [!ATTENTION] Le pattern n'est pas la seule architecture
-> Mais il est devenu le scaffold de référence pour les workflows long-running, et toutes les variantes contemporaines (Microsoft Azure SRE Agent et son evaluator de root cause, l'orchestrateur multi-domaine McKinsey pour l'ITSM agentique, le pattern initializer/coder d'Anthropic pour les sessions multi-jours) en sont des spécialisations[^9] [^12]. ==Pour la taxonomie complète des 8 patterns canoniques et l'arbre de décision *quand* sortir l'artillerie multi-agent==, voir Ch. 11.
+> Mais il est devenu le scaffold de référence pour les workflows long-running, et toutes les variantes contemporaines (Microsoft Azure SRE Agent et son evaluator de root cause, l'orchestrateur multi-domaine McKinsey pour l'ITSM agentique, le pattern initializer/coder d'Anthropic pour les sessions multi-jours) en sont des spécialisations[^9] [^12]. ==Pour la taxonomie complète des 8 patterns canoniques et l'arbre de décision *quand* sortir l'artillerie multi-agent==, voir [Ch. 11](ch11-patterns-orchestration.md).
 
 ### 7.4.4 Trois spécialisations qui circulent
 
@@ -309,8 +312,8 @@ Un sub-agent est un assistant secondaire que l'agent principal invoque pour une 
 
 Trois sub-agents built-in chez Claude Code : `Explore` (read-only, parfait pour la cartographie), `Plan` (mode plan, pour drafter sans toucher), `general-purpose` (le bouclage classique). On peut en créer des custom : un fichier `.claude/agents/<nom>.md` (frontmatter `name`, `description`, `tools`, `model`) plus un system prompt. Le custom-agent peut être routé sur Haiku (plus rapide, moins cher) tout en laissant le main-thread sur Opus.
 
-> [!INFO] Voir Ch. 11 — Patterns canoniques et orchestration multi-agent
-> Le pattern à trois agents (§7.4) et la mécanique sub-agent (§7.6.3) sont les briques élémentaires d'une orchestration. Le Ch. 11 traite la **taxonomie complète** : les 8 patterns canoniques (Anthropic 6 + supervisor-workers + hierarchical + peer-to-peer AutoGen), les 4 régimes de contrôle (code-driven workflow / LLM-driven routines+handoffs / graphe LangGraph / agent autonome), et l'**arbre de décision buy/build** (`fabrique-agent/` 4 stades de maturité).
+> [!INFO] Voir [Ch. 11 — Patterns canoniques et orchestration multi-agents](ch11-patterns-orchestration.md)
+> Le pattern à trois agents (§7.4) et la mécanique sub-agent (§7.6.3) sont les briques élémentaires d'une orchestration. Le [Ch. 11](ch11-patterns-orchestration.md) traite la **taxonomie complète** : les 8 patterns canoniques (Anthropic 6 + supervisor-workers + hierarchical + peer-to-peer AutoGen), les 4 régimes de contrôle (code-driven workflow / LLM-driven routines+handoffs / graphe LangGraph / agent autonome), et l'**arbre de décision buy/build** (4 stades de maturité de fabrique).
 
 ---
 
@@ -320,17 +323,17 @@ Trois sub-agents built-in chez Claude Code : `Explore` (read-only, parfait pour 
 
 L'observabilité agentique n'est pas l'observabilité classique. Les outils APM (Datadog, Dynatrace, New Relic) instrumentent encore essentiellement la latence, les erreurs et l'utilisation de ressources. ==Sur un agent, ces métriques ratent l'essentiel : *est-ce que la sortie est bonne*.==[^16]
 
-Six piliers structurent une observabilité production-grade. On les résume ici parce qu'ils traversent les six autres couches de la §7.2 — le détail vendor landscape et la grille de maturité sont en **Ch. 18** :
+Six piliers structurent une observabilité production-grade. On les résume ici parce qu'ils traversent les six autres couches de la §7.2 — le détail vendor landscape et la grille de maturité sont en **[Ch. 18](ch18-observabilite-cognitive-audit-trail.md)** :
 
 - **Traces** — OpenTelemetry a ratifié en 2025 ses *GenAI Semantic Conventions* (`gen_ai.system`, `gen_ai.request.model`, `gen_ai.usage.prompt_tokens`). Discipline (Azure SRE Agent à nouveau) : tronquer dans le span, persister le payload complet en sandbox.
 - **Métriques de qualité** — LLM-as-Judge online sur chaque interaction en production (pas seulement en offline) pour détecter les régressions en temps réel. Coinbase l'a institutionnalisé : second LLM as judge pour le spot-checking et le confidence scoring[^17].
 - **Coût** — token economics par session, par utilisateur, par cas d'usage. Le risque de boucle infinie (anxiété de contexte + retry sans limite) coûte cher. **Hard cap par session, kill-switch automatique, alerting sur taux de tool calls > seuil.**
 - **Drift comportemental** — agents en production dérivent. La distribution des inputs change (saisonnalité, nouveaux usages), les modèles backend sont mis à jour par le fournisseur (sans préavis explicite parfois), les outils intégrés évoluent.
 - **Guardrails** — politiques d'usage, détection de PII en sortie, redaction, blocage d'outils hors scope. Les violations sont des alertes critiques (PagerDuty, OpsGenie), pas des incidents informationnels.
-- **Audit trail réglementaire** — pour les secteurs régulés (BFSI, healthcare, legal), un enregistrement immuable de chaque exécution : quelles données ont été utilisées, comment, quel raisonnement, qui a approuvé. ==Le **cognitive audit trail** (Ch. 18 §18.3) est devenu en 2026 la nouvelle catégorie de log : rétention longue, signature cryptographique, droit d'accès art. 22 RGPD.==
+- **Audit trail réglementaire** — pour les secteurs régulés (BFSI, healthcare, legal), un enregistrement immuable de chaque exécution : quelles données ont été utilisées, comment, quel raisonnement, qui a approuvé. ==Le **cognitive audit trail** ([Ch. 18](ch18-observabilite-cognitive-audit-trail.md) §18.3) est devenu en 2026 la nouvelle catégorie de log : rétention longue, signature cryptographique, droit d'accès art. 22 RGPD.==
 
-> [!INFO] Voir Ch. 18 — Observabilité agentique
-> Le présent chapitre instancie l'observabilité **comme couche d'un harness**. Le Ch. 18 traite la grille complète : vendor landscape (Langfuse, Braintrust, Arize, LangSmith, Dynatrace, AgentCore), échelle de maturité (POC → audit → cognitive trail), et l'attribut `gen_ai.compaction.*` du WG OpenTelemetry actif fin 2026 (cf. Ch. 10 §10.9).
+> [!INFO] Voir [Ch. 18 — Observabilité agentique et cognitive audit trail](ch18-observabilite-cognitive-audit-trail.md)
+> L'observabilité est posée ici **comme couche d'un harness**. Le [Ch. 18](ch18-observabilite-cognitive-audit-trail.md) traite la grille complète : vendor landscape (Langfuse, Braintrust, Arize, LangSmith, Dynatrace, AgentCore), échelle de maturité (POC → audit → cognitive trail), et l'attribut `gen_ai.compaction.*` du WG OpenTelemetry actif fin 2026 (cf. [Ch. 10](ch10-compaction.md) §10.9).
 
 ---
 
@@ -347,10 +350,10 @@ Thariq Shihipar (Anthropic, mai 2026) décrit la sécurité d'un agent bash-driv
 **Couche 3 — Sandbox env.** Isolation réseau (l'agent ne peut pas appeler des endpoints arbitraires), filesystem scope (l'agent ne voit que `/workspace`, pas `/etc`), execution scope (pas d'accès root, limites de CPU/RAM). C'est ce qui empêche l'exfiltration de données et limite le *blast radius* en cas de compromission. Les providers cités (Cloudflare Sandbox, Modal, E2B, Daytona) implémentent déjà ces garanties.
 
 > [!WARNING] Le piège classique de la couche outils
-> Exposer `execute_sql` sans scoping ni sandbox. Sous prompt injection indirecte, l'agent exfiltre la base en **trois tours**. Variante : le **tool poisoning** — une description d'outil malicieuse détourne l'intention. OWASP ASI02 documente la famille entière[^13]. ==La défense passe par : tagging des sources (chaque token porte un tag `user` / `system` / `tool:web` / `tool:rag` que le compactor doit préserver — cf. Ch. 10 §10.7), sandbox isolée, allowlist namespace pour les tools MCP (cf. Ch. 13).==
+> Exposer `execute_sql` sans scoping ni sandbox. Sous prompt injection indirecte, l'agent exfiltre la base en **trois tours**. Variante : le **tool poisoning** — une description d'outil malicieuse détourne l'intention. OWASP ASI02 documente la famille entière[^13]. ==La défense passe par : tagging des sources (chaque token porte un tag `user` / `system` / `tool:web` / `tool:rag` que le compactor doit préserver — cf. [Ch. 10](ch10-compaction.md) §10.7), sandbox isolée, allowlist namespace pour les tools MCP (cf. [Ch. 13](ch13-mcp-securite.md)).==
 
-> [!INFO] Voir Ch. 13 et Ch. 19 — Sécurité MCP et threat model unifié
-> La matrice défensive **10 vecteurs × 10 patterns** pour les serveurs MCP est traitée en Ch. 13. La synthèse transverse — modèle / prompt / mémoire / outil / protocole / surface — est en Ch. 19 (schéma E4 du threat model unifié 2026). Le présent chapitre fixe le principe (gruyère, least agency) et l'instanciation au niveau du harness.
+> [!INFO] Voir [Ch. 13 — Sécurité MCP](ch13-mcp-securite.md) et [Ch. 19 — Garde-fous et sécurité globale](ch19-gardefous-securite-globale.md)
+> La matrice défensive **10 vecteurs × 10 patterns** pour les serveurs MCP est traitée en [Ch. 13](ch13-mcp-securite.md). La synthèse transverse — modèle / prompt / mémoire / outil / protocole / surface — est en [Ch. 19](ch19-gardefous-securite-globale.md) (schéma E4 du threat model unifié 2026).
 
 ### 7.8.1 Agent sprawl et cascade d'erreurs — les deux risques systémiques 2026
 
@@ -358,7 +361,7 @@ Au-delà du gruyère technique, deux risques **systémiques** émergent en 2026 
 
 **L'agent sprawl.** Sans gouvernance d'équipe, des agents redondants se multiplient — chaque équipe construit le sien, chacun consomme du compute, beaucoup font la même chose. Le *« lean agent architecture »* d'Azure SRE Agent répond à ce risque : préférer **peu d'agents généralistes avec wide tools** que beaucoup d'agents spécialistes[^8]. La traduction opérationnelle : un catalogue d'agents partagé au niveau organisation, un comité de revue qui valide chaque nouvel agent en prod, et des conventions partagées (`CLAUDE.md` standardisé, skills versionnées dans un repo central).
 
-**La cascade d'erreurs en multi-agents.** Quand un système multi-agents fait passer une erreur silencieuse de l'agent N à l'agent N+1, le débogage devient cauchemardesque. La distillation GitHub de février 2026 sur les échecs multi-agents en synthétise le diagnostic : ==un système multi-agents se comporte comme un système distribué — chaque handoff requiert un schéma typé, des actions contraintes et une validation de frontière explicite.== *Add more agents* n'est jamais la solution ; c'est un problème de design d'interface[^26]. C'est l'angle que le Ch. 11 développe en taxonomie (8 patterns canoniques, 5 problèmes durs prod).
+**La cascade d'erreurs en multi-agents.** Quand un système multi-agents fait passer une erreur silencieuse de l'agent N à l'agent N+1, le débogage devient cauchemardesque. La distillation GitHub de février 2026 sur les échecs multi-agents en synthétise le diagnostic : ==un système multi-agents se comporte comme un système distribué — chaque handoff requiert un schéma typé, des actions contraintes et une validation de frontière explicite.== *Add more agents* n'est jamais la solution ; c'est un problème de design d'interface[^26]. Cet angle est repris en taxonomie dans le [Ch. 11](ch11-patterns-orchestration.md) (8 patterns canoniques, 5 problèmes durs prod).
 
 ---
 
@@ -366,7 +369,7 @@ Au-delà du gruyère technique, deux risques **systémiques** émergent en 2026 
 
 ![Pyramide des cas d'usage — quatre étages, du transverse au produit/décideurs|1300](../../coding-agents/images/20260512-05-pyramide.svg)
 
-Une fois le harness construit, reste la question d'adoption — qui s'en sert, pour quoi, et avec quelle posture face à l'agent ? Le dossier `coding-agents/` propose une pyramide à quatre étages qui, malgré son nom, dépasse le périmètre du code et structure l'usage des agents dans toute organisation[^14].
+Une fois le harness construit, reste la question d'adoption — qui s'en sert, pour quoi, et avec quelle posture face à l'agent ? Une pyramide à quatre étages, malgré son origine côté code, dépasse ce périmètre et structure l'usage des agents dans toute organisation[^14].
 
 **Étage 1 — transverse (pour tout knowledge worker).** Rédaction longue, slide deck, veille / résumés, brief client / proposal, mails complexes, recherche documentaire. C'est l'étage **le plus large**, et celui qui a fait sortir Claude Code du périmètre dev — finance, marketing, data science l'ont adopté pour la composition de scripts bash et la production de livrables texte structurés. Simon Willison l'a écrit en octobre 2025 après avoir longtemps minimisé le tournant : *« Claude Code est mal nommé. Ce n'est pas un outil de code, c'est un outil d'automatisation générale »*[^15].
 
@@ -437,8 +440,8 @@ Trois règles transverses :
 - **Plus les actions sont destructives, plus les tools déclarés gagnent sur le bash libre.** Un agent qui envoie des emails à des clients ou modifie des données de production doit le faire via tools auditables, pas via shell.
 - **Plus l'analyse est ad hoc et exploratoire, plus le codegen + bash gagne.** Un agent de recherche ou de data analysis profite massivement de la flexibilité — la rigueur s'ajoute via les hooks et la vérification.
 
-> [!INFO] Voir Ch. 20 — Runtime managé et déploiement
-> La voie 4 (Managed Agents) est traitée en profondeur en Ch. 20 : matrice vendor (Bedrock AgentCore / Vertex Agent Engine / Foundry Agent Service / Claude Managed Agents / OpenAI Agent Builder), pricing consumption-based, dépendance et **code-first + protocoles ouverts** (MCP, A2A) comme meilleure assurance anti-lock-in.
+> [!INFO] Voir [Ch. 20 — Runtime managé et déploiement](ch20-runtime-manage.md)
+> La voie 4 (Managed Agents) y est traitée en profondeur : matrice vendor (Bedrock AgentCore / Vertex Agent Engine / Foundry Agent Service / Claude Managed Agents / OpenAI Agent Builder), pricing consumption-based, dépendance et **code-first + protocoles ouverts** (MCP, A2A) comme meilleure assurance anti-lock-in.
 
 ---
 
@@ -458,7 +461,7 @@ La question que pose tout COMEX éclairé en 2026 : *combien*, *combien de temps
 
 **Coûts de fonctionnement.** 3 200 à 13 000 $ par mois pour un agent en production servant des utilisateurs réels, selon le volume et la complexité des requêtes[^22]. La conséquence implicite : ==le **cost-per-successful-task** — pas le cost-per-token — devient l'indicateur central.== Vercel cite un repère : un agent DevOps automatisé résout une erreur de déploiement pour 2 $ de compute là où un ingénieur humain coûte 150 $ de labor chargé pour la même heure.
 
-> [!INFO] Voir Ch. 21 — Mesurer le ROI (et le paradoxe agentique)
+> [!INFO] Voir [Ch. 21 — Mesurer le ROI (et le paradoxe agentique)](ch21-roi-paradoxe-agentique.md)
 > Le chapitre charnière de l'Acte IV traite la **productivity J-curve** (Brynjolfsson), les 5 frameworks de mesure (Cigref, McKinsey, BCG, MIT NANDA, Forrester TEI), et le **paradoxe agentique** — le changement d'unité de mesure à mesure que l'agent monte la pile de valeur (token → tâche → processus → outcome). Le cas Klarna (67 % automatisé puis recul partiel sur les 5 % de cas charge émotionnelle) y est traité comme illustration centrale.
 
 ---
@@ -467,7 +470,7 @@ La question que pose tout COMEX éclairé en 2026 : *combien*, *combien de temps
 
 ![Anatomie d'un harness — récap chapitre : sept couches verticales (modèle, boucle, contexte, outils, mémoire) traversées par les plans observabilité et gouvernance|1300](../../harness-agentique/images/20260429-01-anatomie-harness.svg)
 
-Si le lecteur ne retient qu'une page de ce chapitre, c'est celle des **sept couches** ci-dessus. Cinq couches verticales empilées (modèle → boucle → contexte → outils → mémoire) traversées par deux plans horizontaux (observabilité, gouvernance). Sous ces sept couches, **une seule boucle invariante** : *Reason · Act · Observe*, formalisée ReAct en 2022, instanciée comme *Gather · Act · Verify* chez Anthropic, comme *TAOR* dans les SDK vendor, comme *pattern à trois agents* (planner / generator / evaluator) dès que la tâche s'étend au-delà de 30 minutes wall-clock.
+==**À retenir** : sept couches structurent un harness production-grade.== Cinq couches verticales empilées (modèle → boucle → contexte → outils → mémoire) traversées par deux plans horizontaux (observabilité, gouvernance). Sous ces sept couches, **une seule boucle invariante** : *Reason · Act · Observe*, formalisée ReAct en 2022, instanciée comme *Gather · Act · Verify* chez Anthropic, comme *TAOR* dans les SDK vendor, comme *pattern à trois agents* (planner / generator / evaluator) dès que la tâche s'étend au-delà de 30 minutes wall-clock.
 
 ==Le différenciant 2026 n'est ni dans la couche modèle (banalisée à 1,3 point près sur SWE-bench), ni dans la couche surfaces d'entrée (CLI / IDE / web, tout vendeur sérieux a les trois), ni dans la persistance (commodity).== Il se loge dans la zone agent (routing, boucle TAOR à quatre phases, sub-agents) et dans la couche outils & contexte (Tool Registry, Skills System, Context Engineering). C'est là que se logent les heures d'ingénierie qui transforment un wrapper en harness.
 
@@ -478,7 +481,7 @@ Quatre voies pour le construire — Client SDK (max contrôle, max boilerplate),
 > [!WARNING] Trois pièges classiques (les trois sont 100 % traçables)
 > - **Laisser tourner la boucle sans budget de tours.** Un agent entre en loop infinie ; la facture ne se réveille que le lundi matin à 4 $/minute × week-end. ==Le harness doit être défensif par défaut== : max_turns, max_tokens, timeout wall-clock, kill-switch sur taux de tool calls > seuil.
 > - **Exposer `execute_sql` sans scoping ni sandbox.** Sous prompt injection indirecte, l'agent exfiltre la base en 3 tours. La sécurité passe par les clés API scopées, les proxies backend et les tokens temporaires — **jamais** par un prompt qui dit *« ne touche pas à ces données »*.
-> - **Sortir l'artillerie multi-agent pour un besoin qu'un workflow aurait résolu.** ×10-15 tokens, mois vs semaines de delivery, debug exponentiellement plus dur. Règle Schluntz-Zhang (Anthropic, déc. 2024) : *start simple, measure, add complexity only when it delivers measurable value*. 70 % des cas se résolvent en workflow routé sans jamais mériter l'étiquette *agentique* (cf. Ch. 11).
+> - **Sortir l'artillerie multi-agent pour un besoin qu'un workflow aurait résolu.** ×10-15 tokens, mois vs semaines de delivery, debug exponentiellement plus dur. Règle Schluntz-Zhang (Anthropic, déc. 2024) : *start simple, measure, add complexity only when it delivers measurable value*. 70 % des cas se résolvent en workflow routé sans jamais mériter l'étiquette *agentique* (cf. [Ch. 11](ch11-patterns-orchestration.md)).
 
 ---
 
