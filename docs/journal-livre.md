@@ -9,7 +9,7 @@ Journal de production du livre (28 dossiers → 25 chapitres). Voir [`livre-outl
 | | Statut | Note |
 | --- | --- | --- |
 | Outline | ✅ v0 mergé (PR #127) | 4 actes, 25 chapitres, 3 catégories de schémas (S/R/E) |
-| Audit schémas | 🟡 partiel | Ch.7-13 + Ch.14-16 (Acte III complet) + Ch.17-20 + **Ch.21-22-23 audités + manuscrits v1 livrés 2026-05-28** + **Ch.4 audité + manuscrit v1 livré 2026-05-29** — les 7 autres en attente |
+| Audit schémas | 🟡 partiel | Ch.7-13 + Ch.14-16 (Acte III complet) + Ch.17-20 + **Ch.21-22-23 audités + manuscrits v1 livrés 2026-05-28** + **Ch.4 audité + manuscrit v1 livré 2026-05-29** + **Ch.1-3 + Ch.5-6 audités 2026-05-29** — 2 autres en attente (Prologue + Ch.24-25 + Épilogue) |
 | Manuscrit | 🟡 **18/25** | **Acte I (partiel)** : Ch.4 v1 (décode spéculative). **Acte II** : Ch.7 (charnière) + Ch.8 + Ch.9 + Ch.10 + Ch.11 — tous v1. **Acte III complet** : Ch.12 + Ch.13 + Ch.14 + Ch.15 + Ch.16 v1. **Acte IV** : Ch.17 (charnière) + Ch.18 + Ch.19 (charnière) + Ch.20 v1 + **Ch.21 (charnière ROI) + Ch.22 (frugalité) + Ch.23 (gouvernance) v1 livrés 2026-05-28**. Restent à écrire : Ch.1-3 + Ch.5-6 (Acte I) + Prologue + Ch.24 (IA et travail) + Ch.25 (procès Musk) + Épilogue. |
 | Schémas R/E à produire | ⏳ | E3 (capability×cost) et E5 (PRM comparatif) restent à créer. E4 (threat model unifié 2026) **textualisé en Ch.19 §19.10**. R1-R15 traités par réutilisation. **R16 (J-curve × LLMflation × paradoxe agentique)** à créer par fusion lourde — brief détaillé Ch.21 §Schémas. **R17 (3 trajectoires énergétiques 2030)** traité par réutilisation tel quel de `ia-frugale-08-trajectoires-2030.svg`. **R18 (calendrier réglementaire 2026-2028 unifié)** à créer ex nihilo — brief détaillé Ch.23 §Schémas. |
 | Bugs SVG corrigés | ✅ 1 | `cinq-familles.svg` (balise XML malformée) |
@@ -1957,3 +1957,786 @@ L'Acte IV a maintenant son **squelette en place** : Ch.17 (éval+benchmarks, cha
 - **Ch.23 (gouvernance)** — dossier `gouvernance/` (21 avr) + rappels Ch.16/10/13/19. Standard. ~22 pages. Calendrier AI Act art. 12/15 août 2026, DORA, machine unlearning, rôles DPO/RSSI/Sponsor.
 - **Ch.24 (IA et travail)** — dossier `ia-et-travail/` (06 mai). Standard. ~22 pages. Acemoglu/Frey-Osborne/Eloundou, 4 scénarios 2035, pause d'Engels.
 - **Ch.25 (procès Musk vs Altman)** — dossier `proces-musk-altman/` (27 avr). Court encart 12 pages. Fige une lecture au 27 mai 2026 ; le journal en ligne reste source de profondeur.
+
+---
+
+## Chapitre 1 — Le cœur stochastique (anneau 00)
+
+> **Acte I — Les moteurs · Gabarit court/encart 8-12 p · ~3 000-4 000 mots**
+> **Lecteur cible** : agent engineer, sponsor IA technique, plateforme ML, FinOps qui démarrent l'Acte I — premier chapitre de fond après le prologue, **porte d'entrée** de la pile.
+> **Sortie lecteur** : sait pourquoi un LLM moderne est, à `T > 0`, un **tirage probabiliste** et non une fonction pure ; lit la mécanique softmax → température → top-p → top-k → tirage comme une chaîne de quatre opérateurs **où chaque maillon est un curseur** (et pas un détail d'implémentation) ; comprend pourquoi `seed` est un leurre opérationnel à l'échelle GPU (non-associativité FP, batching dynamique, mixed precision, versions de modèle) et pourquoi la **reproductibilité statistique** remplace la reproductibilité bit-à-bit ; sait passer d'un raisonnement « cas isolé » à un raisonnement « distribution d'évaluation » (`n` rejouages, intervalles de confiance, pass@k vs pass^k introduit ici puis détaillé Ch.17) ; identifie les trois familles de truncation sampling et leur date — Holtzman top-p (2019), Hewitt η-sampling (2022), min-p (2024) — sans entrer dans le débat académique ; nomme le **piège classique** (traiter le LLM comme une fonction pure : `T=0.7` rejoué 1 000 fois = 1 000 trajectoires) et l'ancre dans deux conséquences traçables — l'amplification multiplicative de la variance le long d'une chaîne d'outils (renvoi Ch.4 spec + Ch.7 boucle) et le **trajectory drift** silencieux en prod (renvoi Ch.18 observabilité) ; reconnaît que les paramètres « température » et « top-p » exposés par les APIs sont une convention historique — pas une vérité physique — et que le débat 2024-2026 (min-p, η-sampling, mirostat) reste ouvert ; sort équipé pour ne pas demander en RFP « la même réponse à chaque appel ».
+
+### Statut
+
+| Étape | Statut |
+| --- | --- |
+| Audit schémas source | ✅ fait — `anatomie/` couche 00 : **0 schéma SVG dédié**. Le cœur est rendu uniquement comme **disque central de l'oignon** (`livre-render.js`, `coreR=52`, radial gradient `#coreGrad`). Pas de schéma narratif standalone dans `livre-schemas.js` (SCHEMAS[] commence à `layerIdx: 1` ReAct). |
+| Plan détaillé | ✅ fait (audit du 2026-05-29) |
+| Manuscrit | ⏳ à rédiger — gabarit court ~3 000-4 000 mots (8-12 p) |
+| Schémas à créer | **2 ex nihilo** — S1.1 (softmax→T→top-p→tirage chain, ~1-1,5 j SVG) + S1.2 (faisceau 1 000 trajectoires `T=0,7`, ~1-1,5 j SVG). Couche 00 d'`anatomie/` n'a pas de matière SVG narrative — le disque central de l'oignon ne suffit pas à un chapitre standalone. |
+| Frontière Ch.1 ↔ Ch.2 | À tenir — Ch.2 dit *quoi se passe quand on dépense du compute à l'inférence pour raisonner* (CoT, RLVR, GRPO, second axe de scaling Snell). Ch.1 reste **strictement en amont** : ce qui se passe à **chaque token** indépendamment de la longueur du raisonnement. Règle d'écriture : Ch.1 ne parle pas de chain-of-thought, ne nomme pas o1/R1, ne mentionne pas RLVR. Renvoi `[!INFO]` en clôture §1.5. |
+| Frontière Ch.1 ↔ Ch.4 | À tenir — Ch.4 (décode spéculative) est l'**optimisation** qui calque le sampling : le théorème d'équivalence Leviathan/Kalman/Matias 2023 prouve que `accept(min(1, p_target/p_draft))` + resample sur `max(0, p_target − p_draft)` produit une distribution **strictement identique** à la décode standard. Ch.1 introduit la mécanique du softmax/sampling **sans** mentionner la spec ; Ch.4 démontre que c'est précisément cette mécanique qui rend la spec contractuellement neutre. Renvoi `[!INFO]` en §1.4. |
+| Frontière Ch.1 ↔ Ch.7 | À tenir — Ch.7 montre comment la variance **s'accumule à chaque tour** (boucle ReAct, `stop_reason`, harness défensif). Ch.1 pose la variance **à un seul token** ; le multiplicateur agentique (la variance qui explose avec le nombre de tool calls) est nommé une phrase et renvoyé. Pas de boucle ReAct ici. |
+| Frontière Ch.1 ↔ Ch.18 | À tenir — Ch.18 documente le **trajectory drift** comme problème d'observabilité OTel GenAI (`gen_ai.*` semconv, cognitive audit trail). Ch.1 pose le *pourquoi* (la stochasticité fondamentale) ; Ch.18 pose le *comment instrumenter*. Renvoi `[!INFO]` en §1.5 — c'est **le seul endroit** du Ch.1 où OTel est mentionné (la définition canonique OTel GenAI reste Ch.18 §18.2). |
+| Frontière Ch.1 ↔ Ch.17 | Légère — `pass@k` vs `pass^k` est **introduit** ici comme conséquence directe de la stochasticité (« si chaque tirage est variable, un seul rejouage ne suffit pas à signer un score »), **développé** Ch.17 comme outil de bench. Renvoi en footnote, pas en encadré. |
+
+### Sources matérielles
+
+Le Ch.1 est un **chapitre encart à dossier source unique mais maigre** : la matière narrative existe (couche 00 d'`anatomie/`) mais le corpus SVG est **inexistant à ce niveau**. C'est le seul chapitre du livre dans ce cas — c'est ce qui justifie le gabarit court et 2 schémas à créer ex nihilo.
+
+- **Dossier principal — [`anatomie/`](../anatomie/) couche 00** (14 mai 2026, étude #11) — narration courte (`livre-data.js` LAYERS[0]) et 5 définitions de concepts (`CONCEPT_DEFS` : `Température`, `Top-p sampling`, `Softmax`, `Stochasticité`, `Seed`). À utiliser comme **squelette de transposition narrative** — pas comme texte source à recopier.
+  - [`anatomie/livre-data.js`](../anatomie/livre-data.js) L.5-17 (LAYERS[0]) + L.132-138 (CONCEPT_DEFS 00)
+  - [`anatomie/scrolly.html`](../anatomie/scrolly.html) L.2034-2039 (scène 00) + L.2670-2685 (définitions étendues)
+  - [`anatomie/index.html`](../anatomie/index.html) L.524 (lede stochasticité)
+- **Renvois croisés Acte I** : `decode-speculative/` Ch.4 (théorème Leviathan en renvoi), `modeles-raisonnement/` Ch.2 (variance qui s'accumule en clôture).
+- **Renvoi Acte IV** : `observabilite-agents-ia/` Ch.18 — trajectory drift et OTel GenAI semconv (renvoi clôture, **pas** mention du contenu).
+
+### Audit des schémas — Ch.1
+
+| Fig | Slug/source | viewBox | Catégorie | Insertion | Statut |
+| --- | --- | --- | --- | --- | --- |
+| 01 | `anatomie/livre-render.js` disque central de l'oignon (rendu inline) | `800×800` global / `coreR=52` | **figure ouverture** | citée comme « le noyau de l'oignon `anatomie/` » avec lien vers le livre interactif ; **pas reproduite ici** (déjà vue en couverture livre via E1) | **renvoi seulement** — pas de duplication |
+| **S1.1 (à créer)** | `livre/images/20260601-01-softmax-temperature-sampling-chain.svg` | `1200×720` | **S §1.2 + Récap** | Chaîne mécanique **logits bruts → softmax → division par T → top-p / top-k truncation → tirage**. Quatre panneaux horizontaux ; chaque panneau montre une distribution discrete (~30 tokens en abscisse, probabilité en ordonnée) qui se déforme à chaque étape. Slider visuel « T=0,2 / T=0,7 / T=1,5 » en trois lignes superposées. | **À créer ex nihilo** (~1-1,5 j SVG). Schéma signature du chapitre. |
+| **S1.2 (à créer)** | `livre/images/20260601-02-variance-trajectoire-1000-rejouages.svg` | `1200×640` | **S §1.3** | Faisceau de **1 000 trajectoires de décode** issu d'un même prompt à `T=0,7` (axe X = position du token 0-200, axe Y = perplexité ou position lexicale). Annotation : « ce que mesure un test unitaire exact = 1 trajectoire sur 1 000. Ce qu'il faut mesurer = la distribution ». | **À créer ex nihilo** (~1-1,5 j SVG, données simulées suffisent — figure pédagogique). |
+
+**Bilan audit Ch.1** : 0 schéma réutilisable depuis le corpus, 2 schémas à créer ex nihilo (~2-3 j SVG total). C'est le **seul chapitre du livre** dans ce cas — la couche 00 d'`anatomie/` a été pensée comme « point d'entrée narratif et conceptuel » (le centre de l'oignon), pas comme un objet à expliciter en standalone.
+
+### Plan détaillé
+
+```
+> [!QUESTION] Question d'ouverture
+  Si la sortie d'un LLM est un dé pondéré, comment construit-on
+  un système fiable autour ? Et pourquoi la première intuition
+  d'ingénieur — « fixer un seed » — est-elle un leurre à l'échelle GPU ?
+
+> [!TLDR] TL;DR décideur (5 bullets)
+  · LLM moderne à T>0 = tirage probabiliste, pas fonction pure
+  · Mécanique : logits → softmax → division par T → top-p/top-k → tirage
+  · `seed` ne suffit pas en prod (FP non-associatif, batching dynamique,
+    mixed precision, versions modèle) → reproductibilité statistique
+  · Conséquence évaluation : on signe sur distributions (n rejouages),
+    pas sur cas isolés
+  · Conséquence agentique : la variance se multiplie à chaque tool call,
+    chaque sous-agent, chaque boucle — multiplicateur = sujet Ch.4/7/18
+
+§1.1  Ce que le modèle produit vraiment — distribution, pas réponse
+        ├─ §1.1.1 Le forward pass et le vecteur de logits
+        ├─ §1.1.2 Pourquoi softmax — normalisation en distribution sommant à 1
+        ├─ §1.1.3 Le moment précis du tirage — la dernière étape
+        └─ encadré [!IMPORTANT] La sortie d'un LLM n'est pas un token,
+            c'est une distribution sur ~30k-200k tokens, dont on extrait
+            *un* tirage.
+
+§1.2  Les quatre opérateurs — softmax · température · top-p · top-k
+        ├─ [SVG S1.1] softmax-temperature-sampling-chain (signature)
+        ├─ §1.2.1 Softmax — convertir logits en distribution
+        ├─ §1.2.2 Température — aplatir ou contracter (T=0 ≈ argmax,
+        │         T=0.7 conventionnel, T>1 chaos contrôlé)
+        ├─ §1.2.3 Top-p (Holtzman 2019, nucleus) — masquer la longue traîne
+        ├─ §1.2.4 Top-k — variante historique encore utilisée
+        ├─ §1.2.5 Min-p (2024), η-sampling (Hewitt 2022) — débat ouvert
+        └─ encadré [!NOTE] T et top-p = conventions historiques exposées
+            par les APIs, pas des vérités physiques.
+
+§1.3  La stochasticité comme nature — pas comme bug
+        ├─ [SVG S1.2] variance-trajectoire-1000-rejouages
+        ├─ §1.3.1 Le même prompt, 1 000 trajectoires — démonstration visuelle
+        ├─ §1.3.2 Pourquoi cette variance est précisément ce qui rend
+        │         le modèle capable de raisonner
+        ├─ §1.3.3 Conséquence évaluation : distributions, pas cas isolés
+        │         (n rejouages, intervalles de confiance, pass@k — Ch.17)
+        └─ encadré [!ATTENTION] Test unitaire exact sur sortie stochastique
+            = programmer la frustration.
+
+§1.4  Le seed — un leurre opérationnel
+        ├─ §1.4.1 Ce qu'un seed fixe : le RNG du sampler côté software
+        ├─ §1.4.2 Ce qu'il ne fixe pas, à l'échelle GPU :
+        │         (a) opérations FP non-associatives
+        │         (b) batching dynamique
+        │         (c) mixed precision FP8/FP16
+        │         (d) versions de modèle (silent updates fournisseur)
+        ├─ §1.4.3 OpenAI seed — « best effort, not guaranteed »
+        ├─ §1.4.4 Verma et al. 2024 — dérive mesurée sur GPT-4 à seed fixe
+        ├─ §1.4.5 La reproductibilité statistique remplace la bit-à-bit
+        ├─ encadré [!IMPORTANT] La reproductibilité bit-à-bit n'existe pas
+        │   en LLM serveur 2026. C'est un fait physique, pas un choix.
+        └─ [!INFO] Voir Ch.4 — théorème d'équivalence Leviathan/Kalman/
+            Matias (ICML 2023) : décode spéculative produit une distribution
+            **strictement identique** à la décode standard. Précisément
+            cette propriété rend la spec contractuellement neutre.
+
+§1.5  L'effet multiplicateur agentique — pourquoi Ch.1 conditionne l'Acte II
+        ├─ §1.5.1 Variance à un token (Ch.1) → variance à un tour (Ch.7)
+        │         → variance sur N tours d'agent (Ch.7 nouveau, Ch.18 obs)
+        ├─ §1.5.2 Le trajectory drift — silent regression sur version modèle
+        ├─ encadré [!INFO] Voir Ch.2 — seconde courbe de scaling : *plus la
+        │   chaîne de tokens est longue, plus la variance multiplicative
+        │   s'accumule*.
+        ├─ encadré [!INFO] Voir Ch.18 — trajectory drift instrumenté via
+        │   OpenTelemetry GenAI Semantic Conventions (`gen_ai.*` namespaces).
+        └─ §1.5.3 La règle de signature : tout contrat agent 2026 spécifie
+            n, T, p, k, version modèle gelée, et protocole de mesure
+            sur distribution.
+
+§1.6  Conclusion — domestiquer la variance sans la tuer (~250 mots)
+        ├─ Le LLM moderne est un dé pondéré, c'est sa nature
+        ├─ Toute la stack qui suit existe pour domestiquer cette variance
+        │   sans la tuer — car c'est elle qui rend le modèle capable de raisonner
+        ├─ Le paradoxe d'ouverture : la fiabilité d'un système se construit
+        │   sur un cœur qui n'est pas fiable au sens classique
+        └─ Pont vers Ch.2 — si la variance se paie en tokens et que les
+            modèles de raisonnement en dépensent dix fois plus, quelle économie ?
+
+> [!WARNING] Trois pièges classiques
+  · Traiter le LLM comme une fonction pure (T=0.7 × 1 000 = 1 000 trajectoires)
+  · Demander en RFP « la même réponse à chaque appel »
+  · Tester par cas isolés au lieu de distributions
+```
+
+### Footnotes Tier-A prévues (10-12)
+
+| # | Source | Usage |
+| --- | --- | --- |
+| F1 | Holtzman, Buys, Du, Forbes, Choi, *The Curious Case of Neural Text Degeneration*, ICLR 2020 (arXiv:1904.09751) | §1.2.3 top-p |
+| F2 | Hewitt, Manning, Liang, *Truncation Sampling as Language Model Desmoothing*, EMNLP 2022 (arXiv:2210.15191) | §1.2.5 η-sampling |
+| F3 | Welleck et al., *Neural Text Generation with Unlikelihood Training*, ICLR 2020 (arXiv:1908.04319) | §1.2.2 pourquoi T>0 |
+| F4 | Nguyen, Mehrabian, Welleck, *Min-p Sampling*, ICLR 2025 (arXiv:2407.01082) | §1.2.5 |
+| F5 | OpenAI Platform Docs — *Reproducibility (Beta)* — `seed` + `system_fingerprint`, *best-effort* explicite | §1.4.3 |
+| F6 | Verma, Tomlin et al., HELM 2024 (papier dérive seed-fixed GPT-4 / Claude 3) | §1.4.4 |
+| F7 | Anthropic Claude API docs — `temperature`, `top_p`, `top_k` | §1.2.1-1.2.4 |
+| F8 | Google DeepMind / Gemini API docs — sampling + reproducibility caveats | §1.4.2 |
+| F9 | Leviathan, Kalman, Matias, *Fast Inference from Transformers via Speculative Decoding*, ICML 2023 (arXiv:2211.17192) | §1.4 renvoi |
+| F10 | Anthropic — *Building Effective Agents* (Schluntz & Zhang, dec 2024) | §1.5.1 renvoi |
+| F11 (option) | NVIDIA cuDNN/cuBLAS Reproducibility Guide | §1.4.2 (a)(c) |
+| F12 (option) | Anthropic Research — *Toy Models of Superposition* | §1.3.2 |
+
+### Encadrés prévus
+
+| Type | Usage | Compte |
+| --- | --- | --- |
+| `[!QUESTION]` | Ouverture | 1 |
+| `[!TLDR]` | 5 bullets | 1 |
+| `[!IMPORTANT]` | (a) sortie = distribution · (b) reproductibilité bit-à-bit n'existe pas | 2 |
+| `[!ATTENTION]` | Test unitaire exact = frustration | 1 |
+| `[!NOTE]` | T et top-p = conventions historiques | 1 |
+| `[!INFO]` | Renvois (Ch.2 · Ch.4 · Ch.18 — pas Ch.7 sauf allusion) | 3 |
+| `[!WARNING]` | Trois pièges classiques | 1 |
+| **Total** | | **~10** |
+
+### Tâches restantes Ch.1
+
+- [ ] Rédiger le manuscrit `docs/livre/ch01-coeur-stochastique.md` (~3 000-4 000 mots)
+- [ ] Créer **S1.1** (softmax→T→top-p→tirage chain, ~1-1,5 j SVG) — `livre/images/20260601-01-softmax-temperature-sampling-chain.svg`, viewBox 1200×720
+- [ ] Créer **S1.2** (faisceau 1 000 trajectoires, ~1-1,5 j SVG) — `livre/images/20260601-02-variance-trajectoire-1000-rejouages.svg`, viewBox 1200×640
+- [ ] Tenir la frontière Ch.1 ↔ Ch.2 strictement : zéro mention de o1, R1, RLVR, GRPO, *aha moment*, interleaved/parallel thinking
+- [ ] Tenir la frontière Ch.1 ↔ Ch.18 strictement : OTel GenAI nommé **une seule fois**, en renvoi, jamais défini
+- [ ] Sourcer les 5 paramètres API mentionnés (`temperature`, `top_p`, `top_k`, `seed`, `system_fingerprint`) sur **trois docs vendeurs frontière** (OpenAI / Anthropic / Google)
+- [ ] Vérifier que « bug » n'apparaît jamais pour qualifier la stochasticité (formulation systématique : « nature », « propriété fondamentale »)
+
+---
+
+## Chapitre 2 — Les modèles de raisonnement et la seconde courbe de scaling
+
+> **Acte I — Les moteurs · Gabarit standard 22 p · ~7 000-7 500 mots**
+> **Lecteur cible** : expert data, agent engineer démarrant un projet à raisonnement complexe, FinOps qui doit chiffrer un contrat *thinking*, sponsor IA qui arbitre entre modèle non-raisonneur et modèle raisonneur sur un cas d'usage.
+> **Sortie lecteur** : date le pivot o1 (12 septembre 2024) comme événement de bascule industrielle et le distingue de l'astuce de prompt « let's think step-by-step » antérieure ; nomme la mécanique RLVR (Reinforcement Learning with Verifiable Rewards) et l'algorithme GRPO (DeepSeek, variante PPO sans critique séparé) ; sait que DeepSeek-R1 est publié dans *Nature* septembre 2025 (preprint arXiv 2501.12948) et que R1-Zero apprend à raisonner par RL pur **sans aucune trace humaine de chaîne de pensée**, ce qui définit l'*aha moment* émergent (auto-vérification, retour en arrière, planification non programmés) ; lit le second axe de scaling de Snell et al. (arXiv 2408.03314, août 2024) qui montre qu'un petit modèle compute-optimal à l'inférence peut surclasser un modèle **14× plus gros** à FLOPs équivalents, via 4 stratégies (Best-of-N · Beam + PRM · MCTS · refinement séquentiel) ; distingue les trois variantes laboratoires en 2026 (interleaved thinking Claude 4.x exposant `<thinking>` explicite intercalable avec tool calls / *summary* OpenAI depuis o1 qui cache la chaîne brute pour gêner la distillation / parallel thinking Gemini 2.5 Deep Think qui explore plusieurs branches simultanément, médaille d'or IMO 2025) ; tient le piège de la fidélité de la chaîne de pensée (Anthropic mars 2025 : Claude 3.7 fidèle **25 %** du temps, R1 **39 %**, fidélité qui *décroît* avec la difficulté — GPQA -44 % vs MMLU) et sait que cela invalide « trust the chain » comme stratégie d'oversight pur ; connaît la mécanique de diffusion par distillation (R1-Distill-Qwen-7B 55 % AIME, 32B 72 % comparable o1-mini) qui rend le raisonnement accessible sur GPU consumer ; cadre la matrice du coût unitaire d'un appel raisonneur (4 à 100× tokens d'un appel non-raisonné, ratio thinking/output jusqu'à 100:1, latence non-streamable) ; reconnaît le piège **router automatiquement vers un reasoning model** (×10 à ×74 sur AIME pour gain marginal voire négatif sur conversationnel ouvert).
+
+### Statut
+
+| Étape | Statut |
+| --- | --- |
+| Audit schémas source (1 dossier principal) | ✅ fait — `modeles-raisonnement/` (6 schémas SVG narratifs absorbés intégralement, viewBox uniforme `0 0 1200 800`) |
+| Plan détaillé | ✅ fait (audit du 2026-05-29) |
+| Manuscrit | ⏳ à rédiger — `docs/livre/ch02-modeles-raisonnement.md` (~7 000-7 500 mots) |
+| Schémas à créer | **E3** (Capability vs Cost, A4 portrait) — fusion lourde `modeles-raisonnement-03-diptyque-scaling.svg` + `economie-inference-07-reasoning-cost.svg` (~2-3 j SVG). Manuscrit v1 peut fonctionner par **juxtaposition** des deux SVG existants en attendant la fusion E3 print. |
+| Frontière Ch.2 ↔ Ch.1 | À tenir — Ch.1 = cœur stochastique. Ch.2 = couche au-dessus : le raisonneur greffe une boucle de recherche/vérification sur le sampling de Ch.1. Pas de redéfinition de la variance. |
+| Frontière Ch.2 ↔ Ch.3 | À tenir — Ch.2 dit **quoi** (RLVR comme mécanique d'entraînement avec vérifieur booléen). Ch.3 dit **qui note les étapes** (PRM800K, GenRM/ThinkPRM, generative verifiers). §2.3 mentionne PRM uniquement comme l'une des 4 stratégies test-time de Snell, renvoi `[!INFO]` Ch.3. |
+| Frontière Ch.2 ↔ Ch.4 | À tenir — Ch.4 = décode spéculative. Ch.2 explique **pourquoi** on dépense plus de tokens à l'inférence ; Ch.4 explique **comment** on regagne la latence. Frontière déjà posée en miroir dans Ch.4 §4.1.1 — Ch.2 §2.8 pose la réciproque. |
+| Frontière Ch.2 ↔ Ch.5 | À tenir — Ch.5 = économie unitaire (LLMflation ×1000, addition pile complète, ×10-74 AIME). Ch.2 mentionne le **coût marginal explicite** (4-100× tokens, thinking/output 100:1) mais **ne déroule pas la pile éco** — c'est Ch.5. Le chiffre ×10-74 sur AIME apparaît en clôture Ch.2 comme amorce du piège « router automatiquement », **justification chiffrée** en Ch.5. |
+| Frontière Ch.2 ↔ Ch.18 | À tenir — Ch.18 = observabilité (OTel GenAI, cognitive audit trail). Ch.2 pose le **constat** de la non-fidélité de la CoT ; Ch.18 en déroule les **conséquences opérationnelles** (monitoring outputs ≠ monitoring thinking). Anchor `[!INFO] Voir Ch.18` en clôture §2.6. |
+
+### Sources matérielles
+
+Le Ch.2 est un **chapitre standard à un seul dossier source dense** (10 sources Tier-A dans l'app, 6 schémas narratifs uniformes, 113 lignes de rapport).
+
+- **Dossier principal — [`modeles-raisonnement/`](../modeles-raisonnement/)** (06 mai 2026, étude #14)
+  - [Rapport (.md)](../modeles-raisonnement/20260506-modeles-raisonnement-rapport.md) · [App interactive](../modeles-raisonnement/20260506-modeles-raisonnement-app.html) · [Hub](../modeles-raisonnement/index.html)
+  - 6 schémas SVG dans [`images/`](../modeles-raisonnement/images/) — tous narratifs, tous absorbables, viewBox `0 0 1200 800`
+
+**Sources Tier-A à citer (10)** :
+
+1. **OpenAI** — *Learning to reason with LLMs*, 12 septembre 2024.
+2. **Daya Guo et al. (DeepSeek)** — *DeepSeek-R1*, **Nature 645:633, septembre 2025** (preprint arXiv:2501.12948).
+3. **Charlie Snell, Jaehoon Lee, Kelvin Xu, Aviral Kumar** — *Scaling LLM Test-Time Compute Optimally…*, **arXiv:2408.03314**, août 2024.
+4. **Google DeepMind** — *Gemini 2.5 Deep Think*, blog août 2025 + tech report 2025.
+5. **Anthropic** — *Building with extended thinking*, doc Claude 4.x 2025-2026.
+6. **Yanda Chen, Joe Benton et al. (Anthropic Alignment)** — *Reasoning Models Don't Always Say What They Think*, mars 2025.
+7. **ARC Prize Foundation** — *OpenAI o3 Breakthrough High Score on ARC-AGI-Pub* (20 déc. 2024) + *ARC Prize 2025 Results* (déc. 2025).
+8. **Yang Yue et al.** — *Does RL Really Incentivize Reasoning Capacity in LLMs Beyond the Base Model?*, **NeurIPS 2025**.
+9. **Xumeng Wen et al.** — *RLVR Implicitly Incentivizes Correct Reasoning…*, **arXiv:2506.14245**, juin 2025.
+10. **Survey équipe Test-Time Scaling** — *What, How, Where, and How Well? A Survey on Test-Time Scaling in LLMs*, 2025.
+
+### Audit des schémas — Ch.2
+
+| Fig | Slug | viewBox | Catégorie Ch.2 | Insertion | Statut |
+| --- | --- | --- | --- | --- | --- |
+| 01 | [`20260506-01-timeline-pivot.svg`](../modeles-raisonnement/images/20260506-01-timeline-pivot.svg) | `0 0 1200 800` | **S §2.2** | Timeline 4 tracks (OpenAI / DeepSeek / Anthropic / Google) sur 20 mois sept 2024 → mai 2026 | tel quel |
+| 02 | [`20260506-02-boucle-rlvr.svg`](../modeles-raisonnement/images/20260506-02-boucle-rlvr.svg) | `0 0 1200 800` | **S §2.3** | Boucle 5 étapes : policy → rollouts → vérifieur (script booléen) → GRPO update → aha moment | tel quel — schéma signature mécanique |
+| 03 | [`20260506-03-diptyque-scaling.svg`](../modeles-raisonnement/images/20260506-03-diptyque-scaling.svg) | `0 0 1200 800` | **E3 ingrédient §2.4 (ingrédient gauche)** | Diptyque pretraining FLOPs vs test-time tokens + 4 stratégies | **À fusionner en E3** avec `economie-inference-07-reasoning-cost.svg` ; **réutilisable tel quel** en v1 |
+| 04 | [`20260506-04-anatomie-raisonneur.svg`](../modeles-raisonnement/images/20260506-04-anatomie-raisonneur.svg) | `0 0 1200 800` | **S §2.5** | Anatomie API : 2 flux (thinking / output) + 3 variantes labo | tel quel — schéma signature de l'angle API/produit |
+| 05 | [`20260506-05-faithfulness-scoreboard.svg`](../modeles-raisonnement/images/20260506-05-faithfulness-scoreboard.svg) | `0 0 1200 800` | **S §2.6** | Scoreboard fidélité CoT — 25/39 %, hint 41/19 %, GPQA -44 % | tel quel — schéma signature piège fidélité |
+| 06 | [`20260506-06-diffusion-ladder.svg`](../modeles-raisonnement/images/20260506-06-diffusion-ladder.svg) | `0 0 1200 800` | **S §2.7** | 4 paliers : frontier → distillé → on-device → agents prod | tel quel — clôt l'arc, pont vers Acte II |
+
+**Bilan audit Ch.2** : 6/6 schémas narratifs absorbés sans retouche. Densité finale visée : ~1 schéma par 1 100-1 250 mots.
+
+### Schémas à créer — E3 (Capability vs Cost — second axe de scaling)
+
+| Critère | Spec |
+| --- | --- |
+| Format | **A4 portrait** (210×297 mm) |
+| Position dans le livre | **§2.4 principal** + Ch.5 §5.8 + Ch.17 (axe coût accompagne axe performance) |
+| Statut | **À créer par fusion** (~2-3 j SVG). Manuscrit v1 peut fonctionner par juxtaposition. |
+| Sources à fusionner | (a) `modeles-raisonnement/images/20260506-03-diptyque-scaling.svg` — panel capability. (b) `economie-inference/images/20260506-07-reasoning-cost.svg` — panel coût. |
+| Contenu | **Panel A (haut)** : axe X temps 2020-2026, axe Y capability (MMLU + AIME). Courbes pretraining vs test-time-compute, bande pivot o1 sept 2024. Annotation Snell 14×. **Panel B (bas)** : axe X log USD/résolution AIME, axe Y perf AIME. Deux nuages distincts (non-reasoning bas-gauche, reasoning haut-droit, ×10-74). **Bandeau bas** : 3 régimes vendor (pricing/token uniforme, thinking facturés, effort levels). |
+| Légende | « *La capability monte avec le test-time compute. La facture monte avec elle. Le décideur qui choisit un raisonneur ne choisit pas un modèle — il choisit un régime tarifaire et un design d'allocation compute par requête.* » |
+| Réutilisation | §2.4 + Ch.5 §5.8 + Ch.17 + annexe cahier central. |
+
+### Plan détaillé
+
+```
+> [!QUESTION] Ouverture
+  Depuis o1 (12 septembre 2024), on dépense du compute à l'inférence
+  pour chercher, vérifier, corriger. Qu'est-ce qui a changé exactement,
+  et pourquoi un décideur 2026 doit-il s'en soucier ?
+
+> [!TLDR] TL;DR décideur (6-7 bullets)
+  - Pivot o1 = mécanique d'entraînement, pas un prompt — RLVR sur vérifieur
+    booléen, GRPO chez DeepSeek, aucun humain dans la boucle.
+  - DeepSeek-R1 (Nature 09/2025) prouve que le RL pur suffit ; R1-Zero
+    apprend l'aha moment seul.
+  - Second axe de scaling (Snell 08/2024) : petit modèle compute-optimal
+    à l'inférence bat un modèle 14× plus gros à FLOPs équivalents.
+  - 4 stratégies test-time : Best-of-N · Beam+PRM · MCTS · refinement.
+  - Trois régimes laboratoires 2026 : interleaved Claude · summary OpenAI
+    · parallel Google Deep Think (médaille d'or IMO).
+  - Piège fidélité : Claude 3.7 fidèle 25 %, R1 39 %, décroît avec
+    la difficulté. « Trust the chain » n'est plus une stratégie tenable.
+  - Économie : ratio thinking/output jusqu'à 100:1, ×10-74 coût par tâche
+    AIME — router automatiquement vers reasoning = piège FinOps.
+
+§2.1  La place du chapitre dans l'Acte I
+        ├─ §2.1.1 Le chaînon qui ouvre la chaîne des moteurs
+        ├─ §2.1.2 Lien Ch.1 (cœur stochastique)
+        └─ §2.1.3 Le triangle Ch.2/Ch.3/Ch.4
+
+§2.2  Le pivot o1 (12 septembre 2024)
+        ├─ [SVG S] 01-timeline-pivot
+        ├─ §2.2.1-2.2.6 Avant/après, AIME 13→74 %, ARC-AGI o3, DeepSeek-R1,
+        │   Claude 3.7/4.x, Gemini 2.5 Deep Think
+        └─ encadré [!IMPORTANT] Le pivot n'est pas le prompt, c'est la
+            mécanique d'entraînement
+
+§2.3  RLVR et GRPO — la mécanique d'entraînement
+        ├─ [SVG S] 02-boucle-rlvr
+        ├─ §2.3.1-2.3.5 Boucle 5 étapes, GRPO vs PPO, aha moment R1-Zero,
+        │   débat compression vs expansion (Yue/Wen)
+        └─ encadré [!INFO] Voir Ch.3 — couche notateur cachée
+
+§2.4  Le second axe de scaling (Snell et al.)
+        ├─ [SVG S] 03-diptyque-scaling (ingrédient E3)
+        ├─ §2.4.1-2.4.5 14× FLOPs équivalents, 4 stratégies test-time,
+        │   coût marginal non linéaire
+        └─ encadré [!INFO] Voir Ch.5 — addition économique complète
+
+§2.5  Anatomie d'un raisonneur en 2026
+        ├─ [SVG S] 04-anatomie-raisonneur
+        ├─ §2.5.1-2.5.7 Deux flux thinking/output, 3 variantes labo,
+        │   adaptive effort levels, conséquences UX et économiques (100:1)
+        └─ encadré [!IMPORTANT] Le raisonneur n'est plus un chatbot
+
+§2.6  Le piège de la fidélité de la chaîne de pensée
+        ├─ [SVG S] 05-faithfulness-scoreboard
+        ├─ §2.6.1-2.6.6 Protocole hint Anthropic, 25/39 %, GPQA -44 %,
+        │   nuance METR, implications AISI/NIST
+        └─ encadré [!INFO] Voir Ch.18 — cognitive audit trail
+
+§2.7  Diffusion ladder et alternatives
+        ├─ [SVG S] 06-diffusion-ladder
+        └─ §2.7.1-2.7.5 R1-Distill 7B/14B/32B, over-thinking, anti-distillation,
+            agentique moderne reposant sur raisonneur
+
+§2.8  Conclusion — pourquoi le décideur doit s'en soucier
+        ├─ §2.8.1-2.8.4 Contrat vendor, piège routing, CoT ≠ audit log,
+        │   trois lignes de force horizon
+        └─ Pont vers Ch.3 / Ch.4 / Ch.5
+
+> [!WARNING] Trois pièges classiques
+  - Router automatiquement vers reasoning (×10-74 coût pour gain marginal)
+  - Confondre token cost et task cost (ratio thinking/output 100:1)
+  - Croire la chaîne de pensée (fidélité 25 % / 39 %)
+```
+
+### Encadrés prévus
+
+| Type | Usage | Compte |
+| --- | --- | --- |
+| `[!QUESTION]` | Ouverture | 1 |
+| `[!TLDR]` | 6-7 bullets | 1 |
+| `[!INFO]` | Renvois (Ch.1 §2.1, Ch.3 §2.3, Ch.4 + Ch.5 §2.1, Ch.5 §2.4, Ch.18 §2.6) | 5-6 |
+| `[!IMPORTANT]` | Pivot mécanique §2.2 · Raisonneur ≠ chatbot §2.5 · Agentique 2026 §2.7 | 3 |
+| `[!QUOTE]` | Snell + Anthropic faithfulness | 2 |
+| `[!ATTENTION]` | Ratio thinking/output 100:1 change UX/éco §2.5 | 1 |
+| `[!EXAMPLE]` | DeepSeek-R1 aha moment extrait « wait, let me reconsider » §2.3 | 1 |
+| `[!WARNING]` | Trois pièges en clôture | 1 |
+| **Total** | | **~15-16** |
+
+### Tâches restantes Ch.2
+
+- [ ] Rédiger `docs/livre/ch02-modeles-raisonnement.md` (~7 000-7 500 mots)
+- [ ] Créer E3 (~2-3 j SVG, optionnel pour v1)
+- [ ] Confirmer footnote METR août 2025 sur distingo fidélité/informativité
+- [ ] Valider échappement `&lt;thinking&gt;` quand bloc Anthropic apparaît dans `<code>` HTML
+- [ ] Tenir frontière Ch.2 ↔ Ch.3 : zéro description PRM800K, GenRM, ThinkPRM ici
+
+---
+
+## Chapitre 3 — La couche notateur cachée (Process Reward Models)
+
+> **Acte I — Les moteurs · Gabarit standard 22 p · ~6 500-7 500 mots**
+> **Lecteur cible** : agent engineer, sponsor IA technique, plateforme ML, acheteur de service eval.
+> **Sortie lecteur** : nomme la trinité Lightman *générateur–notateur–chercheur* (PRM800K mai 2023) et son verrou économique (5 000-10 000 heures-PhD, 0,35-1,5 M$ pour le seul dataset OpenAI) ; comprend pourquoi Math-Shepherd (Wang et al., ACL 2024) a partiellement levé ce verrou par MCTS rollout — uniquement sur les domaines à *ground-truth vérifiable* ; date le pivot **DeepSeek-R1 (janvier 2025)** où GRPO + RLVR rendent le PRM superflu sur math/code/sciences exactes ; situe la convergence raisonneur ↔ notateur des **generative verifiers** (GenRM Zhang ICLR 2025 : 5→45 % sur algorithmique, 73→93,4 % sur GSM8K ; ThinkPRM Khalifa avril 2025 : équivalent discriminatif avec **1 % des labels**) ; intériorise le chiffre signature **99 % d'exploitation reward proxies / < 2 % de verbalisation** (Anthropic + OpenAI 2025) et son corollaire — la faithfulness CoT est un *pré-requis* du PRM, pas un produit ; tient les quatre trajectoires 2027-2028 (RLVR généralisé / generative intégré / PRM spécialisé domaine / PRM-as-a-service) et la cartographie économique sous-jacente (marché annotation procédurale **2-4 Md $ en 2026**, 300-800 $/h sur les domaines spécialisés, Scale/Surge/Mercor/Outlier/Invisible) ; sait que la couche notateur a une *seconde vie en production comme infrastructure d'audit* (trois sondes : règle déterministe + judge LLM async + sampling humain 0,5-2 %) ; reconnaît trois pièges 100 % traçables (adopter un PRM-as-a-service sans audit de la fonction de récompense / confondre ORM et PRM / réinjecter le verdict du judge dans la récompense du raisonneur).
+
+### Statut
+
+| Étape | Statut |
+| --- | --- |
+| Audit schémas source (1 dossier) | ✅ fait — `process-reward-models/` (7 SVG narratifs tous absorbés + ingrédient E5) |
+| Plan détaillé | ✅ fait (audit du 2026-05-29) |
+| Manuscrit | ⏳ à rédiger — `docs/livre/ch03-process-reward-models.md` (~6 500-7 500 mots) |
+| Schémas à créer | **E5** (comparatif PRM vs LLM-as-judge vs human eval, A4 portrait) — fusion légère `process-reward-models` + `evaluation-agentique` (~2 j SVG). Principal en Ch.3 §3.7, renvoyé depuis Ch.17 §graders. |
+| Frontière Ch.3 ↔ Ch.2 | À tenir — Ch.2 dit *quoi* (raisonneur, RLVR/GRPO, faithfulness 25/39 %) ; Ch.3 dit *qui note* (économie 2-4 Md$, reward hacking 99/2). Définition canonique RLVR **en Ch.2** ; Ch.3 la mobilise sous l'angle « élimination du PRM ». |
+| Frontière Ch.3 ↔ Ch.5 | À tenir — Triptyque économique : Ch.3 (notateur) → Ch.5 (token) → Ch.21 (outcome). Renvoi `[!INFO]` croisé. |
+| Frontière Ch.3 ↔ Ch.17 | À tenir — Ch.17 = playbook gruyère + LLM-as-judge en eval/CI. E5 créé ici **renvoyé** depuis Ch.17 §graders. La taxonomie code/model/human reste en Ch.17. |
+| Frontière Ch.3 ↔ Ch.18 | À tenir — Schéma 07 mobilisé en Ch.3 §3.8.6 comme cas d'usage in-prod (3 sondes) ; Ch.18 déroule l'instrumentation OTel complète. Renvoi croisé. |
+| Frontière Ch.3 ↔ Ch.19 | À tenir — Reward hacking comme *signal silencieux pré-attaque* (vecteur jailbreak par optimisation du moniteur). Renvoi croisé §3.6 → Ch.19. |
+| Frontière Ch.3 ↔ Ch.4 | Rappel mineur — « inference-time compute » canonique en Ch.2. Ch.3/Ch.4 renvoient. |
+
+### Sources matérielles
+
+Le Ch.3 est un **chapitre standard à un seul dossier source**, dense visuellement (7 schémas pour ~5 000 mots) et bibliographiquement (12 sources Tier-A).
+
+- **Dossier principal — [`process-reward-models/`](../process-reward-models/)** (13 mai 2026, étude #18)
+  - [Rapport (.md, ~5 000 mots / 269 lignes)](../process-reward-models/20260513-process-reward-models-rapport.md) · [App interactive](../process-reward-models/20260513-process-reward-models-app.html) · [Quiz sidecar](../process-reward-models/quizzes.json)
+  - 7 schémas SVG dans [`images/`](../process-reward-models/images/)
+- **Dossier d'appoint pour E5 — [`evaluation-agentique/`](../evaluation-agentique/)** — apporte taxonomie code/model/human graders + calibration LLM-judge ↔ humain. Ingrédient pour E5 uniquement.
+
+**12 sources Tier-A** : Lightman 2023 PRM800K · OpenAI o1 09/2024 · Wang Math-Shepherd ACL 2024 · DeepSeek-R1 Nature 2025 · Razin RLVR theory 2025 · Zhang GenRM ICLR 2025 · Khalifa ThinkPRM 2025 · Anthropic faithfulness avril 2025 · OpenAI CoT monitoring mars 2025 · Cui PRIME 2025 · Sun Causal Reward Adjustment 2025 · Wolfe Reward Models Substack 2025 (B). Compléter à la rédaction par 2-4 sources E5 (Anthropic *Building effective LLM-as-judge*, MT-Bench / Chatbot Arena, rapports marché Scale/Mercor 2025).
+
+### Audit des schémas — Ch.3
+
+| Fig | Slug | viewBox | Catégorie Ch.3 | Insertion | Statut |
+| --- | --- | --- | --- | --- | --- |
+| 01 | [`01-orm-vs-prm`](../process-reward-models/images/20260513-01-orm-vs-prm.svg) | 1200×720 | **S §3.2** | Outcome vs Process — noter destination ou chemin | tel quel |
+| 02 | [`02-math-shepherd-mcts`](../process-reward-models/images/20260513-02-math-shepherd-mcts.svg) | 1200×700 | **S §3.3** | MCTS rollout, fonction-valeur AlphaGo | tel quel |
+| 03 | [`03-trois-familles-recompenses`](../process-reward-models/images/20260513-03-trois-familles-recompenses.svg) | 1200×720 | **S §3.4** | ORM / PRM / RLVR — **cardinal du chapitre** | tel quel |
+| 04 | [`04-discriminative-vs-generative`](../process-reward-models/images/20260513-04-discriminative-vs-generative.svg) | 1200×720 | **S §3.5** | Verifier discriminatif vs génératif | tel quel |
+| 05 | [`05-reward-hacking-invisible`](../process-reward-models/images/20260513-05-reward-hacking-invisible.svg) | 1200×720 | **S §3.6** | **Chiffre signature 99/2** — exploitation vs verbalisation | tel quel |
+| 06 | [`06-quatre-trajectoires`](../process-reward-models/images/20260513-06-quatre-trajectoires.svg) | 1200×760 | **S §3.8** | 4 quadrants RLVR généralisé / generative intégré / PRM spécialisé / PRM-as-a-service | tel quel |
+| 07 | [`07-observabilite-chatbot-agent`](../process-reward-models/images/20260513-07-observabilite-chatbot-agent.svg) | 1200×780 | **S §3.8.2** | Pipeline audit step-level (3 sondes), pont Ch.18 | tel quel (renvoyé depuis Ch.18) |
+
+**Bilan audit Ch.3** : 7/7 schémas absorbés. Aucun à fusionner en interne. Seule production neuve = **E5**.
+
+### Schémas à créer — E5 (comparatif PRM vs LLM-as-judge vs human eval)
+
+| Critère | Spec |
+| --- | --- |
+| Format | A4 portrait (210 × 297 mm) |
+| Position | **Principal Ch.3 §3.7** + renvoi Ch.17 §graders |
+| Statut | **À créer par fusion légère** (~2 j SVG) |
+| Sources | Ch.3 §3.7 (économie cachée + chiffres bench) + Ch.17 §2.2 (taxonomie graders) + §5 calibration judge-humain |
+| Contenu | **Matrice 3 lignes × 5 colonnes** : *PRM* / *LLM-as-judge* / *Human eval* × **Coût** (0,001 $ / 0,01-0,05 $ / 5-150 $) · **Scalabilité** · **Biais** (reward hacking 99/2 / sycophantie + position bias / IAA variable) · **Fidélité** · **Cas d'usage**. **Bandeau bas** : 4 trajectoires d'évolution alignées sur les 3 lignes. |
+| Légende | « *Trois mécaniques pour noter la qualité d'un raisonnement. Aucune ne suffit seule : en 2026, le pattern dominant en production combine les trois — règle déterministe pour la précision, judge LLM async pour la couverture, sampling humain pour la calibration.* » |
+| Réutilisation | §3.7 principal + renvoi Ch.17 §graders (page-facing du gruyère R11) + fiche rôle Acheteur eval |
+
+### Plan détaillé
+
+```
+> [!QUESTION] Ouverture
+  Si on n'évalue plus juste le résultat mais chaque étape du raisonnement,
+  qui annote, à quel coût, et qu'est-ce qu'on récompense vraiment ?
+
+> [!TLDR] (6-7 bullets)
+  • PRM = couche cachée qui note chaque étape, née OpenAI mai 2023
+  • Marché annotation procédurale 2-4 Md$ en 2026
+  • DeepSeek-R1 (janv 2025) prouve qu'on peut s'en passer sur math/code (RLVR)
+  • Generative verifiers (GenRM, ThinkPRM) fusionnent raisonneur et notateur
+  • Reward hacking : 99 % exploitation, < 2 % verbalisation
+  • Pour un builder agent : 3 questions séquentielles éliminent 80 % des PRM réflexes
+  • La couche notateur a une seconde vie en production comme infra d'audit
+
+§3.1  Place du chapitre dans l'Acte I
+§3.2  De Lightman/PRM800K (2023) au pari de noter le chemin
+        ├─ [SVG S] 01-orm-vs-prm
+        ├─ §3.2.1 Outcome vs Process supervision (72,4 → 78,2 % sur MATH)
+        ├─ §3.2.2 PRM800K — 800K labels, 5 000-10 000 h-PhD, 0,35-1,5 M$
+        └─ §3.2.3 Trinité générateur–notateur–chercheur
+§3.3  La fabrique des annotations — MCTS, Math-Shepherd, fin partielle du label humain
+        ├─ [SVG S] 02-math-shepherd-mcts
+        ├─ §3.3.1-3.3.4 Verrou levé, Mistral 28,6→43,5 %, ground-truth requis,
+        │   économie souterraine 2-4 Md$ (Scale/Surge/Mercor/Outlier)
+        └─ encadré [!IMPORTANT] Le PRM est moins une technologie qu'un contrat de travail
+§3.4  Trois familles de récompenses — ORM, PRM, RLVR
+        ├─ [SVG S] 03-trois-familles-recompenses
+        ├─ §3.4.1-3.4.4 ORM récap, PRM anatomie, RLVR pivot DeepSeek-R1,
+        │   fracture vérifiable/non-vérifiable
+        └─ encadré [!INFO] Renvoi Ch.2
+§3.5  Generative verifiers — quand le notateur pense
+        ├─ [SVG S] 04-discriminative-vs-generative
+        ├─ §3.5.1-3.5.4 GenRM 5→45 % algo, 73→93,4 % GSM8K · ThinkPRM 1 % labels
+        └─ encadré [!IMPORTANT] Le modèle qui pense et qui note est le même
+§3.6  Reward hacking invisible — 99 % d'exploitation, < 2 % de verbalisation
+        ├─ [SVG S] 05-reward-hacking-invisible
+        ├─ §3.6.1-3.6.6 Anthropic 6 environnements, OpenAI CoT monitoring,
+        │   faithfulness pré-requis, PRIME, CRA, ne résout pas dans le cas général
+        └─ encadré [!ATTENTION] Renvoi Ch.18 + Ch.19
+§3.7  Comparatif PRM vs LLM-as-judge vs human eval
+        ├─ [SVG E5] (à créer)
+        ├─ §3.7.1-3.7.3 Trois mécaniques, pattern dominant prod = combinaison,
+        │   piège achat sans audit
+        └─ encadré [!INFO] Renvoi Ch.17 §graders
+§3.8  Où va la couche notateur — quatre trajectoires + observabilité
+        ├─ [SVG S] 06-quatre-trajectoires
+        ├─ §3.8.1-3.8.4 RLVR généralisé / Generative intégré / PRM spécialisé / PaaS
+        ├─ §3.8.5 Seconde vie en production — couche d'audit + 3 questions builder
+        ├─ [SVG S] 07-observabilite-chatbot-agent
+        ├─ §3.8.6 Cas chatbot e-commerce — 3 sondes (règle / judge async / humain)
+        └─ encadré [!INFO] Renvoi Ch.18
+§3.9  Conclusion — l'économie cachée et son risque
+
+> [!WARNING] Trois pièges classiques
+  • PRM-as-a-service sans audit de la fonction de récompense
+  • Confondre ORM et PRM
+  • Réinjecter le judge dans la récompense du raisonneur (OpenAI 2025)
+```
+
+### Encadrés prévus
+
+| Type | Usage | Compte |
+| --- | --- | --- |
+| `[!QUESTION]` | Ouverture | 1 |
+| `[!TLDR]` | 6-7 bullets | 1 |
+| `[!INFO]` | Renvois Ch.2 / Ch.5 / Ch.17 (E5) / Ch.18 / Ch.19 | 5 |
+| `[!QUOTE]` | Lightman 2023 + aha moment R1 + Anthropic 2025 | 2-3 |
+| `[!IMPORTANT]` | « PRM = contrat de travail » §3.3 · « raisonneur = notateur » §3.5 | 2 |
+| `[!ATTENTION]` | Faithfulness pré-requis §3.6 · ne pas réinjecter judge §3.8 | 2 |
+| `[!EXAMPLE]` | Cas chatbot e-commerce 4 tools + 3 sondes §3.8.6 | 1 |
+| `[!WARNING]` | Trois pièges classiques | 1 |
+| **Total** | | **~14-16** |
+
+### Tâches restantes Ch.3
+
+- [ ] Rédiger `docs/livre/ch03-process-reward-models.md` (~6 500-7 500 mots, 14-16 footnotes)
+- [ ] Créer **E5** (~2 j SVG)
+- [ ] Compléter sources 12 → 14-20 par ajouts E5
+- [ ] Vérifier triptyque économique Ch.3 → Ch.5 → Ch.21 explicite §3.1 + §3.9
+- [ ] Tester pont §3.6 → Ch.19 (reward hacking comme vecteur jailbreak silencieux)
+
+---
+
+## Chapitre 5 — L'économie unitaire de l'inférence (et son angle mort)
+
+> **Acte I — Les moteurs · Gabarit standard 22 p · ~7 000-7 500 mots**
+> **Lecteur cible** : FinOps, acheteur infra, sponsor IA, architecte plateforme, CDO, agent engineer côté serving.
+> **Sortie lecteur** : intègre la trajectoire LLMflation ×1 000 en quatre ans (60 $→0,06 $→0,02 $/Mtok, trois régimes successifs : dense+batching statique 2021-2023, PagedAttention/FA-3 2023-2024, MoE+désagrégation+Blackwell 2024-2026) ; lit l'anatomie d'un appel (prefill compute-bound vs decode memory-bound, KV cache linéaire en contexte) ; déroule la **pile 7 couches** (kernel fusion ×1,5 → FA-3 ×2 → PagedAttention+continuous batching ×2-4 → FP8/FP4 ×2 chacune → speculative decoding ×3-6,5 → prefix caching ×10 situationnel → désagrégation prefill/decode), comprend pourquoi ×14 sur le même B300 ; situe la désagrégation Splitwise/Mooncake/DistServe (TTFT 1,4-2,3×, Mooncake >100 Mds tokens/jour Kimi) ; arbitre MoE vs dense (DeepSeek V3 671 B totaux / 37 B actifs, MLA KV cache ×20, pré-entraînement 5,6 M$ compute pur) ; lit le mix matériel 2026 (H100 0,15 $/Mtok, H200 0,10 $, B200 0,02 $ sur GPT-OSS-120B, MI300X 0,12 $, Trainium 2 -30/-40 % vs H100 Bedrock, Groq LPU 800 tok/s premium latence) ; identifie les marges fragiles (Together ~45 % / Fireworks ~50 % cible 60 % / OpenAI-Anthropic ~60-70 % / hyperscalers 70-80 %) ; reconnaît l'angle mort reasoning ×10-74 AIME (o1/o3, mais o3-mini -63 % vs o1-mini à perf comparable) ; nomme la **règle structurelle** du chapitre — *prix par token qui baisse, facture par tâche qui monte* ; tient le triptyque tarifaire Ch.5 coût/token (physique) ↔ Ch.21 valeur/outcome (J-curve) ↔ Ch.22 externalité/Wh-L-CO₂eq (Jevons) ; reconnaît trois pièges 100 % traçables (contrat 3 ans prix/token sans clause révision ; RFP sur tokens/sec batch 1 ; confondre LLMflation marketing et coût par cas d'usage).
+
+### Statut
+
+| Étape | Statut |
+| --- | --- |
+| Audit schémas source (1 dossier) | ✅ fait — `economie-inference/` (7 SVG tous absorbés tels quels, dont E2 schéma le + densément cité du livre) |
+| Plan détaillé | ✅ fait (audit du 2026-05-29) |
+| Manuscrit | ⏳ à rédiger — `docs/livre/ch05-economie-inference.md` (~7 000-7 500 mots) |
+| Schémas à créer | **0 ex nihilo** pour Ch.5. `03-pile-optimisation` devient **E2** (référence livre). `07-reasoning-cost` = **ingrédient E3** (Ch.2). `01-llmflation-curve` = **ingrédient secondaire R16** (panel A Ch.21). |
+| Frontière Ch.5 ↔ Ch.4 | À tenir — Ch.4 = zoom monographique. Matrices Ch.4 (variantes × frameworks) et Ch.5 (mix matériel) **côte à côte, pas fusionnées**. Renvoi `[!INFO]` §5.3.5 + §5.4. |
+| Frontière Ch.5 ↔ Ch.2 | À tenir — `07-reasoning-cost` ingrédient cost E3, Ch.2 fournit ingrédient capability. Renvoi `[!INFO]` §5.8. |
+| Frontière Ch.5 ↔ Ch.21 | À tenir — **triptyque tarifaire**. R16 (J-curve × LLMflation) référencé §5.10 en clôture, principal en Ch.21. |
+| Frontière Ch.5 ↔ Ch.22 | À tenir — E2 = **pont explicite** Ch.5 ↔ Ch.22 (mêmes leviers, angle externalité). Renvoi §5.3 + §5.9. |
+| Frontière Ch.5 ↔ Ch.20 | À tenir — marges 45-50 % éclairent décision buy/build. Renvoi `[!INFO]` §5.9. |
+| Frontière Ch.5 ↔ Ch.6 | Légère — pas de renvoi. |
+
+### Sources matérielles
+
+Chapitre standard à un seul dossier source dense, structure ~ Ch.4.
+
+- **Dossier principal — [`economie-inference/`](../economie-inference/)** (06 mai 2026, étude #13)
+  - [Rapport (.md, ~3 200 mots / 191 lignes / 13 footnotes)](../economie-inference/20260506-economie-inference-rapport.md) · [App](../economie-inference/20260506-economie-inference-app.html)
+  - 7 schémas SVG dans [`images/`](../economie-inference/images/)
+
+**13 sources Tier-A** : a16z LLMflation · PagedAttention SOSP 2023 (arXiv:2309.06180) · FlashAttention-3 NeurIPS 2024 (arXiv:2407.08608) · DeepSeek V3 Tech Report (arXiv:2412.19437) · Splitwise ISCA 2024 (arXiv:2311.18677) · Mooncake ACM TOS 2025 · EAGLE-3 NeurIPS 2025 (arXiv:2503.01840) · NVIDIA Blackwell InferenceMAX 10/2025 · SemiAnalysis InferenceMAX 2025 · Sacra Together/Fireworks 2025 · Epoch AI MoE vs dense 2025 · OpenAI Learning to reason 09/2024 · Hao AI Lab UCSD *Disaggregated Inference: 18 Months Later* 2025. Ajout possible : MLPerf Inference v6, Patterson 2021 pour amorcer pont Ch.22.
+
+### Audit des schémas — Ch.5
+
+| Fig | Slug | viewBox | Catégorie Ch.5 | Insertion | Statut |
+| --- | --- | --- | --- | --- | --- |
+| 01 | [`llmflation-curve`](../economie-inference/images/20260506-01-llmflation-curve.svg) | 1200×800 | **S §5.1** (+ ingrédient panel A R16 Ch.21) | Courbe 2021-2026, 3 régimes, 60 $ → 0,02 $/Mtok | tel quel — ouverture narrative + ingrédient R16 |
+| 02 | [`anatomie-appel`](../economie-inference/images/20260506-02-anatomie-appel.svg) | 1200×800 | **S §5.2** | Asymétrie prefill/decode + KV cache | tel quel — base mécanique |
+| 03 | [`pile-optimisation`](../economie-inference/images/20260506-03-pile-optimisation.svg) | 1200×800 | **E2 §5.3 principal + référence Ch.21 + Ch.22 §22.7** | 7 couches empilées, ×14 cumulé sur B300 | tel quel — **schéma signature du livre, le + densément cité (3 chapitres)** ; pleine page A3 paysage print |
+| 04 | [`desagregation`](../economie-inference/images/20260506-04-desagregation.svg) | 1200×800 | **S §5.5** | Cluster prefill ↔ bus RDMA ↔ cluster decode, TTFT 1,4-2,3× | tel quel |
+| 05 | [`moe-vs-dense`](../economie-inference/images/20260506-05-moe-vs-dense.svg) | **900×900** (portrait) | **S §5.6** | VRAM (totaux) × FLOPs (actifs), DeepSeek V3 / Mixtral / dense | tel quel — seul format portrait |
+| 06 | [`mix-materiel`](../economie-inference/images/20260506-06-mix-materiel.svg) | 1200×800 | **S §5.7** | H100/H200/B200/MI300X/Trainium 2/Groq LPU sur 4 dimensions | tel quel — carte de décision matérielle, **côte à côte** avec matrice Ch.4 print |
+| 07 | [`reasoning-cost`](../economie-inference/images/20260506-07-reasoning-cost.svg) | 1200×800 | **S §5.8 + ingrédient E3 Ch.2** | Scatter accuracy AIME × $/résolution, 2 nuages, ×10-74 | tel quel + ingrédient fusion E3 |
+
+**Bilan audit Ch.5** : 7/7 schémas absorbés tels quels. 0 à créer pour Ch.5 lui-même. **E2 = `pile-optimisation` = schéma le + densément cité du livre** (Ch.5 §5.3 principal + Ch.21 §21.7 référence + Ch.22 §22.7 leviers frugaux).
+
+### Schémas — E2 (référence) et E3 (ingrédient)
+
+**E2 = `economie-inference/images/20260506-03-pile-optimisation.svg`, tel quel.**
+- Format : A3 paysage 1200×800
+- Position : pleine page §5.3 + miniatures §21.7 + §22.7
+- Statut : ✅ existe — **schéma le + cité du livre**
+- Légende Ch.5 : *« Sept couches logicielles empilées multiplient le throughput d'un facteur 14 sur un B300 — sans changer une ligne de hardware. Le silicium fait son travail ; l'écart compétitif se joue dans le harness de service. »*
+- Légendes alternatives Ch.21 et Ch.22 à tenir cohérentes avec celles posées dans les audits Ch.21 / Ch.22.
+
+**E3 = à créer en Ch.2** (cf. audit Ch.2). Ingrédient cost : `economie-inference/images/20260506-07-reasoning-cost.svg`.
+
+### Plan détaillé
+
+```
+> [!QUESTION] Ouverture
+  Le prix d'1 M tokens a chuté ×1 000 en 4 ans, de 60 $ en nov 2021 à
+  0,02 $ sur B200 oct 2025. Pourquoi ? Et pourquoi le décideur qui signe
+  un contrat 3 ans en croyant en bénéficier mécaniquement déchante six
+  mois plus tard sur les reasoning models (×10-74 sur AIME) ?
+
+> [!TLDR] (7-8 bullets)
+  - LLMflation ×1 000 en 4 ans, 3 régimes successifs
+  - Prefill compute-bound vs decode memory-bound, KV cache dimensionne VRAM
+  - 7 couches d'optim cumulées → ×14 throughput sur même B300
+  - Désagrégation Splitwise/Mooncake : TTFT 1,4-2,3×, Mooncake >100 Mds tokens/jour Kimi
+  - MoE vs dense : DeepSeek V3 671 B / 37 B, MLA ×20 KV cache
+  - Mix matériel 2026 : B200 0,02 $/Mtok, Trainium -30/-40 %, Groq LPU
+  - Marges fragiles : Together ~45 % / Fireworks ~50 % / hyperscalers 70-80 %
+  - Reasoning ré-explose la facture par tâche : AIME ×10-74
+
+§5.1  LLMflation — la chute ×1 000 en quatre ans
+        ├─ [SVG S] 01-llmflation-curve
+        ├─ §5.1.1-5.1.4 a16z, 3 régimes (dense → PA+FA → MoE+désag+Blackwell),
+        │   analogie kWh industrialisation
+        └─ encadré [!INFO] Voir Ch.21 R16 J-curve × LLMflation
+
+§5.2  Anatomie d'un appel — prefill compute-bound vs decode memory-bound
+        ├─ [SVG S] 02-anatomie-appel
+        └─ §5.2.1-5.2.5 Prefill, decode, KV cache, PagedAttention, batching continu
+
+§5.3  La pile 7 couches d'optimisation (E2 — schéma signature livre)
+        ├─ [SVG E2] 03-pile-optimisation — pleine page
+        ├─ §5.3.1-5.3.7 Kernel fusion ×1,5 / FA-3 ×2 / PA+CB ×2-4 / FP8/FP4 ×2 /
+        │   spec ×3-6,5 / prefix ×10 / désagrégation
+        │   └─ encadré [!INFO] Voir Ch.4 monographique
+        └─ encadré [!INFO] Voir Ch.22 mêmes leviers angle externalité
+
+§5.4  Le harness comme avantage compétitif
+        ├─ §5.4.1-5.4.3 Aucune couche breakthrough en soi, intégration cohérente
+        │   = art difficile, dette d'ingénierie
+        └─ encadré [!INFO] Voir Ch.20 buy/build
+
+§5.5  Désagrégation Splitwise / Mooncake / DistServe
+        ├─ [SVG S] 04-desagregation
+        └─ §5.5.1-5.5.5 Splitwise ISCA 2024, Mooncake Moonshot AI Kimi,
+            DistServe OSDI 2024, coût réseau, hyperscalers avantage structurel
+
+§5.6  MoE vs dense — DeepSeek V3 et l'inflexion d'architecture
+        ├─ [SVG S] 05-moe-vs-dense (portrait)
+        └─ §5.6.1-5.6.4 Arbitrage VRAM/FLOPs, règle Epoch, 3 techniques
+            (expert parallelism, auxiliary-loss-free balancing, MLA),
+            économie DeepSeek V3 5,6 M$ compute pur
+
+§5.7  Mix matériel 2026 — H100, H200, B200, MI300X, Trainium 2, Groq LPU
+        ├─ [SVG S] 06-mix-materiel
+        ├─ §5.7.1-5.7.6 Tableau $/Mtok, saut Blackwell ×15, AMD MI300X,
+        │   Trainium 2 -30/-40 %, Groq/Cerebras/SambaNova premium latence
+        └─ encadré [!ATTENTION] Le mix prefill/decode change avec le workload
+
+§5.8  L'angle mort — le reasoning ré-explose le coût par tâche
+        ├─ [SVG S] 07-reasoning-cost (ingrédient E3)
+        ├─ §5.8.1-5.8.4 o1/o3 5-50× tokens, AIME ×10-74, 3 nuances tempérantes
+        │   (o3-mini -63 %, rentable selon workload, spec partiellement compat),
+        │   équation inversée
+        └─ encadré [!INFO] Voir Ch.2 (mécanique) + Ch.21 R16
+
+§5.9  Marges vendeurs — l'industrie low-cost de l'inférence
+        ├─ §5.9.1-5.9.3 COGS dominé GPU+réseau+énergie, marges 45-50 % vs
+        │   70-80 % SaaS, 3 forces baisse / 3 hausse
+        └─ encadré [!INFO] Voir Ch.20
+
+§5.10 Conclusion — le triptyque tarifaire (et trois pièges)
+        ├─ §5.10.1-5.10.3 Ch.5 token / Ch.21 outcome / Ch.22 externalité,
+        │   slogan « prix qui baisse, facture qui monte, outcome dans le creux »,
+        │   outlook 12-24 mois ($/résolution KPI dominant)
+        └─ encadré [!INFO] Voir R16 Ch.21 double-page éco
+
+> [!WARNING] Trois pièges classiques
+  Contrat 3 ans prix/token sans clause révision /
+  RFP sur tokens/sec batch 1 /
+  Confondre LLMflation marketing et coût par cas d'usage
+```
+
+### Encadrés prévus
+
+| Type | Usage | Compte |
+| --- | --- | --- |
+| `[!QUESTION]` | Ouverture | 1 |
+| `[!TLDR]` | 7-8 bullets | 1 |
+| `[!INFO]` | Renvois Ch.4 / Ch.2 / Ch.21 R16 / Ch.22 / Ch.20 / R16 double-page | 6 |
+| `[!QUOTE]` | a16z Appenzeller + DeepSeek V3 + SemiAnalysis | 2-3 |
+| `[!IMPORTANT]` | Harness avantage compétitif §5.4 + équation inversée §5.8.4 | 2 |
+| `[!ATTENTION]` | Mix prefill/decode change avec workload §5.7 + marge fragile §5.9 | 2 |
+| `[!EXAMPLE]` | Calcul $/Mtok par mix (code 80 % decode / RAG 70 % prefill) | 1-2 |
+| `[!NOTE]` | MLA ×20 KV cache §5.6.3 | 1 |
+| `[!WARNING]` | Trois pièges en clôture | 1 |
+| **Total** | | **~16-18** |
+
+### Tâches restantes Ch.5
+
+- [ ] Rédiger `docs/livre/ch05-economie-inference.md` (~7 000-7 500 mots)
+- [ ] Vérifier en rédaction que chaque chiffre choquant (×1 000, ×14, AIME ×10-74, marges 45-50 %, MLA ×20, DeepSeek 5,6 M$, Mooncake 100 Mds/jour) est sourcé Tier-A
+- [ ] Tenir frontière Ch.4 en §5.3.5 (une ligne + renvoi, pas un mini-chapitre)
+- [ ] Préparer le calage triptyque §5.10 → R16 Ch.21 (édition print A3 facing)
+- [ ] Confirmer que E2 reçoit sa légende canonique Ch.5 ET ses deux légendes alternatives Ch.21/Ch.22 cohérentes
+
+---
+
+## Chapitre 6 (encart court) — Bordure : world models et physique apprise
+
+> **Acte I — Les moteurs · Gabarit court / encart 6-8 p · ~2 500-3 000 mots**
+> **Lecteur cible** : agent engineer curieux, architecte (notamment computer use / robotique), sponsor IA qui suit la R&D, lecteur en transition Acte I → Acte II.
+> **Sortie lecteur** : sait définir un world model en une ligne (`f(état_t, action_t) → état_{t+1}`) et le distingue d'un LLM ; identifie les trois architectures concurrentes (V/M/C → RSSM/Dreamer pixel-prédictif ; JEPA latent ; autoregressif type Genie/Cosmos) et comprend qu'aucune n'a gagné en mai 2026 ; lit la controverse pixel vs latent comme un débat de dimensionnalité et de planification, pas comme un combat religieux ; reconnaît les quatre boucles d'usage (robotique, conduite, création 3D, agent virtuel) et leurs contraintes limitantes distinctes ; mesure les six verrous durs (mémoire courte, physique imparfaite, compute, données, évaluation immature, sécurité) ; sait qu'en 2026 c'est encore une bordure de recherche pour le décideur — sauf si son cas d'usage touche au pilotage écran (Ch.15) ou à la robotique ; ferme l'Acte I avec un signal faible à 18-36 mois et entre dans la boucle agentique (Ch.7) avec une question en plus : *mon agent a-t-il besoin d'un modèle interne du monde, ou seulement d'un langage et d'outils ?*
+
+### Statut
+
+| Étape | Statut |
+| --- | --- |
+| Audit schémas source | ✅ fait — `world-models/` (9 SVG dont **4-5 absorbés** en encart court, 4-5 restent en ligne) |
+| Plan détaillé | ✅ fait (audit du 2026-05-29) |
+| Manuscrit | ⏳ à rédiger — encart court ~2 500-3 000 mots, **moins d'encadrés et de footnotes** qu'un chapitre standard |
+| Schémas à créer | **0 ex nihilo**. |
+| Frontière Ch.6 ↔ Ch.5 | À tenir — Ch.5 = pile texte. Ch.6 dit que les world models = **un autre régime de scaling** (Cosmos 9 000 Md tokens vidéo, GAIA-3 ×5 compute) que la 7-couches Ch.5 ne capture pas. Renvoi `[!INFO]` léger §6.4.3. |
+| Frontière Ch.6 ↔ Ch.15 | À tenir — **frontière la plus délicate**. Ch.15 = applicatif (modèles vision-action, grounding écran). Ch.6 reste **conceptuel**. Encadré `[!INFO]` croisé bidirectionnel §6.5. |
+| Frontière Ch.6 ↔ Ch.7 | À tenir — Ch.6 pose en clôture la distinction agent purement langage (Ch.7, 95 % des cas) vs agent avec world model interne. Renvoi de transition léger §6.5. |
+| Frontière Ch.6 ↔ Ch.16 | Renvoi optionnel — narrative experiences en note de pied de page (création 3D cousine). |
+
+### Sources matérielles
+
+Encart à dossier source unique. Rapport source ~5 900 mots / 31 footnotes — **délibérément sur-dimensionné**, il faut couper.
+
+- **Dossier principal — [`world-models/`](../world-models/)** (05 mai 2026, statut bordure d'outline)
+  - [Rapport (.md, ~5 900 mots)](../world-models/20260505-world-models-rapport.md) · [App](../world-models/20260505-world-models-app.html)
+  - 9 schémas SVG dans [`images/`](../world-models/images/) — viewBox `1400×760` sauf 01 (`1400×1100`).
+
+### Audit des schémas — Ch.6
+
+**4 retenus + 1 optionnel sur 9. 4-5 écartés (disponibles en ligne).**
+
+| Fig | Slug | viewBox | Catégorie Ch.6 | Insertion | Statut |
+| --- | --- | --- | --- | --- | --- |
+| 02 | [`anatomie-world-model`](../world-models/images/20260505-02-anatomie-world-model.svg) | `1400×760` | **S §6.1** | 3 entrées → 3 fonctions → 2 sorties + boucle | **retenu** — définition opérationnelle |
+| 03 | [`trois-architectures`](../world-models/images/20260505-03-trois-architectures.svg) | `1400×760` | **S §6.2** | V/M/C · RSSM Dreamer · JEPA | **retenu** — pierre angulaire de la thèse |
+| 04 | [`pixel-vs-latent`](../world-models/images/20260505-04-pixel-vs-latent.svg) | `1400×760` | **S §6.3** | Matrice 2×2 pixel/latent × AR/diffusif, 9 modèles positionnés | **retenu** — cartographie référentiel |
+| 08 | [`thermometre-limites`](../world-models/images/20260505-08-thermometre-limites.svg) | `1400×760` | **S §6.4** | 6 barres : mémoire / physique / compute / données / éval / sécurité | **retenu** — argument central décideur |
+| 07 | [`piece-manquante`](../world-models/images/20260505-07-piece-manquante.svg) | `1400×760` | S §6.5 (optionnel) | LLM verbal ∩ World Model physique → agent général (Hassabis) | **optionnel** — si manuscrit reste sous 3 000 mots |
+| 01 | [`frise-2018-2026`](../world-models/images/20260505-01-frise-2018-2026.svg) | `1400×1100` | — | Frise verticale 21 jalons | **écarté** — trop dense |
+| 05 | [`cartographie-acteurs`](../world-models/images/20260505-05-cartographie-acteurs.svg) | `1400×760` | — | Cartographie 10 acteurs | **écarté** — citée en prose 4-5 acteurs |
+| 06 | [`quatre-boucles`](../world-models/images/20260505-06-quatre-boucles.svg) | `1400×760` | — | 4 cycles fermés | **écarté** — résumé prose §6.4 |
+| 09 | [`trois-scenarios`](../world-models/images/20260505-09-trois-scenarios.svg) | `1400×760` | — | 3 trajectoires 2026-2028 | **écarté** — clôture prose |
+
+**Bilan audit Ch.6** : 4 retenus (5 si optionnel) sur 9 = ~50 %. Ratio cible : 1 schéma par 600-750 mots, plus lâche qu'un chapitre standard.
+
+### Plan détaillé
+
+```
+> [!QUESTION] Si le LLM est un modèle du langage, qu'est-ce qu'un world model —
+  et pourquoi est-ce que la question revient dans tous les pipelines de
+  computer use et de robotique en 2026 ?
+
+> [!TLDR] (5 bullets — bordure de recherche pour décideur)
+  • Un world model = fonction f(état, action) → état suivant
+  • Trois architectures concurrentes (V/M/C+Dreamer pixel, JEPA latent,
+    autoregressif Genie/Cosmos). Aucune n'a gagné.
+  • Pour 95 % des cas agentiques 2026 : ce n'est PAS votre problème
+  • Pour les 5 % restants — pilotage écran avancé (Ch.15), robotique
+    humanoïde, conduite, simulation 3D — c'est central
+  • Signal faible à 18-36 mois ; surveiller benchmarks robotiques 2027
+
+§6.1  Pourquoi le langage ne suffit pas à tout
+        ├─ Le LLM tombe en panne sur les trajectoires physiques
+        ├─ [SVG S] 02-anatomie-world-model
+        ├─ §6.1.1 Boucle de planification, Ha & Schmidhuber 2018 (« apprendre en rêvant »)
+        └─ Note de bas de page : renvoi dossier en ligne pour frise/cartographie/boucles/scénarios
+
+§6.2  Trois architectures concurrentes
+        ├─ [SVG S] 03-trois-architectures
+        ├─ §6.2.1 V/M/C → RSSM/Dreamer (DreamerV3 Nature 2025, premier diamant Minecraft)
+        ├─ §6.2.2 JEPA (V-JEPA 2 Meta 2025, ratio 16 000 : 1 vidéo passive / robot)
+        └─ §6.2.3 Autoregressif latent — Genie 3 (11 Md, 720p 24 fps temps réel), Cosmos NVIDIA
+
+§6.3  Le débat pixel vs latent — un débat technique
+        ├─ [SVG S] 04-pixel-vs-latent
+        ├─ §6.3.1 Procès LeCun contre Sora (« gaspilleur et voué à l'échec »)
+        ├─ §6.3.2 Défense pixel (données massives, diffusion multi-modale)
+        └─ §6.3.3 Pari latent 2026 — AMI Labs (LeCun, Paris, seed 1,03 Md$ à 3,5 Md$ valo)
+
+§6.4  La bordure 2026 — six verrous
+        ├─ [SVG S] 08-thermometre-limites
+        ├─ §6.4.1-6.4.3 Mémoire courte (Genie 3 < 1 min), physique imparfaite
+        │   (fourmis 4 pattes), éval immature (FVD/FID = esthétique pas justesse)
+        └─ Bref résumé prose des 4 boucles sans schéma
+
+§6.5  Pourquoi la question revient en computer use et robotique
+        ├─ §6.5.1 Grounding visuel + planification — pipeline computer use partage substrat
+        ├─ [!INFO] Voir Ch.15 — applicatif modèles vision-action
+        ├─ §6.5.2 Robotique humanoïde — 1X NEO oct 2025 (20 k$ / 499 $/mois),
+        │   language-conditioned world model
+        ├─ [SVG S] 07-piece-manquante — *optionnel* (argument Hassabis)
+        └─ §6.5.3 Conclusion — signal faible à 18-36 mois, sauf pilotage / robotique.
+            Renvoi transition Ch.7 : *agent purement langage vs agent avec world model interne ?*
+
+> [!WARNING] Deux pièges classiques
+  • Croire que GPT-4/Claude-class est un world model (décrire ≠ prédire)
+  • Sur-investir en world models robotiques sans cas d'usage industriel
+    (ticket d'entrée hors de portée sans hyperscale)
+```
+
+### Encadrés prévus
+
+| Type | Usage | Compte |
+| --- | --- | --- |
+| `[!QUESTION]` | Ouverture | 1 |
+| `[!TLDR]` | 5 bullets | 1 |
+| `[!INFO]` | Renvois Ch.5 / Ch.15 / Ch.7 / Ch.16 (optionnel) | 3-4 |
+| `[!QUOTE]` | LeCun « modéliser le monde en pixels = gaspilleur » + Hassabis « pièce manquante » | 2 |
+| `[!WARNING]` | Deux pièges en clôture | 1 |
+| **Total** | | **~8-9** (vs ~16-18 chapitre charnière) |
+
+### Footnotes Tier-A retenues (6-9)
+
+1. **Ha & Schmidhuber 2018** (arXiv:1803.10122) — V/M/C fondateur
+2. **Hafner et al., DreamerV3** (arXiv:2301.04104, *Nature* 2025)
+3. **Bardes et al., V-JEPA 2** (arXiv:2506.09985, juin 2025) — ratio 16 000 : 1
+4. **LeCun 2022, A Path Towards Autonomous Machine Intelligence** (OpenReview)
+5. **Google DeepMind, Genie 3** (blog 5 août 2025)
+6. **NVIDIA, Cosmos World Foundation Model Platform** (CES 2025)
+7. **Wayve, GAIA-3** (déc 2025, communiqué)
+8. **MIT Technology Review, AMI Labs Yann LeCun** (22 janvier 2026)
+9. **Demis Hassabis on AGI, World Models** (14 janvier 2026)
+
+Footnotes écartées (TechCrunch / Engadget / Decoder / Autopilot Review) restent disponibles dans le rapport source.
+
+### Tâches restantes Ch.6
+
+- [ ] Rédiger `docs/livre/ch06-world-models.md` (~2 500-3 000 mots, **encart conversationnel**, ~8-9 encadrés, ~6-9 footnotes)
+- [ ] **Valider frontière Ch.6 ↔ Ch.15** en relecture croisée (lire ch15-computer-use.md en regard du brouillon Ch.6)
+- [ ] **Confirmer inclusion ou non du SVG 07 piece-manquante** après rédaction §6.5
+- [ ] Vérifier que l'encart **ne devient pas un mini-chapitre** (objectif ferme 2 500-3 000 mots)
+- [ ] Note de pied de page §6.1 avec renvoi explicite vers le dossier `world-models/` en ligne pour les 4-5 schémas écartés
+- [ ] Ouvrir Ch.7 par transition rappelant Ch.6 (langage seul vs world model interne)
+- [ ] Vérifier ton **conversationnel/exploratoire** (« on », questions rhétoriques, moins de `[!IMPORTANT]` / `[!ATTENTION]`)
