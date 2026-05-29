@@ -1,6 +1,6 @@
 # Sommaire — Livre « Anatomie d'une IA agentique »
 
-> **Manuscrit en cours de production.** État au 29 mai 2026. **23/25 chapitres v1 livrés** (tous trackés git).
+> **Manuscrit en cours de production.** État au 29 mai 2026. **25/25 chapitres v1 livrés** (tous trackés git). Restent Prologue + Épilogue.
 > Voir [`../livre-outline.md`](../livre-outline.md) pour la carte de bataille complète (4 actes, 25 chapitres, schémas R/E, gabarits, frontières inter-chapitres) et [`../journal-livre.md`](../journal-livre.md) pour les audits éditoriaux + tâches restantes par chapitre.
 
 **Repère lecteur** : ✅ v1 livré · ⏳ à écrire
@@ -73,8 +73,8 @@
 | 21  | ✅ [Mesurer le ROI (et le paradoxe agentique)](ch21-roi-paradoxe-agentique.md) (charnière)         | charnière 28-40 p | ~8 530  |
 | 22  | ✅ [Externalité énergétique : IA frugale](ch22-ia-frugale.md)                                      | standard 22 p     | ~8 120  |
 | 23  | ✅ [Gouvernance : AI Act, banque, machine unlearning](ch23-gouvernance-ai-act.md)                  | standard 22 p     | ~9 300  |
-| 24  | ⏳ Société : IA et travail                                                                         | standard 22 p     | —       |
-| 25  | ⏳ Politique : procès Musk v. Altman                                                               | court encart 12 p | —       |
+| 24  | ✅ [Société : IA et travail](ch24-ia-et-travail.md)                                                | standard 22 p     | ~10 115 |
+| 25  | ✅ [Politique : procès Musk v. Altman](ch25-proces-musk-altman.md)                                 | court encart 12 p | ~7 190  |
 |     |                                                                                                   |                   |         |
 
 ## Épilogue
@@ -98,15 +98,15 @@ Générateur idempotent : [`tools/gen_actes_infographics.py`](../../tools/gen_ac
 
 ## Schémas produits ex nihilo pour le livre
 
-| ID       | Schéma                                                                                                                      | Position                              | Statut                                                   |
-| -------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- | -------------------------------------------------------- |
-| **S1.1** | [Softmax → T → top-p → tirage : la chaîne mécanique](../../livre/images/20260601-01-softmax-temperature-sampling-chain.svg) | Ch.1 §1.2                             | ✅ v1                                                     |
-| **S1.2** | [Faisceau de 1 000 trajectoires à T=0,7](../../livre/images/20260601-02-variance-trajectoire-1000-rejouages.svg)            | Ch.1 §1.3                             | ✅ v1                                                     |
-| **E3**   | [Capability × Cost : seconde courbe de scaling](../../livre/images/20260601-03-capability-vs-cost-e3.svg)                   | Ch.2 §2.4 (+ renvoi Ch.5, Ch.17)      | ✅ v1                                                     |
-| **E5**   | [PRM vs LLM-as-judge vs human eval](../../livre/images/20260601-04-prm-vs-judge-vs-human-e5.svg)                            | Ch.3 §3.7 (+ renvoi Ch.17)            | ✅ v1                                                     |
-| **E4**   | [Threat model unifié 2026 (six surfaces × quatre parades load-bearing)](../../livre/images/20260601-e4-threat-model-unifie-2026.svg) | Ch.19 §19.10 (+ cité Ch.10, Ch.13, Ch.15) | ✅ v1                                                     |
-| **R16**  | [Productivity J-curve × LLMflation × paradoxe agentique](../../livre/images/20260601-r16-jcurve-llmflation-paradoxe.svg)    | Ch.21 §21.2.3 + §21.7 (+ renvoi Ch.5) | ✅ v1                                                     |
-| **R18**  | [Calendrier réglementaire 2026-2028 unifié](../../gouvernance/images/20260421-r18-calendrier-reglementaire.svg)             | Ch.23 §23.2 + §23.10                  | ✅ v1 (livré dans `gouvernance/images/`)                  |
+| ID       | Schéma                                                                                                                               | Position                                  | Statut                                  |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------- | --------------------------------------- |
+| **S1.1** | [Softmax → T → top-p → tirage : la chaîne mécanique](../../livre/images/20260601-01-softmax-temperature-sampling-chain.svg)          | Ch.1 §1.2                                 | ✅ v1                                    |
+| **S1.2** | [Faisceau de 1 000 trajectoires à T=0,7](../../livre/images/20260601-02-variance-trajectoire-1000-rejouages.svg)                     | Ch.1 §1.3                                 | ✅ v1                                    |
+| **E3**   | [Capability × Cost : seconde courbe de scaling](../../livre/images/20260601-03-capability-vs-cost-e3.svg)                            | Ch.2 §2.4 (+ renvoi Ch.5, Ch.17)          | ✅ v1                                    |
+| **E5**   | [PRM vs LLM-as-judge vs human eval](../../livre/images/20260601-04-prm-vs-judge-vs-human-e5.svg)                                     | Ch.3 §3.7 (+ renvoi Ch.17)                | ✅ v1                                    |
+| **E4**   | [Threat model unifié 2026 (six surfaces × quatre parades load-bearing)](../../livre/images/20260601-e4-threat-model-unifie-2026.svg) | Ch.19 §19.10 (+ cité Ch.10, Ch.13, Ch.15) | ✅ v1                                    |
+| **R16**  | [Productivity J-curve × LLMflation × paradoxe agentique](../../livre/images/20260601-r16-jcurve-llmflation-paradoxe.svg)             | Ch.21 §21.2.3 + §21.7 (+ renvoi Ch.5)     | ✅ v1                                    |
+| **R18**  | [Calendrier réglementaire 2026-2028 unifié](../../gouvernance/images/20260421-r18-calendrier-reglementaire.svg)                      | Ch.23 §23.2 + §23.10                      | ✅ v1 (livré dans `gouvernance/images/`) |
 
 Tous les autres schémas (R1-R15, R17, R19, E1, E2, E6) sont **réutilisés tels quels** depuis les dossiers source (`anatomie/`, `economie-inference/`, `orchestration-agentique/`, etc.). Voir [`../livre-outline.md`](../livre-outline.md) annexe A pour la liste exhaustive.
 
@@ -126,8 +126,8 @@ Tous les autres schémas (R1-R15, R17, R19, E1, E2, E6) sont **réutilisés tels
 
 ## Statistiques de production
 
-- **Couverture chapitres** : 23 / 25 (92 %) tous trackés git ; restent Ch.24 (IA et travail) et Ch.25 (procès Musk v. Altman)
-- **Volume total chapitres committés** : ~157 000 mots sur 23 chapitres (~6 800 mots/chapitre en moyenne)
+- **Couverture chapitres** : 25 / 25 (100 %) tous trackés git ; restent Prologue et Épilogue à rédiger
+- **Volume total chapitres committés** : ~174 000 mots sur 25 chapitres (~6 970 mots/chapitre en moyenne)
 - **Footnotes Tier-A intégrées** : 300+ (cible 12-25 par chapitre standard, 25-50 par chapitre charnière)
 - **Schémas réutilisés tels quels** : 60+ depuis les 28 dossiers source
 - **Schémas créés ex nihilo pour le livre** : 7 (S1.1, S1.2, E3, E4, E5, R16, R18) — tous v1 livrés
