@@ -1,7 +1,18 @@
+---
+chapitre: 5
+titre: "L'économie unitaire de l'inférence (et son angle mort)"
+acte: 1
+acte_titre: "Les moteurs"
+gabarit: standard
+mots: 7590
+statut: v1
+date_maj: 2026-05-29
+---
+
 # Chapitre 5 — L'économie unitaire de l'inférence (et son angle mort)
 
 > **Acte I — Les moteurs · Chapitre standard, ~22 pages**
-> _Le prix d'un million de tokens a chuté d'un facteur mille en quatre ans — de 60 $ sur GPT-3 en novembre 2021 à 0,02 $ sur GPT-OSS-120B porté par Blackwell en octobre 2025. La trajectoire est documentée, sourcée, vérifiable. Mais elle masque deux mécaniques opposées que le décideur doit lire en parallèle. Sept couches logicielles empilées multiplient le débit par GPU d'un facteur quatorze sur le même silicium — l'écart compétitif se joue dans le harness de service, pas dans le poids du modèle. Et les reasoning models — o1, o3, et leurs cousins — multiplient la facture par tâche d'un facteur dix à soixante-quatorze sur AIME, exactement au moment où le prix unitaire est devenu négligeable. Le chapitre démonte la pile, lit le mix matériel 2026, mesure les marges fragiles des fournisseurs, et nomme la règle structurelle qui traverse l'Acte IV : le décideur paie un prix par token qui baisse pendant que sa facture par tâche monte et que sa courbe d'outcome traverse le creux. Trois lectures d'une même facture — et trois pièges contractuels traçables._
+> _Le prix d'un million de tokens a chuté d'un facteur mille en quatre ans — de 60 $ sur GPT-3 en novembre 2021 à 0,02 $ sur GPT-OSS-120B porté par Blackwell en octobre 2025. La trajectoire est documentée, sourcée, vérifiable. Mais elle masque deux mécaniques opposées que le décideur doit lire en parallèle. Sept couches logicielles empilées multiplient le débit par GPU d'un facteur quatorze sur le même silicium — l'écart compétitif se joue dans le harness de service, pas dans le poids du modèle. Et les reasoning models — o1, o3, et leurs cousins — multiplient la facture par tâche d'un facteur dix à soixante-quatorze sur AIME, exactement au moment où le prix unitaire est devenu négligeable. La pile démontée, le mix matériel 2026 lu, les marges fragiles des fournisseurs mesurées : reste la règle structurelle — le décideur paie un prix par token qui baisse pendant que sa facture par tâche monte et que sa courbe d'outcome traverse le creux. Trois lectures d'une même facture — et trois pièges contractuels traçables._
 
 > [!QUESTION] Question d'ouverture
 > Pourquoi un décideur qui signe en mai 2026 un contrat 3 ans sur la base d'un prix au million de tokens — et qui croit en bénéficier mécaniquement chaque trimestre — déchante-t-il six mois plus tard sur les reasoning models, dont la facture par requête peut être dix à soixante-quatorze fois supérieure à perf comparable ? Et pourquoi le même décideur, qui signe un RFP indexé sur des `tokens/sec` mesurés en batch 1, découvre-t-il en multi-tenant à batch 32-64 qu'il a contractualisé sur un peak qu'aucun fournisseur n'atteint à charge réelle ?
@@ -47,8 +58,8 @@ La trajectoire de 60 $ à 0,02 $ n'est pas linéaire. Trois régimes distincts s
 
 L'analogie la plus fidèle est la **baisse du prix du kWh** pendant l'industrialisation du XXᵉ siècle : combinaison de meilleurs combustibles (silicium plus dense), de meilleures turbines (FlashAttention, PagedAttention) et d'une intégration verticale du grid (désagrégation prefill/decode). ==Aucun des trois leviers pris isolément n'aurait produit le ×1 000 — c'est leur empilement coordonné qui le rend possible==. La prochaine décade de gains demandera une combinaison que personne ne sait nommer aujourd'hui.
 
-> [!INFO] Voir Ch. 21 — R16 J-curve × LLMflation × paradoxe agentique
-> Le Ch.21 mesure la valeur métier par outcome et documente le **paradoxe agentique** — le décideur paie moins par token mais peut payer plus par tâche, et la valeur business ne suit qu'avec un décalage de 12-36 mois (J-curve Brynjolfsson). La double-page éco du Ch.21 (R16) place côte à côte la courbe LLMflation §5.1 et la J-curve d'outcome. C'est le **triptyque tarifaire** repris en clôture §5.10.
+> [!INFO] Voir [Ch. 21 — Mesurer le ROI (et le paradoxe agentique)](ch21-roi-paradoxe-agentique.md)
+> Le **paradoxe agentique** — le décideur paie moins par token mais peut payer plus par tâche, et la valeur business ne suit qu'avec un décalage de 12-36 mois (J-curve Brynjolfsson). La double-page éco du schéma R16 place côte à côte la courbe LLMflation §5.1 et la J-curve d'outcome. C'est le **triptyque tarifaire** repris en clôture §5.10.
 
 ---
 
@@ -78,9 +89,7 @@ Avant PagedAttention (2023), le KV cache était alloué en blocs contigus de tai
 
 ![Schéma 3 — Pile sept couches : ×14 throughput cumulé sur un B300|1300](../../economie-inference/images/20260506-03-pile-optimisation.svg)
 
-> [!NOTE] À propos du schéma de la pile
-> Ce schéma est le **plus densément cité du livre**. Il revient en référence en Ch.21 §21.7 (stack à quatre niveaux du paradoxe agentique) et en Ch.22 §22.7 (mêmes leviers techniques sous l'angle externalité énergétique). Sa légende canonique au Ch.5 — celle qu'on retient :
->
+> [!NOTE] Légende du schéma
 > ==*« Sept couches logicielles empilées multiplient le throughput d'un facteur 14 sur un B300 — sans changer une ligne de hardware. Le silicium fait son travail ; l'écart compétitif se joue dans le harness de service. »*==
 
 Les gains de l'inférence ne viennent pas d'une seule innovation. Ils viennent de l'**empilement** de sept couches logicielles, chacune apportant 1,3× à 4× sur la précédente. Sur un B300, une version naïve produit environ 1 000 tokens/seconde par GPU ; une version pleinement optimisée atteint 14 000 — **un facteur 14 sur le même silicium**[^9]. C'est cette multiplication cumulée, et non un seul levier vedette, qui rend la trajectoire LLMflation soutenable.
@@ -105,8 +114,8 @@ La **FP8** sur Hopper est devenue standard pour l'inférence en 2024 ; la **FP4*
 
 Une tête de prédiction légère génère plusieurs tokens candidats que le modèle cible vérifie en un seul forward pass[^7]. **EAGLE-3** atteint 4,5-5× sur Llama 3.1 8B et 3,0-4,5× sur Llama 3.3 70B en 2025. ==×3 à ×6,5 sur le même silicium==, mais perte nette dès que l'on quitte le régime memory-bound à acceptance élevée — la couche la plus traître à calibrer.
 
-> [!INFO] Voir Ch. 4 — Décode spéculative et la course au token/sec
-> Le Ch.4 est un chapitre monographique consacré à cette unique couche : mécanique mathématique (théorème d'équivalence de Leviathan, Kalman, Matias — sortie bit-identique en sampling stochastique) et deux pièges traîtres en production (acceptance rate qui dérive silencieusement, batching qui annule le gain au-delà d'un seuil). ==La matrice frameworks × variantes spéculatives du Ch.4 et la matrice mix matériel du Ch.5 sont **côte à côte, pas fusionnées**== — deux couches différentes du même empilement, juxtaposées en page facing en édition print.
+> [!INFO] Voir [Ch. 4 — Décode spéculative et la course au token/sec](ch04-decode-speculative.md)
+> Mécanique mathématique (théorème d'équivalence de Leviathan, Kalman, Matias — sortie bit-identique en sampling stochastique) et deux pièges traîtres en production (acceptance rate qui dérive silencieusement, batching qui annule le gain au-delà d'un seuil).
 
 ### 5.3.6 Couche 7 — Prefix caching (×10 situationnel)
 
@@ -116,8 +125,8 @@ Mémoriser le KV cache des préfixes communs (system prompt, retrieved documents
 
 Séparer prefill (compute-bound) et decode (memory-bound) sur des pools de calcul distincts, communicants par un transfert de KV cache via réseau RDMA. C'est la couche la plus structurelle des sept — celle qui change l'architecture du datacenter et pas seulement le runtime du serveur. Développement complet au §5.5 ci-dessous.
 
-> [!INFO] Voir Ch. 22 — Externalité énergétique : IA frugale
-> Les sept couches d'optimisation §5.3 sont **les mêmes leviers techniques** que ceux que Patterson 2021 nomme dans son ×100 à ×1 000 sur l'empreinte d'un entraînement (choix combiné DC × DNN × processeur). Le Ch.22 les reprend sous l'angle externalité environnementale. ==Frontière sèche : ici en Ch.5, TWh qui se traduisent en lignes de facture cloud ; là en Ch.22, TWh qui se traduisent en grid stress local, embodied carbon, eau.== Pas de Wh ni de CO₂eq dans ce chapitre.
+> [!INFO] Voir [Ch. 22 — Externalité énergétique : IA frugale](ch22-ia-frugale.md)
+> Les sept couches d'optimisation §5.3 sont **les mêmes leviers techniques** que ceux que Patterson 2021 nomme dans son ×100 à ×1 000 sur l'empreinte d'un entraînement (choix combiné DC × DNN × processeur), repris sous l'angle externalité environnementale. ==Ici, TWh qui se traduisent en lignes de facture cloud ; là, TWh qui se traduisent en grid stress local, embodied carbon, eau.==
 
 ---
 
@@ -138,8 +147,8 @@ C'est pourquoi l'inférence est devenue en 2026 une industrie distincte de la R&
 > [!IMPORTANT] Le harness comme avantage compétitif
 > ==L'avantage compétitif d'un fournisseur d'inférence en 2026 ne se loge plus dans l'invention d'une optimisation nouvelle — toutes les briques sont publiques.== Il se loge dans la maturité du **harness de service** : qualité du scheduler hybride, instrumentation fine de l'acceptance rate spéculative, rapidité d'intégration des nouvelles versions de FlashAttention, solidité du routing prefill/decode sous charge mixte. C'est ce qui distingue Together, Fireworks, SGLang et TensorRT-LLM d'une implémentation amateur de vLLM stock. C'est aussi ce qui rend les RFP sur le `tokens/sec peak` trompeurs : le peak est facile, c'est le `p95 TTFT` sous charge représentative qui mesure la maturité du harness.
 
-> [!INFO] Voir Ch. 20 — Runtime managé et déploiement
-> Le Ch.20 développe la décision **buy / build** côté runtime : self-hosted vLLM, managé Together / Fireworks / Anyscale, hyperscaler Bedrock / OpenAI Service. ==La marge fragile §5.9 éclaire directement cette décision.== Externaliser chez un managé coûte typiquement 20-30 % de marge intermédiaire ; ce delta achète la maintenance du harness, le suivi upstream, la calibration multi-tenant. Choisir un harness, c'est choisir un mainteneur — et sur 18-36 mois, sa stabilité pèse plus que le delta de 10 % sur le `tokens/sec` annoncé.
+> [!INFO] Voir [Ch. 20 — Runtime managé et déploiement](ch20-runtime-manage.md)
+> La décision **buy / build** côté runtime : self-hosted vLLM, managé Together / Fireworks / Anyscale, hyperscaler Bedrock / OpenAI Service. ==La marge fragile §5.9 éclaire directement cette décision.== Externaliser chez un managé coûte typiquement 20-30 % de marge intermédiaire ; ce delta achète la maintenance du harness, le suivi upstream, la calibration multi-tenant. Choisir un harness, c'est choisir un mainteneur — et sur 18-36 mois, sa stabilité pèse plus que le delta de 10 % sur le `tokens/sec` annoncé.
 
 ---
 
@@ -270,8 +279,8 @@ L'équation économique reste inversée. ==**La déflation tokens/seconde gagné
 > [!IMPORTANT] L'équation inversée
 > Prix/Mtok descend de 60 $ à 0,02 $ (×1 000). Tokens consommés par tâche monte de 1 (réponse directe) à 50 (CoT invisible d'un reasoning model). ==La facture par tâche peut rester stable, voire augmenter, alors que le prix unitaire s'est effondré.== Le décideur qui ne lit que le prix au token croit signer une victoire FinOps ; celui qui lit la facture par tâche découvre la dérive. C'est la mécanique économique réelle des déploiements 2026.
 
-> [!INFO] Voir Ch. 2 — Les modèles de raisonnement · Ch. 21 — R16 J-curve × LLMflation
-> Le Ch.2 documente la **mécanique** du raisonnement à l'inférence (RLVR, GRPO, interleaved thinking, parallel thinking, Snell sur le second axe de scaling). Le §5.8 n'en refait pas la mécanique — il en traduit la **conséquence économique** sur la facture par tâche. ==Le schéma `07-reasoning-cost` est l'ingrédient cost du schéma E3 *capability × cost* construit en Ch.2.== Le R16 du Ch.21 reprend LLMflation §5.1 + reasoning cost §5.8 pour matérialiser le triptyque en édition print A3 facing.
+> [!INFO] Voir [Ch. 2 — Les modèles de raisonnement](ch02-modeles-raisonnement.md) · [Ch. 21 — Mesurer le ROI](ch21-roi-paradoxe-agentique.md)
+> La **mécanique** du raisonnement à l'inférence (RLVR, GRPO, interleaved thinking, parallel thinking, Snell sur le second axe de scaling) tient en [Ch. 2](ch02-modeles-raisonnement.md). Le §5.8 ci-dessus en traduit la **conséquence économique** sur la facture par tâche. Le R16 du [Ch. 21](ch21-roi-paradoxe-agentique.md) reprend LLMflation §5.1 + reasoning cost §5.8 pour matérialiser le triptyque en édition print A3 facing.
 
 ---
 
@@ -300,21 +309,21 @@ L'écart Together 45 % vs AWS Bedrock 75-80 % n'est pas une question de harness 
 
 **À la baisse.** **Concurrence par les prix** entre fournisseurs serveuse — chaque deal de Llama 4 70B se gagne au cent près, transparence des benchmarks ouverts. **Coût d'amortissement** des GPU achetés au pic 2023-2024 (cluster H100 à 35 k$ la carte en 2023 vs 22 k$ en 2025). **Pression contractuelle** des clients enterprise qui négocient des rabais de volume — passage *catalogue API* → *deals dédiés* érode 5-10 points sur les gros comptes.
 
-**À la hausse.** **Deployments dédiés** (cluster réservé, marge proche SaaS classique parce que le risque d'allocation est porté par le client). **Services à valeur ajoutée** (fine-tuning, monitoring, RAG managé, observabilité OpenTelemetry GenAI — cf. Ch.18) à marges 70-85 %, qui diluent positivement la consolidée. **Effet d'échelle sur l'utilisation GPU** — charger 80 % de ses GPU au lieu de 50 % donne un avantage structurel mécanique.
+**À la hausse.** **Deployments dédiés** (cluster réservé, marge proche SaaS classique parce que le risque d'allocation est porté par le client). **Services à valeur ajoutée** (fine-tuning, monitoring, RAG managé, observabilité OpenTelemetry GenAI — cf. [Ch. 18](ch18-observabilite-cognitive-audit-trail.md)) à marges 70-85 %, qui diluent positivement la consolidée. **Effet d'échelle sur l'utilisation GPU** — charger 80 % de ses GPU au lieu de 50 % donne un avantage structurel mécanique.
 
 > [!ATTENTION] La marge fragile vs SaaS classique
 > SaaS classique (Salesforce, Workday, ServiceNow) : 70-85 % de marge brute. ==Inférence pure : 45-50 %. Delta structurel, pas conjoncturel.== Tant que les GPU sont dans le COGS et qu'aucun acteur ne possède simultanément silicium + datacenter + service, la marge ne remontera pas. Deux conséquences : un pure-play n'a pas la résilience financière d'un SaaS (il ne tient pas une récession 3 ans à -25 % de chiffre) ; la consolidation est inévitable à 36-60 mois — les pure-players (Together, Fireworks, Anyscale) seront absorbés ou disparaîtront. ==Tout contrat 3 ans avec un pure-play doit explicitement modéliser le risque de continuité.==
 
-> [!INFO] Voir Ch. 20 — La marge fragile éclaire la décision buy/build
+> [!INFO] Voir [Ch. 20 — Runtime managé et déploiement](ch20-runtime-manage.md)
 > Si la marge fournisseur est 45 %, le delta entre managé et self-hosted est de 25-30 % sur le coût total (à amortissement GPU comparable). ==Pour un workload mature, stable, à volume prévisible, le self-hosted devient rentable plus vite que ce que le décideur croit== — typiquement 12-18 mois de payback sur cluster H100 dédié, contre 24-36 mois sur un SaaS classique. Le triptyque : marge fournisseur fragile → delta buy/build étroit → payback court → décision favorable au build pour les workloads matures.
 
 ---
 
 ## 5.10 Conclusion — le triptyque tarifaire (et trois pièges)
 
-### 5.10.1 Ch.5 coût/token ↔ Ch.21 valeur/outcome ↔ Ch.22 externalité
+### 5.10.1 Coût/token ↔ valeur/outcome ↔ externalité
 
-L'Acte IV lit la même facture sous trois angles. Le Ch.5 a posé la **physique du prix par token** (sept couches, LLMflation ×1 000). Le Ch.21 pose la **valeur métier par outcome** (paradoxe agentique, stack token → tâche → processus → outcome, Klarna). Le Ch.22 pose **l'externalité énergétique** qui n'apparaît sur aucune facture (3 scopes × 3 phases, Patterson 100-1 000×, Jevons).
+La même facture lue sous trois angles. La **physique du prix par token** (sept couches, LLMflation ×1 000) tient ici. La **valeur métier par outcome** (paradoxe agentique, stack token → tâche → processus → outcome, Klarna) tient en [Ch. 21](ch21-roi-paradoxe-agentique.md). L'**externalité énergétique** qui n'apparaît sur aucune facture (3 scopes × 3 phases, Patterson 100-1 000×, Jevons) tient en [Ch. 22](ch22-ia-frugale.md).
 
 Les trois lectures se complètent strictement. Optimiser le prix par token au détriment de l'outcome, c'est préparer un cas Klarna. Maximiser l'outcome sans regarder l'externalité, c'est préparer une révision désagréable à 18-36 mois. Suivre l'externalité sans tenir le prix au token, c'est ne pas savoir ce qu'on optimise.
 
@@ -329,17 +338,17 @@ Le sponsor IA qui ne lit que le **prix par token** rate trois choses. La **factu
 
 **Déflation à pente décroissante.** Les gains software faciles ont été cueillis. Les prochains 5× viendront d'une nouvelle génération de hardware (Rubin NVIDIA, MI400 AMD) et d'optimisations marginales. a16z prévoit ==3-5× par an jusqu'en 2027, puis 1,5-2× par an==[^1]. Extrapoler un 10×/an sur dix ans donne un facteur 10 milliards — impossible.
 
-**Désagrégation cross-region.** Tous les serveurs majeurs supportent désormais prefill/decode native. Prochaine étape : prefill à Paris, decode à Dublin, KV cache sur backbone privé — Mooncake le déploie aujourd'hui pour Kimi[^6]. Conséquences réglementaires (souveraineté, latence cross-border, traçabilité) qui rejoignent le Ch.23.
+**Désagrégation cross-region.** Tous les serveurs majeurs supportent désormais prefill/decode native. Prochaine étape : prefill à Paris, decode à Dublin, KV cache sur backbone privé — Mooncake le déploie aujourd'hui pour Kimi[^6]. Conséquences réglementaires (souveraineté, latence cross-border, traçabilité) qui rejoignent le [Ch. 23](ch23-gouvernance-ai-act.md).
 
 **$/tâche-réussie devient le KPI dominant.** Un modèle qui résout AIME en 20 K tokens à 0,02 $/Mtok gagne contre un modèle qui le résout en 200 K tokens à 0,01 $/Mtok. ==L'efficacité de raisonnement devient le KPI dominant==, et les benchmarks (InferenceMAX, MLPerf v6) migrent vers le coût-par-tâche-réussie. Probable mutation la plus structurelle des 24 mois à venir — elle déplace la conversation FinOps de l'infrastructure vers le cas d'usage.
 
-> [!INFO] Voir R16 Ch. 21 — double-page éco facing qui matérialise le triptyque (édition print A3)
-> Le schéma R16 du Ch.21 fusionne en une double-page A3 paysage les trois ingrédients : panel A — la courbe LLMflation de §5.1 (prix descend ×1 000), panel B — la stack à quatre niveaux du paradoxe agentique (token → tâche → processus → outcome), panel C — la J-curve Brynjolfsson en creux entre 0-3 ans, plateau 3-7 ans. La légende canonique du schéma reprend mot pour mot le slogan signature du §5.10.1 ci-dessus. C'est la matérialisation imprimée du triptyque tarifaire.
+> [!INFO] Voir [Ch. 21 — Mesurer le ROI (et le paradoxe agentique)](ch21-roi-paradoxe-agentique.md)
+> Le schéma R16 fusionne en une double-page A3 paysage les trois ingrédients : panel A — la courbe LLMflation de §5.1 (prix descend ×1 000), panel B — la stack à quatre niveaux du paradoxe agentique (token → tâche → processus → outcome), panel C — la J-curve Brynjolfsson en creux entre 0-3 ans, plateau 3-7 ans. La légende canonique du schéma reprend mot pour mot le slogan signature du §5.10.1 ci-dessus.
 
 > [!WARNING] Trois pièges classiques (100 % traçables)
 > **(1) Contrat 3 ans prix/token sans clause de révision sur évolution du mix prefill/decode.** Le fournisseur a dimensionné son cluster pour un mix anticipé ; le client bascule en cours d'année vers des agents RAG long contexte ; le coût réel s'effondre mais le contrat reste signé sur l'ancien tarif. *Mitigation* : clause trimestrielle de re-calibrage + audit côté client.
 >
-> **(2) RFP sur tokens/sec en batch 1.** Les chiffres peak sont mesurés à batch 1 (memory-bound, slack compute énorme, spéculation maximale). En multi-tenant à batch 24-64, le speedup s'effondre. ==Tout RFP qui ne précise pas le profil de charge représentatif et le `p95 TTFT` sous charge est mal cadré==. *Mitigation* : `p95 TTFT` sous charge représentative + seuil de désactivation par batch documenté + plan de rollback (cf. Ch.4 §4.5).
+> **(2) RFP sur tokens/sec en batch 1.** Les chiffres peak sont mesurés à batch 1 (memory-bound, slack compute énorme, spéculation maximale). En multi-tenant à batch 24-64, le speedup s'effondre. ==Tout RFP qui ne précise pas le profil de charge représentatif et le `p95 TTFT` sous charge est mal cadré==. *Mitigation* : `p95 TTFT` sous charge représentative + seuil de désactivation par batch documenté + plan de rollback (cf. [Ch. 4](ch04-decode-speculative.md)).
 >
 > **(3) Confondre LLMflation marketing (prix/Mtok) et coût par cas d'usage.** Le prix unitaire baisse de ×1 000, mais le nombre de tokens par tâche peut monter de ×50 sur reasoning. ==Un workload reasoning sur RAG long contexte peut coûter cent fois le prix unitaire affiché==. *Mitigation* : instrumenter `$/tâche-réussie` aux côtés du `$/Mtok`, séparer routing reasoning et non-reasoning, modéliser tokens cacheables et fraction de requêtes raisonnement.
 
@@ -347,11 +356,11 @@ Le sponsor IA qui ne lit que le **prix par token** rate trois choses. La **factu
 
 ## Pour aller plus loin
 
-- Zoom monographique sur la décode spéculative (théorème d'équivalence, deux pièges acceptance rate × batching) : **Ch.4 — Décode spéculative et la course au token/sec**.
-- Mécanique du raisonnement (RLVR, GRPO, second axe de scaling Snell) qui rend l'angle mort §5.8 économiquement crucial : **Ch.2 — Les modèles de raisonnement**.
-- Décision **buy / build** que les marges fragiles éclairent : **Ch.20 — Runtime managé et déploiement**.
-- **Valeur métier par outcome** (paradoxe agentique, stack token → tâche → processus → outcome, J-curve, Klarna) : **Ch.21 — Mesurer le ROI**.
-- **Externalité énergétique** qui ferme le triptyque (3 scopes × 3 phases, Patterson 100-1 000×, Jevons) : **Ch.22 — IA frugale**.
+- Zoom monographique sur la décode spéculative (théorème d'équivalence, deux pièges acceptance rate × batching) : **[Ch. 4 — Décode spéculative et la course au token/sec](ch04-decode-speculative.md)**.
+- Mécanique du raisonnement (RLVR, GRPO, second axe de scaling Snell) qui rend l'angle mort §5.8 économiquement crucial : **[Ch. 2 — Les modèles de raisonnement](ch02-modeles-raisonnement.md)**.
+- Décision **buy / build** que les marges fragiles éclairent : **[Ch. 20 — Runtime managé et déploiement](ch20-runtime-manage.md)**.
+- **Valeur métier par outcome** (paradoxe agentique, stack token → tâche → processus → outcome, J-curve, Klarna) : **[Ch. 21 — Mesurer le ROI](ch21-roi-paradoxe-agentique.md)**.
+- **Externalité énergétique** qui ferme le triptyque (3 scopes × 3 phases, Patterson 100-1 000×, Jevons) : **[Ch. 22 — IA frugale](ch22-ia-frugale.md)**.
 - Sources externes vivantes : a16z LLMflation[^1], benchmarks InferenceMAX[^8][^9], doc vLLM[^2] / SGLang / TensorRT-LLM, DeepSeek V3 Technical Report[^4], retour d'expérience Mooncake[^6] et rétrospectif DistServe[^13].
 
 ---
@@ -384,4 +393,4 @@ Le sponsor IA qui ne lit que le **prix par token** rate trois choses. La **factu
 
 [^13]: Hao AI Lab UCSD, *Disaggregated Inference: 18 Months Later*. 2025. URL : https://haoailab.com/blogs/distserve-retro/. Consulté le 6 mai 2026.
 
-[^14]: Patterson, David et al., *Carbon Emissions and Large Neural Network Training*. arXiv:2104.10350, avril 2021. URL : https://arxiv.org/abs/2104.10350. Consulté le 6 mai 2026. *Cité pour amorcer le pont Ch.5 ↔ Ch.22 sur les leviers d'efficience cumulés ×100-1 000.*
+[^14]: Patterson, David et al., *Carbon Emissions and Large Neural Network Training*. arXiv:2104.10350, avril 2021. URL : https://arxiv.org/abs/2104.10350. Consulté le 6 mai 2026.

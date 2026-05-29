@@ -1,7 +1,18 @@
+---
+chapitre: 20
+titre: "Runtime managé et déploiement"
+acte: 4
+acte_titre: "Mesures et garde-fous"
+gabarit: standard
+mots: 6240
+statut: v1
+date_maj: 2026-05-29
+---
+
 # Chapitre 20 — Runtime managé et déploiement
 
 > **Acte IV — Mesures et garde-fous · Chapitre standard, ~22 pages**
-> _2026 est l'année des **runtimes managés** pour agents : Claude Managed Agents en public beta (avril 2026), OpenAI Agent Builder, Vertex AI Agent Engine, Azure AI Foundry Agent Service (GA mai 2025), AWS Bedrock AgentCore (GA octobre 2025) avec ses six services composables. Le chapitre absorbe `anatomie` couche 08 et les sous-chapitres runtime de `orchestration-agentique/` (§5 — ADK ≠ runtime ≠ plateforme) et de `agent-sdk/` (§9 — production, sandbox, voies de déploiement). Il pose **les trois couches du stack agentique 2026** et trace la frontière où le décideur signe — ou pas — l'engagement vis-à-vis d'un hyperscaler._
+> _2026 est l'année des **runtimes managés** pour agents : Claude Managed Agents en public beta (avril 2026), OpenAI Agent Builder, Vertex AI Agent Engine, Azure AI Foundry Agent Service (GA mai 2025), AWS Bedrock AgentCore (GA octobre 2025) avec ses six services composables. **Les trois couches du stack agentique 2026** — ADK ≠ runtime ≠ plateforme — et la frontière où le décideur signe — ou pas — l'engagement vis-à-vis d'un hyperscaler._
 
 > [!QUESTION] Question d'ouverture
 > En 2023, un agent était un script Python de 60 lignes autour d'un appel API ; on l'opérait à la main. En 2026, c'est une session de huit heures qui tourne sur une **microVM dédiée**, partage sa mémoire avec quinze autres agents via un protocole standard, et facture le client à la fin de son raisonnement. Entre les deux, **trois couches** se sont glissées qui ne portent pas le même nom selon le cloud, et qui pourtant règlent les mêmes problèmes. ==Quand vous dites *« on utilise AgentCore »* ou *« on tourne sur Vertex Agent Engine »*, **qu'est-ce que vous achetez exactement** — et qu'est-ce que vous payez en contrepartie sur la portabilité dans 18 mois ?==
@@ -29,8 +40,8 @@ L'année 2024 a été celle des **boucles agentiques** ; 2026 est celle des **pl
 
 Le prix d'un million de tokens en classe Sonnet a été divisé par dix entre 2023 et 2026 ; en classe Haiku par cinquante. Une boucle agentique qui tournait à 4 € l'exécution en 2023 en coûte 8 centimes aujourd'hui — ce qui rend les patterns du type *evaluator-optimizer* (qui empilent les appels) financièrement défendables. ==Le coût marginal d'un *« et si on rajoutait une étape de vérification »* est passé d'inacceptable à acceptable.== Les architectures se sont densifiées en conséquence ; les sessions se sont allongées ; et les runtimes sont devenus le goulot opérationnel qui se monétise.
 
-> [!INFO] Voir Ch. 5 — Économie de l'inférence · Ch. 11 — Patterns
-> Le Ch. 5 a posé la pile 7 couches d'optimisation qui produit la LLMflation × 1000. Le Ch. 11 a posé les patterns canoniques d'orchestration et les 4 régimes de contrôle (code-driven / LLM-driven / graphe / autonome). Ce chapitre tient la marche suivante — où ces patterns *tournent réellement*, et qui paye pour l'opération.
+> [!INFO] Voir [Ch. 5 — Économie de l'inférence](ch05-economie-inference.md) · [Ch. 11 — Patterns d'orchestration](ch11-patterns-orchestration.md)
+> Le [Ch. 5](ch05-economie-inference.md) a posé la pile 7 couches d'optimisation qui produit la LLMflation × 1000. Le [Ch. 11](ch11-patterns-orchestration.md) a posé les patterns canoniques d'orchestration et les 4 régimes de contrôle (code-driven / LLM-driven / graphe / autonome). La marche suivante — où ces patterns *tournent réellement*, et qui paye pour l'opération.
 
 ---
 
@@ -75,7 +86,7 @@ Là où les hyperscalers se distinguent vraiment, et où la complexité se cache
 
 ## 20.3 Les six briques de plateforme — anatomie AgentCore
 
-AgentCore (référence de l'analyse parce que la plus modulaire) propose six briques distinctes, chacune consommable indépendamment[^12]. Google Vertex AI a sa propre déclinaison (Memory Bank, Agent Garden, A2A natif), Azure Foundry aussi. Le tableau de bord change selon le cloud ; ==**la liste des problèmes à régler est la même**==, parce qu'elle découle des modes d'échec du Ch. 11 §5.
+AgentCore (référence de l'analyse parce que la plus modulaire) propose six briques distinctes, chacune consommable indépendamment[^12]. Google Vertex AI a sa propre déclinaison (Memory Bank, Agent Garden, A2A natif), Azure Foundry aussi. Le tableau de bord change selon le cloud ; ==**la liste des problèmes à régler est la même**==, parce qu'elle découle des modes d'échec du [Ch. 11](ch11-patterns-orchestration.md) §5.
 
 ![Anatomie du harness Claude Code — neuf satellites autour du modèle|1300](../../agent-sdk/images/20260518-02-anatomie-claude-code.svg)
 
@@ -83,40 +94,40 @@ AgentCore (référence de l'analyse parce que la plus modulaire) propose six bri
 
 Service de mémoire à deux étages : **session memory** (l'historique de la conversation pendant que la trajectoire tourne) et **long-term memory** (faits, préférences, résumés persistés entre sessions). AgentCore Memory chez AWS, Memory Bank chez Vertex (GA décembre 2025 avec extraction automatique des faits persistants), Foundry Memory chez Azure. Tous offrent une API REST pour read/write/forget et une politique d'expiration configurable.
 
-Le Ch. 9 détaille la cartographie 4 piliers × 5 architectures (Letta, A-MEM, Zep, Mem0, file-based) ; le Ch. 10 détaille la compaction du pilier *travail*. Ici, on note simplement que **le service managé absorbe l'opération** — vous ne provisionnez plus un vector store, vous ne gérez plus l'extraction, vous ne tunez plus le retrieve. Le contrepoint : portabilité dégradée, et politiques d'oubli (RGPD art. 17) à vérifier explicitement dans la documentation du vendor.
+Le [Ch. 9](ch09-memoire-agentique.md) détaille la cartographie 4 piliers × 5 architectures (Letta, A-MEM, Zep, Mem0, file-based) ; le [Ch. 10](ch10-compaction.md) détaille la compaction du pilier *travail*. Ici, on note simplement que **le service managé absorbe l'opération** — vous ne provisionnez plus un vector store, vous ne gérez plus l'extraction, vous ne tunez plus le retrieve. Le contrepoint : portabilité dégradée, et politiques d'oubli (RGPD art. 17) à vérifier explicitement dans la documentation du vendor.
 
 ### 20.3.2 Identity — l'agent au nom de l'utilisateur
 
 Authentification *on-behalf-of*, compatible avec les fournisseurs d'identité existants (Okta, Azure AD, Google Workspace, AWS IAM). ==L'agent agit *au nom de l'utilisateur*, pas avec les droits du service==. C'est la différence entre *« cet agent peut lire toutes les bases »* et *« cet agent peut lire les bases que **Marie** a le droit de lire »*. AgentCore Identity gère ce *on-behalf-of* nativement, compatible OAuth/OIDC. Vertex et Foundry alignent.
 
-Conséquence sécurité : sans identité déléguée, ==une injection indirecte dans un email lu déclenche une action avec les droits *admin* du service==. C'est exactement le scénario EchoLeak (cf. Ch. 19 §19.5.1) — la mitigation structurelle est *on-behalf-of*, pas un classifier de plus.
+Conséquence sécurité : sans identité déléguée, ==une injection indirecte dans un email lu déclenche une action avec les droits *admin* du service==. C'est exactement le scénario EchoLeak (cf. [Ch. 19](ch19-gardefous-securite-globale.md) §19.5.1) — la mitigation structurelle est *on-behalf-of*, pas un classifier de plus.
 
 ### 20.3.3 Gateway — outils MCP
 
 Convertit n'importe quelle API (REST, Lambda, services existants) en outils MCP-compatibles. Permet aussi de fédérer des serveurs MCP existants — un seul endpoint unifié, allowlist namespace, *secrets management* centralisé. Du côté Vertex, c'est le rôle d'Agent Garden et des connecteurs natifs ; chez Foundry, c'est intégré dans le AI Agent Service.
 
-C'est le layer où la matrice 10×10 du Ch. 13 s'instancie. Le service managé absorbe une partie du plumbing (auth, retries, *circuit breaking*, observabilité), pas la **politique de sécurité** — qui reste à votre charge. Sigstore + hash pinning + tool tagging + HITL writes, c'est vous qui décidez.
+C'est le layer où la matrice 10×10 du [Ch. 13](ch13-mcp-securite.md) s'instancie. Le service managé absorbe une partie du plumbing (auth, retries, *circuit breaking*, observabilité), pas la **politique de sécurité** — qui reste à votre charge. Sigstore + hash pinning + tool tagging + HITL writes, c'est vous qui décidez.
 
 ### 20.3.4 Observability — traces OTel natives
 
-Tracing OpenTelemetry, vue unifiée des appels et des erreurs. AgentCore Observability émet des spans `gen_ai.*` conformes à la spec v1.37+ (cf. Ch. 18). Vertex et Foundry idem. La force du managé : ==le tracing est natif, pas optionnel==. La limite : si vous voulez le crosser avec votre stack APM existante (Dynatrace, Datadog), il faut exporter via OTLP — ce qui est possible mais à configurer.
+Tracing OpenTelemetry, vue unifiée des appels et des erreurs. AgentCore Observability émet des spans `gen_ai.*` conformes à la spec v1.37+ (cf. [Ch. 18](ch18-observabilite-cognitive-audit-trail.md)). Vertex et Foundry idem. La force du managé : ==le tracing est natif, pas optionnel==. La limite : si vous voulez le crosser avec votre stack APM existante (Dynatrace, Datadog), il faut exporter via OTLP — ce qui est possible mais à configurer.
 
-Le Ch. 18 §18.8 a posé l'arbitrage incumbents APM × challengers AI-native. Avec un runtime managé, vous avez **par défaut** un backend AI-native ; pour la couche infra/topologie, vous restez sur votre stack incumbent.
+Le [Ch. 18](ch18-observabilite-cognitive-audit-trail.md) §18.8 a posé l'arbitrage incumbents APM × challengers AI-native. Avec un runtime managé, vous avez **par défaut** un backend AI-native ; pour la couche infra/topologie, vous restez sur votre stack incumbent.
 
 ### 20.3.5 Code Interpreter — sandbox Python/JS/TS jusqu'à 8 h
 
-Sandbox isolé pour exécuter du code généré par l'agent — jusqu'à huit heures de session. Filesystem scopé à `/workspace`, réseau allowlisté, pas d'accès root, limites CPU/RAM. C'est le service qui permet aux patterns *codegen* (cf. Ch. 11) de tourner sans risquer le serveur du runtime.
+Sandbox isolé pour exécuter du code généré par l'agent — jusqu'à huit heures de session. Filesystem scopé à `/workspace`, réseau allowlisté, pas d'accès root, limites CPU/RAM. C'est le service qui permet aux patterns *codegen* (cf. [Ch. 11](ch11-patterns-orchestration.md)) de tourner sans risquer le serveur du runtime.
 
 Différences pratiques entre AgentCore Code Interpreter, Vertex Code Execution et Foundry Sandbox : la durée maximum (8 h vs 1 h vs 30 min), les langages supportés (Python+JS+TS vs Python vs Python+TypeScript), le pricing (consumption AWS vs allocation Vertex vs Foundry hybride). Sur un agent qui fait beaucoup de codegen long, l'écart de durée maximum est *load-bearing*.
 
 ### 20.3.6 Browser Tool — navigation distante
 
-Navigateur distant : l'agent navigue le web *comme un humain*, sans pourrir la machine locale. Pour les agents computer-use (Ch. 15), c'est le pendant managé du *headless browser* qu'on devait gérer soi-même. Le service offre une session isolée, un cookie store éphémère, des screenshots, et un protocole d'interaction (clicks, types, scrolls).
+Navigateur distant : l'agent navigue le web *comme un humain*, sans pourrir la machine locale. Pour les agents computer-use ([Ch. 15](ch15-computer-use.md)), c'est le pendant managé du *headless browser* qu'on devait gérer soi-même. Le service offre une session isolée, un cookie store éphémère, des screenshots, et un protocole d'interaction (clicks, types, scrolls).
 
-==Surface d'attaque inédite==, intimement liée à Ch. 15 : Visual Prompt Injection (VPI). Le browser tool managé sandbox la *navigation*, pas le *rendu*. Une page web hostile peut toujours injecter via une image rendue. Mitigation : OCR + classifier (cf. Ch. 19 surface (vi)).
+==Surface d'attaque inédite==, intimement liée à [Ch. 15](ch15-computer-use.md) : Visual Prompt Injection (VPI). Le browser tool managé sandbox la *navigation*, pas le *rendu*. Une page web hostile peut toujours injecter via une image rendue. Mitigation : OCR + classifier (cf. [Ch. 19](ch19-gardefous-securite-globale.md) surface (vi)).
 
-> [!INFO] Voir Ch. 18 — Observabilité · Ch. 19 — Sécurité · Ch. 9-10 — Mémoire/Compaction
-> Chaque brique de plateforme s'instancie dans une discipline déjà traitée. Memory ⇒ Ch. 9-10. Identity + Gateway ⇒ Ch. 19 surfaces (iv) et (vi). Observability ⇒ Ch. 18. Code Interpreter + Browser Tool ⇒ Ch. 19 sandboxing + Ch. 15 computer use. La valeur ajoutée du runtime managé n'est pas de *réinventer* ces disciplines — c'est de **fournir une implémentation par défaut** que vous gouvernez par configuration, pas par code.
+> [!INFO] Voir [Ch. 18 — Observabilité](ch18-observabilite-cognitive-audit-trail.md) · [Ch. 19 — Sécurité](ch19-gardefous-securite-globale.md) · [Ch. 9](ch09-memoire-agentique.md)-[10](ch10-compaction.md) — Mémoire/Compaction
+> Chaque brique de plateforme s'instancie dans une discipline déjà traitée. Memory ⇒ [Ch. 9](ch09-memoire-agentique.md)-[10](ch10-compaction.md). Identity + Gateway ⇒ [Ch. 19](ch19-gardefous-securite-globale.md) surfaces (iv) et (vi). Observability ⇒ [Ch. 18](ch18-observabilite-cognitive-audit-trail.md). Code Interpreter + Browser Tool ⇒ [Ch. 19](ch19-gardefous-securite-globale.md) sandboxing + [Ch. 15](ch15-computer-use.md) computer use. La valeur ajoutée du runtime managé n'est pas de *réinventer* ces disciplines — c'est de **fournir une implémentation par défaut** que vous gouvernez par configuration, pas par code.
 
 ---
 
@@ -205,13 +216,13 @@ Trois cibles principales, en ordre croissant de couplage :
 
 ## 20.6 Sécurité gruyère — trois couches qui combinent
 
-Le Ch. 19 a posé les **cinq couches** de la défense en profondeur agentique. Côté runtime, le manuel d'Anthropic[^13] décline une version pragmatique pour un agent bash-driven : **trois couches** spécifiques au runtime, qui s'imbriquent dans le stack à cinq couches du Ch. 19.
+Le [Ch. 19](ch19-gardefous-securite-globale.md) a posé les **cinq couches** de la défense en profondeur agentique. Côté runtime, le manuel d'Anthropic[^13] décline une version pragmatique pour un agent bash-driven : **trois couches** spécifiques au runtime, qui s'imbriquent dans le stack à cinq couches du [Ch. 19](ch19-gardefous-securite-globale.md).
 
 ![Le gruyère suisse à trois couches — sécurité d'un agent bash-driven|1300](../../agent-sdk/images/20260518-09-securite-couches.svg)
 
 ### 20.6.1 Couche 1 — Alignement modèle
 
-Anthropic, OpenAI, Google investissent massivement sur l'alignement du modèle lui-même : il refuse les actions destructrices sans confirmation, il évite les prompt injections évidentes, il ne s'auto-exfiltre pas. Publication Anthropic sur le reward hacking — un modèle bien aligné ne triche pas pour atteindre son objectif. ==C'est la première barrière, mais elle ne suffit jamais== (cf. Ch. 19 §19.7.1 — Layer 1 training-time alignment).
+Anthropic, OpenAI, Google investissent massivement sur l'alignement du modèle lui-même : il refuse les actions destructrices sans confirmation, il évite les prompt injections évidentes, il ne s'auto-exfiltre pas. Publication Anthropic sur le reward hacking — un modèle bien aligné ne triche pas pour atteindre son objectif. ==C'est la première barrière, mais elle ne suffit jamais== (cf. [Ch. 19](ch19-gardefous-securite-globale.md) §19.7.1 — Layer 1 training-time alignment).
 
 ### 20.6.2 Couche 2 — Harness controls
 
@@ -223,7 +234,7 @@ Cinq points d'interception déterministes (variant selon SDK) : `PreToolUse`, `P
 
 Isolation réseau (l'agent ne peut pas appeler des endpoints arbitraires), filesystem scope (l'agent ne voit que `/workspace`, pas `/etc`), execution scope (pas d'accès root, limites de CPU/RAM). C'est ce qui empêche l'exfiltration de données et limite le blast radius en cas de compromission. Les providers cités (Cloudflare, Modal, E2B, Daytona, AgentCore Code Interpreter, Vertex Code Execution, Foundry Sandbox) implémentent déjà ces garanties.
 
-==Aucune des trois couches n'est suffisante seule — c'est la composition qui rend l'ensemble robuste.== C'est exactement le motif de défense en profondeur du Ch. 19 §19.10 appliqué au runtime.
+==Aucune des trois couches n'est suffisante seule — c'est la composition qui rend l'ensemble robuste.== C'est exactement le motif de défense en profondeur du [Ch. 19](ch19-gardefous-securite-globale.md) §19.10 appliqué au runtime.
 
 ### 20.6.4 RBAC — côté infra, pas côté prompt
 
@@ -257,7 +268,7 @@ Sur un AgentCore-type deployment, six postes à dimensionner :
 3. **Memory** — facturé sur volume stocké + opérations read/write. Souvent <5 % de la facture mais facilement sous-estimé.
 4. **Code Interpreter** — facturé sur sandbox-seconds + allocation peak (CPU/RAM). Variable selon usage codegen.
 5. **Browser Tool** — facturé sur sandbox-seconds + bande passante. Variable selon usage computer-use.
-6. **Observability** — facturé sur volume de spans + rétention. **Le poste le plus mal anticipé** (cf. Ch. 18 §18.8.1 sur le piège per-LLM-span).
+6. **Observability** — facturé sur volume de spans + rétention. **Le poste le plus mal anticipé** (cf. [Ch. 18](ch18-observabilite-cognitive-audit-trail.md) §18.8.1 sur le piège per-LLM-span).
 
 ### 20.7.3 Les pièges de signature
 
@@ -265,7 +276,7 @@ Trois clauses à négocier explicitement avant signature :
 
 - **Clause de révision tarifaire** — les pricing models de 2026 sont jeunes. Plusieurs vendors ont déjà ajusté à la baisse (compute) ou à la hausse (memory storage). Sans clause de révision, le contrat 3 ans signé en 2026 vous enferme dans un pricing qui aura bougé d'ici 18 mois.
 - **Volume d'observabilité inclus** — par défaut, les vendors facturent les spans OTel au-delà d'un seuil. Pour un agent qui émet 100-500 spans par session, ce seuil arrive vite. Négocier un volume inclus aligné sur le volume réel.
-- **Egress data** — sortir les données du cloud (vers backup, audit externe, ou autre cloud) coûte parfois plus que le compute. Pour un cognitive audit trail à rétention 5 ans (cf. Ch. 18 §18.6.1), c'est un poste à dimensionner.
+- **Egress data** — sortir les données du cloud (vers backup, audit externe, ou autre cloud) coûte parfois plus que le compute. Pour un cognitive audit trail à rétention 5 ans (cf. [Ch. 18](ch18-observabilite-cognitive-audit-trail.md) §18.6.1), c'est un poste à dimensionner.
 
 > [!WARNING] Le coût caché — l'attente I/O qui devient compute
 > Un agent qui *« attend »* peut en fait *« réfléchir »* — un reasoning model en thinking mode brûle des tokens même quand il semble inactif. ==**L'attente I/O gratuite ne couvre que les vrais waits OS-level, pas les pauses de raisonnement.**== Vérifier sur les premières factures que ce que vous croyez gratuit l'est effectivement.
@@ -305,8 +316,8 @@ La migration de cloud, dans cette architecture, consiste à **re-pointer les API
 
 ==Le sweet spot anti-lock-in 2026 est la ligne 1== : ADK ouvert (LangGraph par défaut pour environnements régulés ; Mastra pour TypeScript) + runtime managé hyperscaler pour absorber le plumbing + protocoles ouverts (MCP, A2A) pour les intégrations. Le runtime devient révisable ; les briques de plateforme aussi.
 
-> [!INFO] Voir Ch. 12 — MCP plateforme · Ch. 11 — Patterns
-> Le Ch. 12 détaille MCP comme *« HTTP des agents »* et l'effet de réseau qui l'a installé en standard de facto. Le Ch. 11 §11.5.2 a introduit la trilogie ADK / runtime / plateforme et l'arbre de décision buy/build. Ce chapitre tient le **deep-dive runtime**.
+> [!INFO] Voir [Ch. 12 — MCP plateforme](ch12-mcp-plateforme.md) · [Ch. 11 — Patterns d'orchestration](ch11-patterns-orchestration.md)
+> Le [Ch. 12](ch12-mcp-plateforme.md) détaille MCP comme *« HTTP des agents »* et l'effet de réseau qui l'a installé en standard de facto. Le [Ch. 11](ch11-patterns-orchestration.md) §11.5.2 a introduit la trilogie ADK / runtime / plateforme et l'arbre de décision buy/build. Ici, le **deep-dive runtime**.
 
 ---
 
@@ -320,15 +331,15 @@ L'arbre de décision pour un nouvel agent en 2026.
 
 **Q3 — Avez-vous une équipe SRE / Cloud Architect en place ?** Si non, runtime managé impératif — la complexité de l'opération (microVM isolation, sandbox sécurité, scaling, observabilité OTel) n'est pas un sujet à apprendre en parallèle du build de l'agent. Si oui, le choix self-hosted devient défendable, à condition de doser.
 
-**Q4 — Volume et latence sont-ils critiques ?** Si oui (latence p95 < 100 ms sur des actions cœur métier), le self-host devient préférable pour le tuning fin (quantification modèles, batching, speculative decoding du Ch. 4). Si non, le runtime managé absorbe.
+**Q4 — Volume et latence sont-ils critiques ?** Si oui (latence p95 < 100 ms sur des actions cœur métier), le self-host devient préférable pour le tuning fin (quantification modèles, batching, speculative decoding du [Ch. 4](ch04-decode-speculative.md)). Si non, le runtime managé absorbe.
 
-**Q5 — Compliance régulée (banque, santé, public) ?** Vérifier que le runtime managé offre Assured Workloads / S3NS / SecNumCloud / souveraineté de données alignés sur votre threat model (cf. Ch. 16 et Ch. 23). Sinon, déploiement hybride (runtime self-hosted dans région souveraine + modèle via API régionale).
+**Q5 — Compliance régulée (banque, santé, public) ?** Vérifier que le runtime managé offre Assured Workloads / S3NS / SecNumCloud / souveraineté de données alignés sur votre threat model (cf. [Ch. 16](ch16-analytics-agentique-banque.md) et [Ch. 23](ch23-gouvernance-ai-act.md)). Sinon, déploiement hybride (runtime self-hosted dans région souveraine + modèle via API régionale).
 
 ### 20.9.1 Signaux de migration vers managé
 
 - **L'opération coûte plus que le développement.** Vous passez plus de temps à debugger les sessions crashées qu'à coder les nouveaux cas. Signe qu'un runtime managé vaut son prix.
 - **Vous avez réécrit votre propre couche memory ou observabilité.** À ce stade, les briques de plateforme valent leur coût marginal — ce que vous bricolez existe en mieux ailleurs.
-- **Le métier vous demande des évals continues, du replay, des audits.** Le graphe déclaratif + checkpointing devient quasi-obligatoire ; un agent autonome non-instrumenté ne passera pas la revue (cf. Ch. 18 cognitive audit trail).
+- **Le métier vous demande des évals continues, du replay, des audits.** Le graphe déclaratif + checkpointing devient quasi-obligatoire ; un agent autonome non-instrumenté ne passera pas la revue (cf. [Ch. 18](ch18-observabilite-cognitive-audit-trail.md) cognitive audit trail).
 
 ### 20.9.2 Signaux de migration *depuis* managé
 
@@ -341,7 +352,7 @@ L'arbre de décision pour un nouvel agent en 2026.
 
 ## 20.10 Récap chapitre — trois couches, une discipline
 
-Si le lecteur ne retient qu'une page de ce chapitre, c'est celle-ci.
+==**À retenir** : trois couches, une discipline.==
 
 ==**Trois couches** :== ADK (le SDK qu'on importe), Runtime (où les sessions tournent), Services de plateforme (les briques périphériques — Memory, Identity, Gateway, Observability, Code Interpreter, Browser Tool). *« On utilise AgentCore »* ou *« On tourne sur Vertex »* ne dit rien tant qu'on n'a pas nommé les trois.
 
@@ -352,7 +363,7 @@ Pour une équipe Data & AI qui démarre en 2026 :
 1. **Prototyper dans Claude Code** (ou équivalent product agent du vendor cible). Valider la logique sur 20 cas réels avant tout déploiement.
 2. **Extraire en Agent SDK** dès que la logique tient (~50 lignes de code spécifique + CLAUDE.md + skills).
 3. **Choisir un runtime managé** aligné sur l'IAM cloud existant. AgentCore par défaut côté AWS, Vertex AE côté GCP, Foundry côté Azure, Claude Managed côté Anthropic, OpenAI Agent Builder côté OpenAI.
-4. **Configurer les six briques de plateforme explicitement.** Memory avec politique d'expiration (RGPD art. 17 — Ch. 10). Identity en *on-behalf-of* (sécurité — Ch. 19). Gateway en MCP avec allowlist namespace + Sigstore (Ch. 13). Observability en OTel natif (Ch. 18). Code Interpreter et Browser Tool sandboxés.
+4. **Configurer les six briques de plateforme explicitement.** Memory avec politique d'expiration (RGPD art. 17 — [Ch. 10](ch10-compaction.md)). Identity en *on-behalf-of* (sécurité — [Ch. 19](ch19-gardefous-securite-globale.md)). Gateway en MCP avec allowlist namespace + Sigstore ([Ch. 13](ch13-mcp-securite.md)). Observability en OTel natif ([Ch. 18](ch18-observabilite-cognitive-audit-trail.md)). Code Interpreter et Browser Tool sandboxés.
 5. **Négocier les clauses de pricing** — révision tarifaire, volume d'observabilité inclus, egress data — *avant* signature, pas au premier renouvellement.
 
 L'investissement marginal au-delà (multi-cloud actif, A2A inter-vendor, runtime custom Temporal) doit attendre une volumétrie qui le justifie — ==sinon il optimise une portabilité qu'on n'utilise pas==.
@@ -362,7 +373,7 @@ L'investissement marginal au-delà (multi-cloud actif, A2A inter-vendor, runtime
 > [!WARNING] Trois pièges classiques (les trois sont 100 % traçables)
 > ***« On utilise AgentCore »* sans préciser quelles briques** — six services indépendants, la facture varie d'un facteur 10. Une équipe qui consomme Runtime + Memory + Identity + Gateway + Observability + Code Interpreter + Browser Tool sans gouvernance produit une facture de fin de mois qui surprend tout le monde. Discipline minimale : architecture decision record qui nomme les trois couches sur chaque cas d'usage, avec dimensionnement chiffré par brique.
 >
-> **Sandbox sans on-behalf-of identity** — l'agent agit avec les droits du service plutôt que de l'utilisateur. Une injection indirecte dans un email lu déclenche une action avec les droits *admin* du service. ==C'est exactement le pattern EchoLeak (cf. Ch. 19 §19.5.1)== — la mitigation structurelle est *on-behalf-of* via OAuth/OIDC, pas un classifier de plus.
+> **Sandbox sans on-behalf-of identity** — l'agent agit avec les droits du service plutôt que de l'utilisateur. Une injection indirecte dans un email lu déclenche une action avec les droits *admin* du service. ==C'est exactement le pattern EchoLeak (cf. [Ch. 19](ch19-gardefous-securite-globale.md) §19.5.1)== — la mitigation structurelle est *on-behalf-of* via OAuth/OIDC, pas un classifier de plus.
 >
 > **Pricing not read at signature** — l'attente I/O est gratuite, *mais le code interpreter est facturé sur l'allocation peak* (CPU/RAM peak), pas la moyenne. Un agent qui pic à 8 vCPU pendant 30 secondes et tourne à 1 vCPU le reste du temps est facturé 8 × duration sur cette brique. La fenêtre de surprise est sur les **premières factures** ; sans clause de révision, le contrat 3 ans devient un boulet 18 mois plus tard.
 

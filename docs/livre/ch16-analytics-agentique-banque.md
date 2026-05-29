@@ -1,7 +1,18 @@
+---
+chapitre: 16
+titre: "Analytics agentique : la stack data + IA en sectoriel régulé"
+acte: 3
+acte_titre: "Les interfaces"
+gabarit: standard
+mots: 10800
+statut: v1
+date_maj: 2026-05-29
+---
+
 # Chapitre 16 — Analytics agentique : la stack data + IA en sectoriel régulé
 
 > **Acte III — Les interfaces · Chapitre standard, ~24 pages (dont encart 4 pages)**
-> _Le Ch.14 a posé quatre régimes d'accès, le Ch.15 a zoomé sur le sous-régime extrême. Ce chapitre ferme l'Acte III en instanciant les trois objets sur un cas concret : la stack data + IA d'une **banque française tier 1** sur Google Cloud, à 75 jours de l'échéance AI Act haut-risque (2 août 2026). Trois surfaces agentiques (conversational analytics / agents custom / MCP banque), un pivot d'architecture (le semantic layer), une matrice régulaire à six référentiels superposés, et une feuille de route 18 mois construite autour d'un ratio 70/20/10 contre-intuitif. L'encart §16.14 ferme l'Acte sur la généalogie des expériences narratives — la troisième voie d'interaction qui ne se range ni en chat, ni en copilote, ni en canvas._
+> _Le [Ch. 14](ch14-surfaces-agentiques.md) a posé quatre régimes d'accès, le [Ch. 15](ch15-computer-use.md) a zoomé sur le sous-régime extrême. Voici l'instanciation des trois objets sur un cas concret : la stack data + IA d'une **banque française tier 1** sur Google Cloud, à 75 jours de l'échéance AI Act haut-risque (2 août 2026). Trois surfaces agentiques (conversational analytics / agents custom / MCP banque), un pivot d'architecture (le semantic layer), une matrice régulaire à six référentiels superposés, et une feuille de route 18 mois construite autour d'un ratio 70/20/10 contre-intuitif. L'encart §16.14 ferme l'Acte sur la généalogie des expériences narratives — la troisième voie d'interaction qui ne se range ni en chat, ni en copilote, ni en canvas._
 
 > [!QUESTION] Question d'ouverture
 > Le scénario qui vend tout seul : un dirigeant ouvre un chat, tape *« quel a été le PNB de la banque privée au T1 par région avec variation YoY ? »*, et reçoit la réponse sourcée, avec un graphique. Le scénario marche en démo. Il ne marche pas en prod. Les benchmarks académiques de NL→SQL — Spider, BIRD — atteignent **85 % d'accuracy** ou plus avec les modèles frontière[^24]. En entreprise, sur des schémas réels, les chiffres s'effondrent : ==**10–20 %** d'accuracy[^11]==. Et Gartner publie fin 2025 une projection qui circule : à 2028, ==**60 % des projets agentiques s'appuyant uniquement sur MCP sans semantic layer auront échoué**==[^14]. Si la falaise est mesurée, le pivot n'est plus *quel modèle* mais *quel semantic, quelle stratégie MCP, quel niveau de gouvernance* — et le calendrier régulaire ne décale pas.
@@ -15,28 +26,14 @@
 
 ---
 
-## 16.1 La place de ce chapitre — instanciation sectorielle
+## 16.1 La rupture analytique en 2026 — la falaise du NL→SQL
 
-### 16.1.1 Pourquoi un cas banque française tier 1 sur GCP
+Le choix de la banque française tier 1 n'est pas anodin. ==C'est le secteur où la pression réglementaire est la plus dense en 2026== — six référentiels se superposent (DORA, AI Act, EBA Outsourcing, BCBS 239, RGPD, ACPR), trois niveaux de souveraineté coexistent (Assured Workloads EU, partenaires souverains, S3NS SecNumCloud 3.2), et l'échéance AI Act haut-risque du **2 août 2026**[^7] tombe à 75 jours. Ce qui résiste à cette pression résiste à la majorité des autres secteurs régulés (assurance, énergie, santé, défense). Le choix de GCP n'est pas exclusif : la §16.11 compare ponctuellement Snowflake, Databricks, Microsoft Fabric — les patterns proposés s'instancient sur les autres warehouses moyennant traduction (Looker semantic ↔ Cortex Analyst YAML ↔ Power BI semantic model ↔ Unity Catalog métriques).
 
-Le Ch.16 ferme l'Acte III en quittant l'analyse transverse pour une **instanciation sectorielle**. C'est le seul chapitre du livre qui prend ce parti : un cas concret — une banque française tier 1 déjà sur GCP — sert de cadre pour montrer comment se composent en pratique les régimes du Ch.14, le pilotage écran du Ch.15, la matrice MCP du Ch.13, et la grille Knight du Ch.14 §14.8.
+> [!INFO] Voir [Ch. 23 — Gouvernance : AI Act, machine unlearning, calendrier réglementaire](ch23-gouvernance-ai-act.md)
+> Ici, la **régulation comme contrainte d'architecture sectorielle**. Le [Ch. 23](ch23-gouvernance-ai-act.md) traite la régulation comme **grille générale** : calendrier 2026-2027 complet, machine unlearning (CNIL, EDPS, retraining-free papers 2025-2026), rôles DPO / RSSI / Sponsor pour chaque obligation. ==La discipline éditoriale est stricte== : les articles AI Act (9 à 15) sont **nommés** ici mais **déroulés** au [Ch. 23](ch23-gouvernance-ai-act.md) ; les modalités de gouvernance interne (qui signe quoi) sont au [Ch. 23](ch23-gouvernance-ai-act.md). Ici, comment ça se concrétise sur un cas concret — scoring crédit, reporting réglementaire, agent ITSM banque.
 
-Le choix de la banque française tier 1 n'est pas anodin. ==C'est le secteur où la pression réglementaire est la plus dense en 2026== — six référentiels se superposent (DORA, AI Act, EBA Outsourcing, BCBS 239, RGPD, ACPR), trois niveaux de souveraineté coexistent (Assured Workloads EU, partenaires souverains, S3NS SecNumCloud 3.2), et l'échéance AI Act haut-risque du 2 août 2026 tombe à 75 jours du jour où ce chapitre est écrit. Ce qui résiste à cette pression résiste à la majorité des autres secteurs régulés (assurance, énergie, santé, défense).
-
-Le choix de GCP comme cible n'est pas non plus exclusif. Le Ch.16 §16.12 compare ponctuellement Snowflake, Databricks, Microsoft Fabric — les patterns proposés ici s'instancient sur les autres warehouses moyennant traduction (Looker semantic ↔ Cortex Analyst YAML ↔ Power BI semantic model ↔ Unity Catalog métriques).
-
-> [!INFO] Voir Ch. 23 — Gouvernance : AI Act, machine unlearning, calendrier réglementaire
-> Le présent chapitre traite la **régulation comme contrainte d'architecture sectorielle**. Le Ch.23 traite la régulation comme **grille générale** : calendrier 2026-2027 complet, machine unlearning (CNIL, EDPS, retraining-free papers 2025-2026), rôles DPO / RSSI / Sponsor pour chaque obligation. ==La discipline éditoriale est stricte== : les articles AI Act (9 à 15) sont **nommés** ici mais **déroulés** en Ch.23 ; les modalités de gouvernance interne (qui signe quoi) sont en Ch.23. Le Ch.16 montre comment ça se concrétise sur un cas concret — scoring crédit, reporting réglementaire, agent ITSM banque.
-
-### 16.1.2 La position dans le calendrier
-
-L'échéance n'est pas symbolique : ==l'AI Act haut-risque entre en vigueur le **2 août 2026**==[^7]. Tout système d'IA utilisé pour évaluer la solvabilité d'une personne physique ou attribuer un score de crédit (à l'exception de la détection de fraude) sera *haut-risque* — Annexe III. Pour une banque française qui veut déployer un agent NL→SQL sur des données client, qui veut industrialiser le reporting réglementaire, qui veut automatiser le scoring : la conformité n'est plus optionnelle, elle est la condition de mise en prod. C'est dans ce calendrier que se cadrent les choix d'architecture du présent chapitre.
-
----
-
-## 16.2 La rupture analytique en 2026 — la falaise du NL→SQL
-
-### 16.2.1 Spider académique vs schéma enterprise réel
+### 16.1.1 Spider académique vs schéma enterprise réel
 
 Les benchmarks académiques de text-to-SQL — Spider, BIRD, BIRD-INTERACT — atteignent 85 % d'accuracy ou plus avec les modèles frontière[^24]. Mais ces benchmarks sont *sales* — au sens où ils ont été nettoyés. Une analyse récente du benchmark BIRD a relevé ==**52,8 % d'erreurs d'annotation** dans certains subsets ; après correction, les performances bougent de -3 à +31 points selon le système==[^25]. Et surtout, les schémas y sont propres : peu de tables, noms de colonnes explicites, pas de table de référence intermédiaire, pas d'historisation slowly-changing.
 
@@ -46,9 +43,9 @@ En entreprise, les chiffres s'effondrent. Plusieurs études de praticiens placen
 
 L'écart se rattrape — mais pas par un meilleur modèle. ==Il se rattrape par un meilleur *contexte*.== Ajouter de la documentation sémantique aux tables (descriptions de colonnes, relations explicites, métriques nommées) gagne 17 à 23 points selon les benchmarks récents[^12]. Et passer à un semantic layer formel — où les métriques sont définies une fois, et où l'agent n'écrit pas le SQL mais appelle `get_metric(pnb, dimension=region, period=q1_2026)` — fait tomber l'accuracy à des niveaux proches de **100 %** sur les queries couvertes[^13]. La §16.5 développe cette mécanique.
 
-### 16.2.2 Pourquoi la chaîne data n'est pas la chaîne code
+### 16.1.2 Pourquoi la chaîne data n'est pas la chaîne code
 
-La rupture agentique sur la chaîne code (cf. dossier `coding-agents/`) a un atout : ==le test unitaire==. Un coding agent peut écrire du code, le compiler, le tester, observer la sortie, recommencer. La boucle est fermée par un signal objectif. **La chaîne data n'a pas cet équivalent évident.** Un SQL qui retourne 1 234 567 lignes peut être faux. Une jointure qui multiplie les lignes par doublon non géré peut passer inaperçue. Une métrique recalculée à la volée par l'agent peut diverger d'un quart de point sans qu'aucun test ne le rattrape.
+La rupture agentique sur la chaîne code a un atout : ==le test unitaire==. Un coding agent peut écrire du code, le compiler, le tester, observer la sortie, recommencer. La boucle est fermée par un signal objectif. **La chaîne data n'a pas cet équivalent évident.** Un SQL qui retourne 1 234 567 lignes peut être faux. Une jointure qui multiplie les lignes par doublon non géré peut passer inaperçue. Une métrique recalculée à la volée par l'agent peut diverger d'un quart de point sans qu'aucun test ne le rattrape.
 
 C'est pour ça que la chaîne data exige des garde-fous qui n'existent pas par défaut sur la chaîne code : le **semantic layer** (qui contraint la définition de la métrique), le **lineage** (qui trace l'origine d'une donnée), l'**observabilité agentique** (qui détecte la dérive des coûts BigQuery ou la régression d'accuracy), et l'**évaluation offline** (qui exécute périodiquement un référentiel de questions métier annotées). ==Sans ces quatre pièces, déployer un agent data en banque est un pari sur l'absence d'audit.==
 
@@ -56,7 +53,7 @@ C'est pour ça que la chaîne data exige des garde-fous qui n'existent pas par d
 
 ## 16.3 La chaîne data GCP « avant agents »
 
-Avant de décrire les surfaces agentiques, on fixe le vocabulaire. La chaîne data sur GCP s'articule autour de cinq couches. Le lecteur averti peut sauter au §16.4.
+Avant de décrire les surfaces agentiques, fixons le vocabulaire. La chaîne data sur GCP s'articule autour de cinq couches. Le lecteur averti peut sauter au §16.4.
 
 ![Chaîne data canonique sur GCP — cinq couches|1300](../../analytics-agentique-gcp/images/20260519-02-chaine-canonique.svg)
 
@@ -76,7 +73,7 @@ Le lineage traverse verticalement. Dataplex catalogue les sources, capture les t
 
 ## 16.4 Trois surfaces agentiques — pyramide × chaîne
 
-Le dossier `coding-agents/` propose une pyramide à quatre étages d'usage : transverse, data quotidien, data expert, produit-décideurs. Cette pyramide se réinstancie sur la chaîne data. À chaque étage, des outils GCP différents. Mais ce qui structure les choix d'architecture ne s'aligne pas sur les étages — ça s'aligne sur ==trois surfaces transverses== qui traversent les étages : conversational analytics, agents custom, MCP.
+Une pyramide à quatre étages d'usage structure le terrain : transverse, data quotidien, data expert, produit-décideurs. Cette pyramide se réinstancie sur la chaîne data. À chaque étage, des outils GCP différents. Mais ce qui structure les choix d'architecture ne s'aligne pas sur les étages — ça s'aligne sur ==trois surfaces transverses== qui traversent les étages : conversational analytics, agents custom, MCP.
 
 ![Pyramide d'usage × cinq couches de chaîne — outils GCP par cellule|1300](../../analytics-agentique-gcp/images/20260519-03-pyramide-chaine.svg)
 
@@ -94,7 +91,7 @@ Les trois surfaces transverses se distribuent ainsi : **conversational analytics
 
 ## 16.5 Le pivot sémantique — la section la plus technique
 
-C'est la section où le RDV banque se joue. Elle est plus longue et plus dense que les autres ; ==c'est la thèse load-bearing du chapitre==.
+C'est la section où le RDV banque se joue. Elle est plus longue et plus dense que les autres ; ==c'est la thèse load-bearing du dossier==.
 
 ### 16.5.1 La mécanique de l'hallucination de jointure
 
@@ -141,7 +138,7 @@ Le scénario à éviter : laisser chaque équipe définir ses métriques dans so
 Gartner publie, fin 2025, une projection citée plusieurs fois dans la presse spécialisée : ==à 2028, **60 % des projets agentiques s'appuyant uniquement sur MCP, sans semantic layer, auront échoué**==[^14]. La même note projette que les organisations qui priorisent la sémantique dans leur data « AI-ready » verront leur accuracy GenAI augmenter de 80 % et leurs coûts baisser de 60 %. ==On peut discuter les pourcentages ; la direction du gradient n'est pas contestée.== Le semantic layer est devenu une condition de mise en prod, plus une option d'architecture.
 
 > [!IMPORTANT] Le pivot d'architecture en 2026 n'est pas le modèle, c'est le semantic
-> Pour un directeur data qui doit arbitrer entre *« on prend le modèle le plus cher »* et *« on construit le semantic »*, la grille est claire : le delta de qualité d'un modèle frontière à l'autre est de 2-3 points sur les benchmarks NL→SQL ; le delta apporté par un semantic layer bien posé est de **80 points** (10 % → ~95 %). ==L'asymétrie est telle qu'aucun investissement sur le modèle ne rattrape un déficit de semantic.== C'est ce que matérialise le ratio 70/20/10 du §16.13.
+> Pour un directeur data qui doit arbitrer entre « on prend le modèle le plus cher » et « on construit le semantic », la grille est claire : le delta de qualité d'un modèle frontière à l'autre est de 2-3 points sur les benchmarks NL→SQL ; le delta apporté par un semantic layer bien posé est de **80 points** (10 % → ~95 %). ==L'asymétrie est telle qu'aucun investissement sur le modèle ne rattrape un déficit de semantic.== C'est ce que matérialise le ratio 70/20/10 du §16.13.
 
 ---
 
@@ -186,8 +183,8 @@ Pour une banque, c'est ce qui permet de mettre un agent NL dans l'espace client 
 
 Une erreur de cadrage à éviter : opposer dashboard fixe et conversational analytics. ==Le pattern qui marche en banque est l'hybride.== Les dashboards Looker restent l'objet de référence pour ce qui doit être audité, signé, distribué (reporting hebdo, comité crédit, ALM). Le chat conversational vient ouvrir, depuis ce dashboard, la possibilité de creuser une cellule, demander une variante, isoler une sous-population. Le dashboard apporte l'objet de référence ; la conversation apporte la profondeur. Les Dashboard Agents Next 2026 sont la matérialisation produit de ce pattern.
 
-> [!INFO] Voir Ch. 14 — Quel régime d'accès ?
-> Conv Analytics combine deux des quatre régimes du Ch.14 : un **régime narratif** orienté tâche (le dashboard fixe pose une trame, la conversation ouvre des poignées calibrées) et un **régime inline** dans le dashboard (la question ne vit pas dans une fenêtre séparée, elle vit dans le contexte de lecture). C'est l'instanciation sectorielle du pattern hybride §14.10. La grille Knight situe Conv Analytics typiquement en *collaborator* ou *consultant* — jamais en *operator* (l'agent n'exécute pas à la place de l'humain) ni en *observer* (la décision reste à l'humain).
+> [!INFO] Voir [Ch. 14 — Surfaces agentiques : quatre régimes d'accès](ch14-surfaces-agentiques.md)
+> Conv Analytics combine deux des quatre régimes du [Ch. 14](ch14-surfaces-agentiques.md) : un **régime narratif** orienté tâche (le dashboard fixe pose une trame, la conversation ouvre des poignées calibrées) et un **régime inline** dans le dashboard (la question ne vit pas dans une fenêtre séparée, elle vit dans le contexte de lecture). C'est l'instanciation sectorielle du pattern hybride §14.10. La grille Knight situe Conv Analytics typiquement en *collaborator* ou *consultant* — jamais en *operator* (l'agent n'exécute pas à la place de l'humain) ni en *observer* (la décision reste à l'humain).
 
 ---
 
@@ -219,14 +216,14 @@ Quatre familles de cas d'usage banque pour lesquels un agent custom est la bonne
 - ==**Surveillance d'opérations atypiques** (lien AML / fraude).== Un agent qui ouvre une enquête en partant d'une alerte du système de détection, croise transactions, profil client, contexte.
 
 > [!ATTENTION] Cas d'usage haut-risque AI Act selon le critère Annexe III
-> ==**La surveillance d'opérations atypiques pour scoring crédit relève d'Annexe III** (haut-risque) ; la détection de fraude au sens strict en est explicitement exclue.== La frontière est subtile et c'est elle qui décide si toutes les obligations art. 9-15 s'appliquent. Pour la sécurité juridique : ne pas câbler dans le même agent une fonction scoring (haut-risque) et une fonction fraude (non haut-risque) sous prétexte qu'elles partagent les mêmes données — la mise en conformité d'un agent unique mixte coûte plus que la séparation en deux agents distincts. Le Ch.23 détaille la grille Annexe III par cas d'usage.
+> ==**La surveillance d'opérations atypiques pour scoring crédit relève d'Annexe III** (haut-risque) ; la détection de fraude au sens strict en est explicitement exclue.== La frontière est subtile et c'est elle qui décide si toutes les obligations art. 9-15 s'appliquent. Pour la sécurité juridique : ne pas câbler dans le même agent une fonction scoring (haut-risque) et une fonction fraude (non haut-risque) sous prétexte qu'elles partagent les mêmes données — la mise en conformité d'un agent unique mixte coûte plus que la séparation en deux agents distincts. Le [Ch. 23](ch23-gouvernance-ai-act.md) détaille la grille Annexe III par cas d'usage.
 
 ### 16.7.3 A2A et l'interop cross-vendor
 
 À noter pour les choix stratégiques : Google a publié en 2025 le protocole ==**A2A**== (Agent-to-Agent), qui standardise la communication entre agents au-delà de la communication agent↔tool de MCP. Trajectoire 2026-2027 floue : soit adoption cross-vendor, soit absorption par MCP via sampling et subagents (déjà discutée dans la révision majeure de la spec MCP attendue automne 2026). ==Pour une banque, ce n'est pas un sujet à arbitrer en 2026 — c'est un sujet de veille.== Pour 2027, ce sera celui qui décide si on peut composer des agents Google avec des agents Anthropic, Microsoft, OpenAI sans contournement.
 
-> [!INFO] Voir Ch. 11 — Patterns canoniques et orchestration multi-agents
-> Le Ch.11 a posé les 8 patterns canoniques (5 workflows Anthropic + 3 topologies multi-agents) et les 4 régimes de contrôle (code-driven / LLM-driven / graphe / agent autonome). Les agents banque décrits ici instancient typiquement le pattern *orchestrator-workers* (un agent superviseur + sous-agents spécialisés) en régime *LLM-driven routines+handoffs*. La régu cadre le buy/build : pour Annexe III, le contrôle du raisonnement impose souvent le régime code-driven (workflow) plutôt qu'agent autonome — la prédictibilité prime.
+> [!INFO] Voir [Ch. 11 — Patterns d'orchestration](ch11-patterns-orchestration.md)
+> Le [Ch. 11](ch11-patterns-orchestration.md) a posé les 8 patterns canoniques (5 workflows Anthropic + 3 topologies multi-agents) et les 4 régimes de contrôle (code-driven / LLM-driven / graphe / agent autonome). Les agents banque décrits ici instancient typiquement le pattern *orchestrator-workers* (un agent superviseur + sous-agents spécialisés) en régime *LLM-driven routines+handoffs*. La régu cadre le buy/build : pour Annexe III, le contrôle du raisonnement impose souvent le régime code-driven (workflow) plutôt qu'agent autonome — la prédictibilité prime.
 
 ---
 
@@ -258,7 +255,7 @@ Avantages :
 
 - **Isolation**. Chaque MCP server est un service Cloud Run distinct, qu'on déploie, scale et révoque indépendamment
 - **Auth OAuth 2.0 + PKCE**. Le pattern recommandé[^34] — l'agent obtient un token avec un scope précis pour chaque MCP server, sans manipuler de credentials longue durée
-- **Audit log OTel**. Chaque appel MCP est tracé avec son client, son tool, ses arguments, sa réponse. Compatible avec OTel GenAI semconv (voir §16.9 et Ch.18)
+- **Audit log OTel**. Chaque appel MCP est tracé avec son client, son tool, ses arguments, sa réponse. Compatible avec OTel GenAI semconv (voir §16.9 et [Ch. 18](ch18-observabilite-cognitive-audit-trail.md))
 - **Sandbox**. Le MCP server peut imposer des limites (whitelist de tables, throughput max, exécution dans un projet GCP isolé) avant d'atteindre le backend
 
 ![Topologie MCP banque interne — auth, scope, audit, isolation|1300](../../analytics-agentique-gcp/images/20260519-07-mcp-topologie.svg)
@@ -272,8 +269,8 @@ Pour une banque française tier 1, ==**les quatre MCP servers internes prioritai
 - ==**MCP « référentiel »**== — façade sur les données de référence (catalogue produits, segments client, hiérarchie organisationnelle, calendrier financier). Évite que l'agent ne devine les valeurs autorisées.
 - ==**MCP « conformité »**== — façade sur les règles de gestion (zones autorisées par utilisateur, données accessibles par profil, contraintes RGPD/AI Act sur certains champs). Centralise les règles « ce qu'un agent ne doit pas faire » au lieu de les répartir dans chaque agent.
 
-> [!INFO] Voir Ch. 13 — Sécurité MCP : la matrice 10×10 supposée acquise
-> Le déploiement des quatre MCP servers banque suppose acquises les défenses du Ch.13 : signature Sigstore + hash pinning sur les serveurs internes (couche A), allowlist namespace par utilisateur (couche C), tool tagging au runtime (couche A et C), human-in-the-loop sur les `write` tools (couche B). ==Le Ch.13 a déjà nommé ces patterns load-bearing ; la banque les implémente== avec en plus une exigence sectorielle — chaque appel MCP doit être loggé dans un audit log central conservé 5 ans (DORA art. 28), ce qui ajoute au pattern un cinquième port load-bearing : audit log centralisé non-altérable.
+> [!INFO] Voir [Ch. 13 — Sécurité MCP : dix vecteurs × dix patterns](ch13-mcp-securite.md)
+> Le déploiement des quatre MCP servers banque suppose acquises les défenses du [Ch. 13](ch13-mcp-securite.md) : signature Sigstore + hash pinning sur les serveurs internes (couche A), allowlist namespace par utilisateur (couche C), tool tagging au runtime (couche A et C), human-in-the-loop sur les `write` tools (couche B). ==Le [Ch. 13](ch13-mcp-securite.md) a déjà nommé ces patterns load-bearing== avec en plus une exigence sectorielle — chaque appel MCP doit être loggé dans un audit log central conservé 5 ans (DORA art. 28), ce qui ajoute au pattern un cinquième port load-bearing : audit log centralisé non-altérable.
 
 ---
 
@@ -298,7 +295,7 @@ Au-delà des métriques agentiques standard (latency, token consumption, tool ca
 - ==**Query failure rate**==. % de SQL générés qui ne s'exécutent pas (erreur de syntaxe, table manquante, permission refusée). Indicateur direct de la qualité du semantic layer.
 - ==**BQ cost drift**==. Évolution du scan size moyen par requête. Un agent qui ne sait pas filtrer correctement génère du `SELECT *` sur des partitions non filtrées — la facture explose silencieusement.
 - ==**Plausibilité d'insight**==. Un LLM judge évalue, sur un échantillon, si les insights produits sont métier-plausibles (un PNB négatif, une croissance YoY de +850 %, un nombre de clients > population française → signaux d'alerte).
-- ==**Repro rate**==. Même question posée à dix moments différents → est-ce que l'agent produit le même SQL ? Si non, on a un problème de stabilité. C'est l'instanciation du *On the Reliability* du Ch.15 §15.8.5 sur le cas data.
+- ==**Repro rate**==. Même question posée à dix moments différents → est-ce que l'agent produit le même SQL ? Si non, on a un problème de stabilité. C'est l'instanciation du *On the Reliability* du [Ch. 15](ch15-computer-use.md) §15.7.5 sur le cas data.
 - ==**Hallucination de jointure**==. Détection passive — par exemple en comparant les jointures effectivement écrites par l'agent avec les jointures déclarées valides dans le semantic model.
 
 ### 16.9.3 L'évaluation offline — la pratique qui distingue prod-grade des PoC
@@ -318,8 +315,8 @@ Trois objets côté GCP :
 - **Tool Governance** dans Agent Builder[^33] — contrôle d'appel de tools, déjà mentionné §16.7.
 - **DLP / Sensitive Data Protection** sur les flux qui transitent (§16.11).
 
-> [!INFO] Voir Ch. 17 et Ch. 18 — Les transverses déjà couverts
-> Le Ch.17 a posé le playbook gruyère d'évaluation 8 étapes et les graders (code / model / human) — le présent chapitre **ne refait pas** la grille générique, il ajoute les métriques **data-spécifiques** (query failure rate, BQ cost drift, hallucination de jointure). Le Ch.18 traite OpenTelemetry GenAI Semantic Conventions et le cognitive audit trail — BigQuery Agent Analytics est l'instanciation GCP de la couche obs.
+> [!INFO] Voir [Ch. 17](ch17-evaluation-benchmarks.md) et [Ch. 18](ch18-observabilite-cognitive-audit-trail.md) — Les transverses déjà couverts
+> Le [Ch. 17](ch17-evaluation-benchmarks.md) a posé le playbook gruyère d'évaluation 8 étapes et les graders (code / model / human) — ici, **pas** de redémonstration de la grille générique, mais des métriques **data-spécifiques** (query failure rate, BQ cost drift, hallucination de jointure). Le [Ch. 18](ch18-observabilite-cognitive-audit-trail.md) traite OpenTelemetry GenAI Semantic Conventions et le cognitive audit trail — BigQuery Agent Analytics est l'instanciation GCP de la couche obs.
 
 ---
 
@@ -335,7 +332,7 @@ Trois objets cohabitent désormais :
 
 ![Du dashboard fixe à l'expérience narrative générative|1300](../../analytics-agentique-gcp/images/20260519-08-restitution.svg)
 
-Le scénario type banque : un comité crédit reçoit un dashboard fixe en début de séance (chiffres signés). Un membre pose une question hors-périmètre du dashboard : ==l'expérience conversationnelle ouvre la profondeur==, en interrogeant le semantic model avec gouvernance. Si la question demande une analyse sur-mesure — par exemple *« cartographie l'exposition de notre portefeuille immobilier locatif aux zones où la sécheresse est en augmentation tendancielle »* — un agent custom (§16.7) compose une page d'analyse à la demande, qui combine données internes, données externes, et qui expose son lineage.
+Le scénario type banque : un comité crédit reçoit un dashboard fixe en début de séance (chiffres signés). Un membre pose une question hors-périmètre du dashboard : ==l'expérience conversationnelle ouvre la profondeur==, en interrogeant le semantic model avec gouvernance. Si la question demande une analyse sur-mesure — par exemple « cartographie l'exposition de notre portefeuille immobilier locatif aux zones où la sécheresse est en augmentation tendancielle » — un agent custom (§16.7) compose une page d'analyse à la demande, qui combine données internes, données externes, et qui expose son lineage.
 
 Trois prérequis pour que ce pattern fonctionne en banque :
 
@@ -349,7 +346,7 @@ L'encart §16.14 plus bas remonte la généalogie complète des expériences nar
 
 ## 16.11 La section régu banque française
 
-La section pivot pour le RDV. Les choix d'architecture présentés dans les §16.5 à §16.10 sont contraints — et parfois rendus obligatoires — par six référentiels qui se superposent en 2026.
+Section pivot. Les choix d'architecture présentés dans les §16.5 à §16.10 sont contraints — et parfois rendus obligatoires — par six référentiels qui se superposent en 2026.
 
 ### 16.11.1 DORA — la résilience opérationnelle est un sujet du conseil
 
@@ -361,7 +358,7 @@ Pour la stack data agentique : (a) **Contrats** — les contrats GCP signés ava
 
 ### 16.11.2 AI Act — l'échéance du 2 août 2026
 
-Le règlement européen 2024/1689 sur l'IA[^7] entre dans sa phase critique. ==**Les obligations sur les systèmes haut-risque s'appliquent à compter du 2 août 2026**== — soit 75 jours après la date de publication de ce dossier. Pour une banque, le périmètre Annexe III est explicite : tout système d'IA utilisé pour évaluer la solvabilité d'une personne physique ou attribuer un score de crédit (à l'exception de la détection de fraude) est haut-risque.
+Le règlement européen 2024/1689 sur l'IA[^7] entre dans sa phase critique. ==**Les obligations sur les systèmes haut-risque s'appliquent à compter du 2 août 2026**== — soit 75 jours après l'écriture de ce chapitre. Pour une banque, le périmètre Annexe III est explicite : tout système d'IA utilisé pour évaluer la solvabilité d'une personne physique ou attribuer un score de crédit (à l'exception de la détection de fraude) est haut-risque.
 
 Les obligations Article 9 à 15 couvrent : système de gestion des risques formalisé (art. 9), gouvernance des datasets (art. 10), documentation technique et journalisation (art. 11-12), transparence (art. 13), supervision humaine effective (art. 14), exactitude, robustesse, cybersécurité (art. 15). ==Pour un agent data utilisé sur scoring crédit, **toutes ces obligations s'appliquent à l'agent**, pas seulement au modèle de scoring sous-jacent.== C'est un changement de périmètre qui surprend encore beaucoup d'équipes.
 
@@ -393,8 +390,8 @@ Pour une banque, ==aucun de ces objets n'est optionnel== sur un déploiement age
 
 ![Matrice contrainte régulaire × couche stack — où chaque obligation s'applique|1300](../../analytics-agentique-gcp/images/20260519-09-matrice-regu.svg)
 
-> [!IMPORTANT] La frontière Ch.16 ↔ Ch.23
-> ==Ce chapitre nomme les articles AI Act 9-15 ; le Ch.23 les déroule.== Ici, on montre comment ils se concrétisent sur un cas concret (scoring crédit, reporting réglementaire). Là, le Ch.23 fait la grille générale (calendrier AI Act 2026-2027, GPAI, machine unlearning émergent comme réponse opérationnelle à RGPD art. 17, rôle DPO / RSSI / Sponsor par obligation). Le présent chapitre **ne refait pas** le calendrier complet AI Act ni la grille des rôles ; il instancie sur l'écosystème banque française. Discipline éditoriale stricte.
+> [!IMPORTANT] La frontière avec [Ch. 23](ch23-gouvernance-ai-act.md)
+> ==Les articles AI Act 9-15 sont nommés ici ; le [Ch. 23](ch23-gouvernance-ai-act.md) les déroule.== Ici, comment ils se concrétisent sur un cas concret (scoring crédit, reporting réglementaire). Là, le [Ch. 23](ch23-gouvernance-ai-act.md) fait la grille générale (calendrier AI Act 2026-2027, GPAI, machine unlearning émergent comme réponse opérationnelle à RGPD art. 17, rôle DPO / RSSI / Sponsor par obligation). Ici, **pas** de calendrier complet AI Act ni de grille des rôles ; instanciation sur l'écosystème banque française. Discipline éditoriale stricte.
 
 ---
 
@@ -466,8 +463,8 @@ Quatre phases. Chaque phase a un livrable, des métriques de sortie et un seuil 
 
 À mesurer continuellement, pas juste en fin de phase : **taux de questions self-served** (cible 40-60 % à T12), **accuracy NL→SQL en prod** (cible ≥ 80 % stable), **cost per insight** (coût agent / nombre d'insights validés), **time-to-insight**, **taux de garde-fou déclenché** (devrait être faible mais non-nul), **conformité audits ACPR** (pass/fail sur les audits internes).
 
-> [!INFO] Voir Ch. 21 — Mesurer le ROI agentique
-> Le Ch.21 a documenté les 5 frameworks ROI (Cigref, McKinsey, BCG, MIT NANDA, Forrester TEI), le paradoxe agentique token→tâche→processus→outcome, le cas Klarna (67 % automatisé puis recul partiel). Le présent chapitre **ne refait pas** la grille ROI générique — il décline les métriques data-spécifiques. Le cost per insight et le time-to-insight sont les deux indicateurs qu'on remonte au Ch.21 comme illustration sectorielle. ==Le calibrage des attentes ROI reste Ch.21 ; les indicateurs concrets sont ici.==
+> [!INFO] Voir [Ch. 21 — Mesurer le ROI agentique](ch21-roi-paradoxe-agentique.md)
+> Le [Ch. 21](ch21-roi-paradoxe-agentique.md) a documenté les 5 frameworks ROI (Cigref, McKinsey, BCG, MIT NANDA, Forrester TEI), le paradoxe agentique token→tâche→processus→outcome, le cas Klarna (67 % automatisé puis recul partiel). Ici, **pas** de grille ROI générique — déclinaison des métriques data-spécifiques. Le cost per insight et le time-to-insight sont les deux indicateurs qu'on remonte au [Ch. 21](ch21-roi-paradoxe-agentique.md) comme illustration sectorielle. ==Le calibrage des attentes ROI reste au [Ch. 21](ch21-roi-paradoxe-agentique.md) ; les indicateurs concrets sont ici.==
 
 ### 16.13.6 Les sept pièges à éviter
 
@@ -484,7 +481,7 @@ Quatre phases. Chaque phase a un livrable, des métriques de sortie et un seuil 
 
 ## 16.14 Encart — Expériences narratives génératives (la troisième voie)
 
-> _Cet encart de quatre pages remonte la généalogie des expériences narratives — Segel & Heer, Bertin, Tufte, Cairo, Lupi, Posavec, Fragapane — pour justifier l'existence du régime narratif §16.10 au-delà du seul cas analytics. C'est la troisième voie d'interaction qui ne se range ni en chat, ni en copilote, ni en canvas, et que le Ch.14 §14.5 a esquissée. Le dossier `narrative-experiences/` (5 mai 2026) traite la matière en profondeur ; on en garde ici les quatre arêtes saillantes._
+> _Cet encart de quatre pages remonte la généalogie des expériences narratives — Segel & Heer, Bertin, Tufte, Cairo, Lupi, Posavec, Fragapane — pour justifier l'existence du régime narratif §16.10 au-delà du seul cas analytics. C'est la troisième voie d'interaction qui ne se range ni en chat, ni en copilote, ni en canvas, et que le [Ch. 14](ch14-surfaces-agentiques.md) §14.5 a esquissée. Quatre arêtes saillantes._
 
 ### 16.14.1 Trois régimes pour communiquer avec des données
 
@@ -506,7 +503,7 @@ Edward Segel et Jeffrey Heer, dans leur article fondateur de 2010 (2 600 citatio
 
 ### 16.14.3 Les fondations canoniques — Bertin → Shneiderman → Cairo
 
-L'expérience narrative s'appuie sur quarante ans de théorie de la visualisation. Jacques Bertin (*Sémiologie graphique*, 1967) identifie huit variables visuelles et leur adéquation au type de donnée — la qualité d'un graphique ne tient pas au goût mais à **l'adéquation entre la nature de la donnée et la variable visuelle choisie**. Ben Shneiderman (1996) pose le mantra *« overview first, zoom and filter, then details on demand »*. Alberto Cairo formule l'éthique du graphique : *« honesty, clarity, and depth come first »*. Pour un praticien banque, ces référents permettent de **diagnostiquer une expérience qui ne marche pas** sans s'en remettre à l'intuition.
+L'expérience narrative s'appuie sur quarante ans de théorie de la visualisation. Jacques Bertin (*Sémiologie graphique*, 1967) identifie huit variables visuelles et leur adéquation au type de donnée — la qualité d'un graphique ne tient pas au goût mais à **l'adéquation entre la nature de la donnée et la variable visuelle choisie**. Ben Shneiderman (1996) pose le mantra « overview first, zoom and filter, then details on demand ». Alberto Cairo formule l'éthique du graphique : « honesty, clarity, and depth come first ». Pour un praticien banque, ces référents permettent de **diagnostiquer une expérience qui ne marche pas** sans s'en remettre à l'intuition.
 
 ### 16.14.4 Le tournant humaniste — Lupi, Posavec, Fragapane
 
@@ -523,7 +520,7 @@ Le workshop IEEE VIS Gen4DS (2024) a institutionnalisé la question. Une revue r
 ==Aucun de ces régimes ne supprime l'auteur : ils déplacent son acte de valeur ajoutée — du tracé des courbes vers le **scénario, le rythme et le jugement éditorial**.== Pour la stack data agentique banque, le régime à viser est *humain-réviseur* pour les artefacts à enjeu (comités, reporting réglementaire) et *IA-collaboratrice* pour les artefacts internes à faible enjeu (suivi opérationnel, exploration). Le *fully-automatic* est exclu par construction des obligations AI Act art. 14 sur la supervision humaine.
 
 > [!NOTE] La place de cet encart dans l'Acte III
-> Cet encart ferme l'Acte III en posant que ==la **troisième voie d'interaction** — ni chat (régime 1 du Ch.14), ni copilote (régime 2), ni canvas (régime 3) — est une catégorie à part entière==, avec sa généalogie, ses contraintes, et ses usages 2026. Elle se déploie côté banque sous la forme d'expériences narratives génératives à la demande (§16.10) ; côté grand public, elle se déploie sous la forme de scrollytellings IA-assistés ; côté produit, elle se déploie sous la forme de briefs scénarisés type Tableau Pulse (Ch.14 §14.5). C'est le genre éditorial 2026 qui n'a pas encore son nom commercial, et c'est probablement le plus important à ne pas confondre avec les trois autres.
+> Cet encart ferme l'Acte III en posant que ==la **troisième voie d'interaction** — ni chat (régime 1 du [Ch. 14](ch14-surfaces-agentiques.md)), ni copilote (régime 2), ni canvas (régime 3) — est une catégorie à part entière==, avec sa généalogie, ses contraintes, et ses usages 2026. Elle se déploie côté banque sous la forme d'expériences narratives génératives à la demande (§16.10) ; côté grand public, sous la forme de scrollytellings IA-assistés ; côté produit, sous la forme de briefs scénarisés type Tableau Pulse ([Ch. 14](ch14-surfaces-agentiques.md) §14.5). C'est le genre éditorial 2026 qui n'a pas encore son nom commercial, et c'est probablement le plus important à ne pas confondre avec les trois autres.
 
 ---
 
@@ -550,7 +547,7 @@ Le workshop IEEE VIS Gen4DS (2024) a institutionnalisé la question. Une revue r
 
 Pour une banque française tier 1, le compteur tourne. L'échéance AI Act du 2 août 2026 ne décale pas. La supervision DORA s'installe. Les concurrents passent en prod. ==Le bon réflexe en mai 2026, ce n'est pas de choisir un modèle. C'est de mesurer la maturité du semantic layer, de cadrer la stratégie MCP, et de provisionner 70 % de l'investissement sur la gouvernance plutôt que sur l'agent.== Le reste suivra.
 
-L'Acte III est maintenant fermé. Le Ch.12 a posé MCP comme HTTP des agents, le Ch.13 a documenté son coût sécurité, le Ch.14 a cadré quatre régimes d'accès et fixé Knight, le Ch.15 a zoomé sur le pilotage écran, et le présent chapitre a instancié les quatre objets sur une banque française tier 1. L'Acte IV s'ouvre maintenant sur les mesures et garde-fous — évaluation, observabilité, sécurité, ROI, frugalité, gouvernance, société.
+L'Acte III est maintenant fermé. Le [Ch. 12](ch12-mcp-plateforme.md) a posé MCP comme HTTP des agents, le [Ch. 13](ch13-mcp-securite.md) a documenté son coût sécurité, le [Ch. 14](ch14-surfaces-agentiques.md) a cadré quatre régimes d'accès et fixé Knight, le [Ch. 15](ch15-computer-use.md) a zoomé sur le pilotage écran, et ce chapitre a instancié les quatre objets sur une banque française tier 1. L'Acte IV s'ouvre maintenant sur les mesures et garde-fous — évaluation, observabilité, sécurité, ROI, frugalité, gouvernance, société.
 
 ---
 
@@ -618,6 +615,6 @@ L'Acte III est maintenant fermé. Le Ch.12 a posé MCP comme HTTP des agents, le
 
 [^33]: Google Cloud Blog, *New Enhanced Tool Governance in Vertex AI Agent Builder*. [cloud.google.com/blog/products/ai-machine-learning/new-enhanced-tool-governance-in-vertex-ai-agent-builder](https://cloud.google.com/blog/products/ai-machine-learning/new-enhanced-tool-governance-in-vertex-ai-agent-builder). Consulté 2026-05-19.
 
-[^34]: Edward Segel & Jeffrey Heer, *Narrative Visualization: Telling Stories with Data*, IEEE TVCG, 2010. Voir aussi `narrative-experiences/` sur ce site pour la généalogie complète. Consulté 2026-05-19.
+[^34]: Edward Segel & Jeffrey Heer, *Narrative Visualization: Telling Stories with Data*, IEEE TVCG, 2010. Consulté 2026-05-19.
 
 [^35]: Google Cloud Codelabs, *Securing a Multi-Agent System with Model Armor*, et Medium *Secure AI Applications with Model Armor and Sensitive Data Protection*. [codelabs.developers.google.com/codelabs/production-ready-ai-roadshow/3-securing-a-multi-agent-system/securing-a-multi-agent-system](https://codelabs.developers.google.com/codelabs/production-ready-ai-roadshow/3-securing-a-multi-agent-system/securing-a-multi-agent-system). Consulté 2026-05-19.

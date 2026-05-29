@@ -1,7 +1,18 @@
+---
+chapitre: 22
+titre: "Externalité énergétique : IA frugale"
+acte: 4
+acte_titre: "Mesures et garde-fous"
+gabarit: standard
+mots: 8120
+statut: v1
+date_maj: 2026-05-29
+---
+
 # Chapitre 22 — Externalité énergétique : IA frugale
 
 > **Acte IV — Mesures et garde-fous · Gabarit standard, ~22 pages**
-> _Le débat public sur l'empreinte de l'IA est saturé de chiffres viraux faux d'un ordre de grandeur — 3 Wh par requête, 500 ml d'eau pour dix réponses, des datacenters qui « boivent » des fleuves. Ce chapitre absorbe le dossier `ia-frugale/` (13 mai 2026) pour reposer l'arithmétique honnête 2026, lire la matrice GHG à neuf cases (3 scopes × 3 phases), nommer les leviers qui marchent (Patterson 100-1 000×) et l'effet qui les neutralise (Jevons). Il ferme le triptyque tarifaire de l'Acte IV — Ch.5 mesure le prix par token, Ch.21 la valeur par outcome, ce chapitre l'externalité énergétique qui n'apparaît sur aucune facture. Et il bascule §22.9 vers le Ch.23 : la question de l'IA frugale n'est plus technique, elle est devenue politique._
+> _Le débat public sur l'empreinte de l'IA est saturé de chiffres viraux faux d'un ordre de grandeur — 3 Wh par requête, 500 ml d'eau pour dix réponses, des datacenters qui « boivent » des fleuves. Reposer l'arithmétique honnête 2026, lire la matrice GHG à neuf cases (3 scopes × 3 phases), nommer les leviers qui marchent (Patterson 100-1 000×) et l'effet qui les neutralise (Jevons). Clôture du triptyque tarifaire de l'Acte IV — [Ch. 5](ch05-economie-inference.md) mesure le prix par token, [Ch. 21](ch21-roi-paradoxe-agentique.md) la valeur par outcome, ici l'externalité énergétique qui n'apparaît sur aucune facture. Et bascule §22.9 vers le [Ch. 23](ch23-gouvernance-ai-act.md) : la question de l'IA frugale n'est plus technique, elle est devenue politique._
 
 > [!QUESTION] Question d'ouverture
 > Une requête ChatGPT consomme 0,3 Wh ou 3 Wh ? Une vidéo IA générée, 50 Wh ou 1 000 Wh ? Google a divisé par dix l'énergie par requête depuis 2019 — et ses émissions globales ont monté de **48 %** sur la même période[^google-2025]. ==Si chaque levier d'efficience est mangé par le volume qu'il rend possible, qu'est-ce qu'il reste à décider — et qui le décide ?==
@@ -20,16 +31,10 @@
 
 ## 22.1 La fabrique des chiffres viraux
 
-### 22.1.1 Place du chapitre dans le triptyque tarifaire
+> [!INFO] Voir [Ch. 5 — Économie de l'inférence](ch05-economie-inference.md) · [Ch. 21 — Mesurer le ROI (et le paradoxe agentique)](ch21-roi-paradoxe-agentique.md)
+> Le [Ch. 5](ch05-economie-inference.md) traite des **mêmes leviers techniques** — MoE, distillation, quantization, liquid cooling, geo-aware — sous l'angle *direct cost* (sept couches d'optimisation côté facture token). Ici, on les reprend sous l'angle *externalité environnementale*. La frontière est claire : [Ch. 5](ch05-economie-inference.md) = TWh qui se traduisent en lignes de facture cloud ; ici = TWh qui se traduisent en grid stress local, embodied carbon, eau. Les deux se lisent côte à côte sur les chantiers FinOps + RSE.
 
-L'Acte IV du livre lit la même facture sous trois angles complémentaires. Le **Ch.5** a posé la physique du **prix par token** — sept couches d'optimisation, LLMflation ×1000 entre 2022 et 2025, économie unitaire de l'inférence. Le **Ch.21** a posé la **valeur métier par outcome** — quatre ruptures structurelles, stack à quatre niveaux token→tâche→processus→outcome, paradoxe agentique. Ce chapitre pose la troisième lecture : ==l'externalité énergétique qui n'apparaît sur aucune facture==, jusqu'au jour où elle y apparaît brutalement (PPA nucléaire, taxe carbone, moratoire municipal).
-
-Les trois lectures se complètent strictement. Le décideur qui ne lit qu'une seule des trois prend une décision biaisée : optimiser le prix par token au détriment de la valeur outcome (Klarna §21.7), ou maximiser la valeur outcome sans regarder l'externalité (DeepSeek-V3 trigger Jevons), c'est se préparer une révision désagréable à 18-36 mois.
-
-> [!INFO] Voir Ch. 5 — Économie unitaire de l'inférence · Ch. 21 — ROI et paradoxe agentique
-> Le Ch.5 traite des **mêmes leviers techniques** que ce chapitre — MoE, distillation, quantization, liquid cooling, geo-aware — sous l'angle *direct cost* (sept couches d'optimisation côté facture token). Ce chapitre les reprend sous l'angle *externalité environnementale*. La frontière est claire : Ch.5 = TWh qui se traduisent en lignes de facture cloud ; Ch.22 = TWh qui se traduisent en grid stress local, embodied carbon, eau. Les deux se lisent côte à côte sur les chantiers FinOps + RSE.
-
-### 22.1.2 Quatre chiffres viraux et leur correction
+### 22.1.1 Quatre chiffres viraux et leur correction
 
 Avant de mesurer, il faut comprendre d'où viennent les phrases qui circulent. Quatre chiffres dominent le débat public depuis cinq ans, et trois sur quatre sont mal cités. La carte des jalons éditoriaux raconte l'histoire :
 
@@ -102,7 +107,7 @@ Reprenons à zéro, avec les chiffres de mai 2026.
 
 ### 22.3.2 Texte avec raisonnement — 5 à 20 Wh, l'explosion silencieuse
 
-**Modèles thinking (o3, Claude Opus thinking, DeepSeek R1, Gemini 2.5 Thinking).** Le modèle « réfléchit » avant de répondre, parfois plusieurs dizaines de secondes. La chaîne de raisonnement multiplie le coût par 20 à 70× : ==5 à 20 Wh par requête==. Sur du raisonnement long (preuve mathématique, agent autonome multi-étapes), des cas extrêmes dépassent 100 Wh — l'équivalent d'une heure d'ampoule LED. C'est exactement le facteur 10-74 documenté en Ch.2 sur AIME et en Ch.5 sur les régimes de scaling — vu sous l'angle énergétique, il devient l'**explosion silencieuse du thinking** : la même requête, sur un modèle de raisonnement, consomme un à deux ordres de grandeur de plus qu'en direct, et ce coût ne se voit nulle part dans l'interface utilisateur.
+**Modèles thinking (o3, Claude Opus thinking, DeepSeek R1, Gemini 2.5 Thinking).** Le modèle « réfléchit » avant de répondre, parfois plusieurs dizaines de secondes. La chaîne de raisonnement multiplie le coût par 20 à 70× : ==5 à 20 Wh par requête==. Sur du raisonnement long (preuve mathématique, agent autonome multi-étapes), des cas extrêmes dépassent 100 Wh — l'équivalent d'une heure d'ampoule LED. C'est exactement le facteur 10-74 documenté en [Ch. 2](ch02-modeles-raisonnement.md) sur AIME et en [Ch. 5](ch05-economie-inference.md) sur les régimes de scaling — vu sous l'angle énergétique, il devient l'**explosion silencieuse du thinking** : la même requête, sur un modèle de raisonnement, consomme un à deux ordres de grandeur de plus qu'en direct, et ce coût ne se voit nulle part dans l'interface utilisateur.
 
 ### 22.3.3 Image générée — 2 à 4 Wh
 
@@ -120,7 +125,7 @@ Et l'agrégat raconte une autre histoire. ==Si l'on prend les estimations de con
 
 ### 22.3.6 Cas concret — une équipe agentique en 2026
 
-Pour matérialiser, prenons un profil 2026 type : un développeur en stack MCP + agents, dont le quotidien est documenté en Ch.7 et Ch.12.
+Pour matérialiser, prenons un profil 2026 type : un développeur en stack MCP + agents, dont le quotidien est documenté en [Ch. 7](ch07-boucle-agentique.md) et [Ch. 12](ch12-mcp-plateforme.md).
 
 ![Stack-up énergétique d'une équipe agentique 2026|1300](../../ia-frugale/images/20260513-10-equipe-agentique.svg)
 
@@ -179,7 +184,7 @@ L'eau IA globale, rapportée à l'irrigation agricole, est négligeable. ==Le vr
 - **Taïwan (Taoyuan, Hsinchu, Tainan)** : 200 ML/jour pour TSMC, alors que le pays a connu sa pire sécheresse historique en 2021.
 
 > [!INFO] Dublin et la Virginie — la concentration en chiffres
-> **Dublin** absorbe 79 % de l'électricité urbaine en datacenters. **Virginie du Nord** (Loudoun, Prince William, Fairfax) absorbe ==26 % de la consommation électrique de l'État== — un État de 8,7 millions d'habitants. Le débat eau et électricité est municipal et national, pas mondial. C'est aussi ce qui prépare le bascule politique du Ch.23 — les régulateurs qui agiront en premier seront municipaux.
+> **Dublin** absorbe 79 % de l'électricité urbaine en datacenters. **Virginie du Nord** (Loudoun, Prince William, Fairfax) absorbe ==26 % de la consommation électrique de l'État== — un État de 8,7 millions d'habitants. Le débat eau et électricité est municipal et national, pas mondial. C'est aussi ce qui prépare le bascule politique du [Ch. 23](ch23-gouvernance-ai-act.md) — les régulateurs qui agiront en premier seront municipaux.
 
 ### 22.4.6 La réponse industrielle — Microsoft 12/2024
 
@@ -187,7 +192,7 @@ Microsoft a annoncé en décembre 2024[^microsoft-zero-water] que **tous ses nou
 
 ![Sankey des flux d'eau — évaporatif vs boucle fermée|1300](../../ia-frugale/images/20260513-11-sankey-eau.svg)
 
-==En dix-huit mois, l'industrie a tranché : l'eau d'évaporation, c'est fini sur les nouveaux sites.== Le scandale court-circuite l'industrie qui l'a déjà résolu. Le facteur ×120 sur le WUE annuel (1 200 m³/MW/an évaporatif → 10 m³/MW/an closed-loop, après remplissage initial) est l'une des inflexions les plus brutales jamais observées dans une infrastructure industrielle. Le scope 1 hydrique IA est en train de devenir un faux problème — il reste à régler le scope 2 thermique (qui dépend du mix électrique) et la concentration locale (qui ne se règle que politiquement, voir §22.8 et Ch.23).
+==En dix-huit mois, l'industrie a tranché : l'eau d'évaporation, c'est fini sur les nouveaux sites.== Le scandale court-circuite l'industrie qui l'a déjà résolu. Le facteur ×120 sur le WUE annuel (1 200 m³/MW/an évaporatif → 10 m³/MW/an closed-loop, après remplissage initial) est l'une des inflexions les plus brutales jamais observées dans une infrastructure industrielle. Le scope 1 hydrique IA est en train de devenir un faux problème — il reste à régler le scope 2 thermique (qui dépend du mix électrique) et la concentration locale (qui ne se règle que politiquement, voir §22.8 et [Ch. 23](ch23-gouvernance-ai-act.md)).
 
 ---
 
@@ -309,15 +314,15 @@ Cinq familles de leviers, classées par ordre de grandeur du gain potentiel et p
 ### 22.7.5 Comportement et design produit — ×5 à ×30
 
 - **Routage modèle** : le routeur GPT-5 d'OpenAI choisit dynamiquement entre mini, standard et thinking selon la difficulté. ==Un bon routage économise 80 % d'énergie sur l'usage agrégé.==
-- **Caching agressif** : 30 à 50 % des requêtes texte se rejouent. Le prompt caching d'Anthropic et le KV cache global de DeepSeek divisent le coût par 5 à 10 sur la portion répétée. Renvoi Ch.5 §5.4 pour la mécanique fine.
+- **Caching agressif** : 30 à 50 % des requêtes texte se rejouent. Le prompt caching d'Anthropic et le KV cache global de DeepSeek divisent le coût par 5 à 10 sur la portion répétée. Renvoi [Ch. 5](ch05-economie-inference.md) §5.4 pour la mécanique fine.
 - **SLM on-device** : la migration de l'inférence vers le téléphone/PC déplace la facture du scope 2 cloud (centralisé) vers le scope 3 device (distribué), avec un effet net globalement favorable au-delà d'un seuil d'usage.
 
 ### 22.7.6 Patterson combiné — le facteur 100 à 1 000×
 
 Patterson 2021 résume en une phrase : ==le choix combiné du DC, du DNN, et du processeur peut réduire l'empreinte carbone d'un entraînement par un facteur 100 à 1 000×.== C'est la nouvelle qui devrait dominer la couverture médiatique, et pourtant elle ne circule presque pas — sans doute parce qu'elle implique de citer une décision technique au lieu d'un slogan moral.
 
-> [!INFO] Voir Ch. 5 — mêmes leviers, angle direct cost
-> Les cinq familles ci-dessus sont **les mêmes** que celles déroulées en Ch.5 §5.2-5.8 (les sept couches d'optimisation côté coût par token). Les angles diffèrent : Ch.5 mesure des centimes de facture cloud ; Ch.22 mesure des grammes de CO₂eq, des litres d'eau et des MWh agrégés. Le décideur qui pilote son FinOps et son RSE doit lire les deux chapitres comme un seul tableau de bord — chaque optimisation d'architecture, hardware ou usage joue simultanément sur les deux faces de la même décision technique. La cohérence interne est forte : ce qui baisse le coût par token baisse aussi (presque) toujours l'empreinte par token. La divergence apparaît au niveau agrégé — c'est ce que la section suivante traite.
+> [!INFO] Voir [Ch. 5](ch05-economie-inference.md) — mêmes leviers, angle direct cost
+> Les cinq familles ci-dessus sont **les mêmes** que celles déroulées en [Ch. 5](ch05-economie-inference.md) §5.2-5.8 (les sept couches d'optimisation côté coût par token). Les angles diffèrent : [Ch. 5](ch05-economie-inference.md) mesure des centimes de facture cloud ; ici, des grammes de CO₂eq, des litres d'eau et des MWh agrégés. Le décideur qui pilote son FinOps et son RSE doit lire les deux chapitres comme un seul tableau de bord — chaque optimisation d'architecture, hardware ou usage joue simultanément sur les deux faces de la même décision technique. La cohérence interne est forte : ce qui baisse le coût par token baisse aussi (presque) toujours l'empreinte par token. La divergence apparaît au niveau agrégé — c'est ce que la section suivante traite.
 
 ---
 
@@ -378,8 +383,8 @@ Quatre points tiennent le chapitre, et le quatrième bascule vers le chapitre su
 
 L'IA frugale existe. Elle s'appelle Phi-4 sur un Copilot+ PC, Gemma 4 sur Android, un H100 en Iowa la nuit, un PPA nucléaire en Pennsylvanie, un cap urbain à Dublin. Elle n'a juste rien à voir avec la culpabilité du prompt qu'un utilisateur tape à 21 h depuis son canapé.
 
-> [!INFO] Voir Ch. 23 — Gouvernance
-> Le quatrième point est l'amorce du Ch.23. ==Là où s'arrête le mesurable, commence le politique.== Le triptyque tarifaire complet (Ch.5 coût token, Ch.21 valeur outcome, Ch.22 externalité énergétique) cesse d'être un sujet de mesure et devient un sujet de **décision collective**. Le Ch.23 traite de la gouvernance — six référentiels convergents (DORA, AI Act art. 9-15, EBA, BCBS 239, RGPD, ACPR) et la fenêtre du 2 août 2026 pour l'AI Act haut-risque. Le Jevons politique du §22.8 est ce qui transforme la mesure d'externalité en obligation réglementaire (prix carbone interne, caps régionaux, disclosure obligatoire EU DC EE Q2 2026, AI Energy Score). Le passage est direct : la mesure produit le diagnostic ; la gouvernance produit la décision ; l'AI Act produit l'obligation.
+> [!INFO] Voir [Ch. 23 — Gouvernance : AI Act, banque, machine unlearning](ch23-gouvernance-ai-act.md)
+> Le quatrième point est l'amorce du [Ch. 23](ch23-gouvernance-ai-act.md). ==Là où s'arrête le mesurable, commence le politique.== Le triptyque tarifaire complet ([Ch. 5](ch05-economie-inference.md) coût token, [Ch. 21](ch21-roi-paradoxe-agentique.md) valeur outcome, ici externalité énergétique) cesse d'être un sujet de mesure et devient un sujet de **décision collective**. Le [Ch. 23](ch23-gouvernance-ai-act.md) traite de la gouvernance — six référentiels convergents (DORA, AI Act art. 9-15, EBA, BCBS 239, RGPD, ACPR) et la fenêtre du 2 août 2026 pour l'AI Act haut-risque. Le Jevons politique du §22.8 est ce qui transforme la mesure d'externalité en obligation réglementaire (prix carbone interne, caps régionaux, disclosure obligatoire EU DC EE Q2 2026, AI Energy Score). Le passage est direct : la mesure produit le diagnostic ; la gouvernance produit la décision ; l'AI Act produit l'obligation.
 
 > [!WARNING] Trois pièges classiques (100 % traçables)
 > **Citer un chiffre énergie sans scope/date/phase** — produit un slogan, pas une mesure (cf. la mécanique des chiffres viraux §22.1). · **Confondre annualisé global et pic local** — l'IA mondiale est négligeable rapportée à l'aviation civile, mais elle absorbe 79 % de Dublin et 26 % de la Virginie. Le bon dénominateur dépend de la décision visée. · **Croire que MoE + nucléaire suffit** — sans plafond Jevons, tous les gains techniques sont mangés par le volume. Google +48 % d'émissions en cinq ans malgré -10× par requête en est la preuve empirique la plus nette.

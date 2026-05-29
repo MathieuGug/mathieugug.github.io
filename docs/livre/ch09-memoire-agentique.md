@@ -1,7 +1,18 @@
+---
+chapitre: 9
+titre: "Mémoire agentique : 4 piliers, 6 opérations, 5 architectures"
+acte: 2
+acte_titre: "La boucle"
+gabarit: standard
+mots: 6900
+statut: v1
+date_maj: 2026-05-29
+---
+
 # Chapitre 9 — Mémoire agentique : quatre piliers, six opérations, cinq architectures
 
 > **Acte II — La boucle · Chapitre standard, ~22 pages**
-> _Comment un agent se souvient-il de la conversation d'hier, du projet en cours, du dernier résultat de son sous-agent — et où ça casse en prod ? Ce chapitre pose la **grille canonique de la mémoire agentique** (CoALA, Princeton, TMLR 2024), cartographie les cinq architectures de production qui s'en sont déduites en moins de 24 mois, et trace la frontière régulatoire (MITRE ATLAS AML.T0080, RGPD art. 17, AI Act art. 10/25) que le déployeur 2026 ne peut plus traiter en option._
+> _Comment un agent se souvient-il de la conversation d'hier, du projet en cours, du dernier résultat de son sous-agent — et où ça casse en prod ? La **grille canonique de la mémoire agentique** (CoALA, Princeton, TMLR 2024), les cinq architectures de production qui s'en sont déduites en moins de 24 mois, et la frontière régulatoire (MITRE ATLAS AML.T0080, RGPD art. 17, AI Act art. 10/25) que le déployeur 2026 ne peut plus traiter en option._
 
 > [!QUESTION] Question d'ouverture
 > Si **95 %** des pilotes GenAI en entreprise n'aboutissent pas (MIT NANDA, juillet 2025[^1]) et que Gartner anticipe **40 %** d'abandons de projets agentiques d'ici fin 2027[^2] — pour la même cause racine, le *learning gap* — pourquoi continue-t-on à empiler du contexte au lieu d'investir dans une mémoire gouvernée ? Et qu'est-ce qu'« oublier » veut dire, opérationnellement, dans un système qui a vectorisé, paraphrasé et indexé l'information sur six mois ?
@@ -18,11 +29,7 @@
 
 ## 9.1 Le déficit d'apprentissage : pourquoi la mémoire est devenue le goulot
 
-### 9.1.1 La place de ce chapitre dans l'Acte II
-
-Le Ch. 7 a posé le **harness** comme l'amplificateur qui transforme un LLM en agent — et listé sept couches dont l'une, la **couche mémoire**, restait sous-spécifiée. Ce chapitre l'instancie. Le Ch. 10 qui suit (compaction) approfondit un sous-pilier — la mémoire de travail / scratchpad — sous l'angle de son éviction. ==Ensemble, Ch. 9 et Ch. 10 forment le cœur cognitif de l'Acte II== : le stock d'un côté, l'oubli stratégique de l'autre. Lus séparément, ils manquent leur cible ; lus ensemble, ils donnent à un agent engineer la grille complète pour designer la couche mémoire d'un système production.
-
-### 9.1.2 L'amnésie comme signature opérationnelle
+### 9.1.1 L'amnésie comme signature opérationnelle
 
 Le rapport MIT NANDA *State of AI in Business 2025* — fondé sur 52 entretiens d'organisations, 153 réponses de dirigeants et l'analyse de plus de 300 déploiements publics — fait converger un diagnostic[^1] : malgré 30 à 40 milliards de dollars investis en GenAI sur l'année écoulée, **95 % des entreprises ne constatent aucun retour mesurable sur leurs projets**. Le facteur central n'est ni la qualité des modèles, ni le cadre régulatoire — c'est l'**absence d'apprentissage et de mémoire** dans les systèmes déployés. Gartner converge en juin 2025[^2] : *plus de 40 % des projets agentiques seront annulés d'ici fin 2027*, pour cause de coûts incontrôlés, valeur commerciale floue et contrôles de risque inadéquats — autant de symptômes d'un même mal racine.
 
@@ -30,16 +37,16 @@ Cette amnésie a une signature opérationnelle reconnaissable. Un agent qui oubl
 
 ![Cadrage stratégique — MIT NANDA, Gartner, et la courbe reasoning-in-haystack|1300](../../memoire-agentique/images/20260430-01-cadrage-strategique.svg)
 
-### 9.1.3 Le contexte long ne résout pas le problème
+### 9.1.2 Le contexte long ne résout pas le problème
 
 L'objection commune — *« si la fenêtre est plus grande que la trajectoire, on n'a pas besoin de mémoire externe »* — a longtemps tenu côté commercial. Anthropic, OpenAI, Google ont successivement annoncé 200 k, 1 M, puis 2 M tokens entre 2023 et 2025. Le travail *AI-native Memory* (Shang et al., 2024[^3]) la démonte. La méthode est simple : on insère une information cruciale au milieu d'un texte extrêmement long et distrayant, puis on pose une question qui exige non seulement de **retrouver** cette information, mais de **l'utiliser dans un raisonnement**. Le test du *reasoning-in-a-haystack* donne un verdict sans équivoque : même les modèles les plus sophistiqués voient leur précision chuter à mesure que la longueur croît — pas linéairement, par paliers — démontrant que ==le long contexte nuit à la capacité de raisonner et de récupérer *simultanément*==.
 
-Le pattern Liu et al. (TACL 2024, *Lost in the Middle*), traité en détail en Ch. 10 §10.2, l'isole sur une dimension simple : la performance d'un agent question-answering trace une courbe en U selon la position de l'information cible dans la fenêtre. Étendre la fenêtre sans repenser la *gestion* du contenu revient à empiler de la mémoire morte.
+Le pattern Liu et al. (TACL 2024, *Lost in the Middle*), traité en détail en [Ch. 10](ch10-compaction.md) §10.2, l'isole sur une dimension simple : la performance d'un agent question-answering trace une courbe en U selon la position de l'information cible dans la fenêtre. Étendre la fenêtre sans repenser la *gestion* du contenu revient à empiler de la mémoire morte.
 
 L'étude *Agent Hospital* (Li et al., 2024[^17]) et son successeur *MedAgentSim* (Almansoori et al., 2025[^18]) quantifient le coût dans un cadre médical critique. Sur le benchmark MIMIC-IV, des agents dotés de mécanismes de mémoire et d'auto-amélioration atteignent **79,5 % de précision diagnostique**, là où les modèles de base peinent à dépasser 40 %. L'écart n'est pas marginal — il définit la frontière entre un démonstrateur et un système déployable. ==La mémoire n'est pas un confort d'expérience utilisateur ; c'est le mécanisme par lequel un agent devient *intrinsèquement* plus fiable.==
 
-> [!INFO] Voir Ch. 7 — Le harness et ses sept couches
-> La couche mémoire (n° 5 dans la grille Ch. 7 §7.2) reste sous-spécifiée tant qu'on n'a pas posé la grille des quatre piliers + six opérations. Ce chapitre l'instancie. Le Ch. 10 qui suit approfondit un sous-pilier (le scratchpad / mémoire de travail) sous l'angle de la compaction.
+> [!INFO] Voir [Ch. 7 — Reason · Act · Observe](ch07-boucle-agentique.md)
+> La couche mémoire (n° 5 dans la grille [Ch. 7](ch07-boucle-agentique.md) §7.2) reste sous-spécifiée tant qu'on n'a pas posé la grille des quatre piliers + six opérations — c'est ce que ce chapitre fait. Le [Ch. 10](ch10-compaction.md) qui suit approfondit un sous-pilier (le scratchpad / mémoire de travail) sous l'angle de la compaction.
 
 ---
 
@@ -51,7 +58,7 @@ Le travail fondateur *Cognitive Architectures for Language Agents* (CoALA), publ
 
 ### 9.2.1 Mémoire de travail — le scratchpad de l'instant présent
 
-Le *bloc-notes* à très court terme qui maintient l'état d'avancement d'une tâche en cours. Implémentation typique : injection directe dans le prompt sous forme de *scratchpad* (Yao et al. ReAct, Anthropic *thinking* blocks, OpenAI scratchpad implicite). Sur des processus structurés, son architecture détermine la fiabilité — les contributeurs IMA documentent que les agents avec mémoire de travail **non structurée** échouent dans la moitié des cas (50 %), contre **90 %** de réussite pour ceux opérant avec un protocole structuré sur les mêmes tâches[^16]. C'est ce pilier qui sature en premier sur les trajectoires longues, et c'est lui que le Ch. 10 approfondit sous l'angle de la compaction.
+Le *bloc-notes* à très court terme qui maintient l'état d'avancement d'une tâche en cours. Implémentation typique : injection directe dans le prompt sous forme de *scratchpad* (Yao et al. ReAct, Anthropic *thinking* blocks, OpenAI scratchpad implicite). Sur des processus structurés, son architecture détermine la fiabilité — les contributeurs IMA documentent que les agents avec mémoire de travail **non structurée** échouent dans la moitié des cas (50 %), contre **90 %** de réussite pour ceux opérant avec un protocole structuré sur les mêmes tâches[^16]. C'est ce pilier qui sature en premier sur les trajectoires longues, et c'est lui que le [Ch. 10](ch10-compaction.md) approfondit sous l'angle de la compaction.
 
 ### 9.2.2 Mémoire sémantique — l'encyclopédie
 
@@ -96,8 +103,8 @@ L'organisation intelligente de la mémoire (typiquement via une base vectorielle
 
 Le résumé d'information pour optimiser le stockage et l'usage du contexte. *MemoryBank* (Zhong et al., AAAI 2024[^20]) crée des résumés quotidiens de haut niveau ; *TiM* extrait les relations clés. Le sujet est si dense qu'il fait l'objet du **chapitre suivant** dans son intégralité — la compaction comme première politique d'oubli active.
 
-> [!INFO] Voir Ch. 10 — Compaction et oubli stratégique
-> Le Ch. 10 approfondit la compression sous l'angle de la **mémoire de travail / scratchpad**, avec ses cinq familles (summarization LLM, eviction attention-based, hiérarchique paging, retrieval-augmentée, compactors appris) et le triangle non-dégénéré **fidélité × coût × oubliabilité**. La compression long-terme (résumés quotidiens MemoryBank, decay temporel Mem0) reste dans ce chapitre.
+> [!INFO] Voir [Ch. 10 — Compaction et oubli stratégique](ch10-compaction.md)
+> [Ch. 10](ch10-compaction.md) approfondit la compression sous l'angle de la **mémoire de travail / scratchpad**, avec ses cinq familles (summarization LLM, eviction attention-based, hiérarchique paging, retrieval-augmentée, compactors appris) et le triangle non-dégénéré **fidélité × coût × oubliabilité**. La compression long-terme (résumés quotidiens MemoryBank, decay temporel Mem0) reste traitée ici.
 
 ### 9.3.6 Oubli (forgetting)
 
@@ -165,7 +172,7 @@ Lance Martin (LangChain) a structuré le champ en quatre stratégies générique
 
 ### 9.5.1 Write — sortir l'information du contexte
 
-Sauvegarder dans un scratchpad (TODO file, mémoire structurée), externaliser des résultats d'outils dans un système de fichiers. ==L'équipe Manus atteint des ratios de compression 100:1== en gardant la réversibilité (URL pour récupérer le contenu complet si nécessaire). Le pattern est commun à Claude Code (filesystem-backed scratchpads), Cursor (workspace state) et aux harnesses orientés *bash is all you need* (cf. Ch. 7 §7.5.2).
+Sauvegarder dans un scratchpad (TODO file, mémoire structurée), externaliser des résultats d'outils dans un système de fichiers. ==L'équipe Manus atteint des ratios de compression 100:1== en gardant la réversibilité (URL pour récupérer le contenu complet si nécessaire). Le pattern est commun à Claude Code (filesystem-backed scratchpads), Cursor (workspace state) et aux harnesses orientés *bash is all you need* (cf. [Ch. 7](ch07-boucle-agentique.md) §7.5.2).
 
 ### 9.5.2 Select — choisir ce qui rentre
 
@@ -173,11 +180,11 @@ Retrieval ciblé (RAG), sélection de quelques exemples few-shot par similarité
 
 ### 9.5.3 Compress — réduire ce qui rentre
 
-Résumés successifs, synthèses hiérarchiques, *condensation* de l'historique conversationnel. *MemoryBank* implémente la compression quotidienne ; *Reflexion* compresse les échecs en leçons ; la commande `/compact` de Claude Code est l'archétype côté harness. Le sujet est traité en détail au Ch. 10.
+Résumés successifs, synthèses hiérarchiques, *condensation* de l'historique conversationnel. *MemoryBank* implémente la compression quotidienne ; *Reflexion* compresse les échecs en leçons ; la commande `/compact` de Claude Code est l'archétype côté harness. Le sujet est traité en détail au [Ch. 10](ch10-compaction.md).
 
 ### 9.5.4 Isolate — cloisonner
 
-Sandboxer un sous-agent dans un contexte restreint pour éviter la pollution d'attention, déléguer une sous-tâche à un agent spécialisé qui aura son propre contexte. Le pattern *planner / executor / critic* en est l'incarnation classique[^6]. C'est aussi ce que le pattern à trois agents (GAN-inspiré, Ch. 7 §7.4) opère structurellement.
+Sandboxer un sous-agent dans un contexte restreint pour éviter la pollution d'attention, déléguer une sous-tâche à un agent spécialisé qui aura son propre contexte. Le pattern *planner / executor / critic* en est l'incarnation classique[^6]. C'est aussi ce que le pattern à trois agents (GAN-inspiré, [Ch. 7](ch07-boucle-agentique.md) §7.4) opère structurellement.
 
 > [!QUOTE] Karpathy — la bascule modèle ↔ contexte
 > *« Dans la plupart des cas où les agents échouent, ce n'est pas le modèle qui échoue, c'est le contexte. »* (Karpathy, juin 2025, repris par Tobias Lütke et Greg Brockman[^27].) Pour un agent engineer 2026, le déplacement est concret : ne pas s'enfermer dans la course aux modèles, investir dans la **couche d'orchestration mémoire / contexte** qui se place au-dessus.
@@ -242,8 +249,8 @@ Les défenses connues couvrent plusieurs niveaux, et aucune n'est suffisante seu
 - **Utilisateur** : *tableau de bord mémoire* permettant de visualiser, corriger et oublier sélectivement — recommandé par les contributeurs IMA[^16] et désormais standard chez Anthropic et OpenAI ; mode Incognito pour les conversations sensibles.
 - **Organisation** : audit régulier, purge périodique, sources de confiance documentées.
 
-> [!INFO] Voir Ch. 19 — Threat model unifié 2026 (schéma E4)
-> Le vecteur memory poisoning est l'une des six branches du **schéma essentiel transverse E4** (modèle / prompt / mémoire / outil / protocole / surface) qui agrège, en Ch. 19, l'ensemble des surfaces d'attaque 2026. Le présent chapitre traite la verticale mémoire ; le Ch. 13 traite la verticale outil/protocole (MCP) ; le Ch. 19 fournit la matrice transverse pour le RSSI.
+> [!INFO] Voir [Ch. 19 — Garde-fous et sécurité globale](ch19-gardefous-securite-globale.md)
+> Le vecteur memory poisoning est l'une des six branches du **schéma essentiel transverse E4** (modèle / prompt / mémoire / outil / protocole / surface) qui agrège, en [Ch. 19](ch19-gardefous-securite-globale.md), l'ensemble des surfaces d'attaque 2026. La verticale mémoire est traitée ici ; le [Ch. 13](ch13-mcp-securite.md) traite la verticale outil/protocole (MCP) ; le [Ch. 19](ch19-gardefous-securite-globale.md) fournit la matrice transverse pour le RSSI.
 
 ### 9.7.3 RGPD, AI Act et le défi du *machine unlearning*
 
@@ -257,8 +264,8 @@ Les contributeurs IMA distinguent à juste titre deux régimes[^16] :
 > [!IMPORTANT] La gouvernance tactique en trois actions
 > (1) **Consentement explicite et durée de rétention bornée** (par exemple 6 mois renouvelables), (2) **gestion documentée de l'effacement** sur le périmètre opérationnel, (3) **reconnaissance explicite des limites** sur le périmètre paramétrique. ==Cette honnêteté technique est un déterminant de confiance, pas un aveu de faiblesse.==
 
-> [!INFO] Voir Ch. 23 — Gouvernance, machine unlearning et AI Act
-> Le Ch. 23 traite la grille réglementaire dans son ensemble (calendrier 2026-2027, sous-puits *machine unlearning*, rôle DPO/RSSI/Sponsor). La présente section instancie sur le cas spécifique de la mémoire persistante.
+> [!INFO] Voir [Ch. 23 — Gouvernance, machine unlearning et AI Act](ch23-gouvernance-ai-act.md)
+> [Ch. 23](ch23-gouvernance-ai-act.md) traite la grille réglementaire dans son ensemble (calendrier 2026-2027, sous-puits *machine unlearning*, rôle DPO/RSSI/Sponsor). Le détail mémoire persistante est instancié ici.
 
 ---
 
@@ -288,8 +295,8 @@ La transformation d'un agent amnésique en partenaire persistant est moins un *b
 - **Déployer en multi-agents** : partage de mémoire gouverné, *Memory Pool* avec scoring de qualité.
 - **Mémoire procédurale induite** : *Agent Workflow Memory* permet à l'agent d'extraire automatiquement de nouveaux workflows à partir des trajectoires passées[^19], réduisant la maintenance manuelle des prompts complexes.
 
-> [!INFO] Voir Ch. 18 — Observabilité agentique
-> La mesure des indicateurs ci-dessus repose sur la **télémétrie OpenTelemetry GenAI semconv** traitée en Ch. 18 (six piliers télémétrie + cognitive audit trail). Les attributs `gen_ai.memory.*` (en cours de spécification par le WG fin 2026, en miroir des `gen_ai.compaction.*` du Ch. 10) sont l'infrastructure de mesure obligatoire pour qui veut défendre son ROI mémoire face à un DPO ou à un auditeur AI Act.
+> [!INFO] Voir [Ch. 18 — Observabilité agentique et cognitive audit trail](ch18-observabilite-cognitive-audit-trail.md)
+> La mesure des indicateurs ci-dessus repose sur la **télémétrie OpenTelemetry GenAI semconv** traitée en [Ch. 18](ch18-observabilite-cognitive-audit-trail.md) (six piliers télémétrie + cognitive audit trail). Les attributs `gen_ai.memory.*` (en cours de spécification par le WG fin 2026, en miroir des `gen_ai.compaction.*` du [Ch. 10](ch10-compaction.md)) sont l'infrastructure de mesure obligatoire pour qui veut défendre son ROI mémoire face à un DPO ou à un auditeur AI Act.
 
 ---
 
@@ -297,9 +304,9 @@ La transformation d'un agent amnésique en partenaire persistant est moins un *b
 
 ![Taxonomie des quatre piliers — récap chapitre|1300](../../memoire-agentique/images/20260430-02-taxonomie-piliers.svg)
 
-Si le lecteur ne retient qu'une page de ce chapitre, c'est celle-ci. ==Quatre piliers (travail, sémantique, épisodique, procédurale), six opérations (récupération, consolidation, mise à jour, indexation, compression, oubli), cinq architectures de production (Letta, Generative Agents, A-MEM, Zep, Mem0).== Une architecture mémoire d'entreprise se conçoit en croisant ces trois axes — pas en achetant un framework et en espérant que la grille viendra avec.
+==**À retenir** : quatre piliers (travail, sémantique, épisodique, procédurale), six opérations (récupération, consolidation, mise à jour, indexation, compression, oubli), cinq architectures de production (Letta, Generative Agents, A-MEM, Zep, Mem0).== Une architecture mémoire d'entreprise se conçoit en croisant ces trois axes — pas en achetant un framework et en espérant que la grille viendra avec.
 
-Le Ch. 10 approfondit immédiatement le pilier *travail* sous l'angle de la **compaction** (cinq familles, triangle non-dégénéré fidélité × coût × oubliabilité). Le Ch. 19 agrège la verticale mémoire dans le **threat model unifié 2026** (schéma E4). Le Ch. 23 prend le sujet par le bout réglementaire (RGPD art. 17, AI Act art. 10/25, machine unlearning). Les trois lectures sont complémentaires — pas redondantes.
+Le [Ch. 10](ch10-compaction.md) approfondit immédiatement le pilier *travail* sous l'angle de la **compaction** (cinq familles, triangle non-dégénéré fidélité × coût × oubliabilité). Le [Ch. 19](ch19-gardefous-securite-globale.md) agrège la verticale mémoire dans le **threat model unifié 2026** (schéma E4). Le [Ch. 23](ch23-gouvernance-ai-act.md) prend le sujet par le bout réglementaire (RGPD art. 17, AI Act art. 10/25, machine unlearning). Les trois lectures sont complémentaires — pas redondantes.
 
 ---
 

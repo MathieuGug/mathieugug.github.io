@@ -1,7 +1,18 @@
+---
+chapitre: 4
+titre: "Décode spéculative et la course au token/sec"
+acte: 1
+acte_titre: "Les moteurs"
+gabarit: standard
+mots: 6590
+statut: v1
+date_maj: 2026-05-29
+---
+
 # Chapitre 4 — Décode spéculative et la course au token/sec
 
 > **Acte I — Les moteurs · Chapitre standard, ~22 pages**
-> _Le Ch.2 a posé la seconde courbe de scaling — depuis o1, on dépense du compute **à l'inférence** pour chercher, vérifier, corriger. Ce surcoût se paye en latence : un raisonnement qui consomme dix fois plus de tokens met dix fois plus longtemps à sortir si l'on décode token après token. Le Ch.4 documente comment l'industrie a regagné le facteur perdu — sans dégrader la qualité — via une optimisation devenue option par défaut des serveurs en 2026. La décode spéculative n'est ni un compromis, ni un free lunch : c'est une optimisation **conditionnelle** dont le gain s'évapore dès que l'on quitte deux régimes précis. Tout le chapitre tient en deux phrases : la spec marche en memory-bound à batch faible et sur un domaine in-distribution. En dehors de ces deux conditions, elle peut devenir perte nette — silencieusement._
+> _La seconde courbe de scaling est désormais acquise — depuis o1, on dépense du compute **à l'inférence** pour chercher, vérifier, corriger. Ce surcoût se paye en latence : un raisonnement qui consomme dix fois plus de tokens met dix fois plus longtemps à sortir si l'on décode token après token. Comment l'industrie a regagné le facteur perdu — sans dégrader la qualité — via une optimisation devenue option par défaut des serveurs en 2026. La décode spéculative n'est ni un compromis, ni un free lunch : c'est une optimisation **conditionnelle** dont le gain s'évapore dès que l'on quitte deux régimes précis. Tout tient en deux phrases : la spec marche en memory-bound à batch faible et sur un domaine in-distribution. En dehors de ces deux conditions, elle peut devenir perte nette — silencieusement._
 
 > [!QUESTION] Question d'ouverture
 > Si le draft model accepte 80 % de ses propositions sur du code mais 45 % sur de la prose créative, à partir de quel batch et sur quel cas d'usage la spec devient-elle une perte nette plutôt qu'un gain ? Et comment instrumente-t-on un paramètre — l'acceptance rate — qui peut dériver silencieusement de 75 % à 35 % en dix-huit mois sans qu'aucune alerte ne se déclenche, parce que le SLA de latence se dégrade lentement et que le serveur continue de répondre ?
@@ -15,25 +26,13 @@
 
 ---
 
-## 4.1 Place du chapitre dans l'Acte I
-
-### 4.1.1 Le chaînon qui referme l'Acte I
-
-L'Acte I déroule la physique des moteurs LLM dans un ordre de profondeur croissante. Le Ch.1 pose le cœur stochastique — un dé pondéré sous chaque token. Le Ch.2 ouvre la seconde courbe de scaling : depuis o1 (septembre 2024), on dépense du compute **à l'inférence** pour chercher, vérifier, corriger — RLVR, GRPO, interleaved thinking, parallel thinking. Le Ch.3 documente la couche notateur cachée (process reward models) qui annote chaque étape. Le présent Ch.4 répond à la conséquence directe de Ch.2 : ==si un raisonnement consomme dix fois plus de tokens qu'une réponse directe, il met dix fois plus longtemps à sortir — et l'industrie a passé deux ans à regagner ce facteur perdu==. Le Ch.5 fermera l'Acte en agrégeant l'addition économique des sept couches d'optim qui rendent la baisse de prix au token soutenable.
-
-> [!INFO] Voir Ch. 2 — Les modèles de raisonnement et la seconde courbe de scaling
-> Le Ch.2 explique **pourquoi** on dépense du compute à l'inférence : la pensée est devenue un programme stochastique outillé, le second axe de scaling (Snell et al.) déplace une partie du coût de l'entraînement vers l'inférence. Le présent Ch.4 explique **comment** on regagne le débit perdu sans dégrader la qualité. Frontière éditoriale stricte : la formule du speedup spéculatif tient ici ; la justification du *pourquoi reasoning* reste en Ch.2.
-
-> [!INFO] Voir Ch. 5 — L'économie unitaire de l'inférence
-> Le Ch.5 agrège les **sept couches** d'optimisation qui ont permis la LLMflation × 1 000 en trois ans : PagedAttention, FlashAttention-3, batching continu, FP8/FP4, **décode spéculative**, désagrégation prefill/decode, MoE. Le présent Ch.4 est le zoom monographique sur **une** de ces couches — celle dont la mécanique mathématique est la plus intéressante et dont les deux pièges (acceptance rate, batching) sont les plus traîtres pour un déploiement de production. La pile complète reste Ch.5 ; les matrices framework de Ch.4 et Ch.5 sont **côte à côte, pas fusionnées** (décision outline) — elles couvrent deux couches différentes du même empilement.
-
-### 4.1.2 Pourquoi décoder est sériel
+## 4.1 Pourquoi décoder est sériel
 
 L'inférence LLM se découpe en deux phases asymétriques. La **prefill** traite le prompt complet en un seul forward parallèle : 1 000 tokens d'entrée = 1 forward, compute-bound, le GPU sature ses tensor cores. La **decode** génère les tokens de sortie *un par un*, chaque token dépendant du précédent : 100 tokens de sortie = 100 forwards séquentiels[^6]. Cette deuxième phase est **memory-bound** — le goulot n'est pas le compute, c'est le débit de lecture du KV cache et des poids du modèle depuis la HBM vers les registres.
 
 Une seule décode autoregressive d'un Llama-3 70B sur un H100 lit environ 140 Go de poids et 2-30 Go de KV cache par token généré, sur une bande passante HBM3 de ~3,35 To/s — ce qui plafonne théoriquement à ~24 tokens/seconde. ==Le GPU passe l'essentiel de son temps à attendre la mémoire ; ses tensor cores sont sous-utilisés (souvent à 5-15 % de leur peak FLOPS pendant la décode)==[^6]. C'est ce *slack compute* qui rend la spéculation possible : il y a de la puissance de calcul disponible si l'on trouve un moyen d'évaluer plusieurs tokens en parallèle.
 
-D'où l'idée fondatrice. Plutôt que d'attendre que le target produise le token N pour ensuite produire le token N+1, on demande à un **petit modèle rapide** (le *draft*) de produire spéculativement les K tokens suivants. Le *target* — le gros modèle — les valide tous en **un seul forward parallèle** (compute-bound, comme un mini-prefill). Si le draft a bien deviné, on a généré K tokens en un seul aller-retour HBM au lieu de K. Si le draft a mal deviné, on retombe sur la décode normale à partir du dernier token accepté. C'est la mécanique fondatrice ; tout ce qui suit dans le chapitre en est variation, raffinement, ou diagnostic du moment où elle cesse de payer.
+D'où l'idée fondatrice. Plutôt que d'attendre que le target produise le token N pour ensuite produire le token N+1, on demande à un **petit modèle rapide** (le *draft*) de produire spéculativement les K tokens suivants. Le *target* — le gros modèle — les valide tous en **un seul forward parallèle** (compute-bound, comme un mini-prefill). Si le draft a bien deviné, on a généré K tokens en un seul aller-retour HBM au lieu de K. Si le draft a mal deviné, on retombe sur la décode normale à partir du dernier token accepté. C'est la mécanique fondatrice ; tout ce qui suit en est variation, raffinement, ou diagnostic du moment où elle cesse de payer.
 
 ---
 
@@ -144,8 +143,8 @@ où `α` est l'acceptance rate par token, K le nombre de tokens proposés, `T_ta
 
 EAGLE-3 et Medusa-2 incluent des mécanismes de **draft tree dynamique** qui adaptent la profondeur K et la largeur (nombre de branches dans le tree) à la confiance courante : sur une zone à haute prédictibilité (génération de code structuré), le tree pousse à K=8 et largeur 4 ; sur une zone créative, il retombe à K=3 et largeur 1 — voire désactive temporairement la spéculation jusqu'à ce qu'on quitte la zone difficile. Cette adaptativité est ce qui distingue une intégration GA mature (vLLM 0.6+, TensorRT-LLM 0.9+) d'un prototype académique[^4][^9][^10].
 
-> [!INFO] Voir Ch. 18 — Observabilité agentique et cognitive audit trail
-> L'OpenTelemetry GenAI semconv WG a ouvert mi-2026 un sous-groupe `gen_ai.speculative.*` qui standardise les champs `acceptance_rate`, `draft_model.id`, `draft_model.version`, `accepted_tokens`, `rejected_tokens`, `tree_depth`, `tree_width`. Pour le décideur, c'est la condition pour que l'instrumentation d'α devienne **portable entre vendeurs** au lieu de rester captive de chaque framework — exactement comme `gen_ai.usage.*` a permis de comparer les coûts token cross-provider depuis 2025. Le pattern complet de l'OTel GenAI semconv (cognitive audit trail, 6 piliers télémétrie, vendor landscape) tient en Ch.18.
+> [!INFO] Voir [Ch. 18 — Observabilité agentique et cognitive audit trail](ch18-observabilite-cognitive-audit-trail.md)
+> L'OpenTelemetry GenAI semconv WG a ouvert mi-2026 un sous-groupe `gen_ai.speculative.*` qui standardise les champs `acceptance_rate`, `draft_model.id`, `draft_model.version`, `accepted_tokens`, `rejected_tokens`, `tree_depth`, `tree_width`. Pour le décideur, c'est la condition pour que l'instrumentation d'α devienne **portable entre vendeurs** au lieu de rester captive de chaque framework — exactement comme `gen_ai.usage.*` a permis de comparer les coûts token cross-provider depuis 2025. Le pattern complet de l'OTel GenAI semconv tient en [Ch. 18](ch18-observabilite-cognitive-audit-trail.md) : cognitive audit trail, 6 piliers télémétrie, vendor landscape.
 
 ---
 
@@ -186,7 +185,7 @@ La référence de fait depuis la publication SOSP 2023[^6]. Architecture PagedAt
 
 ### 4.6.2 SGLang (sgl-project, fondé par Lianmin Zheng, ex-LMSYS)
 
-Né en 2024 comme alternative académique à vLLM, ciblant initialement les workloads multi-tour structurés (RadixAttention pour le prefix caching agressif). Support spéculatif aligné sur vLLM : draft externe, Medusa, EAGLE-1/2/3. ==RadixAttention + spéculation = particulièrement efficace pour les workloads agentiques où les prompts partagent des préfixes longs== (system prompt, contexte conversationnel, historique d'outils)[^9]. License Apache 2.0. **Choix montant pour workloads agentiques et multi-tour conversationnels** — typiquement les déploiements qui hébergent des assistants longue-mémoire ou des agents harness-driven (cf. Ch.7).
+Né en 2024 comme alternative académique à vLLM, ciblant initialement les workloads multi-tour structurés (RadixAttention pour le prefix caching agressif). Support spéculatif aligné sur vLLM : draft externe, Medusa, EAGLE-1/2/3. ==RadixAttention + spéculation = particulièrement efficace pour les workloads agentiques où les prompts partagent des préfixes longs== (system prompt, contexte conversationnel, historique d'outils)[^9]. License Apache 2.0. **Choix montant pour workloads agentiques et multi-tour conversationnels** — typiquement les déploiements qui hébergent des assistants longue-mémoire ou des agents harness-driven (cf. [Ch. 7](ch07-boucle-agentique.md)).
 
 ### 4.6.3 TensorRT-LLM (NVIDIA)
 
@@ -218,7 +217,7 @@ Trois directions de recherche structurent l'avenir court de la décode spéculat
 
 ## 4.8 Récap — deux régimes, trois pièges, une métrique
 
-Le chapitre tient en trois invariants à mémoriser pour qui déploie de la décode spéculative en 2026 :
+Trois invariants à mémoriser pour qui déploie de la décode spéculative en 2026 :
 
 - **Le théorème d'équivalence rend la spec gratuite côté qualité.** La sortie est bit-identique en sampling stochastique ; aucune justification produit n'est nécessaire. C'est pourquoi tous les serveurs récents l'activent par défaut, et c'est aussi pourquoi son dysfonctionnement passe inaperçu — ce qui marche silencieusement déraille silencieusement.
 - **Le gain est conditionnel.** Speedup maximal sur deux régimes simultanés : (a) acceptance rate α ≥ 0,5 (code, Q&A factuel, prose informative) et (b) batch ≤ 16-24 selon variante et GPU. Hors de ces deux régimes, le speedup s'effondre ; au-delà d'un seuil de batch ou en dessous de α ≈ 0,3, la spec devient perte nette.
@@ -235,9 +234,9 @@ Le chapitre tient en trois invariants à mémoriser pour qui déploie de la déc
 
 ## Pour aller plus loin
 
-- Pour le décor économique global de l'inference LLM dans lequel s'inscrit la décode spéculative (LLMflation × 1 000, pile 7 couches, désagrégation prefill/decode, MoE, mix matériel H100/B200/MI300X/Trainium 2/Groq LPU, marges des hyperscalers), voir le **Ch.5 — L'économie unitaire de l'inférence**.
-- Pour la mécanique du raisonnement à l'inférence qui rend la spec économiquement nécessaire (sans spec, le coût × 10 d'un reasoning model deviendrait coût × 10 en latence), voir le **Ch.2 — Les modèles de raisonnement et la seconde courbe de scaling**.
-- Pour l'instrumentation OTel GenAI de l'acceptance rate dans un *cognitive audit trail* portable cross-vendor, voir le **Ch.18 — Observabilité agentique et cognitive audit trail**.
+- Pour le décor économique global de l'inference LLM dans lequel s'inscrit la décode spéculative (LLMflation × 1 000, pile 7 couches, désagrégation prefill/decode, MoE, mix matériel H100/B200/MI300X/Trainium 2/Groq LPU, marges des hyperscalers), voir le **[Ch. 5 — L'économie unitaire de l'inférence](ch05-economie-inference.md)**.
+- Pour la mécanique du raisonnement à l'inférence qui rend la spec économiquement nécessaire (sans spec, le coût × 10 d'un reasoning model deviendrait coût × 10 en latence), voir le **[Ch. 2 — Les modèles de raisonnement et la seconde courbe de scaling](ch02-modeles-raisonnement.md)**.
+- Pour l'instrumentation OTel GenAI de l'acceptance rate dans un *cognitive audit trail* portable cross-vendor, voir le **[Ch. 18 — Observabilité agentique et cognitive audit trail](ch18-observabilite-cognitive-audit-trail.md)**.
 - Côté sources externes vivantes : la documentation [vLLM Speculative Decoding](https://docs.vllm.ai/), le [SGLang engineering blog](https://github.com/sgl-project/sglang), la doc [TensorRT-LLM Speculative Decoding](https://nvidia.github.io/TensorRT-LLM/advanced/speculative-decoding.html), et le benchmark croisé [Together AI specdec](https://www.together.ai/blog/specdec) restent les références à jour entre deux éditions.
 
 ---

@@ -1,7 +1,18 @@
+---
+chapitre: 1
+titre: "Le cœur stochastique"
+acte: 1
+acte_titre: "Les moteurs"
+gabarit: encart
+mots: 4760
+statut: v1
+date_maj: 2026-05-29
+---
+
 # Chapitre 1 — Le cœur stochastique
 
 > **Acte I — Les moteurs · Encart court, ~10 pages**
-> _Avant la boucle, avant les outils, avant la mémoire, avant tout ce qui ressemble à un système agentique, il y a un tirage. À chaque token généré, un LLM moderne ne renvoie pas un mot — il renvoie une distribution de probabilité sur l'ensemble de son vocabulaire, puis il y pioche. Ce chapitre est court parce que son objet est petit ; il est dense parce que c'est lui qui conditionne tous les autres. Tout ce qui suit dans le livre n'a de sens que si l'on a accepté ce premier fait : ==le cœur n'est pas une fonction pure==, c'est un dé pondéré, et la fiabilité d'un système agentique se construit autour de cette propriété, jamais contre elle._
+> _Avant la boucle, avant les outils, avant la mémoire, avant tout ce qui ressemble à un système agentique, il y a un tirage. À chaque token généré, un LLM moderne ne renvoie pas un mot — il renvoie une distribution de probabilité sur l'ensemble de son vocabulaire, puis il y pioche. Tout ce qui suit dans le livre n'a de sens que si l'on a accepté ce premier fait : ==le cœur n'est pas une fonction pure==, c'est un dé pondéré, et la fiabilité d'un système agentique se construit autour de cette propriété, jamais contre elle._
 
 > [!QUESTION] Question d'ouverture
 > Si la sortie d'un LLM moderne est, à chaque token, un tirage probabiliste sur une distribution de cinquante mille à deux cent mille candidats — et non une fonction qui renvoie un mot — comment construit-on un système fiable autour ? Et pourquoi la première intuition d'ingénieur, *« il suffit de fixer un seed »*, est-elle un leurre opérationnel à l'échelle GPU ?
@@ -133,16 +144,16 @@ Verma et collaborateurs documentent en 2024, dans le cadre du benchmark HELM, un
 > [!IMPORTANT] La reproductibilité bit-à-bit n'existe pas en LLM serveur 2026
 > C'est un fait physique, pas un choix produit. Le `seed` fixe le RNG du sampler côté software ; il ne fixe ni les arrondis flottants non associatifs (a), ni la composition du batch dynamique (b), ni les règles de promotion de précision mixte (c), ni la version effective du modèle servi (d). ==Aucun contrat 2026 ne devrait exiger que deux appels successifs produisent la même sortie textuelle==. Ce qui peut être contracté : une distribution stable sur `n` rejouages, un `system_fingerprint` publié, un protocole de notification en cas de changement de version, un intervalle de confiance sur les métriques d'évaluation.
 
-> [!INFO] Voir Ch. 4 — Décode spéculative et la course au token/sec
-> La décode spéculative, devenue option par défaut des serveurs en 2026, repose sur un théorème d'équivalence prouvé par Leviathan, Kalman et Matias (Google Research, ICML 2023)[^leviathan]. Il stipule que si l'on accepte chaque token spéculatif avec probabilité `min(1, p_target/p_draft)` et qu'on rééchantillonne sur `max(0, p_target − p_draft)`, la distribution de sortie est **strictement identique** à celle d'une décode autoregressive standard. C'est précisément la mécanique du sampling stochastique décrite ici qui rend la spéculation contractuellement neutre : la variance qu'on accepte au Ch.1 est ce qui permet l'optimisation du Ch.4 sans débat qualité.
+> [!INFO] Voir [Ch. 4 — Décode spéculative et la course au token/sec](ch04-decode-speculative.md)
+> La décode spéculative, devenue option par défaut des serveurs en 2026, repose sur un théorème d'équivalence prouvé par Leviathan, Kalman et Matias (Google Research, ICML 2023)[^leviathan]. Il stipule que si l'on accepte chaque token spéculatif avec probabilité `min(1, p_target/p_draft)` et qu'on rééchantillonne sur `max(0, p_target − p_draft)`, la distribution de sortie est **strictement identique** à celle d'une décode autoregressive standard. La variance acceptée au niveau du sampling est exactement ce qui rend l'optimisation spéculative contractuellement neutre — sans débat qualité.
 
 ---
 
-## 1.5 L'effet multiplicateur agentique — pourquoi Ch.1 conditionne l'Acte II
+## 1.5 L'effet multiplicateur agentique
 
 ### 1.5.1 Variance à un token → variance à un tour → variance sur N tours
 
-La variance posée à l'échelle d'un token se propage. À l'échelle d'un **tour de modèle** (la réponse à un prompt unique, 100 à 2 000 tokens), elle produit le faisceau démontré §1.3. À l'échelle d'un **agent multi-tours** (sujet du Ch.7), elle se compose : chaque tour est conditionné sur le précédent, et un écart au tour 1 peut faire diverger complètement les tours 2 à N. Sur un agent qui enchaîne dix tool calls, la probabilité que deux exécutions produisent la même trajectoire d'outils décroît rapidement — souvent en-dessous de 30 % dès quatre ou cinq tours[^building-agents]. ==Cette amplification multi-tour est traitée intégralement Ch.7 ; on la nomme ici uniquement pour rappeler que la fiabilité de l'Acte II se construit sur la propriété stochastique posée à l'Acte I.==
+La variance posée à l'échelle d'un token se propage. À l'échelle d'un **tour de modèle** (la réponse à un prompt unique, 100 à 2 000 tokens), elle produit le faisceau démontré §1.3. À l'échelle d'un **agent multi-tours** ([Ch. 7](ch07-boucle-agentique.md)), elle se compose : chaque tour est conditionné sur le précédent, et un écart au tour 1 peut faire diverger complètement les tours 2 à N. Sur un agent qui enchaîne dix tool calls, la probabilité que deux exécutions produisent la même trajectoire d'outils décroît rapidement — souvent en-dessous de 30 % dès quatre ou cinq tours[^building-agents]. ==La fiabilité de l'Acte II se construit sur la propriété stochastique posée à l'Acte I.==
 
 ### 1.5.2 Le trajectory drift — quand la variance ne s'amplifie pas mais dérive
 
@@ -150,11 +161,11 @@ Un cas plus subtil — et plus dangereux opérationnellement — est le **trajec
 
 Ce drift est silencieux par nature : aucune alerte de runtime, aucune erreur HTTP, aucun test d'intégration de surface qui tombe. Le seul moyen de le détecter est d'**instrumenter en continu** la distribution des sorties — taux de succès par classe de prompt, longueurs de réponse, distributions d'outils choisis, similarité sémantique aux références — et de comparer aux baselines historiques.
 
-> [!INFO] Voir Ch. 2 — Les modèles de raisonnement et la seconde courbe de scaling
-> Le Ch.2 explique ce qui se passe quand on dépense du compute à l'inférence pour raisonner. Plus la chaîne de tokens en sortie est longue, plus la variance multiplicative s'accumule — la discipline d'évaluation sur distribution posée §1.3.3 devient critique : on ne signe pas sur un raisonnement, on signe sur une distribution de raisonnements.
+> [!INFO] Voir [Ch. 2 — Les modèles de raisonnement et la seconde courbe de scaling](ch02-modeles-raisonnement.md)
+> Quand on dépense du compute à l'inférence pour raisonner, la chaîne de tokens en sortie s'allonge et la variance multiplicative s'accumule. La discipline d'évaluation sur distribution posée §1.3.3 devient critique : on ne signe pas sur un raisonnement, on signe sur une distribution de raisonnements.
 
-> [!INFO] Voir Ch. 18 — Observabilité agentique et cognitive audit trail
-> Le Ch.18 documente le trajectory drift comme problème d'observabilité de premier rang, et l'instrumentation associée via les conventions sémantiques OpenTelemetry GenAI. L'idée centrale : ce qu'on instrumente en production n'est pas la conformité d'une sortie à un oracle (impossible à seed fixé, voir §1.4), mais la conformité d'une **distribution** de sorties à une baseline statistique. Frontière éditoriale : Ch.1 pose le *pourquoi* (la stochasticité fondamentale), Ch.18 pose le *comment instrumenter*.
+> [!INFO] Voir [Ch. 18 — Observabilité agentique et cognitive audit trail](ch18-observabilite-cognitive-audit-trail.md)
+> Le trajectory drift est documenté comme problème d'observabilité de premier rang, et l'instrumentation associée via les conventions sémantiques OpenTelemetry GenAI. L'idée centrale : ce qu'on instrumente en production n'est pas la conformité d'une sortie à un oracle (impossible à seed fixé, voir §1.4), mais la conformité d'une **distribution** de sorties à une baseline statistique.
 
 ### 1.5.3 La règle de signature — tout contrat agent 2026 spécifie n, T, p, k, version
 
@@ -170,18 +181,12 @@ Le LLM moderne est un dé pondéré. Pas par accident, pas par défaut de calibr
 
 Le paradoxe d'ouverture trouve ici sa résolution : la fiabilité d'un système agentique se construit sur un cœur qui n'est pas fiable au sens classique du logiciel — qui ne renvoie pas le même bit à chaque appel, qui ne se laisse pas figer par un seed, qui dérive silencieusement entre versions. Cette fiabilité s'obtient en changeant la définition même de la reproductibilité : on passe du bit-à-bit au statistique, du cas isolé à la distribution, du test d'égalité à l'intervalle de confiance. C'est une adaptation à la physique d'un nouveau substrat de calcul, pas une concession à la médiocrité.
 
-Le pont vers le Ch.2 est direct. Si la variance se paie en tokens, et si les modèles de raisonnement dépensent dix à cent fois plus de tokens qu'une réponse directe, alors la question économique devient brûlante : quelle est l'addition que paie le décideur qui choisit ce régime ?
+Si la variance se paie en tokens, et si les modèles de raisonnement dépensent dix à cent fois plus de tokens qu'une réponse directe, alors la question économique devient brûlante : quelle est l'addition que paie le décideur qui choisit ce régime ?
 
 > [!WARNING] Trois pièges classiques
 > - **Traiter le LLM comme une fonction pure**. Le réflexe d'ingénieur logiciel — *« j'appelle, je récupère, je teste l'égalité »* — programme la frustration sur sortie stochastique. À `T = 0,7`, mille appels = mille trajectoires. Le test à écrire porte sur la distribution, pas sur l'égalité d'une réponse.
 > - **Demander en RFP « la même réponse à chaque appel »**. Exigence techniquement infaisable à l'échelle GPU 2026 (voir §1.4 sur les quatre sources de non-déterminisme persistant à seed fixé). La bonne formulation porte sur la conformité statistique à une baseline, pas sur l'égalité textuelle.
 > - **Tester par cas isolés au lieu de distributions**. Rejouer une fois, comparer à un oracle, signer le verdict — c'est tester un tirage, pas un modèle. La discipline minimale : `n = 10` à `n = 100` rejouages, intervalle de confiance, suivi de drift sur la fenêtre temporelle.
-
----
-
-## Note sur les schémas
-
-Les deux schémas **S1.1** (*« Softmax → température → top-p → tirage : la chaîne mécanique »*, viewBox 1200×720) et **S1.2** (*« Faisceau de 1 000 trajectoires à T=0,7 »*, viewBox 1200×640) cités plus haut sont à créer en SVG dans une session ultérieure. Briefs détaillés (panneaux, données simulées, échelles, annotations) : `docs/journal-livre.md` § *Audit Ch.1 · Schémas à créer*. Les références markdown sont posées dès maintenant avec le hint Obsidian `|1300` aux URL canoniques `livre/images/20260601-01-softmax-temperature-sampling-chain.svg` et `livre/images/20260601-02-variance-trajectoire-1000-rejouages.svg`. Aucun schéma de la couche 00 du dossier `anatomie/` n'est réutilisable tel quel — le noyau de l'oignon agentique a été pensé comme point d'entrée narratif, pas comme objet à expliciter en standalone.
 
 ---
 
@@ -209,4 +214,4 @@ Les deux schémas **S1.1** (*« Softmax → température → top-p → tirage : 
 
 [^nvidia-determinism]: NVIDIA, *cuDNN Developer Guide — Reproducibility* et *CUDA C++ Best Practices Guide — Numerical Accuracy and Precision*. URLs : https://docs.nvidia.com/deeplearning/cudnn/developer-guide/ et https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/. Consultés le 2026-05-29. Documentation officielle décrivant la non-associativité des opérations flottantes parallèles, les modes déterministes optionnels (au prix d'une perte de débit significative) et leurs limites lorsque le batching dynamique modifie la composition des sommes parallèles.
 
-[^pass-k]: Le pattern `pass@k`, introduit par Mark Chen et al. dans *Evaluating Large Language Models Trained on Code* (OpenAI HumanEval, arXiv:2107.03374, 2021), formalise l'évaluation sur distribution : on rejoue `k` fois et on mesure la probabilité qu'au moins un rejouage satisfasse l'oracle. Le pattern est développé Ch.17 comme outil de bench ; il est cité ici uniquement pour ancrer l'idée §1.3.3 *« on évalue sur des distributions, pas sur des cas isolés »*. URL : https://arxiv.org/abs/2107.03374. Consulté le 2026-05-29.
+[^pass-k]: Le pattern `pass@k`, introduit par Mark Chen et al. dans *Evaluating Large Language Models Trained on Code* (OpenAI HumanEval, arXiv:2107.03374, 2021), formalise l'évaluation sur distribution : on rejoue `k` fois et on mesure la probabilité qu'au moins un rejouage satisfasse l'oracle. Voir [Ch. 17](ch17-evaluation-benchmarks.md) pour le développement comme outil de bench. URL : https://arxiv.org/abs/2107.03374. Consulté le 2026-05-29.

@@ -1,7 +1,18 @@
+---
+chapitre: 18
+titre: "Observabilité agentique et cognitive audit trail"
+acte: 4
+acte_titre: "Mesures et garde-fous"
+gabarit: standard
+mots: 6000
+statut: v1
+date_maj: 2026-05-29
+---
+
 # Chapitre 18 — Observabilité agentique et cognitive audit trail
 
 > **Acte IV — Mesures et garde-fous · Chapitre standard, ~24 pages**
-> _L'agent ne **crashe** pas — il **dérive**. Ce chapitre construit la grille d'observabilité 2026 : OpenTelemetry GenAI comme standard d'instrumentation, six piliers de télémétrie, **cognitive audit trail** comme réponse à l'AI Act et au RGPD, double marché incumbents-APM / challengers AI-native, et échelle de maturité organisationnelle. Il prolonge Ch. 17 (où la trajectoire devenait l'objet d'évaluation) en montrant comment la même trajectoire devient l'objet de **monitoring en production**._
+> _L'agent ne **crashe** pas — il **dérive**. La grille d'observabilité 2026 : OpenTelemetry GenAI comme standard d'instrumentation, six piliers de télémétrie, **cognitive audit trail** comme réponse à l'AI Act et au RGPD, double marché incumbents-APM / challengers AI-native, et échelle de maturité organisationnelle. La trajectoire qui était l'objet d'évaluation au [Ch. 17](ch17-evaluation-benchmarks.md) devient l'objet de **monitoring en production**._
 
 > [!QUESTION] Question d'ouverture
 > Le 12 mars 2026, une caisse régionale française découvre que son agent CRM, déployé six mois plus tôt, recommande depuis trois semaines un produit que la direction marketing a retiré du catalogue le 17 février. Aucune alerte. Aucun ticket. Les CSAT ne bougent pas — les clients qui acceptent la recommandation sont simplement orientés vers la mauvaise page produit, où on leur dit *« ce produit n'est plus disponible »*. La perte n'est pas une panne ; c'est une **dérive silencieuse**, lente, partielle. ==Comment voir, en 2026, ce qu'un APM classique n'a plus aucune chance de voir — la trajectoire d'un raisonnement, la qualité d'une réponse, le glissement d'une politique d'usage — et à qui cette visibilité doit-elle être rendue ?==
@@ -40,8 +51,8 @@ Quatre angles morts caractérisent l'incapacité de l'APM traditionnel à couvri
 
 Les chiffres parlent. 89 % des organisations ayant déployé des agents ont implémenté une forme d'observabilité dédiée[^9] ; 57 % ont des agents en production[^5] ; et Gartner prédit que ==40 % des projets d'IA agentique seront annulés d'ici 2027 pour des raisons de fiabilité==[^4]. L'écart entre expérimentation et production enterprise — moins de 10 % des organisations ont scalé l'agentique au niveau fonctionnel[^3] — est avant tout un **gap d'observabilité**.
 
-> [!INFO] Voir Ch. 17 — Évaluation · Ch. 21 — ROI
-> Le Ch. 17 a posé l'évaluation **avant** déploiement : trajectoires, pass^k, graders, playbook gruyère 8 étapes. Ce chapitre tient l'autre mouvement : la trajectoire devient un objet d'observation **en production**, et le matériau que l'eval offline manipule est désormais le **trafic réel** scoré en continu. Le Ch. 21 (ROI) en tirera les conséquences économiques — l'observabilité est le seul moyen d'attribuer un coût à un outcome.
+> [!INFO] Voir [Ch. 17 — Évaluer un agent (et débunker les leaderboards)](ch17-evaluation-benchmarks.md) · [Ch. 21 — Mesurer le ROI (et le paradoxe agentique)](ch21-roi-paradoxe-agentique.md)
+> Le [Ch. 17](ch17-evaluation-benchmarks.md) a posé l'évaluation **avant** déploiement : trajectoires, pass^k, graders, playbook gruyère 8 étapes. L'autre mouvement : la trajectoire devient un objet d'observation **en production**, et le matériau que l'eval offline manipule est désormais le **trafic réel** scoré en continu. Le [Ch. 21](ch21-roi-paradoxe-agentique.md) (ROI) en tirera les conséquences économiques — l'observabilité est le seul moyen d'attribuer un coût à un outcome.
 
 ---
 
@@ -90,9 +101,9 @@ L'erreur la plus fréquente dans les premières implémentations consiste à tra
 
 Trois choix de design méritent attention. Le premier est la **séparation orchestration / capacités**. Le planner décompose en sous-objectifs, l'executor appelle outils et modèles, le critic évalue et replanifie si nécessaire. Cette séparation rend chaque rôle observable individuellement : la boucle de correction critic → planner produit un span imbriqué visible dans les traces, ce qui permet de mesurer le coût et la latence du *self-correction* indépendamment du coût et de la latence de la première proposition.
 
-Le second est la **sandbox d'outils**, isolée du système de production. C'est elle qui exécute les actions de l'executor — appels API, requêtes vector store via MCP, exécution de code. L'isolation est à la fois sécuritaire (un agent compromis ne peut pas atteindre la prod directement — cf. Ch. 19) et observable (chaque appel produit un span `execute_tool` avec ses paramètres et son résultat capturés en option).
+Le second est la **sandbox d'outils**, isolée du système de production. C'est elle qui exécute les actions de l'executor — appels API, requêtes vector store via MCP, exécution de code. L'isolation est à la fois sécuritaire (un agent compromis ne peut pas atteindre la prod directement — cf. [Ch. 19](ch19-gardefous-securite-globale.md)) et observable (chaque appel produit un span `execute_tool` avec ses paramètres et son résultat capturés en option).
 
-Le troisième est l'unification mémoire / télémétrie en un **plan horizontal**. La mémoire agent (épisodique, sémantique, procédurale — cf. Ch. 9) et le bus de télémétrie partagent la même position structurelle : transverse à toutes les opérations, accessible en lecture/écriture par tous les agents, persistante au-delà d'une trace individuelle. Cette parité conceptuelle simplifie la gouvernance — la rétention des spans devient un sujet aussi régulé que la rétention des entrées mémoire (cf. Ch. 10 § *RGPD art. 17 + AI Act art. 10/25*).
+Le troisième est l'unification mémoire / télémétrie en un **plan horizontal**. La mémoire agent (épisodique, sémantique, procédurale — cf. [Ch. 9](ch09-memoire-agentique.md)) et le bus de télémétrie partagent la même position structurelle : transverse à toutes les opérations, accessible en lecture/écriture par tous les agents, persistante au-delà d'une trace individuelle. Cette parité conceptuelle simplifie la gouvernance — la rétention des spans devient un sujet aussi régulé que la rétention des entrées mémoire (cf. [Ch. 10](ch10-compaction.md) § *RGPD art. 17 + AI Act art. 10/25*).
 
 Le bus central — OpenTelemetry GenAI — exporte vers N backends via OTLP. ==C'est le point de découplage stratégique qui justifie l'effort d'instrumentation.== C'est aussi le sujet de la section suivante.
 
@@ -168,7 +179,7 @@ Pour les environnements régulés (finance, santé, assurance, secteur public), 
 Ce n'est pas un dashboard, ce n'est pas un log applicatif, ce n'est pas une trace OTel : c'est ==une catégorie de **document opérationnel**==, signée, horodatée, à rétention longue, soumise à un droit d'accès. Quatre régulations européennes le rendent obligatoire ou quasi-obligatoire en 2026-2027.
 
 - **AI Act art. 12-13** — *record keeping* et *transparency obligations* pour les systèmes haute-risque. Obligation de conserver les logs automatiquement générés tant qu'ils sont pertinents pour le cycle de vie du système. Art. 12 entre en application le 2 août 2026 pour les systèmes haute-risque déjà déployés.
-- **AI Act art. 15** — *cybersecurity* et *accuracy*. Documentation des mécanismes de robustesse face aux entrées adversariales (cf. Ch. 19). Le journal d'observabilité fait partie de la technical file.
+- **AI Act art. 15** — *cybersecurity* et *accuracy*. Documentation des mécanismes de robustesse face aux entrées adversariales (cf. [Ch. 19](ch19-gardefous-securite-globale.md)). Le journal d'observabilité fait partie de la technical file.
 - **RGPD art. 22** — *automated individual decision-making*. Pour toute décision purement automatisée à effet juridique ou significatif, le sujet a un droit à une explication. ==L'explication ne s'invente pas a posteriori ; elle se construit en amont, dans le cognitive audit trail==.
 - **DORA** (Digital Operational Resilience Act, application 17 janvier 2025 pour le secteur financier UE) — *ICT-related incidents* doivent être documentés et déclarés. Pour un agent CRM bancaire, un drift de score de qualité au-delà d'un seuil constitue un incident ICT au sens DORA — et le cognitive audit trail est ce qu'on présente à l'ACPR.
 
@@ -180,7 +191,7 @@ Ce n'est pas un dashboard, ce n'est pas un log applicatif, ce n'est pas une trac
 - L'**identité du modèle réellement utilisé** (`gen_ai.response.model`, pas seulement la valeur demandée).
 - La **trajectoire d'outils** (`execute_tool` spans dans l'ordre, avec leurs paramètres et leurs résultats résumés).
 - La **chaîne de provenance des données** lues (sources RAG, tenant, *trust level*, hash du document).
-- Les **guardrails déclenchés** (cf. Ch. 19) — quels classifiers ont bloqué, quels ont laissé passer, quelle action a été modifiée.
+- Les **guardrails déclenchés** (cf. [Ch. 19](ch19-gardefous-securite-globale.md)) — quels classifiers ont bloqué, quels ont laissé passer, quelle action a été modifiée.
 - Le **score d'évaluation en ligne** attaché à la trace, avec l'identité du juge et la version de la rubrique.
 
 > [!IMPORTANT] Cognitive audit ≠ logging classique
@@ -188,10 +199,10 @@ Ce n'est pas un dashboard, ce n'est pas un log applicatif, ce n'est pas une trac
 
 ### 18.6.3 La couche `gen_ai.compaction.*` — front actif du WG GenAI
 
-Une convention candidate, actuellement discutée au Working Group OTel GenAI (fin 2026), propose une famille d'attributs `gen_ai.compaction.*` pour documenter les opérations de compaction décrites au Ch. 10 — `policy_id`, `signed_by`, `tokens_dropped`, `summary_hash`, `retrieval_handle_count`. C'est le seul moyen connu de rendre une compaction **opposable** : signée à l'instant t, vérifiable à t+N mois. ==Sans cette couche, le droit à l'oubli RGPD art. 17 ne peut pas être prouvé techniquement.==
+Une convention candidate, actuellement discutée au Working Group OTel GenAI (fin 2026), propose une famille d'attributs `gen_ai.compaction.*` pour documenter les opérations de compaction décrites au [Ch. 10](ch10-compaction.md) — `policy_id`, `signed_by`, `tokens_dropped`, `summary_hash`, `retrieval_handle_count`. C'est le seul moyen connu de rendre une compaction **opposable** : signée à l'instant t, vérifiable à t+N mois. ==Sans cette couche, le droit à l'oubli RGPD art. 17 ne peut pas être prouvé techniquement.==
 
-> [!INFO] Voir Ch. 10 — Compaction · Ch. 23 — Gouvernance
-> Le Ch. 10 a posé le triangle **fidélité × coût × oubliabilité** comme cadre éditorial de la compaction. Ce chapitre rend la troisième dimension — l'oubliabilité — observable. Le Ch. 23 (gouvernance) reprendra l'angle régulatoire pour expliciter le rôle DPO / RSSI / sponsor dans la signature des politiques.
+> [!INFO] Voir [Ch. 10 — Compaction](ch10-compaction.md) · [Ch. 23 — Gouvernance : AI Act, banque, machine unlearning](ch23-gouvernance-ai-act.md)
+> Le [Ch. 10](ch10-compaction.md) a posé le triangle **fidélité × coût × oubliabilité** comme cadre éditorial de la compaction. L'observabilité rend la troisième dimension — l'oubliabilité — observable. Le [Ch. 23](ch23-gouvernance-ai-act.md) (gouvernance) reprendra l'angle régulatoire pour expliciter le rôle DPO / RSSI / sponsor dans la signature des politiques.
 
 ---
 
@@ -211,7 +222,7 @@ Les organisations ne sautent pas directement à l'autonomie complète. Elles pro
 
 ### 18.7.1 Le saut N2 → N3 — le palier cognitif
 
-Le passage de N2 à N3 est le **saut le plus difficile**. Il exige de définir *« qu'est-ce qu'une réponse correcte ? »* de façon mesurable, via datasets de référence et scorers calibrés. C'est exactement le travail décrit en Ch. 17 §17.6 (LLM-as-a-judge calibré, debiased pairwise par swap, ensemble multi-modèles, calibration humaine sur 100-200 échantillons). Tant que ce travail n'a pas été fait, l'observabilité reste *cosmétique* : on voit des dashboards, on ne voit pas la qualité.
+Le passage de N2 à N3 est le **saut le plus difficile**. Il exige de définir *« qu'est-ce qu'une réponse correcte ? »* de façon mesurable, via datasets de référence et scorers calibrés. C'est exactement le travail décrit en [Ch. 17](ch17-evaluation-benchmarks.md) §17.6 (LLM-as-a-judge calibré, debiased pairwise par swap, ensemble multi-modèles, calibration humaine sur 100-200 échantillons). Tant que ce travail n'a pas été fait, l'observabilité reste *cosmétique* : on voit des dashboards, on ne voit pas la qualité.
 
 ==Les organisations qui sautent ce palier — typiquement parce que le sponsor exige des « agents autonomes » avant que les juges soient calibrés — construisent de l'auto-remédiation sur des signaux non calibrés et obtiennent une autonomie illisible.== Le système rollback, alerte, escalade — mais personne ne sait si ces actions sont justifiées. Les ops apprennent à ignorer les alertes ; le sponsor finit par couper le programme.
 
@@ -266,8 +277,8 @@ Côté challengers AI-native, le segment se structure autour de l'**évaluation 
 
 Le choix n'est pas binaire. ==L'architecture mature en 2026 est typiquement **hybride** : un backend full-stack== (Dynatrace, Datadog ou Grafana selon le profil) couplé à un outil AI-native (Langfuse ou Braintrust) pour la couche évaluation, le tout fédéré par OpenTelemetry comme protocole d'instrumentation unique. C'est exactement parce qu'aucun acteur ne couvre seul le spectre — et c'est précisément ce que le découplage OTel permet de bricoler sans s'enfermer.
 
-> [!INFO] Voir Ch. 20 — Runtime managé
-> Les runtimes managés des hyperscalers (AWS Bedrock AgentCore Observability, Vertex AI Agent Engine telemetry, Azure AI Foundry tracing) embarquent leur propre couche d'observabilité, **OTel-compliant**. Ce sont des choix raisonnables pour un mono-cloud — au prix d'un couplage qui se paie le jour du multi-cloud (cf. Ch. 20 §sur la portabilité).
+> [!INFO] Voir [Ch. 20 — Runtime managé et déploiement](ch20-runtime-manage.md)
+> Les runtimes managés des hyperscalers (AWS Bedrock AgentCore Observability, Vertex AI Agent Engine telemetry, Azure AI Foundry tracing) embarquent leur propre couche d'observabilité, **OTel-compliant**. Ce sont des choix raisonnables pour un mono-cloud — au prix d'un couplage qui se paie le jour du multi-cloud (cf. [Ch. 20](ch20-runtime-manage.md) §sur la portabilité).
 
 ---
 
@@ -275,7 +286,7 @@ Le choix n'est pas binaire. ==L'architecture mature en 2026 est typiquement **hy
 
 ![Le bus d'observabilité et les six piliers — récap chapitre|1300](../../observabilite-agents-ia/images/20260430-03-architecture-bus-observabilite.svg)
 
-Si le lecteur ne retient qu'une page de ce chapitre, ce sont quatre disciplines et un standard.
+==**À retenir** : quatre disciplines et un standard.==
 
 ==**Quatre disciplines** :== (1) instrumenter dès le premier sprint ; (2) construire les six piliers — usage, performance, comportement, qualité, gouvernance, drift — et lire à la croisée ; (3) franchir le palier N2 → N3 en calibrant les juges avant d'investir l'autonomie ; (4) produire un cognitive audit trail signé, opposable, à rétention longue, pour répondre à AI Act + RGPD + DORA.
 
@@ -283,7 +294,7 @@ Si le lecteur ne retient qu'une page de ce chapitre, ce sont quatre disciplines 
 
 Pour une équipe Data & AI qui démarre :
 
-1. **Une instrumentation OTel native** dès le pilote, avec backend Langfuse self-hosted ou Phoenix. Les traces deviennent le matériau de toutes les analyses ultérieures — éval (Ch. 17), ROI (Ch. 21), audit (Ch. 23).
+1. **Une instrumentation OTel native** dès le pilote, avec backend Langfuse self-hosted ou Phoenix. Les traces deviennent le matériau de toutes les analyses ultérieures — éval ([Ch. 17](ch17-evaluation-benchmarks.md)), ROI ([Ch. 21](ch21-roi-paradoxe-agentique.md)), audit ([Ch. 23](ch23-gouvernance-ai-act.md)).
 2. **Un Collector OTel centralisé** avec processors de redaction PII et politique de sampling, déployé avant la première mise en production. C'est le point unique de gouvernance.
 3. **Trois à cinq scorers calibrés** sur des cas critiques (faithfulness RAG, tool-use accuracy, policy compliance), avec 100-200 annotations humaines pour ancrer la corrélation.
 4. **Un cognitive audit trail signé** dès la première mise en prod régulée, avec rétention alignée sur l'AI Act art. 12 (durée pertinente pour le cycle de vie du système — souvent 5 ans pour banque/santé).
@@ -297,7 +308,7 @@ L'investissement marginal au-delà (agents d'observabilité N5, RCA automatisé,
 >
 > **Per-LLM-span billing non lu au moment de la signature** — un workload agentique émet 10 à 50× plus de spans qu'un service classique. Une facture Datadog ou New Relic dimensionnée sur l'APM classique double à triple en six mois. ==La clause de révision doit être négociée à la signature, pas découverte au premier renouvellement==.
 >
-> **Juge LLM unique non calibré** — position bias 10-20 %, verbosity bias, self-enhancement bias (cf. Ch. 17 §17.6). Un juge unique sur une rubrique vague produit un score qui dépend autant du juge que de l'agent. Les ops apprennent à ignorer les alertes ; les alertes deviennent du bruit ; ==l'observabilité retombe au niveau N2 avec un dashboard plus joli==. Sans debiased pairwise par swap, ensemble multi-modèles, et calibration humaine sur 100-200 échantillons, ce qu'on appelle « éval continue » est en réalité du bruit signé.
+> **Juge LLM unique non calibré** — position bias 10-20 %, verbosity bias, self-enhancement bias (cf. [Ch. 17](ch17-evaluation-benchmarks.md) §17.6). Un juge unique sur une rubrique vague produit un score qui dépend autant du juge que de l'agent. Les ops apprennent à ignorer les alertes ; les alertes deviennent du bruit ; ==l'observabilité retombe au niveau N2 avec un dashboard plus joli==. Sans debiased pairwise par swap, ensemble multi-modèles, et calibration humaine sur 100-200 échantillons, ce qu'on appelle « éval continue » est en réalité du bruit signé.
 
 ---
 
