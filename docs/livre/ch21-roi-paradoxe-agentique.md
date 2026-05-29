@@ -62,6 +62,11 @@ Les économistes Erik Brynjolfsson, Daniel Rock et Chad Syverson ont formalisé 
 
 ![Productivity J-curve de Brynjolfsson, Rock & Syverson|1300](../../measure-roi/images/20260507-06-j-curve.svg)
 
+![Schéma R16 — Double-page éco : LLMflation × paradoxe agentique × J-curve|1400](../../livre/images/20260601-r16-jcurve-llmflation-paradoxe.svg)
+
+> [!NOTE] À propos du Schéma R16
+> Version v1 — fusion lourde en A3 paysage du triptyque tarifaire : (A) LLMflation `economie-inference/01-llmflation-curve.svg`, (B) stack 4 niveaux paradoxe agentique `measure-roi/08-stack-roi-agentique.svg`, (C) J-curve Brynjolfsson `measure-roi/06-j-curve.svg`. Bandeau bas : 3 régimes temporels (court / moyen / long terme) alignés sur les trois panels. Réutilisé en §21.7 (récap) + référencé Ch.5 §5.10 (clôture triptyque). Manuscrit v1 conserve les schémas sources affichés ci-dessus pour la lecture détaillée.
+
 Trois phases se succèdent. **Phase 1 (0-3 ans)** : dépense visible, actifs intangibles invisibles, productivité mesurée *en dessous* du baseline. C'est exactement la phase qui produit les *95 % de pilotes au point mort* de MIT NANDA — non pas parce que les projets sont mauvais, mais parce qu'on les mesure trop tôt. **Phase 2 (3-5 ans)** : la masse critique d'intangibles atteinte ; la productivité remonte et croise le baseline. **Phase 3 (5-7 ans et au-delà)** : les actifs intangibles produisent leurs effets, la productivité dépasse durablement le niveau initial.
 
 Brynjolfsson et al. estiment que **les ajustements liés aux intangibles informatiques rendaient déjà la TFP américaine 15,9 % plus élevée que les mesures officielles fin 2017**[^brynjolfsson-jcurve]. Sur l'IA générative, le même mécanisme est attendu, à un horizon de 3 à 7 ans selon le secteur.
@@ -267,6 +272,9 @@ L'arbre tient en trois questions séquentielles. Chacune élimine quatre méthod
 L'arrivée des agents — entités logicielles capables de planifier, d'appeler des outils, de raisonner et de revenir sur leurs propres décisions (voir Acte II) — décale la mesure du ROI à un niveau d'abstraction supérieur. BCG estime déjà à **17 % la part de valeur captée par les agents en 2025**, et anticipe **29 % en 2028**[^bcg]. IBM IBV confirme que ==61 % des dirigeants disent adopter activement des agents et préparer leur déploiement à l'échelle==[^ibm-ibv]. Le sujet n'est plus émergent.
 
 ![Stack ROI agentique — token → tâche → processus → outcome|1300](../../measure-roi/images/20260507-08-stack-roi-agentique.svg)
+
+> [!INFO] Voir le schéma R16 (double-page éco) en §21.2.3
+> R16 met la stack ci-dessus en regard de la courbe LLMflation (Ch.5) et de la J-curve Brynjolfsson, avec un bandeau bas alignant les trois sur trois régimes temporels (court / moyen / long). C'est l'image à montrer en COMEX quand on défend un horizon outcome plutôt qu'un horizon token.
 
 ### 21.7.1 La stack à quatre niveaux
 

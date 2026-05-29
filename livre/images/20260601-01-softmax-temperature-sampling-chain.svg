@@ -1,0 +1,251 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" font-family="Inter, system-ui, sans-serif" role="img" aria-labelledby="title-fig01">
+  <title id="title-fig01">Softmax, température, top-p, tirage : la chaîne mécanique du sampling LLM</title>
+  <desc>Quatre panneaux montrent la même distribution sur 15 tokens transformée par l'opérateur successif logits, softmax, température T=0.7, top-p p=0.9 ; suivis d'un strip comparant T=0,2, T=0,7 et T=1,5 sur la même distribution.</desc>
+  <style>
+    .title { font: 600 26px/1.2 'Fraunces', 'Georgia', serif; fill: #1a1a1a; }
+    .subtitle { font: italic 14px/1.4 'Inter', sans-serif; fill: #555; }
+    .panel-title { font: 600 14px 'Inter', sans-serif; fill: #1a1a1a; }
+    .panel-sub { font: italic 11px 'Inter', sans-serif; fill: #666; }
+    .label { font: 10px 'JetBrains Mono', monospace; fill: #444; }
+    .label-token { font: 9px 'Inter', sans-serif; fill: #777; }
+    .annotation { font: italic 12px 'Inter', sans-serif; fill: #444; }
+    .annotation-em { font: italic 13px 'Inter', sans-serif; fill: #b8582e; }
+    .bar { fill: #b8582e; }
+    .bar-neg { fill: #b8b3a1; }
+    .bar-kept { fill: #b8582e; }
+    .bar-masked { fill: #dcd5c2; }
+    .baseline { stroke: #1a1a1a; stroke-width: 1; }
+    .cutoff { stroke: #7a1e1e; stroke-width: 1; stroke-dasharray: 3,3; fill: none; }
+    .arrow { stroke: #b8582e; stroke-width: 1.6; fill: none; }
+  </style>
+
+  <defs>
+    <marker id="arrow-end" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#b8582e"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="720" fill="#faf6ec"/>
+
+  <!-- Title block -->
+  <text x="40" y="42" class="title">Softmax → température → top-p → tirage : la chaîne mécanique</text>
+  <text x="40" y="64" class="subtitle">Quatre opérateurs appliqués à la même distribution de logits sur 15 tokens (suite du prompt « ____ est la capitale de la France »)</text>
+
+  <!-- ============================= -->
+  <!-- Panel 1 : Logits bruts -->
+  <g transform="translate(40, 100)">
+    <text x="0" y="0" class="panel-title">1 · Logits bruts</text>
+    <text x="0" y="16" class="panel-sub">sortie du forward pass — non bornés, peuvent être négatifs</text>
+
+    <!-- Baseline at y=170 (zero line) ; bars go up or down -->
+    <line x1="0" y1="170" x2="270" y2="170" class="baseline"/>
+    <text x="-5" y="174" text-anchor="end" class="label">0</text>
+
+    <!-- 15 bars : logits [5.2,4.1,3.5,2.8,2.4,2.1,1.7,1.4,1.0,0.7,0.3,-0.2,-0.8,-1.3,-1.9]
+         scale 1 logit = 25 px ; width 14 ; gap 4 (pitch 18) -->
+    <rect x="0"   y="40"  width="14" height="130" class="bar"/>
+    <rect x="18"  y="68"  width="14" height="102" class="bar"/>
+    <rect x="36"  y="82"  width="14" height="88"  class="bar"/>
+    <rect x="54"  y="100" width="14" height="70"  class="bar"/>
+    <rect x="72"  y="110" width="14" height="60"  class="bar"/>
+    <rect x="90"  y="118" width="14" height="52"  class="bar"/>
+    <rect x="108" y="128" width="14" height="42"  class="bar"/>
+    <rect x="126" y="135" width="14" height="35"  class="bar"/>
+    <rect x="144" y="145" width="14" height="25"  class="bar"/>
+    <rect x="162" y="153" width="14" height="17"  class="bar"/>
+    <rect x="180" y="162" width="14" height="8"   class="bar"/>
+    <rect x="198" y="170" width="14" height="5"   class="bar-neg"/>
+    <rect x="216" y="170" width="14" height="20"  class="bar-neg"/>
+    <rect x="234" y="170" width="14" height="33"  class="bar-neg"/>
+    <rect x="252" y="170" width="14" height="48"  class="bar-neg"/>
+
+    <text x="7"   y="32" text-anchor="middle" class="label">+5,2</text>
+    <text x="259" y="232" text-anchor="middle" class="label">−1,9</text>
+
+    <!-- Token labels (rotated) at y=230 -->
+    <g transform="translate(0, 240)">
+      <text transform="rotate(-50 7 0)"   x="7" y="0" text-anchor="end" class="label-token">Paris</text>
+      <text transform="rotate(-50 25 0)"  x="25" y="0" text-anchor="end" class="label-token">ville</text>
+      <text transform="rotate(-50 43 0)"  x="43" y="0" text-anchor="end" class="label-token">France</text>
+      <text transform="rotate(-50 61 0)"  x="61" y="0" text-anchor="end" class="label-token">Seine</text>
+      <text transform="rotate(-50 79 0)"  x="79" y="0" text-anchor="end" class="label-token">Lutèce</text>
+      <text transform="rotate(-50 97 0)"  x="97" y="0" text-anchor="end" class="label-token">capitale</text>
+      <text transform="rotate(-50 115 0)" x="115" y="0" text-anchor="end" class="label-token">lumière</text>
+      <text transform="rotate(-50 133 0)" x="133" y="0" text-anchor="end" class="label-token">amour</text>
+      <text transform="rotate(-50 151 0)" x="151" y="0" text-anchor="end" class="label-token">café</text>
+      <text transform="rotate(-50 169 0)" x="169" y="0" text-anchor="end" class="label-token">Eiffel</text>
+      <text transform="rotate(-50 187 0)" x="187" y="0" text-anchor="end" class="label-token">Louvre</text>
+      <text transform="rotate(-50 205 0)" x="205" y="0" text-anchor="end" class="label-token">Hugo</text>
+      <text transform="rotate(-50 223 0)" x="223" y="0" text-anchor="end" class="label-token">Sacré</text>
+      <text transform="rotate(-50 241 0)" x="241" y="0" text-anchor="end" class="label-token">mode</text>
+      <text transform="rotate(-50 259 0)" x="259" y="0" text-anchor="end" class="label-token">…</text>
+    </g>
+
+    <text x="135" y="305" text-anchor="middle" class="annotation">Réels, non bornés. Ce n'est pas encore une distribution.</text>
+  </g>
+
+  <!-- Panel 2 : Softmax T=1 -->
+  <g transform="translate(320, 100)">
+    <text x="0" y="0" class="panel-title">2 · Softmax (T=1)</text>
+    <text x="0" y="16" class="panel-sub">e^logit / Σ e^logit — distribution sommant à 1</text>
+
+    <!-- Baseline at y=220 (bottom of chart) ; bars go up only -->
+    <line x1="0" y1="220" x2="270" y2="220" class="baseline"/>
+    <text x="-5" y="224" text-anchor="end" class="label">0</text>
+    <text x="-5" y="40" text-anchor="end" class="label">1,0</text>
+
+    <!-- probs [0.55,0.18,0.10,0.05,0.034,0.025,0.017,0.012,0.008,0.006,0.004,0.003,0.001,0.001,0.000]
+         scale prob 1.0 = 180 px ; heights -->
+    <rect x="0"   y="121" width="14" height="99"  class="bar"/>
+    <rect x="18"  y="187.6" width="14" height="32.4" class="bar"/>
+    <rect x="36"  y="202" width="14" height="18" class="bar"/>
+    <rect x="54"  y="211" width="14" height="9" class="bar"/>
+    <rect x="72"  y="213.9" width="14" height="6.1" class="bar"/>
+    <rect x="90"  y="215.5" width="14" height="4.5" class="bar"/>
+    <rect x="108" y="216.9" width="14" height="3.1" class="bar"/>
+    <rect x="126" y="217.8" width="14" height="2.2" class="bar"/>
+    <rect x="144" y="218.6" width="14" height="1.4" class="bar"/>
+    <rect x="162" y="218.9" width="14" height="1.1" class="bar"/>
+    <rect x="180" y="219.3" width="14" height="0.7" class="bar"/>
+    <rect x="198" y="219.5" width="14" height="0.5" class="bar"/>
+    <rect x="216" y="219.8" width="14" height="0.2" class="bar"/>
+    <rect x="234" y="219.8" width="14" height="0.2" class="bar"/>
+    <rect x="252" y="219.9" width="14" height="0.1" class="bar"/>
+
+    <text x="7"  y="117" text-anchor="middle" class="label">0,55</text>
+    <text x="25" y="184" text-anchor="middle" class="label">0,18</text>
+    <text x="43" y="198" text-anchor="middle" class="label">0,10</text>
+
+    <text x="135" y="305" text-anchor="middle" class="annotation">Tous positifs. Somme = 1. La distribution est née.</text>
+  </g>
+
+  <!-- Panel 3 : Température T=0.7 -->
+  <g transform="translate(600, 100)">
+    <text x="0" y="0" class="panel-title">3 · Température T = 0,7</text>
+    <text x="0" y="16" class="panel-sub">softmax(logit / T) — petit T pique la distribution</text>
+
+    <line x1="0" y1="220" x2="270" y2="220" class="baseline"/>
+    <text x="-5" y="224" text-anchor="end" class="label">0</text>
+    <text x="-5" y="40" text-anchor="end" class="label">1,0</text>
+
+    <!-- probs after T=0.7 (peakier) : [0.73,0.15,0.06,0.024,0.013,0.0087,0.0049,...] -->
+    <rect x="0"   y="89"  width="14" height="131" class="bar"/>
+    <rect x="18"  y="193" width="14" height="27"  class="bar"/>
+    <rect x="36"  y="209.2" width="14" height="10.8" class="bar"/>
+    <rect x="54"  y="215.7" width="14" height="4.3" class="bar"/>
+    <rect x="72"  y="217.7" width="14" height="2.3" class="bar"/>
+    <rect x="90"  y="218.4" width="14" height="1.6" class="bar"/>
+    <rect x="108" y="219.1" width="14" height="0.9" class="bar"/>
+    <rect x="126" y="219.4" width="14" height="0.6" class="bar"/>
+    <rect x="144" y="219.6" width="14" height="0.4" class="bar"/>
+    <rect x="162" y="219.7" width="14" height="0.3" class="bar"/>
+    <rect x="180" y="219.9" width="14" height="0.1" class="bar"/>
+
+    <text x="7"  y="85"  text-anchor="middle" class="label">0,73</text>
+    <text x="25" y="189" text-anchor="middle" class="label">0,15</text>
+
+    <text x="135" y="305" text-anchor="middle" class="annotation">T contracte ou aplatit. Choix de design, pas vérité.</text>
+  </g>
+
+  <!-- Panel 4 : Top-p 0.9 + tirage -->
+  <g transform="translate(880, 100)">
+    <text x="0" y="0" class="panel-title">4 · Top-p p = 0,9 + tirage</text>
+    <text x="0" y="16" class="panel-sub">masque la queue (Σ &lt; 0,9), renormalise, échantillonne</text>
+
+    <line x1="0" y1="220" x2="270" y2="220" class="baseline"/>
+    <text x="-5" y="224" text-anchor="end" class="label">0</text>
+
+    <!-- top-p 0.9 keeps tokens 1-5 (cumulative 0.92), renormalize :
+         kept renorm : [0.60, 0.20, 0.11, 0.054, 0.037, 0, ...]
+         heights = prob * 180 -->
+    <rect x="0"   y="112" width="14" height="108" class="bar-kept"/>
+    <rect x="18"  y="184" width="14" height="36"  class="bar-kept"/>
+    <rect x="36"  y="200.2" width="14" height="19.8" class="bar-kept"/>
+    <rect x="54"  y="210.3" width="14" height="9.7" class="bar-kept"/>
+    <rect x="72"  y="213.3" width="14" height="6.7" class="bar-kept"/>
+    <rect x="90"  y="218" width="14" height="2" class="bar-masked"/>
+    <rect x="108" y="218" width="14" height="2" class="bar-masked"/>
+    <rect x="126" y="218" width="14" height="2" class="bar-masked"/>
+    <rect x="144" y="218" width="14" height="2" class="bar-masked"/>
+    <rect x="162" y="218" width="14" height="2" class="bar-masked"/>
+    <rect x="180" y="218" width="14" height="2" class="bar-masked"/>
+    <rect x="198" y="218" width="14" height="2" class="bar-masked"/>
+    <rect x="216" y="218" width="14" height="2" class="bar-masked"/>
+    <rect x="234" y="218" width="14" height="2" class="bar-masked"/>
+    <rect x="252" y="218" width="14" height="2" class="bar-masked"/>
+
+    <text x="7"  y="108" text-anchor="middle" class="label">0,60</text>
+    <text x="25" y="180" text-anchor="middle" class="label">0,20</text>
+
+    <!-- cutoff marker (between token 5 and 6) -->
+    <line x1="83" y1="48" x2="83" y2="234" class="cutoff"/>
+    <text x="83" y="44" text-anchor="middle" class="label" fill="#7a1e1e">cutoff Σ = 0,9</text>
+
+    <!-- tirage arrow -->
+    <path d="M 7,82 L 7,107" class="arrow" marker-end="url(#arrow-end)"/>
+    <text x="20" y="65" class="annotation-em">tirage : « Paris »</text>
+
+    <text x="135" y="305" text-anchor="middle" class="annotation">Le tirage final est échantillonné — pas argmax.</text>
+  </g>
+
+  <!-- Separator -->
+  <line x1="40" y1="490" x2="1160" y2="490" stroke="#d4cdb6" stroke-width="0.6"/>
+
+  <!-- ============================= -->
+  <!-- Comparison strip : T=0,2 / T=0,7 / T=1,5 -->
+  <g transform="translate(40, 510)">
+    <text x="0" y="0" class="panel-title">Comparaison : effet de la température sur la même distribution</text>
+    <text x="0" y="16" class="panel-sub">T petit = quasi déterministe · T grand = chaos contrôlé</text>
+
+    <!-- T = 0.2 (very peaky) -->
+    <g transform="translate(0, 35)">
+      <text x="180" y="0" text-anchor="middle" class="label" fill="#1a1a1a">T = 0,2 (quasi déterministe)</text>
+      <line x1="0" y1="110" x2="360" y2="110" class="baseline"/>
+      <rect x="0"   y="14"  width="14" height="96" class="bar"/>
+      <rect x="18"  y="104" width="14" height="6"  class="bar"/>
+      <rect x="36"  y="108" width="14" height="2"  class="bar"/>
+      <rect x="54"  y="109" width="14" height="1"  class="bar"/>
+      <text x="7" y="10" text-anchor="middle" class="label">0,96</text>
+    </g>
+
+    <!-- T = 0.7 (default) -->
+    <g transform="translate(400, 35)">
+      <text x="180" y="0" text-anchor="middle" class="label" fill="#1a1a1a">T = 0,7 (défaut conventionnel)</text>
+      <line x1="0" y1="110" x2="360" y2="110" class="baseline"/>
+      <rect x="0"   y="31"  width="14" height="79" class="bar"/>
+      <rect x="18"  y="94"  width="14" height="16" class="bar"/>
+      <rect x="36"  y="103" width="14" height="7"  class="bar"/>
+      <rect x="54"  y="107" width="14" height="3"  class="bar"/>
+      <rect x="72"  y="108.6" width="14" height="1.4" class="bar"/>
+      <rect x="90"  y="109.2" width="14" height="0.8" class="bar"/>
+      <text x="7" y="27" text-anchor="middle" class="label">0,73</text>
+    </g>
+
+    <!-- T = 1.5 (flat) -->
+    <g transform="translate(800, 35)">
+      <text x="180" y="0" text-anchor="middle" class="label" fill="#1a1a1a">T = 1,5 (chaos contrôlé)</text>
+      <line x1="0" y1="110" x2="360" y2="110" class="baseline"/>
+      <rect x="0"   y="80"  width="14" height="30" class="bar"/>
+      <rect x="18"  y="86"  width="14" height="24" class="bar"/>
+      <rect x="36"  y="89"  width="14" height="21" class="bar"/>
+      <rect x="54"  y="91"  width="14" height="19" class="bar"/>
+      <rect x="72"  y="93"  width="14" height="17" class="bar"/>
+      <rect x="90"  y="94"  width="14" height="16" class="bar"/>
+      <rect x="108" y="95"  width="14" height="15" class="bar"/>
+      <rect x="126" y="96"  width="14" height="14" class="bar"/>
+      <rect x="144" y="97"  width="14" height="13" class="bar"/>
+      <rect x="162" y="98"  width="14" height="12" class="bar"/>
+      <rect x="180" y="99"  width="14" height="11" class="bar"/>
+      <rect x="198" y="100" width="14" height="10" class="bar"/>
+      <rect x="216" y="101" width="14" height="9"  class="bar"/>
+      <rect x="234" y="102" width="14" height="8"  class="bar"/>
+      <rect x="252" y="103" width="14" height="7"  class="bar"/>
+      <text x="7" y="76" text-anchor="middle" class="label">0,25</text>
+    </g>
+  </g>
+
+  <!-- Caption -->
+  <text x="600" y="708" text-anchor="middle" class="annotation">
+    Le tirage final est échantillonné dans la distribution masquée de l'étape 4 — il n'y a pas de « réponse correcte », il y a un dé pondéré.
+  </text>
+</svg>
