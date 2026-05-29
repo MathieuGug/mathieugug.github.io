@@ -13,6 +13,8 @@
 
 ## Acte I — Les moteurs
 
+![Infographie Acte I — Les moteurs (A3 paysage)](../../livre/images/20260601-acte1-moteurs-infographie.svg)
+
 > _Couches du dessous de la pile. Avant la boucle, le modèle. Avant la conversation, un tirage probabiliste. Avant le débit en token/sec, un schedule de GPU._
 > _Lecteur cible : expert data + acheteur infra/cloud._
 
@@ -27,6 +29,8 @@
 
 ## Acte II — La boucle
 
+![Infographie Acte II — La boucle (A3 paysage)](../../livre/images/20260601-acte2-boucle-infographie.svg)
+
 > _Anneaux 01-04 (boucle, outils, contexte, patterns). C'est ici que se gagne ou se perd le ROI, et que se constitue la dette technique._
 > _Lecteur cible : agent engineer, tech lead, architecte._
 
@@ -40,6 +44,8 @@
 
 ## Acte III — Les interfaces
 
+![Infographie Acte III — Les interfaces (A3 paysage)](../../livre/images/20260601-acte3-interfaces-infographie.svg)
+
 > _Anneau 05 + surfaces. C'est par là que l'utilisateur final touche l'agent — et que se décide la friction d'adoption._
 > _Lecteur cible : PM, designer, intégrateur, architecte plateforme._
 
@@ -52,6 +58,8 @@
 | 16 | ✅ [Analytics agentique : la stack data + IA en sectoriel régulé](ch16-analytics-agentique-banque.md) (dont encart 4 p) | standard 24 p | ~10 800 |
 
 ## Acte IV — Mesures et garde-fous
+
+![Infographie Acte IV — Mesures et garde-fous (A3 paysage)](../../livre/images/20260601-acte4-mesures-garde-fous-infographie.svg)
 
 > _Anneaux 06-09 (guardrails, observabilité, runtime, governance). C'est ici que se gagne ou se perd la confiance du décideur._
 > _Lecteur cible : décideur, sponsor, RSSI, DPO, FinOps, CDO._
@@ -73,6 +81,19 @@
 - ⏳ **Épilogue — Sept paris à dater 2027-2028**
 
 ---
+
+## Infographies de couverture par acte
+
+Une par acte, A3 paysage (viewBox 1600×1130). Vue d'avion synthétisant les chapitres de l'acte avec, pour chacun : contenu (en mots-clés), thèse à retenir, schéma signature.
+
+| Acte | Infographie | Statut |
+|---|---|---|
+| **I** | [Les moteurs](../../livre/images/20260601-acte1-moteurs-infographie.svg) | ✅ v1 |
+| **II** | [La boucle](../../livre/images/20260601-acte2-boucle-infographie.svg) | ✅ v1 |
+| **III** | [Les interfaces](../../livre/images/20260601-acte3-interfaces-infographie.svg) | ✅ v1 |
+| **IV** | [Mesures et garde-fous](../../livre/images/20260601-acte4-mesures-garde-fous-infographie.svg) | ✅ v1 |
+
+Générateur idempotent : [`tools/gen_actes_infographics.py`](../../tools/gen_actes_infographics.py).
 
 ## Schémas produits ex nihilo pour le livre
 
