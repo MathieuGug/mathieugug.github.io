@@ -1,9 +1,9 @@
 # Sommaire — Livre « Anatomie d'une IA agentique »
 
-> **Manuscrit en cours de production.** État au 29 mai 2026. **23/25 chapitres v1 livrés.**
+> **Manuscrit en cours de production.** État au 29 mai 2026. **23/25 chapitres v1 livrés** (tous trackés git).
 > Voir [`../livre-outline.md`](../livre-outline.md) pour la carte de bataille complète (4 actes, 25 chapitres, schémas R/E, gabarits, frontières inter-chapitres) et [`../journal-livre.md`](../journal-livre.md) pour les audits éditoriaux + tâches restantes par chapitre.
 
-**Repère lecteur** : ✅ v1 livré · 🟡 v1 sur disque hors PR · ⏳ à écrire
+**Repère lecteur** : ✅ v1 livré · ⏳ à écrire
 
 ---
 
@@ -47,9 +47,9 @@
 |---|---|---|---|
 | 12 | ✅ [MCP, le HTTP des agents](ch12-mcp-plateforme.md) | standard 22 p | ~5 550 |
 | 13 | ✅ [Sécurité MCP : dix vecteurs × dix patterns](ch13-mcp-securite.md) | standard 22 p | ~5 570 |
-| 14 | 🟡 [Surfaces agentiques : quatre régimes d'accès](ch14-surfaces-agentiques.md) | standard 22 p | ~10 370 |
-| 15 | 🟡 [Computer use : le régime extrême](ch15-computer-use.md) | standard 22 p | ~7 530 |
-| 16 | 🟡 [Analytics agentique : la stack data + IA en sectoriel régulé](ch16-analytics-agentique-banque.md) | standard 24 p | ~10 800 |
+| 14 | ✅ [Surfaces agentiques : quatre régimes d'accès](ch14-surfaces-agentiques.md) | standard 22 p | ~10 370 |
+| 15 | ✅ [Computer use : le régime extrême](ch15-computer-use.md) | standard 18 p | ~7 530 |
+| 16 | ✅ [Analytics agentique : la stack data + IA en sectoriel régulé](ch16-analytics-agentique-banque.md) (dont encart 4 p) | standard 24 p | ~10 800 |
 
 ## Acte IV — Mesures et garde-fous
 
@@ -104,7 +104,7 @@ Tous les autres schémas (R1-R15, R17, R19, E1, E2, E6) sont **réutilisés tels
 
 ## Statistiques de production
 
-- **Couverture chapitres** : 23 / 25 (92 %) + 3 manuscrits Ch.14-16 sur disque hors PR
+- **Couverture chapitres** : 23 / 25 (92 %) tous trackés git ; restent Ch.24 (IA et travail) et Ch.25 (procès Musk v. Altman)
 - **Volume total chapitres committés** : ~157 000 mots sur 23 chapitres (~6 800 mots/chapitre en moyenne)
 - **Footnotes Tier-A intégrées** : 300+ (cible 12-25 par chapitre standard, 25-50 par chapitre charnière)
 - **Schémas réutilisés tels quels** : 60+ depuis les 28 dossiers source
