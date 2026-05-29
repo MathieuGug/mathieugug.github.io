@@ -64,17 +64,18 @@
 > _Anneaux 06-09 (guardrails, observabilité, runtime, governance). C'est ici que se gagne ou se perd la confiance du décideur._
 > _Lecteur cible : décideur, sponsor, RSSI, DPO, FinOps, CDO._
 
-| # | Chapitre | Gabarit | Mots |
-|---|---|---|---|
-| 17 | ✅ [Évaluer un agent (et débunker les leaderboards)](ch17-evaluation-benchmarks.md) (charnière) | charnière 28-40 p | ~11 050 |
-| 18 | ✅ [Observabilité agentique et cognitive audit trail](ch18-observabilite-cognitive-audit-trail.md) | standard 22 p | ~6 000 |
-| 19 | ✅ [Garde-fous, jailbreaking et sécurité globale](ch19-gardefous-securite-globale.md) (charnière) | charnière 28-40 p | ~6 720 |
-| 20 | ✅ [Runtime managé et déploiement](ch20-runtime-manage.md) | standard 22 p | ~6 240 |
-| 21 | ✅ [Mesurer le ROI (et le paradoxe agentique)](ch21-roi-paradoxe-agentique.md) (charnière) | charnière 28-40 p | ~8 530 |
-| 22 | ✅ [Externalité énergétique : IA frugale](ch22-ia-frugale.md) | standard 22 p | ~8 120 |
-| 23 | ✅ [Gouvernance : AI Act, banque, machine unlearning](ch23-gouvernance-ai-act.md) | standard 22 p | ~9 300 |
-| 24 | ⏳ Société : IA et travail | standard 22 p | — |
-| 25 | ⏳ Politique : procès Musk v. Altman | court encart 12 p | — |
+| #   | Chapitre                                                                                          | Gabarit           | Mots    |
+| --- | ------------------------------------------------------------------------------------------------- | ----------------- | ------- |
+| 17  | ✅ [Évaluer un agent (et débunker les leaderboards)](ch17-evaluation-benchmarks.md) (charnière)    | charnière 28-40 p | ~11 050 |
+| 18  | ✅ [Observabilité agentique et cognitive audit trail](ch18-observabilite-cognitive-audit-trail.md) | standard 22 p     | ~6 000  |
+| 19  | ✅ [Garde-fous, jailbreaking et sécurité globale](ch19-gardefous-securite-globale.md) (charnière)  | charnière 28-40 p | ~6 720  |
+| 20  | ✅ [Runtime managé et déploiement](ch20-runtime-manage.md)                                         | standard 22 p     | ~6 240  |
+| 21  | ✅ [Mesurer le ROI (et le paradoxe agentique)](ch21-roi-paradoxe-agentique.md) (charnière)         | charnière 28-40 p | ~8 530  |
+| 22  | ✅ [Externalité énergétique : IA frugale](ch22-ia-frugale.md)                                      | standard 22 p     | ~8 120  |
+| 23  | ✅ [Gouvernance : AI Act, banque, machine unlearning](ch23-gouvernance-ai-act.md)                  | standard 22 p     | ~9 300  |
+| 24  | ⏳ Société : IA et travail                                                                         | standard 22 p     | —       |
+| 25  | ⏳ Politique : procès Musk v. Altman                                                               | court encart 12 p | —       |
+|     |                                                                                                   |                   |         |
 
 ## Épilogue
 
@@ -86,26 +87,26 @@
 
 Une par acte, A3 paysage (viewBox 1600×1130). Vue d'avion synthétisant les chapitres de l'acte avec, pour chacun : contenu (en mots-clés), thèse à retenir, schéma signature.
 
-| Acte | Infographie | Statut |
-|---|---|---|
-| **I** | [Les moteurs](../../livre/images/20260601-acte1-moteurs-infographie.svg) | ✅ v1 |
-| **II** | [La boucle](../../livre/images/20260601-acte2-boucle-infographie.svg) | ✅ v1 |
-| **III** | [Les interfaces](../../livre/images/20260601-acte3-interfaces-infographie.svg) | ✅ v1 |
-| **IV** | [Mesures et garde-fous](../../livre/images/20260601-acte4-mesures-garde-fous-infographie.svg) | ✅ v1 |
+| Acte    | Infographie                                                                                   | Statut |
+| ------- | --------------------------------------------------------------------------------------------- | ------ |
+| **I**   | [Les moteurs](../../livre/images/20260601-acte1-moteurs-infographie.svg)                      | ✅ v1   |
+| **II**  | [La boucle](../../livre/images/20260601-acte2-boucle-infographie.svg)                         | ✅ v1   |
+| **III** | [Les interfaces](../../livre/images/20260601-acte3-interfaces-infographie.svg)                | ✅ v1   |
+| **IV**  | [Mesures et garde-fous](../../livre/images/20260601-acte4-mesures-garde-fous-infographie.svg) | ✅ v1   |
 
 Générateur idempotent : [`tools/gen_actes_infographics.py`](../../tools/gen_actes_infographics.py).
 
 ## Schémas produits ex nihilo pour le livre
 
-| ID | Schéma | Position | Statut |
-|---|---|---|---|
-| **S1.1** | [Softmax → T → top-p → tirage : la chaîne mécanique](../../livre/images/20260601-01-softmax-temperature-sampling-chain.svg) | Ch.1 §1.2 | ✅ v1 |
-| **S1.2** | [Faisceau de 1 000 trajectoires à T=0,7](../../livre/images/20260601-02-variance-trajectoire-1000-rejouages.svg) | Ch.1 §1.3 | ✅ v1 |
-| **E3** | [Capability × Cost : seconde courbe de scaling](../../livre/images/20260601-03-capability-vs-cost-e3.svg) | Ch.2 §2.4 (+ renvoi Ch.5, Ch.17) | ✅ v1 |
-| **E5** | [PRM vs LLM-as-judge vs human eval](../../livre/images/20260601-04-prm-vs-judge-vs-human-e5.svg) | Ch.3 §3.7 (+ renvoi Ch.17) | ✅ v1 |
-| E4 | Threat model unifié 2026 (modèle / prompt / mémoire / outil / protocole / surface) | Ch.19 §19.10 | 📝 textualisé (à graphiquer si édition print le réclame) |
-| R16 | Productivity J-curve × LLMflation × paradoxe agentique | Ch.21 §21.2.3 / §21.7 (+ renvoi Ch.5) | ⏳ à créer (brief Ch.21) |
-| R18 | Calendrier réglementaire 2026-2028 unifié | Ch.23 §23.2 (+ §23.10) | ⏳ à créer (brief Ch.23) |
+| ID       | Schéma                                                                                                                      | Position                              | Statut                                                   |
+| -------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- | -------------------------------------------------------- |
+| **S1.1** | [Softmax → T → top-p → tirage : la chaîne mécanique](../../livre/images/20260601-01-softmax-temperature-sampling-chain.svg) | Ch.1 §1.2                             | ✅ v1                                                     |
+| **S1.2** | [Faisceau de 1 000 trajectoires à T=0,7](../../livre/images/20260601-02-variance-trajectoire-1000-rejouages.svg)            | Ch.1 §1.3                             | ✅ v1                                                     |
+| **E3**   | [Capability × Cost : seconde courbe de scaling](../../livre/images/20260601-03-capability-vs-cost-e3.svg)                   | Ch.2 §2.4 (+ renvoi Ch.5, Ch.17)      | ✅ v1                                                     |
+| **E5**   | [PRM vs LLM-as-judge vs human eval](../../livre/images/20260601-04-prm-vs-judge-vs-human-e5.svg)                            | Ch.3 §3.7 (+ renvoi Ch.17)            | ✅ v1                                                     |
+| **E4**   | [Threat model unifié 2026 (six surfaces × quatre parades load-bearing)](../../livre/images/20260601-e4-threat-model-unifie-2026.svg) | Ch.19 §19.10 (+ cité Ch.10, Ch.13, Ch.15) | ✅ v1                                                     |
+| **R16**  | [Productivity J-curve × LLMflation × paradoxe agentique](../../livre/images/20260601-r16-jcurve-llmflation-paradoxe.svg)    | Ch.21 §21.2.3 + §21.7 (+ renvoi Ch.5) | ✅ v1                                                     |
+| **R18**  | [Calendrier réglementaire 2026-2028 unifié](../../gouvernance/images/20260421-r18-calendrier-reglementaire.svg)             | Ch.23 §23.2 + §23.10                  | ✅ v1 (livré dans `gouvernance/images/`)                  |
 
 Tous les autres schémas (R1-R15, R17, R19, E1, E2, E6) sont **réutilisés tels quels** depuis les dossiers source (`anatomie/`, `economie-inference/`, `orchestration-agentique/`, etc.). Voir [`../livre-outline.md`](../livre-outline.md) annexe A pour la liste exhaustive.
 
@@ -113,13 +114,13 @@ Tous les autres schémas (R1-R15, R17, R19, E1, E2, E6) sont **réutilisés tels
 
 ## Annexes
 
-| | Annexe | Statut |
-|---|---|---|
-| A | Schémas à fusionner (registres R et E) | 🟡 partiel — voir [`../livre-outline.md`](../livre-outline.md) §A |
-| B | Glossaire (extension de `anatomie/livre-data.js` CONCEPT_DEFS + ~30 entrées spécialisées) | ⏳ à compléter |
-| C | Index des dossiers source (chronologique, 28 dossiers) | ⏳ à générer depuis `index.html` racine |
-| D | Index des rôles (parcours de lecture par profil RSSI / FinOps / DPO / CDO / Agent Engineer) | ⏳ à compléter |
-| | Cahier central « 6 schémas pour tout retenir » (E1-E6) | 🟡 4/6 prêts (E1, E2, E3 ✅, E5 ✅, E6) — E4 textualisé |
+|     | Annexe                                                                                      | Statut                                                            |
+| --- | ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| A   | Schémas à fusionner (registres R et E)                                                      | 🟡 partiel — voir [`../livre-outline.md`](../livre-outline.md) §A |
+| B   | Glossaire (extension de `anatomie/livre-data.js` CONCEPT_DEFS + ~30 entrées spécialisées)   | ⏳ à compléter                                                     |
+| C   | Index des dossiers source (chronologique, 28 dossiers)                                      | ⏳ à générer depuis `index.html` racine                            |
+| D   | Index des rôles (parcours de lecture par profil RSSI / FinOps / DPO / CDO / Agent Engineer) | ⏳ à compléter                                                     |
+|     | Cahier central « 6 schémas pour tout retenir » (E1-E6)                                      | ✅ 6/6 prêts (E1, E2, E3, E4, E5, E6)                              |
 
 ---
 
@@ -129,7 +130,7 @@ Tous les autres schémas (R1-R15, R17, R19, E1, E2, E6) sont **réutilisés tels
 - **Volume total chapitres committés** : ~157 000 mots sur 23 chapitres (~6 800 mots/chapitre en moyenne)
 - **Footnotes Tier-A intégrées** : 300+ (cible 12-25 par chapitre standard, 25-50 par chapitre charnière)
 - **Schémas réutilisés tels quels** : 60+ depuis les 28 dossiers source
-- **Schémas créés ex nihilo pour le livre** : 4 (S1.1, S1.2, E3, E5) — restent E4 (textualisé), R16, R18
+- **Schémas créés ex nihilo pour le livre** : 7 (S1.1, S1.2, E3, E4, E5, R16, R18) — tous v1 livrés
 
 ---
 

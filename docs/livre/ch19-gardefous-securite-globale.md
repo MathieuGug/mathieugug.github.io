@@ -268,6 +268,11 @@ Le threat model détermine quels layers sont **obligatoires** vs **optionnels**.
 
 L'angle propre du chapitre, et l'objet **transverse** de l'Acte IV : un threat model **unifié** qui agrège ce que les chapitres voisins décrivent en silos. ==Six surfaces empilées, chacune avec son owner, ses défenses spécifiques, ses indicateurs OTel `gen_ai.security.*`==.
 
+![Schéma E4 — Threat model unifié 2026 : six surfaces, six familles, quatre parades load-bearing|1400](../../livre/images/20260601-e4-threat-model-unifie-2026.svg)
+
+> [!NOTE] À propos du Schéma E4
+> Version v1 — schéma transverse RSSI agrégeant les vecteurs identifiés en silos dans Ch.10 (memory poisoning SpAIware), Ch.13 (matrice MCP 10×10), Ch.15 (VPI + CVE-2025-55322), Ch.2 §2.6 (faithfulness CoT), Ch.3 §3.6 (reward hacking). Six cartes-surfaces en grille 3×2 avec, pour chacune, trois vecteurs typiques + parade dominante + renvoi chapitre. Bandeau bas : quatre parades load-bearing transverses (Sigstore + hash pinning · tool tagging · allowlist namespace · HITL writes irréversibles). Cité 4× dans le livre : Ch.19 (principal), Ch.10, Ch.13, Ch.15.
+
 | Surface | Cible primaire | Vecteurs principaux | Défense load-bearing | Owner |
 | --- | --- | --- | --- | --- |
 | **(i) Modèle** | poids, refus, alignement | GCG, PAIR, Crescendo, MSJ, Policy Puppetry | Constitutional Classifiers v2 + circuit breakers | provider modèle + AI Safety Lead |
