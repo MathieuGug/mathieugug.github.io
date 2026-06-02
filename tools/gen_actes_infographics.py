@@ -111,36 +111,40 @@ def make_svg(acte_key, data):
     card_h = 520
     card_y = 260
 
+    # Scope every CSS rule with `#svg-acte-X` so the 4 inlined SVGs do not
+    # cascade into each other (without the prefix, the last `<style>` block
+    # in the document wins for shared class names like `.card-stripe`).
+    svg_id = "svg-acte-{}".format(acte_key)
     svg = []
-    svg.append('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {} {}" font-family="Inter, system-ui, sans-serif" role="img" aria-labelledby="title-acte-{}">'.format(W, H, acte_key))
+    svg.append('<svg id="{}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {} {}" font-family="Inter, system-ui, sans-serif" role="img" aria-labelledby="title-acte-{}">'.format(svg_id, W, H, acte_key))
     svg.append('  <title id="title-acte-{}">Acte {} — {}</title>'.format(acte_key, theme["name"], data["title"]))
     svg.append('  <desc>Infographie de l\'Acte {} du livre « Anatomie d\'une IA agentique ». Synthèse des {} chapitres : thèse, public cible, contenu de chaque chapitre, schéma signature.</desc>'.format(theme["name"], n_chap))
 
     svg.append('''  <style>
-    .acte-tag { font: 700 14px 'JetBrains Mono', monospace; fill: PRIMARY; letter-spacing: 0.18em; }
-    .acte-num { font: 900 200px/1 'Fraunces', 'Georgia', serif; fill: PRIMARY; opacity: 0.08; }
-    .acte-title { font: 700 52px/1.1 'Fraunces', 'Georgia', serif; fill: #1a1a1a; }
-    .acte-subtitle { font: italic 18px/1.4 'Inter', sans-serif; fill: #444; }
-    .acte-audience { font: 600 13px 'Inter', sans-serif; fill: PRIMARY; letter-spacing: 0.05em; }
-    .acte-thesis { font: 16px/1.4 'Inter', sans-serif; fill: #1a1a1a; }
-    .card-bg { fill: #ffffff; stroke: #d4cdb6; stroke-width: 0.8; }
-    .card-stripe { fill: PRIMARY; }
-    .card-num { font: 700 32px 'Fraunces', 'Georgia', serif; fill: #fff; }
-    .card-tag { font: 600 9px 'JetBrains Mono', monospace; fill: #fff; letter-spacing: 0.12em; }
-    .card-title { font: 600 16px/1.25 'Inter', sans-serif; fill: #1a1a1a; }
-    .card-fact { font: 600 12px 'JetBrains Mono', monospace; fill: INK; }
-    .card-claim { font: italic 13px/1.4 'Inter', sans-serif; fill: #333; }
-    .card-schema { font: 11px 'JetBrains Mono', monospace; fill: PRIMARY; }
-    .card-label { font: 600 9px 'Inter', sans-serif; fill: #888; letter-spacing: 0.1em; }
-    .callout-box { fill: SOFT; stroke: PRIMARY; stroke-width: 1.2; }
-    .callout-title { font: 700 14px 'Inter', sans-serif; fill: INK; letter-spacing: 0.04em; }
-    .callout-body { font: 13px/1.4 'Inter', sans-serif; fill: #1a1a1a; }
-    .caption { font: italic 11px 'Inter', sans-serif; fill: #777; }
-    .chapter-card { cursor: pointer; transition: transform .2s ease, filter .2s ease; transform-origin: center; transform-box: fill-box; }
-    .chapter-card:hover .card-bg, .chapter-card:focus-visible .card-bg { fill: #fffdf6; }
-    .chapter-card:focus { outline: none; }
-    .chapter-card:focus-visible .card-bg { stroke: PRIMARY; stroke-width: 2; }
-  </style>'''.replace("PRIMARY", primary).replace("INK", ink).replace("SOFT", soft))
+    #SVGID .acte-tag { font: 700 14px 'JetBrains Mono', monospace; fill: PRIMARY; letter-spacing: 0.18em; }
+    #SVGID .acte-num { font: 900 200px/1 'Fraunces', 'Georgia', serif; fill: PRIMARY; opacity: 0.08; }
+    #SVGID .acte-title { font: 700 52px/1.1 'Fraunces', 'Georgia', serif; fill: #1a1a1a; }
+    #SVGID .acte-subtitle { font: italic 18px/1.4 'Inter', sans-serif; fill: #444; }
+    #SVGID .acte-audience { font: 600 13px 'Inter', sans-serif; fill: PRIMARY; letter-spacing: 0.05em; }
+    #SVGID .acte-thesis { font: 16px/1.4 'Inter', sans-serif; fill: #1a1a1a; }
+    #SVGID .card-bg { fill: #ffffff; stroke: #d4cdb6; stroke-width: 0.8; }
+    #SVGID .card-stripe { fill: PRIMARY; }
+    #SVGID .card-num { font: 700 32px 'Fraunces', 'Georgia', serif; fill: #fff; }
+    #SVGID .card-tag { font: 600 9px 'JetBrains Mono', monospace; fill: #fff; letter-spacing: 0.12em; }
+    #SVGID .card-title { font: 600 16px/1.25 'Inter', sans-serif; fill: #1a1a1a; }
+    #SVGID .card-fact { font: 600 12px 'JetBrains Mono', monospace; fill: INK; }
+    #SVGID .card-claim { font: italic 13px/1.4 'Inter', sans-serif; fill: #333; }
+    #SVGID .card-schema { font: 11px 'JetBrains Mono', monospace; fill: PRIMARY; }
+    #SVGID .card-label { font: 600 9px 'Inter', sans-serif; fill: #888; letter-spacing: 0.1em; }
+    #SVGID .callout-box { fill: SOFT; stroke: PRIMARY; stroke-width: 1.2; }
+    #SVGID .callout-title { font: 700 14px 'Inter', sans-serif; fill: INK; letter-spacing: 0.04em; }
+    #SVGID .callout-body { font: 13px/1.4 'Inter', sans-serif; fill: #1a1a1a; }
+    #SVGID .caption { font: italic 11px 'Inter', sans-serif; fill: #777; }
+    #SVGID .chapter-card { cursor: pointer; transition: transform .2s ease, filter .2s ease; transform-origin: center; transform-box: fill-box; }
+    #SVGID .chapter-card:hover .card-bg, #SVGID .chapter-card:focus-visible .card-bg { fill: #fffdf6; }
+    #SVGID .chapter-card:focus { outline: none; }
+    #SVGID .chapter-card:focus-visible .card-bg { stroke: PRIMARY; stroke-width: 2; }
+  </style>'''.replace("SVGID", svg_id).replace("PRIMARY", primary).replace("INK", ink).replace("SOFT", soft))
 
     svg.append('  <rect width="{}" height="{}" fill="#faf6ec"/>'.format(W, H))
 
