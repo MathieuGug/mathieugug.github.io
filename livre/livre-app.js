@@ -86,6 +86,9 @@
     lastFocus = document.activeElement;
     var overlay = document.getElementById('reader-overlay');
     overlay.removeAttribute('hidden');
+    // Lock BOTH html and body — body alone leaves the (now-empty) page
+    // scrollbar visible at the right edge, giving the illusion of duplicates.
+    document.documentElement.style.overflow = 'hidden';
     document.body.style.overflow = 'hidden';
 
     // Update hash without scroll. Preserve anchor when present.
@@ -123,6 +126,7 @@
   function closeReader() {
     var overlay = document.getElementById('reader-overlay');
     overlay.setAttribute('hidden', '');
+    document.documentElement.style.overflow = '';
     document.body.style.overflow = '';
     // Strip the hash so we don't reopen on back-button/refresh.
     if (location.hash && /^#ch\d{2}(\/.+)?$/.test(location.hash)) {
