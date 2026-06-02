@@ -6,7 +6,7 @@ Usage:
         --title "MCP, le HTTP des agents" \
         --eyebrow "Dossier 14 . 8 mai 2026" \
         --output mcp-plateforme/og.png \
-        [--accent-word "agents"] [--kind dossier|veille|etude]
+        [--accent-word "agents"] [--kind dossier|veille|etude|livre]
 
 Design choices:
 - 1200x630 = standard og:image ratio (Facebook, LinkedIn, Twitter summary_large_image).
@@ -152,7 +152,7 @@ def main():
     ap.add_argument("--eyebrow", required=True, help="e.g. 'Dossier 14 . 8 mai 2026'")
     ap.add_argument("--output", required=True)
     ap.add_argument("--accent-word", default=None, help="One word in the title to render in accent orange")
-    ap.add_argument("--kind", default="dossier", choices=["dossier", "veille", "etude"])
+    ap.add_argument("--kind", default="dossier", choices=["dossier", "veille", "etude", "livre"])
     args = ap.parse_args()
     render_card(args.title, args.eyebrow, args.output, args.accent_word, args.kind)
 
