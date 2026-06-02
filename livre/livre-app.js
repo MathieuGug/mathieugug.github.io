@@ -101,14 +101,16 @@
     content.innerHTML = '<div class="reader-loading">Chargement…</div>';
 
     fetchChapter(meta.slug).then(function (md) {
-      var article = renderChapter(md, meta);
+      var grid = renderChapter(md, meta);
       content.innerHTML = '';
-      content.appendChild(article);
+      content.appendChild(grid);
       // Scroll to top
       overlay.scrollTop = 0;
       // Move focus into the article so keyboard shortcuts work without tabbing
-      var firstHeading = article.querySelector('h1');
+      var firstHeading = grid.querySelector('h1');
       if (firstHeading) firstHeading.setAttribute('tabindex', '-1'), firstHeading.focus({ preventScroll: true });
+      // Wire TOC observer to highlight the active section while scrolling
+      wireTocObserver(grid, overlay);
     }).catch(function (err) {
       console.error('[livre-app] fetch error', err);
       content.innerHTML = '<div class="reader-error">Impossible de charger ' + meta.slug + '.md (' + err.message + ')</div>';
@@ -184,7 +186,86 @@
       wrap.appendChild(t);
     });
 
-    return article;
+    // Slugify H2/H3 + build mini-TOC sidebar
+    var toc = buildToc(article);
+
+    // Wrap article + toc in a grid container
+    var grid = document.createElement('div');
+    grid.className = 'reader-grid';
+    grid.appendChild(article);
+    if (toc) grid.appendChild(toc);
+
+    return grid;
+  }
+
+  function slugifyHeading(text) {
+    return text.toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 60);
+  }
+
+  function buildToc(article) {
+    var headings = article.querySelectorAll('h2, h3');
+    if (headings.length < 2) return null;
+    var aside = document.createElement('aside');
+    aside.className = 'reader-toc';
+    aside.setAttribute('aria-label', 'Sommaire du chapitre');
+    var html = '<div class="toc-label">Dans ce chapitre</div><ol class="toc-list">';
+    var seen = Object.create(null);
+    headings.forEach(function (h) {
+      var text = h.textContent.trim();
+      if (!text) return;
+      var base = slugifyHeading(text) || 'h';
+      var id = base;
+      var n = 2;
+      while (seen[id]) { id = base + '-' + n; n += 1; }
+      seen[id] = true;
+      h.id = id;
+      var level = h.tagName === 'H2' ? '2' : '3';
+      html += '<li class="toc-item toc-level-' + level + '"><a href="#' + id + '">' + escapeHtml(text) + '</a></li>';
+    });
+    html += '</ol>';
+    aside.innerHTML = html;
+    // Smooth-scroll handler that targets the overlay scroll container (not the body)
+    aside.addEventListener('click', function (e) {
+      var a = e.target.closest('a[href^="#"]');
+      if (!a) return;
+      var targetId = a.getAttribute('href').slice(1);
+      var target = document.getElementById(targetId);
+      if (!target) return;
+      e.preventDefault();
+      var overlay = document.getElementById('reader-overlay');
+      var top = target.getBoundingClientRect().top - overlay.getBoundingClientRect().top + overlay.scrollTop - 72;
+      overlay.scrollTo({ top: top, behavior: 'smooth' });
+    });
+    return aside;
+  }
+
+  function wireTocObserver(grid, overlay) {
+    var toc = grid.querySelector('.reader-toc');
+    if (!toc) return;
+    var links = toc.querySelectorAll('a[href^="#"]');
+    if (!links.length) return;
+    var byId = Object.create(null);
+    links.forEach(function (a) {
+      var id = a.getAttribute('href').slice(1);
+      byId[id] = a.parentElement; // .toc-item
+    });
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        var id = entry.target.id;
+        var item = byId[id];
+        if (!item) return;
+        if (entry.isIntersecting) {
+          // Clear other active states, set this one
+          toc.querySelectorAll('.toc-item.is-active').forEach(function (el) { el.classList.remove('is-active'); });
+          item.classList.add('is-active');
+        }
+      });
+    }, { root: overlay, rootMargin: '-80px 0px -60% 0px', threshold: 0 });
+    grid.querySelectorAll('h2, h3').forEach(function (h) { if (h.id) observer.observe(h); });
   }
 
   function stripFrontmatter(md) {
@@ -250,24 +331,43 @@
   }
 
   function extractFootnotes(md) {
-    // Definitions :  [^1]: body
-    // References  :  text[^1]
+    // Definitions :  [^id]: body
+    // References  :  text[^id]
+    // IDs can be named (`[^welleck]`) — we renumber them 1..N by order of first
+    // appearance in the body, so the rendered ref reads `[1]`, not `welleck`.
     var defs = Object.create(null);
     var defRe = /^\[\^([^\]]+)\]:[ \t]*([^\n]*(?:\n[ \t]+[^\n]*)*)/gm;
     var body = md.replace(defRe, function (_, id, content) {
       defs[id] = content.replace(/\n[ \t]+/g, ' ').trim();
       return '';
     });
-    // Replace references
-    body = body.replace(/\[\^([^\]]+)\]/g, function (_, id) {
-      return '<sup class="fn-ref"><a href="#fn-' + id + '" id="fnref-' + id + '">' + id + '</a></sup>';
+    // First pass : assign numbers in order of first ref appearance in body.
+    var numbering = Object.create(null);
+    var counter = 0;
+    body.replace(/\[\^([^\]]+)\]/g, function (_, id) {
+      if (numbering[id] === undefined) { counter += 1; numbering[id] = counter; }
+      return _;
     });
-    var ids = Object.keys(defs);
-    if (!ids.length) return { body: body, section: '' };
+    // Catch defs that have no ref (rare) so they still show up — append at end.
+    Object.keys(defs).forEach(function (id) {
+      if (numbering[id] === undefined) { counter += 1; numbering[id] = counter; }
+    });
+    // Replace references with numbered <sup>[N]</sup>
+    body = body.replace(/\[\^([^\]]+)\]/g, function (_, id) {
+      var n = numbering[id];
+      return '<sup class="fn-ref"><a href="#fn-' + n + '" id="fnref-' + n + '">[' + n + ']</a></sup>';
+    });
+    if (!counter) return { body: body, section: '' };
+    // Render notes section in numerical order
+    var ordered = Object.keys(numbering).sort(function (a, b) { return numbering[a] - numbering[b]; });
     var section = '<hr><h4 id="footnotes">Notes</h4><ol class="footnotes">';
-    ids.forEach(function (id) {
-      var html = window.marked.parseInline(defs[id]);
-      section += '<li id="fn-' + id + '">' + html + ' <a href="#fnref-' + id + '" class="fn-back" aria-label="Retour à la référence">↩</a></li>';
+    ordered.forEach(function (id) {
+      var n = numbering[id];
+      var content = defs[id];
+      if (!content) return;
+      var html = window.marked.parseInline(content);
+      section += '<li id="fn-' + n + '"><span class="fn-num">[' + n + ']</span> ' + html +
+                 ' <a href="#fnref-' + n + '" class="fn-back" aria-label="Retour à la référence">↩</a></li>';
     });
     section += '</ol>';
     return { body: body, section: section };

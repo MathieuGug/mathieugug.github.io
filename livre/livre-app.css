@@ -435,10 +435,17 @@ footer.site .colophon-ai {
   position: relative;
   z-index: 1;
 }
-.reader-article {
-  max-width: 760px;
+.reader-grid {
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 6vh 5vw 8vh;
+  padding: 5vh clamp(20px, 4vw, 56px) 8vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 240px;
+  column-gap: 56px;
+  align-items: start;
+}
+.reader-article {
+  min-width: 0;
   font-family: 'Fraunces', 'Georgia', serif;
   font-weight: 300;
   font-size: 17.5px;
@@ -528,12 +535,45 @@ footer.site .colophon-ai {
   color: inherit;
   font-size: inherit;
 }
-.reader-article img {
+.reader-article img,
+.reader-article svg,
+.reader-article figure {
   display: block;
   max-width: 100%;
   height: auto;
-  margin: 24px auto;
+  margin: 28px auto;
   border-radius: 6px;
+}
+/* Full-bleed figures : extend beyond the 760-ish content column, up to the
+   grid container's available width. Caption stays centered under the figure. */
+.reader-article figure {
+  margin-left: clamp(-180px, calc((100% - 1000px) / 2), 0px);
+  margin-right: clamp(-180px, calc((100% - 1000px) / 2), 0px);
+  max-width: none;
+  width: auto;
+}
+.reader-article figure img,
+.reader-article figure svg {
+  margin: 0 auto;
+  max-width: 1000px;
+  width: 100%;
+}
+.reader-article figcaption {
+  max-width: 760px;
+  margin: 12px auto 0;
+  text-align: center;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: var(--text-faint);
+  font-style: italic;
+}
+/* Standalone images inserted as paragraphs (Obsidian style ![[…]] rendered
+   as <p><img></p>) — apply the same wider treatment when standalone. */
+.reader-article p > img:only-child {
+  display: block;
+  max-width: 1000px;
+  width: 100%;
+  margin: 28px auto;
 }
 .reader-article hr {
   border: 0;
@@ -579,54 +619,160 @@ footer.site .colophon-ai {
   text-transform: uppercase;
 }
 
-/* Obsidian callouts */
+/* Obsidian callouts — polished : softer left border, subtle full border,
+   tinted background per type. Each type drives a single `--cb-color`. */
 .reader-article .callout {
-  margin: 24px 0;
-  padding: 18px 22px;
-  border-radius: 6px;
-  background: var(--surface);
-  border-left: 4px solid var(--accent);
+  --cb-color: var(--accent);
+  margin: 28px 0;
+  padding: 18px 24px 20px;
+  border-radius: 8px;
+  background: color-mix(in oklab, var(--cb-color) 4%, var(--surface));
+  border: 1px solid color-mix(in oklab, var(--cb-color) 14%, var(--line));
+  border-left: 3px solid var(--cb-color);
   font-family: 'Inter', sans-serif;
   font-size: 15px;
-  line-height: 1.55;
+  line-height: 1.6;
   color: var(--text);
 }
 .reader-article .callout-title {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 10.5px;
-  letter-spacing: 0.16em;
+  font-size: 10px;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  font-weight: 500;
-  margin-bottom: 8px;
-  color: var(--accent);
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: var(--cb-color);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
+.reader-article .callout-title::before {
+  content: '';
+  display: inline-block;
+  width: 14px;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.45;
+  margin-right: 2px;
+}
+.reader-article .callout-body { color: var(--text); }
+.reader-article .callout-body p:first-child { margin-top: 0; }
 .reader-article .callout-body p:last-child { margin-bottom: 0; }
-.reader-article .callout-body ul, .reader-article .callout-body ol { margin-bottom: 0; }
-.reader-article .callout[data-type="QUESTION"]  { border-left-color: var(--teal); }
-.reader-article .callout[data-type="QUESTION"]  .callout-title { color: var(--teal); }
-.reader-article .callout[data-type="TLDR"]      { border-left-color: var(--accent); background: linear-gradient(180deg, color-mix(in oklab, var(--accent) 5%, var(--surface)), var(--surface)); }
-.reader-article .callout[data-type="TLDR"]      .callout-title { color: var(--accent); }
-.reader-article .callout[data-type="IMPORTANT"] { border-left-color: var(--carmine); }
-.reader-article .callout[data-type="IMPORTANT"] .callout-title { color: var(--carmine); }
-.reader-article .callout[data-type="WARNING"]   { border-left-color: var(--carmine); background: linear-gradient(180deg, color-mix(in oklab, var(--carmine) 5%, var(--surface)), var(--surface)); }
-.reader-article .callout[data-type="WARNING"]   .callout-title { color: var(--carmine); }
-.reader-article .callout[data-type="CAUTION"]   { border-left-color: var(--carmine); }
-.reader-article .callout[data-type="CAUTION"]   .callout-title { color: var(--carmine); }
-.reader-article .callout[data-type="ATTENTION"] { border-left-color: var(--carmine); }
-.reader-article .callout[data-type="ATTENTION"] .callout-title { color: var(--carmine); }
-.reader-article .callout[data-type="INFO"]      { border-left-color: var(--teal); }
-.reader-article .callout[data-type="INFO"]      .callout-title { color: var(--teal); }
-.reader-article .callout[data-type="TIP"]       { border-left-color: var(--gold); }
-.reader-article .callout[data-type="TIP"]       .callout-title { color: var(--gold); }
-.reader-article .callout[data-type="NOTE"]      { border-left-color: var(--text-faint); }
-.reader-article .callout[data-type="NOTE"]      .callout-title { color: var(--text-faint); }
-.reader-article .callout[data-type="EXAMPLE"]   { border-left-color: var(--gold); }
-.reader-article .callout[data-type="EXAMPLE"]   .callout-title { color: var(--gold); }
-.reader-article .callout[data-type="QUOTE"]     { border-left-color: var(--text-faint); font-style: italic; }
-.reader-article .callout[data-type="QUOTE"]     .callout-title { color: var(--text-faint); }
+.reader-article .callout-body ul, .reader-article .callout-body ol { margin: 0.4em 0 0 1.3em; }
+.reader-article .callout-body ul:last-child, .reader-article .callout-body ol:last-child { margin-bottom: 0; }
+.reader-article .callout-body li { margin: 0 0 .3em; }
+.reader-article .callout[data-type="QUESTION"]  { --cb-color: var(--teal); }
+.reader-article .callout[data-type="TLDR"]      { --cb-color: var(--accent); }
+.reader-article .callout[data-type="IMPORTANT"] { --cb-color: var(--carmine); }
+.reader-article .callout[data-type="WARNING"]   { --cb-color: var(--carmine); }
+.reader-article .callout[data-type="CAUTION"]   { --cb-color: var(--carmine); }
+.reader-article .callout[data-type="ATTENTION"] { --cb-color: var(--carmine); }
+.reader-article .callout[data-type="INFO"]      { --cb-color: var(--teal); }
+.reader-article .callout[data-type="TIP"]       { --cb-color: var(--gold); }
+.reader-article .callout[data-type="NOTE"]      { --cb-color: var(--text-faint); }
+.reader-article .callout[data-type="EXAMPLE"]   { --cb-color: var(--gold); }
+.reader-article .callout[data-type="QUOTE"]     { --cb-color: var(--text-faint); font-style: italic; }
+
+/* Mini-TOC sidebar (right rail) */
+.reader-toc {
+  position: sticky;
+  top: 80px;
+  align-self: start;
+  max-height: calc(100vh - 110px);
+  overflow-y: auto;
+  padding: 8px 0 24px;
+  border-left: 1px solid var(--line);
+  padding-left: 22px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-dim);
+  scrollbar-width: thin;
+}
+.reader-toc .toc-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+.reader-toc .toc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.reader-toc .toc-item a {
+  color: var(--text-dim);
+  text-decoration: none;
+  display: block;
+  padding: 4px 0 4px 10px;
+  border-left: 2px solid transparent;
+  transition: color .15s, border-color .15s;
+}
+.reader-toc .toc-item a:hover { color: var(--accent); }
+.reader-toc .toc-item.is-active > a {
+  color: var(--text);
+  border-left-color: var(--accent);
+  font-weight: 500;
+}
+.reader-toc .toc-level-3 a {
+  font-size: 12.5px;
+  padding-left: 22px;
+  color: var(--text-faint);
+}
+.reader-toc .toc-level-3.is-active > a { color: var(--text-dim); }
+
+/* Footnote markers */
+.reader-article sup.fn-ref { font-size: 0.7em; vertical-align: super; line-height: 0; }
+.reader-article sup.fn-ref a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 0;
+  padding: 0 1px;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+}
+.reader-article sup.fn-ref a:hover { background: color-mix(in oklab, var(--accent) 14%, transparent); }
+.reader-article ol.footnotes {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  font-family: 'Inter', sans-serif;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--text-dim);
+}
+.reader-article ol.footnotes li {
+  margin: 0 0 10px;
+  padding-left: 0;
+  text-indent: 0;
+}
+.reader-article ol.footnotes li .fn-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-right: 4px;
+}
+.reader-article ol.footnotes li a.fn-back {
+  margin-left: 4px;
+  color: var(--text-faint);
+  border-bottom: 0;
+  font-family: 'JetBrains Mono', monospace;
+}
+.reader-article h4#footnotes {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 40px 0 16px;
+}
 
 /* Footer reader */
 .reader-foot {
@@ -694,6 +840,26 @@ footer.site .colophon-ai {
   text-transform: uppercase;
   color: var(--text);
   cursor: pointer;
+}
+
+/* ═════ TABLET — collapse TOC + tame figure full-bleed ═════ */
+@media (max-width: 1100px) {
+  .reader-grid {
+    grid-template-columns: minmax(0, 1fr);
+    column-gap: 0;
+  }
+  .reader-toc {
+    display: none;
+  }
+  .reader-article figure {
+    margin-left: 0;
+    margin-right: 0;
+  }
+  .reader-article figure img,
+  .reader-article figure svg,
+  .reader-article p > img:only-child {
+    max-width: 100%;
+  }
 }
 
 /* ═════ MOBILE ═════ */
