@@ -66,7 +66,12 @@
       '<div class="zoom-stage"></div>';
     document.body.appendChild(overlay);
     overlay.querySelector('.zoom-close').addEventListener('click', closeZoom);
-    overlay.addEventListener('click', function (e) { if (e.target === overlay) closeZoom(); });
+    // Click outside the SVG (and outside the close button) closes the modal.
+    overlay.addEventListener('click', function (e) {
+      if (e.target.closest('.zoom-stage svg')) return; // inside the schema
+      if (e.target.closest('.zoom-close')) return;     // close button handled above
+      closeZoom();
+    });
     return overlay;
   }
   function closeZoom() {
