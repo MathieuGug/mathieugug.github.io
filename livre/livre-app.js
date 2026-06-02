@@ -79,7 +79,7 @@
   // ─────────────────────────────────────────────────────────────────
   var lastFocus = null;
 
-  function openReader(chNum) {
+  function openReader(chNum, anchor) {
     var meta = DATA.chapitres[chNum];
     if (!meta) { console.warn('[livre-app] no chapter', chNum); return; }
 
@@ -88,9 +88,10 @@
     overlay.removeAttribute('hidden');
     document.body.style.overflow = 'hidden';
 
-    // Update hash without scroll
-    if (location.hash !== '#ch' + pad2(chNum)) {
-      history.pushState({ ch: chNum }, '', '#ch' + pad2(chNum));
+    // Update hash without scroll. Preserve anchor when present.
+    var targetHash = '#ch' + pad2(chNum) + (anchor ? '/' + anchor : '');
+    if (location.hash !== targetHash) {
+      history.pushState({ ch: chNum, anchor: anchor || null }, '', targetHash);
     }
 
     paintBreadcrumb(chNum, meta);
@@ -104,13 +105,15 @@
       var grid = renderChapter(md, meta);
       content.innerHTML = '';
       content.appendChild(grid);
-      // Scroll to top
+      // Scroll to top (default) — overridden if an anchor was requested
       overlay.scrollTop = 0;
       // Move focus into the article so keyboard shortcuts work without tabbing
       var firstHeading = grid.querySelector('h1');
       if (firstHeading) firstHeading.setAttribute('tabindex', '-1'), firstHeading.focus({ preventScroll: true });
       // Wire TOC observer to highlight the active section while scrolling
       wireTocObserver(grid, overlay);
+      // Deep-link : scroll to a specific anchor (figure or section) if provided
+      if (anchor) scrollToAnchor(anchor, overlay);
     }).catch(function (err) {
       console.error('[livre-app] fetch error', err);
       content.innerHTML = '<div class="reader-error">Impossible de charger ' + meta.slug + '.md (' + err.message + ')</div>';
@@ -122,7 +125,7 @@
     overlay.setAttribute('hidden', '');
     document.body.style.overflow = '';
     // Strip the hash so we don't reopen on back-button/refresh.
-    if (location.hash && /^#ch\d{2}$/.test(location.hash)) {
+    if (location.hash && /^#ch\d{2}(\/.+)?$/.test(location.hash)) {
       history.pushState({}, '', location.pathname + location.search);
     }
     if (lastFocus && typeof lastFocus.focus === 'function') lastFocus.focus();
@@ -184,6 +187,21 @@
       wrap.className = 'table-wrap';
       t.parentNode.insertBefore(wrap, t);
       wrap.appendChild(t);
+    });
+
+    // Assign deep-link IDs to images based on their src basename, so the
+    // figures index page can land on the exact figure inside the chapter via
+    // a `#chNN/fig-<basename>` hash.
+    article.querySelectorAll('img').forEach(function (img) {
+      var src = img.getAttribute('src') || '';
+      var basename = src.split('/').pop().replace(/\.[^.]+$/, '');
+      if (!basename) return;
+      var anchorId = 'fig-' + basename;
+      img.id = anchorId;
+      // Lift the ID onto the wrapping <p> too, so scrolling lands cleanly
+      // (img inside a paragraph often has padding above from the <p>).
+      var parent = img.closest('p, figure');
+      if (parent && !parent.id) parent.id = anchorId + '-wrap';
     });
 
     // Slugify H2/H3 + build mini-TOC sidebar
@@ -404,14 +422,31 @@
   // Routing + keyboard
   // ─────────────────────────────────────────────────────────────────
   function handleHash() {
-    var m = /^#ch(\d{2})$/.exec(location.hash);
+    // Accept #chNN or #chNN/<anchor>. The anchor is opaque to the router —
+    // anything after the `/` is passed through to openReader as-is.
+    var m = /^#ch(\d{2})(?:\/(.+))?$/.exec(location.hash);
     if (m) {
       var n = parseInt(m[1], 10);
-      if (n >= 1 && n <= 25) { openReader(n); return; }
+      var anchor = m[2] ? decodeURIComponent(m[2]) : null;
+      if (n >= 1 && n <= 25) { openReader(n, anchor); return; }
     }
     // No hash or invalid → ensure reader closed
     var overlay = document.getElementById('reader-overlay');
     if (overlay && !overlay.hasAttribute('hidden')) closeReader();
+  }
+
+  function scrollToAnchor(anchor, overlay) {
+    // Try the anchor as-is, then the wrap variant (used for images/figures).
+    var target = document.getElementById(anchor) || document.getElementById(anchor + '-wrap');
+    if (!target) return;
+    // Wait one frame so layout has settled after the article was injected.
+    requestAnimationFrame(function () {
+      var top = target.getBoundingClientRect().top - overlay.getBoundingClientRect().top + overlay.scrollTop - 72;
+      overlay.scrollTo({ top: top, behavior: 'auto' });
+      // Brief highlight ring so the user spots the target
+      target.classList.add('fig-deeplinked');
+      setTimeout(function () { target.classList.remove('fig-deeplinked'); }, 2200);
+    });
   }
 
   function bindKeyboard() {
