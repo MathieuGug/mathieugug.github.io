@@ -1,7 +1,7 @@
 # Sommaire — Livre « Anatomie d'une IA agentique »
 
 > **Manuscrit en cours de production.** État au 29 mai 2026. **25/25 chapitres v1 livrés** (tous trackés git). Restent Prologue + Épilogue.
-> Voir [`../livre-outline.md`](../livre-outline.md) pour la carte de bataille complète (4 actes, 25 chapitres, schémas R/E, gabarits, frontières inter-chapitres) et [`../journal-livre.md`](../journal-livre.md) pour les audits éditoriaux + tâches restantes par chapitre.
+> Voir [`../livre-outline.md`](livre-outline.md) pour la carte de bataille complète (4 actes, 25 chapitres, schémas R/E, gabarits, frontières inter-chapitres) et [`../journal-livre.md`](journal-livre.md) pour les audits éditoriaux + tâches restantes par chapitre.
 
 **Repère lecteur** : ✅ v1 livré · ⏳ à écrire
 
@@ -108,7 +108,7 @@ Générateur idempotent : [`tools/gen_actes_infographics.py`](../../tools/gen_ac
 | **R16**  | [Productivity J-curve × LLMflation × paradoxe agentique](../../livre/images/20260601-r16-jcurve-llmflation-paradoxe.svg)             | Ch.21 §21.2.3 + §21.7 (+ renvoi Ch.5)     | ✅ v1                                    |
 | **R18**  | [Calendrier réglementaire 2026-2028 unifié](../../gouvernance/images/20260421-r18-calendrier-reglementaire.svg)                      | Ch.23 §23.2 + §23.10                      | ✅ v1 (livré dans `gouvernance/images/`) |
 
-Tous les autres schémas (R1-R15, R17, R19, E1, E2, E6) sont **réutilisés tels quels** depuis les dossiers source (`anatomie/`, `economie-inference/`, `orchestration-agentique/`, etc.). Voir [`../livre-outline.md`](../livre-outline.md) annexe A pour la liste exhaustive.
+Tous les autres schémas (R1-R15, R17, R19, E1, E2, E6) sont **réutilisés tels quels** depuis les dossiers source (`anatomie/`, `economie-inference/`, `orchestration-agentique/`, etc.). Voir [`../livre-outline.md`](livre-outline.md) annexe A pour la liste exhaustive.
 
 ---
 
@@ -116,7 +116,7 @@ Tous les autres schémas (R1-R15, R17, R19, E1, E2, E6) sont **réutilisés tels
 
 |     | Annexe                                                                                      | Statut                                                            |
 | --- | ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| A   | Schémas à fusionner (registres R et E)                                                      | 🟡 partiel — voir [`../livre-outline.md`](../livre-outline.md) §A |
+| A   | Schémas à fusionner (registres R et E)                                                      | 🟡 partiel — voir [`../livre-outline.md`](livre-outline.md) §A |
 | B   | Glossaire (extension de `anatomie/livre-data.js` CONCEPT_DEFS + ~30 entrées spécialisées)   | ⏳ à compléter                                                     |
 | C   | Index des dossiers source (chronologique, 28 dossiers)                                      | ⏳ à générer depuis `index.html` racine                            |
 | D   | Index des rôles (parcours de lecture par profil RSSI / FinOps / DPO / CDO / Agent Engineer) | ⏳ à compléter                                                     |

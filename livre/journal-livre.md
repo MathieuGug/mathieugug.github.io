@@ -1,6 +1,6 @@
 # Journal de suivi — livre
 
-Journal de production du livre (28 dossiers → 25 chapitres). Voir [`livre-outline.md`](./livre-outline.md) pour la structure globale.
+Journal de production du livre (28 dossiers → 25 chapitres). Voir [`livre-outline.md`](livre-outline.md) pour la structure globale.
 
 > **Branche** : `claude/book-outline-concepts-2mRuR` · **Dépôt** : [mathieugug/mathieugug.github.io](https://github.com/MathieuGug/mathieugug.github.io)
 
