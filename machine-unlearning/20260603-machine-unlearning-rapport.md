@@ -107,7 +107,7 @@ L'enchaînement est gênant. Une méthode qui passe TOFU à 0,95 peut perdre 93 
 
 La voie de sortie communautaire qui se dessine en 2025-2026 ne consiste pas à inventer une cinquième famille de méthodes, mais à *robustifier* les méthodes existantes par une couche d'ingénierie de pipeline.
 
-[SCHEMA-06]
+![Pipeline d'audit d'unlearning : forget set → unlearn → SMIA → relearn probe → certification|1200](images/20260603-06-pipeline-audit.svg)
 
 **Distillation Robustifies Unlearning** (arXiv 2506.06278)[^8] est la publication-pivot. L'idée : après avoir appliqué NPO ou RMU, on distille un *student* depuis ce modèle *teacher* unlearned. Le student, n'ayant jamais vu la donnée d'origine, hérite d'une représentation déjà partiellement « oubliée » et résiste mieux aux relearning attacks. C'est une réutilisation élégante du *model collapse* — la dégradation par auto-distillation devient une primitive constructive d'oubli, comme l'a théorisé une publication arXiv 2507.04219 (« Model Collapse Is Not a Bug but a Feature in Machine Unlearning »).
 
