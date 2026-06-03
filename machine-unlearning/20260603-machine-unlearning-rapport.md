@@ -30,7 +30,7 @@ Enfin, l'**EDPS** a inscrit le *machine unlearning* dans son TechSonar comme l'u
 
 Avant de comparer des méthodes, il faut s'accorder sur ce que *oublier* veut dire dans un système IA. La confusion la plus fréquente — y compris dans certaines communications produit — consiste à présenter une purge de retrieval comme un *unlearning*. Elle ne l'est pas.
 
-[SCHEMA-02]
+![Trois couches d'oubli : RAG, fine-tune, poids — coût et garantie comparés|1200](images/20260603-02-trois-couches-oubli.svg)
 
 **Couche 1 — RAG / retrieval.** Une donnée vit dans un index vectoriel (FAISS, Pinecone, pgvector). La supprimer revient à supprimer un *embedding* et son texte source. C'est immédiat, peu coûteux, *exact*. Mais cette couche ne couvre que les données que le modèle ne connaît pas par lui-même — celles qu'on lui *donne* à chaque requête.
 
