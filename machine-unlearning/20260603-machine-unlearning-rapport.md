@@ -90,7 +90,7 @@ Le problème — celui que les régulateurs vont devoir trancher — est l'écar
 
 Deux publications 2025 ont fait basculer le discours communautaire de l'optimisme méthodologique vers la prudence régulatoire.
 
-[SCHEMA-05]
+![Matrice attaques × familles : REBEL, relearning bénin, SMIA, Apollo|1200](images/20260603-05-matrice-attaques.svg)
 
 **Łucki et al., ICLR 2025** — *Machine Unlearning Fails to Remove Data Poisoning Attacks*[^5]. Les auteurs construisent un cadre d'évaluation adversaire (REBEL) qui utilise des *prompts évolutionnaires* pour sonder le modèle après unlearning. Le résultat est brutal : ==REBEL récupère jusqu'à 60 % du savoir TOFU « oublié » et 93 % du savoir WMDP==, sur des modèles ayant publié des scores forget quality > 0,9 par les méthodes standards. Même l'*exact unlearning* par retraining est vulnérable à des « difference attacks » qui comparent les sorties pré- et post-suppression.
 
