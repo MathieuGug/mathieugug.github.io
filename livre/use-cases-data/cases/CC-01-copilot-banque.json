@@ -1,0 +1,560 @@
+{
+  "meta": {
+    "id": "CC-01",
+    "titre": "Copilot conseiller bancaire",
+    "secteur": "Banque",
+    "facette_scaling": "build_vs_buy",
+    "facettes_secondaires": ["trajectoire_couts", "gouvernance"],
+    "regime": "hybride",
+    "ia_type": "generative",
+    "gabarit": "charniere",
+    "thes_e_une_ligne": "Le copilot allège l'entretien — mais le KPI qu'on choisit décide si on retombe sur le pivot Vitesse → Hybride documenté 2024.",
+    "auteur": "Mathieu Guglielmino",
+    "date_v1": "2026-06-03"
+  },
+
+  "mise_en_situation": {
+    "scene": "Agence pilote de [VILLE], 9 h, lundi de rentrée scolaire. La conseillère reçoit son premier RDV crédit conso depuis 4 ans dans le métier. Le copilot lui suggère 3 produits en marge de l'entretien — elle en choisit 1, contre l'intuition qu'elle aurait eue. 47 min plus tard, le crédit est ouvert. Le directeur retail veut généraliser : 2 800 conseillers, 14 régions. Mais le directeur conformité demande : « qui répond si le conseil suggéré viole DDA ? »",
+    "chiffres_bruts": [
+      { "label": "Conseillers", "valeur": "2 800" },
+      { "label": "RDV crédit / an", "valeur": "1.2 M" },
+      { "label": "NPS conseiller actuel", "valeur": "38" },
+      { "label": "Cost-per-RDV actuel", "valeur": "85 €" },
+      { "label": "Pilote initial", "valeur": "80 conseillers · 30 k RDV · 6 mois" },
+      { "label": "Recherche doc actuelle", "valeur": "12 s / requête full-text PDF" }
+    ],
+    "horizon_temporel": "POC sept. 2026 → pilote en prod avril 2027 → généralisation Q3 2027 (avant échéance AI Act août 2027)."
+  },
+
+  "architecture_actuelle": {
+    "composants": [
+      {
+        "categorie": "canal_utilisateur",
+        "nom": "Poste de travail conseiller (Windows + Edge + Office 365)",
+        "criticite_pour_le_cas": "read_only",
+        "remarque": "IAM Azure AD avec Conditional Access et MFA hardware key. SSO + scopes par grade conseiller (junior/senior/manager)."
+      },
+      {
+        "categorie": "front_metier",
+        "nom": "Salesforce Financial Services Cloud (CRM cloud Azure)",
+        "criticite_pour_le_cas": "read_write_via_proxy_validation",
+        "remarque": "Fiche client 360, RDV, opportunités cross-sell, KYC, custom Lightning components pour produits crédit. MCP officiel disponible (effort scopes ~1 sem.)."
+      },
+      {
+        "categorie": "data_scoring",
+        "nom": "Snowflake datamart (cloud Azure) + Pega Decisioning (SaaS)",
+        "criticite_pour_le_cas": "read_only",
+        "remarque": "Snowflake mirror nuit du core banking (transactions, soldes, scores comportementaux). Pega API REST pour scoring crédit temps réel."
+      },
+      {
+        "categorie": "core_metier_regule",
+        "nom": "Mainframe IBM z/OS COBOL + middleware Tibco/MQ (WS-SOAP)",
+        "criticite_pour_le_cas": "pas_touche_regule",
+        "remarque": "Décision crédit OFFICIELLE humaine, jamais déléguée à l'IA. Le copilot prépare le dossier ; l'humain signe. Aucun tool MCP exposé."
+      },
+      {
+        "categorie": "knowledge_base",
+        "nom": "SharePoint Online + Documentum DMS + Confluence",
+        "criticite_pour_le_cas": "read_only",
+        "remarque": "Documentum legacy SOAP = MCP wrapper custom obligatoire (3 sem. d'effort, le sclérosant projet). SharePoint MCP officiel (3 j). Confluence MCP communautaire."
+      },
+      {
+        "categorie": "back_office",
+        "nom": "ServiceNow + Power BI",
+        "criticite_pour_le_cas": "read_write",
+        "remarque": "Création tickets back-office post-RDV pour pièces manquantes. Power BI uniquement pour reporting hiérarchique, non touché par le copilot."
+      }
+    ],
+    "implications_structurantes": [
+      "Cloud Azure dominant (Salesforce, Snowflake) → Microsoft Copilot Studio s'intègre quasi natif (argument time-to-value).",
+      "Mainframe inaccessible → le copilot prépare le dossier, l'humain signe via les outils existants.",
+      "Documentum DMS legacy → MCP wrapper custom obligatoire, 50 % du risque planning.",
+      "Azure AD → SSO et scope par grade conseiller gérés côté IAM, le copilot hérite des autorisations."
+    ],
+    "renvoi_figure": "fig-00"
+  },
+
+  "application_concrete": {
+    "modes_usage": [
+      {
+        "id": "A",
+        "label": "Préparation pré-RDV",
+        "moment": "5 min avant le RDV, déclenché par bouton « Briefer ce RDV » sur Salesforce",
+        "actions": [
+          "Génère brief client 360° (situation patrimoniale, événements de vie détectés via signaux datamart)",
+          "Suggère 3 opportunités cross-sell ranked avec pré-filtre DDA",
+          "Propose trame d'entretien adaptée au profil (jeune actif vs sénior, premier RDV vs récurrent)",
+          "Flags de vigilance conformité (DDA jeune, surendettement signalé, plainte ouverte)"
+        ]
+      },
+      {
+        "id": "B",
+        "label": "Pendant le RDV (temps réel, side-panel CRM)",
+        "moment": "Transcription temps réel via Deepgram on-prem, pas d'enregistrement audio persistant (RGPD)",
+        "sous_modes": [
+          { "id": "B1", "label": "Q&A doc temps réel", "description": "Réponse en 4-6 sec avec source citée. Ex : « taux pour crédit travaux vert chez professions libérales ? »" },
+          { "id": "B2", "label": "Suggestion produit contextuelle", "description": "Détecte mention de projet → propose offre éligible + 3 arguments + flag DDA. Trajectoire multi-step détaillée plus bas." },
+          { "id": "B3", "label": "Pré-remplissage formulaire", "description": "Pendant que le conseiller clarifie montants/durées, le copilot remplit en silence les champs de souscription dans Salesforce. Validation 1-clic à la fin." }
+        ]
+      },
+      {
+        "id": "C",
+        "label": "Post-RDV",
+        "moment": "10 min après la fin du RDV",
+        "actions": [
+          "Génère compte-rendu structuré (résumé, décisions, actions de relance datées)",
+          "Crée ticket ServiceNow automatique si pièces manquantes (avec relance préformulée)",
+          "Met à jour fiche Salesforce (tags d'intérêt, prochaine action recommandée)",
+          "Sauvegarde audit trail conformité (qui a dit quoi, quelles recommandations, quelles validations)"
+        ]
+      }
+    ],
+    "niveaux_autonomie": [
+      { "id": "L1", "label": "Suggest",                  "description": "Suggestions textuelles ; le conseiller copie-colle / reformule",                  "active_en": "POC (8 sem.)" },
+      { "id": "L2", "label": "Pré-remplir",              "description": "Écrit dans Salesforce des champs structurés ; validation globale 1-clic",         "active_en": "Pilote (mois 4-9)" },
+      { "id": "L3", "label": "Exécuter sous validation", "description": "Crée ticket ServiceNow, met à jour fiche, envoie email récap — chaque action validée 1-clic via UI", "active_en": "Prod (mois 10-22)" },
+      { "id": "L4", "label": "Pleine autonomie",         "description": "Agit sans validation humaine",                                                     "active_en": "INTERDIT — DDA exige décision humaine en conseil financier ; AI Act haut risque exige supervision humaine effective (Annexe III §5)" }
+    ],
+    "trajectoire_multi_step_exemple": {
+      "scenario": "Mode B.2 — suggestion produit contextuelle suite à mention « travaux d'isolation, 18 000 € sur 7 ans »",
+      "etapes": [
+        {
+          "id": 1,
+          "label": "Listen",
+          "description": "Transcription streaming (Deepgram on-prem) en français."
+        },
+        {
+          "id": 2,
+          "label": "Retrieve",
+          "description": "5 appels MCP en parallèle, ~1.2 s total.",
+          "outils_appeles": [
+            "salesforce-mcp.get_client_360(client_id)",
+            "snowflake-mcp.get_credit_history(client_id, 24m)",
+            "pega-mcp.score_credit_conso(client_id, 18000, 84)",
+            "sharepoint-mcp.search_offers(category='travaux_vert')",
+            "documentum-mcp.search_dda(persona='proprio_RP', risk='moyen')"
+          ]
+        },
+        {
+          "id": 3,
+          "label": "Reason",
+          "description": "Chain-of-thought sur modèle reasoning (Claude 4.7 Sonnet) : DTI projeté 32 % (sous seuil 35 %), éligible Crédit Travaux Vert (−1.2 pt TAEG std), DDA jeune n'applique pas, score Pega 78/100 favorable → suggérer offre A + flag opportunité B (assurance emprunteur) + check DDA explicite.",
+          "renvoi_livre": ["ch.7 boucle agent", "ch.2 modèles reasoning"]
+        },
+        {
+          "id": 4,
+          "label": "Propose",
+          "description": "Carte produit en side-panel CRM avec offre + TAEG + DTI projeté + check DDA + 3 arguments + cross-sell + boutons [Insérer dans formulaire] [Ignorer]."
+        },
+        {
+          "id": 5,
+          "label": "Audit",
+          "description": "Log structuré (chain-of-thought + sources retrieve + décision conseiller) → bucket S3 audit-trail (rétention 6 ans DDA), accessible via tableau RGPD client sur demande.",
+          "renvoi_livre": ["ch.18 audit trail cognitif"]
+        }
+      ]
+    }
+  },
+
+  "outils_internes": {
+    "mcp_servers": [
+      { "systeme": "Salesforce FSC",      "mode": "read_write_via_proxy",        "type_mcp": "officiel disponible",            "effort_dev": "1 sem. customization scopes",                "risque": "moyen", "raison_risque": "scopes par grade conseiller à câbler (junior/senior/manager)" },
+      { "systeme": "Snowflake datamart",  "mode": "read",                        "type_mcp": "open source (snowflake-mcp)",    "effort_dev": "2 j config",                                 "risque": "bas" },
+      { "systeme": "Pega Decisioning",    "mode": "read",                        "type_mcp": "custom (API REST)",              "effort_dev": "1 sem.",                                     "risque": "bas" },
+      { "systeme": "SharePoint Online",   "mode": "read",                        "type_mcp": "officiel Microsoft",             "effort_dev": "3 j",                                        "risque": "moyen", "raison_risque": "RBAC + scoping des libraries autorisées" },
+      { "systeme": "Documentum DMS",      "mode": "read",                        "type_mcp": "custom obligatoire (legacy SOAP)", "effort_dev": "3 sem.",                                   "risque": "haut",  "raison_risque": "Legacy SOAP + permissions granulaires + corpus DDA mal structuré — le sclérosant projet." },
+      { "systeme": "ServiceNow",          "mode": "write",                       "type_mcp": "officiel",                       "effort_dev": "1 sem.",                                     "risque": "bas" },
+      { "systeme": "Deepgram voice",      "mode": "read_streaming",              "type_mcp": "pas MCP, intégration websocket directe", "effort_dev": "1 sem.",                            "risque": "bas" }
+    ],
+    "effort_total": "6-8 semaines pour 1 backend dev sénior + 1 ML eng en support pour le wrapping Documentum.",
+    "renvois_livre": ["ch.12 MCP plateforme", "ch.13 sécurité MCP"]
+  },
+
+  "modeles_cibles": {
+    "candidats": [
+      { "modele": "Claude 4.7 Sonnet",       "force_pour_le_cas": "Excellent FR, tool use natif robuste, MCP first-class, context 1M tokens.",      "faiblesse": "Cloud US (RGPD scrutin) — atténué par AWS Bedrock résidence EU.", "cout_indicatif": "$3 / $15 par M tokens" },
+      { "modele": "Claude 4.7 Opus",         "force_pour_le_cas": "Reasoning niveau supérieur, idéal sur arbitrages DDA complexes.",                "faiblesse": "Coût, latence.",                                                  "cout_indicatif": "$15 / $75 par M tokens" },
+      { "modele": "GPT-5",                   "force_pour_le_cas": "Voice tier intégré, structured output robuste.",                                  "faiblesse": "Lock-in MS si Copilot Studio.",                                   "cout_indicatif": "$5 / $25 par M tokens" },
+      { "modele": "Mistral Large 3",         "force_pour_le_cas": "Souverain France — argument fort en banque réglementée.",                        "faiblesse": "Reasoning légèrement en retrait sur arbitrages multi-critères.",  "cout_indicatif": "€2.5 / €10 par M tokens" },
+      { "modele": "Mistral 7B fine-tuné",    "force_pour_le_cas": "Coût plancher, self-hosted pour 2nd opinion DDA.",                                "faiblesse": "Capacité limitée, pas standalone.",                               "cout_indicatif": "OpEx infra" }
+    ],
+    "recommandation": {
+      "regime": "cascade",
+      "modele_primaire": "Claude 4.7 Sonnet (via AWS Bedrock résidence EU)",
+      "modele_gardien": "Mistral 7B fine-tuned self-hosted (2nd opinion sur tout flag DDA)",
+      "voice_tier": "Deepgram on-prem",
+      "embeddings_rag": "Mistral embed (souverain, perf OK)",
+      "argument_cascade": "Tient le tweet « et si Anthropic est down ? » — fallback dégradé sur Mistral seul possible. Souveraineté partielle + capacité reasoning + coût maîtrisé. Le gardien Mistral 7B est aussi utilisé pour le LLM-as-judge en évaluation continue (cf. section evaluation)."
+    }
+  },
+
+  "enjeux": {
+    "enjeux_chiffres": [
+      { "label": "Délester l'entretien",    "chiffre": "−8 min en moyenne (47 → 39 min)", "consequence": "+4 RDV / semaine / conseiller" },
+      { "label": "Réduire le cost-per-contact", "chiffre": "85 € → 68 €",                 "consequence": "ROI 18 mois sur l'investissement copilot" },
+      { "label": "Élever la consistency de conseil", "chiffre": "écart à doctrine < 5 %", "consequence": "vs 12 % baseline ; protège le FDC contre les banques 100 % en ligne" }
+    ],
+    "benchmark": {
+      "reference": "Bank of America (Erica) 2024",
+      "metrique": "1.5 Md interactions / NPS digital +12 pts ; intégration native CRM en US retail",
+      "renvoi_livre": "ch.21.8"
+    },
+    "contre_benchmark": "Le cas d'école de la remontée échouée 2024 (fintech BNPL scandinave) : copilot client-facing pushé sans KPI gardien Soft, retour à l'hybride forcé 18 mois plus tard avec dégradation NPS. Cf. ch.21.7.2."
+  },
+
+  "build_buy": {
+    "criteres": ["data_sensitivity", "personnalisation", "volumetrie", "lock_in", "time_to_value", "souverainete"],
+    "options": [
+      {
+        "regime": "interne",
+        "stack": "LangGraph + vLLM + Mistral Large 3 self-hosted + corpus DDA fine-tuned + 6 MCP servers custom",
+        "scores": { "data_sensitivity": "++", "personnalisation": "++", "volumetrie": "+", "lock_in": "+", "time_to_value": "--", "souverainete": "++" },
+        "verdict": "Trop lent à mettre en prod pour le calendrier sponsor (CODIR Q2 2027). Reasoning Mistral Large 3 légèrement en retrait sur arbitrages DDA complexes. Réserve : à internaliser progressivement dès phase Scale."
+      },
+      {
+        "regime": "mainstream",
+        "solution": "Microsoft Copilot Studio (GPT-5 sur Azure) + connecteurs Salesforce + SharePoint natifs",
+        "scores": { "data_sensitivity": "-", "personnalisation": "-", "volumetrie": "++", "lock_in": "--", "time_to_value": "++", "souverainete": "--" },
+        "verdict": "Time-to-value imbattable (POC en 4 sem.) mais lock-in Azure problématique pour métier régulé. Le connecteur Documentum reste à construire (pas dans Copilot Studio natif)."
+      },
+      {
+        "regime": "hybride",
+        "stack": "Orchestrateur maison Python + Claude 4.7 Sonnet via MCP + cascade Mistral 7B FT gardien DDA + RAG Mistral embed + 6 MCP servers custom (dont Documentum)",
+        "scores": { "data_sensitivity": "+", "personnalisation": "+", "volumetrie": "+", "lock_in": "0", "time_to_value": "+", "souverainete": "0" },
+        "verdict": "RECOMMANDÉ — équilibre time-to-value, souveraineté partielle (gardien + embeddings FR), fallback dégradé. Les MCP custom servent pour TOUTE la plateforme agent banque ultérieure."
+      }
+    ],
+    "decision_ponderee": "Hybride : démarrage POC sur API Anthropic (Bedrock EU), ré-évaluation à 12 mois pour internaliser routing et gardien Mistral. Investir dans les 6 MCP custom dès la phase POC car ils servent la plateforme agent banque transverse (CC-03 fraude, CC-18 AML, CC-19 reporting réglementaire profiteront du même socle).",
+    "renvoi_livre": "ch.21.6 arbre décision"
+  },
+
+  "trajectoire_couts": {
+    "phases": [
+      { "id": "poc",    "label": "POC 3 mois",    "perimetre": "20 conseillers, 1 agence, mode L1 Suggest, crédit conso uniquement" },
+      { "id": "pilote", "label": "Pilote 6 mois", "perimetre": "80 conseillers, 4 agences, mode L2 Pré-remplir, MCP Salesforce + Snowflake + SharePoint + Pega" },
+      { "id": "prod",   "label": "Prod 12 mois",  "perimetre": "2 800 conseillers, 14 régions, mode L3 sous validation, extension crédit immo + assurance" },
+      { "id": "scale",  "label": "Scale 36 mois", "perimetre": "2 800 conseillers + cross-sell pro + internalisation Mistral self-hosted" }
+    ],
+    "postes": {
+      "inference":   { "poc": 5,  "pilote": 30,  "prod": 180,  "scale": 450  },
+      "infra":       { "poc": 8,  "pilote": 25,  "prod": 90,   "scale": 220  },
+      "equipe":      { "poc": 90, "pilote": 280, "prod": 720,  "scale": 1500 },
+      "data":        { "poc": 10, "pilote": 40,  "prod": 60,   "scale": 80   },
+      "evaluation":  { "poc": 5,  "pilote": 30,  "prod": 120,  "scale": 300  },
+      "gouvernance": { "poc": 8,  "pilote": 25,  "prod": 80,   "scale": 180  },
+      "securite":    { "poc": 5,  "pilote": 20,  "prod": 80,   "scale": 180  },
+      "change":      { "poc": 0,  "pilote": 40,  "prod": 160,  "scale": 320  }
+    },
+    "cout_par_interaction": { "poc": 2.10, "pilote": 0.85, "prod": 0.42, "scale": 0.28 },
+    "crossover_point": "≈ 800 k interactions / an : seuil au-delà duquel l'hybride avec routing interne et gardien self-hosted bat la solution mainstream pure en coût total.",
+    "commentaire_courbe": "Le coût par interaction divise par 7 entre POC et Scale, MAIS le poste équipe est multiplié par ~17 et le poste change par +∞ (de 0 à 320 k€) — paradoxe agentique (ch.21.7) : l'unité de mesure se déplace de l'inférence vers l'équipe + change + évaluation. Les 3 postes les plus sous-estimés au cadrage initial."
+  },
+
+  "gouvernance": {
+    "raci": {
+      "responsable": "Équipe produit copilot (Tech Lead Agentic + 2 prompt eng + 1 ML eng en eval)",
+      "approbateur": "Dir. Retail (sponsor) — engage le budget et arbitre les conflits avec Conformité",
+      "consultes":   ["DPO référent", "RSSI", "Conformité DDA", "Comité IA Risk groupe", "CSE / représentants conseillers"],
+      "informes":    ["CODIR mensuel", "ACPR (régulateur prudentiel banque)"]
+    },
+    "cadence_revue": {
+      "comite_eval":   "trimestriel — métriques en ligne + régression suite + revue incidents",
+      "alertes":       "continues (Datadog + Mistral 7B gardien sur 5 % des entretiens en LLM-as-judge)",
+      "audit_externe": "annuel (cabinet conformité bancaire spécialisé, ex. KPMG ou EY Financial Services)"
+    },
+    "ai_act_ligne": {
+      "niveau":    "haut_risque",
+      "fondement": "AI Act Annexe III §5 — évaluation de la solvabilité dans le cadre du conseil crédit",
+      "echeance":  "2026-08 (transparence) puis 2027-08 (obligations complètes — FRIA, registre, log 6 ans)",
+      "actions":   [
+        "FRIA documentée (Fundamental Rights Impact Assessment) avant pilote élargi",
+        "Registre Annexe IV maintenu trimestriel",
+        "Log d'audit rétention ≥ 6 ans (cohérent DDA + AI Act)",
+        "Supervision humaine effective documentée — interface ≠ rubber-stamp, échantillonnage retour humain ≥ 5 %",
+        "Information du client (DDA) : mention IA dans le compte-rendu post-RDV"
+      ]
+    },
+    "renvoi_livre": "ch.23.5 banque sous AI Act"
+  },
+
+  "evaluation": {
+    "regression_suite": {
+      "taille":   "120 cas dorés DDA + 40 cas adversariaux (prompt injection, contournement règles)",
+      "cadence":  "mise à jour mensuelle par cellule conformité + équipe produit",
+      "criteres": [
+        "respect DDA (doctrine v2026-04 versionnée)",
+        "consistency vs doctrine (response-consistency > 95 %)",
+        "absence cross-sell agressif (heuristique : pas > 2 produits suggérés par RDV)",
+        "robustesse aux prompt injection (rate < 0.5 %)",
+        "qualité argumentaire (LLM-as-judge Mistral gardien + revue humaine échantillon 5 %)"
+      ]
+    },
+    "metriques_online": [
+      { "id": "response-consistency",  "cible": "> 95 %",          "alerte": "< 92 %" },
+      { "id": "regulatory-compliance", "cible": "0 violation DDA", "alerte": "> 0 (rollback immédiat sur 24 h)" },
+      { "id": "csat",                  "cible": "> 4.2 / 5",       "alerte": "< 4.0 / 5 sur 7 j roulants" }
+    ],
+    "detection_derive": {
+      "outil":   "Datadog (latence, taux d'appel tool) + Mistral 7B gardien en LLM-as-judge sur 5 % des entretiens",
+      "alerte":  "PagerDuty équipe produit, escalade DPO si DDA, escalade RSSI si attaque prompt injection",
+      "fenetre": "rolling 7 jours vs baseline 30 jours pour les métriques de qualité ; instantané pour DDA"
+    },
+    "boucle_correction": {
+      "trigger":             "ticket Linear ou alerte automatique Datadog/Mistral gardien",
+      "delai_re_prompt":     "48 h sur les sub-prompts orchestrateur",
+      "cadence_re_finetune": "trimestriel sur le gardien Mistral 7B (corpus DDA mis à jour) ; pas de fine-tuning du primaire Claude (frozen)",
+      "rollback":            "possible en < 4 h via feature flag (chaque tool MCP désactivable individuellement), clause expresse au contrat AWS Bedrock"
+    },
+    "renvoi_livre": ["ch.17 évaluation agent", "ch.18 audit trail cognitif"]
+  },
+
+  "roi": {
+    "axe_principal":     "vitesse",
+    "axes_secondaires":  ["volume", "bienetre"],
+    "methode_mobilisee": "TEI Forrester (chiffrage) + Cigref Hard/Soft (qualification) + arbre décision ch.21.6",
+    "metriques": [
+      { "id": "processing-time",     "borne_basse": "-3 min",   "cible": "-8 min",   "borne_haute": "-12 min" },
+      { "id": "cost-per-contact",    "borne_basse": "-8 €",     "cible": "-17 €",    "borne_haute": "-25 €"   },
+      { "id": "conversion-rate",     "borne_basse": "+0.5 pt",  "cible": "+1.5 pt",  "borne_haute": "+3 pt"   },
+      { "id": "employee-engagement", "borne_basse": "+3",       "cible": "+8",       "borne_haute": "+12"     }
+    ],
+    "kpi_gardien": {
+      "id": "response-consistency",
+      "role": "KPI gardien Soft ajouté pour activer la règle ch.21.5.4 de convergence — déclenche rollback si dérive > 3 pts sur 7 jours roulants.",
+      "borne": "> 95 % vs doctrine DDA, alerte < 92 %"
+    },
+    "non_retenu": [
+      { "id": "fraud-avoided", "raison": "pas le périmètre (cf. CC-03 détection fraude)" },
+      { "id": "basket-size",   "raison": "attribution copilot ↔ cross-sell trop indirecte sur 12 mois pilote" },
+      { "id": "nps",           "raison": "secondaire de convergence Soft, pas KPI primaire (cf. ch.21.5.4) ; utilisé en monitoring CSAT à la place" }
+    ],
+    "renvoi_figure": "fig-01"
+  },
+
+  "operation_equipe": {
+    "personas": {
+      "porteur":  { "role": "Dir. Retail",     "posture": "Convaincu, pragmatique, sait que les 18 premiers mois seront difficiles, lit le livre", "citation": "Le retour d'expérience BNPL 2024 nous a fait peur, on prend des risques bornés." },
+      "sponsor":  { "role": "CFO",             "posture": "Veut un ROI Hard chiffrable pour le CODIR Q2 2027, comprend Cigref Hard/Soft une fois exposé", "citation": "Si on dégage 5 pts de cost-ratio en 18 mois, je signe." },
+      "allie":    { "role": "DSI",             "posture": "Voit l'opportunité de refondre la couche d'intégration legacy et de monter une plateforme MCP transverse", "citation": "Le CRM est vétuste, c'est le moment de moderniser — et les 6 MCP serviront pour toutes les futures IA." },
+      "opposant": { "role": "Conformité DDA",  "posture": "Garde-fou principiel, mandat légitime — souvent celui qui aura raison à 18 mois si on bâcle le gardien Soft", "citation": "On a accepté l'IA pour la pré-qualif, pas pour recommander." }
+    },
+    "equipe_par_phase": {
+      "poc": {
+        "etp_total": 9.6,
+        "composition": [
+          { "role": "Tech Lead Agentic", "etp": 1.0, "profil": "Senior Python+TS, expérience agentic ≥ 12 mois, comprend MCP/tool use, a déjà livré un agent en prod" },
+          { "role": "ML Engineer",       "etp": 2.0, "profil": "Eval, RAG, fine-tuning Mistral 7B, MLOps" },
+          { "role": "Backend MCP",       "etp": 1.0, "profil": "Le sclérosant : intégration Documentum legacy SOAP + Pega + middleware Tibco" },
+          { "role": "Prompt Engineer",   "etp": 1.5, "profil": "1 banque/conformité (ex-conseiller crédit ou conformité DDA) + 0.5 conversation designer FR" },
+          { "role": "Data Engineer",     "etp": 1.0, "profil": "Snowflake, corpus DDA, embeddings Mistral, qualité data" },
+          { "role": "UX Designer",       "etp": 0.5, "profil": "Side-panel CRM Salesforce, workflow conseiller, validation 1-clic" },
+          { "role": "Product Owner",     "etp": 1.0, "profil": "Ex-conseiller banque retail — LOAD-BEARING, sans ce profil échec garanti" },
+          { "role": "MLOps / SRE",       "etp": 0.5, "profil": "Observabilité, déploiement, monitoring agent, Datadog" },
+          { "role": "RSSI référent",     "etp": 0.3, "profil": "Threat model, MCP authz hardening, red-team trimestriel" },
+          { "role": "DPO référent",      "etp": 0.3, "profil": "FRIA, registre AI Act, doctrine prompts, audit trail" },
+          { "role": "Change manager",    "etp": 0.5, "profil": "Formation conseillers, CSE, communication interne, gestion résistances" }
+        ]
+      },
+      "prod": { "etp_total": 6.0, "note": "Core 6 ETP + ressources mutualisées plateforme agent transverse (si CC-03/CC-18/CC-19 partagent les MCP servers)" }
+    },
+    "velocite": {
+      "poc":    { "duree": "8 sem.",  "cadence_release": "bi-hebdo",                "perimetre": "20 conseillers 1 agence, mode L1 Suggest, crédit conso" },
+      "pilote": { "duree": "6 mois",  "cadence_release": "hebdo",                   "perimetre": "80 conseillers 4 agences, mode L2 Pré-remplir, MCP Salesforce+Snowflake+SharePoint+Pega+Documentum" },
+      "prod":   { "duree": "12 mois", "cadence_release": "2 sem. + hotfix 48 h",   "perimetre": "2 800 conseillers 14 régions, mode L3 sous validation, extension crédit immo + assurance" },
+      "scale":  { "duree": "36 mois", "cadence_release": "mensuel",                 "perimetre": "Optimisation cost/interaction, internalisation Mistral self-hosted, cross-sell pro" }
+    },
+    "sclerosants": [
+      "Accès Documentum DMS legacy + qualité corpus DDA (doctrine en circulaires PDF non versionnées) : +1 mois data prep et +3 sem. MCP wrapper.",
+      "Gouvernance CSE / syndicats : 3 mois de consultations obligatoires avant le pilote élargi.",
+      "FRIA AI Act : 4 semaines via cabinet externe spécialisé.",
+      "Convaincre la Conformité DDA : 2-3 sessions de cadrage + 1 audit pilote à 3 mois sous peine de blocage."
+    ],
+    "deadlines_externes": [
+      { "echeance": "2026-08", "label": "AI Act transparence (Annexe III §5)",           "consequence_si_ratee": "FRIA + registre obligatoires si système haut risque en prod sans documentation" },
+      { "echeance": "2027-08", "label": "AI Act obligations complètes",                  "consequence_si_ratee": "Audit externe, log 6 ans, non-conformité = amende jusqu'à 7 % CA" },
+      { "echeance": "2027-Q2", "label": "CODIR premiers chiffres ROI",                  "consequence_si_ratee": "Sponsor CFO doit présenter Hard savings concrets — sinon arrêt budget" },
+      { "echeance": "2028",    "label": "Plan stratégique -10 pts cost-income ratio",   "consequence_si_ratee": "Copilot est levier sur 1.5-2 pts du plan — manqué = report d'objectif" }
+    ],
+    "deadline_operationnelle": "POC démarré septembre 2026 → pilote en prod avril 2027 → généralisation Q3 2027 (3 mois marge avant AI Act août 2027)."
+  },
+
+  "debat": {
+    "question": "Le ROI Vitesse cache-t-il le risque de pivot Vitesse → Hybride documenté 2024 ?",
+    "pour": [
+      { "argument": "Hard savings mesurables, signables CFO et défendables au CODIR." },
+      { "argument": "Réallocation prouvable des minutes économisées (+4 RDV / sem / conseiller)." },
+      { "argument": "Rollback technique possible en < 4 h via feature flags (architecture saine)." }
+    ],
+    "contre": [
+      { "argument": "Le pattern fintech BNPL 2024 a optimisé Vitesse, dégradé la qualité de conseil, fait marche arrière 18 mois plus tard avec dégradation NPS forte." },
+      { "argument": "Les Soft savings (conseil consistant) sont ce qui protège le FDC contre les banques 100 % en ligne." },
+      { "argument": "Le coût d'évaluation + change + gouvernance est sous-estimé : il représente 25 % du coût total à Scale et 0 % du cadrage POC initial." }
+    ],
+    "verdict_pondere": "KPI primaire = Vitesse (processing-time + cost-per-contact). KPI gardien = response-consistency > 95 %. Échantillon humain de re-listening 5 % des RDV. Clause contractuelle de rollback si NPS conseillers dégrade > 2 pts ou consistency-rate dégrade > 3 pts sur 7 j roulants.",
+    "renvois_livre": ["ch.21.5 Hard vs Soft", "ch.21.7.2 cas d'école de la remontée échouée"]
+  },
+
+  "choix_lecteur": [
+    {
+      "question": "Vous êtes le CFO. Vous engagez 2.8 M€ sur 18 mois. Vous demandez de mesurer EN PREMIER à 6 mois…",
+      "options": [
+        {
+          "id": "A",
+          "label": "Cost-per-contact baseline + pilote",
+          "consequence": "Vous tombez dans le piège du Hard isolé : la consistency a déjà dérivé de 4 pts en silencieux, invisible dans votre KPI primaire. Le compte-rendu CODIR est triomphal — mais à 18 mois, le NPS chute et il faut tout reprendre.",
+          "grille_analyse": "Cf. règle de validation Hard ch.21.5.3 — preuve de réallocation OUI, mais sans contre-poids Soft, le pivot Vitesse → Hybride menace à 12-18 mois.",
+          "renvoi_chapitre": "ch.21.5.3"
+        },
+        {
+          "id": "B",
+          "label": "NPS conseillers (eNPS) uniquement",
+          "consequence": "Le pilote est jugé succès Soft (+9 eNPS) mais le CFO ne peut pas signer la généralisation : pas de chiffre Hard à présenter au CODIR, le budget est gelé en attente.",
+          "grille_analyse": "Cf. règle de validation Soft ch.21.5.4 — convergence à 3 indicateurs requise, eNPS seul ne tient pas. Le pilote est techniquement bon mais politiquement mort.",
+          "renvoi_chapitre": "ch.21.5.4"
+        },
+        {
+          "id": "C",
+          "label": "Combo Vitesse (Hard primaire) + response-consistency (Soft gardien)",
+          "consequence": "Vous tenez l'alignement Cigref — KPI Hard signé CFO + garde-fou Soft qui déclenche rollback automatique si dérive. La généralisation est validée avec clause de surveillance.",
+          "grille_analyse": "Cf. règle Cigref alignement stratégique ch.21.7.3 — c'est le seul setup qui évite le retour à l'hybride forcé documenté 2024.",
+          "renvoi_chapitre": "ch.21.7.3"
+        }
+      ]
+    },
+    {
+      "question": "La Conformité DDA demande : qui répond d'une recommandation copilot non conforme DDA ?",
+      "options": [
+        {
+          "id": "A",
+          "label": "Le conseiller (assistance, pas décision)",
+          "consequence": "Vous transférez le risque sur le conseiller — qui devient juridiquement exposé sans en avoir les moyens. Les syndicats bloquent au CSE, le pilote est suspendu 3 mois.",
+          "grille_analyse": "Pattern à éviter : le conseiller n'a ni la formation IA-act, ni le temps de valider sérieusement. La responsabilité doit rester côté éditeur du système (la banque).",
+          "renvoi_chapitre": "ch.23.5 banque sous AI Act"
+        },
+        {
+          "id": "B",
+          "label": "La banque (système éditeur), supervision humaine effective documentée",
+          "consequence": "Vous assumez la responsabilité au niveau institutionnel + organisez la supervision humaine effective (échantillonnage 5 %, audit DDA trimestriel, formation conseillers IA-act). La FRIA documente la chaîne.",
+          "grille_analyse": "Conforme AI Act Annexe III §5 + DDA. Coût de gouvernance ≈ 80 k€/an en Prod (cf. trajectoire_couts) — c'est le prix d'une plateforme régulée. Ne pas l'inscrire au cadrage = pivot inévitable.",
+          "renvoi_chapitre": "ch.19 + ch.23.5"
+        },
+        {
+          "id": "C",
+          "label": "Mode soft-block : le copilot ne propose que des produits whitelistés et flagge les zones grises pour escalade humaine",
+          "consequence": "Vous limitez l'utilité du copilot aux 60 % de cas standards. Les 40 % restants nécessitent escalade humaine — le gain Vitesse est divisé par deux mais le risque DDA est plafonné. Bon compromis pour la phase Pilote, à élargir en Prod après calibration.",
+          "grille_analyse": "Pattern human-in-the-loop + autorisation MCP scoped (ch.7 boucle + ch.13 sécurité MCP). Souvent la bonne réponse en phase pilote, avant d'avoir mesuré la dérive réelle.",
+          "renvoi_chapitre": "ch.7 + ch.13"
+        }
+      ]
+    },
+    {
+      "question": "À 12 mois, le ROI Vitesse est à −6 min (cible −8). Vous faites quoi ?",
+      "options": [
+        {
+          "id": "A",
+          "label": "Étendre quand même (sunk cost, pression CODIR)",
+          "consequence": "Vous généralisez avec un ROI sous cible. Le coût total à Scale est 15 % au-dessus du budget, le sponsor finit l'année avec un dossier critiqué. Le projet survit mais l'effort plateforme transverse est annulé.",
+          "grille_analyse": "Pattern McKinsey aboutissement (ch.21.3.2) : ne pas généraliser un cas qui n'a pas atteint son seuil. Le sunk cost est un mauvais argument."
+        },
+        {
+          "id": "B",
+          "label": "Suspendre, ré-évaluer la stack (notamment Documentum et qualité corpus DDA)",
+          "consequence": "Vous identifiez que 70 % de l'écart vient de la latence Documentum (réponses 2-4 s vs cible 1 s). Vous mettez 3 mois à internaliser un cache RAG sur le corpus DDA. ROI rejoint cible à 18 mois. Pilote prolongé mais Prod sain.",
+          "grille_analyse": "Bon réflexe — identifier le sclérosant réel, pas l'apparent. Souvent le data layer (qualité corpus) et pas le modèle est en cause.",
+          "renvoi_chapitre": "ch.21.6 arbre décision"
+        },
+        {
+          "id": "C",
+          "label": "Pivot vers Quality first (re-spec KPI primaire en consistency-rate)",
+          "consequence": "Vous changez le KPI primaire en cours de pilote — politiquement coûteux mais éditorialement honnête. Le CFO râle mais signe car le récit est tenable.",
+          "grille_analyse": "Pattern McKinsey aboutissement + Cigref alignement (ch.21.7.3) : si la mesure révèle qu'on s'est trompé d'axe, mieux vaut pivoter que continuer une lente dérive.",
+          "renvoi_chapitre": "ch.21.7.3"
+        }
+      ]
+    }
+  ],
+
+  "quiz": [
+    {
+      "question": "Pourquoi cost-per-contact seul est-il un piège méthodologique ?",
+      "options": [
+        "Parce qu'il n'est pas mesurable directement",
+        "Parce qu'il manque la preuve de réallocation Hard",
+        "Parce qu'il ignore la dérive Qualité Soft qui peut imposer un retour à l'hybride à 18 mois",
+        "Parce qu'il est interdit par le RGPD"
+      ],
+      "bonne_reponse": 2,
+      "explication": "Le KPI Hard isolé ne déclenche pas le rollback quand la consistency dérive — c'est l'angle mort qui a coûté cher au pattern fintech BNPL documenté 2024 (cf. ch.21.7.2).",
+      "renvoi_chapitre": "ch.21.5"
+    },
+    {
+      "question": "Pourquoi Documentum DMS est-il le sclérosant projet, et pas Salesforce ?",
+      "options": [
+        "Parce que Documentum est plus volumineux que Salesforce",
+        "Parce que Salesforce a un MCP officiel disponible alors que Documentum nécessite un wrapper custom (legacy SOAP) et héberge un corpus DDA mal structuré",
+        "Parce que Documentum coûte plus cher en licence",
+        "Parce que Documentum n'a pas d'API"
+      ],
+      "bonne_reponse": 1,
+      "explication": "L'arbitrage build/buy/hybride est dicté par l'architecture actuelle. Les systèmes legacy avec API SOAP + permissions granulaires + corpus mal structuré sont systématiquement les sclérosants — c'est là que se logent les 3-4 semaines de surprise projet.",
+      "renvoi_chapitre": "ch.12"
+    },
+    {
+      "question": "Quel poste de coût est le plus sous-estimé au cadrage POC dans ce cas ?",
+      "options": [
+        "Le coût d'inférence (tokens)",
+        "Le coût d'infrastructure GPU",
+        "Le coût combiné évaluation + gouvernance + change (passe de 0-5 % du budget POC à 25 % du budget Scale)",
+        "Le coût des licences mainstream"
+      ],
+      "bonne_reponse": 2,
+      "explication": "C'est le paradoxe agentique (ch.21.7) : l'unité de mesure se déplace de l'inférence (qui baisse avec la LLMflation) vers l'équipe + change + évaluation. Ces 3 postes représentent < 10 % du POC mais > 50 % du Scale.",
+      "renvoi_chapitre": "ch.21.7"
+    }
+  ],
+
+  "verdict": {
+    "stamp": "PILOT_ETENDU_CONDITIONNE",
+    "label": "Pilote étendu, conditionné — généralisation possible Q3 2027 sous garde-fous",
+    "conditions": [
+      "KPI primaire Vitesse (processing-time + cost-per-contact) + KPI gardien response-consistency > 95 % avec rollback automatique",
+      "Échantillon humain re-listening 5 % des RDV par cellule conformité DDA",
+      "Clause contractuelle de rollback si NPS conseillers dégrade > 2 pts ou consistency-rate dégrade > 3 pts sur 7 j roulants",
+      "Plateforme MCP transverse (6 servers) considérée comme investissement banque-wide, mutualisée avec CC-03 / CC-18 / CC-19",
+      "FRIA documentée et registre AI Act tenu trimestriellement"
+    ]
+  },
+
+  "renvois_livre": [
+    "ch.2 modèles reasoning",
+    "ch.5 économie inférence",
+    "ch.7 boucle agent (ReAct, human-in-the-loop)",
+    "ch.12 MCP plateforme",
+    "ch.13 sécurité MCP",
+    "ch.17 évaluation agent",
+    "ch.18 audit trail cognitif",
+    "ch.19 garde-fous",
+    "ch.21.5 Hard vs Soft",
+    "ch.21.6 arbre décision méthode ROI",
+    "ch.21.7 paradoxe agentique",
+    "ch.21.7.2 cas d'école de la remontée échouée",
+    "ch.21.7.3 alignement Cigref",
+    "ch.21.8 études empiriques",
+    "ch.23.5 banque sous AI Act"
+  ],
+
+  "figures": [
+    {
+      "id": "fig-00",
+      "titre": "Architecture SI actuelle — banque retail mid-tier 2026",
+      "fichier": "images/CC-01-fig-00-architecture-actuelle.svg",
+      "caption": "Six couches existantes (canal, front Salesforce, data Snowflake+Pega, core banking pas-touche, KB SharePoint+Documentum+Confluence, back-office ServiceNow+Power BI) avec criticité par composant. Documentum DMS = 50 % du risque planning."
+    },
+    {
+      "id": "fig-01",
+      "titre": "Carte d'estimation Hard / Soft du copilot bancaire",
+      "fichier": "images/CC-01-fig-01-roi-hard-soft.svg",
+      "caption": "Sankey : 4 métriques retenues (3 Hard + 1 Soft) + 1 KPI gardien Soft ajouté pour activer la règle ch.21.5.4 de convergence. Sans le gardien, Hard isolé → pivot Vitesse → Hybride à 18 mois."
+    }
+  ]
+}
