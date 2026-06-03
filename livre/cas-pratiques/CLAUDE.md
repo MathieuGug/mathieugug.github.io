@@ -96,8 +96,8 @@ L'annexe est structurée en **arc de maturité agentique** (4 strates) — cf. [
 
 | Strate | ID | Cas | Statut | Lien |
 |---|---|---|---|---|
-| 🟦 Fondations | **CC-00** | Assistant transverse (routines · analyses · veille) | Draft index *(NEW — contenu à écrire)* | — |
-| 🟦 Fondations | **CC-03** | Plateforme data moderne & analytics agentique | Draft index *(NEW — remplace la fraude)* | — |
+| 🟦 Fondations | **CC-00** | Assistant transverse (routines · analyses · veille) | 🖊️ Rédigé couche auteur (JSON + MD + 4 SVG) — HTML phase 2 | [MD](cases/CC-00-assistant-transverse.md) · [JSON](cases/CC-00-assistant-transverse.json) |
+| 🟦 Fondations | **CC-03** | Plateforme data moderne & analytics agentique | 🖊️ Rédigé couche auteur (JSON + MD + 4 SVG) — HTML phase 2 | [MD](cases/CC-03-plateforme-data.md) · [JSON](cases/CC-03-plateforme-data.json) |
 | 🟦 Fondations | **CC-10** | Pair programming → organisation dev agentique | Draft index *(reframé : ia_type agentic)* | — |
 | 🟩 Remontée métiers | **CC-01** | Copilot conseiller bancaire | ✅ Livré (JSON + MD + 4 SVG + HTML) | [HTML](CC-01-copilot-banque.html) · [MD](cases/CC-01-copilot-banque.md) |
 | 🟩 Remontée métiers | **CC-02** | Agent vocal IA service client | 🖊️ Rédigé couche auteur (JSON + MD + 4 SVG) — HTML phase 2 | [MD](cases/CC-02-agent-vocal-telecom.md) · [JSON](cases/CC-02-agent-vocal-telecom.json) |

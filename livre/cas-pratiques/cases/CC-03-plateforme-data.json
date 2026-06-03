@@ -1,0 +1,483 @@
+{
+  "meta": {
+    "id": "CC-03",
+    "titre": "Plateforme data moderne & analytics agentique",
+    "secteur": "Transverse",
+    "facette_scaling": "build_vs_buy",
+    "facettes_secondaires": ["gouvernance", "trajectoire_couts"],
+    "regime": "hybride",
+    "ia_type": "agentic",
+    "gabarit": "charniere",
+    "thes_e_une_ligne": "On parle d'IA en oubliant le socle data : sans qualité automatisée ni gouvernance d'accès, démocratiser l'analytics agentique, c'est industrialiser l'erreur.",
+    "auteur": "Mathieu Guglielmino",
+    "date_v1": "2026-06-03"
+  },
+
+  "mise_en_situation": {
+    "scene": "Comité de direction, revue trimestrielle. Sur le slide stratégique, le « nombre de clients actifs » : 412 000. Le DG le compare au chiffre que lui a montré la veille un directeur commercial — 487 000 — via un assistant data flambant neuf qui « parle au datawarehouse » en langage naturel. Deux chiffres pour la même notion, à la même date. La salle se fige. La cause n'est pas l'IA : c'est qu'« actif » n'a jamais été défini une seule fois quelque part — il existe sept définitions implicites éparpillées dans autant de dashboards, et le text-to-SQL en a inventé une huitième, plausible et fausse. Le CDO comprend en direct le vrai sujet : on a voulu démocratiser l'analytics sans avoir sécurisé le socle — pas l'IA, le socle data en dessous. Et le DAF demande : « avant de donner ça à 2 000 personnes, qu'est-ce qui nous garantit que le chiffre est juste ? »",
+    "chiffres_bruts": [
+      { "label": "Définitions implicites de « client actif »", "valeur": "7 (→ cible : 1)" },
+      { "label": "Dashboards en production", "valeur": "≈ 1 800 (dont ~60 % obsolètes)" },
+      { "label": "Part du temps analyste sur des requêtes triviales", "valeur": "≈ 45 %" },
+      { "label": "Tables sans owner ni définition", "valeur": "≈ 70 %" },
+      { "label": "Cible d'utilisateurs self-serve", "valeur": "≈ 2 000 métiers" },
+      { "label": "Couche sémantique gouvernée", "valeur": "0 → le chantier" }
+    ],
+    "horizon_temporel": "Socle d'abord (couche sémantique + qualité + accès) 6-9 mois, démocratisation progressive ensuite — jamais l'inverse. Revue de confiance dans les chiffres à chaque palier d'ouverture."
+  },
+
+  "architecture_actuelle": {
+    "composants": [
+      {
+        "categorie": "outils_satellites",
+        "nom": "Sources : ERP (SAP), CRM (Salesforce), apps transactionnelles, SaaS métier",
+        "criticite_pour_le_cas": "read_only",
+        "remarque": "Les systèmes producteurs de la donnée. Hétérogènes, avec leurs propres notions (un « client » SAP ≠ un « client » CRM). La réconciliation est le travail de fond — et la source des sept définitions divergentes."
+      },
+      {
+        "categorie": "data_scoring",
+        "nom": "Ingestion : Fivetran / Airbyte managé + ETL batch legacy (scripts, Talend)",
+        "criticite_pour_le_cas": "read_write",
+        "remarque": "La couche d'extraction-chargement. La partie managée est saine ; les scripts legacy sont les angles morts de qualité (pannes silencieuses, retards non détectés) que les agents data quality doivent surveiller."
+      },
+      {
+        "categorie": "core_metier_regule",
+        "nom": "Data warehouse / lakehouse (Snowflake / BigQuery / Databricks)",
+        "criticite_pour_le_cas": "read_write_via_proxy_validation",
+        "remarque": "Le cœur du socle. Le compute y est facturé à l'usage — un text-to-SQL mal cadré lâché sur 2 000 personnes peut faire exploser la facture (full scans, requêtes en boucle). La maîtrise du coût compute est un enjeu de premier rang."
+      },
+      {
+        "categorie": "core_metier_regule",
+        "nom": "Transformation (dbt) — et la COUCHE SÉMANTIQUE absente ou incohérente",
+        "criticite_pour_le_cas": "read_write_via_proxy_validation",
+        "remarque": "Le sclérosant du cas. dbt existe parfois, mais la couche sémantique — où « client actif », « churn », « marge » sont définis UNE fois, gouvernés, testés — est le grand trou. Sans elle, le text-to-SQL hallucine une définition plausible. C'est ICI que se gagne ou se perd la démocratisation."
+      },
+      {
+        "categorie": "front_metier",
+        "nom": "BI : Power BI / Tableau / Looker + une forêt de 1 800 dashboards + spreadmarts Excel",
+        "criticite_pour_le_cas": "read_write",
+        "remarque": "La couche de restitution actuelle, proliférante et redondante. Les exports Excel (« spreadmarts ») sont le shadow data : des chiffres recalculés à la main, hors gouvernance, qui contredisent le warehouse."
+      },
+      {
+        "categorie": "back_office",
+        "nom": "Gouvernance : catalogue (DataHub / Collibra) partiel + lineage + IAM/RBAC + DLP",
+        "criticite_pour_le_cas": "read_write",
+        "remarque": "Le périmètre de sécurité-accès — le GARDIEN du cas. Le text-to-SQL hérite des droits de l'utilisateur : si le RBAC est lâche (accès trop larges historiques), démocratiser = exposer à la demande des données qui auraient dû rester cloisonnées (RH, finance, données perso)."
+      }
+    ],
+    "implications_structurantes": [
+      "La couche sémantique gouvernée est le prérequis non négociable : c'est elle qui décide si le text-to-SQL est un actif ou un générateur de chiffres faux-mais-confiants. Sans définition unique d'« actif », démocratiser = industrialiser sept réponses contradictoires.",
+      "Le text-to-SQL hérite des droits utilisateur. Le RBAC et le lineage ne sont pas des options de fin de projet : ce sont la condition d'ouverture. Sécuriser AVANT de démocratiser — jamais l'inverse.",
+      "Le compute du warehouse est facturé à l'usage : la démocratisation sans garde-fous (cache, limites de scan, requêtes gouvernées) peut faire exploser la facture. Le coût du socle est un poste de premier rang, pas une externalité.",
+      "Le socle ne « rend » rien directement : il multiplie la valeur de tous les cas en aval (chaque copilot métier, chaque agent consomme ce socle). C'est un ROI diffus — le piège de mesure du paradoxe agentique appliqué à une fondation (ch.21.7)."
+    ],
+    "renvoi_figure": "fig-00"
+  },
+
+  "application_concrete": {
+    "modes_usage": [
+      {
+        "id": "A",
+        "label": "Automatiser — qualité & ops data (agents data quality / data ops)",
+        "moment": "En continu, sur les pipelines et les tables critiques",
+        "actions": [
+          "Détecte les anomalies (volumétrie, fraîcheur, distribution) avant qu'elles ne polluent les tableaux de bord",
+          "Génère et maintient les tests dbt, propose des corrections de pipeline en pull request",
+          "Documente automatiquement les tables (owner, définition, lineage) — réduit la dette de catalogue",
+          "Première passe d'analyse exploratoire sur une nouvelle source"
+        ]
+      },
+      {
+        "id": "B",
+        "label": "Analyser — text-to-SQL & data storytelling (sur couche sémantique gouvernée)",
+        "moment": "À la demande, par un métier ou un analyste, sur la couche sémantique",
+        "sous_modes": [
+          { "id": "B1", "label": "Text-to-SQL gouverné", "description": "Question en langage naturel → SQL généré SUR la couche sémantique (définitions gouvernées) → chiffre restitué AVEC sa définition et son lineage." },
+          { "id": "B2", "label": "Exploration conversationnelle", "description": "Dialogue d'approfondissement (« et par région ? », « vs l'an dernier ? ») sans réécrire de requête." },
+          { "id": "B3", "label": "Dashboard généré + data storytelling", "description": "Produit une visualisation pertinente et un récit commenté en langage clair — avec les hypothèses et les limites explicites." }
+        ]
+      },
+      {
+        "id": "C",
+        "label": "Démocratiser — l'accès métier, CONDITIONNÉ à la gouvernance",
+        "moment": "Par paliers d'ouverture, après sécurisation du socle",
+        "actions": [
+          "Ouvre le self-service aux métiers — uniquement sur les domaines dont la couche sémantique est gouvernée",
+          "Applique le RBAC : chaque utilisateur ne voit que ce qu'il a le droit de voir (le text-to-SQL hérite des droits)",
+          "Trace chaque réponse (requête, définition, lineage) pour l'auditabilité et la confiance",
+          "Élève progressivement le périmètre à mesure que la gouvernance le couvre — jamais avant"
+        ]
+      }
+    ],
+    "niveaux_autonomie": [
+      { "id": "L1", "label": "Copilote SQL analyste", "description": "Suggère du SQL à un analyste qui valide et exécute. Outil de productivité analyste, pas de démocratisation.", "active_en": "Immédiat (sur les outils data existants)" },
+      { "id": "L2", "label": "Text-to-SQL gouverné (lecture)", "description": "Restitue un chiffre sur la couche sémantique gouvernée, avec définition + lineage, dans le périmètre RBAC de l'utilisateur.", "active_en": "Après couche sémantique (mois 6-9)" },
+      { "id": "L3", "label": "Agent data quality / ops (action validée)", "description": "Détecte une anomalie, ouvre une PR dbt de correction, met à jour le catalogue — chaque action revue par un data engineer.", "active_en": "Mois 9-18" },
+      { "id": "L4", "label": "Agent autonome qui publie des chiffres / modifie les pipelines sans humain", "description": "Met en prod une transformation ou publie une métrique officielle sans revue.", "active_en": "INTERDIT sur les métriques officielles et les pipelines critiques — un chiffre faux propagé est une décision fausse à l'échelle. Toujours gate de revue + tests verts." }
+    ],
+    "trajectoire_multi_step_exemple": {
+      "scenario": "Mode B.1 — « quel est notre taux de churn sur le segment PME ce trimestre ? »",
+      "etapes": [
+        { "id": 1, "label": "Resolve sémantique", "description": "Résout les notions sur la COUCHE SÉMANTIQUE gouvernée : définition officielle de « churn », périmètre « segment PME », « ce trimestre ». Sans cette couche, l'étape hallucine une définition plausible — la racine du chiffre faux.", "outils_appeles": ["semantic-mcp.resolve_metric(churn)", "semantic-mcp.resolve_dimension(segment=PME)"], "renvoi_livre": "ch.16 analytics agentique" },
+        { "id": 2, "label": "Check accès (RBAC)", "description": "Vérifie que l'utilisateur a le droit de voir le segment PME et les données sous-jacentes. Le text-to-SQL hérite de ses droits — pas plus.", "outils_appeles": ["iam-mcp.check_scope(user, dataset)"], "renvoi_livre": "ch.13 sécurité MCP" },
+        { "id": 3, "label": "Generate SQL", "description": "Génère le SQL sur le modèle gouverné (pas sur les tables brutes) — la définition gouvernée garantit l'unicité du calcul." },
+        { "id": 4, "label": "Execute (sous garde-fou compute)", "description": "Exécute sur le warehouse avec limites de scan / cache pour maîtriser le coût compute facturé à l'usage." },
+        { "id": 5, "label": "Verify", "description": "Sanity checks : comparaison à l'historique, cohérence d'ordre de grandeur, détection d'anomalie. Si l'écart est suspect → drapeau au lieu d'un chiffre faux affirmé.", "renvoi_livre": "ch.17 évaluation" },
+        { "id": 6, "label": "Answer", "description": "Restitue le chiffre AVEC sa définition gouvernée, son lineage (d'où il vient) et son niveau de confiance. La traçabilité EST la confiance.", "renvoi_livre": "ch.18 audit trail" }
+      ]
+    }
+  },
+
+  "outils_internes": {
+    "mcp_servers": [
+      { "systeme": "Data warehouse (Snowflake / BigQuery / Databricks)", "mode": "read", "type_mcp": "officiel / connecteur SQL", "effort_dev": "1 sem.", "risque": "moyen", "raison_risque": "garde-fous compute obligatoires (limites de scan, cache) — sinon facture qui explose au volume self-serve" },
+      { "systeme": "Couche sémantique / metrics layer", "mode": "read", "type_mcp": "custom — À CONSTRUIRE (le cœur du projet)", "effort_dev": "8-12 sem. (modélisation des métriques + gouvernance des définitions)", "risque": "haut", "raison_risque": "Le sclérosant : sans couche sémantique gouvernée, le text-to-SQL hallucine les définitions. C'est 60 % de l'effort et toute la valeur." },
+      { "systeme": "Catalogue / lineage (DataHub / Collibra)", "mode": "read_write", "type_mcp": "officiel / API", "effort_dev": "2 sem.", "risque": "moyen", "raison_risque": "qualité du catalogue (owner, définition) — l'agent peut aider à le combler, mais le socle initial doit exister" },
+      { "systeme": "dbt (transformation + tests)", "mode": "read_write_via_proxy", "type_mcp": "API dbt + intégration CI", "effort_dev": "2 sem.", "risque": "moyen", "raison_risque": "les agents data quality ouvrent des PR dbt — gate de revue + tests verts obligatoires avant merge" },
+      { "systeme": "IAM / RBAC + DLP", "mode": "read", "type_mcp": "intégration identité (le gardien d'accès)", "effort_dev": "3 sem.", "risque": "haut", "raison_risque": "le text-to-SQL hérite des droits utilisateur — un RBAC lâche transforme la démocratisation en exposition de données sensibles" },
+      { "systeme": "BI (Power BI / Tableau / Looker)", "mode": "read_write_via_proxy", "type_mcp": "officiel (dashboards générés)", "effort_dev": "1 sem.", "risque": "bas" }
+    ],
+    "effort_total": "12-16 semaines, dont 60 % sur la couche sémantique gouvernée et le RBAC (le socle), 40 % sur la couche agentique. L'ordre est non négociable : socle d'abord, agents ensuite.",
+    "renvois_livre": ["ch.12 MCP plateforme (le socle data)", "ch.16 analytics agentique", "ch.13 sécurité MCP (RBAC, droits hérités)"]
+  },
+
+  "modeles_cibles": {
+    "candidats": [
+      { "modele": "Claude 4.7 Sonnet", "force_pour_le_cas": "Reasoning sur schéma, text-to-SQL robuste, respect de contraintes (couche sémantique), tool use MCP natif.", "faiblesse": "Cloud US (RGPD à cadrer via résidence EU pour les données sensibles).", "cout_indicatif": "$3 / $15 par M tokens" },
+      { "modele": "Snowflake Cortex Analyst / Databricks Genie (text-to-SQL natif du warehouse)", "force_pour_le_cas": "Intégration native au warehouse, time-to-value rapide — mais hérite de la qualité de TON modèle sémantique.", "faiblesse": "Lock-in plateforme ; ne dispense PAS de gouverner la couche sémantique (même piège du chiffre faux si le socle est absent).", "cout_indicatif": "crédits compute de la plateforme" },
+      { "modele": "Power BI Copilot / outil BI natif", "force_pour_le_cas": "Démocratisation dans l'outil que les métiers connaissent déjà.", "faiblesse": "Qualité conditionnée au modèle de données sous-jacent — garbage in, garbage out à l'échelle.", "cout_indicatif": "par siège / capacité" },
+      { "modele": "Mistral Large (souverain)", "force_pour_le_cas": "Option France/UE pour les domaines de données sensibles (RH, finance, santé).", "faiblesse": "Écosystème data-tooling moins dense.", "cout_indicatif": "€, résidence EU" },
+      { "modele": "Embeddings (catalog / semantic search)", "force_pour_le_cas": "Recherche sémantique dans le catalogue, désambiguïsation des notions, matching question ↔ métrique gouvernée.", "faiblesse": "Qualité dépendante de la richesse du catalogue.", "cout_indicatif": "faible (embeddings)" }
+    ],
+    "recommandation": {
+      "regime": "hybride — stack data managée + couche agentique maison sur socle gouverné",
+      "modele_primaire": "Claude 4.7 Sonnet pour le text-to-SQL gouverné et le data storytelling (reasoning sur schéma + respect de la couche sémantique)",
+      "modele_gardien": "Vérification systématique (sanity checks, comparaison historique) + RBAC + lineage : le gardien n'est pas un modèle, c'est le socle de gouvernance",
+      "voice_tier": "non applicable",
+      "embeddings_rag": "Embeddings souverains pour la recherche sémantique dans le catalogue",
+      "argument_cascade": "Le débat « quel modèle de text-to-SQL » est un faux débat : Claude, Cortex, Genie ou Power BI Copilot donneront tous un chiffre FAUX si la couche sémantique n'est pas gouvernée — ils héritent de la qualité du socle. La décision structurante n'est pas le modèle, c'est de gouverner les définitions et le RBAC AVANT d'ouvrir. Le modèle est interchangeable ; le socle ne l'est pas."
+    }
+  },
+
+  "enjeux": {
+    "enjeux_chiffres": [
+      { "label": "Désengorger les analystes du tout-venant", "chiffre": "≈ 45 % du temps analyste sur des requêtes triviales", "consequence": "self-service gouverné → analystes réalloués sur l'analyse à valeur" },
+      { "label": "Une vérité unique par métrique", "chiffre": "7 définitions de « actif » → 1 gouvernée", "consequence": "fin des chiffres contradictoires en COMEX — confiance restaurée" },
+      { "label": "Qualité data automatisée", "chiffre": "anomalies détectées avant publication (vs après incident)", "consequence": "moins de décisions sur données fausses ; dette de catalogue résorbée" }
+    ],
+    "benchmark": {
+      "reference": "Modern data stack + semantic layer / metrics layer (mouvement 2023-2025)",
+      "metrique": "la valeur du text-to-SQL est entièrement conditionnée à la maturité de la couche sémantique — les déploiements qui sautent cette étape produisent des chiffres faux à l'échelle",
+      "renvoi_livre": "ch.16 analytics agentique"
+    },
+    "contre_benchmark": "Le piège de la démocratisation prématurée : une organisation déploie un text-to-SQL self-serve à grande échelle « pour démocratiser la data », sans couche sémantique gouvernée. Résultat : chaque métier obtient un chiffre légèrement différent pour la même question, les COMEX se transforment en débats sur « quel chiffre est le bon », et la confiance dans la data s'effondre — l'inverse de l'objectif. Démocratiser sans socle, c'est industrialiser l'erreur. Cf. ch.21.7 (le socle est le poste qui décide de tout)."
+  },
+
+  "build_buy": {
+    "criteres": ["data_sensitivity", "personnalisation", "volumetrie", "lock_in", "time_to_value", "souverainete"],
+    "options": [
+      {
+        "regime": "interne",
+        "stack": "Plateforme data + analytics agentique entièrement maison (warehouse open, orchestration, couche sémantique, agents)",
+        "scores": { "data_sensitivity": "++", "personnalisation": "++", "volumetrie": "+", "lock_in": "+", "time_to_value": "--", "souverainete": "++" },
+        "verdict": "Réinventer une modern data stack mature. Effort démesuré sur l'ingestion/warehouse qui sont des commodités managées. À NE PAS faire — sauf contrainte de souveraineté extrême."
+      },
+      {
+        "regime": "mainstream",
+        "solution": "Text-to-SQL natif du warehouse (Cortex Analyst / Genie / Power BI Copilot) déployé directement",
+        "scores": { "data_sensitivity": "0", "personnalisation": "-", "volumetrie": "++", "lock_in": "--", "time_to_value": "++", "souverainete": "-" },
+        "verdict": "Time-to-value séduisant, MAIS il hérite de la qualité de ton modèle sémantique : sans socle gouverné, c'est le générateur de chiffres faux à l'échelle. Acheter le text-to-SQL ne dispense pas de construire le socle."
+      },
+      {
+        "regime": "hybride",
+        "stack": "Modern data stack managée (Snowflake/BigQuery + dbt + BI) + COUCHE SÉMANTIQUE gouvernée maison + couche agentique (text-to-SQL gouverné, data quality agents) + RBAC/lineage/DLP",
+        "scores": { "data_sensitivity": "+", "personnalisation": "+", "volumetrie": "+", "lock_in": "0", "time_to_value": "+", "souverainete": "0" },
+        "verdict": "RECOMMANDÉ — on achète les commodités (warehouse, ingestion, BI) et on construit ce qui crée la valeur ET le risque : la couche sémantique gouvernée et le RBAC. Le socle d'abord, la démocratisation ensuite."
+      }
+    ],
+    "decision_ponderee": "Hybride, mais la vraie décision n'est pas build/buy du modèle — c'est l'ORDRE : sécuriser le socle (couche sémantique gouvernée + RBAC + qualité automatisée) AVANT d'ouvrir la démocratisation. Le warehouse et le text-to-SQL sont des commodités ; la gouvernance des définitions et des accès est l'actif différenciant — et non négociable.",
+    "renvoi_livre": "ch.21.6 arbre décision"
+  },
+
+  "trajectoire_couts": {
+    "phases": [
+      { "id": "poc",    "label": "Socle 4 mois", "perimetre": "couche sémantique sur 1 domaine (commerce), 1 data quality agent, 20 analystes" },
+      { "id": "pilote", "label": "Gouvernance 6 mois", "perimetre": "3 domaines gouvernés, RBAC durci, text-to-SQL gouverné, 150 utilisateurs" },
+      { "id": "prod",   "label": "Démocratisation 12 mois", "perimetre": "domaines majeurs gouvernés, 2 000 utilisateurs self-serve, agents data quality en prod" },
+      { "id": "scale",  "label": "Socle fédéré 36 mois", "perimetre": "socle consommé par les copilots métiers (CC-01/CC-02…), data storytelling généralisé, FinOps compute" }
+    ],
+    "postes": {
+      "inference":   { "poc": 8,   "pilote": 40,  "prod": 160,  "scale": 280  },
+      "infra":       { "poc": 40,  "pilote": 110, "prod": 380,  "scale": 620  },
+      "equipe":      { "poc": 120, "pilote": 320, "prod": 640,  "scale": 1200 },
+      "data":        { "poc": 60,  "pilote": 180, "prod": 320,  "scale": 420  },
+      "evaluation":  { "poc": 10,  "pilote": 40,  "prod": 110,  "scale": 200  },
+      "gouvernance": { "poc": 30,  "pilote": 90,  "prod": 220,  "scale": 320  },
+      "securite":    { "poc": 20,  "pilote": 70,  "prod": 170,  "scale": 260  },
+      "change":      { "poc": 10,  "pilote": 60,  "prod": 240,  "scale": 380  }
+    },
+    "cout_par_interaction": { "poc": 14.00, "pilote": 4.50, "prod": 1.10, "scale": 0.45 },
+    "crossover_point": "Le CROSSOVER DU SOCLE : sous ~3-4 domaines gouvernés et quelques centaines de consommateurs, le socle (couche sémantique + gouvernance) est un coût fixe lourd qui ne se justifie pas. Au-delà, il s'amortit sur le nombre de cas et de consommateurs en aval — chaque copilot métier (CC-01, CC-02…) et chaque utilisateur self-serve réutilise le socle sans le repayer. C'est l'analogue data du crossover de flotte (CC-11).",
+    "commentaire_courbe": "Particularité : le poste infra (compute warehouse) est ICI un poste DOMINANT et croissant (40 → 620 k€) — le self-serve à 2 000 personnes consomme du compute facturé à l'usage. D'où le FinOps compute en phase Scale (cache, requêtes gouvernées, limites de scan). Le poste data (modélisation sémantique, qualité) est lourd dès le POC (60 k€) car c'est LE chantier. Le coût par interaction divise par ~30 (14 € → 0,45 €) non par optimisation du modèle, mais par AMORTISSEMENT DU SOCLE sur les consommateurs en aval. Le ROI du socle est diffus : il ne rend rien seul, il multiplie la valeur de tout ce qui le consomme — paradoxe agentique sur une fondation (ch.21.7)."
+  },
+
+  "gouvernance": {
+    "raci": {
+      "responsable": "Équipe Data Platform (Data Platform Lead + analytics engineers + data quality eng + steward sémantique)",
+      "approbateur": "Chief Data Officer (porteur) + DAF (sponsor, arbitre coût compute vs valeur)",
+      "consultes": ["DPO (données perso accessibles via text-to-SQL)", "RSSI (RBAC, DLP, fuite à la demande)", "Data owners métier (définitions gouvernées)", "Contrôle de gestion (confiance dans les chiffres officiels)"],
+      "informes": ["COMEX (vérité unique des métriques)", "Communautés analystes & métiers self-serve"]
+    },
+    "cadence_revue": {
+      "comite_eval": "comité de gouvernance des métriques mensuel (définitions, owners, palier d'ouverture) ; revue FinOps compute trimestrielle",
+      "alertes": "continues sur la qualité data (agents data quality) + DLP sur les accès sensibles + monitoring du coût compute",
+      "audit_externe": "annuel (RGPD sur les accès data, lineage, conformité des définitions réglementaires)"
+    },
+    "ai_act_ligne": {
+      "niveau": "risque_minimal_a_limite",
+      "fondement": "L'analytics interne relève généralement du risque minimal/limité. L'enjeu réglementaire dominant n'est PAS l'AI Act mais le RGPD : le text-to-SQL peut exposer des données personnelles si le RBAC est lâche. Vigilance haut-risque si les sorties alimentent des décisions sur des personnes (RH, crédit — cf. CC-01).",
+      "echeance": "RGPD applicable en continu ; transparence AI Act (Art. 50) si data storytelling diffusé",
+      "actions": [
+        "RBAC durci AVANT ouverture : le text-to-SQL n'expose jamais plus que les droits de l'utilisateur",
+        "Lineage de bout en bout : chaque chiffre traçable à sa source et sa définition",
+        "DLP sur les domaines sensibles (RH, finance, données perso)",
+        "Gouvernance des définitions : une métrique = un owner = une définition testée",
+        "Garde-fous compute (FinOps) : pas de full scan en self-serve non maîtrisé"
+      ]
+    },
+    "renvoi_livre": "ch.23 gouvernance + ch.13 sécurité (RBAC, droits hérités, le gardien)"
+  },
+
+  "evaluation": {
+    "regression_suite": {
+      "taille": "200 questions-or à réponse connue (par domaine gouverné) + 50 questions-pièges (notions ambiguës, hors-périmètre RBAC, données absentes)",
+      "cadence": "mise à jour à chaque évolution de la couche sémantique ; rejeu à chaque nouveau domaine ouvert",
+      "criteres": [
+        "exactitude du chiffre vs réponse-or (critère bloquant : un chiffre faux affirmé est pire que pas de réponse)",
+        "respect de la définition gouvernée (pas de définition inventée)",
+        "respect du périmètre RBAC (refus propre si hors droits)",
+        "drapeau d'incertitude quand la donnée est absente ou ambiguë (ne pas halluciner un chiffre plausible)"
+      ]
+    },
+    "metriques_online": [
+      { "id": "prediction-reliability", "cible": "> 98 % de chiffres exacts sur les domaines gouvernés", "alerte": "< 95 % → fermeture du domaine au self-serve" },
+      { "id": "doc-search-time", "cible": "-50 % sur le temps d'obtention d'un chiffre fiable", "alerte": "métiers qui retournent aux spreadmarts (signal de défiance)" },
+      { "id": "tco-infrastructure", "cible": "coût compute / requête maîtrisé", "alerte": "explosion du compute (full scans self-serve non gouvernés)" }
+    ],
+    "detection_derive": {
+      "outil": "Agents data quality (anomalies, fraîcheur, distribution) + comparaison historique des chiffres restitués + monitoring du coût compute + suivi du taux de retour aux spreadmarts",
+      "alerte": "chiffre incohérent vs historique → drapeau ; pic de compte ; reprise des exports Excel (défiance) ; définition divergente détectée",
+      "fenetre": "continue sur la qualité ; instantané sur le chiffre faux (critère bloquant)"
+    },
+    "boucle_correction": {
+      "trigger": "comité de gouvernance des métriques + alertes qualité + remontées métiers",
+      "delai_re_prompt": "correction de la couche sémantique / des prompts en continu",
+      "cadence_re_finetune": "non applicable (modèle managé) — l'itération porte sur la couche sémantique et le RBAC, pas le modèle",
+      "rollback": "fermeture d'un domaine au self-serve si le taux d'exactitude passe sous le seuil — on REFERME plutôt que de laisser circuler des chiffres faux"
+    },
+    "renvoi_livre": ["ch.17 évaluation agent (exactitude SQL)", "ch.18 audit trail (lineage = confiance)"]
+  },
+
+  "roi": {
+    "axe_principal": "bienetre",
+    "axes_secondaires": ["qualite", "cout"],
+    "methode_mobilisee": "Cigref Hard/Soft + TEI Forrester + arbre décision ch.21.6 — avec l'honnêteté que le socle a un ROI diffus (il multiplie la valeur en aval)",
+    "metriques": [
+      { "id": "doc-search-time", "borne_basse": "-30 %", "cible": "-50 %", "borne_haute": "-65 %" },
+      { "id": "processing-time", "borne_basse": "-20 %", "cible": "-40 %", "borne_haute": "-55 %" },
+      { "id": "prediction-reliability", "borne_basse": "95 %", "cible": "98 %", "borne_haute": "99,5 %" },
+      { "id": "tco-infrastructure", "borne_basse": "compute stable", "cible": "compute maîtrisé par FinOps", "borne_haute": "compute optimisé -20 %" }
+    ],
+    "kpi_gardien": {
+      "id": "prediction-reliability",
+      "role": "KPI gardien Qualité : la fiabilité des chiffres restitués est la condition de tout. Un dashboard faux est PIRE que pas de dashboard — il fait prendre une mauvaise décision avec confiance. Si l'exactitude passe sous le seuil, on referme le domaine au self-serve.",
+      "borne": "exactitude > 98 % sur les domaines gouvernés ; sinon fermeture du domaine"
+    },
+    "non_retenu": [
+      { "id": "revenue", "raison": "le socle ne génère pas de CA directement — il multiplie la valeur des cas en aval ; promettre un CA direct serait malhonnête (ROI diffus)" },
+      { "id": "conversion-rate", "raison": "attribution socle ↔ conversion impossible à isoler" },
+      { "id": "system-availability", "raison": "suivi en SRE/ops, pas en KPI de ROI primaire" }
+    ],
+    "renvoi_figure": "fig-01"
+  },
+
+  "operation_equipe": {
+    "personas": {
+      "porteur": { "role": "Chief Data Officer", "posture": "Veut démocratiser la data, mais a compris en COMEX que sans socle gouverné c'est un piège", "citation": "On ne démocratise pas un chiffre faux. D'abord une vérité unique, ensuite on ouvre." },
+      "sponsor": { "role": "DAF / COO", "posture": "Veut des décisions data-driven ET la maîtrise du coût compute du warehouse", "citation": "Je veux que 2 000 personnes accèdent à la data — et que la facture Snowflake ne double pas du jour au lendemain." },
+      "allie": { "role": "Data engineers / analytics engineers", "posture": "Voient le self-serve comme la fin du tout-venant qui les engorge", "citation": "Si les métiers se servent eux-mêmes sur des métriques gouvernées, on arrête de produire 50 dashboards jetables par mois." },
+      "opposant": { "role": "Analyste senior / Data governance / DPO", "posture": "Garde-fou légitime : redoute le chiffre faux démocratisé et l'exposition de données sensibles — souvent celui qui aura raison à 18 mois", "citation": "Donner le text-to-SQL à tout le monde sans couche sémantique, c'est garantir que chacun aura SON chiffre. Et le RBAC, vous l'avez vérifié ?" }
+    },
+    "equipe_par_phase": {
+      "poc": {
+        "etp_total": 7.1,
+        "composition": [
+          { "role": "Data Platform Lead", "etp": 1.0, "profil": "Architecte modern data stack, MCP, couche sémantique — vision socle" },
+          { "role": "Analytics Engineer (sémantique)", "etp": 1.5, "profil": "LOAD-BEARING — modélise les métriques gouvernées (dbt + metrics layer), le vrai chantier" },
+          { "role": "Data Quality Engineer", "etp": 1.0, "profil": "Agents data quality, tests dbt, détection d'anomalies" },
+          { "role": "ML / Agent Engineer", "etp": 1.0, "profil": "Text-to-SQL gouverné, eval exactitude, garde-fous compute" },
+          { "role": "Data Steward / Gouvernance", "etp": 1.0, "profil": "LOAD-BEARING — owners de métriques, définitions, RBAC, lineage (le gardien)" },
+          { "role": "Référent sécurité / RBAC", "etp": 0.5, "profil": "Droits hérités, DLP, domaines sensibles" },
+          { "role": "Product Owner data", "etp": 0.8, "profil": "Priorise les domaines à gouverner, dialogue métiers" },
+          { "role": "DPO référent", "etp": 0.3, "profil": "RGPD, données perso accessibles via text-to-SQL" }
+        ]
+      },
+      "prod": { "etp_total": 7.0, "note": "Cœur Data Platform 7 ETP + le socle est ensuite consommé (mutualisé) par les équipes copilots métiers — son coût se répartit sur les cas en aval" }
+    },
+    "velocite": {
+      "poc":    { "duree": "4 mois", "cadence_release": "bi-hebdo", "perimetre": "couche sémantique sur 1 domaine, 1 data quality agent, 20 analystes" },
+      "pilote": { "duree": "6 mois", "cadence_release": "hebdo", "perimetre": "3 domaines gouvernés, RBAC durci, text-to-SQL gouverné, 150 utilisateurs" },
+      "prod":   { "duree": "12 mois", "cadence_release": "2 sem.", "perimetre": "domaines majeurs gouvernés, 2 000 utilisateurs self-serve, FinOps compute" },
+      "scale":  { "duree": "36 mois", "cadence_release": "mensuel", "perimetre": "socle fédéré consommé par les copilots métiers, data storytelling généralisé" }
+    },
+    "sclerosants": [
+      "La couche sémantique : modéliser et gouverner les définitions (« actif », « churn », « marge ») est un travail métier long et politique — c'est 60 % de l'effort et toute la valeur.",
+      "Le RBAC / les droits hérités : des années d'accès trop larges à reprendre avant d'ouvrir le text-to-SQL — sinon fuite à la demande.",
+      "Le compute facturé à l'usage : sans garde-fous (cache, limites de scan), le self-serve à 2 000 personnes fait exploser la facture warehouse.",
+      "La défiance / les spreadmarts : tant que les métiers ne font pas confiance au chiffre gouverné, ils retournent à leurs exports Excel — la confiance se gagne par la traçabilité, pas par décret."
+    ],
+    "deadlines_externes": [
+      { "echeance": "Continu", "label": "RGPD (accès aux données perso via text-to-SQL)", "consequence_si_ratee": "exposition de données personnelles si le RBAC est ouvert avant d'être durci — incident + sanction" },
+      { "echeance": "Trimestriel", "label": "Revue FinOps compute", "consequence_si_ratee": "facture warehouse qui dérape ; le DAF rouvre le dossier coût" },
+      { "echeance": "Par palier", "label": "Gate de gouvernance avant chaque ouverture de domaine", "consequence_si_ratee": "démocratiser un domaine non gouverné = chiffres faux à l'échelle" }
+    ],
+    "deadline_operationnelle": "Socle (sémantique + RBAC + qualité) sur 1 domaine T3 2026 → 3 domaines gouvernés + text-to-SQL T1 2027 → démocratisation 2 000 utilisateurs progressive 2027, palier par palier conditionné à la gouvernance."
+  },
+
+  "debat": {
+    "question": "Faut-il démocratiser l'analytics agentique tout de suite, ou sécuriser le socle d'abord ?",
+    "pour": [
+      { "argument": "La démocratisation libère un gisement réel : 45 % du temps analyste part dans des requêtes triviales que le self-serve gouverné absorbe." },
+      { "argument": "Une vérité unique par métrique met fin aux débats de COMEX sur « quel chiffre est le bon » — la confiance dans la data est un actif." },
+      { "argument": "Les agents data quality détectent les anomalies avant publication : moins de décisions sur données fausses, dette de catalogue résorbée." }
+    ],
+    "contre": [
+      { "argument": "Démocratiser sans couche sémantique gouvernée = industrialiser l'erreur : chaque métier obtient un chiffre différent, la confiance s'effondre (l'inverse de l'objectif)." },
+      { "argument": "Le text-to-SQL hérite des droits : sans RBAC durci, démocratiser = exposer à la demande des données sensibles (fuite RGPD)." },
+      { "argument": "Le compute facturé à l'usage : le self-serve non gouverné fait exploser la facture warehouse." }
+    ],
+    "verdict_pondere": "GO mais SOCLE D'ABORD : couche sémantique gouvernée + RBAC durci + qualité automatisée AVANT toute démocratisation. Ouverture par paliers, chaque domaine ouvert seulement quand il est gouverné. KPI gardien = exactitude des chiffres (on referme un domaine plutôt que de laisser circuler du faux).",
+    "renvois_livre": ["ch.16 analytics agentique", "ch.21.7 paradoxe agentique (le socle)", "ch.23 gouvernance"]
+  },
+
+  "choix_lecteur": [
+    {
+      "question": "Vous êtes le CDO. Le DG veut le self-service text-to-SQL pour 2 000 personnes dans 3 mois. Vous…",
+      "options": [
+        { "id": "A", "label": "Vous l'ouvrez à tous tout de suite (la demande est là)", "consequence": "En trois mois, chaque direction a son chiffre. Les COMEX deviennent des disputes sur « quelle définition est la bonne ». Un commercial cite un churn faux à un client. La confiance dans la data s'effondre — vous avez démocratisé l'erreur.", "grille_analyse": "Le piège de la démocratisation prématurée (ch.21.7) : sans socle sémantique, le text-to-SQL industrialise sept réponses contradictoires.", "renvoi_chapitre": "ch.21.7" },
+        { "id": "B", "label": "Vous refusez tant que tout n'est pas parfait", "consequence": "Vous attendez un socle complet sur tous les domaines — 18 mois. Pendant ce temps, les métiers retournent aux spreadmarts et au shadow data. Vous avez raison sur le fond, mais vous avez perdu l'élan et la crédibilité.", "grille_analyse": "Excès inverse : le perfectionnisme tue l'adoption. La bonne voie est par paliers, pas le tout ou rien.", "renvoi_chapitre": "ch.21.6" },
+        { "id": "C", "label": "Vous ouvrez PAR PALIERS, domaine par domaine gouverné", "consequence": "Vous gouvernez d'abord le domaine commerce (couche sémantique + RBAC + qualité), l'ouvrez, prouvez la confiance, puis enchaînez. La démocratisation avance au rythme de la gouvernance — chaque domaine ouvert est fiable.", "grille_analyse": "La bonne réponse (ch.21.6) : socle d'abord, ouverture par paliers conditionnée à la gouvernance. On démocratise du fiable, pas du faux.", "renvoi_chapitre": "ch.21.6" }
+      ]
+    },
+    {
+      "question": "Le text-to-SQL va hériter des droits des utilisateurs. Avant d'ouvrir, vous…",
+      "options": [
+        { "id": "A", "label": "Vous ouvrez avec les droits existants", "consequence": "Les accès historiques sont trop larges (des années de partages cumulés). Le premier jour, un métier interroge en langage naturel et obtient des données RH qu'il n'aurait jamais dû voir. Incident RGPD.", "grille_analyse": "Antipattern : le text-to-SQL rend visible en deux secondes ce que le RBAC lâche laissait dormir (ch.13).", "renvoi_chapitre": "ch.13" },
+        { "id": "B", "label": "Vous durcissez le RBAC et tracez le lineage AVANT", "consequence": "Vous reprenez les droits, cloisonnez les domaines sensibles, tracez chaque accès. Le text-to-SQL n'expose jamais plus que les droits réels de l'utilisateur. L'ouverture est sûre et auditable.", "grille_analyse": "La bonne réponse (ch.13) : sécuriser l'accès est la condition d'ouverture, pas une tâche de fin de projet. C'est le gardien.", "renvoi_chapitre": "ch.13" },
+        { "id": "C", "label": "Vous comptez sur la DLP pour rattraper après coup", "consequence": "La DLP attrape quelques cas, mais elle est un filet, pas un mur. Les données sensibles ont déjà circulé avant que l'alerte ne remonte. Le rattrapage après coup ne répare pas une fuite.", "grille_analyse": "Faux confort : la DLP complète le RBAC, elle ne le remplace pas. Sécuriser en amont, pas en aval.", "renvoi_chapitre": "ch.13" }
+      ]
+    },
+    {
+      "question": "Un agent text-to-SQL renvoie un chiffre incohérent avec l'historique. Le système devrait…",
+      "options": [
+        { "id": "A", "label": "Afficher le chiffre quand même (l'agent a calculé)", "consequence": "Le métier prend le chiffre pour argent comptant et décide dessus. L'incohérence n'est découverte qu'après, quand la décision est déjà prise. Un chiffre faux affirmé avec confiance est le pire des résultats.", "grille_analyse": "Antipattern : un dashboard faux est pire que pas de dashboard (ch.17).", "renvoi_chapitre": "ch.17" },
+        { "id": "B", "label": "Lever un drapeau d'incertitude au lieu d'affirmer", "consequence": "L'agent détecte l'écart à l'historique, signale l'incohérence, propose de vérifier plutôt que d'affirmer. Le métier sait qu'il doit creuser. La confiance se construit sur l'honnêteté de l'incertitude.", "grille_analyse": "La bonne réponse (ch.17) : la vérification (sanity checks, comparaison historique) et le drapeau d'incertitude sont le cœur de l'éval analytics.", "renvoi_chapitre": "ch.17" },
+        { "id": "C", "label": "Bloquer toute réponse du domaine", "consequence": "Vous fermez par excès de prudence — mais une seule incohérence ponctuelle ne justifie pas de couper tout un domaine fiable. Vous perdez l'adoption sur un faux positif.", "grille_analyse": "Sur-réaction : le drapeau ciblé vaut mieux que la fermeture totale sur un cas isolé. On referme un domaine sur une dérive durable, pas un point.", "renvoi_chapitre": "ch.17" }
+      ]
+    }
+  ],
+
+  "quiz": [
+    {
+      "question": "Pourquoi déployer un text-to-SQL sans couche sémantique gouvernée est-il dangereux ?",
+      "options": [
+        "Parce que le modèle de langage coûte trop cher",
+        "Parce que, sans définition unique et gouvernée des métriques, l'agent invente une définition plausible — chaque métier obtient un chiffre différent et on industrialise l'erreur à l'échelle",
+        "Parce que l'AI Act l'interdit",
+        "Parce que le SQL est trop lent"
+      ],
+      "bonne_reponse": 1,
+      "explication": "La valeur du text-to-SQL est entièrement conditionnée à la maturité de la couche sémantique. Sans elle, l'agent hallucine une définition cohérente mais fausse, et la démocratisation propage des chiffres contradictoires — l'inverse de l'objectif (ch.16, ch.21.7).",
+      "renvoi_chapitre": "ch.16"
+    },
+    {
+      "question": "Pourquoi le RBAC est-il une condition d'ouverture, pas une tâche de fin de projet ?",
+      "options": [
+        "Parce que c'est exigé par le contrat de licence",
+        "Parce que le text-to-SQL hérite des droits de l'utilisateur : un RBAC lâche transforme la démocratisation en exposition à la demande de données sensibles (fuite RGPD)",
+        "Parce que le RBAC accélère les requêtes",
+        "Parce qu'il réduit le coût compute"
+      ],
+      "bonne_reponse": 1,
+      "explication": "L'agent rend visible en deux secondes ce que des années de partages trop larges laissaient dormir. Durcir le RBAC et tracer le lineage AVANT d'ouvrir est le gardien du cas (ch.13).",
+      "renvoi_chapitre": "ch.13"
+    },
+    {
+      "question": "Pourquoi dit-on que le socle data a un ROI « diffus » ?",
+      "options": [
+        "Parce qu'il ne sert à rien",
+        "Parce qu'il ne génère pas de valeur directement : il multiplie la valeur de tous les cas en aval (chaque copilot métier, chaque utilisateur self-serve le consomme) — le poste qui décide de tout est le plus dur à attribuer",
+        "Parce que le ROI est négatif",
+        "Parce qu'il est facturé à l'usage"
+      ],
+      "bonne_reponse": 1,
+      "explication": "Comme l'assistant transverse (CC-00), le socle est un multiplicateur, pas un générateur direct. C'est le paradoxe agentique appliqué à une fondation (ch.21.7) : le crossover du socle se franchit quand assez de cas en aval l'amortissent.",
+      "renvoi_chapitre": "ch.21.7"
+    }
+  ],
+
+  "verdict": {
+    "stamp": "GO_SOCLE_DATA_AVANT_DEMOCRATISATION",
+    "label": "GO en hybride — mais le socle (sémantique + accès + qualité) AVANT la démocratisation, jamais l'inverse",
+    "conditions": [
+      "Couche sémantique gouvernée : une métrique = un owner = une définition testée, AVANT d'ouvrir un domaine",
+      "RBAC durci + lineage AVANT ouverture : le text-to-SQL n'expose jamais plus que les droits de l'utilisateur",
+      "Qualité automatisée : agents data quality + vérification (sanity checks) — un chiffre faux est drapeauté, pas affirmé",
+      "Démocratisation PAR PALIERS : chaque domaine ouvert seulement quand il est gouverné",
+      "KPI gardien = exactitude des chiffres (> 98 %) : on referme un domaine plutôt que de laisser circuler du faux",
+      "FinOps compute : garde-fous (cache, limites de scan) pour que le self-serve ne fasse pas exploser la facture warehouse"
+    ]
+  },
+
+  "renvois_livre": [
+    "ch.7 boucle agent (text-to-SQL : resolve → generate → verify)",
+    "ch.12 MCP plateforme (le socle data est le MCP des données)",
+    "ch.13 sécurité MCP (RBAC, droits hérités, le gardien d'accès)",
+    "ch.14 surfaces agentiques (data storytelling)",
+    "ch.16 analytics agentique (text-to-SQL, couche sémantique)",
+    "ch.17 évaluation agent (exactitude SQL, drapeau d'incertitude)",
+    "ch.18 audit trail cognitif (lineage = confiance)",
+    "ch.21.5 Hard vs Soft (ROI diffus du socle)",
+    "ch.21.6 arbre de décision méthode ROI",
+    "ch.21.7 paradoxe agentique (le socle, le poste qui décide de tout)",
+    "ch.22 IA frugale (FinOps compute warehouse)",
+    "ch.23 gouvernance (RGPD, gouvernance des métriques)"
+  ],
+
+  "figures": [
+    {
+      "id": "fig-00",
+      "titre": "Architecture du socle data moderne — et le gardien sécurité/accès",
+      "fichier": "images/CC-03-fig-00-architecture-actuelle.svg",
+      "caption": "Sources → ingestion → warehouse/lakehouse → transformation (dbt) → COUCHE SÉMANTIQUE → BI, avec la couche agentique (data quality, text-to-SQL, data storytelling) greffée par-dessus, et le périmètre sécurité/accès (RBAC, lineage, DLP) dessiné comme le gardien. La couche sémantique est le trou à combler ; sans elle, le « démocratiser » reste un slogan."
+    },
+    {
+      "id": "fig-01",
+      "titre": "La même question, deux réponses — pourquoi la couche sémantique décide tout",
+      "fichier": "images/CC-03-fig-01-semantique.svg",
+      "caption": "« Combien de clients actifs ? » sans couche sémantique → 7 définitions implicites → 7 chiffres (industrialiser l'erreur). Avec couche sémantique gouvernée → 1 définition → 1 chiffre tracé. Le test de véracité du cas."
+    },
+    {
+      "id": "fig-02",
+      "titre": "Le crossover du socle — un ROI diffus qui s'amortit sur les cas en aval",
+      "fichier": "images/CC-03-fig-02-crossover-socle.svg",
+      "caption": "Le socle a un coût fixe lourd : sous quelques domaines gouvernés, il ne se justifie pas. Au-delà, il s'amortit sur le nombre de consommateurs et de copilots métiers qui le réutilisent sans le repayer — l'analogue data du crossover de flotte (CC-11)."
+    },
+    {
+      "id": "fig-03",
+      "titre": "Huit postes sur quatre phases — l'infra compute et la data dominent",
+      "fichier": "images/CC-03-fig-03-postes-phases.svg",
+      "caption": "Largeur de chaque colonne ∝ coût total de la phase, hauteur de chaque bloc = part du poste. L'infra (compute warehouse, facturé à l'usage) et la data (couche sémantique + qualité, le chantier) dominent dès le socle ; l'inférence (text-to-SQL) reste un petit poste. Le coût par requête à valeur baisse par amortissement du socle sur les cas en aval, pas par optimisation du modèle."
+    }
+  ]
+}

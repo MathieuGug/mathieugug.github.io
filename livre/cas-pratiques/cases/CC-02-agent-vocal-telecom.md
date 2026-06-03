@@ -163,7 +163,7 @@ Grille CC-02, en k€. Lecture attentive du couple inférence/infra.
 | **Total** | **115** | **413** | **1 205** | **2 290** |
 | Coût/appel | 6,80 € | 2,20 € | 0,62 € | 0,34 € |
 
-![Huit postes sur quatre phases — marimekko : largeur ∝ coût total de la phase, hauteur = part de chaque poste, et la bascule inférence → infra au crossover|1300](../images/CC-02-fig-02-postes-phases.svg)
+![Huit postes sur quatre phases — largeur ∝ coût total de la phase, hauteur = part de chaque poste, et la bascule inférence → infra au crossover|1300](../images/CC-02-fig-02-postes-phases.svg)
 
 Lecture transverse :
 
