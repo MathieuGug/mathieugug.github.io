@@ -74,7 +74,7 @@ Une publication récente (*WIN-U*, arXiv 2604.13438) propose un cadre Newton-Woo
 
 Trois benchmarks structurent l'évaluation académique de l'unlearning des LLMs.
 
-[SCHEMA-04]
+![Matrice benchmarks × garanties : TOFU, WMDP, MUSE, OpenUnlearning|1200](images/20260603-04-matrice-benchmarks.svg)
 
 **TOFU** (Maini et al. 2024)[^2] — 200 auteurs fictifs, 4 000 questions générées sur leurs « biographies ». Le modèle est fine-tuné sur ces données puis on lui demande d'en oublier une fraction. Métriques : *forget quality* (ROUGE, probabilités), *model utility* (préservation des capacités générales). C'est le bench le plus joué de 2024-2026.
 
