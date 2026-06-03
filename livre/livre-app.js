@@ -189,6 +189,12 @@
     article.className = 'reader-article';
     article.innerHTML = html;
 
+    // External links open in a new tab so a source click never tears down the reader.
+    article.querySelectorAll('a[href^="http"]').forEach(function (a) {
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+    });
+
     // Post-process : wrap tables in scrollable container
     article.querySelectorAll('table').forEach(function (t) {
       if (t.parentElement && t.parentElement.classList && t.parentElement.classList.contains('table-wrap')) return;
@@ -340,8 +346,12 @@
         bodyMd = bodyMd.replace(/==([^=\n]+?)==/g, 'MARK$1MARK');
         var bodyHtml = window.marked.parse(bodyMd);
         bodyHtml = bodyHtml.replace(/MARK/g, '<mark>').replace(/MARK/g, '</mark>');
+        // parseInline (not escapeHtml) so a Markdown link in the title — e.g.
+        // `[!INFO] Voir [Ch. 8 …](ch08-….md)` — renders as a real link instead
+        // of literal `[…](#ch08)` text. The link target is already rewritten to
+        // `#ch08` upstream, so the delegated handler routes it.
         var titleHtml = title
-          ? '<div class="callout-title">' + type + ' · ' + escapeHtml(title) + '</div>'
+          ? '<div class="callout-title">' + type + ' · ' + window.marked.parseInline(title) + '</div>'
           : '<div class="callout-title">' + type + '</div>';
         var html = '<aside class="callout" data-type="' + type + '">' +
                    titleHtml +
@@ -379,10 +389,15 @@
     Object.keys(defs).forEach(function (id) {
       if (numbering[id] === undefined) { counter += 1; numbering[id] = counter; }
     });
-    // Replace references with numbered <sup>[N]</sup>
+    // Replace references with numbered <sup>[N]</sup>. A footnote can be cited
+    // several times, so only the FIRST ref carries id="fnref-N" (keeps IDs unique
+    // and lets the ↩ back-link land on the first citation).
+    var refSeen = Object.create(null);
     body = body.replace(/\[\^([^\]]+)\]/g, function (_, id) {
       var n = numbering[id];
-      return '<sup class="fn-ref"><a href="#fn-' + n + '" id="fnref-' + n + '">[' + n + ']</a></sup>';
+      var idAttr = refSeen[n] ? '' : ' id="fnref-' + n + '"';
+      refSeen[n] = true;
+      return '<sup class="fn-ref"><a href="#fn-' + n + '"' + idAttr + '>[' + n + ']</a></sup>';
     });
     if (!counter) return { body: body, section: '' };
     // Render notes section in numerical order
@@ -444,6 +459,35 @@
     if (overlay && !overlay.hasAttribute('hidden')) closeReader();
   }
 
+  // Delegated handler for in-article links. Without it, clicking a footnote ref
+  // `[1]` (href="#fn-1") or a cross-chapter link (href="#ch07") just rewrites
+  // location.hash to e.g. `#fn-1`, blowing away the `#chNN` reader context (and
+  // cross-chapter links fire `hashchange`, which the router doesn't listen to).
+  function wireReaderLinks() {
+    var content = document.getElementById('reader-content');
+    var overlay = document.getElementById('reader-overlay');
+    content.addEventListener('click', function (e) {
+      var a = e.target.closest('a[href]');
+      if (!a || !content.contains(a)) return;
+      var href = a.getAttribute('href');
+      if (!href || href.charAt(0) !== '#') return;   // external links handled natively (new tab)
+      e.preventDefault();
+      var id = href.slice(1);
+      // Cross-chapter : #chNN or #chNN/<anchor> → swap the reader to that chapter.
+      var m = /^ch(\d{2})(?:\/(.+))?$/.exec(id);
+      if (m) {
+        var n = parseInt(m[1], 10);
+        if (n >= 1 && n <= 25) openReader(n, m[2] ? decodeURIComponent(m[2]) : null);
+        return;
+      }
+      // In-chapter anchor (footnote, ↩ back-ref, heading) → scroll within the overlay.
+      var target = document.getElementById(id);
+      if (!target) return;
+      var top = target.getBoundingClientRect().top - overlay.getBoundingClientRect().top + overlay.scrollTop - 72;
+      overlay.scrollTo({ top: top, behavior: 'smooth' });
+    });
+  }
+
   function scrollToAnchor(anchor, overlay) {
     // Try the anchor as-is, then the wrap variant (used for images/figures).
     var target = document.getElementById(anchor) || document.getElementById(anchor + '-wrap');
@@ -484,6 +528,7 @@
     wireChapterCards();
     setupZoomButtons();
     bindKeyboard();
+    wireReaderLinks();
     document.querySelector('#reader-overlay .reader-close').addEventListener('click', closeReader);
     window.addEventListener('popstate', handleHash);
     handleHash();

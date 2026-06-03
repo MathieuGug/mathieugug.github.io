@@ -5,7 +5,8 @@
   'use strict';
 
   var FIGURES_PATH = 'figures.json';
-  var state = { all: [], chapter: 'all', query: '' };
+  // scope.kind : 'all' | 'acte' (scope.acte = "I".."IV") | 'chapter' (scope.chapter = "7")
+  var state = { all: [], scope: { kind: 'all' }, query: '' };
 
   function init() {
     fetch(FIGURES_PATH, { cache: 'default' })
@@ -35,8 +36,14 @@
                '  </button>' +
                '</div>';
     DATA.actes.forEach(function (acte) {
+      var acteCount = 0;
+      acte.chapitres.forEach(function (n) { acteCount += perChapter[n] || 0; });
+      if (!acteCount) return;
       html += '<div class="chips-row" data-acte="' + acte.num + '">';
-      html += '  <span class="chips-row-label">Acte ' + acte.num + '</span>';
+      html += '  <button type="button" class="chip chip-acte" role="radio" aria-checked="false" data-acte="' + acte.num + '"' +
+              ' title="' + escapeAttr(acte.titre) + '" aria-label="Acte ' + acte.num + ' — ' + escapeAttr(acte.titre) + ' (' + acteCount + ' figures)">' +
+              'Acte ' + acte.num + ' · ' + acteCount +
+              '</button>';
       acte.chapitres.forEach(function (n) {
         if (!perChapter[n]) return;
         var chMeta = DATA.chapitres[n];
@@ -50,11 +57,17 @@
     });
     chips.innerHTML = html;
     chips.addEventListener('click', function (e) {
-      var btn = e.target.closest('button.chip-chap');
+      var btn = e.target.closest('button.chip');
       if (!btn) return;
-      chips.querySelectorAll('.chip-chap').forEach(function (b) { b.setAttribute('aria-checked', 'false'); });
+      chips.querySelectorAll('.chip').forEach(function (b) { b.setAttribute('aria-checked', 'false'); });
       btn.setAttribute('aria-checked', 'true');
-      state.chapter = btn.dataset.chapter;
+      if (btn.dataset.acte) {
+        state.scope = { kind: 'acte', acte: btn.dataset.acte };
+      } else if (btn.dataset.chapter === 'all') {
+        state.scope = { kind: 'all' };
+      } else {
+        state.scope = { kind: 'chapter', chapter: btn.dataset.chapter };
+      }
       render();
     });
   }
@@ -73,9 +86,17 @@
 
   function filtered() {
     var q = state.query;
-    var chap = state.chapter;
+    var scope = state.scope;
+    var acteChapters = null;
+    if (scope.kind === 'acte') {
+      var DATA = window.LIVRE_DATA;
+      var acteMeta = DATA.actes.filter(function (a) { return String(a.num) === scope.acte; })[0];
+      acteChapters = Object.create(null);
+      if (acteMeta) acteMeta.chapitres.forEach(function (n) { acteChapters[n] = true; });
+    }
     return state.all.filter(function (f) {
-      if (chap !== 'all' && String(f.chapter) !== chap) return false;
+      if (scope.kind === 'chapter' && String(f.chapter) !== scope.chapter) return false;
+      if (scope.kind === 'acte' && !acteChapters[f.chapter]) return false;
       if (!q) return true;
       var hay = (f.alt + ' ' + f.chapter_title + ' ' + f.section_title + ' ' + f.basename).toLowerCase();
       return hay.indexOf(q) !== -1;
@@ -90,7 +111,9 @@
       return;
     }
     var DATA = window.LIVRE_DATA;
-    var groupByActe = (state.chapter === 'all');
+    // Group under acte dividers for the "all" and "acte" scopes (an acte scope
+    // naturally renders a single divider, since only its chapters match).
+    var groupByActe = (state.scope.kind !== 'chapter');
     var html = '';
 
     if (groupByActe) {
