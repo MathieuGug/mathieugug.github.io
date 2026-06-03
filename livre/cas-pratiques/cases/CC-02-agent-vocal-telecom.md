@@ -81,6 +81,8 @@ La frontière L3/L4 n'est pas technique : elle est **juridique et commerciale**.
 
 Reprenons *« ma box ne marche plus, c'est la troisième fois »*. Voici ce qui se passe.
 
+![Anatomie d'un appel — Listen · Identify · Diagnose · Reason · Act · Verify, dans un budget de latence < 800 ms par tour|1300](../images/CC-02-fig-01-anatomie-appel.svg)
+
 **1. Listen.** Transcription streaming (STT) en français, avec gestion des interruptions (barge-in) et du bruit de fond.
 
 **2. Identify.** Authentification via numéro appelant + question de sécurité (date de naissance, dernier paiement). Pas d'empreinte vocale sans opt-in explicite.
@@ -161,9 +163,13 @@ Grille CC-02, en k€. Lecture attentive du couple inférence/infra.
 | **Total** | **115** | **413** | **1 205** | **2 290** |
 | Coût/appel | 6,80 € | 2,20 € | 0,62 € | 0,34 € |
 
+![Huit postes sur quatre phases — marimekko : largeur ∝ coût total de la phase, hauteur = part de chaque poste, et la bascule inférence → infra au crossover|1300](../images/CC-02-fig-02-postes-phases.svg)
+
 Lecture transverse :
 
 - **Le coût par appel divise par vingt** entre POC et Scale (6,80 € → 0,34 €). Mais regardez **comment**.
+
+- **L'investissement et la mise à l'échelle de l'équipe dépendent aussi du volume.** Le nombre d'appels passe de 5 k à 250 k par mois (×50) entre POC et Scale : c'est cette montée en charge qui porte la croissance de l'équipe et fait franchir le crossover ≈ 100 000 appels/mois, en phase Prod, où l'on internalise la voix.
 
 - **Le poste inférence cesse d'exploser à partir de la Prod** (110 → 130 k€). Pourquoi ? Parce qu'au crossover, on **bascule le coût du tier voix managé (per-minute, dans l'inférence) vers l'infra GPU internalisée**. L'inférence inclut la voix louée ; quand on la rapatrie, elle s'arrête de monter.
 
@@ -194,6 +200,8 @@ Quatre temps, comme partout, mais avec deux difficultés propres à la voix.
 **3. Détection de dérive.** Monitoring média (latence STT/TTS, barge-in) + LLM-as-judge sur 5 % des transcripts (containment **réel** vs **déclaré**) + suivi du **repeat-call-rate < 48 h**. Le repeat-call est le juge : un appel « résolu » qui rappelle dans la nuit est un faux containment.
 
 **4. Boucle de correction.** Re-prompt sous 48 h, ré-entraînement trimestriel de l'ASR self-hosted (corpus accents/bruit enrichi) une fois internalisé, et **rollback par motif** : on désactive un motif en moins d'une heure et on bascule vers la file humaine sans coupure.
+
+![La boucle d'évaluation vocale — quatre temps et le juge repeat-call-rate, avec une vérité terrain qui arrive en différé|1300](../images/CC-02-fig-03-boucle-evaluation.svg)
 
 La difficulté propre à la voix : la vérité terrain arrive en différé (le CSAT, le rappel) et le signal est bruité (l'ASR se trompe parfois sur ce qui a été dit). D'où l'importance de l'échantillon humain de ré-écoute.
 
