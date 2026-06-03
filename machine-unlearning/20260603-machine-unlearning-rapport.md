@@ -44,7 +44,7 @@ Avant de comparer des méthodes, il faut s'accorder sur ce que *oublier* veut di
 
 Le paysage 2024-2026 des méthodes d'unlearning au niveau des poids se structure en quatre familles, distinguées par l'endroit de la stack où elles interviennent[^7].
 
-[SCHEMA-03]
+![Taxonomie 4 familles : SISA exact, NPO gradient, RMU representation, influence functions|1200](images/20260603-03-taxonomie-familles.svg)
 
 ### Famille A — Exact retraining partitionné : SISA
 
