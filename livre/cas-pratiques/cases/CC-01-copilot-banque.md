@@ -156,7 +156,7 @@ Trois options sur la table, évaluées sur six critères. Notation `--` (très d
 | Souveraineté        | `++` *(France end-to-end)*       | `--` *(cloud US sans atténuation)* | `0` *(partielle : embeddings + gardien FR, primaire US-EU)* |
 | **Verdict**         | *Trop lent pour le calendrier sponsor (CODIR Q2 2027). Reasoning Mistral Large 3 en retrait sur arbitrages DDA complexes. À internaliser progressivement dès Scale, mais pas en porte d'entrée.* | *Time-to-value imbattable, mais lock-in Azure problématique pour un métier qui doit documenter sa souveraineté devant l'ACPR. Connecteur Documentum à construire de toute façon.* | ***RECOMMANDÉ.** Équilibre time-to-value / souveraineté partielle / fallback dégradé qui tient devant CODIR et Conformité.* |
 
-**Argument décisif pour l'hybride** : les six MCP servers custom **servent toute la plateforme agent banque ultérieure** — CC-03 (détection fraude), CC-18 (AML), CC-19 (génération rapports réglementaires) profiteront du même socle. C'est un investissement plateforme, pas projet.
+**Argument décisif pour l'hybride** : les six MCP servers custom **servent toute la plateforme agent banque ultérieure** — la détection de fraude, l'AML (CC-18), le reporting réglementaire (CC-19) profiteront du même socle. C'est un investissement plateforme, pas projet.
 
 **Décision opérationnelle** : démarrage POC sur API Anthropic via Bedrock EU. Ré-évaluation à 12 mois pour internaliser le routing et le gardien Mistral si la volumétrie le justifie (crossover ≈ 800 000 interactions/an, cf. §9).
 
@@ -290,7 +290,7 @@ Cette grille est honnête mais incomplète. C'est ici qu'arrive la décision qui
 Sans ce gardien, le ROI Hard isolé (Vitesse + Volume) signe au CODIR — et la consistency dérive en silence pendant six à neuf mois. À 18 mois, le NPS chute, les premières plaintes DDA arrivent, et la dégradation Soft impose un retour à l'hybride forcé. C'est le pattern fintech BNPL scandinave 2024, documenté au [ch. 21.7.2](../../chapitres/ch21-roi-paradoxe-agentique.md).
 
 **Métriques explicitement non retenues** :
-- `fraud-avoided` — pas le périmètre du copilot conseil (cf. CC-03 détection fraude).
+- `fraud-avoided` — pas le périmètre du copilot conseil (détection de fraude, cas dédié).
 - `basket-size` — attribution copilot ↔ cross-sell trop indirecte sur 12 mois pilote.
 - `nps` — utilisé en monitoring CSAT secondaire, pas en KPI primaire (cf. règle [ch. 21.5.4](../../chapitres/ch21-roi-paradoxe-agentique.md) sur la convergence à trois indicateurs).
 
@@ -314,7 +314,7 @@ La discipline d'écrire ce qu'on ne mesure pas, et pourquoi, est ce qui sauve le
 | DPO référent          | 0,3 | FRIA, registre AI Act, doctrine prompts, audit trail |
 | Change manager        | 0,5 | Formation conseillers, CSE, communication interne |
 
-En Prod (mois 10+), descente à **6 ETP core** + ressources mutualisées plateforme agent transverse (la plateforme MCP servira aussi CC-03, CC-18, CC-19 — l'argument vaut le détour quand on présente le budget DSI).
+En Prod (mois 10+), descente à **6 ETP core** + ressources mutualisées plateforme agent transverse (la plateforme MCP servira aussi les cas fraude, AML CC-18, reporting CC-19 — l'argument vaut le détour quand on présente le budget DSI).
 
 **Vélocité** :
 - POC : **8 semaines**, releases bi-hebdo, 20 conseillers 1 agence, mode L1, crédit conso uniquement.
@@ -421,7 +421,7 @@ Cinq conditions non-négociables :
 1. **KPI primaire Vitesse** (processing-time + cost-per-contact) **+ KPI gardien response-consistency > 95 %** avec rollback automatique.
 2. **Échantillon humain re-listening 5 % des RDV** par la cellule conformité DDA, trimestriel.
 3. **Clause contractuelle de rollback** si NPS conseillers dégrade > 2 pts ou consistency-rate dégrade > 3 pts sur 7 jours roulants.
-4. **Plateforme MCP transverse** (six servers) considérée comme investissement banque-wide, **mutualisée avec CC-03 / CC-18 / CC-19** (fraude, AML, reporting réglementaire). C'est ce qui transforme un projet à 1,5 M€ en plateforme à 0,8 M€ amortis.
+4. **Plateforme MCP transverse** (six servers) considérée comme investissement banque-wide, **mutualisée avec les cas fraude / AML (CC-18) / reporting (CC-19)**. C'est ce qui transforme un projet à 1,5 M€ en plateforme à 0,8 M€ amortis.
 5. **FRIA documentée** et **registre AI Act tenu trimestriellement** dès la phase Pilote, sans attendre 2027-08.
 
 Aux conditions remplies, le copilot conseiller bancaire est défendable au CODIR, à l'ACPR et au CSE simultanément. Ce qui — soyons clairs — n'est pas le cas par défaut.

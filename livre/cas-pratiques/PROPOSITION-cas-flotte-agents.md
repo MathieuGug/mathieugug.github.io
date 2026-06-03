@@ -1,12 +1,12 @@
 # Cas pratique (spec à valider) — Gouverner une flotte d'agents
 
-> **ID de travail : CC-11** (slot réserve libéré ; pourrait aussi **ouvrir l'annexe** car c'est le cas-chapeau qui relie tous les autres). Statut : **spec + `fig-00`** livrés en couche auteur. JSON 19 sections + MD à écrire sur ton feu vert. Ne touche pas `cases-index.json`.
+> **ID : CC-11 — cas-chapeau de CLÔTURE de l'annexe** (`ordre` final). **Décision tranchée** : CC-11 n'**ouvre pas** l'annexe — l'ouvreur est l'**assistant transverse (CC-00)**, le pôle large/peu maîtrisé de l'arc de maturité. CC-11 est la **synthèse de clôture** : on ne gouverne une flotte qu'**après** l'avoir laissée proliférer (fondations + remontée métiers + galerie). Statut : **spec + `fig-00`** livrés en couche auteur ; CC-11 est désormais **inscrit dans `cases-index.json`** (entrée draft, `strate: "chapeau"`) et **présent dans le hub** (carte draft, strate 4). JSON 19 sections + MD + `fig-01`/`fig-02` à écrire sur ton feu vert.
 
 **Transverse · Agentic · charnière · facette principale `gouvernance` (secondaires `build_vs_buy` du socle, `evaluation` à l'échelle).**
 
 > **Thèse** : passé une dizaine d'agents, le problème n'est plus de *faire* un agent mais de *gouverner une flotte*. Sans socle fédéré ni modèle opératoire, la prolifération (50 agents Copilot + verticaux + shadow) coûte plus qu'elle ne rapporte — doublons, zombies, accès non revus, réponses contradictoires. Le ROI n'est pas par agent, il est au niveau du **portefeuille**.
 
-Ce cas est le **point de convergence** de CC-01/CC-02/CC-03 : leurs MCP servers, leurs harness d'éval, leurs garde-fous deviennent des **composants mutualisés du socle**. C'est le cas qui transforme une collection de projets en plateforme.
+Ce cas est le **point de convergence de tout l'arc** : les MCP servers, harness d'éval et garde-fous des fondations (CC-00 assistant, CC-03 socle data, CC-10 dev agentique) et des cas métiers (CC-01/CC-02/CC-09) deviennent des **composants mutualisés d'un socle fédéré**. C'est le cas qui transforme une collection de projets en plateforme — et qui ferme la boucle ouverte par l'assistant transverse : là où CC-00 montrait l'IA *non maîtrisée* qui entre par tous les côtés, CC-11 montre comment on *reprend la main* sur la flotte qui en résulte.
 
 ---
 
@@ -15,7 +15,7 @@ Ce cas est le **point de convergence** de CC-01/CC-02/CC-03 : leurs MCP servers,
 Grand groupe / ETI. En 18 mois, l'IA agentique est entrée **bottom-up** :
 
 - **50 agents dans Microsoft Copilot Studio** montés par les métiers (RH, finance, achats, IT, juridique, commerce, support…).
-- **4 agents verticaux « sérieux »** buildés par les équipes data (le copilot conseiller CC-01, l'agent vocal CC-02, la fraude CC-03, un agent guichet).
+- **4 agents verticaux « sérieux »** buildés par les équipes data (le copilot conseiller CC-01, l'agent vocal CC-02, l'agent guichet CC-09, un agent fraude temps réel).
 - **~12 agents shadow** montés en douce sur des plateformes grand public.
 
 Le déclencheur CODIR : le DSI découvre qu'un agent RH écrit dans le SIRH **sans revue sécu** ; le DAF voit **7 abonnements agentiques en doublon** ; deux agents donnent des réponses **contradictoires** sur la politique de notes de frais ; un agent client-facing a été mis en prod **sans éval**. Question : *« qui gère ces 50 agents, comment, sur quel socle — et est-ce que ça nous coûte plus que ça ne rapporte ? »*
@@ -98,7 +98,7 @@ L'éval **à l'échelle de la flotte** est un problème nouveau : on ne peut pas
 - **Éval-as-a-service** : un harness partagé, des suites de régression réutilisables **par archétype** (RAG, tool-use, conversationnel), un LLM-as-judge mutualisé, des **gates de promotion standardisés** (aucun agent en prod sans passer le gate).
 - **Test de non-contradiction inter-agents** : les 50 agents donnent-ils des réponses **cohérentes** sur les politiques communes (notes de frais, congés) ? C'est un test propre à la flotte.
 - **Détection de collision** : deux agents au périmètre qui se chevauchent et divergent.
-- **Validation continue, pas one-shot** (leçon CC-03 généralisée à la flotte) : la dérive d'un agent passe inaperçue si l'éval n'est pas mutualisée et permanente.
+- **Validation continue, pas one-shot** (leçon de l'évaluation continue généralisée à la flotte) : la dérive d'un agent passe inaperçue si l'éval n'est pas mutualisée et permanente.
 
 > Renvois : ch.17 (évaluation), ch.18 (observabilité / audit trail).
 

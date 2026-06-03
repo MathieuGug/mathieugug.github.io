@@ -1,13 +1,13 @@
 # CLAUDE.md — `livre/cas-pratiques/`
 
-Dossier d'artefact : **12 études de cas** qui adossent le ch. 21 (ROI · paradoxe agentique) au terrain. Chaque cas illustre une facette de la mise à l'échelle d'agents IA en entreprise (build/buy, trajectoire de 8 postes de coûts × 4 phases, gouvernance, évaluation).
+Dossier d'artefact : **un arc de maturité agentique en 14 études de cas** (4 strates : fondations → remontée métiers → galerie → chapeau) qui adosse le ch. 21 (ROI · paradoxe agentique) au terrain. Chaque cas illustre une facette de la mise à l'échelle d'agents IA en entreprise (build/buy, trajectoire de 8 postes de coûts × 4 phases, gouvernance, évaluation).
 
 ## Layout
 
 ```
 livre/cas-pratiques/
 ├── CLAUDE.md                         ← ce fichier
-├── index.html                        ← hub des 12 cas (self-contained)
+├── index.html                        ← hub des cas, groupé en 4 strates (self-contained)
 ├── cases/
 │   ├── CC-01-copilot-banque.json     ← données structurées (schéma 19 sections)
 │   ├── CC-01-copilot-banque.md       ← narration éditoriale (charnière ~6 500 mots)
@@ -92,20 +92,25 @@ Autres règles héritées du CLAUDE.md racine :
 
 ## État (au 2026-06-03)
 
-| ID | Cas | Statut | Lien |
-|---|---|---|---|
-| **CC-01** | Copilot conseiller bancaire | ✅ Livré (JSON + MD + 4 SVG + HTML) | [HTML](CC-01-copilot-banque.html) · [MD](cases/CC-01-copilot-banque.md) |
-| **CC-02** | Agent vocal IA service client | 🖊️ Rédigé couche auteur (JSON + MD + fig-00) — HTML phase 2 | [MD](cases/CC-02-agent-vocal-telecom.md) · [JSON](cases/CC-02-agent-vocal-telecom.json) |
-| **CC-03** | Détection fraude temps réel | 🖊️ Rédigé couche auteur (JSON + MD + fig-00) — HTML phase 2 | [MD](cases/CC-03-fraude-temps-reel.md) · [JSON](cases/CC-03-fraude-temps-reel.json) |
-| CC-04 | Maintenance prédictive turbines | Draft index | — |
-| CC-05 | Optimisation grid temps réel | Draft index | — |
-| CC-06 | Try-on virtuel | Draft index | — |
-| CC-07 | Pricing dynamique fret | Draft index | — |
-| CC-08 | Drug discovery IA | Draft index | — |
-| CC-09 | Agent guichet unique | Draft index | — |
-| CC-10 | Pair programming (Copilot dev) | Draft index | — |
-| CC-13 | Contrôle qualité visuel usine | Draft index | — |
-| CC-12 | Modération contenu IA | Draft index | — |
+L'annexe est structurée en **arc de maturité agentique** (4 strates) — cf. [`PROPOSITION-priorisation.md`](PROPOSITION-priorisation.md). Ordre canonique : `../use-cases-data/cases-index.json` (champ `ordre` + `strate`).
+
+| Strate | ID | Cas | Statut | Lien |
+|---|---|---|---|---|
+| 🟦 Fondations | **CC-00** | Assistant transverse (routines · analyses · veille) | Draft index *(NEW — contenu à écrire)* | — |
+| 🟦 Fondations | **CC-03** | Plateforme data moderne & analytics agentique | Draft index *(NEW — remplace la fraude)* | — |
+| 🟦 Fondations | **CC-10** | Pair programming → organisation dev agentique | Draft index *(reframé : ia_type agentic)* | — |
+| 🟩 Remontée métiers | **CC-01** | Copilot conseiller bancaire | ✅ Livré (JSON + MD + 4 SVG + HTML) | [HTML](CC-01-copilot-banque.html) · [MD](cases/CC-01-copilot-banque.md) |
+| 🟩 Remontée métiers | **CC-02** | Agent vocal IA service client | 🖊️ Rédigé couche auteur (JSON + MD + 4 SVG) — HTML phase 2 | [MD](cases/CC-02-agent-vocal-telecom.md) · [JSON](cases/CC-02-agent-vocal-telecom.json) |
+| 🟩 Remontée métiers | CC-09 | Agent guichet unique | Draft index | — |
+| 🟨 Galerie | CC-13 | Contrôle qualité visuel usine | Draft index | — |
+| 🟨 Galerie | CC-06 | Try-on virtuel | Draft index | — |
+| 🟨 Galerie | CC-04 | Maintenance prédictive turbines | Draft index | — |
+| 🟨 Galerie | CC-12 | Modération contenu IA | Draft index | — |
+| 🟨 Galerie | CC-05 | Optimisation grid temps réel | Draft index *(proposé réserve — arbitrage)* | — |
+| 🟨 Galerie | CC-07 | Pricing dynamique fret | Draft index *(proposé réserve — arbitrage)* | — |
+| 🟨 Galerie | CC-08 | Drug discovery IA | Draft index *(proposé réserve — arbitrage)* | — |
+| 🟥 Chapeau | **CC-11** | Gouverner une flotte d'agents | Spec + fig-00 livrés — JSON/MD phase 2 | [Spec](PROPOSITION-cas-flotte-agents.md) |
+| ⬛ Réserve | CC-03-reserve | Détection fraude temps réel *(ML traditionnel, hors focus)* | Couche auteur conservée dans `../use-cases-data/reserve/` | [MD](../use-cases-data/reserve/CC-03-fraude-temps-reel.md) · [JSON](../use-cases-data/reserve/CC-03-fraude-temps-reel.json) |
 
 ## Pipeline (à venir phase 2)
 
