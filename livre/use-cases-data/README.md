@@ -1,25 +1,41 @@
-# `livre/use-cases-data/` — Source de vérité des 12 cas pratiques
+# `livre/use-cases-data/` — Standards partagés des 12 cas pratiques
 
-Données structurées des **12 études de cas** du livre, packagées comme JSON canoniques + canevas partagés. Le HTML rendu (`livre/cas-pratiques/CC-XX-*.html`) est **rebuilt** depuis ce dossier — ne jamais éditer le HTML à la main.
+**Bibliothèque de standards** : index des 12 cas, schéma JSON canonique, métriques ROI curées, postes de coûts, personas. Les cas individuels (JSON structuré + MD narratif + SVG figures) vivent dans `livre/cas-pratiques/` comme dossier d'artefact autonome.
 
-> **État : PR-1 phase 1 (fondations)**. Cas pilote CC-01 et build engine arrivent en phase 2.
+> **État : phase 1bis terminée** — CC-01 pilote (JSON + MD + 2 SVG) livré dans `cas-pratiques/`. Build engine HTML arrive en phase 2.
 
 ---
 
 ## Contenu
+
+### Bibliothèque standards (ici, `livre/use-cases-data/`)
 
 ```
 use-cases-data/
 ├── README.md                          ← ce fichier
 ├── cases-index.json                   ← liste ordonnée des 12 cas + 8 en réserve
 ├── schemas/
-│   └── case.schema.md                 ← contrat éditorial d'un CC-XX.json (16 sections)
+│   └── case.schema.md                 ← contrat éditorial d'un CC-XX.json (19 sections)
 ├── shared/
-│   ├── roi-metrics.json               ← 30 métriques ROI curées (de 85), classées Hard/Soft
+│   ├── roi-metrics.json               ← 32 métriques ROI curées (de 85), classées Hard/Soft
 │   ├── cost-postes.json               ← 8 postes de coûts standardisés × 4 phases
 │   └── personas.json                  ← archétypes porteur/sponsor/allié/opposant
-├── cases/                             ← (à venir phase 2) CC-XX-*.json par cas
 └── OLD/                               ← matière première (non versionnée, archive locale)
+```
+
+### Dossier d'artefact (`livre/cas-pratiques/`)
+
+```
+cas-pratiques/
+├── cases/                             ← CC-XX-*.{json,md} par cas
+│   ├── CC-01-copilot-banque.json      ← données structurées (19 sections du schema)
+│   ├── CC-01-copilot-banque.md        ← narration lecteur (gabarit charnière ~6 000 mots)
+│   └── …
+├── images/                            ← CC-XX-fig-NN-*.svg par cas
+│   ├── CC-01-fig-00-architecture-actuelle.svg
+│   ├── CC-01-fig-01-roi-hard-soft.svg
+│   └── …
+└── (à venir phase 2) index.html + CC-XX-*.html par cas, rendus par build engine
 ```
 
 ---
@@ -83,9 +99,12 @@ Le détail (statut, axe ROI, gabarit, thèse, renvois livre) est dans [`cases-in
 
 ```
 tools/build_case_pages.py [--only CC-01]
-   ↓ lit cases-index.json + cases/CC-XX.json + shared/*.json
+   ↓ lit  livre/use-cases-data/cases-index.json
+   ↓ lit  livre/use-cases-data/shared/{roi-metrics,cost-postes,personas}.json
+   ↓ lit  livre/cas-pratiques/cases/CC-XX-*.json   (data structurée)
+   ↓ lit  livre/cas-pratiques/cases/CC-XX-*.md     (narration éditoriale)
    ↓ render via templates Python (string templating, safe HTML escaping)
-   ↓ produit livre/cas-pratiques/CC-XX-*.html
+   ↓ produit livre/cas-pratiques/CC-XX-*.html      (référence images/CC-XX-fig-NN-*.svg)
    ↓ injecte bloc SEO via markers (compat tools/seo_dossiers.py)
 ```
 

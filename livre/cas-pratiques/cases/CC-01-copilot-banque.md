@@ -33,7 +33,7 @@ L'enjeu n'est donc pas tellement de **faire** un copilot. C'est de le faire avec
 
 Avant de parler MCP, modèle ou ROI, il faut regarder la stack existante. C'est elle qui décide de l'effort d'intégration, du risque sécurité, de la marge de manœuvre face à l'AI Act. La théorie build/buy/hybride sans architecture actuelle est un slide commercial.
 
-![Architecture SI actuelle — banque retail mid-tier 2026|1300](../cas-pratiques/images/CC-01-fig-00-architecture-actuelle.svg)
+![Architecture SI actuelle — banque retail mid-tier 2026|1300](../images/CC-01-fig-00-architecture-actuelle.svg)
 
 Six couches structurent la banque retail mid-tier 2026 typique :
 
@@ -295,7 +295,7 @@ Cette boucle n'est pas un nice-to-have — c'est **le mécanisme qui transforme 
 
 L'axe principal est la **Vitesse** ; axes secondaires : Volume et Bien-être. Méthode mobilisée : TEI Forrester (chiffrage) + Cigref Hard/Soft (qualification) + arbre de décision ch. 21.6.
 
-![Carte d'estimation Hard / Soft du copilot bancaire|1300](../cas-pratiques/images/CC-01-fig-01-roi-hard-soft.svg)
+![Carte d'estimation Hard / Soft du copilot bancaire|1300](../images/CC-01-fig-01-roi-hard-soft.svg)
 
 Quatre métriques retenues :
 
