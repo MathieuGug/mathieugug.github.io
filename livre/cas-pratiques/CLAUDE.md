@@ -95,8 +95,8 @@ Autres règles héritées du CLAUDE.md racine :
 | ID | Cas | Statut | Lien |
 |---|---|---|---|
 | **CC-01** | Copilot conseiller bancaire | ✅ Livré (JSON + MD + 4 SVG + HTML) | [HTML](CC-01-copilot-banque.html) · [MD](cases/CC-01-copilot-banque.md) |
-| CC-02 | Agent vocal IA service client | Draft index | — |
-| CC-03 | Détection fraude temps réel | Draft index | — |
+| **CC-02** | Agent vocal IA service client | 🖊️ Rédigé couche auteur (JSON + MD + fig-00) — HTML phase 2 | [MD](cases/CC-02-agent-vocal-telecom.md) · [JSON](cases/CC-02-agent-vocal-telecom.json) |
+| **CC-03** | Détection fraude temps réel | 🖊️ Rédigé couche auteur (JSON + MD + fig-00) — HTML phase 2 | [MD](cases/CC-03-fraude-temps-reel.md) · [JSON](cases/CC-03-fraude-temps-reel.json) |
 | CC-04 | Maintenance prédictive turbines | Draft index | — |
 | CC-05 | Optimisation grid temps réel | Draft index | — |
 | CC-06 | Try-on virtuel | Draft index | — |

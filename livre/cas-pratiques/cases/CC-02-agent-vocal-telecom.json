@@ -1,0 +1,479 @@
+{
+  "meta": {
+    "id": "CC-02",
+    "titre": "Agent vocal IA service client",
+    "secteur": "Télécom",
+    "facette_scaling": "trajectoire_couts",
+    "facettes_secondaires": ["build_vs_buy", "evaluation"],
+    "regime": "buy_then_build_partial",
+    "ia_type": "agentic",
+    "gabarit": "charniere",
+    "thes_e_une_ligne": "Le coût par interaction explose quand on scale au-delà de 100 k appels/mois — sauf à internaliser le tier voix qu'on louait au début.",
+    "auteur": "Mathieu Guglielmino",
+    "date_v1": "2026-06-03"
+  },
+
+  "mise_en_situation": {
+    "scene": "Plateau de relation client de [VILLE], 22 h 40. La file d'attente affiche 14 minutes. Un client appelle pour la troisième fois en deux jours : sa box ne synchronise plus. L'agent vocal IA décroche en 2 secondes, l'authentifie, interroge la ligne, détecte une perte de sync DSL, annonce « je redémarre votre box, patientez 90 secondes » — et la ligne remonte. Appel clos en 3 min 10, sans humain. Le directeur de la relation client veut généraliser sur les 30 % de motifs répétitifs. Mais le DAF regarde la facture du tier voix managé grimper proportionnellement au volume et demande : « à 100 000 appels par mois, on continue à louer la voix ou on l'internalise ? »",
+    "chiffres_bruts": [
+      { "label": "Appels entrants / an", "valeur": "8 M" },
+      { "label": "Motifs répétitifs adressables", "valeur": "≈ 30 %" },
+      { "label": "Cost-per-call humain actuel", "valeur": "4,80 €" },
+      { "label": "Temps d'attente moyen (pic)", "valeur": "14 min" },
+      { "label": "Pilote initial", "valeur": "30 k appels/mois · 4 motifs · 6 mois" },
+      { "label": "Budget latence conversation", "valeur": "< 800 ms bout-en-bout" }
+    ],
+    "horizon_temporel": "POC oct. 2026 → pilote 4 motifs avr. 2027 → généralisation + bascule d'internalisation du tier voix au crossover (~mois 14)."
+  },
+
+  "architecture_actuelle": {
+    "composants": [
+      {
+        "categorie": "canal_utilisateur",
+        "nom": "SVI / CCaaS Genesys Cloud + callbot legacy (Dialogflow CX) + softphones agents",
+        "criticite_pour_le_cas": "read_write_via_proxy_validation",
+        "remarque": "Le SVI route, met en file, raccroche. C'est ici que se branche l'agent vocal — et c'est ici que vit le tier voix managé (STT + TTS + média téléphonique) qui pèse au compteur par minute."
+      },
+      {
+        "categorie": "front_metier",
+        "nom": "CRM Salesforce Service Cloud (poste conseiller)",
+        "criticite_pour_le_cas": "read_write_via_proxy_validation",
+        "remarque": "Fiche client, historique contacts, contrats, incidents. L'agent lit le contexte et écrit le compte-rendu / le ticket. MCP officiel disponible."
+      },
+      {
+        "categorie": "core_metier_regule",
+        "nom": "BSS billing Amdocs + OSS provisioning (sur middleware legacy)",
+        "criticite_pour_le_cas": "read_write_via_proxy_validation",
+        "remarque": "Facturation, forfaits, options, conso. Toute modification engageante (changer un forfait, souscrire une option payante) est un acte de consommation → confirmation forte + preuve. Le sclérosant projet : monolithe billing 20 ans d'âge, API partiellement SOAP."
+      },
+      {
+        "categorie": "outils_satellites",
+        "nom": "ACS TR-069 (gestion de parc box / CPE à distance)",
+        "criticite_pour_le_cas": "read_write",
+        "remarque": "Le système qui agit vraiment : diagnostic ligne, reboot box, reconfiguration distante. C'est lui qui transforme l'agent vocal d'un répondeur amélioré en résolveur d'incident niveau 1."
+      },
+      {
+        "categorie": "data_scoring",
+        "nom": "Datalake BigQuery + médiation conso temps réel",
+        "criticite_pour_le_cas": "read_only",
+        "remarque": "Conso data/voix temps réel, statut commande, suivi livraison. Lecture seule pour répondre aux questions de suivi."
+      },
+      {
+        "categorie": "knowledge_base",
+        "nom": "Zendesk Guide (base de connaissance support) + Confluence procédures",
+        "criticite_pour_le_cas": "read_only",
+        "remarque": "Procédures de résolution niveau 1, offres en cours, FAQ. RAG vocal. MCP/API disponible."
+      },
+      {
+        "categorie": "back_office",
+        "nom": "ServiceNow (ticketing) + WFM / QM (planification & qualité)",
+        "criticite_pour_le_cas": "read_write",
+        "remarque": "Création de ticket si escalade ou RDV technicien. WFM/QM hors périmètre direct, mais impacté (la charge humaine se redéploie)."
+      }
+    ],
+    "implications_structurantes": [
+      "Le tier voix managé (STT + TTS + média) est le poste de coût marginal dominant — pas le LLM. C'est lui qui décide de la courbe build/buy, pas le modèle de raisonnement.",
+      "Le billing Amdocs legacy est le sclérosant : toute action engageante (forfait, option payante) traverse un monolithe partiellement SOAP, avec une exigence de preuve consommateur.",
+      "ACS TR-069 est le différenciateur : sans la capacité d'agir sur la box, l'agent vocal reste un SVI bavard ; avec, il résout 60 % des incidents box niveau 1 sans humain.",
+      "Le budget latence < 800 ms bout-en-bout contraint le choix modèle (cascade Haiku) et plaide pour l'internalisation du STT/TTS au crossover (un aller-retour API voix managée ajoute 150-300 ms)."
+    ],
+    "renvoi_figure": "fig-00"
+  },
+
+  "application_concrete": {
+    "modes_usage": [
+      {
+        "id": "A",
+        "label": "Self-service vocal autonome (containment)",
+        "moment": "Décroché en < 2 s, 24/7, sur les motifs adressables (suivi conso, statut commande/livraison, incident box N1, MAJ option réversible)",
+        "actions": [
+          "Authentifie (numéro appelant + question de sécurité, pas de biométrie vocale sans consentement)",
+          "Comprend le motif en langage naturel (pas d'arbre SVI à touches)",
+          "Consulte conso / statut commande / diagnostic ligne",
+          "Agit sous garde-fou : reboot box (ACS), envoi SMS, activation option réversible",
+          "Annonce explicitement chaque action avant de l'exécuter"
+        ]
+      },
+      {
+        "id": "B",
+        "label": "Routage intelligent + passage de relais humain",
+        "moment": "Quand le motif sort du périmètre ou que le client demande un conseiller",
+        "sous_modes": [
+          { "id": "B1", "label": "Détection d'intention hors-scope", "description": "Reconnaît un motif complexe (litige, résiliation, détresse) → route vers la bonne file humaine, pas la file générique." },
+          { "id": "B2", "label": "Résumé pré-transfert", "description": "Pousse au conseiller un résumé structuré (qui, quoi, ce qui a déjà été tenté) — le client ne re-raconte pas son problème depuis zéro." },
+          { "id": "B3", "label": "Opt-out immédiat", "description": "« dire conseiller » à tout moment bascule vers un humain — exigence AI Act transparence + protection consommateur." }
+        ]
+      },
+      {
+        "id": "C",
+        "label": "Post-appel",
+        "moment": "À la clôture de l'appel",
+        "actions": [
+          "Génère le compte-rendu structuré dans Salesforce",
+          "Crée un ticket ServiceNow si escalade / RDV technicien",
+          "Met à jour le statut de l'incident",
+          "Déclenche l'enquête de satisfaction post-appel (CSAT + verbatim)"
+        ]
+      }
+    ],
+    "niveaux_autonomie": [
+      { "id": "L1", "label": "SVI augmenté",                  "description": "Comprend le langage naturel et route mieux ; ne fait aucune action métier",                       "active_en": "POC (8 sem.)" },
+      { "id": "L2", "label": "Self-service lecture",          "description": "Consulte conso, statut commande, diagnostic — actions read-only, restitue l'info",              "active_en": "Pilote (mois 1-6)" },
+      { "id": "L3", "label": "Self-service action réversible", "description": "Reboot box (ACS), active une option réversible, envoie un SMS — chaque action annoncée + journalisée", "active_en": "Prod (mois 7-18)" },
+      { "id": "L4", "label": "Acte engageant en pleine autonomie", "description": "Résiliation ferme, modification de facturation engageante sans humain", "active_en": "INTERDIT — protection consommateur (droit de rétractation, preuve de consentement) + risque de litige. Toujours confirmation forte ou escalade humaine." }
+    ],
+    "trajectoire_multi_step_exemple": {
+      "scenario": "Mode A — « ma box ne marche plus, c'est la troisième fois »",
+      "etapes": [
+        { "id": 1, "label": "Listen", "description": "Transcription streaming (STT) en français, gestion des interruptions et du bruit de fond." },
+        { "id": 2, "label": "Identify", "description": "Authentification via numéro appelant + question de sécurité (date de naissance / dernier paiement). Pas d'empreinte vocale sans opt-in." },
+        { "id": 3, "label": "Diagnose", "description": "Appels en parallèle : ACS TR-069 (état ligne + sync DSL + uptime box), médiation conso (pas de suspension impayé), Zendesk (incident réseau connu sur la zone ?).", "outils_appeles": ["acs-mcp.get_line_status(line_id)", "conso-mcp.check_suspension(account_id)", "zendesk-mcp.search_known_incidents(zone)"] },
+        { "id": 4, "label": "Reason", "description": "Chaîne de raisonnement (cascade : Claude 4.7 Haiku pour le routage, Sonnet si ambigu) : sync DSL perdue + pas d'incident zone + pas de suspension → 60 % des cas résolus par reboot distant → proposer reboot avant d'envoyer un technicien.", "renvoi_livre": ["ch.7 boucle agent", "ch.5 économie inférence (cascade Haiku/Sonnet)"] },
+        { "id": 5, "label": "Act", "description": "« Je redémarre votre box, ne la débranchez pas, patientez 90 secondes. » → acs-mcp.reboot_cpe(box_id), puis ré-interrogation du statut." },
+        { "id": 6, "label": "Verify / Escalate", "description": "Sync remontée → confirmation au client + clôture. Sinon → création ticket ServiceNow P2 + proposition de créneau technicien (jamais d'engagement ferme sans confirmation explicite).", "renvoi_livre": ["ch.18 audit trail"] }
+      ]
+    }
+  },
+
+  "outils_internes": {
+    "mcp_servers": [
+      { "systeme": "Genesys Cloud CCaaS", "mode": "read_write_via_proxy", "type_mcp": "API officielle (route / transfer / hangup)", "effort_dev": "1 sem.", "risque": "moyen", "raison_risque": "intégration média temps réel + barge-in (interruption) à câbler proprement" },
+      { "systeme": "Salesforce Service Cloud", "mode": "read_write_via_proxy", "type_mcp": "officiel disponible", "effort_dev": "1 sem.", "risque": "bas" },
+      { "systeme": "ACS TR-069 (box / CPE)", "mode": "read_write", "type_mcp": "custom (API constructeur)", "effort_dev": "2 sem.", "risque": "moyen", "raison_risque": "actions distantes sur l'équipement client — garde-fous + idempotence + rate-limit obligatoires" },
+      { "systeme": "BSS Amdocs (billing / forfaits)", "mode": "read_write_via_proxy", "type_mcp": "custom obligatoire (legacy partiellement SOAP)", "effort_dev": "4 sem.", "risque": "haut", "raison_risque": "Le sclérosant : monolithe billing 20 ans, API hétérogène, et tout write engageant exige une preuve de consentement consommateur." },
+      { "systeme": "Médiation conso (datalake)", "mode": "read", "type_mcp": "open source / connecteur SQL", "effort_dev": "3 j", "risque": "bas" },
+      { "systeme": "Zendesk Guide (KB)", "mode": "read", "type_mcp": "officiel", "effort_dev": "3 j", "risque": "bas" },
+      { "systeme": "ServiceNow", "mode": "write", "type_mcp": "officiel", "effort_dev": "1 sem.", "risque": "bas" },
+      { "systeme": "Tier voix (STT / TTS / média)", "mode": "read_streaming + synth", "type_mcp": "pas MCP — pipeline média (le poste qui décide la courbe build/buy)", "effort_dev": "2 sem. (managé) → 6-8 sem. (internalisé)", "risque": "moyen", "raison_risque": "latence + qualité voix FR + coût par minute. C'est ici que se joue l'arbitrage trajectoire de coûts." }
+    ],
+    "effort_total": "7-9 semaines pour 1 backend dev sénior + 1 conversation designer voix, hors internalisation du tier voix (phase 2, +6-8 sem.).",
+    "renvois_livre": ["ch.12 MCP plateforme", "ch.14 surfaces agentiques (voix)", "ch.13 sécurité MCP"]
+  },
+
+  "modeles_cibles": {
+    "candidats": [
+      { "modele": "Claude 4.7 Haiku", "force_pour_le_cas": "Latence basse + coût plancher + tool use robuste — idéal pour le routage et 80 % des tours de dialogue.", "faiblesse": "Reasoning limité sur cas ambigus → escalade cascade.", "cout_indicatif": "$0.80 / $4 par M tokens" },
+      { "modele": "Claude 4.7 Sonnet", "force_pour_le_cas": "Reasoning supérieur sur les tours ambigus / multi-contraintes (litige naissant, motif composite).", "faiblesse": "Latence + coût — réservé à la fraction de tours qui en ont besoin.", "cout_indicatif": "$3 / $15 par M tokens" },
+      { "modele": "STT Whisper large-v3 (self-hosted)", "force_pour_le_cas": "Internalisation du speech-to-text : coût marginal proche de zéro après CapEx GPU, latence maîtrisée, données voix qui ne sortent pas.", "faiblesse": "CapEx + MLOps GPU + qualité à fiabiliser sur accents / bruit.", "cout_indicatif": "OpEx GPU (vs $0.004-0.01 / min en managé)" },
+      { "modele": "TTS streaming (Cartesia / ElevenLabs managé)", "force_pour_le_cas": "Voix FR naturelle, faible latence, time-to-value immédiat — bon pour POC/pilote.", "faiblesse": "Coût par caractère qui pèse au volume.", "cout_indicatif": "$ par caractère / minute synthétisée" },
+      { "modele": "TTS open self-hosted (XTTS / Kokoro)", "force_pour_le_cas": "Internalisation de la synthèse vocale au crossover — coût marginal effondré.", "faiblesse": "Qualité voix légèrement en retrait, tuning prosodie FR.", "cout_indicatif": "OpEx GPU" }
+    ],
+    "recommandation": {
+      "regime": "cascade + bascule de tier",
+      "modele_primaire": "Claude 4.7 Haiku (routage + dialogue courant), escalade Sonnet sur tours ambigus",
+      "modele_gardien": "LLM-as-judge sur transcripts (échantillon 5 %) pour la qualité de containment + détection d'hallucination facturation",
+      "voice_tier": "Managé (Deepgram-like STT + Cartesia-like TTS) en POC/pilote → internalisation Whisper + TTS open au crossover ~100 k appels/mois",
+      "embeddings_rag": "Embeddings FR pour le RAG base de connaissance Zendesk",
+      "argument_cascade": "Le LLM n'est PAS le poste cher : la cascade Haiku/Sonnet maîtrise l'inférence. Le poste cher est le tier voix par minute. La stratégie « louer la voix pour démarrer vite, l'internaliser au crossover » est l'inverse de la banque CC-01 (où c'est le modèle de raisonnement qu'on garde managé). Ici c'est l'infra média qu'on rapatrie."
+    }
+  },
+
+  "enjeux": {
+    "enjeux_chiffres": [
+      { "label": "Containment net des motifs répétitifs", "chiffre": "35-45 % cible (résolu sans rappel < 48 h)", "consequence": "cost-per-call 4,80 € → ~0,40 € sur la part automatisée" },
+      { "label": "Supprimer la file d'attente sur le self-service", "chiffre": "14 min → 0 (décroché < 2 s, 24/7)", "consequence": "déport du pic + disponibilité nuit/week-end" },
+      { "label": "Désengorger les agents humains", "chiffre": "−30 % de volume répétitif", "consequence": "redéploiement vers cas complexes / rétention — bien-être agents si bien accompagné" }
+    ],
+    "benchmark": {
+      "reference": "Grand opérateur télécom européen 2024-2025 (paraphrasé)",
+      "metrique": "containment 30-50 % sur motifs simples après 18 mois ; gain réel conditionné à la mesure du repeat-call",
+      "renvoi_livre": "ch.21.8"
+    },
+    "contre_benchmark": "Le cas d'école de la sur-automatisation 2024 : un acteur tech remplace massivement son support humain, claironne un containment record — puis voit le CSAT chuter et les rappels exploser, et ré-internalise une partie des agents 12-18 mois plus tard. Le containment brut sans gardien repeat-call est un mirage. Cf. ch.21.7.2 (variante service client du pivot Vitesse → Hybride)."
+  },
+
+  "build_buy": {
+    "criteres": ["data_sensitivity", "personnalisation", "volumetrie", "lock_in", "time_to_value", "souverainete"],
+    "options": [
+      {
+        "regime": "interne",
+        "stack": "STT Whisper self-hosted + TTS open + orchestrateur maison + LLM API cascade + SIP/média maison + MCP custom (Amdocs, ACS)",
+        "scores": { "data_sensitivity": "++", "personnalisation": "++", "volumetrie": "+", "lock_in": "+", "time_to_value": "--", "souverainete": "++" },
+        "verdict": "Coût marginal plancher et données voix internes, mais time-to-value catastrophique (média temps réel = projet d'infra). À ne PAS faire en porte d'entrée — c'est la cible du crossover, pas du POC."
+      },
+      {
+        "regime": "mainstream",
+        "solution": "Voicebot SaaS vertical (type Genesys + CCAI / éditeur voicebot packagé)",
+        "scores": { "data_sensitivity": "-", "personnalisation": "-", "volumetrie": "++", "lock_in": "--", "time_to_value": "++", "souverainete": "-" },
+        "verdict": "POC en 4-6 semaines, mais le coût par minute du tier voix managé devient un plancher qui mange la marge au-delà de 100 k appels/mois, et la profondeur d'action (Amdocs, ACS) reste à construire de toute façon."
+      },
+      {
+        "regime": "hybride",
+        "stack": "Tier voix managé au démarrage + orchestrateur maison + LLM API cascade Haiku/Sonnet + MCP custom (Amdocs, ACS) + plan d'internalisation STT/TTS au crossover",
+        "scores": { "data_sensitivity": "+", "personnalisation": "+", "volumetrie": "+", "lock_in": "0", "time_to_value": "+", "souverainete": "0" },
+        "verdict": "RECOMMANDÉ — buy_then_build_partial. On loue la voix pour livrer vite, on construit dès le départ les MCP qui font la valeur (Amdocs, ACS), et on internalise le tier voix quand le volume franchit le crossover. Le LLM reste API (la cascade le rend bon marché)."
+      }
+    ],
+    "decision_ponderee": "Buy_then_build_partial : tier voix managé + LLM API cascade en POC/pilote pour le time-to-value ; internalisation du STT (Whisper) puis du TTS (open) au franchissement du crossover ~100 k appels/mois. Les MCP Amdocs et ACS sont construits dès le POC car ils portent toute la valeur métier (et serviront aussi le chat et le canal app).",
+    "renvoi_livre": "ch.21.6 arbre décision"
+  },
+
+  "trajectoire_couts": {
+    "phases": [
+      { "id": "poc",    "label": "POC 3 mois",    "perimetre": "5 k appels/mois, 1 motif (suivi commande), L1-L2, tier voix managé" },
+      { "id": "pilote", "label": "Pilote 6 mois", "perimetre": "30 k appels/mois, 4 motifs (conso, commande, box N1, option), L3 sous garde-fou, tier voix managé" },
+      { "id": "prod",   "label": "Prod 12 mois",  "perimetre": "150 k appels/mois (> crossover), internalisation STT Whisper, MCP Amdocs + ACS en prod" },
+      { "id": "scale",  "label": "Scale 36 mois", "perimetre": "250 k appels/mois, tier voix entièrement internalisé (STT + TTS), extension canaux (chat, app)" }
+    ],
+    "postes": {
+      "inference":   { "poc": 5,   "pilote": 35,  "prod": 110,  "scale": 130  },
+      "infra":       { "poc": 6,   "pilote": 16,  "prod": 140,  "scale": 290  },
+      "equipe":      { "poc": 80,  "pilote": 240, "prod": 560,  "scale": 1100 },
+      "data":        { "poc": 8,   "pilote": 30,  "prod": 70,   "scale": 90   },
+      "evaluation":  { "poc": 6,   "pilote": 28,  "prod": 90,   "scale": 200  },
+      "gouvernance": { "poc": 5,   "pilote": 18,  "prod": 55,   "scale": 110  },
+      "securite":    { "poc": 5,   "pilote": 16,  "prod": 60,   "scale": 130  },
+      "change":      { "poc": 0,   "pilote": 30,  "prod": 120,  "scale": 240  }
+    },
+    "cout_par_interaction": { "poc": 6.80, "pilote": 2.20, "prod": 0.62, "scale": 0.34 },
+    "crossover_point": "≈ 100 k appels-bot / mois : seuil au-delà duquel le CapEx GPU d'un tier voix internalisé (STT Whisper + TTS open) s'amortit et bat le coût par minute du tier voix managé. C'est le cœur de la thèse du cas.",
+    "commentaire_courbe": "Particularité vs CC-01 : ici l'inférence inclut le tier voix managé par minute, qui est le coût marginal dominant. Au crossover (prod), on bascule ce coût de l'inférence (managé, per-minute) vers l'infra (GPU CapEx) — l'inférence cesse d'exploser et le coût/appel s'effondre. Le poste équipe (×14) et change (0 → 240 k€) montent comme partout : paradoxe agentique (ch.21.7). Le poste évaluation grimpe car la surface vocale (ASR, hallucination facturation) est plus dure à monitorer que le texte."
+  },
+
+  "gouvernance": {
+    "raci": {
+      "responsable": "Équipe produit agent vocal (Tech Lead + conversation designer voix + 1 ML eng eval + 1 backend MCP)",
+      "approbateur": "Directeur Relation Client (sponsor) — arbitre containment vs CSAT et le calendrier social",
+      "consultes": ["DPO (voix = donnée personnelle)", "RSSI (fraude vocale, account takeover)", "Direction juridique / conformité consommateur", "CSE / représentants du personnel", "WFM (impact charge)"],
+      "informes": ["CODIR", "DGCCRF (cadre protection consommateur, indirect)"]
+    },
+    "cadence_revue": {
+      "comite_eval": "mensuel au pilote, trimestriel en prod — containment net, repeat-call, CSAT, taux d'hallucination facturation",
+      "alertes": "continues (latence média, taux d'escalade, LLM-as-judge sur 5 % des transcripts)",
+      "audit_externe": "annuel (conformité consommateur + RGPD voix)"
+    },
+    "ai_act_ligne": {
+      "niveau": "risque_limite",
+      "fondement": "AI Act Art. 50 — obligation de transparence : informer l'appelant qu'il parle à un système d'IA, opt-out humain à tout moment. PAS un système haut risque (hors Annexe III).",
+      "echeance": "2026-08 (transparence applicable)",
+      "actions": [
+        "Disclosure vocale explicite en début d'appel (« vous parlez à un assistant virtuel »)",
+        "Opt-out humain immédiat (« dire conseiller ») garanti à tout moment",
+        "Pas de design manipulateur, pas de biométrie vocale sans consentement explicite",
+        "RGPD voix : minimisation, pas d'enregistrement audio persistant non nécessaire, base légale claire",
+        "Acte engageant (forfait/option payante) : confirmation forte + preuve de consentement consommateur"
+      ]
+    },
+    "renvoi_livre": "ch.23 gouvernance AI Act (risque limité Art. 50)"
+  },
+
+  "evaluation": {
+    "regression_suite": {
+      "taille": "200 scénarios vocaux dorés + 60 cas adversariaux (accents, bruit, interruptions, colère, tentative d'ingénierie sociale pour usurpation de compte)",
+      "cadence": "mise à jour mensuelle par l'équipe produit + superviseurs plateau",
+      "criteres": [
+        "résolution effective du motif (pas seulement « clôturé »)",
+        "absence d'hallucination sur les informations facturation (critère bloquant)",
+        "qualité de transcription ASR sur accents / bruit (word error rate)",
+        "pertinence de l'escalade (ne pas garder un client en détresse)",
+        "respect de la disclosure + opt-out (AI Act Art. 50)"
+      ]
+    },
+    "metriques_online": [
+      { "id": "csat", "cible": "> 4,1 / 5", "alerte": "< 3,9 / 5 sur 7 j roulants" },
+      { "id": "cost-per-contact", "cible": "≤ 0,45 € sur la part automatisée", "alerte": "tier voix > plancher cible (signal crossover)" },
+      { "id": "response-time", "cible": "décroché < 2 s, latence tour < 800 ms", "alerte": "> 1 200 ms (rupture de naturel)" }
+    ],
+    "detection_derive": {
+      "outil": "Monitoring média (latence STT/TTS, barge-in) + LLM-as-judge sur 5 % des transcripts (containment réel vs déclaré) + suivi du repeat-call-rate (< 48 h)",
+      "alerte": "PagerDuty équipe produit ; escalade RSSI si pic d'usurpation ; escalade conformité si hallucination facturation",
+      "fenetre": "rolling 7 jours vs baseline 30 jours ; instantané pour l'hallucination facturation"
+    },
+    "boucle_correction": {
+      "trigger": "ticket Linear ou alerte ; revue hebdo des transcripts ratés au pilote",
+      "delai_re_prompt": "48 h sur les sous-prompts de dialogue",
+      "cadence_re_finetune": "trimestriel sur l'ASR self-hosted (corpus accents/bruit enrichi) une fois internalisé",
+      "rollback": "feature flag par motif (désactivation d'un motif en < 1 h) + bascule vers file humaine sans coupure"
+    },
+    "renvoi_livre": ["ch.17 évaluation agent", "ch.18 audit trail cognitif"]
+  },
+
+  "roi": {
+    "axe_principal": "cout",
+    "axes_secondaires": ["vitesse"],
+    "methode_mobilisee": "TEI Forrester (chiffrage) + Cigref Hard/Soft (qualification) + arbre décision ch.21.6",
+    "metriques": [
+      { "id": "cost-per-contact", "borne_basse": "−2,0 €", "cible": "−3,8 €", "borne_haute": "−4,3 €" },
+      { "id": "response-time",    "borne_basse": "−6 min", "cible": "−14 min (file → 0)", "borne_haute": "−14 min" },
+      { "id": "throughput",       "borne_basse": "+15 %",  "cible": "+30 % motifs absorbés", "borne_haute": "+45 %" },
+      { "id": "csat",             "borne_basse": "−0,2",   "cible": "stable ± 0,1", "borne_haute": "+0,3" }
+    ],
+    "kpi_gardien": {
+      "id": "csat",
+      "role": "KPI gardien Soft : le containment Hard ne vaut rien si le CSAT chute. Couplé au repeat-call-rate (< 48 h), il déclenche le rollback d'un motif si le containment est un faux containment.",
+      "borne": "CSAT > 4,1/5 et repeat-call < seuil ; sinon désactivation du motif"
+    },
+    "non_retenu": [
+      { "id": "arpu", "raison": "attribution agent vocal ↔ rétention/upsell trop indirecte" },
+      { "id": "nps", "raison": "secondaire de convergence Soft, suivi en monitoring CSAT à la place (cf. ch.21.5.4)" },
+      { "id": "employee-turnover", "raison": "le sujet RH est traité côté gouvernance/change, pas en KPI de ROI primaire (risque de récit cynique)" }
+    ],
+    "renvoi_figure": "fig-00"
+  },
+
+  "operation_equipe": {
+    "personas": {
+      "porteur": { "role": "Dir. Relation Client", "posture": "Veut décharger le plateau du répétitif sans casser la satisfaction ; sait que le repeat-call est le vrai juge", "citation": "Un containment qui rappelle dans la nuit, c'est pas un containment, c'est un report." },
+      "sponsor": { "role": "DAF", "posture": "Regarde la facture du tier voix monter et veut un plan d'internalisation chiffré", "citation": "À 100 000 appels par mois, je veux savoir quand on arrête de louer la voix." },
+      "allie": { "role": "DSI / CTO", "posture": "Y voit l'occasion de monter une plateforme conversationnelle réutilisable (voix, chat, app)", "citation": "Les MCP Amdocs et ACS, on les construit une fois et ils servent tous les canaux." },
+      "opposant": { "role": "CSE / représentants du personnel", "posture": "Garde-fou social légitime : redoute la suppression de postes derrière le containment", "citation": "Vous automatisez 30 % des appels — qu'est-ce qu'il advient des 30 % d'agents ?" }
+    },
+    "equipe_par_phase": {
+      "poc": {
+        "etp_total": 8.6,
+        "composition": [
+          { "role": "Tech Lead Agentic voix", "etp": 1.0, "profil": "Python/TS sénior, temps réel média, tool use, a livré un agent en prod" },
+          { "role": "Conversation Designer voix", "etp": 1.0, "profil": "LOAD-BEARING — la voix n'est pas du texte lu : prosodie, barge-in, gestion d'erreur, tours de parole" },
+          { "role": "ML Engineer (ASR / eval)", "etp": 1.5, "profil": "STT, word error rate, LLM-as-judge, MLOps voix" },
+          { "role": "Backend MCP", "etp": 1.5, "profil": "Le sclérosant : Amdocs billing legacy + ACS TR-069 + garde-fous actions" },
+          { "role": "Data Engineer", "etp": 0.8, "profil": "Intents, transcripts, RAG Zendesk, qualité corpus" },
+          { "role": "Product Owner", "etp": 1.0, "profil": "Ex-superviseur centre d'appels — LOAD-BEARING, connaît les motifs et les pièges" },
+          { "role": "MLOps / SRE", "etp": 0.5, "profil": "Latence média, monitoring, disponibilité 24/7" },
+          { "role": "RSSI référent", "etp": 0.3, "profil": "Fraude vocale, account takeover, MCP authz" },
+          { "role": "Change manager", "etp": 1.0, "profil": "CSE, requalification agents, communication interne — POSTE RENFORCÉ ici (impact social fort)" }
+        ]
+      },
+      "prod": { "etp_total": 6.5, "note": "Core 6,5 ETP + équipe d'internalisation du tier voix en phase prod (transitoire, +2 ETP infra GPU)" }
+    },
+    "velocite": {
+      "poc":    { "duree": "8 sem.",  "cadence_release": "bi-hebdo", "perimetre": "1 motif (suivi commande), L1-L2, tier voix managé, 5 k appels/mois" },
+      "pilote": { "duree": "6 mois",  "cadence_release": "hebdo",    "perimetre": "4 motifs, L3 sous garde-fou, MCP Amdocs + ACS + ServiceNow, 30 k appels/mois" },
+      "prod":   { "duree": "12 mois", "cadence_release": "2 sem. + hotfix", "perimetre": "150 k appels/mois, internalisation STT Whisper, extension motifs" },
+      "scale":  { "duree": "36 mois", "cadence_release": "mensuel",  "perimetre": "tier voix entièrement internalisé, multi-canal (chat, app), 250 k appels/mois" }
+    },
+    "sclerosants": [
+      "BSS Amdocs billing legacy : +4 sem. MCP wrapper + design de la preuve de consentement consommateur.",
+      "Budget latence < 800 ms : contraint le choix modèle et plaide pour l'internalisation voix (un hop API managé ajoute 150-300 ms).",
+      "Consultation CSE / syndicats : plus lourde qu'en CC-01 car l'automatisation touche directement des postes d'agents — 3 à 4 mois, engagement de requalification.",
+      "Qualité ASR sur accents / bruit : le pilote révèle toujours un word error rate plus élevé que les démos en studio."
+    ],
+    "deadlines_externes": [
+      { "echeance": "2026-08", "label": "AI Act transparence (Art. 50)", "consequence_si_ratee": "disclosure vocale + opt-out obligatoires ; non-conformité = sanction + risque réputationnel" },
+      { "echeance": "2027-Q1", "label": "Consultation CSE bouclée", "consequence_si_ratee": "blocage de l'extension du pilote si l'accord requalification n'est pas signé" },
+      { "echeance": "2027-Q3", "label": "Crossover tier voix (~100 k appels/mois)", "consequence_si_ratee": "sans plan d'internalisation, la facture voix managée plafonne la marge du business case" }
+    ],
+    "deadline_operationnelle": "POC oct. 2026 → pilote 4 motifs avr. 2027 → prod + internalisation STT au crossover (~mois 14)."
+  },
+
+  "debat": {
+    "question": "Le containment Hard cache-t-il une dégradation CSAT et un coût voix qui plafonne la marge ?",
+    "pour": [
+      { "argument": "Hard savings nets et chiffrables : cost-per-call divisé par dix sur la part automatisée." },
+      { "argument": "Disponibilité 24/7 + file d'attente supprimée sur le self-service = valeur client réelle." },
+      { "argument": "Les agents libérés du répétitif montent sur la valeur (rétention, vente, cas complexes) — si l'accompagnement RH suit." }
+    ],
+    "contre": [
+      { "argument": "Le containment brut sans gardien repeat-call est un mirage : un appel « résolu » qui rappelle dans la nuit coûte deux fois et détruit le CSAT (cas d'école sur-automatisation 2024)." },
+      { "argument": "Le tier voix managé est un plancher de coût marginal : sans plan d'internalisation, le coût/appel cesse de baisser et la marge du business case plafonne." },
+      { "argument": "L'impact social (postes d'agents) est un risque CSE/réputationnel réel : à traiter en requalification, pas en KPI de ROI cynique." }
+    ],
+    "verdict_pondere": "KPI primaire = cost-per-contact (containment NET, résolu sans rappel < 48 h). KPI gardien = CSAT > 4,1/5 + repeat-call-rate. Plan d'internalisation du tier voix documenté dès le pilote, déclenché au crossover. Accord de requalification CSE avant l'extension.",
+    "renvois_livre": ["ch.21.5 Hard vs Soft", "ch.21.7.2 sur-automatisation service client", "ch.24 IA et travail"]
+  },
+
+  "choix_lecteur": [
+    {
+      "question": "Vous êtes le DAF. Quel KPI primaire mesurez-vous EN PREMIER à 6 mois ?",
+      "options": [
+        { "id": "A", "label": "Containment brut (taux d'appels clos par le bot)", "consequence": "Vous claironnez 42 % de containment au CODIR — mais 30 % de ces appels rappellent sous 48 h. Le vrai containment est à 29 %, le CSAT a baissé de 0,4, et vous l'apprenez au trimestre suivant par les verbatims.", "grille_analyse": "Piège du Hard isolé (ch.21.5.3) : le containment brut ignore le report. C'est l'angle mort du cas d'école sur-automatisation 2024.", "renvoi_chapitre": "ch.21.5.3" },
+        { "id": "B", "label": "CSAT seul", "consequence": "Le CSAT est stable, mais vous ne pouvez pas justifier l'investissement au CODIR : aucun chiffre Hard de coût évité. Le budget d'extension est gelé.", "grille_analyse": "Piège du Soft seul (ch.21.5.4) : convergence d'indicateurs requise. Bon pilote, mort politiquement.", "renvoi_chapitre": "ch.21.5.4" },
+        { "id": "C", "label": "Containment NET (résolu sans rappel < 48 h) + CSAT gardien", "consequence": "Vous tenez l'alignement Cigref : Hard signable (coût évité réel) + gardien Soft qui déclenche le rollback d'un motif si le containment est un faux containment.", "grille_analyse": "Le seul setup honnête (ch.21.7.3). Le repeat-call est le juge du containment.", "renvoi_chapitre": "ch.21.7.3" }
+      ]
+    },
+    {
+      "question": "À 100 k appels/mois, le tier voix managé pèse lourd. Vous faites quoi ?",
+      "options": [
+        { "id": "A", "label": "Rester en managé (simplicité)", "consequence": "Vous évitez le CapEx GPU, mais le coût/appel cesse de baisser : le tier voix par minute est un plancher. La marge du business case plafonne et le DAF rouvre le dossier dans 6 mois.", "grille_analyse": "Confort à court terme, plafond à moyen terme. Le crossover ne disparaît pas parce qu'on l'ignore.", "renvoi_chapitre": "ch.21.6" },
+        { "id": "B", "label": "Internaliser STT + TTS d'un coup", "consequence": "Vous rapatriez tout le tier voix : coût marginal effondré, mais un trimestre d'infra média temps réel + un word error rate à fiabiliser. Risqué si fait en big-bang.", "grille_analyse": "Bonne cible, mauvais tempo si tout d'un coup. Le média temps réel est un projet d'infra à part entière (ch.22).", "renvoi_chapitre": "ch.22" },
+        { "id": "C", "label": "Internaliser le STT (gros volume) d'abord, garder le TTS managé", "consequence": "Vous rapatriez Whisper (le STT est le plus gros poste voix au volume) et gardez la synthèse managée le temps de fiabiliser. Le coût/appel décroche sans tout casser. Vous internalisez le TTS en phase Scale.", "grille_analyse": "Bascule par étage — exactement la stratégie buy_then_build_partial. Internaliser d'abord ce qui pèse le plus, fiabiliser, puis le reste.", "renvoi_chapitre": "ch.21.6" }
+      ]
+    },
+    {
+      "question": "Le CSE bloque l'extension : peur des suppressions de postes. Vous faites quoi ?",
+      "options": [
+        { "id": "A", "label": "Passer en force (le ROI parle)", "consequence": "Conflit social, grève du plateau, image dégradée. Le projet survit mais l'adhésion des agents — load-bearing pour la qualité des escalades — est détruite.", "grille_analyse": "Antipattern : sans les agents, les escalades se passent mal et le containment réel chute (ch.24).", "renvoi_chapitre": "ch.24" },
+        { "id": "B", "label": "Cadrer requalification + engagement zéro licenciement sec", "consequence": "Vous transformez l'opposant en allié : les agents libérés du répétitif montent sur la rétention et les cas complexes. L'accord CSE débloque l'extension et la qualité des escalades grimpe.", "grille_analyse": "La bonne réponse (ch.24) : l'automatisation du répétitif finance la montée en valeur, pas la coupe sèche.", "renvoi_chapitre": "ch.24" },
+        { "id": "C", "label": "Plafonner le containment à 35 % (motifs simples uniquement)", "consequence": "Vous bornez le risque social, mais vous laissez sur la table une partie du ROI. Compromis défendable en phase pilote, à rediscuter une fois l'accord de requalification signé.", "grille_analyse": "Borne prudente — bon en pilote, sous-optimal si on s'y enferme sans rouvrir la discussion sociale.", "renvoi_chapitre": "ch.24" }
+      ]
+    }
+  ],
+
+  "quiz": [
+    {
+      "question": "Pourquoi le coût par appel du voicebot ne baisse-t-il pas indéfiniment en mode buy ?",
+      "options": [
+        "Parce que le LLM coûte de plus en plus cher",
+        "Parce que le tier voix managé (STT/TTS) facturé à la minute est un plancher de coût marginal qu'on ne franchit qu'en internalisant",
+        "Parce que les appels durent plus longtemps avec le temps",
+        "Parce que l'AI Act impose un surcoût par appel"
+      ],
+      "bonne_reponse": 1,
+      "explication": "Le LLM est maîtrisé par la cascade Haiku/Sonnet. Le coût marginal dominant est le tier voix par minute. Tant qu'on le loue, le coût/appel plafonne ; on ne le franchit qu'en internalisant STT puis TTS au crossover (~100 k appels/mois).",
+      "renvoi_chapitre": "ch.21.6"
+    },
+    {
+      "question": "Pourquoi le repeat-call-rate est-il le vrai gardien du containment ?",
+      "options": [
+        "Parce qu'il est imposé par la réglementation",
+        "Parce qu'un appel « résolu » qui rappelle sous 48 h est un faux containment : il coûte deux fois et dégrade le CSAT",
+        "Parce qu'il mesure la latence du bot",
+        "Parce qu'il remplace le CSAT"
+      ],
+      "bonne_reponse": 1,
+      "explication": "Le containment brut compte les appels clos, pas les problèmes résolus. Sans le gardien repeat-call (+ CSAT), on optimise un mirage — exactement l'angle mort du cas d'école sur-automatisation 2024.",
+      "renvoi_chapitre": "ch.21.5"
+    },
+    {
+      "question": "Quel est le sclérosant projet de ce cas ?",
+      "options": [
+        "Le choix du modèle de langage",
+        "Le BSS Amdocs billing legacy (+ la preuve de consentement consommateur) et le budget de latence voix — pas le LLM",
+        "La base de connaissance Zendesk",
+        "Le ticketing ServiceNow"
+      ],
+      "bonne_reponse": 1,
+      "explication": "Comme en CC-01, le sclérosant est dans le legacy : ici le monolithe billing Amdocs partiellement SOAP, doublé de l'exigence de preuve de consentement sur tout acte engageant, plus la contrainte de latence temps réel.",
+      "renvoi_chapitre": "ch.12"
+    }
+  ],
+
+  "verdict": {
+    "stamp": "PILOT_AVEC_KPI_GARDIEN",
+    "label": "Pilote validé avec KPI gardien — extension conditionnée à l'accord social et au plan d'internalisation",
+    "conditions": [
+      "KPI primaire cost-per-contact sur containment NET (résolu sans rappel < 48 h), pas containment brut",
+      "KPI gardien CSAT > 4,1/5 + repeat-call-rate, avec rollback d'un motif si faux containment",
+      "Plan d'internalisation du tier voix (STT puis TTS) documenté dès le pilote, déclenché au crossover ~100 k appels/mois",
+      "Accord de requalification CSE signé avant l'extension (engagement zéro licenciement sec)",
+      "Disclosure AI Act Art. 50 + opt-out humain garanti à tout moment"
+    ]
+  },
+
+  "renvois_livre": [
+    "ch.5 économie inférence (cascade Haiku/Sonnet)",
+    "ch.7 boucle agent (ReAct, action sous garde-fou)",
+    "ch.12 MCP plateforme",
+    "ch.13 sécurité MCP (fraude vocale)",
+    "ch.14 surfaces agentiques (voix)",
+    "ch.17 évaluation agent",
+    "ch.18 audit trail cognitif",
+    "ch.20 runtime managé vs internalisé",
+    "ch.21.2.1 LLMflation",
+    "ch.21.5 Hard vs Soft",
+    "ch.21.6 arbre de décision méthode ROI",
+    "ch.21.7 paradoxe agentique",
+    "ch.21.7.2 sur-automatisation service client",
+    "ch.22 IA frugale (internalisation tier voix, GPU)",
+    "ch.23 gouvernance AI Act (risque limité Art. 50)",
+    "ch.24 IA et travail (CSE, requalification)"
+  ],
+
+  "figures": [
+    {
+      "id": "fig-00",
+      "titre": "Architecture SI actuelle — opérateur télécom mid-tier 2026",
+      "fichier": "images/CC-02-fig-00-architecture-actuelle.svg",
+      "caption": "Cinq couches existantes (canal voix/CCaaS, front CRM, core BSS Amdocs + provisioning, satellite ACS TR-069, data + KB, back-office) avec criticité par composant. Le tier voix managé (STT/TTS) est encerclé comme le poste de coût qui décide la courbe build/buy ; le BSS Amdocs billing legacy est le sclérosant."
+    }
+  ]
+}

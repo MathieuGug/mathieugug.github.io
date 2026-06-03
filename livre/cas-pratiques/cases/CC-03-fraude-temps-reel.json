@@ -1,0 +1,452 @@
+{
+  "meta": {
+    "id": "CC-03",
+    "titre": "Détection fraude temps réel",
+    "secteur": "Banque",
+    "facette_scaling": "evaluation",
+    "facettes_secondaires": ["trajectoire_couts"],
+    "regime": "build",
+    "ia_type": "traditional_ml",
+    "gabarit": "standard",
+    "thes_e_une_ligne": "Hard savings nets et auditables — mais la boucle d'évaluation continue est le poste sous-estimé qui décide de la dérive 18 mois plus tard.",
+    "auteur": "Mathieu Guglielmino",
+    "date_v1": "2026-06-03"
+  },
+
+  "mise_en_situation": {
+    "scene": "Cellule fraude moyens de paiement de [VILLE], 3 h 12 du matin. Un pic de transactions carte sur un BIN compromis. Le modèle temps réel score chaque autorisation en moins de 50 ms dans le switch : passer, challenger (3-D Secure), bloquer. L'équipe a remplacé l'ancien moteur de règles + scoring acheté il y a deux ans — les Hard savings sont clairs, la fraude évitée se chiffre au centime. Mais le responsable évaluation pointe une courbe que personne d'autre ne regarde : le rappel baisse lentement depuis quatre mois. Les fraudeurs ont muté. Il pose la question qui décide du sort du modèle à 18 mois : « combien coûte vraiment la boucle d'éval continue, et qui la paie quand le projet sera marqué terminé ? »",
+    "chiffres_bruts": [
+      { "label": "Transactions carte / an", "valeur": "40 M" },
+      { "label": "Taux de fraude brut", "valeur": "≈ 0,08 %" },
+      { "label": "Budget latence autorisation", "valeur": "< 50 ms (scoring)" },
+      { "label": "False-positive cible", "valeur": "< 0,5 % du flux légitime" },
+      { "label": "Latence de la vérité terrain", "valeur": "chargeback confirmé à J+30 / J+90" },
+      { "label": "Incumbent remplacé", "valeur": "moteur de règles + scoring acheté" }
+    ],
+    "horizon_temporel": "Modèle en prod depuis 2 ans. Décision : pérenniser le budget d'évaluation continue ou le couper « le modèle est fini » — la dérive se mesure à 18 mois."
+  },
+
+  "architecture_actuelle": {
+    "composants": [
+      {
+        "categorie": "core_metier_regule",
+        "nom": "Switch d'autorisation temps réel (mainframe) + réseaux carte (Visa / Mastercard)",
+        "criticite_pour_le_cas": "pas_touche_regule",
+        "remarque": "La décision passer/bloquer suit la règle métier ; le modèle renvoie un score sous 50 ms, il ne décide pas seul. Budget de latence non négociable : un timeout = autorisation dégradée."
+      },
+      {
+        "categorie": "data_scoring",
+        "nom": "Stream Kafka transactions + feature store temps réel (Feast / Tecton)",
+        "criticite_pour_le_cas": "read_only",
+        "remarque": "Features vélocité, géoloc, écart au comportement, device, montant. C'est le sclérosant data : tenir le calcul de features sous le budget latence."
+      },
+      {
+        "categorie": "front_metier",
+        "nom": "Service de scoring ML temps réel (LE BUILD) — GBM + features graphe",
+        "criticite_pour_le_cas": "read_write",
+        "remarque": "Le système central du cas. Self-hosted, sans dépendance API externe dans le chemin chaud. Gradient boosting + features de graphe d'entités."
+      },
+      {
+        "categorie": "data_scoring",
+        "nom": "Datalake historique + registre de modèles (MLflow) + pipeline d'entraînement",
+        "criticite_pour_le_cas": "read_only",
+        "remarque": "Backtesting, holdout temporel, champion / challenger. C'est ici que vit la boucle d'évaluation — le cœur du cas."
+      },
+      {
+        "categorie": "back_office",
+        "nom": "Console analyste fraude + file d'alertes + outil de déclaration de soupçon (Tracfin)",
+        "criticite_pour_le_cas": "read_write",
+        "remarque": "Les analystes qualifient les alertes ; leurs labels reviennent dans le training set. C'est la source de la vérité terrain — retardée et partielle."
+      },
+      {
+        "categorie": "knowledge_base",
+        "nom": "Référentiel typologies de fraude + données consortium inter-banques",
+        "criticite_pour_le_cas": "read_only",
+        "remarque": "Patterns de fraude partagés. Accès contractuel / juridique — un sclérosant non technique."
+      }
+    ],
+    "implications_structurantes": [
+      "Pas de foundation model dans le chemin chaud : le scoring < 50 ms exige un GBM CPU, pas un appel LLM. Le cas est traditional ML — et c'est un choix, pas un retard.",
+      "Le sclérosant n'est pas le modèle (un GBM se ré-entraîne en heures) mais la boucle d'évaluation : la vérité terrain (chargeback confirmé) revient à J+30 / J+90, et les fraudeurs s'adaptent en semaines.",
+      "Build pur justifié : data ultra-sensible, latence < 50 ms incompatible avec un aller-retour API, et la vitesse d'adaptation contre une fraude adaptative est l'avantage concurrentiel.",
+      "Le vrai gardien n'est pas la fraude attrapée mais le client légitime bloqué : un modèle qui maximise le rappel en bloquant tout détruit le CSAT et l'attrition."
+    ],
+    "renvoi_figure": "fig-00"
+  },
+
+  "application_concrete": {
+    "modes_usage": [
+      {
+        "id": "A",
+        "label": "Scoring temps réel inline",
+        "moment": "À chaque autorisation, < 50 ms",
+        "actions": [
+          "Calcule les features depuis le feature store (vélocité, géoloc, écart au comportement, device)",
+          "Score la transaction (GBM) + vérifie le graphe d'entités liées (carte ↔ réseau de fraude connu)",
+          "Renvoie un score au switch, qui applique la règle : passer / challenger 3-DS / bloquer",
+          "Émet une alerte priorisée vers la console analyste si score élevé"
+        ]
+      },
+      {
+        "id": "B",
+        "label": "Investigation augmentée (analyste)",
+        "moment": "Sur les alertes priorisées",
+        "sous_modes": [
+          { "id": "B1", "label": "Priorisation", "description": "Les alertes sont rankées par score × montant × risque graphe — l'analyste traite d'abord ce qui compte." },
+          { "id": "B2", "label": "Explication (SHAP)", "description": "Chaque alerte vient avec les features qui l'ont déclenchée — pas de boîte noire pour l'analyste." },
+          { "id": "B3", "label": "Graphe d'entités", "description": "Visualisation des cartes / comptes / devices liés au cas suspect." }
+        ]
+      },
+      {
+        "id": "C",
+        "label": "Boucle d'apprentissage",
+        "moment": "En continu, en différé",
+        "actions": [
+          "Les qualifications analystes + les chargebacks confirmés reviennent comme labels (vérité terrain retardée)",
+          "Le pipeline ré-entraîne le challenger sur le training set mis à jour",
+          "Le challenger est évalué en shadow contre le champion",
+          "Promotion sous validation humaine si le challenger gagne sur le holdout temporel"
+        ]
+      }
+    ],
+    "niveaux_autonomie": [
+      { "id": "L1", "label": "Score advisory",       "description": "Le modèle renvoie un score, l'humain (règle) décide",                     "active_en": "POC / shadow" },
+      { "id": "L2", "label": "Auto-challenge",        "description": "Déclenche automatiquement un 3-D Secure sur score moyen",               "active_en": "Pilote" },
+      { "id": "L3", "label": "Auto-block réversible", "description": "Bloque sur score très élevé + seuil ; client peut contester (hotline, voie humaine)", "active_en": "Prod" },
+      { "id": "L4", "label": "Auto-block total sans recours", "description": "Blocage automatique sans voie de contestation humaine", "active_en": "INTERDIT — RGPD Art. 22 (décision automatisée à effet significatif) + un faux positif lèse un client légitime. Voie de contestation humaine obligatoire." }
+    ],
+    "trajectoire_multi_step_exemple": {
+      "scenario": "Mode A — autorisation carte de 1 240 € à 3 h 12, pays étranger, device inconnu",
+      "etapes": [
+        { "id": 1, "label": "Features", "description": "Feature store : vélocité (3 transactions en 4 min), géoloc incohérente, montant >> habituel, device jamais vu.", "renvoi_livre": ["ch.16 analytics agentique"] },
+        { "id": 2, "label": "Score", "description": "GBM score 0,92 (< 20 ms). Au-dessus du seuil de blocage." },
+        { "id": 3, "label": "Graphe", "description": "GNN : la carte est liée à 2 autres cartes déjà marquées frauduleuses sur le même device → renforce le score." },
+        { "id": 4, "label": "Decision", "description": "Score 0,92 + lien graphe → règle métier : bloquer + alerte analyste P1." },
+        { "id": 5, "label": "Action", "description": "Blocage temporaire + SMS au client (« confirmez-vous cette opération ? ») — réversible, voie de contestation ouverte." },
+        { "id": 6, "label": "Feedback", "description": "L'analyste confirme la fraude → label ajouté au training set ; le chargeback éventuel reviendra à J+30/J+90 pour consolider la vérité terrain.", "renvoi_livre": ["ch.17 évaluation", "ch.18 audit trail"] }
+      ]
+    }
+  },
+
+  "outils_internes": {
+    "mcp_servers": [
+      { "systeme": "Stream Kafka transactions", "mode": "read", "type_mcp": "consumer natif (pas MCP — chemin chaud)", "effort_dev": "2 sem.", "risque": "moyen", "raison_risque": "tenir le calcul de features sous le budget latence < 50 ms" },
+      { "systeme": "Feature store (Feast / Tecton)", "mode": "read", "type_mcp": "API native + offline/online store", "effort_dev": "3 sem.", "risque": "haut", "raison_risque": "cohérence online/offline des features (training-serving skew) — le sclérosant data du temps réel" },
+      { "systeme": "Datalake + registre modèles (MLflow)", "mode": "read", "type_mcp": "pipeline d'entraînement / backtesting", "effort_dev": "2 sem.", "risque": "moyen", "raison_risque": "holdout temporel propre (éviter le data leakage) + reproductibilité" },
+      { "systeme": "Console analyste / file d'alertes", "mode": "read_write", "type_mcp": "API custom + UI (SHAP, graphe)", "effort_dev": "3 sem.", "risque": "moyen", "raison_risque": "boucle de labels : c'est la source de vérité terrain, son ergonomie décide de la qualité des labels" },
+      { "systeme": "Outil Tracfin / déclaration de soupçon", "mode": "write", "type_mcp": "connecteur régulé", "effort_dev": "1 sem.", "risque": "moyen", "raison_risque": "obligation légale de déclaration — workflow tracé" },
+      { "systeme": "Données consortium inter-banques", "mode": "read", "type_mcp": "accès contractuel", "effort_dev": "négociation > technique", "risque": "moyen", "raison_risque": "le blocage est juridique/contractuel, pas technique" }
+    ],
+    "effort_total": "Ce cas est du traditional ML temps réel, pas un agent LLM : les « outils » sont des intégrations data/scoring, pas des MCP servers. L'effort se concentre sur le feature store online/offline et la boucle de labels. Une couche d'investigation analyste (copilot LLM) pourra venir plus tard via MCP — hors chemin chaud.",
+    "renvois_livre": ["ch.16 analytics agentique banque", "ch.17 évaluation"]
+  },
+
+  "modeles_cibles": {
+    "candidats": [
+      { "modele": "Gradient Boosting (XGBoost / LightGBM)", "force_pour_le_cas": "Rapide (< 20 ms CPU), robuste, explicable via SHAP, ré-entraînable en heures — le cœur du scoring.", "faiblesse": "Ne capture pas seul les structures relationnelles (réseaux de fraude).", "cout_indicatif": "OpEx CPU (entraînement + serving)" },
+      { "modele": "Graph Neural Network (entités liées)", "force_pour_le_cas": "Capture les réseaux de fraude (cartes / comptes / devices liés) que le GBM rate.", "faiblesse": "Plus lourd à entraîner et à servir ; en augmentation de features, pas dans le chemin chaud pur.", "cout_indicatif": "OpEx GPU (entraînement)" },
+      { "modele": "Isolation Forest / anomaly detection", "force_pour_le_cas": "Détection de patterns nouveaux non labellisés (fraude jamais vue).", "faiblesse": "Taux de faux positifs élevé seul — complément, pas primaire.", "cout_indicatif": "OpEx CPU" },
+      { "modele": "LLM (Mistral / Claude) — couche analyste uniquement", "force_pour_le_cas": "Résumés d'investigation, synthèse de cas pour l'analyste — HORS chemin chaud temps réel.", "faiblesse": "Trop lent et trop cher pour le scoring inline ; risque d'hallucination.", "cout_indicatif": "API, volume faible (analystes seulement)" }
+    ],
+    "recommandation": {
+      "regime": "build pur self-hosted",
+      "modele_primaire": "GBM (LightGBM) dans le chemin chaud < 50 ms",
+      "modele_gardien": "GNN en augmentation de features + Isolation Forest pour la fraude non vue ; champion / challenger permanent",
+      "voice_tier": "non applicable",
+      "embeddings_rag": "non applicable (la couche LLM analyste viendra plus tard, hors chemin chaud)",
+      "argument_cascade": "Pas de foundation model dans le chemin chaud = pas de dépendance API, pas d'exposition à la LLMflation, latence maîtrisée, données qui ne sortent jamais. La valeur n'est pas dans le modèle (un GBM est une commodité) mais dans les features, la qualité des labels et la boucle d'évaluation continue. C'est le contre-pied éditorial des cas génératifs CC-01 / CC-02."
+    }
+  },
+
+  "enjeux": {
+    "enjeux_chiffres": [
+      { "label": "Fraude évitée nette", "chiffre": "Hard, auditable au centime", "consequence": "réduction directe des pertes carte + des chargebacks" },
+      { "label": "False-positive maîtrisé", "chiffre": "< 0,5 % du flux légitime", "consequence": "chaque blocage légitime = client mécontent + appel + risque d'attrition" },
+      { "label": "Latence temps réel", "chiffre": "scoring < 50 ms", "consequence": "au-delà, timeout autorisation = expérience dégradée à grande échelle" }
+    ],
+    "benchmark": {
+      "reference": "Émetteurs carte tier-1 (build interne courant)",
+      "metrique": "fraude ~0,06-0,08 % du volume ; le build interne domine chez les grands émetteurs pour la latence et la vitesse d'adaptation",
+      "renvoi_livre": "ch.21.8"
+    },
+    "contre_benchmark": "Le piège classique : déclarer le modèle « terminé » après la mise en prod et couper le budget d'évaluation. Les fraudeurs s'adaptent en semaines ; un modèle gelé perd silencieusement du rappel, et la perte revient dans le P&L 12 à 18 mois plus tard — invisible jusqu'à la première grosse vague de fraude. Cf. ch.21.5.3 sur la validation Hard dans le temps."
+  },
+
+  "build_buy": {
+    "criteres": ["data_sensitivity", "personnalisation", "volumetrie", "lock_in", "time_to_value", "souverainete"],
+    "options": [
+      {
+        "regime": "interne",
+        "stack": "GBM + GNN self-hosted + feature store + MLOps interne + boucle de labels analystes",
+        "scores": { "data_sensitivity": "++", "personnalisation": "++", "volumetrie": "++", "lock_in": "+", "time_to_value": "0", "souverainete": "++" },
+        "verdict": "RECOMMANDÉ — GO_BUILD_PUR. Data ultra-sensible, latence < 50 ms incompatible avec une API externe, et la vitesse de ré-entraînement contre une fraude adaptative est l'avantage concurrentiel. Au volume de 40 M transactions/an, le coût d'équipe + infra bat la licence d'un moteur acheté."
+      },
+      {
+        "regime": "mainstream",
+        "solution": "Moteur de fraude packagé (scoring + règles, licence éditeur)",
+        "scores": { "data_sensitivity": "-", "personnalisation": "-", "volumetrie": "+", "lock_in": "--", "time_to_value": "++", "souverainete": "-" },
+        "verdict": "Time-to-value rapide et éprouvé, mais licence qui explose au volume, modèle relativement boîte-noire (adaptation lente aux nouveaux patterns), cycle de release éditeur en mois quand la fraude mute en semaines. Le crossover build/buy est déjà franchi à ce volume."
+      },
+      {
+        "regime": "hybride",
+        "stack": "Moteur acheté en socle + challenger interne sur features maison",
+        "scores": { "data_sensitivity": "0", "personnalisation": "+", "volumetrie": "+", "lock_in": "-", "time_to_value": "+", "souverainete": "0" },
+        "verdict": "Transition douce possible, mais double coût transitoire (licence + équipe) et l'avantage décisif — la vitesse d'adaptation — est plafonné par le socle acheté. Bon tremplin si l'équipe ML n'existe pas encore, pas une cible."
+      }
+    ],
+    "decision_ponderee": "GO_BUILD_PUR. À 40 M transactions/an, la licence d'un moteur acheté dépasse le coût équipe + infra interne, ET l'adaptation rapide contre la fraude adaptative est l'avantage que seul le build procure. Le crossover est déjà passé. La vraie question n'est pas build vs buy — c'est combien on budgète la boucle d'évaluation continue.",
+    "renvoi_livre": "ch.21.6 arbre décision"
+  },
+
+  "trajectoire_couts": {
+    "phases": [
+      { "id": "poc",    "label": "POC 3 mois",    "perimetre": "Backtest historique + shadow mode, 1 segment (carte CB)" },
+      { "id": "pilote", "label": "Pilote 6 mois", "perimetre": "10 % du flux en actif (shadow → block), auto-challenge L2" },
+      { "id": "prod",   "label": "Prod 12 mois",  "perimetre": "100 % du flux carte, auto-block réversible L3, boucle de labels complète" },
+      { "id": "scale",  "label": "Scale 36 mois", "perimetre": "Extension multi-rail (virements instantanés) + adjacence AML, ré-entraînement adaptatif" }
+    ],
+    "postes": {
+      "inference":   { "poc": 2,   "pilote": 8,   "prod": 25,   "scale": 50   },
+      "infra":       { "poc": 12,  "pilote": 35,  "prod": 90,   "scale": 160  },
+      "equipe":      { "poc": 110, "pilote": 300, "prod": 620,  "scale": 1100 },
+      "data":        { "poc": 25,  "pilote": 60,  "prod": 130,  "scale": 220  },
+      "evaluation":  { "poc": 15,  "pilote": 70,  "prod": 220,  "scale": 480  },
+      "gouvernance": { "poc": 5,   "pilote": 15,  "prod": 45,   "scale": 90   },
+      "securite":    { "poc": 6,   "pilote": 18,  "prod": 55,   "scale": 110  },
+      "change":      { "poc": 0,   "pilote": 20,  "prod": 60,   "scale": 110  }
+    },
+    "cout_par_interaction": { "poc": 0.120, "pilote": 0.040, "prod": 0.012, "scale": 0.006 },
+    "crossover_point": "Build/buy déjà franchi : au-delà de ~15-20 M transactions/an, la licence d'un moteur acheté dépasse le coût équipe + infra interne, et l'avantage d'adaptation rapide devient décisif contre la fraude adaptative.",
+    "commentaire_courbe": "Particularité vs CC-01/CC-02 : l'inférence est triviale (un GBM CPU coûte des clopinettes par transaction). Le poste qui décide n'est pas l'inférence mais l'ÉVALUATION (×32 entre POC et Scale, ~10 % du POC → ~22 % du Scale) et la DATA. C'est le paradoxe agentique en version traditional ML : la fraude est adversariale, le modèle doit être ré-évalué et ré-entraîné en continu contre des fraudeurs qui s'adaptent. Couper l'éval = dérive silencieuse à 18 mois."
+  },
+
+  "gouvernance": {
+    "raci": {
+      "responsable": "Équipe data science fraude (ML eng + data eng + responsable évaluation)",
+      "approbateur": "Directeur fraude / Chief Data Officer (sponsor) — arbitre rappel vs faux positifs",
+      "consultes": ["DPO (RGPD Art. 22 décision automatisée)", "RSSI (adversarial, vol de modèle)", "Audit interne / model risk", "Conformité LCB-FT (Tracfin)"],
+      "informes": ["DAF", "ACPR (régulateur prudentiel)"]
+    },
+    "cadence_revue": {
+      "comite_eval": "mensuel — rappel, précision, false-positive-rate, dérive (PSI), revue champion/challenger",
+      "alertes": "continues (PSI sur features, taux de challenge, taux de contestation client)",
+      "audit_externe": "annuel (model risk + RGPD Art. 22)"
+    },
+    "ai_act_ligne": {
+      "niveau": "hors_haut_risque",
+      "fondement": "AI Act Annexe III §5(b) — le scoring crédit est haut risque À L'EXCEPTION des systèmes utilisés pour la détection de fraude financière. La détection de fraude est EXCLUE du haut risque.",
+      "echeance": "Pas d'obligation AI Act haut risque. En revanche : RGPD Art. 22 (décision automatisée à effet significatif → droit à une intervention humaine), model risk management (cadre prudentiel) applicables immédiatement.",
+      "actions": [
+        "Voie de contestation humaine sur tout blocage (RGPD Art. 22)",
+        "Documentation model risk : validation indépendante, backtesting, suivi de performance",
+        "Déclaration Tracfin sur soupçon (LCB-FT)",
+        "Journalisation des décisions de blocage (auditable)"
+      ]
+    },
+    "renvoi_livre": "ch.23 gouvernance (exclusion fraude de l'Annexe III) + ch.19 garde-fous"
+  },
+
+  "evaluation": {
+    "regression_suite": {
+      "taille": "Backtesting sur historique fraude labellisé (millions de transactions) + holdout temporel (train passé / test futur, anti-leakage) + cas adversariaux synthétiques (nouveaux patterns simulés)",
+      "cadence": "ré-évaluation hebdomadaire en période calme, quotidienne en période d'attaque",
+      "criteres": [
+        "rappel fraude (taux de fraude détectée)",
+        "précision / false-positive-rate (< 0,5 % du flux légitime)",
+        "stabilité des features (Population Stability Index)",
+        "performance sur holdout TEMPOREL (le futur, pas un échantillon mélangé)",
+        "robustesse aux patterns adversariaux non vus"
+      ]
+    },
+    "metriques_online": [
+      { "id": "fraud-avoided", "cible": "maximiser (€ bloqués confirmés)", "alerte": "baisse du rappel estimé sur fenêtre glissante" },
+      { "id": "prediction-reliability", "cible": "rappel stable vs baseline 90 j", "alerte": "rappel 7 j < baseline − seuil" },
+      { "id": "csat", "cible": "false-positive sous contrôle (proxy CSAT / contestations)", "alerte": "hausse du taux de contestation client" }
+    ],
+    "detection_derive": {
+      "outil": "PSI sur les features (drift de population), rappel sur fenêtre glissante avec labels retardés, champion/challenger permanent en shadow",
+      "alerte": "rappel 7 j < baseline 90 j → escalade responsable éval ; hausse contestations → escalade DPO",
+      "fenetre": "Problème central : la vérité terrain (chargeback) revient à J+30/J+90. On surveille des PROXIES en attendant (taux de challenge, taux de contestation, PSI features) car les vrais labels arrivent trop tard pour piloter au jour le jour."
+    },
+    "boucle_correction": {
+      "trigger": "alerte de dérive (PSI ou rappel) ou nouvelle typologie de fraude détectée par les analystes",
+      "delai_re_prompt": "non applicable (pas de prompt) — ré-entraînement du challenger",
+      "cadence_re_finetune": "ré-entraînement hebdomadaire (calme) à quotidien (attaque), promotion champion/challenger sous validation humaine",
+      "rollback": "registre de modèles (MLflow) : rollback vers le champion précédent en minutes ; feature flags par segment"
+    },
+    "renvoi_livre": ["ch.17 évaluation agent", "ch.18 audit trail cognitif", "ch.19 garde-fous"]
+  },
+
+  "roi": {
+    "axe_principal": "cout",
+    "axes_secondaires": ["qualite"],
+    "methode_mobilisee": "Hard savings directs (fraude évitée) + Cigref Hard/Soft + model risk (validation indépendante) + arbre ch.21.6",
+    "metriques": [
+      { "id": "fraud-avoided",          "borne_basse": "−30 % pertes", "cible": "−45 % pertes carte", "borne_haute": "−60 %" },
+      { "id": "mttd",                   "borne_basse": "−heures",      "cible": "détection inline (< 50 ms)", "borne_haute": "temps réel" },
+      { "id": "prediction-reliability", "borne_basse": "rappel +5 pt", "cible": "rappel +12 pt vs règles", "borne_haute": "+18 pt" },
+      { "id": "csat",                   "borne_basse": "−0,3",         "cible": "stable (FP < 0,5 %)", "borne_haute": "+0,2" }
+    ],
+    "kpi_gardien": {
+      "id": "csat",
+      "role": "KPI gardien : le vrai gardien n'est pas la fraude attrapée mais le client légitime bloqué. Un modèle qui maximise le rappel en bloquant tout détruit le CSAT et provoque de l'attrition. Le false-positive-rate (mesuré via contestations / CSAT) borne l'optimisation du rappel.",
+      "borne": "false-positive < 0,5 % du flux légitime ; CSAT stable, hausse des contestations = alerte"
+    },
+    "non_retenu": [
+      { "id": "sla-penalties-avoided", "raison": "pas le périmètre (incidents SLA ≠ fraude)" },
+      { "id": "nps", "raison": "secondaire de convergence Soft, suivi en CSAT / contestations à la place" },
+      { "id": "cost-per-contact", "raison": "c'est le périmètre de CC-02 (service client), pas de la fraude" }
+    ],
+    "renvoi_figure": "fig-00"
+  },
+
+  "operation_equipe": {
+    "personas": {
+      "porteur": { "role": "Dir. fraude / Chief Data Officer", "posture": "Convaincu par les Hard savings, mais sait que la fraude est une course adverse permanente", "citation": "La fraude évitée se chiffre au centime — mais elle se reperd au centime si on lâche l'évaluation." },
+      "sponsor": { "role": "DAF", "posture": "Veut le Hard savings et la fin du projet pour redéployer le budget", "citation": "Le modèle marche depuis deux ans, on peut alléger l'équipe, non ?" },
+      "allie": { "role": "DSI", "posture": "Y voit une plateforme temps réel réutilisable (AML, paiement instantané)", "citation": "Le feature store temps réel, on le réutilise pour la lutte anti-blanchiment." },
+      "opposant": { "role": "Responsable évaluation / model risk", "posture": "Garde-fou principiel — celui qui a raison à 18 mois : alerte sur la dérive silencieuse", "citation": "Couper l'éval, c'est ne pas voir le rappel baisser. On le paiera dans 18 mois." }
+    },
+    "equipe_par_phase": {
+      "poc": {
+        "etp_total": 7.8,
+        "composition": [
+          { "role": "Lead Data Scientist fraude", "etp": 1.0, "profil": "GBM, GNN, eval, a déjà combattu de la fraude adaptative" },
+          { "role": "ML Engineer", "etp": 1.5, "profil": "Serving temps réel < 50 ms, MLOps, registre de modèles" },
+          { "role": "Data Engineer (feature store)", "etp": 1.5, "profil": "Kafka, feature store online/offline, cohérence training-serving — LOAD-BEARING" },
+          { "role": "Expert métier fraude", "etp": 1.0, "profil": "Ex-analyste fraude — LOAD-BEARING, connaît les typologies et les pièges des labels" },
+          { "role": "Responsable évaluation / drift", "etp": 1.0, "profil": "LE POSTE SOUS-BUDGÉTÉ — backtesting, holdout temporel, drift, champion/challenger" },
+          { "role": "MLOps / SRE", "etp": 0.8, "profil": "Latence, disponibilité chemin chaud, pipeline de ré-entraînement" },
+          { "role": "DPO référent", "etp": 0.3, "profil": "RGPD Art. 22, voie de contestation, model risk" },
+          { "role": "RSSI référent", "etp": 0.2, "profil": "Adversarial ML, vol de modèle, data" }
+        ]
+      },
+      "prod": { "etp_total": 6.0, "note": "Core 6 ETP — dont 1 responsable évaluation à NE PAS couper. C'est le poste dont la suppression déclenche la dérive 18 mois." }
+    },
+    "velocite": {
+      "poc":    { "duree": "8 sem.",  "cadence_release": "backtest + shadow", "perimetre": "1 segment carte, scoring shadow (pas de blocage)" },
+      "pilote": { "duree": "6 mois",  "cadence_release": "hebdo",             "perimetre": "10 % du flux, auto-challenge L2, boucle de labels en place" },
+      "prod":   { "duree": "12 mois", "cadence_release": "hebdo (modèle) + hotfix", "perimetre": "100 % du flux carte, auto-block réversible L3" },
+      "scale":  { "duree": "36 mois", "cadence_release": "adaptatif (quotidien en attaque)", "perimetre": "multi-rail (virement instantané) + adjacence AML" }
+    },
+    "sclerosants": [
+      "Feature store online/offline : la cohérence training-serving (skew) sous budget latence est le vrai défi technique.",
+      "Latence de la vérité terrain : les labels (chargeback) reviennent à J+30/J+90 — on pilote sur des proxies en attendant.",
+      "Accès aux données consortium inter-banques : blocage contractuel/juridique, pas technique.",
+      "Cycle de validation model risk : la mise en prod d'un nouveau modèle passe par une validation indépendante (semaines)."
+    ],
+    "deadlines_externes": [
+      { "echeance": "continu", "label": "Adaptation des fraudeurs (semaines)", "consequence_si_ratee": "rappel qui baisse silencieusement → pertes qui reviennent dans le P&L" },
+      { "echeance": "J+30/J+90", "label": "Retour de la vérité terrain (chargeback)", "consequence_si_ratee": "piloter à l'aveugle si on n'a pas de proxies de dérive" },
+      { "echeance": "annuel", "label": "Validation model risk + audit RGPD Art. 22", "consequence_si_ratee": "non-conformité prudentielle + risque de blocage régulateur" }
+    ],
+    "deadline_operationnelle": "Le cas n'a pas de deadline projet classique : c'est une COURSE PERMANENTE. La deadline est continue — chaque semaine sans ré-évaluation est une semaine de dérive potentielle."
+  },
+
+  "debat": {
+    "question": "Les Hard savings de la fraude évitée justifient-ils qu'on coupe le budget d'évaluation une fois le modèle en prod ?",
+    "pour": [
+      { "argument": "Hard savings nets et auditables au centime — c'est le cas ROI le plus propre du livre." },
+      { "argument": "Build pur justifié : latence < 50 ms, data souveraine, adaptation rapide — un GBM se ré-entraîne en heures." },
+      { "argument": "Réglementairement léger : la fraude est exclue du haut risque AI Act (Annexe III §5b), donc peu de drag de conformité." }
+    ],
+    "contre": [
+      { "argument": "La fraude est adversariale : couper l'éval = dérive silencieuse. Le rappel baisse sans que personne ne le voie, et la perte revient dans le P&L 12-18 mois plus tard." },
+      { "argument": "La vérité terrain est retardée (J+30/J+90) : sans suivi de proxies de dérive, on pilote à l'aveugle." },
+      { "argument": "Le poste évaluation, le moins glamour, est celui qui décide du ROI réel à 18 mois — et c'est le premier qu'on coupe quand le projet est marqué « terminé »." }
+    ],
+    "verdict_pondere": "GO_BUILD_PUR — mais l'évaluation continue n'est PAS optionnelle. KPI primaire = fraud-avoided. KPI gardien = false-positive-rate (CSAT / contestations). Le poste responsable évaluation est sanctuarisé en prod : sa suppression est l'erreur qui déclenche la dérive à 18 mois.",
+    "renvois_livre": ["ch.21.5.3 validation Hard dans le temps", "ch.17 évaluation"]
+  },
+
+  "choix_lecteur": [
+    {
+      "question": "Vous héritez d'un moteur de fraude acheté, coûteux et lent à adapter. Vous faites quoi ?",
+      "options": [
+        { "id": "A", "label": "Garder le moteur acheté (safe)", "consequence": "Vous évitez le projet de build, mais la licence explose au volume et l'adaptation aux nouveaux patterns prend des mois — pendant que les fraudeurs mutent en semaines. Le rappel décroche structurellement.", "grille_analyse": "Confort à court terme. Au volume de 40 M transactions/an, le crossover build/buy est déjà franchi (ch.21.6).", "renvoi_chapitre": "ch.21.6" },
+        { "id": "B", "label": "GO_BUILD_PUR (GBM + GNN self-hosted)", "consequence": "Équipe ML à monter, mais latence maîtrisée, data souveraine, et surtout ré-entraînement en heures contre la fraude adaptative. Au volume, le coût équipe + infra bat la licence.", "grille_analyse": "La bonne réponse à ce volume (ch.21.6) : l'avantage décisif est la vitesse d'adaptation, que seul le build procure.", "renvoi_chapitre": "ch.21.6" },
+        { "id": "C", "label": "Hybride : moteur acheté + challenger interne", "consequence": "Transition douce si l'équipe ML n'existe pas encore, mais double coût transitoire et l'avantage d'adaptation reste plafonné par le socle acheté.", "grille_analyse": "Bon tremplin, pas une cible. À utiliser pour amorcer l'équipe, pas pour s'y installer.", "renvoi_chapitre": "ch.21.6" }
+      ]
+    },
+    {
+      "question": "À 18 mois de prod, le rappel est stable et le DAF veut couper le budget d'évaluation (« le modèle est fini »). Vous faites quoi ?",
+      "options": [
+        { "id": "A", "label": "Couper l'éval (le modèle marche)", "consequence": "Six mois plus tard, le rappel a baissé de 8 points sans que personne ne le voie (la vérité terrain est retardée). La fraude revient dans le P&L, vous le découvrez sur une grosse vague, et il faut tout reprendre dans l'urgence.", "grille_analyse": "Le piège central du cas (ch.21.5.3) : un Hard savings n'est pas acquis une fois pour toutes quand l'adversaire s'adapte. La dérive est silencieuse parce que les labels sont en retard.", "renvoi_chapitre": "ch.21.5.3" },
+        { "id": "B", "label": "Maintenir l'éval continue + montrer la courbe de drift attendue", "consequence": "Vous gardez le responsable évaluation et présentez au DAF la courbe de dérive simulée si on coupe : le Hard savings se reperd. Le budget éval est sanctuarisé comme coût récurrent, pas comme projet.", "grille_analyse": "La bonne réponse (ch.17) : l'évaluation est un budget continu, pas une phase projet. La fraude est une course, pas une livraison.", "renvoi_chapitre": "ch.17" }
+      ]
+    }
+  ],
+
+  "quiz": [
+    {
+      "question": "Pourquoi build pur ici, alors que CC-04 (maintenance turbines) recommande d'acheter ?",
+      "options": [
+        "Parce que la banque a plus de budget",
+        "Parce que la combinaison data ultra-sensible + latence < 50 ms + adaptation rapide contre une fraude adaptative + volume au-delà du crossover impose le build",
+        "Parce que les moteurs de fraude achetés n'existent pas",
+        "Parce que le build est toujours préférable"
+      ],
+      "bonne_reponse": 1,
+      "explication": "L'arbitrage build/buy dépend du contexte : ici la latence temps réel, la sensibilité data et surtout la vitesse d'adaptation contre un adversaire qui mute font basculer vers le build pur. En maintenance prédictive (CC-04), le SaaS vertical gagne sur le time-to-value.",
+      "renvoi_chapitre": "ch.21.6"
+    },
+    {
+      "question": "Pourquoi la détection de fraude n'est-elle PAS un système haut risque au sens de l'AI Act ?",
+      "options": [
+        "Parce qu'elle ne traite pas de données personnelles",
+        "Parce que l'Annexe III §5(b) exclut explicitement la détection de fraude financière du scoring crédit haut risque",
+        "Parce qu'elle est entièrement automatisée",
+        "Parce qu'elle ne concerne pas les particuliers"
+      ],
+      "bonne_reponse": 1,
+      "explication": "Le scoring crédit est haut risque, MAIS l'Annexe III §5(b) en exclut la détection de fraude financière. Conséquence éditoriale : le drag de conformité est plus léger qu'en CC-01 — ce qui isole d'autant mieux le vrai coût caché, la boucle d'évaluation. (RGPD Art. 22 et model risk restent applicables.)",
+      "renvoi_chapitre": "ch.23"
+    },
+    {
+      "question": "Quel poste décide du ROI réel à 18 mois ?",
+      "options": [
+        "L'inférence (le scoring GBM)",
+        "L'infrastructure GPU",
+        "L'évaluation continue — c'est le poste qui détecte la dérive d'un adversaire qui s'adapte, et le premier qu'on coupe à tort",
+        "Les licences"
+      ],
+      "bonne_reponse": 2,
+      "explication": "L'inférence est triviale (un GBM coûte des clopinettes par transaction). Le poste qui décide est l'évaluation (×32 entre POC et Scale) : la fraude est adversariale, le rappel dérive si on ne ré-évalue pas, et la vérité terrain retardée rend la dérive invisible jusqu'au choc P&L.",
+      "renvoi_chapitre": "ch.21.7"
+    }
+  ],
+
+  "verdict": {
+    "stamp": "GO_BUILD_PUR",
+    "label": "Go build pur — sous condition que la boucle d'évaluation soit budgétée en continu",
+    "conditions": [
+      "KPI primaire fraud-avoided + KPI gardien false-positive-rate (CSAT / contestations)",
+      "Poste responsable évaluation SANCTUARISÉ en prod (sa suppression = dérive à 18 mois)",
+      "Détection de dérive sur proxies (PSI, taux de challenge, contestations) en attendant la vérité terrain retardée",
+      "Champion / challenger permanent + rollback modèle en minutes via registre",
+      "Voie de contestation humaine sur tout blocage (RGPD Art. 22) + documentation model risk"
+    ]
+  },
+
+  "renvois_livre": [
+    "ch.16 analytics agentique banque",
+    "ch.17 évaluation agent",
+    "ch.18 audit trail cognitif",
+    "ch.19 garde-fous",
+    "ch.21.5 Hard vs Soft",
+    "ch.21.5.3 validation Hard dans le temps",
+    "ch.21.6 arbre de décision méthode ROI",
+    "ch.21.7 paradoxe agentique",
+    "ch.21.8 études empiriques",
+    "ch.23 gouvernance AI Act (exclusion fraude Annexe III §5b)"
+  ],
+
+  "figures": [
+    {
+      "id": "fig-00",
+      "titre": "Architecture SI actuelle — détection fraude temps réel, banque émettrice 2026",
+      "fichier": "images/CC-03-fig-00-architecture-actuelle.svg",
+      "caption": "Le chemin chaud (switch d'autorisation → feature store → scoring GBM+GNN < 50 ms → décision) et la boucle froide d'apprentissage (alertes analystes → labels retardés → ré-entraînement champion/challenger). La vérité terrain (chargeback) revient à J+30/J+90 : c'est ce décalage qui rend la dérive silencieuse et fait de l'évaluation le poste qui décide à 18 mois."
+    }
+  ]
+}
