@@ -6,7 +6,7 @@ L'oubli est devenu un objet régulatoire avant d'avoir épuisé son agenda de re
 
 Le sujet recoupe deux dossiers déjà publiés sur ce site : ==la compaction agentique adresse l'oubli **sélectif** dans le contexte d'une session, là où le *machine unlearning* vise l'oubli **structurel** dans les poids du modèle pré-entraîné==. Les données synthétiques, traitées sous l'angle du *model collapse*, partagent avec l'unlearning une parenté méthodologique inattendue : la dégradation contrôlée par auto-distillation devient ici une primitive d'oubli, pas un bug.
 
-[SCHEMA-01]
+![Carte régulatoire 2024-2028 : EDPB Opinion, CNIL recommandations, AI Act article 10|1200](images/20260603-01-carte-regulatoire.svg)
 
 ## 1. Pourquoi l'oubli devient un objet régulatoire
 
