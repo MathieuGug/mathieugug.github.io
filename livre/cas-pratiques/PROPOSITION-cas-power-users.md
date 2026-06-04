@@ -30,16 +30,17 @@ Le déclencheur CODIR : un livrable RH interactif contenant des données candida
 
 ## 2. Quel socle ? (→ `build_buy` + `outils_internes`)
 
-Le socle CC-14 reprend la logique des 6 services de CC-11 mais à la **strate du livrable** (l'app que le power user produit) plutôt que de l'agent qui l'a aidé à le produire. Six services partagés, formant les **enablers** :
+Le socle CC-14 reprend la logique des services de CC-11 mais à la **strate du livrable** (l'app que le power user produit) plutôt que de l'agent qui l'a aidé à le produire. **Sept services** partagés, formant les **enablers** :
 
 | # | Service du socle (enabler) | Rôle | Sans lui |
 |---|---|---|---|
-| 1 | **Design system partagé** | Composants visuels (typo, palette, layout, micro-interactions) packagés en CSS/JS prêt à inclure, plus un template HTML « page interne » | Chaque livrable a un design différent → cacophonie, marque interne illisible |
-| 2 | **Hébergement standardisé** | URL interne sous domaine officiel, déploiement par push git ou drop folder, isolation par auteur, expiration optionnelle | Apps stockées sur des partages personnels, indexation publique accidentelle |
+| 1 | **Design system + briques UX partagées** | Composants visuels (typo, palette, layout, micro-interactions) packagés en CSS/JS + template HTML « page interne » + bibliothèque réutilisable (charts, tableaux filtrables, scrolly, annotations interactives, *progressive disclosure*, deep-link figcaption `¶`, export PDF/PPT) — exposés à Claude Code via MCP | Chaque livrable a un design différent + chaque power user rebuild les mêmes briques → cacophonie + duplication d'effort |
+| 2 | **Hébergement standardisé** | URL interne sous domaine officiel, déploiement par push git ou drop folder, isolation par auteur, expiration optionnelle — **buckets statiques** pour les apps HTML + **base de données managée** scopée par power user pour les apps qui persistent un état (tracker, dashboard, formulaire) | Apps stockées sur des partages personnels, indexation publique accidentelle, état perdu ou bricolé dans des feuilles partagées |
 | 3 | **Identité & accès** | SSO entreprise + groupes AD pour scoper les apps, partage par lien révocable, audit des accès | Liens publics par défaut, fuites de données candidat / RH / financières |
-| 4 | **Catalogue d'apps power users** | Registre : owner, finalité, données utilisées, statut RGPD, niveau de risque, date de dernière utilisation | Pas d'inventaire → on découvre l'app le jour où elle casse |
-| 5 | **Observabilité légère** | Pings de santé, compteur d'usage, alerte si app non visitée depuis N jours | Pas de détection des zombies, pas de signal pour le dé-commissionnement |
-| 6 | **Briques techniques mutualisées** | Bibliothèque interne réutilisable (charts, tableaux, scrolly, annotations interactives, *progressive disclosure*, export PDF, deep-link figcaption `¶`) + serveurs MCP partagés (lecture datamart, CRM, datalake) | Chaque power user rebuild les mêmes briques + chacun configure son propre accès aux données métier |
+| 4 | **Logs centralisés** | Collecte uniforme des erreurs, exceptions et audit trail des apps power users — qui a accédé à quoi, quand, depuis où | Pas un APM lourd, mais le minimum pour qu'un incident soit traçable et qu'on tienne la conformité RGPD côté accès |
+| 5 | **Observabilité légère** | Pings de santé, compteur d'usage unique, alerte si app non visitée depuis N jours, détection des zombies | Pas de détection des zombies, pas de signal pour le dé-commissionnement |
+| 6 | **Catalogue / registre des apps** | Owner, finalité, données utilisées, statut RGPD, niveau de risque, date de dernière utilisation, cycle de vie | Pas d'inventaire → on découvre l'app le jour où elle casse |
+| 7 | **Gateway LLM + modèles partagés + sous-agents** | (a) Tokens scopés par power user vers les LLM (Claude, modèles internes), (b) modèles spécialisés mutualisés (OCR, vision, embeddings) en service partagé, (c) déclaration de **sous-agents custom** — le power user décrit un mini-pipeline (capture → OCR → vision → reconstruction), le gateway l'exécute avec quota et journalisation | Chaque power user reconfigure son propre accès LLM, redéploie son propre OCR, et toute la chaîne reste artisanale au lieu de devenir un enabler de portefeuille |
 
 ### L'arbitrage central — build/buy **du socle**
 
@@ -50,9 +51,11 @@ Le socle CC-14 reprend la logique des 6 services de CC-11 mais à la **strate du
 | **Build socle maison léger** (template + bucket + SSO + registre) | Tout, conforme au flux Claude Code | Effort plateforme, équipe |
 | **Hybride fédéré** *(recommandé)* | **Tout** | Discipline d'architecture |
 
-**Recommandation — hybride fédéré** : un **socle maison léger** (design system + template HTML + bucket d'hébergement SSO + registre + briques mutualisées) qui **ne contraint pas le flux de création** (le power user continue d'utiliser Claude Code comme il l'entend) mais **rend la voie conforme la plus simple à emprunter** : pousser une app dans le bucket interne est plus facile que de la mettre sur un partage personnel ; utiliser le template de design system est plus rapide que de coder son CSS ; appeler les MCP servers internes est plus simple que de copier-coller des CSV.
+**Recommandation — hybride fédéré** : un **socle maison léger** (design system + briques UX + hébergement standardisé buckets/DB + identité SSO + logs + observabilité + registre + gateway LLM/modèles/sous-agents) qui **ne contraint pas le flux de création** (le power user continue d'utiliser Claude Code comme il l'entend) mais **rend la voie conforme la plus simple à emprunter** : pousser une app dans le bucket interne est plus facile que de la mettre sur un partage personnel ; utiliser le template de design system est plus rapide que de coder son CSS ; appeler un sous-agent OCR via la gateway est plus simple que de redéployer son propre modèle.
 
-> Renvois : ch.14 (assistants de code — l'outil-source), ch.15 (MCP plateforme = data via MCP partagés), ch.16 (sécurité MCP = gateway), ch.20 (observabilité).
+La gateway LLM (#7) est l'enabler **le plus critique du périmètre — et le plus risqué à mal calibrer**. Mal calibrée (quotas absents, tokens partagés, pas d'audit, sous-agents libres de déclencher des appels coûteux ou exfiltrer des données métier), elle devient une porte d'entrée à des incidents sécu et financiers diffus. Bien calibrée (tokens scopés par power user, quotas, journalisation des appels, modèles OCR/vision/embeddings mutualisés), elle transforme les compétences artisanales en **enablers de portefeuille** : un sous-agent custom utile à un power user devient utilisable par les autres, son coût se mutualise, sa qualité se standardise. C'est aussi le seul enabler que la plupart des organisations vont **build** en interne plutôt que **buy** — la sensibilité des tokens, des données scopées et de l'audit RGPD est trop forte pour la sous-traiter à une plateforme tierce.
+
+> Renvois : ch.14 (assistants de code — l'outil-source), ch.15 (MCP plateforme = data via MCP partagés), ch.16 (sécurité MCP = tokens scopés par power user, audit des appels gateway), ch.18 (analytics agentique = consommation gateway par direction), ch.20 (observabilité), ch.21 (garde-fous, DLP au push + quota tokens gateway).
 
 ---
 
@@ -178,11 +181,25 @@ Ces patterns sont **stables** (ils ne changent pas à chaque génération d'agen
 
 ---
 
+## 10.5 Exemple canonique — reconstruire un organigramme depuis une capture Teams
+
+L'exemple-pivot qui fait vivre la gateway LLM (#7) et la mutualisation des modèles partagés. Une [RH_BUSINESS_PARTNER] doit fournir un organigramme pour un dossier de mobilité interne ; elle a une capture d'écran Teams de la vue org chart, dense et peu lisible. Sans le socle : elle refait manuellement dans un outil de présentation (~2 h).
+
+Avec le socle, elle appelle un **sous-agent custom** déclaré dans la gateway, `org-from-screenshot`. Le gateway orchestre séquentiellement (a) un modèle **OCR** mutualisé qui extrait les noms et postes, (b) un modèle **vision LLM** qui extrait la hiérarchie depuis la mise en page, (c) la bibliothèque interne du socle (briques UX du #1) qui rend un **SVG d'organigramme** propre. Le rendu sort en HTML interactif (utilisant le design system), hébergé automatiquement sur le bucket interne (#2), lien partageable révocable (#3). Coût mesuré par la gateway (~0,03 €), audité dans les logs centralisés (#4), attribué à la power user via son token.
+
+**Temps réel : ~3 min au lieu de 2 h.** Et surtout : le pipeline est **réutilisable** — la prochaine fois qu'un manager veut un org chart, il appelle le même sous-agent. Ce qui était une compétence manuelle (refaire dans un outil de présentation) devient un *enabler du portefeuille* : plusieurs power users peuvent y accéder, le coût se mutualise, la qualité se standardise. C'est le mécanisme général que la gateway LLM rend possible — pas seulement pour les org charts, pour tous les sous-agents custom déclarés.
+
+> Renvois : ch.15 (MCP plateforme), ch.16 (sécurité MCP — token scopé), ch.18 (analytics agentique — coût mesuré par direction).
+
+---
+
 ## 11. Figures prévues
 
 - **`fig-00` — Carte des apps power users (la sprawl civile)** : ~80 apps maison + ~5 SaaS résiduels + ~2 shadow critiques, avec les angles morts (pas de design system commun, pas de SSO partagé, pas de registre, pas de monitoring, doublons inter-départements) — *à dessiner*.
-- `fig-01` — Le socle d'enablers (6 services) + modèle opératoire RACI (CoE enablement possède le socle, power users possèdent les apps) — *à dessiner*.
+- `fig-01` — Le socle d'enablers (**7 services** : design system + briques UX, hébergement buckets/DB, identité, logs, observabilité, registre, gateway LLM en exergue) + modèle opératoire RACI (CoE enablement possède le socle, power users possèdent les apps) — *à dessiner*.
 - `fig-02` — Cycle de vie d'une app power user (idée → registre quand usage dépasse personnel → tiering → hébergement SSO → revue 6 mois → dé-commissionnement OU bascule projet officiel) + les 6 design patterns packagés — *à dessiner*.
+- `fig-03` (optionnelle) — Pipeline de l'exemple canonique : capture Teams → OCR → vision LLM → briques SVG du socle → org chart propre. Avant/après (2 h manuel vs 3 min via gateway) + encart coût mesuré (~0,03 € audité, attribué au token power user) — *à dessiner*.
+- **`fig-04` — Pipeline d'usage de l'IA agentique par les power users** : exemple canonique avec Claude Code comme orchestrateur — 6 étapes au centre (requête → specs → exécution → validation → hébergement → évaluation) + sidebars (rôles d'agents, skills internes, MCP/outils, routines, utils&amp;eval) + bandeau ingénierie transverse (observabilité, sécurité, connaissance, plateforme, gouvernance) + bandeau socle fédéré (identités, réseau, MCP, observabilité, données, politiques) + boucle d'apprentissage continue 6→1 — *livrée 2026-06-04*.
 
 ---
 
