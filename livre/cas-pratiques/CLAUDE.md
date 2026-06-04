@@ -1,6 +1,8 @@
 # CLAUDE.md — `livre/cas-pratiques/`
 
-Dossier d'artefact : **un arc de maturité agentique en 14 études de cas** (4 strates : fondations → remontée métiers → galerie → chapeau) qui adosse le ch. 23 (ROI · paradoxe agentique) au terrain. Chaque cas illustre une facette de la mise à l'échelle d'agents IA en entreprise (build/buy, trajectoire de 8 postes de coûts × 4 phases, gouvernance, évaluation).
+Dossier d'artefact : **un arc de maturité agentique en 10 études de cas** (4 strates : fondations → gouverner la prolifération → remontée métiers → galerie) qui adosse le ch. 23 (ROI · paradoxe agentique) au terrain. Chaque cas illustre une facette de la mise à l'échelle d'agents IA en entreprise (build/buy, trajectoire de 8 postes de coûts × 4 phases, gouvernance, évaluation).
+
+**Nouveau récit (2026-06-04)** : la strate « gouverner la prolifération » (anciennement « chapeau ») est désormais en **strate 2**, immédiatement après le socle, parce que dès les fondations posées deux proliférations se déclenchent en miroir — la flotte d'agents officiels (CC-11) et les apps maison des power users (CC-14). Mêmes réflexes de socle fédéré + enablers partagés + gouvernance de portefeuille.
 
 ## Layout
 
@@ -90,7 +92,7 @@ Autres règles héritées du CLAUDE.md racine :
 - Bouton zoom ⛶ sur chaque figure (visible au hover desktop / opacité 0.85 mobile).
 - Anchor `¶` cliquable en figcaption pour deep-link.
 
-## État (au 2026-06-03)
+## État (au 2026-06-04)
 
 L'annexe est structurée en **arc de maturité agentique** (4 strates) — cf. [`PROPOSITION-priorisation.md`](PROPOSITION-priorisation.md). Ordre canonique : `../use-cases-data/cases-index.json` (champ `ordre` + `strate`).
 
@@ -99,18 +101,19 @@ L'annexe est structurée en **arc de maturité agentique** (4 strates) — cf. [
 | 🟦 Fondations | **CC-00** | Assistant transverse (routines · analyses · veille) | ✅ Livré (JSON + MD + 4 SVG + HTML) | [HTML](CC-00-assistant-transverse.html) · [MD](cases/CC-00-assistant-transverse.md) |
 | 🟦 Fondations | **CC-03** | Plateforme data moderne & analytics agentique | ✅ Livré (JSON + MD + 4 SVG + HTML) | [HTML](CC-03-plateforme-data.html) · [MD](cases/CC-03-plateforme-data.md) |
 | 🟦 Fondations | **CC-10** | Pair programming → organisation dev agentique | Draft index *(reframé : ia_type agentic)* | — |
+| 🟥 Gouverner la prolifération | **CC-11** | Gouverner une flotte d'agents | 🖊️ Rédigé couche auteur (JSON + MD + 3 SVG : fig-00 sprawl, fig-01 socle fédéré, fig-02 tiering+cycle de vie) — HTML phase 2 | [HTML](CC-11-flotte-agents.html) · [MD](cases/CC-11-flotte-agents.md) · [JSON](cases/CC-11-flotte-agents.json) · [Spec](PROPOSITION-cas-flotte-agents.md) |
+| 🟥 Gouverner la prolifération | **CC-14** | Power users & saaspocalypse — apps maison sans coder | 📐 Spec rédigée (`PROPOSITION-cas-power-users.md`) — JSON/MD/SVG à venir | [Spec](PROPOSITION-cas-power-users.md) |
 | 🟩 Remontée métiers | **CC-01** | Copilot conseiller bancaire | ✅ Livré (JSON + MD + 4 SVG + HTML) | [HTML](CC-01-copilot-banque.html) · [MD](cases/CC-01-copilot-banque.md) |
 | 🟩 Remontée métiers | **CC-02** | Agent vocal IA service client | 🖊️ Rédigé couche auteur (JSON + MD + 4 SVG) — HTML phase 2 | [MD](cases/CC-02-agent-vocal-telecom.md) · [JSON](cases/CC-02-agent-vocal-telecom.json) |
-| 🟩 Remontée métiers | CC-09 | Agent guichet unique | Draft index | — |
 | 🟨 Galerie | CC-13 | Contrôle qualité visuel usine | Draft index | — |
-| 🟨 Galerie | CC-06 | Try-on virtuel | Draft index | — |
-| 🟨 Galerie | CC-04 | Maintenance prédictive turbines | Draft index | — |
 | 🟨 Galerie | CC-12 | Modération contenu IA | Draft index | — |
-| 🟨 Galerie | CC-05 | Optimisation grid temps réel | Draft index *(proposé réserve — arbitrage)* | — |
-| 🟨 Galerie | CC-07 | Pricing dynamique fret | Draft index *(proposé réserve — arbitrage)* | — |
-| 🟨 Galerie | CC-08 | Drug discovery IA | Draft index *(proposé réserve — arbitrage)* | — |
-| 🟥 Chapeau | **CC-11** | Gouverner une flotte d'agents | 🖊️ Rédigé couche auteur (JSON + MD + 3 SVG : fig-00 sprawl, fig-01 socle fédéré, fig-02 tiering+cycle de vie) — HTML phase 2 | [MD](cases/CC-11-flotte-agents.md) · [JSON](cases/CC-11-flotte-agents.json) · [Spec](PROPOSITION-cas-flotte-agents.md) |
+| 🟨 Galerie | CC-08 | Drug discovery IA | Draft index | — |
 | ⬛ Réserve | CC-03-reserve | Détection fraude temps réel *(ML traditionnel, hors focus)* | Couche auteur conservée dans `../use-cases-data/reserve/` | [MD](../use-cases-data/reserve/CC-03-fraude-temps-reel.md) · [JSON](../use-cases-data/reserve/CC-03-fraude-temps-reel.json) |
+| ⬛ Réserve | CC-04-reserve | Maintenance prédictive turbines *(archivé 2026-06-04 — ML SaaS vertical)* | Entry de cases-index.json `reserve[]` | — |
+| ⬛ Réserve | CC-05-reserve | Optimisation grid temps réel *(archivé 2026-06-04 — recoupe CC-12)* | Entry de cases-index.json `reserve[]` | — |
+| ⬛ Réserve | CC-06-reserve | Try-on virtuel *(archivé 2026-06-04 — vision générative)* | Entry de cases-index.json `reserve[]` | — |
+| ⬛ Réserve | CC-07-reserve | Pricing dynamique fret *(archivé 2026-06-04 — ML traditionnel)* | Entry de cases-index.json `reserve[]` | — |
+| ⬛ Réserve | CC-09-reserve | Agent guichet unique *(archivé 2026-06-04 — recoupe CC-01)* | Entry de cases-index.json `reserve[]` | — |
 
 ## Pipeline (à venir phase 2)
 
