@@ -20,7 +20,7 @@ THEMES = {
 ACTES = {
     "I": {
         "title": "Les moteurs",
-        "subtitle": "Couches du dessous de la pile. Avant la boucle, le modèle. Avant la conversation, un tirage probabiliste.",
+        "subtitle": "Le tirage qui anime le modèle, le RL qui le fait raisonner, la pile à sept couches qui décide du coût par token.",
         "audience": "Expert data · FinOps · acheteur infra/cloud · sponsor IA technique",
         "thesis": "Toute la stack qui suit existe pour domestiquer la variance fondamentale du LLM sans la tuer — car c'est elle qui rend le modèle capable de raisonner.",
         "chapters": [
@@ -32,59 +32,61 @@ ACTES = {
             {"n": "6", "slug": "ch06-world-models", "title": "Bordure : world models", "fact": "JEPA · diffusion · autoregressif", "claim": "signal faible 18-36 mois (sauf computer use)", "schema": "thermomètre 6 verrous"},
         ],
         "callouts": [
-            ("Triptyque tarifaire", "Ch.5 coût/token ↔ Ch.21 valeur/outcome ↔ Ch.22 externalité"),
+            ("Triptyque tarifaire", "Ch.5 coût/token ↔ Ch.23 valeur/outcome ↔ Ch.24 externalité"),
             ("Frontières strictes", "RLVR canonique Ch.2, PRM en Ch.3, spec en Ch.4, pile 7 couches en Ch.5 — aucune redite."),
         ],
     },
     "II": {
         "title": "La boucle",
-        "subtitle": "Anneaux 01-04. C'est ici que se gagne ou se perd le ROI, et que se constitue la dette technique.",
+        "subtitle": "Le harness qui transforme un LLM bavard en agent : outils, mémoire, compaction, patterns d'orchestration.",
         "audience": "Agent engineer · tech lead · architecte · platform engineer",
         "thesis": "Le harness — pas le modèle — fait l'agent. Reason · Act · Observe + budget de tours + mémoire instrumentée + patterns adaptés au cas d'usage.",
         "chapters": [
             {"n": "7", "slug": "ch07-boucle-agentique", "title": "Reason · Act · Observe", "fact": "harness · stop_reason · hooks", "claim": "POC sans harness défensif = 4 $/min en silence", "schema": "R1 boucle canonique + 3 variantes"},
-            {"n": "8", "slug": "ch08-outils-de-lagent", "title": "Les outils (les mains de l'agent)", "fact": "function calling · code exec · sandbox", "claim": "execute_sql sans scoping = exfiltration en 3 tours", "schema": "renvois Ch.13 (MCP) + Ch.19 (sécu)"},
+            {"n": "8", "slug": "ch08-outils-de-lagent", "title": "Les outils (les mains de l'agent)", "fact": "function calling · code exec · sandbox", "claim": "execute_sql sans scoping = exfiltration en 3 tours", "schema": "renvois Ch.15 (MCP) + Ch.21 (sécu)"},
             {"n": "9", "slug": "ch09-memoire-agentique", "title": "Mémoire agentique", "fact": "4 piliers × 6 opérations × 5 archis", "claim": "Letta · A-MEM · Zep · Mem0 · file-based", "schema": "R2 grille 4×5"},
             {"n": "10", "slug": "ch10-compaction", "title": "Compaction & oubli stratégique", "fact": "5 familles · triangle fidélité×coût×oubli", "claim": "Lost in the Middle tient en 2026", "schema": "R3 triangle + SpAIware"},
             {"n": "11", "slug": "ch11-patterns-orchestration", "title": "Patterns canoniques & orchestration", "fact": "8 patterns · 4 régimes contrôle", "claim": "Klarna 67 % puis recul partiel (5 % cas charges)", "schema": "R4 patterns + arbre buy/build"},
+            {"n": "12", "slug": "ch12-adk-frameworks", "title": "Construire la boucle : SDK, ADK, frameworks", "fact": "Agent SDK · ADK · LangGraph · Mastra", "claim": "le fichier agent tient en ~50 lignes : le harness est hérité", "schema": "matrice 4 voies effort×contrôle"},
         ],
         "callouts": [
             ("La règle Schluntz/Zhang", "Start simple · measure · add complexity only when it delivers measurable value."),
-            ("Risque #1 sur-orchestration", "Multi-agent prématuré = ×10-15 tokens, debug exponentiellement plus dur."),
+            ("ADK ≠ runtime ≠ services", "L'ADK définit la forme dans le code ; le runtime, où ça tourne ; les services, les briques (mémoire, identité, gateway). Confondre les trois est la source de confusion #1."),
         ],
     },
     "III": {
         "title": "Les interfaces",
-        "subtitle": "Anneau 05 + surfaces. C'est par là que l'utilisateur final touche l'agent — et que se décide la friction d'adoption.",
+        "subtitle": "Les protocoles qui standardisent l'écosystème (MCP / A2A / AG-UI), les régimes d'accès, computer use, analytics en secteur régulé.",
         "audience": "PM · designer · intégrateur · architecte plateforme · CDO sectoriel",
         "thesis": "Le chatbot n'est pas mort, mais coexiste avec 3 autres régimes (copilote inline · canvas génératif · on-behalf-of). Le bon design = choisir le régime AVANT de coder l'agent.",
         "chapters": [
-            {"n": "12", "slug": "ch12-mcp-plateforme", "title": "MCP, le HTTP des agents", "fact": "trinité MCP × A2A × AG-UI", "claim": "97 M téléchargements/mois · 7 500 serveurs · LF déc 2025", "schema": "R6 layering protocoles"},
-            {"n": "13", "slug": "ch13-mcp-securite", "title": "Sécurité MCP", "fact": "10 vecteurs × 10 patterns défensifs", "claim": "4 load-bearing : Sigstore · tagging · allowlist · HITL writes", "schema": "R7 matrice 10×10"},
-            {"n": "14", "slug": "ch14-surfaces-agentiques", "title": "Surfaces agentiques", "fact": "4 régimes d'accès Knight", "claim": "operator · collaborator · consultant · approver · observer", "schema": "R8 régimes + levels of autonomy"},
-            {"n": "15", "slug": "ch15-computer-use", "title": "Computer use : le régime extrême", "fact": "observe · plan · ground · act · verify", "claim": "OSAgent dépasse baseline humain OSWorld oct 2025", "schema": "R9 boucle + cliff UI-CUBE"},
-            {"n": "16", "slug": "ch16-analytics-agentique-banque", "title": "Analytics agentique (sectoriel régulé)", "fact": "3 surfaces GCP banque française tier 1", "claim": "75 jours avant AI Act art. 9-15 effectif (2 août 2026)", "schema": "R10 stack + matrice 6 réf"},
+            {"n": "13", "slug": "ch13-surfaces-agentiques", "title": "Surfaces agentiques", "fact": "4 régimes d'accès Knight", "claim": "operator · collaborator · consultant · approver · observer", "schema": "R8 régimes + levels of autonomy"},
+            {"n": "14", "slug": "ch14-assistants-de-code", "title": "Assistants de code", "fact": "CLI · IDE-natif · agent async cloud", "claim": "+55,8 % greenfield / −19 % codebase mature : amplificateur", "schema": "trois régimes × quatre axes + anatomie 6 composants"},
+            {"n": "15", "slug": "ch15-mcp-plateforme", "title": "MCP, le HTTP des agents", "fact": "trinité MCP × A2A × AG-UI", "claim": "97 M téléchargements/mois · 7 500 serveurs · LF déc 2025", "schema": "R6 layering protocoles"},
+            {"n": "16", "slug": "ch16-mcp-securite", "title": "Sécurité MCP", "fact": "10 vecteurs × 10 patterns défensifs", "claim": "4 load-bearing : Sigstore · tagging · allowlist · HITL writes", "schema": "R7 matrice 10×10"},
+            {"n": "17", "slug": "ch17-computer-use", "title": "Computer use : le régime extrême", "fact": "observe · plan · ground · act · verify", "claim": "OSAgent dépasse baseline humain OSWorld oct 2025", "schema": "R9 boucle + cliff UI-CUBE"},
+            {"n": "18", "slug": "ch18-analytics-agentique-banque", "title": "Analytics agentique (sectoriel régulé)", "fact": "3 surfaces GCP banque française tier 1", "claim": "75 jours avant AI Act art. 9-15 effectif (2 août 2026)", "schema": "R10 stack + matrice 6 réf"},
         ],
         "callouts": [
             ("Trinité protocoles 2026", "MCP (agent↔outils) · A2A (agent↔agent, Google→LF) · AG-UI (agent↔frontend, 17 events)."),
-            ("Encart fin Acte III", "Narrative experiences (Ch.16 §16.14) — la 3ᵉ voie d'interaction au statut expérimental."),
+            ("Encart fin Acte III", "Narrative experiences (Ch.18 §18.14) — la 3ᵉ voie d'interaction au statut expérimental."),
         ],
     },
     "IV": {
         "title": "Mesures et garde-fous",
-        "subtitle": "Anneaux 06-09. C'est ici que se gagne ou se perd la confiance du décideur — et qu'on sait tuer un cas d'usage au bon moment.",
+        "subtitle": "Évaluer un agent au-delà des leaderboards, l'observer, le sécuriser, mesurer son ROI — et savoir quand ne pas livrer.",
         "audience": "Décideur · sponsor · RSSI · DPO · FinOps · CDO · CRO/COO banque",
-        "thesis": "Le triptyque coût/token (Ch.5) · valeur/outcome (Ch.21) · externalité (Ch.22). Plus le calendrier réglementaire (Ch.23) qui compresse à 18 mois.",
+        "thesis": "Le triptyque coût/token (Ch.5) · valeur/outcome (Ch.23) · externalité (Ch.24). Plus le calendrier réglementaire (Ch.25) qui compresse à 18 mois.",
         "chapters": [
-            {"n": "17", "slug": "ch17-evaluation-benchmarks", "title": "Évaluer un agent (+ leaderboards)", "fact": "playbook gruyère 8 étapes", "claim": "4 vecteurs contamination · l'éval interne datée bat les scores publics", "schema": "R11 gruyère + R12 contamination"},
-            {"n": "18", "slug": "ch18-observabilite-cognitive-audit-trail", "title": "Observabilité & cognitive audit trail", "fact": "OTel GenAI semconv · 6 piliers", "claim": "réponse à AI Act art. 12-13-15 + RGPD art. 22", "schema": "R13 piliers + audit trail"},
-            {"n": "19", "slug": "ch19-gardefous-securite-globale", "title": "Garde-fous · jailbreaking · sécu globale", "fact": "OWASP ASI Top 10 (déc 2025)", "claim": "Least agency · asymétrie attaque/défense · threat model unifié 2026", "schema": "E4 (textualisé §19.10)"},
-            {"n": "20", "slug": "ch20-runtime-manage", "title": "Runtime managé & déploiement", "fact": "AgentCore · Vertex · AI Foundry", "claim": "buy/build : marges 45-80 % éclairent la décision", "schema": "E6 arbre décision"},
-            {"n": "21", "slug": "ch21-roi-paradoxe-agentique", "title": "Mesurer le ROI (paradoxe agentique)", "fact": "J-curve Brynjolfsson · 5 frameworks", "claim": "token → tâche → processus → outcome (Klarna)", "schema": "R16 (J-curve × LLMflation)"},
-            {"n": "22", "slug": "ch22-ia-frugale", "title": "Externalité énergétique : IA frugale", "fact": "3 scopes × 3 phases (GHG)", "claim": "Jevons +48 % Google malgré -10×/req · 3 trajectoires 2030", "schema": "R17 trajectoires + sankey eau"},
-            {"n": "23", "slug": "ch23-gouvernance-ai-act", "title": "Gouvernance : AI Act, banque, unlearning", "fact": "AI Act art. 9-15 effectif 2 août 2026", "claim": "6 référentiels convergents · 18 mois · 4 rôles pivot", "schema": "R18 calendrier unifié"},
-            {"n": "24", "slug": "ch24-ia-et-travail", "title": "Société : IA et travail", "fact": "Acemoglu · Frey-Osborne · pause d'Engels", "claim": "4 scénarios 2035 · 6 leviers anti-catastrophe", "schema": "diptyque Acemoglu × scénarios"},
-            {"n": "25", "slug": "ch25-proces-musk-altman", "title": "Politique : procès Musk v. Altman", "fact": "veille jour-J · chronologie tri-pistes", "claim": "test de stress de la gouvernance fondateur+capital", "schema": "anatomie juridique"},
+            {"n": "19", "slug": "ch19-evaluation-benchmarks", "title": "Évaluer un agent (+ leaderboards)", "fact": "playbook gruyère 8 étapes", "claim": "4 vecteurs contamination · l'éval interne datée bat les scores publics", "schema": "R11 gruyère + R12 contamination"},
+            {"n": "20", "slug": "ch20-observabilite-cognitive-audit-trail", "title": "Observabilité & cognitive audit trail", "fact": "OTel GenAI semconv · 6 piliers", "claim": "réponse à AI Act art. 12-13-15 + RGPD art. 22", "schema": "R13 piliers + audit trail"},
+            {"n": "21", "slug": "ch21-gardefous-securite-globale", "title": "Garde-fous · jailbreaking · sécu globale", "fact": "OWASP ASI Top 10 (déc 2025)", "claim": "Least agency · asymétrie attaque/défense · threat model unifié 2026", "schema": "E4 (textualisé §21.10)"},
+            {"n": "22", "slug": "ch22-runtime-manage", "title": "Runtime managé & déploiement", "fact": "AgentCore · Vertex · AI Foundry", "claim": "buy/build : marges 45-80 % éclairent la décision", "schema": "E6 arbre décision"},
+            {"n": "23", "slug": "ch23-roi-paradoxe-agentique", "title": "Mesurer le ROI (paradoxe agentique)", "fact": "J-curve Brynjolfsson · 5 frameworks", "claim": "token → tâche → processus → outcome (Klarna)", "schema": "R16 (J-curve × LLMflation)"},
+            {"n": "24", "slug": "ch24-ia-frugale", "title": "Externalité énergétique : IA frugale", "fact": "3 scopes × 3 phases (GHG)", "claim": "Jevons +48 % Google malgré -10×/req · 3 trajectoires 2030", "schema": "R17 trajectoires + sankey eau"},
+            {"n": "25", "slug": "ch25-gouvernance-ai-act", "title": "Gouvernance : AI Act, banque, unlearning", "fact": "AI Act art. 9-15 effectif 2 août 2026", "claim": "6 référentiels convergents · 18 mois · 4 rôles pivot", "schema": "R18 calendrier unifié"},
+            {"n": "26", "slug": "ch26-ia-et-travail", "title": "Société : IA et travail", "fact": "Acemoglu · Frey-Osborne · pause d'Engels", "claim": "4 scénarios 2035 · 6 leviers anti-catastrophe", "schema": "diptyque Acemoglu × scénarios"},
+            {"n": "27", "slug": "ch27-proces-musk-altman", "title": "Politique : procès Musk v. Altman", "fact": "veille jour-J · chronologie tri-pistes", "claim": "test de stress de la gouvernance fondateur+capital", "schema": "anatomie juridique"},
         ],
         "callouts": [
             ("Calendrier régulateur", "Aoû 2026 art. 9-15 · automne 2026 Sigstore MCP v2 · janv 2027 registries signés · printemps 2027 AAIF + A2A×MCP."),
@@ -236,7 +238,7 @@ def make_svg(acte_key, data):
             svg.append('  <text x="{:.1f}" y="{}" class="callout-body">{}</text>'.format(cx + 20, callout_y + 54 + j * 20, escape(lin)))
 
     # Caption (bottom)
-    svg.append('  <text x="{}" y="{}" class="caption">Livre « Anatomie d\'une IA agentique » · Mathieu Guglielmino · état au 29 mai 2026 · mathieugug.github.io</text>'.format(margin_x, H - 16))
+    svg.append('  <text x="{}" y="{}" class="caption">Livre « Anatomie d\'une IA agentique » · Mathieu Guglielmino · état au 4 juin 2026 · mathieugug.github.io</text>'.format(margin_x, H - 16))
     svg.append('  <text x="{}" y="{}" text-anchor="end" class="caption">{} / 4</text>'.format(W - margin_x, H - 16, theme["name"]))
 
     svg.append('</svg>')
