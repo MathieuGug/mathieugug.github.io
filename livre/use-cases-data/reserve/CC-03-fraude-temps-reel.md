@@ -191,8 +191,8 @@ Axe principal : **Coût**. Axe secondaire : Qualité. Méthode : Hard savings di
 | --- | --- | --- |
 | Lead Data Scientist fraude | 1,0 | GBM, GNN, eval, a déjà combattu de la fraude adaptative |
 | ML Engineer | 1,5 | Serving < 50 ms, MLOps, registre de modèles |
-| **Data Engineer (feature store)** | 1,5 | **LOAD-BEARING** — Kafka, feature store online/offline, cohérence training-serving |
-| **Expert métier fraude** | 1,0 | **LOAD-BEARING** — ex-analyste, connaît les typologies et les pièges des labels |
+| **Data Engineer (feature store)** | 1,5 | **pivot** — Kafka, feature store online/offline, cohérence training-serving |
+| **Expert métier fraude** | 1,0 | **pivot** — ex-analyste, connaît les typologies et les pièges des labels |
 | **Responsable évaluation / drift** | 1,0 | **LE POSTE SOUS-BUDGÉTÉ** — backtesting, holdout temporel, drift, champion/challenger |
 | MLOps / SRE | 0,8 | Latence, disponibilité chemin chaud, pipeline de ré-entraînement |
 | DPO référent | 0,3 | RGPD Art. 22, voie de contestation |

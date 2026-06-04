@@ -67,7 +67,7 @@ Gouverner une flotte exige un **socle transverse** : six services partagés qui 
 
 Le mot qui compte est **fédère** : le socle ne centralise pas l'exécution. Les agents continuent de tourner sur Copilot, sur les orchestrateurs maison, là où ils sont nés. Le socle chapeaute — il pose la carte (registre), il garde la porte (gateway), il juge sur un standard commun (éval), il regarde (observabilité), il borne (garde-fous), il mutualise (catalogue).
 
-Le **gateway** est le composant load-bearing. C'est lui qui rend les accès revus, les coûts imputables, les garde-fous appliqués sans être réinventés par agent. Et c'est le sclérosant projet : fédérer Copilot + verticaux + shadow sans casser les flux existants prend deux à trois mois incompressibles. Renvois : la [plateforme MCP (ch. 15)](../../chapitres/ch15-mcp-plateforme.md) est le socle ; la [sécurité MCP (ch. 16)](../../chapitres/ch16-mcp-securite.md) est le gateway/identité agent.
+Le **gateway** est le composant pivot. C'est lui qui rend les accès revus, les coûts imputables, les garde-fous appliqués sans être réinventés par agent. Et c'est le sclérosant projet : fédérer Copilot + verticaux + shadow sans casser les flux existants prend deux à trois mois incompressibles. Renvois : la [plateforme MCP (ch. 15)](../../chapitres/ch15-mcp-plateforme.md) est le socle ; la [sécurité MCP (ch. 16)](../../chapitres/ch16-mcp-securite.md) est le gateway/identité agent.
 
 ## 4. Qui gère ? — métier vs DSI, le vrai débat
 
@@ -198,11 +198,11 @@ Le contre-pied à comprendre : **le premier gisement de valeur n'est pas d'ajout
 
 ## 11. L'équipe, la vélocité, les sclérosants
 
-**5,6 ETP** pour le socle minimal, avec un poste load-bearing qui est un rôle nouveau.
+**5,6 ETP** pour le socle minimal, avec un poste pivot qui est un rôle nouveau.
 
 | Rôle | ETP | Profil cible |
 | --- | --- | --- |
-| **Head of AgentOps / Platform Owner** | 1,0 | **LOAD-BEARING** — pense portefeuille, arbitre le build/buy du socle, anime le comité (pas un chef de projet outil) |
+| **Head of AgentOps / Platform Owner** | 1,0 | **pivot** — pense portefeuille, arbitre le build/buy du socle, anime le comité (pas un chef de projet outil) |
 | Ingénieur plateforme (registre + observabilité) | 1,5 | Schéma de métadonnées, ingestion des inventaires hétérogènes, OpenTelemetry GenAI |
 | Ingénieur gateway / identité agent | 1,0 | Le sclérosant : authn/authz par agent, scopes MCP, routing, FinOps |
 | Référent éval-as-a-service | 0,8 | Consolide les harness des verticaux en suites par archétype + non-contradiction |

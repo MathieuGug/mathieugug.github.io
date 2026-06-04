@@ -225,15 +225,15 @@ Axe principal : **Bien-être** (démocratisation, temps analyste gagné). Second
 
 ## 16. L'équipe, la vélocité, les sclérosants
 
-**7,1 ETP** pour le socle, avec deux postes load-bearing :
+**7,1 ETP** pour le socle, avec deux postes pivot :
 
 | Rôle | ETP | Profil cible |
 | --- | --- | --- |
 | Data Platform Lead | 1,0 | Architecte modern data stack, MCP, vision socle |
-| **Analytics Engineer (sémantique)** | 1,5 | **LOAD-BEARING** — modélise les métriques gouvernées, le vrai chantier |
+| **Analytics Engineer (sémantique)** | 1,5 | **pivot** — modélise les métriques gouvernées, le vrai chantier |
 | Data Quality Engineer | 1,0 | Agents data quality, tests dbt, anomalies |
 | ML / Agent Engineer | 1,0 | Text-to-SQL gouverné, eval exactitude, garde-fous compute |
-| **Data Steward / Gouvernance** | 1,0 | **LOAD-BEARING** — owners de métriques, RBAC, lineage (le gardien) |
+| **Data Steward / Gouvernance** | 1,0 | **pivot** — owners de métriques, RBAC, lineage (le gardien) |
 | Référent sécurité / RBAC | 0,5 | Droits hérités, DLP, domaines sensibles |
 | Product Owner data | 0,8 | Priorise les domaines à gouverner |
 | DPO référent | 0,3 | RGPD, données perso via text-to-SQL |

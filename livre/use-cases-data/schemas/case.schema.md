@@ -551,7 +551,7 @@ Tout le bloc opérationnel en une section. Personas (les 4 archétypes du cas) +
         { "role": "Prompt Engineer",            "etp": 1.5, "profil": "1 banque/conformité + 0.5 conversation designer FR" },
         { "role": "Data Engineer",              "etp": 1.0, "profil": "Snowflake, corpus DDA, embeddings, qualité data" },
         { "role": "UX Designer",                "etp": 0.5, "profil": "Side-panel CRM, workflow conseiller, validation 1-clic" },
-        { "role": "Product Owner",              "etp": 1.0, "profil": "Ex-conseiller banque retail — load-bearing" },
+        { "role": "Product Owner",              "etp": 1.0, "profil": "Ex-conseiller banque retail — pivot" },
         { "role": "MLOps / SRE",                "etp": 0.5, "profil": "Observabilité, déploiement, monitoring agent" },
         { "role": "RSSI référent",              "etp": 0.3, "profil": "Threat model, MCP authz, red-team" },
         { "role": "DPO référent",               "etp": 0.3, "profil": "FRIA, registre AI Act, doctrine prompts" },

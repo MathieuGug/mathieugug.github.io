@@ -426,7 +426,7 @@ Vue d'avion. Le détail chapitre par chapitre suit en §3.
 
 **Question** : Si l'agent peut appeler **n'importe quel** serveur MCP, qui valide qu'il ne se fait pas piéger par un outil empoisonné ou un namespace shadowed ?
 
-**Thèse** : 6 trust boundaries, 4 familles d'attaques (tool poisoning / prompt injection cross-document / cross-server confusion / OAuth+supply chain), matrice défensive 10×10 avec **4 patterns load-bearing** : Sigstore + hash pinning, tool tagging, allowlist namespace, HITL writes. Le reste est cosmétique.
+**Thèse** : 6 trust boundaries, 4 familles d'attaques (tool poisoning / prompt injection cross-document / cross-server confusion / OAuth+supply chain), matrice défensive 10×10 avec **4 patterns pivots** : Sigstore + hash pinning, tool tagging, allowlist namespace, HITL writes. Le reste est cosmétique.
 
 **Dossiers absorbés** : `mcp-securite/` (20 mai · #26). Roadmap 12 mois : AI Act art. 15 (août 2026), spec MCP v2 Sigstore (automne 2026), registries signés (janvier 2027), MCP × A2A (printemps 2027).
 
@@ -533,7 +533,7 @@ Vue d'avion. Le détail chapitre par chapitre suit en §3.
 
 **Question** : 48 % des pros cyber placent l'agentique en top vecteur d'attaque 2026, 34 % seulement ont des contrôles dédiés — qu'est-ce qu'on met en place concrètement ?
 
-**Thèse** : Trois mouvements convergents — (1) **Least agency** (OWASP ASI Top 10 décembre 2025), (2) **Asymétrie attaque/défense** (jailbreaking documenté depuis 2023), (3) **Patterns load-bearing** (Sigstore + hash pinning, tool tagging, allowlist namespace, HITL writes — déjà introduits Ch. 16).
+**Thèse** : Trois mouvements convergents — (1) **Least agency** (OWASP ASI Top 10 décembre 2025), (2) **Asymétrie attaque/défense** (jailbreaking documenté depuis 2023), (3) **patterns pivots** (Sigstore + hash pinning, tool tagging, allowlist namespace, HITL writes — déjà introduits Ch. 16).
 
 **Dossiers fusionnés** :
 - `anatomie` couche 06.
@@ -698,7 +698,7 @@ Résolution retenue : **promotion en chapitre dédié, mais dans l'Acte III** (e
 **Friction 2 — Ch. 16 (sécurité MCP) vs Ch. 21 (sécurité globale)**
 Risque de chevauchement matériel. Le Ch. 16 traite la **surface MCP** (10×10 matrice) ; le Ch. 21 reprend en **synthèse transverse** + OWASP ASI Top 10 + jailbreaking historique.
 Distinction à tenir strictement dans la rédaction :
-- Ch. 16 = matrice spécifique au protocole (R7), 4 patterns load-bearing nommés.
+- Ch. 16 = matrice spécifique au protocole (R7), 4 patterns pivots nommés.
 - Ch. 21 = grille générale + threat model unifié (E4) + asymétrie attaque/défense.
 - **Règle d'écriture** : tout ce qui relève de MCP spécifiquement reste en Ch. 16, et **n'est pas redit** en Ch. 21 (renvoi seulement). Inversement, tout ce qui transcende MCP reste en Ch. 21.
 

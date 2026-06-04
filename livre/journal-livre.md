@@ -299,7 +299,7 @@ Sources (~23 footnotes : ACL Strubell 2019, Joule de Vries 2023,
 | Frontière Ch.25 ↔ Ch.18 | À tenir — Ch.18 = instanciation **sectorielle banque française GCP** (Looker semantic, BigQuery, Dataplex, Assured Workloads, S3NS) ; Ch.25 = grille réglementaire **générique** applicable à tout déployeur. Encadré §25.7 explicite : « *lire Ch.18 pour la profondeur banque* ». |
 | Frontière Ch.25 ↔ Ch.10 | À tenir — Ch.10 = mécanique compaction (5 familles, triangle, surface attaque) ; Ch.25 = angle réglementaire RGPD art. 17 + AI Act art. 25 transparence sur limites. Pas de redite mécanique. |
 | Frontière Ch.25 ↔ Ch.9 | À tenir — Ch.9 = architecture mémoire (4 piliers) ; Ch.25 = distinction opérationnel/paramétrique sous angle régulation. 2-3 paragraphes seulement. |
-| Frontière Ch.25 ↔ Ch.16 | À tenir — Ch.16 = matrice MCP 10×10 + 4 patterns load-bearing techniques ; Ch.25 = calendrier (AI Act art. 15 août 2026, Sigstore automne 2026, MCP v2 spec, AAIF printemps 2027) + rôle RSSI. |
+| Frontière Ch.25 ↔ Ch.16 | À tenir — Ch.16 = matrice MCP 10×10 + 4 patterns pivots techniques ; Ch.25 = calendrier (AI Act art. 15 août 2026, Sigstore automne 2026, MCP v2 spec, AAIF printemps 2027) + rôle RSSI. |
 | Frontière Ch.25 ↔ Ch.21 | À tenir — Ch.21 = threat model unifié 2026 (six surfaces) + OWASP ASI Top 10 ; Ch.25 ne refait pas, renvoie en passant. |
 
 ### Sources matérielles
@@ -482,14 +482,14 @@ Sources (~50-70 footnotes — Ch.25 est densément footnoté :
 | Manuscrit | ✅ **v1 livrée** — `docs/livre/ch18-analytics-agentique-banque.md` (~10 800 mots, 17 encadrés, 11 schémas + 1 schéma encart narratif) |
 | Schémas à créer | 0 v1. R10 (3 surfaces × pile) traité par réutilisation tel quel de `pyramide-chaine.svg`. Tous les schémas analytics-agentique-gcp absorbés (00 exec-sum en annexe). 1 schéma narrative-experiences en encart §18.14. |
 | Frontière Ch.18 ↔ Ch.25 | ✅ respectée — Ch.18 nomme les articles AI Act 9-15 sur cas concrets banque, Ch.25 déroulera la grille générale + machine unlearning + rôles DPO/RSSI. |
-| Frontière Ch.18 ↔ Ch.16 | ✅ respectée — les 4 patterns load-bearing MCP du Ch.16 sont supposés acquis, le Ch.18 ajoute seulement la 5e exigence sectorielle (audit log centralisé 5 ans DORA art. 28). |
+| Frontière Ch.18 ↔ Ch.16 | ✅ respectée — les 4 patterns pivots MCP du Ch.16 sont supposés acquis, le Ch.18 ajoute seulement la 5e exigence sectorielle (audit log centralisé 5 ans DORA art. 28). |
 | Frontière Ch.18 ↔ Ch.13 / Ch.19 / Ch.20 / Ch.23 | ✅ respectée — renvois explicites, pas de redite (Knight grille en Ch.13 ; eval playbook gruyère en Ch.19 ; OTel GenAI en Ch.20 ; frameworks ROI en Ch.23). |
 | Encart narrative-experiences | ✅ intégré §18.14 (~4 pages, 1 schéma) — généalogie Segel-Heer / Bertin / Cairo / Lupi-Posavec-Fragapane, 4 régimes collab humain-IA Gen4DS 2024, justification de la troisième voie d'interaction. |
 
 ### Tâches restantes Ch.18
 
 - [ ] Relecture Mathieu — passes critiques suggérées :
-  - **(a) Le pivot sémantique §18.5** : section load-bearing — vérifier que la falaise est lisible (10-20 % → +17-23 → ~100 %) et que la projection Gartner 60 % est citée avec la précaution rédactionnelle. Le `[!IMPORTANT]` à la fin de §18.5.4 doit tenir comme argument de RDV sponsor.
+  - **(a) Le pivot sémantique §18.5** : section pivot — vérifier que la falaise est lisible (10-20 % → +17-23 → ~100 %) et que la projection Gartner 60 % est citée avec la précaution rédactionnelle. Le `[!IMPORTANT]` à la fin de §18.5.4 doit tenir comme argument de RDV sponsor.
   - **(b) Frontière Ch.18 ↔ Ch.25** : vérifier que §18.11.2 nomme les articles AI Act 9-15 sans les dérouler ; le Ch.25 viendra les expliquer génériquement. Pas de redite.
   - **(c) L'encart §18.14** : 4 pages tenir le plafond — vérifier que la troisième voie est bien posée comme régime à part entière (pas un sous-cas de canvas), et que l'arc Lupi/Fragapane/Posavec n'écrase pas le déroulé pratique des 4 régimes collab humain-IA.
   - **(d) Le ratio 70/20/10** : argument contre-intuitif à protéger en relecture. Le `[!IMPORTANT]` à §18.5.4 et la feuille de route §18.13 doivent le matérialiser deux fois sans le contredire.
@@ -532,7 +532,7 @@ Sources (~50-70 footnotes — Ch.25 est densément footnoté :
 
 > **Acte III — Les interfaces · Gabarit standard 22 p · ~10 400 mots**
 > **Lecteur cible** : PM, designer, intégrateur, architecte plateforme, tech lead, sponsor.
-> **Sortie lecteur** : choisit un régime d'accès (chat / inline / canvas / on-behalf-of) **avant** de coder l'agent ; lit fluemment le procès du chatbot (Wattenberger/Appleton/Lee/Litt/Saarinen/Pike + NN/G articulation barrier) sans le rejouer ; distingue les 4 régimes de generative UI (controlled / declarative / open-ended / dynamic data-driven) ; comprend AG-UI comme transport bi-directionnel SSE (17 événements, StateDelta JSON Patch RFC 6902, shared state vs generative UI distinction load-bearing) ; sait situer un produit dans la grille **Knight First Amendment 5 rôles** (operator/collaborator/consultant/approver/observer) et l'articule avec graduated trust Anthropic + Salesforce Trust Layer ; maîtrise les 4 questions UX critiques de l'on-behalf-of + patterns dominants ; reconnaît les 5 couches d'architecture canonique ; peut dérouler la matrice 12 cas d'usage × régime.
+> **Sortie lecteur** : choisit un régime d'accès (chat / inline / canvas / on-behalf-of) **avant** de coder l'agent ; lit fluemment le procès du chatbot (Wattenberger/Appleton/Lee/Litt/Saarinen/Pike + NN/G articulation barrier) sans le rejouer ; distingue les 4 régimes de generative UI (controlled / declarative / open-ended / dynamic data-driven) ; comprend AG-UI comme transport bi-directionnel SSE (17 événements, StateDelta JSON Patch RFC 6902, shared state vs generative UI distinction structurante) ; sait situer un produit dans la grille **Knight First Amendment 5 rôles** (operator/collaborator/consultant/approver/observer) et l'articule avec graduated trust Anthropic + Salesforce Trust Layer ; maîtrise les 4 questions UX critiques de l'on-behalf-of + patterns dominants ; reconnaît les 5 couches d'architecture canonique ; peut dérouler la matrice 12 cas d'usage × régime.
 
 ### Statut
 
@@ -542,7 +542,7 @@ Sources (~50-70 footnotes — Ch.25 est densément footnoté :
 | Plan détaillé | ✅ fait (audit du 2026-05-28) |
 | Manuscrit | ✅ **v1 livrée** — `docs/livre/ch13-surfaces-agentiques.md` (~10 400 mots, 16 encadrés, 10 schémas dont R8 en récap) |
 | Schémas à créer | 0 v1. R8 (Knight 5 niveaux d'autonomie) traité par réutilisation tel quel de `niveaux-autonomie.svg`, utilisé 2× (§13.8.1 + récap §Récap). |
-| Knight comme grille load-bearing | ✅ fixé § 13.8.1 — wording canonique des 5 rôles (operator / collaborator / consultant / approver / observer) + autonomy certificates. Référencé en Ch.11 (déjà écrit), à référencer en Ch.17 (déjà écrit), à référencer en Ch.25. |
+| Knight comme grille pivot | ✅ fixé § 13.8.1 — wording canonique des 5 rôles (operator / collaborator / consultant / approver / observer) + autonomy certificates. Référencé en Ch.11 (déjà écrit), à référencer en Ch.17 (déjà écrit), à référencer en Ch.25. |
 | AG-UI déroulé (promesse Ch.15) | ✅ §13.7 déroule les 17 events, JSON Patch RFC 6902, shared state vs generative UI, adoption 3 cercles, hooks CopilotKit, matrice AG-UI vs streamUI vs WebSocket maison. |
 | Frontière Ch.13 ↔ Ch.11 / Ch.15 / Ch.16 / Ch.17 / Ch.18 | ✅ respectée — Ch.11 pilote interne, Ch.15 plomberie MCP, Ch.16 coût sécurité, Ch.17 sous-régime extrême, Ch.18 instanciation sectorielle banque. Renvois explicites des 5 côtés. |
 
@@ -562,7 +562,7 @@ Sources (~50-70 footnotes — Ch.25 est densément footnoté :
 
 > **Acte III — Les interfaces · Gabarit standard ~22 p**
 > **Statut** : ✅ v1 livrée — `docs/livre/ch16-mcp-securite.md`.
-> **Frontières tenues** : Ch.16 = matrice MCP spécifique (10 vecteurs × 10 patterns, 6 trust boundaries, 4 familles, 4 load-bearing) ; Ch.21 = synthèse transverse E4 (modèle / prompt / mémoire / outil / protocole / surface).
+> **Frontières tenues** : Ch.16 = matrice MCP spécifique (10 vecteurs × 10 patterns, 6 trust boundaries, 4 familles, 4 pivots) ; Ch.21 = synthèse transverse E4 (modèle / prompt / mémoire / outil / protocole / surface).
 
 ---
 
@@ -898,7 +898,7 @@ Variété des `> [!TYPE]` Obsidian retenus :
 - [x] Rédiger le manuscrit `docs/livre/ch20-observabilite-cognitive-audit-trail.md`
 - [x] Audit des 9 schémas du dossier source
 - [ ] Relecture Mathieu — passes critiques suggérées :
-  - **(a) Le palier N2 → N3 §20.7.1** : argument load-bearing — vérifier que la transition « définir qu'est-ce qu'une bonne réponse de façon mesurable » est lisible et qu'elle articule bien le travail de calibration LLM-as-judge déjà posé en Ch.19 §19.6.
+  - **(a) Le palier N2 → N3 §20.7.1** : argument structurel — vérifier que la transition « définir qu'est-ce qu'une bonne réponse de façon mesurable » est lisible et qu'elle articule bien le travail de calibration LLM-as-judge déjà posé en Ch.19 §19.6.
   - **(b) Le cognitive audit trail §20.6** : section opposable régulateur — vérifier que les 4 régulations citées (AI Act art. 12-13-15, RGPD art. 22, DORA) sont fidèles, et que la distinction logging classique vs cognitive audit ne survend pas (rétention pluri-annuelle, signature, droit d'accès).
   - **(c) La frontière Ch.20 ↔ Ch.19** : §20.1.2 et §20.7.1 renvoient en arrière sur le travail de calibration. Vérifier qu'on ne refait pas la grille des juges du Ch.19, et qu'on ne sous-vend pas le fait que sans Ch.19 fait, le Ch.20 ne tient pas.
   - **(d) L'architecture hybride §20.8.3** : argument de RDV sponsor — incumbents APM (Dynatrace/Datadog/Grafana) + AI-native (Langfuse/Braintrust) fédérés par OTel. Vérifier que la matrice de critères tient encore en avril 2026 (Datadog facturation per-LLM-span en particulier).
@@ -911,7 +911,7 @@ Variété des `> [!TYPE]` Obsidian retenus :
 
 > **Acte IV — Mesures et garde-fous · Chapitre charnière 30 p · ~6 700 mots**
 > **Lecteur cible** : RSSI, AI Safety Lead, security engineer, red team, agent engineer, sponsor.
-> **Sortie lecteur** : situe l'asymétrie attaque/défense (90-99 % ASR open-weight, 50-90 % closed frontier, ~95 % défense max) ; lit la taxonomie 4 axes (access × optim/craft × single/multi-turn × modalité) ; identifie les huit familles d'attaques canoniques et les défenses qui marchent ; déploie l'architecture defense-in-depth à cinq couches (alignement / classifiers / spotlighting+system prompt / **isolation architecturale CaMeL+StruQ+Dual-LLM** / monitoring HITL) ; consomme la matrice d'efficacité layer × attaque ; instrumente le **threat model unifié à six surfaces** (modèle / prompt / mémoire / outil / protocole / surface utilisateur) avec owner et défense load-bearing ; tient les six règles security engineer 2026.
+> **Sortie lecteur** : situe l'asymétrie attaque/défense (90-99 % ASR open-weight, 50-90 % closed frontier, ~95 % défense max) ; lit la taxonomie 4 axes (access × optim/craft × single/multi-turn × modalité) ; identifie les huit familles d'attaques canoniques et les défenses qui marchent ; déploie l'architecture defense-in-depth à cinq couches (alignement / classifiers / spotlighting+system prompt / **isolation architecturale CaMeL+StruQ+Dual-LLM** / monitoring HITL) ; consomme la matrice d'efficacité layer × attaque ; instrumente le **threat model unifié à six surfaces** (modèle / prompt / mémoire / outil / protocole / surface utilisateur) avec owner et défense pivot ; tient les six règles security engineer 2026.
 
 ### Statut
 
@@ -920,7 +920,7 @@ Variété des `> [!TYPE]` Obsidian retenus :
 | Audit schémas source (1 dossier + couche 06 anatomie) | ✅ fait — `llm-jailbreaking/` (9 schémas tous absorbés) + anatomie LAYER 06 (textualisé dans §21.1 et §21.7) |
 | Plan détaillé | ✅ fait |
 | Manuscrit | ✅ **v1 livrée** — `docs/livre/ch21-gardefous-securite-globale.md` (~6 700 mots, 12 encadrés, 8 schémas intégrés + tableau threat model 6 surfaces) |
-| Schémas à créer | 0 v1. **E4 (threat model unifié 2026)** textualisé via tableau §21.10 (6 surfaces × cible × vecteurs × défense load-bearing × owner) — schéma A3 facing optionnel pour édition print (coût ~3-5 j). Tous les autres absorbés tels quels du dossier source. |
+| Schémas à créer | 0 v1. **E4 (threat model unifié 2026)** textualisé via tableau §21.10 (6 surfaces × cible × vecteurs × défense pivot × owner) — schéma A3 facing optionnel pour édition print (coût ~3-5 j). Tous les autres absorbés tels quels du dossier source. |
 | Frontière Ch.21 ↔ Ch.10 | ✅ respectée — §21.5.3 renvoie explicitement Ch.10 sur memory poisoning à travers la compaction ; pas de redite. |
 | Frontière Ch.21 ↔ Ch.16 | ✅ respectée — §21.5.2 résume le tool poisoning MCP en renvoyant Ch.16 pour la matrice 10×10 ; pas de redite. |
 | Frontière Ch.21 ↔ Ch.17 | ✅ respectée — §21.5.5 résume VPI (CVE-2025-55322) en renvoyant Ch.17 pour computer-use ; pas de redite. |
@@ -956,7 +956,7 @@ Variété des `> [!TYPE]` Obsidian retenus :
 | `[!TLDR]` | Synthèse décideur (7 bullets) | 1 |
 | `[!INFO]` | Renvois inter-chapitres (Ch.8/10/13, Ch.25/16) | 2 |
 | `[!ATTENTION]` | La défense ne généralise pas entre familles + L'erreur récurrente confondre alignement et sécurité | 2 |
-| `[!IMPORTANT]` | Cinq patterns load-bearing | 1 |
+| `[!IMPORTANT]` | Cinq patterns pivots | 1 |
 | `[!WARNING]` | Trois pièges classiques clôture | 1 |
 | **Total** | | **8** |
 
@@ -964,11 +964,11 @@ Variété des `> [!TYPE]` Obsidian retenus :
 
 - [x] Rédiger le manuscrit `docs/livre/ch21-gardefous-securite-globale.md`
 - [x] Audit des 9 schémas du dossier source + intégration couche 06 anatomie
-- [x] Construire la synthèse menaces 2026 §21.10 (tableau six surfaces × owner × défense load-bearing) **en lieu et place du schéma E4**
+- [x] Construire la synthèse menaces 2026 §21.10 (tableau six surfaces × owner × défense pivot) **en lieu et place du schéma E4**
 - [ ] Relecture Mathieu — passes critiques suggérées :
-  - **(a) Le tableau §21.10 six surfaces** : c'est l'angle propre du chapitre et l'objet transverse de l'Acte IV. Vérifier que les six surfaces (modèle, prompt, mémoire, outil, protocole, surface utilisateur) sont bien celles défendues, que les owners (provider modèle / agent engineer / platform engineer / DPO / RSSI / PM) sont fidèles, et que les défenses load-bearing nommées (Constitutional Classifiers v2, spotlighting+StruQ, provenance tagging+signed compactions, Sigstore+hash pinning+tool tagging, allowlist namespace, OCR+HITL) tiennent. **Décision éditoriale clé** : tableau plutôt que schéma A3 — schéma E4 optionnel pour édition print.
+  - **(a) Le tableau §21.10 six surfaces** : c'est l'angle propre du chapitre et l'objet transverse de l'Acte IV. Vérifier que les six surfaces (modèle, prompt, mémoire, outil, protocole, surface utilisateur) sont bien celles défendues, que les owners (provider modèle / agent engineer / platform engineer / DPO / RSSI / PM) sont fidèles, et que les défenses pivots nommées (Constitutional Classifiers v2, spotlighting+StruQ, provenance tagging+signed compactions, Sigstore+hash pinning+tool tagging, allowlist namespace, OCR+HITL) tiennent. **Décision éditoriale clé** : tableau plutôt que schéma A3 — schéma E4 optionnel pour édition print.
   - **(b) La frontière Ch.21 ↔ Ch.10/13/15** : vérifier qu'aucune redite n'est passée. §21.5.2 (MCP), §21.5.3 (memory), §21.5.5 (computer use) sont des résumés courts qui renvoient. Si jamais c'est trop court pour un lecteur non-séquentiel, on pourra étoffer.
-  - **(c) Les cinq patterns load-bearing §21.10 encadré [!IMPORTANT]** : c'est le takeaway opératoire. Vérifier que (1) Constitutional Classifiers v2 + circuit breakers, (2) spotlighting+StruQ/SecAlign, (3) provenance tagging + signed compactions, (4) Sigstore + hash pinning + tool tagging + HITL writes, (5) HITL transparence sur destructrices — sont bien les cinq que Mathieu défend.
+  - **(c) Les cinq patterns pivots §21.10 encadré [!IMPORTANT]** : c'est le takeaway opératoire. Vérifier que (1) Constitutional Classifiers v2 + circuit breakers, (2) spotlighting+StruQ/SecAlign, (3) provenance tagging + signed compactions, (4) Sigstore + hash pinning + tool tagging + HITL writes, (5) HITL transparence sur destructrices — sont bien les cinq que Mathieu défend.
   - **(d) Le ton du chapitre** : chapitre charnière + 30 pages + sujet où le ton expert vs alarmiste compte. Vérifier en lecture continue qu'on reste sur le registre *« asymétrie managée »* et pas *« panique »* (cf. la phrase de clôture *« L'arms race n'est pas gagné ; il est managé »*).
   - **(e) La règle 5 §21.12** : *« Modèle ↔ blast radius. DeepSeek-R1 OK pour code completion en sandbox isolé ; pas OK pour agent customer-facing. »* — vérifier que la nomination DeepSeek-R1 reste défendable au moment de la publication (Cisco/Penn/Qualys 2026 toujours fiables ?).
 - [ ] Optionnel : produire **schéma E4 A3 facing** comme schéma signature de l'Acte IV (~3-5 j) si édition print l'exige

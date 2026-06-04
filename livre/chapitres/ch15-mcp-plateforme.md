@@ -110,7 +110,7 @@ Le pattern qui rend MCP utile à l'échelle d'une équipe n'est pas le serveur u
 Cette composition est ce qui crée la valeur. Un agent de support technique peut avoir simultanément accès au filesystem (lire des logs), à GitHub (créer une issue), à Slack (notifier une équipe), et à Postgres (vérifier le statut d'un compte client). Quatre serveurs, quatre packages indépendants, quatre `npm install` ou `uvx`. C'est aussi ce qui crée la surface d'attaque ([Ch. 16](ch16-mcp-securite.md) §16.4) : ==un serveur compromis peut influencer la lecture des descriptions des trois autres==, parce que toutes les descriptions vivent dans le même prompt système. C'est l'angle *cross-server confusion* — namespace collision, tool shadowing, capability leak — que le [Ch. 16](ch16-mcp-securite.md) traite comme famille C des dix vecteurs documentés.
 
 > [!INFO] Voir [Ch. 16 — Sécurité MCP : dix vecteurs × dix patterns](ch16-mcp-securite.md) §16.4
-> La composition multi-server est la *valeur* du protocole et son *vecteur d'attaque principal* simultanément. Le [Ch. 16](ch16-mcp-securite.md) documente les trois sous-variants (namespace collision, tool shadowing, capability leak) et propose comme pattern défensif load-bearing l'**allowlist namespace par serveur** — l'utilisateur déclare au démarrage quels outils peuvent écrire, et toute écriture d'un outil non listé déclenche une confirmation.
+> La composition multi-server est la *valeur* du protocole et son *vecteur d'attaque principal* simultanément. Le [Ch. 16](ch16-mcp-securite.md) documente les trois sous-variants (namespace collision, tool shadowing, capability leak) et propose comme pattern défensif pivot l'**allowlist namespace par serveur** — l'utilisateur déclare au démarrage quels outils peuvent écrire, et toute écriture d'un outil non listé déclenche une confirmation.
 
 ---
 
@@ -210,7 +210,7 @@ Quatre familles d'attaques sont aujourd'hui documentées et reproductibles[^7][^
 OWASP a publié en mars 2026 un *MCP Top 10* qui canonise ces vecteurs et donne des recommandations défensives. ==La maturité des défenses reste en retard d'environ neuf mois sur les attaques connues== — ratio classique pour un protocole en phase d'adoption rapide.
 
 > [!INFO] Voir [Ch. 16 — Sécurité MCP : dix vecteurs × dix patterns](ch16-mcp-securite.md)
-> Le [Ch. 16](ch16-mcp-securite.md) est l'autre moitié obligée. Il documente les **six trust boundaries** géométriques de la surface MCP, les **quatre familles** d'attaques (A : tool layer, B : prompt layer, C : cross-server, D : transport & identité), les **dix vecteurs** documentés à mai 2026, et la **matrice défensive 10×10** dont **quatre patterns** sont load-bearing : Sigstore + hash pinning, tool tagging, allowlist namespace, HITL writes. À lire en dyade — la promesse plateforme et son coût ne se séparent pas.
+> Le [Ch. 16](ch16-mcp-securite.md) est l'autre moitié obligée. Il documente les **six trust boundaries** géométriques de la surface MCP, les **quatre familles** d'attaques (A : tool layer, B : prompt layer, C : cross-server, D : transport & identité), les **dix vecteurs** documentés à mai 2026, et la **matrice défensive 10×10** dont **quatre patterns** sont pivots : Sigstore + hash pinning, tool tagging, allowlist namespace, HITL writes. À lire en dyade — la promesse plateforme et son coût ne se séparent pas.
 
 ---
 

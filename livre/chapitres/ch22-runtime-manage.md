@@ -118,7 +118,7 @@ Le [Ch. 20](ch20-observabilite-cognitive-audit-trail.md) §20.8 a posé l'arbitr
 
 Sandbox isolé pour exécuter du code généré par l'agent — jusqu'à huit heures de session. Filesystem scopé à `/workspace`, réseau allowlisté, pas d'accès root, limites CPU/RAM. C'est le service qui permet aux patterns *codegen* (cf. [Ch. 11](ch11-patterns-orchestration.md)) de tourner sans risquer le serveur du runtime.
 
-Différences pratiques entre AgentCore Code Interpreter, Vertex Code Execution et Foundry Sandbox : la durée maximum (8 h vs 1 h vs 30 min), les langages supportés (Python+JS+TS vs Python vs Python+TypeScript), le pricing (consumption AWS vs allocation Vertex vs Foundry hybride). Sur un agent qui fait beaucoup de codegen long, l'écart de durée maximum est *load-bearing*.
+Différences pratiques entre AgentCore Code Interpreter, Vertex Code Execution et Foundry Sandbox : la durée maximum (8 h vs 1 h vs 30 min), les langages supportés (Python+JS+TS vs Python vs Python+TypeScript), le pricing (consumption AWS vs allocation Vertex vs Foundry hybride). Sur un agent qui fait beaucoup de codegen long, l'écart de durée maximum est *pivot*.
 
 ### 22.3.6 Browser Tool — navigation distante
 

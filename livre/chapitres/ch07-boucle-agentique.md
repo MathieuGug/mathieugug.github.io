@@ -20,7 +20,7 @@ date_maj: 2026-05-29
 > [!TLDR] TL;DR décideur
 > - ==Le modèle s'est banalisé, le harness est devenu différenciant.== 2025 a été l'année des agents ; 2026 est l'année des **harnesses agentiques** (Gupta, janvier 2026)[^3]. Le verrou n'est plus le LLM — c'est le code qui gère `stop_reason`, tools, retries, budget de tours, compaction, hooks.
 > - **Une seule boucle invariante** sous toutes les variantes : *Reason · Act · Observe* (Yao 2022, formalisée ReAct[^4]), instanciée comme *Gather · Act · Verify* dans l'Agent SDK Anthropic et comme *TAOR* dans les SDK vendor. Le harness pivote sur un champ — `stop_reason` — et c'est lui, pas le modèle, qui décide quand rendre la main, quand replanifier, quand demander une approbation humaine.
-> - **Sept couches** structurent un harness production-grade : modèle, boucle de contrôle, contexte, outils & sandbox, mémoire, observabilité, gouvernance. **Aucune couche n'est optionnelle** une fois passé le POC — mais leur **complexité doit décroître** à mesure que les modèles s'améliorent (règle Anthropic : *which scaffolding is still load-bearing ?*).
+> - **Sept couches** structurent un harness production-grade : modèle, boucle de contrôle, contexte, outils & sandbox, mémoire, observabilité, gouvernance. **Aucune couche n'est optionnelle** une fois passé le POC — mais leur **complexité doit décroître** à mesure que les modèles s'améliorent (règle Anthropic : *which scaffolding is still qui porte encore ?*).
 > - **Architecture canonique des tâches longues** : pattern à trois agents inspiré des GAN (planner / generator / evaluator). Sur un build full-stack de 6 heures : mono-agent = 20 min, 9 $, livrables non fonctionnels ; trois agents séparés = 6 h, 200 $, application livrée et testée[^5]. ==La séparation des rôles crée un signal correctif que l'auto-critique ne fournit pas.==
 > - **Une pyramide d'adoption à 4 étages** (§7.9) distribue qui s'en sert : transverse (knowledge workers), data quotidien, data expert, produit/décideurs. Le sommet n'est pas mieux que la base — il est **plus stratégique**, parce qu'il cadre les permissions et les SLA pour les autres étages.
 > - **Trois pièges à 100 % traçables** : laisser tourner la boucle sans budget de tours (loop infinie), exposer `execute_sql` sans scoping ni sandbox (exfiltration en 3 tours), sortir l'artillerie multi-agent pour un besoin qu'un workflow aurait résolu (×10-15 tokens, mois vs semaines, debug exponentiel).
@@ -172,7 +172,7 @@ Le rapport coût/qualité est instructif. Sur l'exemple d'un *retro game maker* 
 
 **Les agents communiquent par fichiers, pas par messages.** Les specs, le journal de progression, la liste des features, les artefacts de test : tout passe par le système de fichiers. Cette discipline garde le travail fidèle aux spécifications sans sur-contraindre les agents — et garde la fenêtre de contexte légère (le sub-agent renvoie un résumé, pas l'intégralité de son travail).
 
-**La complexité du harness doit décroître à mesure que les modèles s'améliorent.** Le harness initial d'Anthropic incluait des *context resets* durs entre sessions (héritage de l'anxiété de contexte de Sonnet 4.5). Avec Opus 4.5 puis 4.6, les context resets ont disparu, la décomposition en sprints a été simplifiée. ==Le test à appliquer périodiquement : quel scaffolding est encore *load-bearing* ? Le reste alourdit sans servir.==
+**La complexité du harness doit décroître à mesure que les modèles s'améliorent.** Le harness initial d'Anthropic incluait des *context resets* durs entre sessions (héritage de l'anxiété de contexte de Sonnet 4.5). Avec Opus 4.5 puis 4.6, les context resets ont disparu, la décomposition en sprints a été simplifiée. ==Le test à appliquer périodiquement : quel scaffolding est encore *pivot* ? Le reste alourdit sans servir.==
 
 **L'evaluator capture les bugs de last-mile.** Même quand le generator est excellent, c'est l'evaluator qui détecte les routes mal câblées, les états cassés, les états initiaux manquants. La critique externalisée force le système à converger sur du fonctionnel, pas sur du *« semble fonctionner »*.
 
@@ -243,7 +243,7 @@ Une app de production combine typiquement les trois. **Tools** pour les ~5 actio
 
 ### 7.5.5 Le cas SQL — un mini-arbre de décision
 
-Pour donner accès à une base à un agent, vous avez le choix entre les trois paradigmes, et ce choix est **load-bearing pour la sécurité** :
+Pour donner accès à une base à un agent, vous avez le choix entre les trois paradigmes, et ce choix est **déterminant pour la sécurité** :
 
 - **Tool** quand vous voulez contrôle strict, masking de colonnes sensibles, et RBAC déterministe. Vous exposez `executeQuery` avec un whitelist de tables et un parser qui retire les colonnes PII. L'agent ne peut faire que ce que le tool permet. C'est la voie pour la prod régulée (BFSI, healthcare, secteur public).
 - **Bash / codegen** quand vous voulez du SQL dynamique avec feedback loop. L'agent écrit une requête, voit l'erreur de syntaxe, corrige, relance. C'est plus puissant pour de l'analyse exploratoire mais beaucoup plus dur à sécuriser — la combinatoire d'attaque sur le shell est ouverte. Réserver à l'exploratoire et au prototype.

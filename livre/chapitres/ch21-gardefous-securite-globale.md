@@ -279,12 +279,12 @@ Le threat model détermine quels layers sont **obligatoires** vs **optionnels**.
 
 L'angle propre du chapitre, et l'objet **transverse** de l'Acte IV : un threat model **unifié** qui agrège ce que les chapitres voisins décrivent en silos. ==Six surfaces empilées, chacune avec son owner, ses défenses spécifiques, ses indicateurs OTel `gen_ai.security.*`==.
 
-![Schéma E4 — Threat model unifié 2026 : six surfaces, six familles, quatre parades load-bearing|1400](../../livre/images/20260601-e4-threat-model-unifie-2026.svg)
+![Schéma E4 — Threat model unifié 2026 : six surfaces, six familles, quatre parades pivot|1400](../../livre/images/20260601-e4-threat-model-unifie-2026.svg)
 
 > [!NOTE] À propos du Schéma E4
-> Version v1 — schéma transverse RSSI agrégeant les vecteurs identifiés en silos dans [Ch. 10](ch10-compaction.md) (memory poisoning SpAIware), [Ch. 16](ch16-mcp-securite.md) (matrice MCP 10×10), [Ch. 17](ch17-computer-use.md) (VPI + CVE-2025-55322), [Ch. 2](ch02-modeles-raisonnement.md) §2.6 (faithfulness CoT), [Ch. 3](ch03-process-reward-models.md) §3.6 (reward hacking). Six cartes-surfaces en grille 3×2 avec, pour chacune, trois vecteurs typiques + parade dominante + renvoi chapitre. Bandeau bas : quatre parades load-bearing transverses (Sigstore + hash pinning · tool tagging · allowlist namespace · HITL writes irréversibles).
+> Version v1 — schéma transverse RSSI agrégeant les vecteurs identifiés en silos dans [Ch. 10](ch10-compaction.md) (memory poisoning SpAIware), [Ch. 16](ch16-mcp-securite.md) (matrice MCP 10×10), [Ch. 17](ch17-computer-use.md) (VPI + CVE-2025-55322), [Ch. 2](ch02-modeles-raisonnement.md) §2.6 (faithfulness CoT), [Ch. 3](ch03-process-reward-models.md) §3.6 (reward hacking). Six cartes-surfaces en grille 3×2 avec, pour chacune, trois vecteurs typiques + parade dominante + renvoi chapitre. Bandeau bas : quatre parades pivot transverses (Sigstore + hash pinning · tool tagging · allowlist namespace · HITL writes irréversibles).
 
-| Surface | Cible primaire | Vecteurs principaux | Défense load-bearing | Owner |
+| Surface | Cible primaire | Vecteurs principaux | défense pivot | Owner |
 | --- | --- | --- | --- | --- |
 | **(i) Modèle** | poids, refus, alignement | GCG, PAIR, Crescendo, MSJ, Policy Puppetry | Constitutional Classifiers v2 + circuit breakers | provider modèle + AI Safety Lead |
 | **(ii) Prompt** | system prompt, instructions | persona swap, encoding cipher, instruction override | spotlighting + StruQ/SecAlign | agent engineer |
@@ -293,9 +293,9 @@ L'angle propre du chapitre, et l'objet **transverse** de l'Acte IV : un threat m
 | **(v) Protocole** *([Ch. 15](ch15-mcp-plateforme.md) + [13](ch16-mcp-securite.md))* | MCP, A2A, AG-UI | namespace shadowing, OAuth+supply chain, infection attack | allowlist namespace + signed registries + per-user auth | integrations engineer + RSSI |
 | **(vi) Surface utilisateur** *([Ch. 17](ch17-computer-use.md))* | écran, browser, copilote, on-behalf-of | VPI (CVE-2025-55322), typographic injection, social engineering UI | OCR + classifier + HITL + confirmation transparency | product manager + RSSI |
 
-==Toute fiche de sécurité d'un agent **doit nommer les six** == — pas l'une, pas trois. Si un layer est absent, le justifier explicitement par le threat model (cf. §21.9.1) — typiquement *« cet agent n'a pas de mémoire long terme, surface (iii) inapplicable »*. Si un layer est présent sans défense load-bearing nommée, c'est un trou que le post-mortem viendra documenter.
+==Toute fiche de sécurité d'un agent **doit nommer les six** == — pas l'une, pas trois. Si un layer est absent, le justifier explicitement par le threat model (cf. §21.9.1) — typiquement *« cet agent n'a pas de mémoire long terme, surface (iii) inapplicable »*. Si un layer est présent sans défense pivot nommée, c'est un trou que le post-mortem viendra documenter.
 
-> [!IMPORTANT] Cinq patterns load-bearing
+> [!IMPORTANT] Cinq patterns pivots
 > Sur la matrice ci-dessus, ==**cinq patterns** portent l'essentiel de la défense== — le reste est cosmétique.
 >
 > **(1) Constitutional Classifiers v2 + circuit breakers** au layer modèle. **(2) Spotlighting (base64 du untrusted content) + StruQ/SecAlign** au layer prompt/data. **(3) Provenance tagging + signed compactions** au layer mémoire. **(4) Sigstore + hash pinning + tool tagging + HITL writes** au layer outil/protocole. **(5) HITL transparence sur actions destructrices** à la surface utilisateur.

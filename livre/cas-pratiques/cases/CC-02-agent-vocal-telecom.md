@@ -224,16 +224,16 @@ Le piège du cas : mesurer le **containment brut** (taux d'appels clos par le bo
 
 ## 16. L'équipe, la vélocité, les deadlines
 
-**8,6 ETP** pour le pilote, avec deux postes load-bearing inhabituels :
+**8,6 ETP** pour le pilote, avec deux postes pivot inhabituels :
 
 | Rôle | ETP | Profil cible |
 | --- | --- | --- |
 | Tech Lead Agentic voix | 1,0 | Python/TS sénior, temps réel média, tool use |
-| **Conversation Designer voix** | 1,0 | **LOAD-BEARING** — la voix n'est pas du texte lu : prosodie, barge-in, gestion d'erreur, tours de parole |
+| **Conversation Designer voix** | 1,0 | **pivot** — la voix n'est pas du texte lu : prosodie, barge-in, gestion d'erreur, tours de parole |
 | ML Engineer (ASR / eval) | 1,5 | STT, word error rate, LLM-as-judge, MLOps voix |
 | Backend MCP | 1,5 | **Le sclérosant** : Amdocs billing legacy + ACS TR-069 + garde-fous actions |
 | Data Engineer | 0,8 | Intents, transcripts, RAG Zendesk |
-| **Product Owner** | 1,0 | **Ex-superviseur centre d'appels** — load-bearing, connaît les motifs et les pièges |
+| **Product Owner** | 1,0 | **Ex-superviseur centre d'appels** — pivot, connaît les motifs et les pièges |
 | MLOps / SRE | 0,5 | Latence média, monitoring, disponibilité 24/7 |
 | RSSI référent | 0,3 | Fraude vocale, account takeover, MCP authz |
 | **Change manager** | 1,0 | **POSTE RENFORCÉ** — CSE, requalification agents, communication interne |

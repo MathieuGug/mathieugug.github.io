@@ -175,7 +175,7 @@ Schéma `when` :
 
 **Bonnes règles d'ajustement** :
 
-- Pointer vers une section précise du dossier (le `(§N)` est load-bearing : montre que la reco est sourcée).
+- Pointer vers une section précise du dossier (le `(§N)` est pivot : montre que la reco est sourcée).
 - Capturer une situation **typique mais pas couverte par les profils** (ex. cloud non-GCP dans un dossier GCP-first, contrainte AI Act dans un dossier industrie).
 - Asymétrie : la même règle déclenchée sur 2 profils différents reste vraie (pas de logique conditionnelle dans la reco elle-même).
 

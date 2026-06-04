@@ -106,7 +106,7 @@ Générateur idempotent : [`tools/gen_actes_infographics.py`](../../tools/gen_ac
 | **S1.2** | [Faisceau de 1 000 trajectoires à T=0,7](../../livre/images/20260601-02-variance-trajectoire-1000-rejouages.svg)                     | Ch.1 §1.3                                 | ✅ v1                                    |
 | **E3**   | [Capability × Cost : seconde courbe de scaling](../../livre/images/20260601-03-capability-vs-cost-e3.svg)                            | Ch.2 §2.4 (+ renvoi Ch.5, Ch.19)          | ✅ v1                                    |
 | **E5**   | [PRM vs LLM-as-judge vs human eval](../../livre/images/20260601-04-prm-vs-judge-vs-human-e5.svg)                                     | Ch.3 §3.7 (+ renvoi Ch.19)                | ✅ v1                                    |
-| **E4**   | [Threat model unifié 2026 (six surfaces × quatre parades load-bearing)](../../livre/images/20260601-e4-threat-model-unifie-2026.svg) | Ch.21 §21.10 (+ cité Ch.10, Ch.16, Ch.17) | ✅ v1                                    |
+| **E4**   | [Threat model unifié 2026 (six surfaces × quatre parades pivot)](../../livre/images/20260601-e4-threat-model-unifie-2026.svg) | Ch.21 §21.10 (+ cité Ch.10, Ch.16, Ch.17) | ✅ v1                                    |
 | **R16**  | [Productivity J-curve × LLMflation × paradoxe agentique](../../livre/images/20260601-r16-jcurve-llmflation-paradoxe.svg)             | Ch.23 §23.2.3 + §23.7 (+ renvoi Ch.5)     | ✅ v1                                    |
 | **R18**  | [Calendrier réglementaire 2026-2028 unifié](../../gouvernance/images/20260421-r18-calendrier-reglementaire.svg)                      | Ch.25 §25.2 + §25.10                      | ✅ v1 (livré dans `gouvernance/images/`) |
 

@@ -440,7 +440,7 @@ def ensure_data_link(html_src: str, qualif_path: Path, app_path: Path) -> tuple[
 def ensure_topbar_button(html_src: str) -> tuple[str, str]:
     """Inject <button id="toggle-qualif"> into <header class="topbar"> just before <nav class="back-nav">.
 
-    Placement load-bearing : la topbar est `position: fixed`, donc le bouton
+    Placement pivot : la topbar est `position: fixed`, donc le bouton
     reste visible à tout moment. Le mettre dans <header class="site"> le ferait
     disparaître dès que l'utilisateur scrolle au-delà de l'en-tête.
     """

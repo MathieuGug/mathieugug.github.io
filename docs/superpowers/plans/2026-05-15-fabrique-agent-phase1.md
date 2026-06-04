@@ -1023,7 +1023,7 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 - **5.1 Tableau récap** (~150 mots) : intégrer SCHÉMA 12. Phrase d'introduction + 2-3 commentaires sur les cellules-pivots.
 - **5.2 Trois questions à se poser** (~300 mots) : une par persona, en bloc dédié.
   - 🎯 PM : "Quel est le signal de bascule qui me dit que je suis prêt pour le stade suivant ?"
-  - 🔧 Builder : "Quel est l'artefact load-bearing que je n'ai pas encore, et qui me fait perdre des heures ?"
+  - 🔧 Builder : "Quel est l'artefact pivot que je n'ai pas encore, et qui me fait perdre des heures ?"
   - 🧭 Décideur : "Si je choisis le régime OBO maintenant, quand devrai-je migrer vers Autonome — et à quel coût ?"
 - **5.3 Coda** (~150 mots) : citer "le travail n'est pas un destin technologique" (Acemoglu). La fabrique d'un agent est aussi une fabrique d'équipe, et donc une fabrique de société. Tenir cette boucle ouverte, c'est notre vrai chantier des trois à cinq ans qui viennent.
 

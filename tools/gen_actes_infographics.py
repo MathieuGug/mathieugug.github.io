@@ -63,7 +63,7 @@ ACTES = {
             {"n": "13", "slug": "ch13-surfaces-agentiques", "title": "Surfaces agentiques", "fact": "4 régimes d'accès Knight", "claim": "operator · collaborator · consultant · approver · observer", "schema": "R8 régimes + levels of autonomy"},
             {"n": "14", "slug": "ch14-assistants-de-code", "title": "Assistants de code", "fact": "CLI · IDE-natif · agent async cloud", "claim": "+55,8 % greenfield / −19 % codebase mature : amplificateur", "schema": "trois régimes × quatre axes + anatomie 6 composants"},
             {"n": "15", "slug": "ch15-mcp-plateforme", "title": "MCP, le HTTP des agents", "fact": "trinité MCP × A2A × AG-UI", "claim": "97 M téléchargements/mois · 7 500 serveurs · LF déc 2025", "schema": "R6 layering protocoles"},
-            {"n": "16", "slug": "ch16-mcp-securite", "title": "Sécurité MCP", "fact": "10 vecteurs × 10 patterns défensifs", "claim": "4 load-bearing : Sigstore · tagging · allowlist · HITL writes", "schema": "R7 matrice 10×10"},
+            {"n": "16", "slug": "ch16-mcp-securite", "title": "Sécurité MCP", "fact": "10 vecteurs × 10 patterns défensifs", "claim": "4 pivots : Sigstore · tagging · allowlist · HITL writes", "schema": "R7 matrice 10×10"},
             {"n": "17", "slug": "ch17-computer-use", "title": "Computer use : le régime extrême", "fact": "observe · plan · ground · act · verify", "claim": "OSAgent dépasse baseline humain OSWorld oct 2025", "schema": "R9 boucle + cliff UI-CUBE"},
             {"n": "18", "slug": "ch18-analytics-agentique-banque", "title": "Analytics agentique (sectoriel régulé)", "fact": "3 surfaces GCP banque française tier 1", "claim": "75 jours avant AI Act art. 9-15 effectif (2 août 2026)", "schema": "R10 stack + matrice 6 réf"},
         ],

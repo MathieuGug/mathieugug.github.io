@@ -100,7 +100,7 @@ Les **hooks** (six points d'interception : `PreToolUse`, `PostToolUse`, `Stop`, 
 
 ## 12.5 ADK ≠ runtime ≠ services de plateforme
 
-C'est la distinction load-bearing du chapitre, et *« la source de confusion la plus fréquente »*[^3]. Trois couches, mêmes problèmes chez les trois hyperscalers, noms différents.
+C'est la distinction structurante du chapitre, et *« la source de confusion la plus fréquente »*[^3]. Trois couches, mêmes problèmes chez les trois hyperscalers, noms différents.
 
 ![Stack en trois couches : ADK / runtime / services de plateforme|1300](../../orchestration-agentique/images/20260527-05-stack-trois-couches.svg)
 

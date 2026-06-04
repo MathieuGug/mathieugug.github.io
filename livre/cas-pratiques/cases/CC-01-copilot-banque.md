@@ -308,7 +308,7 @@ La discipline d'écrire ce qu'on ne mesure pas, et pourquoi, est ce qui sauve le
 | Prompt Engineer       | 1,5 | 1 banque/conformité (ex-conseiller crédit ou conformité DDA) + 0,5 conversation designer FR |
 | Data Engineer         | 1,0 | Snowflake, corpus DDA, embeddings Mistral, qualité data |
 | UX Designer           | 0,5 | Side-panel CRM Salesforce, workflow conseiller, validation 1-clic |
-| Product Owner         | 1,0 | **Ex-conseiller banque retail** — load-bearing, sans ce profil échec garanti |
+| Product Owner         | 1,0 | **Ex-conseiller banque retail** — pivot, sans ce profil échec garanti |
 | MLOps / SRE           | 0,5 | Observabilité, déploiement, monitoring agent, Datadog |
 | RSSI référent         | 0,3 | Threat model, MCP authz hardening, red-team trimestriel |
 | DPO référent          | 0,3 | FRIA, registre AI Act, doctrine prompts, audit trail |

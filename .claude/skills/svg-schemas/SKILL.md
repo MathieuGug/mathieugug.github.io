@@ -162,7 +162,7 @@ Le `width: auto` + marges négatives symétriques absorbent à la fois le centra
 
 Mobile (< 1025 px) : la grille s'effondre en colonne unique, la figure remplit naturellement, pas d'override.
 
-### Prérequis load-bearing — `main#report` doit être container-capped à 760 px
+### prérequis structurel — `main#report` doit être container-capped à 760 px
 
 Pattern exact :
 ```css

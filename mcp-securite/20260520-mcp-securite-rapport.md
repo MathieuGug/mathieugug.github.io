@@ -8,7 +8,7 @@
 - **Quatre familles, pas dix problèmes isolés.** Famille A — *tool layer* : descriptions empoisonnées (TPA), shadowing, rug pull, line-jumping[^2]. Famille B — *prompt layer* : injection via documents lus, exfiltration cross-tool, confused-deputy. Famille C — *cross-server* : namespace collision, host confusion, capability leak entre serveurs co-installés. Famille D — *transport & identité* : DCR pitfalls, token passthrough, supply chain NPM/PyPI typosquatting, session hijack SSE.
 - ==Le contrat de confiance se construit avant l'exécution, pas après par audit.== L'industrie a passé 18 mois à traiter MCP comme un problème de runtime — sandboxes, garde-fous, *humans in the loop*. La spec d'automne 2026 attendue inverse la logique : signature Sigstore obligatoire, tool tagging à l'install, hash verification, registries signés. C'est le pivot. Les déploiements qui ne migrent pas resteront sur du runtime patching à perpétuité.
 - **L'asymétrie attaque/défense est radicale en MCP.** Un attaquant n'a besoin que d'un seul outil empoisonné dans une chaîne pour réussir ; un défenseur doit vérifier les *N* outils, à chaque appel, sur *M* serveurs. Cette asymétrie est aggravée par le fait que les descriptions d'outils sont du *texte libre* dans le prompt système — un format que les LLM lisent exactement comme des instructions utilisateur.
-- **La matrice défensive tient en dix patterns, dont quatre load-bearing.** Signature Sigstore + hash pinning (couvre les familles A et D). Tool tagging au runtime (couvre A et C). Allowlist namespace par serveur (couvre C). Human-in-the-loop sur les `write` tools (couvre B). Les six autres patterns — OTel audit log standardisé, content provenance, rate limiting, refresh token rotation, scope-narrow OAuth, sandbox processus — réduisent la blast radius mais ne préviennent pas l'attaque initiale.
+- **La matrice défensive tient en dix patterns, dont quatre pivots.** Signature Sigstore + hash pinning (couvre les familles A et D). Tool tagging au runtime (couvre A et C). Allowlist namespace par serveur (couvre C). Human-in-the-loop sur les `write` tools (couvre B). Les six autres patterns — OTel audit log standardisé, content provenance, rate limiting, refresh token rotation, scope-narrow OAuth, sandbox processus — réduisent la blast radius mais ne préviennent pas l'attaque initiale.
 
 ## 1. La géométrie de la surface MCP
 
@@ -68,7 +68,7 @@ Variants documentés en 2026 :
 - **Confused deputy** — l'agent dispose de privilèges *écriture* sur un système (par exemple : `update_pr_branch`) et lit un document non-fiable qui exploite ces privilèges. Variante MCP du pattern *confused deputy* classique (Hardy 1988, repris par OWASP).
 - **Data exfil via metadata** — l'attaquant n'a pas besoin que l'agent envoie un mail. Il lui suffit que le contenu sensible soit *écrit dans un endroit que l'attaquant peut lire ensuite* — un commentaire de PR public, un fichier dans un repo public, un message Slack dans un channel à accès large.
 
-La défense load-bearing ici est ==la séparation read/write au niveau du namespace d'outils== — *human-in-the-loop obligatoire* sur tout appel d'outil qui peut écrire à l'extérieur du périmètre. Claude Desktop a implémenté ce pattern en septembre 2025 ; Cursor depuis novembre. Anthropic Console fournit depuis février 2026 un mécanisme de *trusted vs untrusted tools* qui marque les outils en lecture seule par défaut. Reste un trou : la distinction read/write est laissée à la description du serveur. Un serveur malveillant peut très bien marquer un outil d'écriture comme `read_only: true`. Le pattern défensif solide est l'**allowlist explicite** : l'utilisateur déclare au démarrage quels outils peuvent écrire, et toute écriture d'un outil non listé déclenche une confirmation.
+La défense pivot ici est ==la séparation read/write au niveau du namespace d'outils== — *human-in-the-loop obligatoire* sur tout appel d'outil qui peut écrire à l'extérieur du périmètre. Claude Desktop a implémenté ce pattern en septembre 2025 ; Cursor depuis novembre. Anthropic Console fournit depuis février 2026 un mécanisme de *trusted vs untrusted tools* qui marque les outils en lecture seule par défaut. Reste un trou : la distinction read/write est laissée à la description du serveur. Un serveur malveillant peut très bien marquer un outil d'écriture comme `read_only: true`. Le pattern défensif solide est l'**allowlist explicite** : l'utilisateur déclare au démarrage quels outils peuvent écrire, et toute écriture d'un outil non listé déclenche une confirmation.
 
 ## 4. Famille C — Cross-server confusion, namespace collisions, shadowing
 
@@ -115,7 +115,7 @@ La spec MCP automne 2026, en cours de discussion à l'AAIF (Agent and AI Interop
 
 Toute la complexité de la défense MCP tient dans une réalité simple : ==il n'y a pas de pattern universel qui couvre les dix vecteurs.== Chaque famille appelle ses propres patterns ; certains sont préventifs (signature, allowlist), d'autres détectifs (OTel audit log), d'autres correctifs (rate limit, refresh rotation).
 
-Le **schéma 6** croise les dix vecteurs (en ligne) avec les dix patterns défensifs (en colonne), donnant une **matrice de mitigation** où chaque case est colorée par qualité de couverture : couverture pleine (vert foncé), partielle (mid), nulle (gris). Quatre patterns ressortent comme *load-bearing* :
+Le **schéma 6** croise les dix vecteurs (en ligne) avec les dix patterns défensifs (en colonne), donnant une **matrice de mitigation** où chaque case est colorée par qualité de couverture : couverture pleine (vert foncé), partielle (mid), nulle (gris). Quatre patterns ressortent comme *pivot* :
 
 **Pattern 1 — Signature Sigstore + hash pinning.** Couvre TPA statique, rug pull, Unicode tags, compromission upstream, dépendance transitive. C'est le pivot que la spec MCP automne 2026 va imposer sur les registries officiels[^4]. Coût d'implémentation : moyen. Effet : structurel.
 
@@ -127,7 +127,7 @@ Le **schéma 6** croise les dix vecteurs (en ligne) avec les dix patterns défen
 
 ![Matrice défensive 10 vecteurs × 10 patterns|1200](images/20260520-06-matrice-defensive.svg)
 
-*Schéma 6 — Matrice de couverture. Chaque colonne (pattern) est cliquable et ouvre sa fiche détaillée. Les quatre patterns load-bearing sont marqués d'un cartouche.*
+*Schéma 6 — Matrice de couverture. Chaque colonne (pattern) est cliquable et ouvre sa fiche détaillée. Les quatre patterns pivots sont marqués d'un cartouche.*
 
 Les six autres patterns sont *secondaires* mais non-négligeables :
 
@@ -138,7 +138,7 @@ Les six autres patterns sont *secondaires* mais non-négligeables :
 - **Pattern 9 — Rate limiting agressif sur DCR et sur tool calls**. Empêche les attaques par flood et les exfiltrations à fort débit.
 - **Pattern 10 — Content provenance / tagging à la lecture**. Quand un tool retourne du contenu externe (issue GitHub, email, page web), le contenu est encapsulé dans un wrapper `<external_data>` que le prompt système instruit le LLM à ne pas interpréter comme instruction. Pattern empirique, défense partielle — un LLM suffisamment manipulable peut quand même tomber dans le piège, mais le taux d'attaques réussies baisse mesurablement.
 
-Ce que la matrice fait apparaître clairement : ==aucun pattern, seul, ne couvre plus de 4 vecteurs.== Une posture défensive sérieuse en MCP exige la combinaison d'au moins les quatre patterns load-bearing, plus deux à trois patterns secondaires. C'est cohérent avec la philosophie *defense in depth* — mais c'est aussi la raison pour laquelle la sécurisation de MCP en production reste, à mai 2026, plus une discipline qu'un produit.
+Ce que la matrice fait apparaître clairement : ==aucun pattern, seul, ne couvre plus de 4 vecteurs.== Une posture défensive sérieuse en MCP exige la combinaison d'au moins les quatre patterns pivots, plus deux à trois patterns secondaires. C'est cohérent avec la philosophie *defense in depth* — mais c'est aussi la raison pour laquelle la sécurisation de MCP en production reste, à mai 2026, plus une discipline qu'un produit.
 
 ## 7. Roadmap 12 mois — ce qui change d'ici mai 2027
 

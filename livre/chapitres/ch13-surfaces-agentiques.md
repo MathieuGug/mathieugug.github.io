@@ -22,7 +22,7 @@ date_maj: 2026-05-29
 > - **Le procès du chatbot est instruit et le verdict est tombé.** Wattenberger, Appleton, Lee, Litt, Saarinen, Pike, Nielsen Norman Group : six ans de critique convergent en un diagnostic — pas d'affordance, pas de flow, articulation forcée. Le chat reste utile pour la *découverte d'usage*, l'expression de l'imprécis, et le fallback. Il cesse d'être la surface de référence pour l'usage continu.
 > - ==AG-UI standardise la prise côté frontend ce que MCP standardise côté tools.== Lancé par CopilotKit le 12 mai 2025, AG-UI est un transport bi-directionnel agnostique (SSE par défaut), 17 événements core (lifecycle/text/tool/state/special), `StateDelta` en JSON Patch RFC 6902. Adopté par LangGraph, CrewAI, Microsoft Agent Framework, Google ADK, AWS Strands, Mastra, Pydantic AI, Agno, LlamaIndex, AG2 — et en *community tier* par le Claude Agent SDK[^11].
 > - **L'économie du régime 4 a basculé.** Coût par tâche d'un agent navigateur 0,50–1,50 $ (2024) → **0,05–0,15 $** (2026), précision GUI > 90 % avec Claude Opus 4.7 et GPT-5. C'est cette double bascule qui rend l'on-behalf-of commercialement viable — pas un breakthrough modèle isolé. Détails au [Ch. 17](ch17-computer-use.md).
-> - ==Les 5 niveaux d'autonomie du Knight Institute sont la grille **load-bearing** du livre.== Operator / collaborator / consultant / approver / observer (Yonadav Shavit et al., juillet 2025[^19]). Cette grille est fixée ici une fois pour toutes et réutilisée aux [Ch. 11](ch11-patterns-orchestration.md) (pilote *interne* de la boucle), [Ch. 17](ch17-computer-use.md) (computer use), [Ch. 25](ch25-gouvernance-ai-act.md) (gouvernance). Avec elle, six primitives non négociables : plan visible, escalade contextuelle, warm handoff, autonomy slider explicite, audit log, disclosure non-humain.
+> - ==Les 5 niveaux d'autonomie du Knight Institute sont la grille **pivot** du livre.== Operator / collaborator / consultant / approver / observer (Yonadav Shavit et al., juillet 2025[^19]). Cette grille est fixée ici une fois pour toutes et réutilisée aux [Ch. 11](ch11-patterns-orchestration.md) (pilote *interne* de la boucle), [Ch. 17](ch17-computer-use.md) (computer use), [Ch. 25](ch25-gouvernance-ai-act.md) (gouvernance). Avec elle, six primitives non négociables : plan visible, escalade contextuelle, warm handoff, autonomy slider explicite, audit log, disclosure non-humain.
 
 ---
 
@@ -59,7 +59,7 @@ Le procès du chat comme surface universelle est désormais un genre éditorial 
 
 ### 13.2.1 Six contributions convergentes
 
-**Amelia Wattenberger, *Why Chatbots Are Not the Future of Interfaces*** (2023). Le texte fondateur. Trois arguments load-bearing[^3] :
+**Amelia Wattenberger, *Why Chatbots Are Not the Future of Interfaces*** (2023). Le texte fondateur. Trois arguments structurels[^3] :
 
 1. *Un bon outil rend clair comment il doit être utilisé.* Un champ texte ChatGPT ressemble à une barre Google, à un login form, à un champ carte bancaire — *aucune affordance distinctive*. L'utilisateur doit deviner, échouer, retenter. Wattenberger compare au piano : « on voit, sans rien apprendre, qu'on peut frapper toutes les touches et obtenir un son ; on comprend en quelques secondes qu'elles vont du grave à l'aigu ». Le chatbot n'a aucun équivalent.
 2. *Le chat casse le flow state.* Csíkszentmihályi : on est en flow quand on alterne action et feedback à très haute fréquence. Le chat impose un aller-retour permanent entre *implement* (j'écris une question) et *evaluate* (je lis une réponse). C'est l'inverse du flow.
@@ -297,7 +297,7 @@ Le pitch officiel : « an open, lightweight, event-based protocol that standardi
 
 ![Flux d'événements AG-UI — séquence type d'un run avec text, tool call et state delta|1300](../../surfaces-agentiques/images/20260518-07-flux-agui.svg)
 
-### 13.7.3 Shared state vs Generative UI — distinction load-bearing
+### 13.7.3 Shared state vs Generative UI — distinction structurante
 
 AG-UI transporte deux choses orthogonales que la presse confond souvent :
 
@@ -337,7 +337,7 @@ La distinction essentielle : *shared state* = « qu'est-ce que l'agent sait » ;
 
 ## 13.8 Patterns de confiance — la grille transverse
 
-L'agent qui agit pour vous pose deux problèmes de confiance distincts : *est-ce qu'il fait bien ?* (qualité) et *est-ce qu'il fait ce que j'ai autorisé ?* (gouvernance). La surface est ce qui rend ces deux questions concrètes pour l'utilisateur. Cette section pose la grille **load-bearing du livre** — réutilisée aux [Ch. 11](ch11-patterns-orchestration.md) (régimes internes), [Ch. 17](ch17-computer-use.md) (computer use), [Ch. 25](ch25-gouvernance-ai-act.md) (gouvernance régulaire).
+L'agent qui agit pour vous pose deux problèmes de confiance distincts : *est-ce qu'il fait bien ?* (qualité) et *est-ce qu'il fait ce que j'ai autorisé ?* (gouvernance). La surface est ce qui rend ces deux questions concrètes pour l'utilisateur. Cette section pose la grille **pivot du livre** — réutilisée aux [Ch. 11](ch11-patterns-orchestration.md) (régimes internes), [Ch. 17](ch17-computer-use.md) (computer use), [Ch. 25](ch25-gouvernance-ai-act.md) (gouvernance régulaire).
 
 ### 13.8.1 Le cadre Knight Institute — cinq rôles utilisateur
 
@@ -482,7 +482,7 @@ Et toujours, deux principes pour ne pas se tromper :
 
 Trois objets à retenir :
 
-- **La grille Knight à cinq niveaux** (operator / collaborator / consultant / approver / observer) — taxonomie load-bearing du livre, fixée ici, citée aux [Ch. 11](ch11-patterns-orchestration.md), [Ch. 17](ch17-computer-use.md), [Ch. 25](ch25-gouvernance-ai-act.md).
+- **La grille Knight à cinq niveaux** (operator / collaborator / consultant / approver / observer) — taxonomie pivot du livre, fixée ici, citée aux [Ch. 11](ch11-patterns-orchestration.md), [Ch. 17](ch17-computer-use.md), [Ch. 25](ch25-gouvernance-ai-act.md).
 - **Les six primitives non négociables** (plan visible, escalade contextuelle, warm handoff, autonomy slider, audit log, disclosure non-humain) — minima 2026 pour toute surface qui prétend à la production.
 - **La matrice de décision à 12 cas d'usage** — outil pratique pour cadrer un régime avant de cadrer un agent.
 

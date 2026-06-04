@@ -206,11 +206,11 @@ Le piège du cas est dans le titre du slide d'ouverture : **mesurer les sièges 
 
 ## 15. L'équipe, la vélocité, les sclérosants
 
-**4,6 ETP** pour l'amorçage, avec un poste load-bearing qui n'est pas celui qu'on attend :
+**4,6 ETP** pour l'amorçage, avec un poste pivot qui n'est pas celui qu'on attend :
 
 | Rôle | ETP | Profil cible |
 | --- | --- | --- |
-| **Product Owner usages** | 1,0 | **LOAD-BEARING** — cadre les cas d'usage, connaît les métiers, traque l'usage réel (pas un chef de projet outil) |
+| **Product Owner usages** | 1,0 | **pivot** — cadre les cas d'usage, connaît les métiers, traque l'usage réel (pas un chef de projet outil) |
 | Référent enablement / formation | 1,0 | Anime le réseau de champions, la pédagogie du prompt utile |
 | Référent data / deep research | 0,8 | MCP intranet/KB, qualité du corpus de veille |
 | Référent sécurité / DLP | 0,5 | Shadow AI, droits hérités, usage acceptable |

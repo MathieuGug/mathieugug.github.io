@@ -42,7 +42,7 @@ Le mot *surface* mérite d'être ancré. J'appelle ici **surface d'accès** à u
 
 Le procès du chat comme surface universelle est désormais un genre éditorial à part entière dans la communauté design. Il faut le résumer fidèlement, parce que ce procès cadre tout ce qui suit — et parce que les arguments sont solides.
 
-**Amelia Wattenberger, *Why Chatbots Are Not the Future of Interfaces*** (2023). Le texte fondateur. Trois arguments load-bearing[^3] :
+**Amelia Wattenberger, *Why Chatbots Are Not the Future of Interfaces*** (2023). Le texte fondateur. Trois arguments structurels[^3] :
 1. *Un bon outil rend clair comment il doit être utilisé.* Un champ texte ChatGPT ressemble à une barre Google, à un login form, à un champ carte bancaire — *aucune affordance distinctive*. L'utilisateur doit deviner, échouer, retenter. Wattenberger compare au piano : *« on voit, sans rien apprendre, qu'on peut frapper toutes les touches et obtenir un son ; on comprend en quelques secondes qu'elles vont du grave à l'aigu »*. Le chatbot n'a aucun équivalent.
 2. *Le chat casse le flow state.* Csíkszentmihályi : on est en flow quand on alterne action et feedback à très haute fréquence. Le chat impose un aller-retour permanent entre *implement* (j'écris une question) et *evaluate* (je lis une réponse). C'est l'inverse du flow.
 3. *Le chat oblige à articuler tout, en mots, à l'avance.* Or les humains pensent en demi-phrases, en gestes, en pointages. Le NN/G formalisera ce point en 2024 sous le nom de **articulation barrier** : *« obliger l'utilisateur à articuler verbalement chaque demande est une charge cognitive lourde, sous-estimée parce que les concepteurs sont eux-mêmes des manieurs de mots »*[^9].
@@ -285,7 +285,7 @@ RunFinishedEvent(...)
 
 ==**StateDelta** utilise JSON Patch (RFC 6902)== — l'agent émet `[{"op": "replace", "path": "/cart/items/3/qty", "value": 2}]` au lieu de re-streamer tout l'état. Mécanique snapshot+delta classique des bases de données distribuées, appliquée à l'UI. C'est ce qui permet la synchronisation bidirectionnelle d'un état partagé entre agent et UI sans surcharge de bande passante.
 
-### Shared state vs Generative UI — distinction load-bearing
+### Shared state vs Generative UI — distinction structurante
 
 AG-UI transporte deux choses orthogonales que la presse confond souvent :
 

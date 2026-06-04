@@ -91,7 +91,7 @@ Les trois surfaces transverses se distribuent ainsi : **conversational analytics
 
 ## 18.5 Le pivot sémantique — la section la plus technique
 
-C'est la section où le RDV banque se joue. Elle est plus longue et plus dense que les autres ; ==c'est la thèse load-bearing du dossier==.
+C'est la section où le RDV banque se joue. Elle est plus longue et plus dense que les autres ; ==c'est la thèse pivot du dossier==.
 
 ### 18.5.1 La mécanique de l'hallucination de jointure
 
@@ -270,7 +270,7 @@ Pour une banque française tier 1, ==**les quatre MCP servers internes prioritai
 - ==**MCP « conformité »**== — façade sur les règles de gestion (zones autorisées par utilisateur, données accessibles par profil, contraintes RGPD/AI Act sur certains champs). Centralise les règles « ce qu'un agent ne doit pas faire » au lieu de les répartir dans chaque agent.
 
 > [!INFO] Voir [Ch. 16 — Sécurité MCP : dix vecteurs × dix patterns](ch16-mcp-securite.md)
-> Le déploiement des quatre MCP servers banque suppose acquises les défenses du [Ch. 16](ch16-mcp-securite.md) : signature Sigstore + hash pinning sur les serveurs internes (couche A), allowlist namespace par utilisateur (couche C), tool tagging au runtime (couche A et C), human-in-the-loop sur les `write` tools (couche B). ==Le [Ch. 16](ch16-mcp-securite.md) a déjà nommé ces patterns load-bearing== avec en plus une exigence sectorielle — chaque appel MCP doit être loggé dans un audit log central conservé 5 ans (DORA art. 28), ce qui ajoute au pattern un cinquième port load-bearing : audit log centralisé non-altérable.
+> Le déploiement des quatre MCP servers banque suppose acquises les défenses du [Ch. 16](ch16-mcp-securite.md) : signature Sigstore + hash pinning sur les serveurs internes (couche A), allowlist namespace par utilisateur (couche C), tool tagging au runtime (couche A et C), human-in-the-loop sur les `write` tools (couche B). ==Le [Ch. 16](ch16-mcp-securite.md) a déjà nommé ces patterns pivots== avec en plus une exigence sectorielle — chaque appel MCP doit être loggé dans un audit log central conservé 5 ans (DORA art. 28), ce qui ajoute au pattern un cinquième port pivot : audit log centralisé non-altérable.
 
 ---
 
