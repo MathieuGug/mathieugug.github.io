@@ -1,0 +1,444 @@
+{
+  "meta": {
+    "id": "CC-10",
+    "titre": "Pair programming → organisation dev agentique",
+    "secteur": "Développement logiciel",
+    "facette_scaling": "build_vs_buy",
+    "facettes_secondaires": [
+      "evaluation",
+      "gouvernance"
+    ],
+    "regime": "buy",
+    "ia_type": "agentic",
+    "gabarit": "charniere",
+    "thes_e_une_ligne": "Appliquer la boucle agentique au plus bas niveau — résoudre une issue, clôturer une PR, déléguer la review, jusqu'à la sécurité — sur de vraies fondations (MCP, observabilité) valide l'architecture avant de la remonter aux métiers ; mais l'all-you-can-eat Copilot est mort, le bon arbitrage 2026 n'est plus un outil unique imposé à toute l'équipe, c'est un portefeuille par profil de ticket × profil de dev, distribué via une gateway LLM avec quotas.",
+    "auteur": "Mathieu Guglielmino",
+    "date_v1": "2026-06-04"
+  },
+  "mise_en_situation": {
+    "scene": "Mardi 9 h, scale-up SaaS B2B (~150 devs). Le [CTO] ouvre le tableau de bord finance avant le standup : la ligne « AI tooling » a doublé en six mois. Au standup, quatre devs annoncent — sans coordination — qu'ils utilisent quatre outils différents en parallèle : Cursor en abonnement perso, Copilot via le SSO entreprise, Claude Code via Bedrock pour les gros refactors, Codex CLI pour les scripts d'ops. Le matin même, GitHub a envoyé un mail rappelant le passage aux premium requests ; en filigrane, le retex public d'Uber qui a fait dépasser son budget Copilot Enterprise circule sur les channels Slack inter-CTO. La [VP_ENG] veut une doctrine, le [CFO] veut un plafond.",
+    "chiffres_bruts": [
+      { "label": "Devs", "valeur": "150" },
+      { "label": "PR mergées / semaine", "valeur": "280" },
+      { "label": "Outils IA actifs", "valeur": "4 (Cursor, Copilot, Claude Code, Codex CLI) + 2 review auto POC (CodeRabbit, Greptile)" },
+      { "label": "Budget AI tooling annualisé", "valeur": "480 k€ (×2 vs 2025)" },
+      { "label": "Cycle médian ticket → PR", "valeur": "3,8 j" },
+      { "label": "eNPS dev", "valeur": "38" }
+    ],
+    "horizon_temporel": "POC 2 mois → doctrine v1 6 mois → régime fédéré 12 mois → scale 36 mois"
+  },
+  "architecture_actuelle": {
+    "composants": [
+      {
+        "categorie": "canal_utilisateur",
+        "nom": "Postes dev — mix VS Code 65 % / JetBrains 25 % / Neovim 10 %",
+        "criticite_pour_le_cas": "read_write",
+        "remarque": "Slack et Linear comme surfaces de communication, MFA hardware key, scope par squad"
+      },
+      {
+        "categorie": "front_metier",
+        "nom": "GitHub.com (org Cloud) + GitHub Actions matrix CI + GitHub Advanced Security",
+        "criticite_pour_le_cas": "read_write_via_proxy_validation",
+        "remarque": "Secret scan + Dependabot ; webhook surface pour CodeRabbit/Greptile"
+      },
+      {
+        "categorie": "data_scoring",
+        "nom": "Sentry (errors) + Datadog APM/logs + Codecov + LaunchDarkly",
+        "criticite_pour_le_cas": "read_only",
+        "remarque": "Obs existante à étendre aux agents async ; LaunchDarkly = garde-fou rollback"
+      },
+      {
+        "categorie": "core_metier",
+        "nom": "Monorepo TypeScript (Next.js front + Node API) + service Java legacy 2018 (paiement) + service Go récent (event bus). Postgres + Redis managés.",
+        "criticite_pour_le_cas": "read_write_via_proxy_validation",
+        "remarque": "Le service Java legacy 2018 = sclérosant : agent async cloud déconseillé dessus jusqu'à refacto"
+      },
+      {
+        "categorie": "knowledge_base",
+        "nom": "Notion (specs, ADR) + GitHub Discussions + Confluence legacy en migration",
+        "criticite_pour_le_cas": "read_only",
+        "remarque": "MCP Notion officiel disponible ; corpus ADR à indexer en priorité"
+      },
+      {
+        "categorie": "back_office",
+        "nom": "Linear (ticketing) + Vercel (preview env) + Vault HCP (secrets)",
+        "criticite_pour_le_cas": "read_write",
+        "remarque": "Linear MCP officiel pour transitions et commentaires ; Vault MCP custom obligatoire (scoping fin)"
+      },
+      {
+        "categorie": "outils_satellites",
+        "nom": "4 outils IA cités au standup, dont 2 hors SSO (achats perso → shadow soft)",
+        "criticite_pour_le_cas": "read_write",
+        "remarque": "Cursor en perso + Codex CLI sur poste = surface shadow à intégrer dans la doctrine"
+      }
+    ],
+    "implications_structurantes": [
+      "Stack 100 % cloud, pas de mainframe → tous les patterns techniquement accessibles.",
+      "Service Java legacy 2018 → agent async cloud interdit dessus jusqu'à refacto (horizon 2+ ans).",
+      "Vault read-only scopé par équipe → MCP server Vault possible mais scoping fin obligatoire (RSSI).",
+      "GitHub Cloud + Bedrock dispo → bascule API privée Claude/GPT-5 sans contrainte souveraineté.",
+      "Datadog + Sentry → infra obs existante, à étendre pour observer les agents async (cf. ch.20)."
+    ],
+    "renvoi_figure": "fig-00"
+  },
+  "application_concrete": {
+    "modes_usage": [
+      {
+        "id": "A",
+        "label": "Coding inline (caret IDE)",
+        "moment": "Toute la journée, ~80 % des sessions dev",
+        "actions": [
+          "Ghost autocomplete inline (Copilot Tab / Cursor Tab / Supermaven)",
+          "Dialogue chat IDE pour multi-fichier cadré (Cursor Composer, Claude Code, Codex CLI, JetBrains AI)",
+          "Suggestion de tests unitaires + revue de diff en cours"
+        ]
+      },
+      {
+        "id": "B",
+        "label": "Délégation de ticket (agent async cloud, hors écran)",
+        "moment": "Ouvert depuis Linear ou GitHub Issue, l'agent traite, revient avec une PR. ~10 % du flux mais le plus visible.",
+        "sous_modes": [
+          { "id": "B1", "label": "Tier 1 trivial", "description": "Bumps deps, traduction i18n, typage strict, refacto pattern connu — Claude Code BG / Cursor BG / Codex async / Copilot Workspace / Devin" },
+          { "id": "B2", "label": "Tier 2 refacto cadré", "description": "Extraction, rename API, migration framework cadré — supervisé par un sénior en chat IDE" }
+        ]
+      },
+      {
+        "id": "C",
+        "label": "Review et merge (PR GitHub)",
+        "moment": "Webhook PR ouverte → review auto en sentinelle + dev humain qui tranche",
+        "actions": [
+          "Review auto sur diff (CodeRabbit / Greptile / Copilot for PRs)",
+          "Flags qualité (typage régressé, coverage en baisse, conventions monorepo)",
+          "Suggestion de tests manquants"
+        ]
+      }
+    ],
+    "niveaux_autonomie": [
+      { "id": "L1", "label": "Suggest", "description": "Ghost autocomplete, copie-colle ou Tab. Toujours actif.", "active_en": "POC + Pilote + Prod (tous profils)" },
+      { "id": "L2", "label": "Pré-remplir", "description": "Chat IDE multi-fichier diff proposé, validation step-by-step par le dev.", "active_en": "Pilote (sénior et sénior+)" },
+      { "id": "L3", "label": "Exécuter sous validation", "description": "Agent async ouvre une PR sur tier 1 / tier 2 bordé. Review humaine obligatoire avant merge.", "active_en": "Prod (tickets tier 1 ROBOT-friendly)" },
+      { "id": "L4", "label": "Pleine autonomie", "description": "Auto-merge si CI verte sur backlog ROBOT-friendly (bumps deps, traductions i18n, typage strict).", "active_en": "Scale — opt-in explicite par repo, jamais sur Java legacy ni paiement / scoring" }
+    ],
+    "trajectoire_multi_step_exemple": {
+      "scenario": "Mode B.1 — agent async cloud traite un ticket tier 1 ROBOT-friendly (bump deps avec breaking change mineur sur 12 fichiers du monorepo)",
+      "etapes": [
+        { "id": 1, "label": "Listen", "description": "Ticket Linear taggé `tier-1-robot` auto-routé vers l'agent async cloud (Claude Code background)" },
+        { "id": 2, "label": "Retrieve", "description": "MCP calls en parallèle : GitHub (state du repo + open PRs), Linear (acceptance criteria), Datadog (perf baseline), Notion (ADR liée)", "outils_appeles": ["github-mcp.get_repo_state", "linear-mcp.get_ticket", "datadog-mcp.get_metrics", "notion-mcp.search_adr"] },
+        { "id": 3, "label": "Reason + Plan", "description": "Chain-of-thought, plan publié en commentaire Linear + en draft PR description (étapes, tests touchés, risque rollback)", "renvoi_livre": "ch.7 boucle agent" },
+        { "id": 4, "label": "Execute", "description": "Branche créée, commits, CI lancée — review auto en sentinelle déclenchée par webhook" },
+        { "id": 5, "label": "Audit", "description": "Log structuré (chain-of-thought + diff + traces MCP + coût tokens) → audit trail Datadog (rétention 90 j)", "renvoi_livre": "ch.20 audit trail cognitif" }
+      ]
+    }
+  },
+  "outils_internes": {
+    "mcp_servers": [
+      { "systeme": "GitHub", "mode": "read_write", "type_mcp": "officiel disponible", "effort_dev": "2 j", "risque": "bas", "raison_risque": "scoping par repo, accès via bot account dédié" },
+      { "systeme": "Linear", "mode": "read_write", "type_mcp": "officiel", "effort_dev": "1 j", "risque": "bas", "raison_risque": "écriture des commentaires + transitions de statut" },
+      { "systeme": "Datadog", "mode": "read", "type_mcp": "officiel", "effort_dev": "3 j", "risque": "bas" },
+      { "systeme": "Sentry", "mode": "read", "type_mcp": "officiel", "effort_dev": "2 j", "risque": "bas" },
+      { "systeme": "Vault HCP", "mode": "read_only_scope", "type_mcp": "custom obligatoire", "effort_dev": "2 sem.", "risque": "haut", "raison_risque": "scoping par équipe + masquage secret + audit RSSI — le sclérosant projet" },
+      { "systeme": "Notion", "mode": "read", "type_mcp": "officiel", "effort_dev": "3 j", "risque": "bas" },
+      { "systeme": "Codecov", "mode": "read", "type_mcp": "custom (API REST)", "effort_dev": "1 sem.", "risque": "bas" },
+      { "systeme": "LaunchDarkly", "mode": "read", "type_mcp": "officiel", "effort_dev": "3 j", "risque": "moyen", "raison_risque": "éviter qu'un agent toggle des flags prod par erreur" }
+    ],
+    "effort_total": "5-6 semaines pour 1 backend / SRE senior",
+    "renvois_livre": ["ch.15 MCP plateforme", "ch.16 sécurité MCP"]
+  },
+  "modeles_cibles": {
+    "candidats": [
+      { "modele": "Claude 4.7 Sonnet", "force_pour_le_cas": "Tool use natif, MCP first-class, 1M tokens, sweet spot dev", "faiblesse": "Cloud US (atténué Bedrock EU)", "cout_indicatif": "$3 / $15 par M tokens" },
+      { "modele": "Claude 4.7 Opus", "force_pour_le_cas": "Reasoning supérieur, idéal gros refactor multi-fichier", "faiblesse": "Coût ×5, latence", "cout_indicatif": "$15 / $75 par M tokens" },
+      { "modele": "Claude 4.7 Haiku", "force_pour_le_cas": "Latence faible, ghost autocomplete réaliste", "faiblesse": "Reasoning limité sur multi-fichier", "cout_indicatif": "$1 / $5 par M tokens" },
+      { "modele": "GPT-5", "force_pour_le_cas": "Tool use solide, intégration Copilot par défaut", "faiblesse": "Lock-in Copilot, pricing premium reqs", "cout_indicatif": "$5 / $25 par M tokens" },
+      { "modele": "Codestral 25B fine-tuné", "force_pour_le_cas": "Self-hosted possible, fallback dégradé tier 1", "faiblesse": "Reasoning en retrait, infra coûteuse", "cout_indicatif": "OpEx infra" },
+      { "modele": "Cursor proprietary (cursor-small)", "force_pour_le_cas": "Latence ghost imbattable, pricing siège inclus", "faiblesse": "Boîte noire, lock-in éditeur", "cout_indicatif": "inclus siège Cursor" }
+    ],
+    "recommandation": {
+      "regime": "cascade par pattern",
+      "ghost_mode_A_inline": "Claude Haiku ou Cursor-small natif (latence)",
+      "chat_ide_mode_A_multifichier": "Claude Sonnet par défaut, escalade Opus manuelle pour gros refactor",
+      "agent_async_mode_B_tier1": "Claude Sonnet + Opus en fallback réflexif si plan échoue 2× — cap budget par ticket",
+      "code_review_auto_mode_C": "Claude Sonnet (CodeRabbit/Greptile) — pas de bloc Opus en review (coût/PR insoutenable)",
+      "argument_cascade": "Tient le tweet 'et si Anthropic est down ?' → fallback Codestral self-hosted sur tier 1. Anti-tokenmaxxing : Opus borné par budget de ticket et par session (cf. section 10 dérive des coûts)."
+    }
+  },
+  "enjeux": {
+    "enjeux_chiffres": [
+      { "label": "Délester le quotidien", "chiffre": "-40 % cycle ticket → PR sur tier 1", "consequence": "+25 % throughput équipe (PR/sem)" },
+      { "label": "Stabiliser la qualité", "chiffre": "taux de bug post-release stable", "consequence": "à +25 % throughput — le vrai test du pattern agent" },
+      { "label": "Soutenabilité économique", "chiffre": "poste inférence borné à 30 % du budget AI tooling", "consequence": "sinon dérive non finançable au COMEX Q1 2027" }
+    ],
+    "benchmark": {
+      "reference": "DORA State of DevOps 2025 + GitHub Octoverse 2026",
+      "metrique": "% PR ouvertes avec assistance agentique par taille d'équipe, distribution outils par profil dev",
+      "renvoi_livre": "ch.23.8"
+    }
+  },
+  "build_buy": {
+    "criteres": ["data_sensitivity", "personnalisation", "volumetrie", "lock_in", "time_to_value", "souverainete"],
+    "options": [
+      {
+        "regime": "build_pur",
+        "stack": "Plateforme dev agent maison (orchestrateur + LLM hosted + UI + intégrations)",
+        "scores": { "data_sensitivity": "++", "personnalisation": "++", "volumetrie": "+", "lock_in": "+", "time_to_value": "--", "souverainete": "++" },
+        "verdict": "Non — pas le métier d'une scale-up SaaS, effort énorme (18 mois+), retard de l'état de l'art outils du marché. Antipattern."
+      },
+      {
+        "regime": "buy_uniforme",
+        "solution": "Un seul outil pour tous (ex. Copilot Enterprise universel, Cursor universel)",
+        "scores": { "data_sensitivity": "-", "personnalisation": "-", "volumetrie": "++", "lock_in": "--", "time_to_value": "++", "souverainete": "--" },
+        "verdict": "Antipattern — chaque outil a ses forces (ghost / chat IDE / async / review), un Copilot universel laisse 30 % de vélocité sur la table sur les patterns chat IDE et async cloud. Et le pricing siège unique exploserait sur les power users qui tokenmaxxent."
+      },
+      {
+        "regime": "buy_comparatif_par_profil",
+        "stack": "Mix portefeuille : ghost universel + chat IDE par profil sénior + async cloud pour tier 1 + review auto en sentinelle. Distribution via gateway LLM interne + tokens scopés par profil dev.",
+        "scores": { "data_sensitivity": "+", "personnalisation": "+", "volumetrie": "+", "lock_in": "0", "time_to_value": "+", "souverainete": "0" },
+        "verdict": "RECOMMANDÉ — équilibre vélocité, budget maîtrisé via quotas distribués, fallback dégradé Bedrock + cascade modèle, doctrine itérée trimestriel."
+      }
+    ],
+    "decision_ponderee": "Buy comparatif par profil ; gateway LLM interne + tokens scopés par profil dev ; cascade modèle pour le run async ; doctrine en revue trimestrielle. Le crossover gateway interne vs sièges Copilot uniformes se situe à ≈ 1 500 PR/an avec usage agentique.",
+    "renvoi_livre": "ch.23.6 arbre décision"
+  },
+  "trajectoire_couts": {
+    "phases": [
+      { "id": "poc",    "label": "POC 2 mois",        "perimetre": "10 devs early-adopters, 1 squad, mode L1 ghost + L2 chat IDE" },
+      { "id": "pilote", "label": "Pilote 6 mois",      "perimetre": "40 devs, 4 squads, ajout L3 async cloud sur tier 1 + review auto sentinelle" },
+      { "id": "prod",   "label": "Prod 12 mois",       "perimetre": "150 devs, doctrine v1, gateway LLM interne, doctrine trimestrielle" },
+      { "id": "scale",  "label": "Scale 36 mois",      "perimetre": "150 devs + sub-agents custom internes + cascade modèle mature" }
+    ],
+    "postes": {
+      "inference":   { "poc": 18,  "pilote": 95,  "prod": 320,  "scale": 620  },
+      "infra":       { "poc": 6,   "pilote": 22,  "prod": 60,   "scale": 110  },
+      "equipe":      { "poc": 60,  "pilote": 180, "prod": 360,  "scale": 720  },
+      "data":        { "poc": 4,   "pilote": 18,  "prod": 35,   "scale": 55   },
+      "evaluation":  { "poc": 3,   "pilote": 25,  "prod": 80,   "scale": 160  },
+      "gouvernance": { "poc": 4,   "pilote": 18,  "prod": 50,   "scale": 110  },
+      "securite":    { "poc": 6,   "pilote": 22,  "prod": 55,   "scale": 105  },
+      "change":      { "poc": 5,   "pilote": 35,  "prod": 110,  "scale": 220  }
+    },
+    "cout_par_interaction": { "poc": 7.60, "pilote": 4.80, "prod": 3.10, "scale": 2.30 },
+    "crossover_point": "≈ 1 500 PR/an avec usage agentique : bascule de gateway LLM interne bat le tarif siège Copilot uniforme.",
+    "commentaire_courbe": "Inférence × 35 entre POC et Scale, vs équipe × 12, vs change × 44. Le poste change pèse plus que prévu parce que la doctrine doit évoluer trimestriellement (cf. dérive du pricing). Le coût par PR divise par ~3 mais c'est l'inférence qui dérive sans gateway — d'où la section dédiée §10 du MD."
+  },
+  "gouvernance": {
+    "raci": {
+      "responsable": "[STAFF_ENG_DX] (1,5 ETP cible en Prod) + [VP_ENG]",
+      "approbateur": "[CTO] (sponsor)",
+      "consultes": ["[CFO] (budget AI tooling)", "[RSSI] (scoping MCP + agents async sur code prod)", "[DPO] (PII dans logs Datadog)"],
+      "informes": ["Tech leads par squad", "COMEX (trimestriel)"]
+    },
+    "cadence_revue": {
+      "comite_dev_practice": "mensuel (KPI usage + coût + qualité)",
+      "alertes": "continues (dépassement quota ticket, dépassement quota dev, taux re-prompt anormal)",
+      "audit_doctrine_externe": "annuel (revue par pair CTO inter-entreprise, type DX community)"
+    },
+    "ai_act_ligne": {
+      "niveau": "hors_haut_risque_par_defaut",
+      "fondement": "Code interne non-décisionnel sur tiers. Non listé Annexe III. À documenter si agents async accèdent à du code de scoring/RH/PII utilisateur final.",
+      "echeance": "Documentation périmètre permanent + revue annuelle",
+      "actions": ["Registre interne agents async", "Charte explicite agents async sur code prod", "Gate explicite pour repos qui touchent client/PII/scoring"]
+    },
+    "renvoi_livre": "ch.25 gouvernance + ch.26 IA et travail"
+  },
+  "evaluation": {
+    "regression_suite": {
+      "taille": "SWE-bench Live (mensuel) + golden set interne ~80 PRs annotées (replay)",
+      "cadence": "mensuelle pour SWE-bench Live ; trimestrielle pour golden set interne",
+      "criteres": ["completion correcte", "respect des conventions monorepo", "pas de régression de typage", "pas de leak secret", "coverage stable ou en hausse"]
+    },
+    "metriques_online": [
+      { "id": "pr-throughput",         "cible": "+25 %",              "alerte": "< +10 %" },
+      { "id": "post-release-bug-rate", "cible": "stable (≤ 3 %)",    "alerte": "> 5 % (rollback feature flag immédiat)" },
+      { "id": "processing-time",       "cible": "-40 % tier 1",       "alerte": "< -20 %" },
+      { "id": "employee-engagement",   "cible": "+8 (eNPS dev)",      "alerte": "< +3" }
+    ],
+    "detection_derive": {
+      "outil": "Datadog + LLM-as-judge sur 5 % des PR async + ratio re-prompt par session",
+      "alerte": "PagerDuty équipe Dev Productivity, escalade VP Eng si % bug post-release > 5 %",
+      "fenetre": "rolling 7 jours vs baseline 30 jours"
+    },
+    "boucle_correction": {
+      "trigger": "ticket Linear ou alerte automatique",
+      "delai_re_prompt": "48 h sur la doctrine ; immédiat pour rollback feature flag pattern",
+      "cadence_revision_doctrine": "trimestriel (pricing outils + bumps modèles)",
+      "rollback": "feature flag par pattern (`agent-async-tier-1: off`) — possible en < 1 h"
+    },
+    "renvoi_livre": ["ch.19 benchmarks contestés (SWE-bench gaming — cf. benchmarks-contestes/)", "ch.20 audit trail cognitif"]
+  },
+  "roi": {
+    "axe_principal": "vitesse",
+    "axes_secondaires": ["qualite", "bienetre"],
+    "methode_mobilisee": "TEI Forrester + DORA + ch.23.7 paradoxe agentique + ch.23.8 Cigref Hard/Soft",
+    "metriques": [
+      { "id": "processing-time",       "borne_basse": "-25 %",  "cible": "-40 % tier 1",     "borne_haute": "-60 %" },
+      { "id": "pr-throughput",         "borne_basse": "+12 %",  "cible": "+25 %",             "borne_haute": "+40 %" },
+      { "id": "post-release-bug-rate", "borne_basse": "stable", "cible": "stable",            "borne_haute": "stable" },
+      { "id": "employee-engagement",   "borne_basse": "+3",     "cible": "+8 (eNPS dev)",     "borne_haute": "+12" }
+    ],
+    "non_retenu": [
+      { "id": "cost-per-line", "raison": "Anti-pattern Goodhart explicite — les LLM gonflent les lignes sans valeur" },
+      { "id": "revenue",       "raison": "Indirect, pas attribuable au programme dev tooling" },
+      { "id": "nps",           "raison": "Périmètre client, hors cas (renvoyé à CC-01)" }
+    ]
+  },
+  "operation_equipe": {
+    "personas": {
+      "porteur":  { "role": "[VP_ENG]",       "posture": "Convaincu, veut une doctrine partagée, sous pression du [CTO] sur le budget", "citation": "On a quatre outils en parallèle au standup, c'est intenable au COMEX." },
+      "sponsor":  { "role": "[CTO]",          "posture": "Arbitre final, sponsorise mais veut un plafond budget défendable au COMEX",     "citation": "Si le budget AI tooling double encore en 2027, je dois pouvoir expliquer pourquoi en une slide." },
+      "allie":    { "role": "[STAFF_ENG_DX]", "posture": "Porte le programme opérationnel, animait déjà la communauté Cursor/Claude Code en interne", "citation": "Le bon outil dépend du ticket, pas du dev. C'est ça qu'il faut écrire dans la doctrine." },
+      "opposant": { "role": "[RSSI]",         "posture": "Refus agents async sur code prod sensible, exige scoping MCP fin et masquage PII", "citation": "Un agent qui ouvre une PR sur le service de paiement, c'est non. Sur les bumps deps, je veux un audit trail complet." }
+    },
+    "equipe_par_phase": {
+      "poc": {
+        "etp_total": 1.0,
+        "composition": [
+          { "role": "Staff eng Dev Productivity", "etp": 0.5, "profil": "Pivot — anime la communauté Cursor/Claude Code, instrumente la mesure" },
+          { "role": "RSSI référent",              "etp": 0.3, "profil": "Scope MCP Vault, charte agents async" },
+          { "role": "DPO référent",               "etp": 0.2, "profil": "PII dans logs Datadog, registre interne" }
+        ]
+      },
+      "prod": { "etp_total": 2.5, "note": "1,5 ETP Staff DX + 0,5 backend MCP + 0,3 RSSI + 0,2 DPO + 0,1 change manager" }
+    },
+    "velocite": {
+      "poc":    { "duree": "2 mois",  "cadence_release": "bi-hebdo", "perimetre": "10 devs early-adopters, mode L1+L2 ghost+chat IDE, 1 squad" },
+      "pilote": { "duree": "6 mois",  "cadence_release": "hebdo",    "perimetre": "40 devs, 4 squads, ajout L3 async cloud sur tier 1 + review auto sentinelle" },
+      "prod":   { "duree": "12 mois", "cadence_release": "2 sem.",   "perimetre": "150 devs, doctrine v1, gateway LLM interne" },
+      "scale":  { "duree": "36 mois", "cadence_release": "mensuel",  "perimetre": "150 devs + sub-agents custom internes + cascade modèle mature" }
+    },
+    "sclerosants": [
+      "Pricing fluctuant des outils du marché (Anthropic weekly limits, Cursor Background changes, GitHub Copilot premium reqs) → doctrine forcément trimestrielle, jamais figée.",
+      "Service Java legacy 2018 → agent async cloud interdit dessus jusqu'à refacto (horizon 2+ ans).",
+      "Scoping MCP Vault → 2 semaines, demande masquage secret + audit RSSI + scope par squad.",
+      "Formation continue → bi-annuelle (montée patterns chat IDE + async), inertie sur les juniors.",
+      "Mesure de l'eNPS dev → outillage manquant en début, à instrumenter (form trimestriel + dashboard Datadog)."
+    ],
+    "deadlines_externes": [
+      { "echeance": "2026-08", "label": "AI Act transparence (Annexe III)",        "consequence_si_ratee": "N'impacte pas directement le code interne, mais documenter le périmètre si agents touchent scoring/RH" },
+      { "echeance": "2026-Q3", "label": "Présentation doctrine v1 au COMEX",       "consequence_si_ratee": "Plafond budget AI tooling imposé d'en haut sans concertation" },
+      { "echeance": "2027-Q1", "label": "Revue annuelle CFO du poste AI dev tooling", "consequence_si_ratee": "Coupe arbitraire du budget si pas de récit ROI consolidé" }
+    ],
+    "deadline_operationnelle": "POC démarré juil. 2026 → pilote sept. 2026 → prod avr. 2027 → scale en continu."
+  },
+  "debat": {
+    "question": "Le buy comparatif par profil installe-t-il une économie à deux vitesses dans l'équipe — sénior bien outillés vs junior bridés ?",
+    "pour": [
+      { "argument": "Aligne outil sur valeur de ticket. La latence ghost suffit au junior 80 % du temps." },
+      { "argument": "Les coûts d'Opus / Claude Code / Cursor Ultra sur 30 % des devs power users représentent 60 % du budget AI tooling — distribuer uniformément, c'est gâcher." },
+      { "argument": "DORA mesure que l'effet ROI des outils dev se concentre sur les profils sénior + tickets standards (cf. ch.23.8)." }
+    ],
+    "contre": [
+      { "argument": "Crée des classes (sénior outillé vs junior bridé) → risque culturel et turnover des juniors qui ne montent pas en compétence assistée." },
+      { "argument": "Les tickets « ROBOT-friendly » risquent d'être les seuls confiés aux juniors → spirale d'apprentissage cassée." },
+      { "argument": "Le pricing siège unique a une vertu : il pousse l'usage transverse, le portefeuille par profil le contredit." }
+    ],
+    "verdict_pondere": "GO_BUY_COMPARATIF_PAR_PROFIL — mais avec : KPI gardien employee-engagement (+8 cible, alerte si -2) ; promotion rotative (un junior par squad obtient l'outil sénior pendant 2 mois/an pour montée en compétence, financement pris sur le poste change) ; KPI « % PR juniors avec accès outil sénior pour un cas qui le méritait » mesuré trimestriellement ; le COMEX revoit la doctrine si écart eNPS sénior vs junior > 5 pts.",
+    "renvois_livre": ["ch.23.5", "ch.23.7", "ch.26"]
+  },
+  "choix_lecteur": [
+    {
+      "question": "Vous êtes [VP_ENG]. Pour qui plaidez-vous comme sponsor exécutif du programme dev agentique ?",
+      "options": [
+        { "id": "A", "label": "CFO", "consequence": "ROI Hard chiffrable au COMEX, mais arbitrage uniquement sur le coût pur, on perd le KPI qualité.", "grille_analyse": "Piège du Hard isolé — cf. ch.23.5.3", "renvoi_chapitre": "ch.23.5.3" },
+        { "id": "B", "label": "VP Eng (vous)", "consequence": "Focus qualité du code et eNPS dev mais budget fluctuant pas défendable seul au COMEX.", "grille_analyse": "Piège du Soft seul — cf. ch.23.5.4", "renvoi_chapitre": "ch.23.5.4" },
+        { "id": "C", "label": "CTO (recommandé)", "consequence": "Transverse, arbitre entre VP Eng (qualité) et CFO (budget). Sponsorise le mix portefeuille.", "grille_analyse": "Alignement Cigref Hard + Soft — cf. ch.23.7.3", "renvoi_chapitre": "ch.23.7.3" }
+      ]
+    },
+    {
+      "question": "GitHub Copilot annonce les premium requests, fin de l'illimité. Vous faites quoi en 90 jours ?",
+      "options": [
+        { "id": "A", "label": "Tenir l'illimité chez un fournisseur niche", "consequence": "Lock-in vendor + qualité incertaine ; cassure projet si le fournisseur ferme.", "grille_analyse": "Antipattern — refus d'admettre la fin du modèle économique", "renvoi_chapitre": "ch.22" },
+        { "id": "B", "label": "Accepter les quotas + les distribuer par profil via gateway interne (recommandé)", "consequence": "Doctrine itérée trimestriel, gateway LLM interne en 6 mois, plafond par ticket — défend au COMEX.", "grille_analyse": "Pattern paved road + gateway scopée (cf. CC-14)", "renvoi_chapitre": "ch.15" },
+        { "id": "C", "label": "Bascule API pure via Bedrock + cascade modèle interne complète", "consequence": "Autonomie maximale, time-to-doctrine 6 mois supplémentaires, effort lourd ETP.", "grille_analyse": "Pari long terme — valide mais coûteux", "renvoi_chapitre": "ch.22" }
+      ]
+    },
+    {
+      "question": "Tier 1 ROBOT-friendly autorisé. Vous descendez jusqu'où sur l'autonomie des agents async sur le code de prod ?",
+      "options": [
+        { "id": "A", "label": "Interdit total", "consequence": "Vous laissez 30 % du gain sur la table sur les tickets faciles. eNPS sénior dégradé.", "grille_analyse": "Antipattern — sur-prudence qui ne tient pas dans le temps", "renvoi_chapitre": "ch.21" },
+        { "id": "B", "label": "Autorisé tier 1 + review humain obligatoire (recommandé)", "consequence": "Gain mesurable sur tier 1, audit trail Datadog, rollback feature flag par pattern.", "grille_analyse": "Cadre paved road + gardien — cf. ch.20", "renvoi_chapitre": "ch.20" },
+        { "id": "C", "label": "Pleine autonomie + auto-merge si CI verte sur backlog ROBOT-friendly", "consequence": "Pari sur la couverture CI. Le jour où la CI rate, l'incident arrive en prod direct.", "grille_analyse": "Piège du pari CI — cf. ch.21 gardefous", "renvoi_chapitre": "ch.21" }
+      ]
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Pourquoi un seul outil IA pour toute l'équipe dev = antipattern 2026 ?",
+      "options": [
+        "Parce que les éditeurs IDE ne sont plus compatibles entre eux",
+        "Parce que les 4 patterns (ghost / chat IDE / async / review) sont structurellement différents — surfaces, latences, niveaux d'autonomie, modèles éco — un outil unique en laisse 30 % sur la table",
+        "Parce que la loi AI Act l'interdit",
+        "Parce que le pricing siège unique est moins cher"
+      ],
+      "bonne_reponse": 1,
+      "explication": "Chaque pattern a son ROI sur un type de ticket × profil de dev. Un Copilot universel ne maximise aucun des 4. Le bon arbitrage est un portefeuille distribué via gateway LLM avec quotas par profil.",
+      "renvoi_chapitre": "ch.14"
+    },
+    {
+      "question": "Que mesure le « tokenmaxxing » et pourquoi change-t-il le pricing dev 2026 ?",
+      "options": [
+        "Le nombre maximum de tokens dans une seule requête",
+        "L'usage maximal du quota par session (long context + boucles Opus avec tool calls) — qui a poussé Anthropic à introduire des weekly rate limits, Cursor à plafonner Auto/Background, et GitHub Copilot à passer aux premium requests : le modèle all-you-can-eat n'est plus viable",
+        "La compression maximale des tokens",
+        "Une métrique de qualité du code généré"
+      ],
+      "bonne_reponse": 1,
+      "explication": "Le tokenmaxxing désigne la pratique des power users de saturer leur quota en boucle (Opus + long context + tool calls). Anthropic, Cursor et GitHub ont tous ajusté leur pricing en 2025-2026 en réponse. Le all-you-can-eat est mort, place aux quotas distribués.",
+      "renvoi_chapitre": "ch.5"
+    },
+    {
+      "question": "Où s'arrête l'autonomie d'un agent async cloud sur le code de prod d'une scale-up SaaS B2B ?",
+      "options": [
+        "Pleine autonomie si CI verte sur tout le monorepo",
+        "Au périmètre ROBOT-friendly opt-in par repo (typage, deps, traduction, refacto pattern connu) — review humaine obligatoire, jamais sur le service legacy ni sur le code de paiement / scoring client",
+        "Aucune autonomie, tous les agents async sont interdits",
+        "L'autonomie dépend uniquement du modèle utilisé"
+      ],
+      "bonne_reponse": 1,
+      "explication": "L'autonomie agent async est opt-in par repo, jamais sur les zones sensibles (Java legacy 2018, paiement, scoring). Review humaine obligatoire avant merge, audit trail Datadog systématique, rollback feature flag immédiat possible.",
+      "renvoi_chapitre": "ch.20"
+    }
+  ],
+  "verdict": {
+    "stamp": "GO_BUY_COMPARATIF_PAR_PROFIL",
+    "label": "Buy par portefeuille, distribué par profil et par tier de ticket",
+    "conditions": [
+      "Mix portefeuille : ghost universel + chat IDE par profil + async cloud pour tier 1 + review auto en sentinelle",
+      "Gateway LLM interne avec tokens scopés par profil dev + quotas distribués + plafond par ticket",
+      "Doctrine trimestrielle révisée — le pricing des outils du marché bouge trop pour figer la doctrine à 12 mois",
+      "KPI gardien employee-engagement (eNPS dev) + KPI « % PR juniors avec outil sénior » mesuré trimestriellement",
+      "Promotion rotative : un junior par squad obtient l'outil sénior pendant 2 mois/an",
+      "MCP servers internes minimum (GitHub, Linear, Datadog, Sentry, Vault scopé, Notion, Codecov, LaunchDarkly) — effort 5-6 sem.",
+      "Tiering ticket explicite dans Linear : auto-routage tier 1 → async cloud, tier 2 → chat IDE, tier 3 → human-led",
+      "Code review auto en sentinelle obligatoire sur les PRs des agents async",
+      "Formation continue bi-annuelle, financement pris sur le poste change",
+      "Charte agents async sur code de prod : opt-in par repo, jamais sur legacy/paiement/scoring, audit trail Datadog obligatoire"
+    ]
+  },
+  "renvois_livre": ["ch.14", "ch.7", "ch.15", "ch.16", "ch.19", "ch.20", "ch.21", "ch.22", "ch.23.5", "ch.23.7", "ch.23.8", "ch.5", "ch.25", "ch.26"],
+  "figures": [
+    {
+      "id": "fig-00",
+      "titre": "Architecture SI dev actuelle — scale-up SaaS B2B 2026",
+      "fichier": "images/CC-10-dev-agentique/CC-10-fig-00-architecture-actuelle.svg",
+      "caption": "Stack dev existante avant doctrine : monorepo TS + service Java legacy + service Go, GitHub Cloud + Actions, Linear, Datadog + Sentry, Vault HCP, Notion, 4 outils IA en parallèle (Cursor, Copilot, Claude Code, Codex CLI) dont 2 hors SSO. Annotations criticité par composant."
+    },
+    {
+      "id": "fig-01",
+      "titre": "Anatomie comparée des 4 patterns d'agents de dev",
+      "fichier": "images/CC-10-dev-agentique/CC-10-fig-01-anatomie-patterns.svg",
+      "caption": "Comparatif ghost autocomplete inline / chat IDE-CLI connecté / agent async cloud / code review automatique. Pour chaque pattern : surface IDE/CI/PR, latence cible, niveau d'autonomie typique, modèle économique, ticket type."
+    },
+    {
+      "id": "fig-02",
+      "titre": "Workflow ticket en mode agentique — du tri Linear au merge GitHub",
+      "fichier": "images/CC-10-dev-agentique/CC-10-fig-02-workflow-ticket.svg",
+      "caption": "Trajectoire d'un ticket : ouverture Linear → tri par tag automatique → bifurcation par tier (tier 1 trivial → async cloud / tier 2 refacto cadré → chat IDE en pair / tier 3 feature nouvelle → human-led + ghost) → review (agent OU humain selon tier) → merge → release. Marqueurs L1-L4 par étape."
+    },
+    {
+      "id": "fig-03",
+      "titre": "Dérive des coûts inférence par pattern 2024-2026",
+      "fichier": "images/CC-10-dev-agentique/CC-10-fig-03-derive-couts.svg",
+      "caption": "Courbes par pattern de coût/dev/mois : ghost stable ~10 $, chat IDE 20 $ → 60 $, async cloud 0 $ → 140 $, review auto 5 $ → 25 $. Repères Anthropic weekly rate limits (mi-2025), retex Uber Copilot Enterprise (2025-2026), GitHub Copilot premium requests (2025-2026). Crossover gateway LLM interne vs sièges Copilot uniformes."
+    }
+  ]
+}
