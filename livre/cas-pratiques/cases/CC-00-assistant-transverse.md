@@ -19,7 +19,7 @@ auteur: Mathieu Guglielmino
 
 ## 1. « On a déployé 9 200 sièges. Combien de valeur on a déployée ? »
 
-Salle du COMEX, revue budgétaire de mi-année. Sur le slide : *« 9 200 sièges d'assistant IA déployés, 1,1 M€/an. »* Le DG est satisfait — l'entreprise est « passée à l'IA », la case est cochée, le communiqué est parti.
+Salle du COMEX, revue budgétaire de mi-année. Sur le slide : *« 9 200 sièges d'assistant IA déployés, 2,8 M€/an. »* Le DG est satisfait — l'entreprise est « passée à l'IA », la case est cochée, le communiqué est parti.
 
 Le DAF, lui, fait défiler une autre courbe : celle de l'usage réel, lue dans la console d'administration. **38 % des sièges n'ont pas été ouverts une seule fois ce mois-ci.** Et sur ceux qui le sont, l'usage médian plafonne à *« résumer un mail, écrire un message »*. Pendant ce temps, la DPO signale que 600 collaborateurs collent du contenu interne dans des outils grand public non gérés — du **shadow AI** que personne n'a cadré.
 
@@ -33,7 +33,7 @@ La leçon centrale du cas tient en une phrase : **le ROI ne vient pas du siège 
 
 Il n'y a presque rien à *intégrer* techniquement. C'est le premier renversement du cas : contrairement au copilot bancaire (CC-01) ou à l'agent vocal (CC-02), où le sclérosant est un legacy à wrapper, ici la suite native fait le branchement. Le chantier est ailleurs.
 
-![Le poste de travail numérique — où vit l'assistant, et où entre le shadow AI|1300](../images/CC-00-fig-00-poste-travail.svg)
+![Le poste de travail numérique — où vit l'assistant, et où entre le shadow AI|1300](../images/CC-00-assistant-transverse/CC-00-fig-00-poste-travail.svg)
 
 Cinq couches, qu'on connaît déjà parce qu'on travaille dedans tous les jours :
 
@@ -60,11 +60,11 @@ Ce que l'assistant fait, vraiment, se range en trois familles — et chacune est
 
 ### 3.1 Routines — le quotidien
 
-Rédaction et reformulation au ton de l'organisation, résumé d'une réunion ou d'un fil de mails avec actions à reprendre, triage et priorisation de l'inbox, traduction, mise en forme. C'est la couche d'assistance invisible du poste de travail, et c'est là que se concentrent 80 % des usages — et l'essentiel du gain de charge cognitive. Fil du livre : les [surfaces agentiques (ch. 14)](../../chapitres/ch14-surfaces-agentiques.md) et [l'IA au travail (ch. 24)](../../chapitres/ch24-ia-et-travail.md).
+Rédaction et reformulation au ton de l'organisation, résumé d'une réunion ou d'un fil de mails avec actions à reprendre, triage et priorisation de l'inbox, traduction, mise en forme. C'est la couche d'assistance invisible du poste de travail, et c'est là que se concentrent 80 % des usages — et l'essentiel du gain de charge cognitive. Fil du livre : les [surfaces agentiques (ch. 13)](../../chapitres/ch13-surfaces-agentiques.md) et [l'IA au travail (ch. 26)](../../chapitres/ch26-ia-et-travail.md).
 
 ### 3.2 Analyses — la première passe
 
-Lire un export, dégager des tendances, signaler des anomalies, générer un graphe et le commenter en langage clair. **Une première passe, pas une vérité** : à charge d'un humain de vérifier les chiffres. C'est le pont vers CC-03 — la démocratisation de l'analyse n'a de sens que si le socle data en dessous est gouverné. Fil du livre : [l'analytics agentique (ch. 16)](../../chapitres/ch16-analytics-agentique-banque.md).
+Lire un export, dégager des tendances, signaler des anomalies, générer un graphe et le commenter en langage clair. **Une première passe, pas une vérité** : à charge d'un humain de vérifier les chiffres. C'est le pont vers CC-03 — la démocratisation de l'analyse n'a de sens que si le socle data en dessous est gouverné. Fil du livre : [l'analytics agentique (ch. 18)](../../chapitres/ch18-analytics-agentique-banque.md).
 
 ### 3.3 Veille — le deep research agentique
 
@@ -85,7 +85,7 @@ La frontière n'est pas technique : elle est de **confiance et de réversibilit�
 
 Prenons un déclenchement réel : *« fais-moi le point sur les offres d'assistant IA souverain pour le secteur public européen, ce trimestre. »*
 
-![La boucle de deep research agentique — fan-out, vérification, synthèse|1300](../images/CC-00-fig-02-deep-research.svg)
+![La boucle de deep research agentique — fan-out, vérification, synthèse|1300](../images/CC-00-assistant-transverse/CC-00-fig-02-deep-research.svg)
 
 **1. Plan.** L'agent décompose la question en sous-questions (offres, souveraineté, références publiques, prix, conformité) et trace un plan de recherche. C'est une vraie [boucle agent (ch. 7)](../../chapitres/ch07-boucle-agentique.md), pas une requête unique.
 
@@ -98,7 +98,7 @@ Prenons un déclenchement réel : *« fais-moi le point sur les offres d'assista
 
 **4. Synthesize.** Une note structurée, citée, datée, avec un niveau de confiance par affirmation et des zones d'incertitude assumées.
 
-**5. Deliver.** Publication dans un doc partagé ou un canal, sources cliquables, prompt et sources tracés dans le [journal d'audit (ch. 18)](../../chapitres/ch18-observabilite-cognitive-audit-trail.md) — la confidentialité des prompts est ici un sujet de premier rang.
+**5. Deliver.** Publication dans un doc partagé ou un canal, sources cliquables, prompt et sources tracés dans le [journal d'audit (ch. 20)](../../chapitres/ch20-observabilite-cognitive-audit-trail.md) — la confidentialité des prompts est ici un sujet de premier rang.
 
 Ce qui prenait une demi-journée prend quelques minutes. Mais — et c'est le cœur du cas — **ce gain n'existe que si quelqu'un fait réellement cette veille de cette façon.** Le siège déployé ne le garantit pas.
 
@@ -136,7 +136,7 @@ Grille CC-00, en k€. Lecture attentive du poste inférence — qui n'est pas c
 
 | Poste | Amorçage 3 m | Cadrage 6 m | Généralisation 12 m | Régime 36 m |
 | --- | --- | --- | --- | --- |
-| Inférence *(licences par siège)* | 18 | 140 | 1 100 | 980 |
+| Inférence *(licences par siège)* | 18 | 140 | 2 760 | 1 710 |
 | Infra | 4 | 10 | 30 | 50 |
 | Équipe | 80 | 220 | 420 | 380 |
 | Data | 10 | 40 | 90 | 80 |
@@ -144,26 +144,26 @@ Grille CC-00, en k€. Lecture attentive du poste inférence — qui n'est pas c
 | Gouvernance | 10 | 50 | 160 | 200 |
 | Sécurité | 8 | 40 | 130 | 150 |
 | **Change** | **30** | **180** | **520** | **480** |
-| **Total** | **164** | **700** | **2 510** | **2 410** |
-| Coût / usage à valeur | 9,50 € | 3,80 € | 1,45 € | 0,70 € |
+| **Total** | **164** | **700** | **4 170** | **3 140** |
+| Coût / usage à valeur | 9,50 € | 3,80 € | 2,40 € | 0,90 € |
 
-![Huit postes sur quatre phases — largeur ∝ coût total de la phase, hauteur = part de chaque poste ; l'inférence est une licence par tête|1300](../images/CC-00-fig-03-postes-phases.svg)
+![Huit postes sur quatre phases — largeur ∝ coût total de la phase, hauteur = part de chaque poste ; l'inférence est une licence par tête|1300](../images/CC-00-assistant-transverse/CC-00-fig-03-postes-phases.svg)
 
 Lecture transverse, et elle est singulière :
 
 - **L'inférence, ici, ce sont les licences par siège** — un coût fixe par tête, **sans aucune économie d'échelle**. Ajouter un siège ajoute son coût plein. C'est l'inverse de tous les autres cas, où scaler fait baisser le coût marginal.
 
-- **Le poste inférence ne baisse en phase Régime que parce qu'on DÉSABONNE les sièges dormants** (1 100 → 980 k€) et qu'on segmente premium/souverain. On ne l'optimise pas techniquement : on arrête de payer pour ce qui ne sert pas.
+- **Le poste inférence ne baisse en phase Régime que parce qu'on DÉSABONNE les sièges dormants** (2 760 → 1 710 k€) et qu'on segmente premium/souverain. On ne l'optimise pas techniquement : on arrête de payer pour ce qui ne sert pas.
 
-- **Le poste dominant après l'inférence est le change** (30 → 520 k€) — l'enablement, les champions, la formation. C'est le paradoxe agentique ([ch. 21.7](../../chapitres/ch21-roi-paradoxe-agentique.md)) appliqué à l'horizontal : **le poste qui crée la valeur — cadrer l'usage humain — est aussi le plus dur à attribuer.**
+- **Le poste dominant après l'inférence est le change** (30 → 520 k€) — l'enablement, les champions, la formation. C'est le paradoxe agentique ([ch. 23.7](../../chapitres/ch23-roi-paradoxe-agentique.md)) appliqué à l'horizontal : **le poste qui crée la valeur — cadrer l'usage humain — est aussi le plus dur à attribuer.**
 
-- **Le coût par usage à valeur divise par ~13** (9,50 € → 0,70 €) non par prouesse technique, mais par **montée du taux d'usage cadré**. Le levier est l'usage, pas le nombre de sièges.
+- **Le coût par usage à valeur divise par ~11** (9,50 € → 0,90 €) non par prouesse technique, mais par **montée du taux d'usage cadré**. Le levier est l'usage, pas le nombre de sièges.
 
 Il n'y a donc **pas** de crossover build/buy ici, mais un **seuil d'usage cadré** : tant que le taux d'usage réel à valeur reste sous ~40 % des sièges, le coût par usage utile reste prohibitif — le siège dormant est un coût pur. Au-delà, l'enablement s'amortit et le coût par usage s'effondre.
 
 ## 9. Gouvernance — le shadow AI, à cadrer plutôt qu'à combattre
 
-**Ligne AI Act** : la plupart des usages relèvent du **risque minimal** (productivité interne). Obligation de transparence ([Art. 50](../../chapitres/ch23-gouvernance-ai-act.md)) quand l'assistant génère du contenu diffusé à l'externe. Les obligations GPAI pèsent sur le fournisseur du modèle, pas sur l'entreprise déployeuse. **L'essentiel n'est pas l'AI Act, c'est le RGPD et la confidentialité.**
+**Ligne AI Act** : la plupart des usages relèvent du **risque minimal** (productivité interne). Obligation de transparence ([Art. 50](../../chapitres/ch25-gouvernance-ai-act.md)) quand l'assistant génère du contenu diffusé à l'externe. Les obligations GPAI pèsent sur le fournisseur du modèle, pas sur l'entreprise déployeuse. **L'essentiel n'est pas l'AI Act, c'est le RGPD et la confidentialité.**
 
 Le sujet réel de gouvernance, c'est le **shadow AI**. 600 collaborateurs l'utilisent déjà. Trois réponses possibles, une seule tient :
 
@@ -187,7 +187,7 @@ L'évaluation d'un assistant horizontal n'est pas une régression suite classiqu
 
 ## 11. ROI — le fantôme qu'on finance chaque mois
 
-Axe principal : **Bien-être** (soulagement, démocratisation). Axe secondaire : Vitesse. Méthode : Cigref Hard/Soft + TEI Forrester prudent + arbre [ch. 21.6](../../chapitres/ch21-roi-paradoxe-agentique.md), **avec l'honnêteté que l'horizontal est dominé par le Soft.**
+Axe principal : **Bien-être** (soulagement, démocratisation). Axe secondaire : Vitesse. Méthode : Cigref Hard/Soft + TEI Forrester prudent + arbre [ch. 23.6](../../chapitres/ch23-roi-paradoxe-agentique.md), **avec l'honnêteté que l'horizontal est dominé par le Soft.**
 
 | Métrique | Borne basse | Cible | Borne haute | Catégorie |
 | --- | --- | --- | --- | --- |
@@ -198,13 +198,13 @@ Axe principal : **Bien-être** (soulagement, démocratisation). Axe secondaire :
 
 Le piège du cas est dans le titre du slide d'ouverture : **mesurer les sièges déployés.** Le siège est un indicateur d'input, pas de valeur.
 
-![Le ROI fantôme — l'entonnoir du siège déployé à la valeur : la falaise entre « déployé » et « à valeur »|1300](../images/CC-00-fig-01-roi-fantome.svg)
+![Le ROI fantôme — l'entonnoir du siège déployé à la valeur : la falaise entre « déployé » et « à valeur »|1300](../images/CC-00-assistant-transverse/CC-00-fig-01-roi-fantome.svg)
 
 > **KPI gardien : `employee-engagement`** couplé au **taux d'usage actif cadré**. Le temps réalloué ne vaut que s'il est réinvesti sur de la valeur ET vécu comme un soulagement, pas une surveillance. Un siège non utilisé est un coût pur — l'usage réel est le seul juge honnête. C'est le déclencheur du **désabonnement des sièges dormants.**
 
 **Non retenues** : `revenue` (attribution horizontale impossible — ne pas la promettre, c'est le ROI fantôme), `nps` (hors périmètre), `employee-turnover` (trop indirect).
 
-## 12. L'équipe, la vélocité, les sclérosants
+## 15. L'équipe, la vélocité, les sclérosants
 
 **4,6 ETP** pour l'amorçage, avec un poste load-bearing qui n'est pas celui qu'on attend :
 
@@ -228,7 +228,7 @@ En Régime, 5 ETP de cœur (centre d'enablement) + un réseau de champions distr
 
 **Deadlines** : transparence AI Act (2026-08, léger), et surtout la **revue de renouvellement des licences trimestrielle** — sans preuve d'usage, le DAF gèle le budget. Le siège dormant ne se renouvelle pas.
 
-## 13. Le débat — valeur réelle ou ROI fantôme ?
+## 16. Le débat — valeur réelle ou ROI fantôme ?
 
 **Pour** : soulagement réel sur les routines pour qui s'en saisit ; veille et première passe d'analyse démocratisées qui désengorgent les experts ; un outil officiel sûr comme meilleure réponse au shadow AI déjà présent.
 
@@ -236,35 +236,35 @@ En Régime, 5 ETP de cœur (centre d'enablement) + un réseau de champions distr
 
 **Verdict pondéré** : GO mais buy **cadré**. On n'achète pas un ROI, on achète une **capacité** — et le ROI se construit dans la couche enablement + gouvernance + mesure. KPI honnête = taux d'usage actif cadré, pas nombre de sièges. Désabonner les dormants, segmenter le premium, transformer le shadow AI en usage officiel.
 
-## 14. Trois choix qu'il faut faire
+## 13. Trois choix qu'il faut faire
 
-### 14.1 Comment mesurer le succès, au COMEX ?
+### 13.1 Comment mesurer le succès, au COMEX ?
 
 *Vous êtes le DG.*
 
-**A. Le nombre de sièges déployés.** 9 200 sièges, 100 % de couverture — puis le DAF révèle que 38 % dorment. Le ROI promis est introuvable. *Piège de l'indicateur d'input ([ch. 21.5](../../chapitres/ch21-roi-paradoxe-agentique.md)).*
+**A. Le nombre de sièges déployés.** 9 200 sièges, 100 % de couverture — puis le DAF révèle que 38 % dorment. Le ROI promis est introuvable. *Piège de l'indicateur d'input ([ch. 23.5](../../chapitres/ch23-roi-paradoxe-agentique.md)).*
 
-**B. Le taux de satisfaction déclaré.** Les enquêtes sont bonnes, mais aucun retour chiffrable et aucune preuve de réinvestissement du temps. *Piège du Soft seul ([ch. 21.5.4](../../chapitres/ch21-roi-paradoxe-agentique.md)).*
+**B. Le taux de satisfaction déclaré.** Les enquêtes sont bonnes, mais aucun retour chiffrable et aucune preuve de réinvestissement du temps. *Piège du Soft seul ([ch. 23.5.4](../../chapitres/ch23-roi-paradoxe-agentique.md)).*
 
-**C. Le taux d'usage actif cadré + le temps réalloué.** On mesure l'usage réel par cas d'usage, on désabonne les dormants, on réinvestit sur ce qui marche. *Le seul cadrage honnête ([ch. 21.7.3](../../chapitres/ch21-roi-paradoxe-agentique.md)).*
+**C. Le taux d'usage actif cadré + le temps réalloué.** On mesure l'usage réel par cas d'usage, on désabonne les dormants, on réinvestit sur ce qui marche. *Le seul cadrage honnête ([ch. 23.7.3](../../chapitres/ch23-roi-paradoxe-agentique.md)).*
 
-### 14.2 600 collaborateurs en shadow AI. Vous faites quoi ?
+### 13.2 600 collaborateurs en shadow AI. Vous faites quoi ?
 
-**A. Bloquer les outils non gérés.** L'usage continue sur les mobiles perso, hors visibilité. *Antipattern ([ch. 13](../../chapitres/ch13-mcp-securite.md)).*
+**A. Bloquer les outils non gérés.** L'usage continue sur les mobiles perso, hors visibilité. *Antipattern ([ch. 16](../../chapitres/ch16-mcp-securite.md)).*
 
-**B. Fournir un outil officiel sûr + DLP + charte.** 600 contournements deviennent 600 usages visibles et sûrs. *La bonne réponse ([ch. 23](../../chapitres/ch23-gouvernance-ai-act.md)) : cadrer plutôt que combattre.*
+**B. Fournir un outil officiel sûr + DLP + charte.** 600 contournements deviennent 600 usages visibles et sûrs. *La bonne réponse ([ch. 25](../../chapitres/ch25-gouvernance-ai-act.md)) : cadrer plutôt que combattre.*
 
 **C. Fermer les yeux.** Un jour, un document confidentiel collé dans un outil grand public, et c'est l'incident RGPD. *Le risque différé.*
 
-### 14.3 Un budget premium limité. Vous le déployez comment ?
+### 13.3 Un budget premium limité. Vous le déployez comment ?
 
 **A. À tout le monde, pour l'équité.** Outil cher dilué sur 9 200 sièges dont la plupart ne feront jamais de deep research. *Piège de l'uniformité.*
 
 **B. Ciblé sur les profils veille / analyse / R&D.** Le premium va aux quelques centaines qui en tirent une vraie valeur ; la suite native couvre le quotidien des autres. *La bonne réponse : segmentation par population.*
 
-**C. Pas de premium du tout.** Les profils à valeur retournent au ChatGPT perso pour faire le deep research que la suite native fait mal. *Fausse économie ([ch. 13](../../chapitres/ch13-mcp-securite.md)).*
+**C. Pas de premium du tout.** Les profils à valeur retournent au ChatGPT perso pour faire le deep research que la suite native fait mal. *Fausse économie ([ch. 16](../../chapitres/ch16-mcp-securite.md)).*
 
-## 15. Quiz
+## 17. Quiz
 
 **Q1.** Pourquoi le ROI de l'assistant transverse est-il si difficile à chiffrer en Hard ?
 - Parce que le modèle de langage est trop cher
@@ -290,7 +290,7 @@ En Régime, 5 ETP de cœur (centre d'enablement) + un réseau de champions distr
 
 *On achète la suite ; on construit ce qui crée la valeur : 12 cas d'usage, les champions, la gouvernance du shadow AI, la mesure de l'usage réel.*
 
-## 16. Verdict — GO en buy cadré
+## 18. Verdict — GO en buy cadré
 
 **GO_BUY_CADRE_PAR_USAGE** — la valeur est dans l'usage cadré, pas dans le siège déployé.
 
@@ -310,17 +310,17 @@ Aux conditions remplies, l'assistant transverse cesse d'être une ligne de factu
 ## Renvois livre
 
 - **[Ch. 7 — Boucle agent (deep research : fan-out → vérification → synthèse)](../../chapitres/ch07-boucle-agentique.md)**
-- **[Ch. 12 — MCP plateforme (deep research interne)](../../chapitres/ch12-mcp-plateforme.md)**
-- **[Ch. 13 — Sécurité MCP (droits hérités, shadow AI)](../../chapitres/ch13-mcp-securite.md)**
-- **[Ch. 14 — Surfaces agentiques (l'assistant dans le poste de travail)](../../chapitres/ch14-surfaces-agentiques.md)**
-- **[Ch. 16 — Analytics agentique (première passe d'analyse — pont vers CC-03)](../../chapitres/ch16-analytics-agentique-banque.md)**
-- **[Ch. 17 — Évaluation agent](../../chapitres/ch17-evaluation-benchmarks.md)**
-- **[Ch. 18 — Audit trail cognitif (confidentialité des prompts)](../../chapitres/ch18-observabilite-cognitive-audit-trail.md)**
-- **[Ch. 21.5 — Hard vs Soft (le ROI fantôme de l'horizontal)](../../chapitres/ch21-roi-paradoxe-agentique.md)**
-- **[Ch. 21.6 — Arbre de décision méthode ROI](../../chapitres/ch21-roi-paradoxe-agentique.md)**
-- **[Ch. 21.7 — Paradoxe agentique (le poste qui crée la valeur est le plus dur à attribuer)](../../chapitres/ch21-roi-paradoxe-agentique.md)**
-- **[Ch. 23 — Gouvernance AI Act (transparence, shadow AI)](../../chapitres/ch23-gouvernance-ai-act.md)**
-- **[Ch. 24 — IA et travail (réinvestissement du temps, montée en compétences)](../../chapitres/ch24-ia-et-travail.md)**
+- **[Ch. 15 — MCP plateforme (deep research interne)](../../chapitres/ch15-mcp-plateforme.md)**
+- **[Ch. 16 — Sécurité MCP (droits hérités, shadow AI)](../../chapitres/ch16-mcp-securite.md)**
+- **[Ch. 13 — Surfaces agentiques (l'assistant dans le poste de travail)](../../chapitres/ch13-surfaces-agentiques.md)**
+- **[Ch. 18 — Analytics agentique (première passe d'analyse — pont vers CC-03)](../../chapitres/ch18-analytics-agentique-banque.md)**
+- **[Ch. 19 — Évaluation agent](../../chapitres/ch19-evaluation-benchmarks.md)**
+- **[Ch. 20 — Audit trail cognitif (confidentialité des prompts)](../../chapitres/ch20-observabilite-cognitive-audit-trail.md)**
+- **[Ch. 23.5 — Hard vs Soft (le ROI fantôme de l'horizontal)](../../chapitres/ch23-roi-paradoxe-agentique.md)**
+- **[Ch. 23.6 — Arbre de décision méthode ROI](../../chapitres/ch23-roi-paradoxe-agentique.md)**
+- **[Ch. 23.7 — Paradoxe agentique (le poste qui crée la valeur est le plus dur à attribuer)](../../chapitres/ch23-roi-paradoxe-agentique.md)**
+- **[Ch. 25 — Gouvernance AI Act (transparence, shadow AI)](../../chapitres/ch25-gouvernance-ai-act.md)**
+- **[Ch. 26 — IA et travail (réinvestissement du temps, montée en compétences)](../../chapitres/ch26-ia-et-travail.md)**
 
 ---
 

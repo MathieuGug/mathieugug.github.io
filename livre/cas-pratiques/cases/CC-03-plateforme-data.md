@@ -31,7 +31,7 @@ C'est le cas qui répond directement à un angle mort récurrent : **quand on pa
 
 Avant le modèle, avant le prompt, il faut regarder la chaîne de la donnée. Et y repérer le trou.
 
-![Architecture du socle data moderne — et le gardien sécurité/accès|1300](../images/CC-03-fig-00-architecture-actuelle.svg)
+![Architecture du socle data moderne — et le gardien sécurité/accès|1300](../images/CC-03-plateforme-data/CC-03-fig-00-architecture-actuelle.svg)
 
 Six couches structurent la plateforme data d'une organisation mid-to-large 2026 :
 
@@ -60,15 +60,15 @@ L'analytics agentique se range en trois familles — qui sont aussi trois promes
 
 ### 3.1 Automatiser — la qualité et les ops data
 
-Des agents data quality qui détectent les anomalies (volumétrie, fraîcheur, distribution) **avant** qu'elles ne polluent les tableaux de bord, génèrent et maintiennent les tests dbt, proposent des corrections de pipeline en pull request, documentent automatiquement les tables (owner, définition, lineage) pour résorber la dette de catalogue. Fil du livre : [l'analytics agentique (ch. 16)](../../chapitres/ch16-analytics-agentique-banque.md) et [l'observabilité (ch. 18)](../../chapitres/ch18-observabilite-cognitive-audit-trail.md).
+Des agents data quality qui détectent les anomalies (volumétrie, fraîcheur, distribution) **avant** qu'elles ne polluent les tableaux de bord, génèrent et maintiennent les tests dbt, proposent des corrections de pipeline en pull request, documentent automatiquement les tables (owner, définition, lineage) pour résorber la dette de catalogue. Fil du livre : [l'analytics agentique (ch. 18)](../../chapitres/ch18-analytics-agentique-banque.md) et [l'observabilité (ch. 20)](../../chapitres/ch20-observabilite-cognitive-audit-trail.md).
 
 ### 3.2 Analyser — le text-to-SQL gouverné et le data storytelling
 
-Une question en langage naturel → un SQL généré **sur la couche sémantique** → un chiffre restitué avec sa définition et son lineage. Puis l'exploration conversationnelle (*« et par région ? »*, *« vs l'an dernier ? »*) sans réécrire de requête, et le dashboard généré avec un récit commenté — hypothèses et limites explicites. Fil du livre : [ch. 16](../../chapitres/ch16-analytics-agentique-banque.md) et les [surfaces agentiques (ch. 14)](../../chapitres/ch14-surfaces-agentiques.md).
+Une question en langage naturel → un SQL généré **sur la couche sémantique** → un chiffre restitué avec sa définition et son lineage. Puis l'exploration conversationnelle (*« et par région ? »*, *« vs l'an dernier ? »*) sans réécrire de requête, et le dashboard généré avec un récit commenté — hypothèses et limites explicites. Fil du livre : [ch. 18](../../chapitres/ch18-analytics-agentique-banque.md) et les [surfaces agentiques (ch. 13)](../../chapitres/ch13-surfaces-agentiques.md).
 
 ### 3.3 Démocratiser — l'accès métier, sous condition
 
-Ouvrir le self-service aux métiers — mais **uniquement sur les domaines dont la couche sémantique est gouvernée**, en appliquant le RBAC (chacun ne voit que ce qu'il a le droit de voir), en traçant chaque réponse pour l'auditabilité. Le périmètre s'élève à mesure que la gouvernance le couvre — jamais avant. Fil du livre : [MCP plateforme (ch. 12)](../../chapitres/ch12-mcp-plateforme.md) et [gouvernance (ch. 23)](../../chapitres/ch23-gouvernance-ai-act.md).
+Ouvrir le self-service aux métiers — mais **uniquement sur les domaines dont la couche sémantique est gouvernée**, en appliquant le RBAC (chacun ne voit que ce qu'il a le droit de voir), en traçant chaque réponse pour l'auditabilité. Le périmètre s'élève à mesure que la gouvernance le couvre — jamais avant. Fil du livre : [MCP plateforme (ch. 15)](../../chapitres/ch15-mcp-plateforme.md) et [gouvernance (ch. 25)](../../chapitres/ch25-gouvernance-ai-act.md).
 
 ## 4. Quatre niveaux d'autonomie — et le quatrième interdit sur les chiffres officiels
 
@@ -89,17 +89,17 @@ Reprenons une question banale : *« quel est notre taux de churn sur le segment 
 
 **Sans cette couche, cette étape hallucine une définition plausible — la racine du chiffre faux.** C'est tout le cas en une ligne.
 
-**2. Check accès (RBAC).** L'agent vérifie que l'utilisateur a le droit de voir le segment PME — `iam-mcp.check_scope(user, dataset)`. Le text-to-SQL hérite de ses droits, pas plus ([ch. 13](../../chapitres/ch13-mcp-securite.md)).
+**2. Check accès (RBAC).** L'agent vérifie que l'utilisateur a le droit de voir le segment PME — `iam-mcp.check_scope(user, dataset)`. Le text-to-SQL hérite de ses droits, pas plus ([ch. 16](../../chapitres/ch16-mcp-securite.md)).
 
 **3. Generate SQL.** Le SQL est généré sur le modèle gouverné, pas sur les tables brutes. La définition gouvernée garantit l'unicité du calcul.
 
 **4. Execute sous garde-fou compute.** Exécution avec limites de scan et cache pour maîtriser le coût facturé à l'usage.
 
-**5. Verify.** Sanity checks : comparaison à l'historique, cohérence d'ordre de grandeur. Si l'écart est suspect → **un drapeau, pas un chiffre faux affirmé** ([ch. 17](../../chapitres/ch17-evaluation-benchmarks.md)).
+**5. Verify.** Sanity checks : comparaison à l'historique, cohérence d'ordre de grandeur. Si l'écart est suspect → **un drapeau, pas un chiffre faux affirmé** ([ch. 19](../../chapitres/ch19-evaluation-benchmarks.md)).
 
-**6. Answer.** Le chiffre est restitué **avec sa définition gouvernée, son lineage et son niveau de confiance**. La traçabilité *est* la confiance ([ch. 18](../../chapitres/ch18-observabilite-cognitive-audit-trail.md)).
+**6. Answer.** Le chiffre est restitué **avec sa définition gouvernée, son lineage et son niveau de confiance**. La traçabilité *est* la confiance ([ch. 20](../../chapitres/ch20-observabilite-cognitive-audit-trail.md)).
 
-![La même question, deux réponses — pourquoi la couche sémantique décide tout|1300](../images/CC-03-fig-01-semantique.svg)
+![La même question, deux réponses — pourquoi la couche sémantique décide tout|1300](../images/CC-03-plateforme-data/CC-03-fig-01-semantique.svg)
 
 La figure le dit d'un coup d'œil : la même question, sans couche sémantique, donne sept chiffres ; avec une couche sémantique gouvernée, elle en donne un, tracé. **Le modèle de langage est interchangeable ; le socle ne l'est pas.**
 
@@ -164,21 +164,21 @@ Grille CC-03, en k€. Deux postes à surveiller : l'infra et la data.
 | **Total**                        | **298**   | **910**         | **2 240**            | **3 680**         |
 | Coût / requête à valeur          | 14,00 €   | 4,50 €          | 1,10 €               | 0,45 €            |
 
-![Huit postes sur quatre phases — largeur ∝ coût total de la phase, hauteur = part de chaque poste ; l'infra compute et la data dominent dès le socle|1300](../images/CC-03-fig-03-postes-phases.svg)
+![Huit postes sur quatre phases — largeur ∝ coût total de la phase, hauteur = part de chaque poste ; l'infra compute et la data dominent dès le socle|1300](../images/CC-03-plateforme-data/CC-03-fig-03-postes-phases.svg)
 
 Lecture transverse :
 
-- **L'infra (compute warehouse) est ici un poste dominant et croissant** (40 → 620 k€) — le self-serve à 2 000 personnes consomme du compute facturé à l'usage. D'où le **FinOps compute** en phase Scale (cache, requêtes gouvernées, limites de scan), et le renvoi à l'[IA frugale (ch. 22)](../../chapitres/ch22-ia-frugale.md).
+- **L'infra (compute warehouse) est ici un poste dominant et croissant** (40 → 620 k€) — le self-serve à 2 000 personnes consomme du compute facturé à l'usage. D'où le **FinOps compute** en phase Scale (cache, requêtes gouvernées, limites de scan), et le renvoi à l'[IA frugale (ch. 24)](../../chapitres/ch24-ia-frugale.md).
 
 - **Le poste data est lourd dès le départ** (60 k€ au socle) parce que la modélisation sémantique et la qualité **sont** le chantier. Ce n'est pas une externalité, c'est le cœur.
 
 - **Le coût par requête à valeur divise par ~30** (14 € → 0,45 €) non par optimisation du modèle, mais par **amortissement du socle sur les consommateurs en aval**. C'est le mécanisme central du cas.
 
-- **Le ROI du socle est diffus** : il ne rend rien seul, il multiplie la valeur de tout ce qui le consomme. Paradoxe agentique sur une fondation ([ch. 21.7](../../chapitres/ch21-roi-paradoxe-agentique.md)).
+- **Le ROI du socle est diffus** : il ne rend rien seul, il multiplie la valeur de tout ce qui le consomme. Paradoxe agentique sur une fondation ([ch. 23.7](../../chapitres/ch23-roi-paradoxe-agentique.md)).
 
 Le **crossover du socle** : sous ~3-4 domaines gouvernés et quelques centaines de consommateurs, le socle est un coût fixe lourd qui ne se justifie pas. Au-delà, il s'amortit sur le nombre de cas et de copilots métiers qui le réutilisent **sans le repayer** — chaque copilot bancaire (CC-01), chaque agent vocal (CC-02) consomme ce socle. C'est l'analogue data du crossover de flotte (CC-11).
 
-![Le crossover du socle — un ROI diffus qui s'amortit sur les cas en aval|1300](../images/CC-03-fig-02-crossover-socle.svg)
+![Le crossover du socle — un ROI diffus qui s'amortit sur les cas en aval|1300](../images/CC-03-plateforme-data/CC-03-fig-02-crossover-socle.svg)
 
 ## 10. Gouvernance — le RGPD avant l'AI Act, et le gardien d'accès
 
@@ -208,9 +208,9 @@ Quatre temps, avec une métrique bloquante singulière.
 
 C'est la règle d'or de l'évaluation analytics : **un dashboard faux est pire que pas de dashboard** — il fait prendre une mauvaise décision, avec confiance.
 
-## 12. ROI — le socle qui multiplie sans jamais rendre seul
+## 15. ROI — le socle qui multiplie sans jamais rendre seul
 
-Axe principal : **Bien-être** (démocratisation, temps analyste gagné). Secondaires : Qualité, Coût. Méthode : Cigref Hard/Soft + TEI Forrester + arbre [ch. 21.6](../../chapitres/ch21-roi-paradoxe-agentique.md), **avec l'honnêteté que le socle a un ROI diffus.**
+Axe principal : **Bien-être** (démocratisation, temps analyste gagné). Secondaires : Qualité, Coût. Méthode : Cigref Hard/Soft + TEI Forrester + arbre [ch. 23.6](../../chapitres/ch23-roi-paradoxe-agentique.md), **avec l'honnêteté que le socle a un ROI diffus.**
 
 | Métrique | Borne basse | Cible | Borne haute | Catégorie |
 | --- | --- | --- | --- | --- |
@@ -223,7 +223,7 @@ Axe principal : **Bien-être** (démocratisation, temps analyste gagné). Second
 
 **Non retenues** : `revenue` (le socle ne génère pas de CA directement — il multiplie la valeur des cas en aval ; le promettre serait malhonnête), `conversion-rate` (attribution impossible), `system-availability` (suivi en SRE, pas en ROI primaire).
 
-## 13. L'équipe, la vélocité, les sclérosants
+## 16. L'équipe, la vélocité, les sclérosants
 
 **7,1 ETP** pour le socle, avec deux postes load-bearing :
 
@@ -248,7 +248,7 @@ En prod, 7 ETP de cœur — puis **le socle est consommé (mutualisé) par les �
 
 **Deadlines** : RGPD en continu (le RBAC durci avant ouverture), revue FinOps compute trimestrielle, et un **gate de gouvernance avant chaque ouverture de domaine** — démocratiser un domaine non gouverné, c'est garantir des chiffres faux à l'échelle.
 
-## 14. Le débat — démocratiser maintenant, ou sécuriser d'abord ?
+## 13. Le débat — démocratiser maintenant, ou sécuriser d'abord ?
 
 **Pour démocratiser vite** : 45 % du temps analyste part dans des requêtes triviales que le self-serve gouverné absorbe ; une vérité unique par métrique met fin aux débats de COMEX ; les agents data quality détectent les anomalies avant publication.
 
@@ -256,35 +256,35 @@ En prod, 7 ETP de cœur — puis **le socle est consommé (mutualisé) par les �
 
 **Verdict pondéré** : GO mais **socle d'abord** — couche sémantique gouvernée + RBAC durci + qualité automatisée **avant** toute démocratisation. Ouverture par paliers, chaque domaine ouvert seulement quand il est gouverné. KPI gardien = exactitude des chiffres : on referme un domaine plutôt que de laisser circuler du faux.
 
-## 15. Trois choix qu'il faut faire
+## 17. Trois choix qu'il faut faire
 
-### 15.1 Le DG veut le self-service pour 2 000 personnes dans 3 mois
+### 17.1 Le DG veut le self-service pour 2 000 personnes dans 3 mois
 
 *Vous êtes le CDO.*
 
-**A. Vous l'ouvrez à tous tout de suite.** En trois mois, chaque direction a son chiffre, les COMEX deviennent des disputes de définitions, un commercial cite un churn faux à un client. *Le piège de la démocratisation prématurée ([ch. 21.7](../../chapitres/ch21-roi-paradoxe-agentique.md)).*
+**A. Vous l'ouvrez à tous tout de suite.** En trois mois, chaque direction a son chiffre, les COMEX deviennent des disputes de définitions, un commercial cite un churn faux à un client. *Le piège de la démocratisation prématurée ([ch. 23.7](../../chapitres/ch23-roi-paradoxe-agentique.md)).*
 
 **B. Vous refusez tant que tout n'est pas parfait.** Vous attendez un socle complet sur tous les domaines — 18 mois — pendant que les métiers retournent aux spreadmarts. *Le perfectionnisme tue l'adoption.*
 
-**C. Vous ouvrez par paliers, domaine par domaine gouverné.** Vous gouvernez d'abord le commerce, l'ouvrez, prouvez la confiance, enchaînez. *La bonne réponse ([ch. 21.6](../../chapitres/ch21-roi-paradoxe-agentique.md)) : on démocratise du fiable, pas du faux.*
+**C. Vous ouvrez par paliers, domaine par domaine gouverné.** Vous gouvernez d'abord le commerce, l'ouvrez, prouvez la confiance, enchaînez. *La bonne réponse ([ch. 23.6](../../chapitres/ch23-roi-paradoxe-agentique.md)) : on démocratise du fiable, pas du faux.*
 
-### 15.2 Le text-to-SQL va hériter des droits. Avant d'ouvrir, vous…
+### 17.2 Le text-to-SQL va hériter des droits. Avant d'ouvrir, vous…
 
-**A. Vous ouvrez avec les droits existants.** Les accès historiques sont trop larges ; le premier jour, un métier obtient des données RH qu'il n'aurait jamais dû voir. *Antipattern ([ch. 13](../../chapitres/ch13-mcp-securite.md)).*
+**A. Vous ouvrez avec les droits existants.** Les accès historiques sont trop larges ; le premier jour, un métier obtient des données RH qu'il n'aurait jamais dû voir. *Antipattern ([ch. 16](../../chapitres/ch16-mcp-securite.md)).*
 
-**B. Vous durcissez le RBAC et tracez le lineage avant.** Le text-to-SQL n'expose jamais plus que les droits réels. *La bonne réponse ([ch. 13](../../chapitres/ch13-mcp-securite.md)) : sécuriser l'accès est la condition d'ouverture.*
+**B. Vous durcissez le RBAC et tracez le lineage avant.** Le text-to-SQL n'expose jamais plus que les droits réels. *La bonne réponse ([ch. 16](../../chapitres/ch16-mcp-securite.md)) : sécuriser l'accès est la condition d'ouverture.*
 
 **C. Vous comptez sur la DLP après coup.** La DLP est un filet, pas un mur ; les données ont déjà circulé avant l'alerte. *Faux confort.*
 
-### 15.3 Un agent renvoie un chiffre incohérent avec l'historique
+### 17.3 Un agent renvoie un chiffre incohérent avec l'historique
 
-**A. Afficher le chiffre quand même.** Le métier décide dessus ; l'incohérence n'est découverte qu'après. *Un chiffre faux affirmé avec confiance est le pire résultat ([ch. 17](../../chapitres/ch17-evaluation-benchmarks.md)).*
+**A. Afficher le chiffre quand même.** Le métier décide dessus ; l'incohérence n'est découverte qu'après. *Un chiffre faux affirmé avec confiance est le pire résultat ([ch. 19](../../chapitres/ch19-evaluation-benchmarks.md)).*
 
-**B. Lever un drapeau d'incertitude.** L'agent signale l'écart, propose de vérifier plutôt que d'affirmer. *La bonne réponse ([ch. 17](../../chapitres/ch17-evaluation-benchmarks.md)) : la vérification est le cœur de l'éval analytics.*
+**B. Lever un drapeau d'incertitude.** L'agent signale l'écart, propose de vérifier plutôt que d'affirmer. *La bonne réponse ([ch. 19](../../chapitres/ch19-evaluation-benchmarks.md)) : la vérification est le cœur de l'éval analytics.*
 
 **C. Bloquer tout le domaine.** Sur-réaction sur un cas isolé : le drapeau ciblé vaut mieux que la fermeture sur un faux positif.
 
-## 16. Quiz
+## 18. Quiz
 
 **Q1.** Pourquoi déployer un text-to-SQL sans couche sémantique gouvernée est-il dangereux ?
 - Parce que le modèle coûte trop cher
@@ -292,7 +292,7 @@ En prod, 7 ETP de cœur — puis **le socle est consommé (mutualisé) par les �
 - Parce que l'AI Act l'interdit
 - Parce que le SQL est trop lent
 
-*La valeur du text-to-SQL est conditionnée à la maturité de la couche sémantique. Sans elle, l'agent hallucine une définition fausse (ch.16, ch.21.7).*
+*La valeur du text-to-SQL est conditionnée à la maturité de la couche sémantique. Sans elle, l'agent hallucine une définition fausse (ch.18, ch.23.7).*
 
 **Q2.** Pourquoi le RBAC est-il une condition d'ouverture, pas une tâche de fin de projet ?
 - Parce que c'est exigé par le contrat de licence
@@ -300,7 +300,7 @@ En prod, 7 ETP de cœur — puis **le socle est consommé (mutualisé) par les �
 - Parce que le RBAC accélère les requêtes
 - Parce qu'il réduit le coût compute
 
-*L'agent rend visible en deux secondes ce que des années de partages trop larges laissaient dormir (ch.13).*
+*L'agent rend visible en deux secondes ce que des années de partages trop larges laissaient dormir (ch.16).*
 
 **Q3.** Pourquoi dit-on que le socle data a un ROI « diffus » ?
 - Parce qu'il ne sert à rien
@@ -308,9 +308,9 @@ En prod, 7 ETP de cœur — puis **le socle est consommé (mutualisé) par les �
 - Parce que le ROI est négatif
 - Parce qu'il est facturé à l'usage
 
-*Comme l'assistant transverse (CC-00), le socle est un multiplicateur, pas un générateur direct (ch.21.7).*
+*Comme l'assistant transverse (CC-00), le socle est un multiplicateur, pas un générateur direct (ch.23.7).*
 
-## 17. Verdict — le socle d'abord, jamais l'inverse
+## 19. Verdict — le socle d'abord, jamais l'inverse
 
 **GO_SOCLE_DATA_AVANT_DEMOCRATISATION** — GO en hybride, mais le socle (sémantique + accès + qualité) **avant** la démocratisation.
 
@@ -330,17 +330,17 @@ Aux conditions remplies, le socle data devient le **pivot de l'arc** : sans lui,
 ## Renvois livre
 
 - **[Ch. 7 — Boucle agent (text-to-SQL : resolve → generate → verify)](../../chapitres/ch07-boucle-agentique.md)**
-- **[Ch. 12 — MCP plateforme (le socle data)](../../chapitres/ch12-mcp-plateforme.md)**
-- **[Ch. 13 — Sécurité MCP (RBAC, droits hérités, le gardien d'accès)](../../chapitres/ch13-mcp-securite.md)**
-- **[Ch. 14 — Surfaces agentiques (data storytelling)](../../chapitres/ch14-surfaces-agentiques.md)**
-- **[Ch. 16 — Analytics agentique (text-to-SQL, couche sémantique)](../../chapitres/ch16-analytics-agentique-banque.md)**
-- **[Ch. 17 — Évaluation agent (exactitude SQL, drapeau d'incertitude)](../../chapitres/ch17-evaluation-benchmarks.md)**
-- **[Ch. 18 — Audit trail cognitif (lineage = confiance)](../../chapitres/ch18-observabilite-cognitive-audit-trail.md)**
-- **[Ch. 21.5 — Hard vs Soft (ROI diffus du socle)](../../chapitres/ch21-roi-paradoxe-agentique.md)**
-- **[Ch. 21.6 — Arbre de décision méthode ROI](../../chapitres/ch21-roi-paradoxe-agentique.md)**
-- **[Ch. 21.7 — Paradoxe agentique (le socle, le poste qui décide de tout)](../../chapitres/ch21-roi-paradoxe-agentique.md)**
-- **[Ch. 22 — IA frugale (FinOps compute warehouse)](../../chapitres/ch22-ia-frugale.md)**
-- **[Ch. 23 — Gouvernance (RGPD, gouvernance des métriques)](../../chapitres/ch23-gouvernance-ai-act.md)**
+- **[Ch. 15 — MCP plateforme (le socle data)](../../chapitres/ch15-mcp-plateforme.md)**
+- **[Ch. 16 — Sécurité MCP (RBAC, droits hérités, le gardien d'accès)](../../chapitres/ch16-mcp-securite.md)**
+- **[Ch. 13 — Surfaces agentiques (data storytelling)](../../chapitres/ch13-surfaces-agentiques.md)**
+- **[Ch. 18 — Analytics agentique (text-to-SQL, couche sémantique)](../../chapitres/ch18-analytics-agentique-banque.md)**
+- **[Ch. 19 — Évaluation agent (exactitude SQL, drapeau d'incertitude)](../../chapitres/ch19-evaluation-benchmarks.md)**
+- **[Ch. 20 — Audit trail cognitif (lineage = confiance)](../../chapitres/ch20-observabilite-cognitive-audit-trail.md)**
+- **[Ch. 23.5 — Hard vs Soft (ROI diffus du socle)](../../chapitres/ch23-roi-paradoxe-agentique.md)**
+- **[Ch. 23.6 — Arbre de décision méthode ROI](../../chapitres/ch23-roi-paradoxe-agentique.md)**
+- **[Ch. 23.7 — Paradoxe agentique (le socle, le poste qui décide de tout)](../../chapitres/ch23-roi-paradoxe-agentique.md)**
+- **[Ch. 24 — IA frugale (FinOps compute warehouse)](../../chapitres/ch24-ia-frugale.md)**
+- **[Ch. 25 — Gouvernance (RGPD, gouvernance des métriques)](../../chapitres/ch25-gouvernance-ai-act.md)**
 
 ---
 

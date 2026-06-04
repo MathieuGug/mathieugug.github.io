@@ -31,7 +31,7 @@ C'est une question de **trajectoire de coûts**, pas de faisabilité. L'agent vo
 
 Avant le modèle, avant le prompt, il faut regarder où se loge le coût marginal. Dans un copilot bancaire (cf. CC-01), c'est le modèle de raisonnement. Ici, c'est ailleurs.
 
-![Architecture SI actuelle — opérateur télécom mid-tier 2026|1300](../images/CC-02-fig-00-architecture-actuelle.svg)
+![Architecture SI actuelle — opérateur télécom mid-tier 2026|1300](../images/CC-02-agent-vocal-telecom/CC-02-fig-00-architecture-actuelle.svg)
 
 Cinq couches structurent l'opérateur télécom mid-tier 2026 typique :
 
@@ -81,7 +81,7 @@ La frontière L3/L4 n'est pas technique : elle est **juridique et commerciale**.
 
 Reprenons *« ma box ne marche plus, c'est la troisième fois »*. Voici ce qui se passe.
 
-![Anatomie d'un appel — Listen · Identify · Diagnose · Reason · Act · Verify, dans un budget de latence < 800 ms par tour|1300](../images/CC-02-fig-01-anatomie-appel.svg)
+![Anatomie d'un appel — Listen · Identify · Diagnose · Reason · Act · Verify, dans un budget de latence < 800 ms par tour|1300](../images/CC-02-agent-vocal-telecom/CC-02-fig-01-anatomie-appel.svg)
 
 **1. Listen.** Transcription streaming (STT) en français, avec gestion des interruptions (barge-in) et du bruit de fond.
 
@@ -96,7 +96,7 @@ Reprenons *« ma box ne marche plus, c'est la troisième fois »*. Voici ce qui 
 
 **5. Act.** *« Je redémarre votre box, ne la débranchez pas, patientez 90 secondes. »* → `acs-mcp.reboot_cpe(box_id)`, puis ré-interrogation du statut.
 
-**6. Verify / Escalate.** Sync remontée → confirmation et clôture. Sinon → ticket ServiceNow P2 + proposition de créneau technicien, jamais d'engagement ferme sans confirmation explicite. Le tout journalisé dans l'audit trail (cf. [ch. 18](../../chapitres/ch18-observabilite-cognitive-audit-trail.md)).
+**6. Verify / Escalate.** Sync remontée → confirmation et clôture. Sinon → ticket ServiceNow P2 + proposition de créneau technicien, jamais d'engagement ferme sans confirmation explicite. Le tout journalisé dans l'audit trail (cf. [ch. 20](../../chapitres/ch20-observabilite-cognitive-audit-trail.md)).
 
 Le client raccroche en trois minutes, sans avoir tapé sur une touche ni attendu en file. C'est cette résolution réelle — pas la clôture — qui fait le containment.
 
@@ -163,7 +163,7 @@ Grille CC-02, en k€. Lecture attentive du couple inférence/infra.
 | **Total** | **115** | **413** | **1 205** | **2 290** |
 | Coût/appel | 6,80 € | 2,20 € | 0,62 € | 0,34 € |
 
-![Huit postes sur quatre phases — largeur ∝ coût total de la phase, hauteur = part de chaque poste, et la bascule inférence → infra au crossover|1300](../images/CC-02-fig-02-postes-phases.svg)
+![Huit postes sur quatre phases — largeur ∝ coût total de la phase, hauteur = part de chaque poste, et la bascule inférence → infra au crossover|1300](../images/CC-02-agent-vocal-telecom/CC-02-fig-02-postes-phases.svg)
 
 Lecture transverse :
 
@@ -175,7 +175,7 @@ Lecture transverse :
 
 - **Le poste infra fait le saut inverse** (16 → 140 → 290 k€) : c'est le CapEx GPU du tier voix internalisé. C'est lui qui absorbe le coût que l'inférence ne porte plus. **Le coût ne disparaît pas, il change de poste** — et le coût/appel décroche parce que le marginal s'effondre une fois le matériel amorti.
 
-- **Le poste équipe est multiplié par ~14**, le poste change passe de 0 à 240 k€. Paradoxe agentique ([ch. 21.7](../../chapitres/ch21-roi-paradoxe-agentique.md)) : l'unité de mesure se déplace de la voix vers l'équipe et le change.
+- **Le poste équipe est multiplié par ~14**, le poste change passe de 0 à 240 k€. Paradoxe agentique ([ch. 23.7](../../chapitres/ch23-roi-paradoxe-agentique.md)) : l'unité de mesure se déplace de la voix vers l'équipe et le change.
 
 - **Le poste évaluation grimpe fort** (6 → 200 k€) car la surface vocale (ASR, hallucination facturation) est plus dure à monitorer que le texte.
 
@@ -201,13 +201,13 @@ Quatre temps, comme partout, mais avec deux difficultés propres à la voix.
 
 **4. Boucle de correction.** Re-prompt sous 48 h, ré-entraînement trimestriel de l'ASR self-hosted (corpus accents/bruit enrichi) une fois internalisé, et **rollback par motif** : on désactive un motif en moins d'une heure et on bascule vers la file humaine sans coupure.
 
-![La boucle d'évaluation vocale — quatre temps et le juge repeat-call-rate, avec une vérité terrain qui arrive en différé|1300](../images/CC-02-fig-03-boucle-evaluation.svg)
+![La boucle d'évaluation vocale — quatre temps et le juge repeat-call-rate, avec une vérité terrain qui arrive en différé|1300](../images/CC-02-agent-vocal-telecom/CC-02-fig-03-boucle-evaluation.svg)
 
 La difficulté propre à la voix : la vérité terrain arrive en différé (le CSAT, le rappel) et le signal est bruité (l'ASR se trompe parfois sur ce qui a été dit). D'où l'importance de l'échantillon humain de ré-écoute.
 
-## 12. ROI — le containment net, pas le containment brut
+## 15. ROI — le containment net, pas le containment brut
 
-Axe principal : **Coût**. Axe secondaire : Vitesse. Méthode : TEI Forrester + Cigref Hard/Soft + arbre [ch. 21.6](../../chapitres/ch21-roi-paradoxe-agentique.md).
+Axe principal : **Coût**. Axe secondaire : Vitesse. Méthode : TEI Forrester + Cigref Hard/Soft + arbre [ch. 23.6](../../chapitres/ch23-roi-paradoxe-agentique.md).
 
 | Métrique | Borne basse | Cible | Borne haute | Catégorie |
 | --- | --- | --- | --- | --- |
@@ -218,11 +218,11 @@ Axe principal : **Coût**. Axe secondaire : Vitesse. Méthode : TEI Forrester + 
 
 Le piège du cas : mesurer le **containment brut** (taux d'appels clos par le bot). Un appel « résolu » qui rappelle sous 48 h est un faux containment qui coûte deux fois.
 
-> **KPI gardien : `csat`** couplé au **repeat-call-rate**. Le containment Hard ne vaut rien si le CSAT chute. Le gardien déclenche le rollback d'un motif si le containment est un faux containment. Sans lui, on optimise un mirage — exactement l'angle mort du **cas d'école de la sur-automatisation 2024**, où un acteur tech a claironné un containment record avant de voir le CSAT chuter et de ré-internaliser une partie de ses agents (cf. [ch. 21.7.2](../../chapitres/ch21-roi-paradoxe-agentique.md)).
+> **KPI gardien : `csat`** couplé au **repeat-call-rate**. Le containment Hard ne vaut rien si le CSAT chute. Le gardien déclenche le rollback d'un motif si le containment est un faux containment. Sans lui, on optimise un mirage — exactement l'angle mort du **cas d'école de la sur-automatisation 2024**, où un acteur tech a claironné un containment record avant de voir le CSAT chuter et de ré-internaliser une partie de ses agents (cf. [ch. 23.7.2](../../chapitres/ch23-roi-paradoxe-agentique.md)).
 
 **Non retenues** : `arpu` (attribution rétention/upsell trop indirecte), `nps` (suivi en CSAT secondaire), `employee-turnover` (le sujet RH se traite en requalification, pas en KPI de ROI cynique).
 
-## 13. L'équipe, la vélocité, les deadlines
+## 16. L'équipe, la vélocité, les deadlines
 
 **8,6 ETP** pour le pilote, avec deux postes load-bearing inhabituels :
 
@@ -250,7 +250,7 @@ En Prod, descente à 6,5 ETP core + une équipe transitoire d'internalisation du
 
 **Deadlines** : AI Act transparence (2026-08), consultation CSE bouclée (2027-Q1), crossover tier voix (2027-Q3 — sans plan d'internalisation, la facture voix plafonne la marge).
 
-## 14. Le débat — le containment Hard cache-t-il deux pièges ?
+## 13. Le débat — le containment Hard cache-t-il deux pièges ?
 
 **Pour optimiser le containment en KPI primaire** : Hard savings nets et chiffrables (cost-per-call divisé par dix sur la part automatisée), disponibilité 24/7 + file supprimée, agents libérés du répétitif pour monter sur la valeur — *si* l'accompagnement RH suit.
 
@@ -258,35 +258,35 @@ En Prod, descente à 6,5 ETP core + une équipe transitoire d'internalisation du
 
 **Verdict pondéré** : KPI primaire = `cost-per-contact` sur containment **net** (résolu sans rappel < 48 h). KPI gardien = `csat` + repeat-call-rate. Plan d'internalisation du tier voix documenté dès le pilote, déclenché au crossover. Accord de requalification CSE avant l'extension.
 
-## 15. Trois choix qu'il faut faire
+## 17. Trois choix qu'il faut faire
 
-### 15.1 Quel KPI primaire à 6 mois ?
+### 17.1 Quel KPI primaire à 6 mois ?
 
 *Vous êtes le DAF.*
 
-**A. Containment brut.** Vous claironnez 42 % au CODIR — mais 30 % de ces appels rappellent sous 48 h. Le vrai containment est à 29 %, le CSAT a baissé de 0,4, et vous l'apprenez au trimestre suivant. *Piège du Hard isolé ([ch. 21.5.3](../../chapitres/ch21-roi-paradoxe-agentique.md)).*
+**A. Containment brut.** Vous claironnez 42 % au CODIR — mais 30 % de ces appels rappellent sous 48 h. Le vrai containment est à 29 %, le CSAT a baissé de 0,4, et vous l'apprenez au trimestre suivant. *Piège du Hard isolé ([ch. 23.5.3](../../chapitres/ch23-roi-paradoxe-agentique.md)).*
 
-**B. CSAT seul.** Stable, mais aucun chiffre Hard à présenter : budget d'extension gelé. *Piège du Soft seul ([ch. 21.5.4](../../chapitres/ch21-roi-paradoxe-agentique.md)).*
+**B. CSAT seul.** Stable, mais aucun chiffre Hard à présenter : budget d'extension gelé. *Piège du Soft seul ([ch. 23.5.4](../../chapitres/ch23-roi-paradoxe-agentique.md)).*
 
-**C. Containment NET + CSAT gardien.** Hard signable + gardien Soft qui déclenche le rollback d'un motif si faux containment. *Le seul setup honnête ([ch. 21.7.3](../../chapitres/ch21-roi-paradoxe-agentique.md)) — le repeat-call est le juge.*
+**C. Containment NET + CSAT gardien.** Hard signable + gardien Soft qui déclenche le rollback d'un motif si faux containment. *Le seul setup honnête ([ch. 23.7.3](../../chapitres/ch23-roi-paradoxe-agentique.md)) — le repeat-call est le juge.*
 
-### 15.2 À 100 k appels/mois, le tier voix pèse lourd. Vous faites quoi ?
+### 17.2 À 100 k appels/mois, le tier voix pèse lourd. Vous faites quoi ?
 
 **A. Rester en managé.** Pas de CapEx, mais le coût/appel cesse de baisser : le tier voix par minute est un plancher. Le DAF rouvre le dossier dans 6 mois. *Confort court terme, plafond moyen terme.*
 
-**B. Internaliser STT + TTS d'un coup.** Coût marginal effondré, mais un trimestre d'infra média temps réel + un word error rate à fiabiliser. Risqué en big-bang. *Bonne cible, mauvais tempo ([ch. 22](../../chapitres/ch22-ia-frugale.md)).*
+**B. Internaliser STT + TTS d'un coup.** Coût marginal effondré, mais un trimestre d'infra média temps réel + un word error rate à fiabiliser. Risqué en big-bang. *Bonne cible, mauvais tempo ([ch. 24](../../chapitres/ch24-ia-frugale.md)).*
 
 **C. Internaliser le STT d'abord, garder le TTS managé.** Vous rapatriez Whisper (le STT pèse le plus au volume), gardez la synthèse managée le temps de fiabiliser, internalisez le TTS en Scale. Le coût/appel décroche sans tout casser. *Bascule par étage — exactement la stratégie buy_then_build_partial.*
 
-### 15.3 Le CSE bloque l'extension. Vous faites quoi ?
+### 17.3 Le CSE bloque l'extension. Vous faites quoi ?
 
-**A. Passer en force.** Conflit social, qualité des escalades détruite (sans les agents, les escalades se passent mal). *Antipattern ([ch. 24](../../chapitres/ch24-ia-et-travail.md)).*
+**A. Passer en force.** Conflit social, qualité des escalades détruite (sans les agents, les escalades se passent mal). *Antipattern ([ch. 26](../../chapitres/ch26-ia-et-travail.md)).*
 
-**B. Cadrer requalification + zéro licenciement sec.** Les agents libérés du répétitif montent sur la rétention et les cas complexes. L'accord débloque l'extension et la qualité des escalades grimpe. *La bonne réponse ([ch. 24](../../chapitres/ch24-ia-et-travail.md)) : l'automatisation du répétitif finance la montée en valeur.*
+**B. Cadrer requalification + zéro licenciement sec.** Les agents libérés du répétitif montent sur la rétention et les cas complexes. L'accord débloque l'extension et la qualité des escalades grimpe. *La bonne réponse ([ch. 26](../../chapitres/ch26-ia-et-travail.md)) : l'automatisation du répétitif finance la montée en valeur.*
 
 **C. Plafonner le containment à 35 %.** Borne le risque social mais laisse du ROI sur la table. *Compromis défendable en pilote, à rouvrir une fois l'accord signé.*
 
-## 16. Quiz
+## 18. Quiz
 
 **Q1.** Pourquoi le coût par appel ne baisse-t-il pas indéfiniment en mode buy ?
 - Parce que le LLM coûte de plus en plus cher
@@ -312,7 +312,7 @@ En Prod, descente à 6,5 ETP core + une équipe transitoire d'internalisation du
 
 *Le sclérosant est dans le legacy : monolithe billing partiellement SOAP + exigence de preuve consommateur + contrainte de latence temps réel.*
 
-## 17. Verdict — pilote validé avec KPI gardien
+## 19. Verdict — pilote validé avec KPI gardien
 
 **PILOT_AVEC_KPI_GARDIEN** — extension conditionnée à l'accord social et au plan d'internalisation.
 
@@ -332,19 +332,19 @@ Aux conditions remplies, l'agent vocal tient devant le CODIR, le CSE et la confo
 
 - **[Ch. 5 — Économie unitaire de l'inférence (cascade)](../../chapitres/ch05-economie-inference.md)**
 - **[Ch. 7 — Boucle agent (action sous garde-fou)](../../chapitres/ch07-boucle-agentique.md)**
-- **[Ch. 12 — MCP plateforme](../../chapitres/ch12-mcp-plateforme.md)**
-- **[Ch. 13 — Sécurité MCP (fraude vocale)](../../chapitres/ch13-mcp-securite.md)**
-- **[Ch. 14 — Surfaces agentiques (voix)](../../chapitres/ch14-surfaces-agentiques.md)**
-- **[Ch. 17 — Évaluation agent](../../chapitres/ch17-evaluation-benchmarks.md)**
-- **[Ch. 18 — Audit trail cognitif](../../chapitres/ch18-observabilite-cognitive-audit-trail.md)**
-- **[Ch. 20 — Runtime managé vs internalisé](../../chapitres/ch20-runtime-manage.md)**
-- **[Ch. 21.5 — Hard vs Soft Savings](../../chapitres/ch21-roi-paradoxe-agentique.md)**
-- **[Ch. 21.6 — Arbre de décision méthode ROI](../../chapitres/ch21-roi-paradoxe-agentique.md)**
-- **[Ch. 21.7 — Paradoxe agentique](../../chapitres/ch21-roi-paradoxe-agentique.md)**
-- **[Ch. 21.7.2 — Sur-automatisation service client](../../chapitres/ch21-roi-paradoxe-agentique.md)**
-- **[Ch. 22 — IA frugale (internalisation tier voix)](../../chapitres/ch22-ia-frugale.md)**
-- **[Ch. 23 — Gouvernance AI Act (risque limité Art. 50)](../../chapitres/ch23-gouvernance-ai-act.md)**
-- **[Ch. 24 — IA et travail (CSE, requalification)](../../chapitres/ch24-ia-et-travail.md)**
+- **[Ch. 15 — MCP plateforme](../../chapitres/ch15-mcp-plateforme.md)**
+- **[Ch. 16 — Sécurité MCP (fraude vocale)](../../chapitres/ch16-mcp-securite.md)**
+- **[Ch. 13 — Surfaces agentiques (voix)](../../chapitres/ch13-surfaces-agentiques.md)**
+- **[Ch. 19 — Évaluation agent](../../chapitres/ch19-evaluation-benchmarks.md)**
+- **[Ch. 20 — Audit trail cognitif](../../chapitres/ch20-observabilite-cognitive-audit-trail.md)**
+- **[Ch. 22 — Runtime managé vs internalisé](../../chapitres/ch22-runtime-manage.md)**
+- **[Ch. 23.5 — Hard vs Soft Savings](../../chapitres/ch23-roi-paradoxe-agentique.md)**
+- **[Ch. 23.6 — Arbre de décision méthode ROI](../../chapitres/ch23-roi-paradoxe-agentique.md)**
+- **[Ch. 23.7 — Paradoxe agentique](../../chapitres/ch23-roi-paradoxe-agentique.md)**
+- **[Ch. 23.7.2 — Sur-automatisation service client](../../chapitres/ch23-roi-paradoxe-agentique.md)**
+- **[Ch. 24 — IA frugale (internalisation tier voix)](../../chapitres/ch24-ia-frugale.md)**
+- **[Ch. 25 — Gouvernance AI Act (risque limité Art. 50)](../../chapitres/ch25-gouvernance-ai-act.md)**
+- **[Ch. 26 — IA et travail (CSE, requalification)](../../chapitres/ch26-ia-et-travail.md)**
 
 ---
 

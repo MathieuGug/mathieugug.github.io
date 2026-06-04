@@ -81,7 +81,7 @@ Gardés pour la **diversité de type d'IA** que les fondations ne couvrent pas :
 
 ## 4. Pièce maîtresse n°1 : le cas transverse (CC-00)
 
-L'ouvreur de l'annexe : c'est l'usage que le lecteur connaît déjà, et le meilleur véhicule pour la leçon centrale du ch. 21.5 (Hard vs Soft).
+L'ouvreur de l'annexe : c'est l'usage que le lecteur connaît déjà, et le meilleur véhicule pour la leçon centrale du ch. 23.5 (Hard vs Soft).
 
 ### Pitch
 
@@ -91,8 +91,8 @@ L'ouvreur de l'annexe : c'est l'usage que le lecteur connaît déjà, et le meil
 
 | Sous-usage | Ce que ça recouvre | Fil du livre |
 |---|---|---|
-| **Routines** | Rédaction, résumés, comptes-rendus, triage d'inbox | ch. 14 (surfaces agentiques) · ch. 24 (IA et travail) |
-| **Analyses** | Synthèse de données, première passe, dataviz commentée | ch. 16 (analytics agentique) |
+| **Routines** | Rédaction, résumés, comptes-rendus, triage d'inbox | ch. 13 (surfaces agentiques) · ch. 26 (IA et travail) |
+| **Analyses** | Synthèse de données, première passe, dataviz commentée | ch. 18 (analytics agentique) |
 | **Veille** | Monitoring concurrentiel/réglementaire, *deep research* agentique | ch. 7 (boucle agent — *fan-out search → vérification → synthèse*) |
 
 > Clin d'œil méta : la méthode de *deep research* agentique (fan-out, vérification adverse, synthèse citée) est celle qui produit les dossiers illustrés de mathieugug.github.io.
@@ -115,9 +115,9 @@ Le cas qui répond directement au brief *« on oublie le socle data »*. Il est 
 
 | Sous-usage | Ce que ça recouvre | Fil du livre |
 |---|---|---|
-| **Automatiser** | Qualité (détection d'anomalies, tests dbt), mise à jour des pipelines, première passe d'analyse — agents data quality / data ops | ch. 16 (analytics agentique) · ch. 18 (observabilité) |
-| **Analyser** | Text-to-SQL, exploration conversationnelle, dashboards interactifs générés, **visualisations avancées + data storytelling** | ch. 16 · ch. 14 (surfaces) |
-| **Démocratiser** | Donner l'accès aux métiers — **conditionné** à la gouvernance d'accès et au lignage | ch. 12 (MCP plateforme) · ch. 23 (gouvernance) |
+| **Automatiser** | Qualité (détection d'anomalies, tests dbt), mise à jour des pipelines, première passe d'analyse — agents data quality / data ops | ch. 18 (analytics agentique) · ch. 20 (observabilité) |
+| **Analyser** | Text-to-SQL, exploration conversationnelle, dashboards interactifs générés, **visualisations avancées + data storytelling** | ch. 18 · ch. 13 (surfaces) |
+| **Démocratiser** | Donner l'accès aux métiers — **conditionné** à la gouvernance d'accès et au lignage | ch. 15 (MCP plateforme) · ch. 25 (gouvernance) |
 
 ### Métadonnées proposées (schéma canonique)
 
@@ -135,7 +135,7 @@ Le cas qui répond directement au brief *« on oublie le socle data »*. Il est 
 
 ### Pourquoi c'est le meilleur véhicule pédagogique
 
-Comme l'assistant transverse, **le ROI est diffus** : le socle ne « rend » pas directement, il **multiplie la valeur de tous les cas en aval** (chaque copilot métier consomme ce socle). C'est le piège de mesure du paradoxe agentique (ch.21.7) appliqué à une *fondation* : le poste qui décide de tout est le plus dur à attribuer. Et il introduit la condition de gouvernance (sécuriser avant de démocratiser) que CC-11 généralisera à la flotte.
+Comme l'assistant transverse, **le ROI est diffus** : le socle ne « rend » pas directement, il **multiplie la valeur de tous les cas en aval** (chaque copilot métier consomme ce socle). C'est le piège de mesure du paradoxe agentique (ch.23.7) appliqué à une *fondation* : le poste qui décide de tout est le plus dur à attribuer. Et il introduit la condition de gouvernance (sécuriser avant de démocratiser) que CC-11 généralisera à la flotte.
 
 ### La figure `fig-00` (à dessiner)
 

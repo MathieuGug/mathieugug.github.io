@@ -230,7 +230,7 @@ Ce que fait *réellement* l'IA — pas un pitch marketing mais le workflow déta
         "id": 5,
         "label": "Audit",
         "description": "Log structuré (chain-of-thought + sources retrieve + décision conseiller) → bucket S3 audit-trail (rétention 6 ans DDA)",
-        "renvoi_livre": "ch.18 audit trail cognitif"
+        "renvoi_livre": "ch.20 audit trail cognitif"
       }
     ]
   }
@@ -300,7 +300,7 @@ Table opérationnelle des MCP servers à monter. Effort + risque par outil pour 
     }
   ],
   "effort_total": "6-8 semaines pour 1 backend dev sénior",
-  "renvois_livre": ["ch.12 MCP plateforme", "ch.13 sécurité MCP"]
+  "renvois_livre": ["ch.15 MCP plateforme", "ch.16 sécurité MCP"]
 }
 ```
 
@@ -371,7 +371,7 @@ Matrice des modèles candidats + recommandation explicite (cascade primaire + ga
   "benchmark": {
     "reference": "Bank of America (Erica) 2024",
     "metrique": "1.5 Md interactions / NPS digital +12 pts",
-    "renvoi_livre": "ch.21.8"
+    "renvoi_livre": "ch.23.8"
   }
 }
 ```
@@ -406,7 +406,7 @@ Toujours 3 options évaluées côte à côte, même si une seule fait sens. Nota
     }
   ],
   "decision_ponderee": "Hybride : démarrage POC sur API Anthropic, ré-évaluation à 12 mois pour internaliser routing et gardien.",
-  "renvoi_livre": "ch.21.6 arbre décision"
+  "renvoi_livre": "ch.23.6 arbre décision"
 }
 ```
 
@@ -436,7 +436,7 @@ Grille canonique 4 phases × 8 postes (postes définis dans `shared/cost-postes.
   },
   "cout_par_interaction": { "poc": 2.10, "pilote": 0.85, "prod": 0.42, "scale": 0.28 },
   "crossover_point": "≈ 800 k interactions / an : seuil au-delà duquel l'hybride avec routing interne bat la solution mainstream pure.",
-  "commentaire_courbe": "Le coût par interaction divise par 7 entre POC et Scale, MAIS le poste équipe est multiplié par ~17 — paradoxe agentique (ch.21.7) : l'unité de mesure se déplace de l'inférence vers l'équipe + change."
+  "commentaire_courbe": "Le coût par interaction divise par 7 entre POC et Scale, MAIS le poste équipe est multiplié par ~17 — paradoxe agentique (ch.23.7) : l'unité de mesure se déplace de l'inférence vers l'équipe + change."
 }
 ```
 
@@ -465,7 +465,7 @@ Grille canonique 4 phases × 8 postes (postes définis dans `shared/cost-postes.
     "echeance":   "2026-08 (transparence) puis 2027-08 (obligations complètes)",
     "actions":    ["FRIA documentée", "Registre Annexe IV", "Log d'audit ≥ 6 ans", "Supervision humaine effective (DDA + AI Act)"]
   },
-  "renvoi_livre": "ch.23.5 banque sous AI Act"
+  "renvoi_livre": "ch.25.5 banque sous AI Act"
 }
 ```
 
@@ -498,19 +498,19 @@ Boucle à 4 temps : régression suite → métriques online → détection déri
     "cadence_re_finetune":  "trimestriel sur le gardien Mistral",
     "rollback":             "possible en < 4 h via feature flag, contrat clause expresse"
   },
-  "renvoi_livre": ["ch.17 évaluation agent", "ch.18 audit trail cognitif"]
+  "renvoi_livre": ["ch.19 évaluation agent", "ch.20 audit trail cognitif"]
 }
 ```
 
 ---
 
-## 12. ROI (`roi`)
+## 15. ROI (`roi`)
 
 ```json
 {
   "axe_principal":     "vitesse",
   "axes_secondaires":  ["volume", "bienetre"],
-  "methode_mobilisee": "TEI Forrester + Cigref Hard/Soft + arbre décision ch.21.6",
+  "methode_mobilisee": "TEI Forrester + Cigref Hard/Soft + arbre décision ch.23.6",
   "metriques": [
     { "id": "processing-time",     "borne_basse": "-3 min",   "cible": "-8 min",   "borne_haute": "-12 min" },
     { "id": "cost-per-contact",    "borne_basse": "-8 €",     "cible": "-17 €",    "borne_haute": "-25 €"   },
@@ -520,7 +520,7 @@ Boucle à 4 temps : régression suite → métriques online → détection déri
   "non_retenu": [
     { "id": "fraud-avoided",  "raison": "pas le périmètre (cf. CC-03)" },
     { "id": "basket-size",    "raison": "attribution copilot ↔ cross-sell trop indirecte" },
-    { "id": "nps",            "raison": "secondaire de convergence Soft, pas KPI primaire (cf. ch.21.5.4)" }
+    { "id": "nps",            "raison": "secondaire de convergence Soft, pas KPI primaire (cf. ch.23.5.4)" }
   ]
 }
 ```
@@ -529,7 +529,7 @@ Boucle à 4 temps : régression suite → métriques online → détection déri
 
 ---
 
-## 13. Opération, équipe, vélocité, deadlines (`operation_equipe`) — **NEW MERGED v2**
+## 16. Opération, équipe, vélocité, deadlines (`operation_equipe`) — **NEW MERGED v2**
 
 Tout le bloc opérationnel en une section. Personas (les 4 archétypes du cas) + ETP par phase + cadence release + deadlines datées.
 
@@ -586,7 +586,7 @@ Tout le bloc opérationnel en une section. Personas (les 4 archétypes du cas) +
 
 ---
 
-## 14. Débat (`debat`)
+## 13. Débat (`debat`)
 
 ```json
 {
@@ -600,7 +600,7 @@ Tout le bloc opérationnel en une section. Personas (les 4 archétypes du cas) +
     { "argument": "Soft savings (conseil consistant) protègent le FDC contre les banques 100 % en ligne." }
   ],
   "verdict_pondere": "KPI primaire = Vitesse, KPI gardien = consistency-rate. Échantillon humain de re-listening 5 % des RDV. Clause de rollback si NPS dégrade > 2 pts en 18 mois.",
-  "renvois_livre": ["ch.21.5", "ch.21.7.2"]
+  "renvois_livre": ["ch.23.5", "ch.23.7.2"]
 }
 ```
 
@@ -608,18 +608,18 @@ Pas de "Klarna" dans `pour`/`contre`/`verdict_pondere`.
 
 ---
 
-## 15. Bifurcations reader-driven (`choix_lecteur`)
+## 17. Bifurcations reader-driven (`choix_lecteur`)
 
-1-3 bifurcations selon gabarit (court=1, standard=2, charnière=3). Au moins une option doit être un "piège" pédagogique (cf. règle ch.21.5).
+1-3 bifurcations selon gabarit (court=1, standard=2, charnière=3). Au moins une option doit être un "piège" pédagogique (cf. règle ch.23.5).
 
 ```json
 [
   {
     "question": "Vous êtes le CFO. Vous engagez 2.8 M€ sur 18 mois pour mesurer EN PREMIER à 6 mois…",
     "options": [
-      { "id": "A", "label": "Cost-per-contact baseline+pilote",      "consequence": "…", "grille_analyse": "Cf. ch.21.5.3 — piège du Hard isolé", "renvoi_chapitre": "ch.21.5.3" },
-      { "id": "B", "label": "NPS conseillers (eNPS)",                "consequence": "…", "grille_analyse": "Cf. ch.21.5.4 — piège du Soft seul",  "renvoi_chapitre": "ch.21.5.4" },
-      { "id": "C", "label": "Combo Vitesse + KPI gardien qualité",    "consequence": "…", "grille_analyse": "Cf. ch.21.7.3 — alignement Cigref",   "renvoi_chapitre": "ch.21.7.3" }
+      { "id": "A", "label": "Cost-per-contact baseline+pilote",      "consequence": "…", "grille_analyse": "Cf. ch.23.5.3 — piège du Hard isolé", "renvoi_chapitre": "ch.23.5.3" },
+      { "id": "B", "label": "NPS conseillers (eNPS)",                "consequence": "…", "grille_analyse": "Cf. ch.23.5.4 — piège du Soft seul",  "renvoi_chapitre": "ch.23.5.4" },
+      { "id": "C", "label": "Combo Vitesse + KPI gardien qualité",    "consequence": "…", "grille_analyse": "Cf. ch.23.7.3 — alignement Cigref",   "renvoi_chapitre": "ch.23.7.3" }
     ]
   }
 ]
@@ -627,7 +627,7 @@ Pas de "Klarna" dans `pour`/`contre`/`verdict_pondere`.
 
 ---
 
-## 16. Quiz (`quiz`)
+## 18. Quiz (`quiz`)
 
 2-3 cartes-quiz. Workflow JSON identique aux autres dossiers du site.
 
@@ -638,14 +638,14 @@ Pas de "Klarna" dans `pour`/`contre`/`verdict_pondere`.
     "options": ["…", "…", "…", "…"],
     "bonne_reponse": 2,
     "explication": "…",
-    "renvoi_chapitre": "ch.21.5"
+    "renvoi_chapitre": "ch.23.5"
   }
 ]
 ```
 
 ---
 
-## 17. Verdict (`verdict`)
+## 19. Verdict (`verdict`)
 
 ```json
 {
@@ -661,17 +661,17 @@ Pas de "Klarna" dans `pour`/`contre`/`verdict_pondere`.
 
 ---
 
-## 18. Renvois livre (`renvois_livre`)
+## 20. Renvois livre (`renvois_livre`)
 
 Liste plate, format `ch.XX.Y` ou `ch.XX`. Utilisée pour générer les callouts teal à la fin du cas et pour le tableau comparatif transverse.
 
 ```json
-["ch.21.5", "ch.21.7.2", "ch.21.7.3", "ch.7", "ch.13", "ch.17", "ch.18", "ch.19", "ch.23.5"]
+["ch.23.5", "ch.23.7.2", "ch.23.7.3", "ch.7", "ch.16", "ch.19", "ch.20", "ch.21", "ch.25.5"]
 ```
 
 ---
 
-## 19. Figures (`figures`)
+## 21. Figures (`figures`)
 
 **Au moins** `fig-00-architecture-actuelle.svg` obligatoire. Une ou deux figures additionnelles selon gabarit (charnière = jusqu'à 3, standard = jusqu'à 2).
 
@@ -687,7 +687,7 @@ Liste plate, format `ch.XX.Y` ou `ch.XX`. Utilisée pour générer les callouts 
     "id": "fig-01",
     "titre": "Carte d'estimation Hard/Soft du copilot bancaire",
     "fichier": "images/CC-01-fig-01-roi-hard-soft.svg",
-    "caption": "Sankey : 4 métriques → 4 axes ROI → classification Hard / Soft. Illustre la règle ch.21.5 : Hard sans gardien Soft = risque de pivot Vitesse → Hybride."
+    "caption": "Sankey : 4 métriques → 4 axes ROI → classification Hard / Soft. Illustre la règle ch.23.5 : Hard sans gardien Soft = risque de pivot Vitesse → Hybride."
   }
 ]
 ```
@@ -696,7 +696,7 @@ Conventions générales SVG : voir skill `svg-schemas` (palette site, échelle t
 
 ---
 
-## 20. Validation CI (méta — pas une section JSON)
+## 22. Validation CI (méta — pas une section JSON)
 
 - `tests/cases-contract.test.mjs` — sections obligatoires : 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 17, 18, 19.
 - `tests/roi-metrics-contract.test.mjs` — tout `roi.metriques[].id` existe dans `shared/roi-metrics.json`.

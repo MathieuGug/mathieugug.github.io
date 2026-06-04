@@ -164,7 +164,7 @@ Ce drift est silencieux par nature : aucune alerte de runtime, aucune erreur HTT
 > [!INFO] Voir [Ch. 2 — Les modèles de raisonnement et la seconde courbe de scaling](ch02-modeles-raisonnement.md)
 > Quand on dépense du compute à l'inférence pour raisonner, la chaîne de tokens en sortie s'allonge et la variance multiplicative s'accumule. La discipline d'évaluation sur distribution posée §1.3.3 devient critique : on ne signe pas sur un raisonnement, on signe sur une distribution de raisonnements.
 
-> [!INFO] Voir [Ch. 18 — Observabilité agentique et cognitive audit trail](ch18-observabilite-cognitive-audit-trail.md)
+> [!INFO] Voir [Ch. 20 — Observabilité agentique et cognitive audit trail](ch20-observabilite-cognitive-audit-trail.md)
 > Le trajectory drift est documenté comme problème d'observabilité de premier rang, et l'instrumentation associée via les conventions sémantiques OpenTelemetry GenAI. L'idée centrale : ce qu'on instrumente en production n'est pas la conformité d'une sortie à un oracle (impossible à seed fixé, voir §1.4), mais la conformité d'une **distribution** de sorties à une baseline statistique.
 
 ### 1.5.3 La règle de signature — tout contrat agent 2026 spécifie n, T, p, k, version
@@ -214,4 +214,4 @@ Si la variance se paie en tokens, et si les modèles de raisonnement dépensent 
 
 [^nvidia-determinism]: NVIDIA, *cuDNN Developer Guide — Reproducibility* et *CUDA C++ Best Practices Guide — Numerical Accuracy and Precision*. URLs : https://docs.nvidia.com/deeplearning/cudnn/developer-guide/ et https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/. Consultés le 2026-05-29. Documentation officielle décrivant la non-associativité des opérations flottantes parallèles, les modes déterministes optionnels (au prix d'une perte de débit significative) et leurs limites lorsque le batching dynamique modifie la composition des sommes parallèles.
 
-[^pass-k]: Le pattern `pass@k`, introduit par Mark Chen et al. dans *Evaluating Large Language Models Trained on Code* (OpenAI HumanEval, arXiv:2107.03374, 2021), formalise l'évaluation sur distribution : on rejoue `k` fois et on mesure la probabilité qu'au moins un rejouage satisfasse l'oracle. Voir [Ch. 17](ch17-evaluation-benchmarks.md) pour le développement comme outil de bench. URL : https://arxiv.org/abs/2107.03374. Consulté le 2026-05-29.
+[^pass-k]: Le pattern `pass@k`, introduit par Mark Chen et al. dans *Evaluating Large Language Models Trained on Code* (OpenAI HumanEval, arXiv:2107.03374, 2021), formalise l'évaluation sur distribution : on rejoue `k` fois et on mesure la probabilité qu'au moins un rejouage satisfasse l'oracle. Voir [Ch. 19](ch19-evaluation-benchmarks.md) pour le développement comme outil de bench. URL : https://arxiv.org/abs/2107.03374. Consulté le 2026-05-29.

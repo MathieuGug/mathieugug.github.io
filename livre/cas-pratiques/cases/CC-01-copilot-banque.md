@@ -25,7 +25,7 @@ Le directeur retail veut généraliser : 2 800 conseillers, 14 régions, 1,2 mil
 
 Mais le directeur conformité demande : *« qui répond si le conseil suggéré viole DDA ? »*
 
-Cette question, qui paraît bureaucratique au sponsor finance, est la seule qui décide vraiment du sort du projet. La conséquence pratique se mesure à 18 mois, quand la dérive a déjà fait son œuvre — comme l'a vécu une fintech BNPL scandinave en 2024, contrainte de revenir à l'humain après avoir trop optimisé la Vitesse au détriment de la qualité de conseil (cf. [ch. 21.7.2](../../chapitres/ch21-roi-paradoxe-agentique.md)).
+Cette question, qui paraît bureaucratique au sponsor finance, est la seule qui décide vraiment du sort du projet. La conséquence pratique se mesure à 18 mois, quand la dérive a déjà fait son œuvre — comme l'a vécu une fintech BNPL scandinave en 2024, contrainte de revenir à l'humain après avoir trop optimisé la Vitesse au détriment de la qualité de conseil (cf. [ch. 23.7.2](../../chapitres/ch23-roi-paradoxe-agentique.md)).
 
 L'enjeu n'est donc pas tellement de **faire** un copilot. C'est de le faire avec **les bons garde-fous**, avec **les bonnes mesures**, sur **la bonne stack**, à un coût qui tient à l'échelle. Et la première question — celle qui structure toutes les autres — est : *qu'est-ce qu'on a déjà dans le SI ?*
 
@@ -33,7 +33,7 @@ L'enjeu n'est donc pas tellement de **faire** un copilot. C'est de le faire avec
 
 Avant de parler MCP, modèle ou ROI, il faut regarder la stack existante. C'est elle qui décide de l'effort d'intégration, du risque sécurité, de la marge de manœuvre face à l'AI Act. La théorie build/buy/hybride sans architecture actuelle est un slide commercial.
 
-![Architecture SI actuelle — banque retail mid-tier 2026|1300](../images/CC-01-fig-00-architecture-actuelle.svg)
+![Architecture SI actuelle — banque retail mid-tier 2026|1300](../images/CC-01-copilot-banque/CC-01-fig-00-architecture-actuelle.svg)
 
 Six couches structurent la banque retail mid-tier 2026 typique :
 
@@ -62,7 +62,7 @@ Avec cette carte, on peut maintenant parler de ce que le copilot fait.
 
 Pas un chatbot ouvert. Un copilot **contextuel**, ancré dans le workflow CRM du conseiller. Trois modes d'usage temporels — avant, pendant, après le RDV — qui mobilisent chacun des outils différents et engagent des niveaux de risque différents.
 
-![Trois modes temporels — où le copilot intervient dans un RDV crédit conso|1300](../images/CC-01-fig-02-modes-temporels.svg)
+![Trois modes temporels — où le copilot intervient dans un RDV crédit conso|1300](../images/CC-01-copilot-banque/CC-01-fig-02-modes-temporels.svg)
 
 ### 3.1 Avant le RDV — 5 minutes pour briefer
 
@@ -111,7 +111,7 @@ L'interdiction de L4 n'est pas une frilosité ; c'est une obligation réglementa
 
 Le mode B.2 (suggestion produit pendant le RDV) est le test de vérité. Si le copilot s'effondre ici, le reste n'a pas d'importance. Reprenons l'exemple : *« le client veut faire des travaux d'isolation, il pense emprunter 18 000 € sur 7 ans »*. Voici ce qui se passe en moins de deux secondes.
 
-![Anatomie d'un appel — Listen · Retrieve · Reason · Propose · Audit|1300](../images/CC-01-fig-03-anatomie-appel.svg)
+![Anatomie d'un appel — Listen · Retrieve · Reason · Propose · Audit|1300](../images/CC-01-copilot-banque/CC-01-fig-03-anatomie-appel.svg)
 
 **1. Listen.** Deepgram transcrit en streaming, en français, avec ponctuation. Latence brute : 200 ms. Le texte arrive dans un buffer rolling.
 
@@ -138,7 +138,7 @@ Cette étape mobilise vraiment la chaîne agentic (cf. [ch. 7](../../chapitres/c
 >
 > `[ Insérer dans formulaire ]  [ Ignorer ]`
 
-**5. Audit.** Log structuré (chain-of-thought + sources retrieve + décision conseiller) → bucket S3 audit-trail (rétention 6 ans DDA), accessible via le tableau RGPD du client sur demande. Cette discipline d'audit cognitif (cf. [ch. 18](../../chapitres/ch18-observabilite-cognitive-audit-trail.md)) est ce qui rendra l'AI Act gérable plutôt que paralysant.
+**5. Audit.** Log structuré (chain-of-thought + sources retrieve + décision conseiller) → bucket S3 audit-trail (rétention 6 ans DDA), accessible via le tableau RGPD du client sur demande. Cette discipline d'audit cognitif (cf. [ch. 20](../../chapitres/ch20-observabilite-cognitive-audit-trail.md)) est ce qui rendra l'AI Act gérable plutôt que paralysant.
 
 Le total : moins de 2 secondes du *« 18 000 € sur 7 ans »* prononcé à la carte affichée. Le conseiller continue son entretien sans rupture de rythme — c'est cette fluidité qui fera la différence entre un copilot adopté et un copilot toléré.
 
@@ -224,7 +224,7 @@ Lecture transverse :
 
 - **Le poste change passe de 0 à 320 k€**. Au cadrage initial, c'est le poste qu'on oublie systématiquement — on n'a pas formé 2 800 conseillers et 14 régions sans budget dédié. Quand on s'en aperçoit, l'écart au plan est de l'ordre de 200 à 300 k€.
 
-- **Le couple évaluation + gouvernance + change** représente **5 % du POC** (18 k€ sur 131) mais **25 % du Scale** (800 k€ sur 3 230). C'est le **paradoxe agentique** ([ch. 21.7](../../chapitres/ch21-roi-paradoxe-agentique.md)) en grandeur réelle : l'unité de mesure se déplace de l'inférence (qui baisse) vers l'équipe + change + évaluation (qui montent).
+- **Le couple évaluation + gouvernance + change** représente **5 % du POC** (18 k€ sur 131) mais **25 % du Scale** (800 k€ sur 3 230). C'est le **paradoxe agentique** ([ch. 23.7](../../chapitres/ch23-roi-paradoxe-agentique.md)) en grandeur réelle : l'unité de mesure se déplace de l'inférence (qui baisse) vers l'équipe + change + évaluation (qui montent).
 
 **Crossover build/buy** estimé à ≈ 800 000 interactions/an : seuil au-delà duquel l'hybride avec routing interne et gardien self-hosted bat la solution mainstream pure en coût total. CC-01 dépasse ce seuil dès le mois 14 en Prod — c'est ce qui justifie la stratégie *« démarrer hybride avec Claude API + internaliser le gardien dès Scale »*.
 
@@ -268,11 +268,11 @@ Quatre temps :
 
 Cette boucle n'est pas un nice-to-have — c'est **le mécanisme qui transforme la promesse en confiance**. Sans elle, on découvre la dérive en lisant les premiers commentaires conseillers excédés sur le NPS interne, six mois après que le mal soit fait.
 
-## 12. ROI — Hard, Soft, et le KPI gardien qu'on ajoute
+## 15. ROI — Hard, Soft, et le KPI gardien qu'on ajoute
 
-L'axe principal est la **Vitesse** ; axes secondaires : Volume et Bien-être. Méthode mobilisée : TEI Forrester (chiffrage) + Cigref Hard/Soft (qualification) + arbre de décision [ch. 21.6](../../chapitres/ch21-roi-paradoxe-agentique.md).
+L'axe principal est la **Vitesse** ; axes secondaires : Volume et Bien-être. Méthode mobilisée : TEI Forrester (chiffrage) + Cigref Hard/Soft (qualification) + arbre de décision [ch. 23.6](../../chapitres/ch23-roi-paradoxe-agentique.md).
 
-![Carte d'estimation Hard / Soft du copilot bancaire|1300](../images/CC-01-fig-01-roi-hard-soft.svg)
+![Carte d'estimation Hard / Soft du copilot bancaire|1300](../images/CC-01-copilot-banque/CC-01-fig-01-roi-hard-soft.svg)
 
 Quatre métriques retenues :
 
@@ -285,18 +285,18 @@ Quatre métriques retenues :
 
 Cette grille est honnête mais incomplète. C'est ici qu'arrive la décision qui change tout : **ajouter un KPI gardien Soft**.
 
-> **`response-consistency`** (axe Qualité, catégorie Soft) — cible > 95 % vs doctrine DDA, alerte < 92 %. **Déclenche le rollback automatique** si dérive > 3 pts sur 7 jours roulants. C'est le mécanisme qui active la règle [ch. 21.5.4](../../chapitres/ch21-roi-paradoxe-agentique.md) de **convergence Soft**.
+> **`response-consistency`** (axe Qualité, catégorie Soft) — cible > 95 % vs doctrine DDA, alerte < 92 %. **Déclenche le rollback automatique** si dérive > 3 pts sur 7 jours roulants. C'est le mécanisme qui active la règle [ch. 23.5.4](../../chapitres/ch23-roi-paradoxe-agentique.md) de **convergence Soft**.
 
-Sans ce gardien, le ROI Hard isolé (Vitesse + Volume) signe au CODIR — et la consistency dérive en silence pendant six à neuf mois. À 18 mois, le NPS chute, les premières plaintes DDA arrivent, et la dégradation Soft impose un retour à l'hybride forcé. C'est le pattern fintech BNPL scandinave 2024, documenté au [ch. 21.7.2](../../chapitres/ch21-roi-paradoxe-agentique.md).
+Sans ce gardien, le ROI Hard isolé (Vitesse + Volume) signe au CODIR — et la consistency dérive en silence pendant six à neuf mois. À 18 mois, le NPS chute, les premières plaintes DDA arrivent, et la dégradation Soft impose un retour à l'hybride forcé. C'est le pattern fintech BNPL scandinave 2024, documenté au [ch. 23.7.2](../../chapitres/ch23-roi-paradoxe-agentique.md).
 
 **Métriques explicitement non retenues** :
 - `fraud-avoided` — pas le périmètre du copilot conseil (détection de fraude, cas dédié).
 - `basket-size` — attribution copilot ↔ cross-sell trop indirecte sur 12 mois pilote.
-- `nps` — utilisé en monitoring CSAT secondaire, pas en KPI primaire (cf. règle [ch. 21.5.4](../../chapitres/ch21-roi-paradoxe-agentique.md) sur la convergence à trois indicateurs).
+- `nps` — utilisé en monitoring CSAT secondaire, pas en KPI primaire (cf. règle [ch. 23.5.4](../../chapitres/ch23-roi-paradoxe-agentique.md) sur la convergence à trois indicateurs).
 
 La discipline d'écrire ce qu'on ne mesure pas, et pourquoi, est ce qui sauve le pilote du procès en cherry-picking au CODIR.
 
-## 13. L'équipe, la vélocité, les deadlines
+## 16. L'équipe, la vélocité, les deadlines
 
 **9,6 ETP** pour le pilote 6 mois, composés ainsi :
 
@@ -336,7 +336,7 @@ En Prod (mois 10+), descente à **6 ETP core** + ressources mutualisées platefo
 
 **Deadline opérationnelle** : POC démarré **septembre 2026** → pilote en prod **avril 2027** → généralisation **Q3 2027** (3 mois de marge avant AI Act août 2027).
 
-## 14. Le débat — Vitesse cache-t-elle le pivot ?
+## 13. Le débat — Vitesse cache-t-elle le pivot ?
 
 C'est la question centrale du cas, et celle qui se pose dans tous les copilots métier 2026.
 
@@ -346,7 +346,7 @@ C'est la question centrale du cas, et celle qui se pose dans tous les copilots m
 - Rollback technique possible en moins de 4 h via feature flags — architecture saine.
 
 **Contre l'optimisation Vitesse isolée** :
-- Le pattern fintech BNPL scandinave 2024 a optimisé Vitesse, dégradé la qualité de conseil, fait marche arrière 18 mois plus tard avec dégradation NPS forte. Ce n'est pas une anecdote, c'est le **cas d'école de la remontée échouée** ([ch. 21.7.2](../../chapitres/ch21-roi-paradoxe-agentique.md)).
+- Le pattern fintech BNPL scandinave 2024 a optimisé Vitesse, dégradé la qualité de conseil, fait marche arrière 18 mois plus tard avec dégradation NPS forte. Ce n'est pas une anecdote, c'est le **cas d'école de la remontée échouée** ([ch. 23.7.2](../../chapitres/ch23-roi-paradoxe-agentique.md)).
 - Les Soft savings (conseil consistant, doctrine respectée) sont ce qui protège le FDC contre les banques 100 % en ligne — c'est l'avantage concurrentiel qu'on dilapide si on optimise mal.
 - Le coût d'évaluation + change + gouvernance est sous-estimé : il représente 25 % du coût total à Scale et 0 % du cadrage POC initial.
 
@@ -354,21 +354,21 @@ C'est la question centrale du cas, et celle qui se pose dans tous les copilots m
 
 C'est le seul setup qui tient à 18 mois.
 
-## 15. Trois choix qu'il faut faire — et leurs conséquences
+## 17. Trois choix qu'il faut faire — et leurs conséquences
 
 Les bifurcations ne sont pas pour noter le lecteur ; elles sont pour le faire **rencontrer** les chemins. Chaque option est plausible. Une seule est sage.
 
-### 15.1 Premier KPI à mesurer à 6 mois ?
+### 17.1 Premier KPI à mesurer à 6 mois ?
 
 *Vous êtes le CFO. Vous engagez 2,8 M€ sur 18 mois. Quel KPI mesurez-vous EN PREMIER à 6 mois ?*
 
-**A. Cost-per-contact baseline + pilote.** Vous tombez dans le piège du Hard isolé : la consistency a déjà dérivé de 4 pts en silencieux, invisible dans votre KPI primaire. Le compte-rendu CODIR est triomphal — mais à 18 mois, le NPS chute et il faut tout reprendre. *Cf. règle de validation Hard [ch. 21.5.3](../../chapitres/ch21-roi-paradoxe-agentique.md) — preuve de réallocation oui, mais sans contre-poids Soft, le pivot menace à 12-18 mois.*
+**A. Cost-per-contact baseline + pilote.** Vous tombez dans le piège du Hard isolé : la consistency a déjà dérivé de 4 pts en silencieux, invisible dans votre KPI primaire. Le compte-rendu CODIR est triomphal — mais à 18 mois, le NPS chute et il faut tout reprendre. *Cf. règle de validation Hard [ch. 23.5.3](../../chapitres/ch23-roi-paradoxe-agentique.md) — preuve de réallocation oui, mais sans contre-poids Soft, le pivot menace à 12-18 mois.*
 
-**B. NPS conseillers (eNPS) uniquement.** Le pilote est jugé succès Soft (+9 eNPS) mais le CFO ne peut pas signer la généralisation : pas de chiffre Hard à présenter au CODIR, le budget est gelé en attente. *Cf. règle de validation Soft [ch. 21.5.4](../../chapitres/ch21-roi-paradoxe-agentique.md) — convergence à trois indicateurs requise, eNPS seul ne tient pas. Le pilote est techniquement bon mais politiquement mort.*
+**B. NPS conseillers (eNPS) uniquement.** Le pilote est jugé succès Soft (+9 eNPS) mais le CFO ne peut pas signer la généralisation : pas de chiffre Hard à présenter au CODIR, le budget est gelé en attente. *Cf. règle de validation Soft [ch. 23.5.4](../../chapitres/ch23-roi-paradoxe-agentique.md) — convergence à trois indicateurs requise, eNPS seul ne tient pas. Le pilote est techniquement bon mais politiquement mort.*
 
-**C. Combo Vitesse (Hard primaire) + response-consistency (Soft gardien).** Vous tenez l'alignement Cigref — KPI Hard signé CFO + garde-fou Soft qui déclenche rollback automatique si dérive. La généralisation est validée avec clause de surveillance. *Cf. règle Cigref alignement stratégique [ch. 21.7.3](../../chapitres/ch21-roi-paradoxe-agentique.md) — c'est le seul setup qui évite le retour à l'hybride forcé documenté 2024.*
+**C. Combo Vitesse (Hard primaire) + response-consistency (Soft gardien).** Vous tenez l'alignement Cigref — KPI Hard signé CFO + garde-fou Soft qui déclenche rollback automatique si dérive. La généralisation est validée avec clause de surveillance. *Cf. règle Cigref alignement stratégique [ch. 23.7.3](../../chapitres/ch23-roi-paradoxe-agentique.md) — c'est le seul setup qui évite le retour à l'hybride forcé documenté 2024.*
 
-### 15.2 Qui répond d'une recommandation copilot non conforme DDA ?
+### 17.2 Qui répond d'une recommandation copilot non conforme DDA ?
 
 *La Conformité DDA pose la question. Vous tranchez.*
 
@@ -376,17 +376,17 @@ Les bifurcations ne sont pas pour noter le lecteur ; elles sont pour le faire **
 
 **B. La banque (système éditeur), supervision humaine effective documentée.** Vous assumez la responsabilité au niveau institutionnel + organisez la supervision humaine effective (échantillonnage 5 %, audit DDA trimestriel, formation conseillers IA-Act). La FRIA documente la chaîne. *Conforme AI Act Annexe III §5 + DDA. Coût gouvernance ≈ 80 k€/an en Prod — c'est le prix d'une plateforme régulée. Ne pas l'inscrire au cadrage = pivot inévitable.*
 
-**C. Mode soft-block — le copilot ne propose que des produits whitelistés, flagge les zones grises pour escalade humaine.** Vous limitez l'utilité du copilot aux 60 % de cas standards. Les 40 % restants nécessitent escalade humaine — gain Vitesse divisé par deux mais risque DDA plafonné. *Bon compromis pour la phase Pilote, à élargir en Prod après calibration. Pattern human-in-the-loop + autorisation MCP scoped ([ch. 7](../../chapitres/ch07-boucle-agentique.md) + [ch. 13](../../chapitres/ch13-mcp-securite.md)). Souvent la bonne réponse en phase pilote, avant d'avoir mesuré la dérive réelle.*
+**C. Mode soft-block — le copilot ne propose que des produits whitelistés, flagge les zones grises pour escalade humaine.** Vous limitez l'utilité du copilot aux 60 % de cas standards. Les 40 % restants nécessitent escalade humaine — gain Vitesse divisé par deux mais risque DDA plafonné. *Bon compromis pour la phase Pilote, à élargir en Prod après calibration. Pattern human-in-the-loop + autorisation MCP scoped ([ch. 7](../../chapitres/ch07-boucle-agentique.md) + [ch. 16](../../chapitres/ch16-mcp-securite.md)). Souvent la bonne réponse en phase pilote, avant d'avoir mesuré la dérive réelle.*
 
-### 15.3 À 12 mois, le ROI Vitesse est à −6 min (cible −8). Vous faites quoi ?
+### 17.3 À 12 mois, le ROI Vitesse est à −6 min (cible −8). Vous faites quoi ?
 
-**A. Étendre quand même (sunk cost, pression CODIR).** Vous généralisez avec un ROI sous cible. Le coût total à Scale est 15 % au-dessus du budget, le sponsor finit l'année avec un dossier critiqué. Le projet survit mais l'effort plateforme transverse est annulé. *Pattern McKinsey aboutissement ([ch. 21.3.2](../../chapitres/ch21-roi-paradoxe-agentique.md)) : ne pas généraliser un cas qui n'a pas atteint son seuil. Le sunk cost est un mauvais argument.*
+**A. Étendre quand même (sunk cost, pression CODIR).** Vous généralisez avec un ROI sous cible. Le coût total à Scale est 15 % au-dessus du budget, le sponsor finit l'année avec un dossier critiqué. Le projet survit mais l'effort plateforme transverse est annulé. *Pattern McKinsey aboutissement ([ch. 23.3.2](../../chapitres/ch23-roi-paradoxe-agentique.md)) : ne pas généraliser un cas qui n'a pas atteint son seuil. Le sunk cost est un mauvais argument.*
 
 **B. Suspendre, ré-évaluer la stack (Documentum, qualité corpus DDA).** Vous identifiez que 70 % de l'écart vient de la latence Documentum (réponses 2-4 s vs cible 1 s). 3 mois pour internaliser un cache RAG sur le corpus DDA. ROI rejoint cible à 18 mois. Pilote prolongé mais Prod sain. *Bon réflexe — identifier le sclérosant réel, pas l'apparent. Souvent le data layer (qualité corpus) et pas le modèle est en cause.*
 
-**C. Pivot vers Quality first (re-spec KPI primaire en consistency-rate).** Vous changez le KPI primaire en cours de pilote — politiquement coûteux mais éditorialement honnête. Le CFO râle mais signe car le récit est tenable. *Pattern McKinsey aboutissement + Cigref alignement ([ch. 21.7.3](../../chapitres/ch21-roi-paradoxe-agentique.md)) : si la mesure révèle qu'on s'est trompé d'axe, mieux vaut pivoter que continuer une lente dérive.*
+**C. Pivot vers Quality first (re-spec KPI primaire en consistency-rate).** Vous changez le KPI primaire en cours de pilote — politiquement coûteux mais éditorialement honnête. Le CFO râle mais signe car le récit est tenable. *Pattern McKinsey aboutissement + Cigref alignement ([ch. 23.7.3](../../chapitres/ch23-roi-paradoxe-agentique.md)) : si la mesure révèle qu'on s'est trompé d'axe, mieux vaut pivoter que continuer une lente dérive.*
 
-## 16. Quiz — vérifier qu'on a saisi
+## 18. Quiz — vérifier qu'on a saisi
 
 **Q1.** Pourquoi `cost-per-contact` seul est-il un piège méthodologique ?
 - Parce qu'il n'est pas mesurable directement
@@ -394,7 +394,7 @@ Les bifurcations ne sont pas pour noter le lecteur ; elles sont pour le faire **
 - **Parce qu'il ignore la dérive Qualité Soft qui peut imposer un retour à l'hybride à 18 mois** ✓
 - Parce qu'il est interdit par le RGPD
 
-*Le KPI Hard isolé ne déclenche pas le rollback quand la consistency dérive — c'est l'angle mort qui a coûté cher au pattern fintech BNPL documenté 2024 (cf. [ch. 21.5](../../chapitres/ch21-roi-paradoxe-agentique.md)).*
+*Le KPI Hard isolé ne déclenche pas le rollback quand la consistency dérive — c'est l'angle mort qui a coûté cher au pattern fintech BNPL documenté 2024 (cf. [ch. 23.5](../../chapitres/ch23-roi-paradoxe-agentique.md)).*
 
 **Q2.** Pourquoi Documentum DMS est-il le sclérosant projet, et pas Salesforce ?
 - Parce que Documentum est plus volumineux
@@ -402,7 +402,7 @@ Les bifurcations ne sont pas pour noter le lecteur ; elles sont pour le faire **
 - Parce que Documentum coûte plus cher en licence
 - Parce que Documentum n'a pas d'API
 
-*L'arbitrage build/buy/hybride est dicté par l'architecture actuelle. Les systèmes legacy avec API SOAP + permissions granulaires + corpus mal structuré sont systématiquement les sclérosants (cf. [ch. 12](../../chapitres/ch12-mcp-plateforme.md)).*
+*L'arbitrage build/buy/hybride est dicté par l'architecture actuelle. Les systèmes legacy avec API SOAP + permissions granulaires + corpus mal structuré sont systématiquement les sclérosants (cf. [ch. 15](../../chapitres/ch15-mcp-plateforme.md)).*
 
 **Q3.** Quel poste de coût est le plus sous-estimé au cadrage POC ?
 - L'inférence (tokens)
@@ -410,9 +410,9 @@ Les bifurcations ne sont pas pour noter le lecteur ; elles sont pour le faire **
 - **Le couple évaluation + gouvernance + change (passe de 5 % du budget POC à 25 % du budget Scale)** ✓
 - Les licences mainstream
 
-*C'est le paradoxe agentique ([ch. 21.7](../../chapitres/ch21-roi-paradoxe-agentique.md)) en grandeur réelle : l'unité de mesure se déplace de l'inférence (qui baisse avec la LLMflation) vers l'équipe + change + évaluation.*
+*C'est le paradoxe agentique ([ch. 23.7](../../chapitres/ch23-roi-paradoxe-agentique.md)) en grandeur réelle : l'unité de mesure se déplace de l'inférence (qui baisse avec la LLMflation) vers l'équipe + change + évaluation.*
 
-## 17. Verdict — pilote étendu, conditionné
+## 19. Verdict — pilote étendu, conditionné
 
 **PILOT_ETENDU_CONDITIONNE** — généralisation possible Q3 2027 sous garde-fous.
 
@@ -433,18 +433,18 @@ Aux conditions remplies, le copilot conseiller bancaire est défendable au CODIR
 - **[Ch. 2 — Modèles de raisonnement et seconde courbe de scaling](../../chapitres/ch02-modeles-raisonnement.md)**
 - **[Ch. 5 — Économie unitaire de l'inférence](../../chapitres/ch05-economie-inference.md)**
 - **[Ch. 7 — Boucle agent (ReAct, human-in-the-loop)](../../chapitres/ch07-boucle-agentique.md)**
-- **[Ch. 12 — MCP plateforme](../../chapitres/ch12-mcp-plateforme.md)**
-- **[Ch. 13 — Sécurité MCP](../../chapitres/ch13-mcp-securite.md)**
-- **[Ch. 17 — Évaluation agent](../../chapitres/ch17-evaluation-benchmarks.md)**
-- **[Ch. 18 — Audit trail cognitif](../../chapitres/ch18-observabilite-cognitive-audit-trail.md)**
-- **[Ch. 19 — Garde-fous](../../chapitres/ch19-gardefous-securite-globale.md)**
-- **[Ch. 21.5 — Hard vs Soft Savings](../../chapitres/ch21-roi-paradoxe-agentique.md)**
-- **[Ch. 21.6 — Arbre de décision méthode ROI](../../chapitres/ch21-roi-paradoxe-agentique.md)**
-- **[Ch. 21.7 — Paradoxe agentique](../../chapitres/ch21-roi-paradoxe-agentique.md)**
-- **[Ch. 21.7.2 — Cas d'école de la remontée échouée](../../chapitres/ch21-roi-paradoxe-agentique.md)**
-- **[Ch. 21.7.3 — Alignement Cigref](../../chapitres/ch21-roi-paradoxe-agentique.md)**
-- **[Ch. 21.8 — Études empiriques (Brynjolfsson, Copilot, METR)](../../chapitres/ch21-roi-paradoxe-agentique.md)**
-- **[Ch. 23.5 — Banque sous AI Act](../../chapitres/ch23-gouvernance-ai-act.md)**
+- **[Ch. 15 — MCP plateforme](../../chapitres/ch15-mcp-plateforme.md)**
+- **[Ch. 16 — Sécurité MCP](../../chapitres/ch16-mcp-securite.md)**
+- **[Ch. 19 — Évaluation agent](../../chapitres/ch19-evaluation-benchmarks.md)**
+- **[Ch. 20 — Audit trail cognitif](../../chapitres/ch20-observabilite-cognitive-audit-trail.md)**
+- **[Ch. 21 — Garde-fous](../../chapitres/ch21-gardefous-securite-globale.md)**
+- **[Ch. 23.5 — Hard vs Soft Savings](../../chapitres/ch23-roi-paradoxe-agentique.md)**
+- **[Ch. 23.6 — Arbre de décision méthode ROI](../../chapitres/ch23-roi-paradoxe-agentique.md)**
+- **[Ch. 23.7 — Paradoxe agentique](../../chapitres/ch23-roi-paradoxe-agentique.md)**
+- **[Ch. 23.7.2 — Cas d'école de la remontée échouée](../../chapitres/ch23-roi-paradoxe-agentique.md)**
+- **[Ch. 23.7.3 — Alignement Cigref](../../chapitres/ch23-roi-paradoxe-agentique.md)**
+- **[Ch. 23.8 — Études empiriques (Brynjolfsson, Copilot, METR)](../../chapitres/ch23-roi-paradoxe-agentique.md)**
+- **[Ch. 25.5 — Banque sous AI Act](../../chapitres/ch25-gouvernance-ai-act.md)**
 
 ---
 

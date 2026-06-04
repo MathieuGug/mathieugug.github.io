@@ -22,7 +22,7 @@ Le déclencheur CODIR : le DSI découvre qu'un agent RH écrit dans le SIRH **sa
 
 **Chiffres bruts** (à caler) : 50 agents Copilot · 4 verticaux · ~12 shadow · X k€ de licences/sièges · **~60 % d'agents « zombies »** (déployés, jamais utilisés) · % sans owner · % sans éval · N incidents accès.
 
-**`fig-00`** = la carte de la flotte (la sprawl) — voir `images/CC-11-fig-00-flotte-agents-sprawl.svg`. C'est le test de véracité : sans cette carte, le « cadrage » reste un slogan.
+**`fig-00`** = la carte de la flotte (la sprawl) — voir `images/CC-11-flotte-agents/CC-11-fig-00-flotte-agents-sprawl.svg`. C'est le test de véracité : sans cette carte, le « cadrage » reste un slogan.
 
 ---
 
@@ -50,7 +50,7 @@ La gestion d'une flotte exige un **socle transverse** = 6 services partagés (la
 
 **Recommandation — hybride fédéré** : exploiter le **natif Microsoft** pour gouverner les 50 Copilot (ne pas réinventer), + un **registre + gateway transverse maison léger** qui chapeaute **toutes** les plateformes (Copilot + build + cadre les shadow), + un **harness d'éval partagé**. Le socle fédère, il ne centralise pas l'exécution.
 
-> Renvois : ch.12 (MCP plateforme = le socle), ch.13 (sécurité MCP = gateway/identité agent), ch.20 (runtime managé vs maison).
+> Renvois : ch.15 (MCP plateforme = le socle), ch.16 (sécurité MCP = gateway/identité agent), ch.22 (runtime managé vs maison).
 
 ---
 
@@ -73,7 +73,7 @@ C'est **le** débat. Trois modèles opératoires :
 
 **Rôles nouveaux** : un **Head of AgentOps / Agent Platform Owner** (côté plateforme) + des **agent product owners** côté métier. **Règle d'or : tout agent a un owner métier nommé + une fiche au registre — sinon il est éteint.**
 
-> Renvois : ch.24 (métier vs DSI, conduite du changement), ch.11 (patterns d'orchestration).
+> Renvois : ch.26 (métier vs DSI, conduite du changement), ch.11 (patterns d'orchestration).
 
 ---
 
@@ -87,7 +87,7 @@ C'est **le** débat. Trois modèles opératoires :
 - **AI Act par agent** : la plupart des 50 sont risque limité/minimal (productivité interne), mais certains basculent **haut risque** (RH/recrutement = Annexe III). Le **registre porte le statut AI Act de chaque agent** — le registre **est** l'outil de conformité.
 - **Shadow agents** : **amnistie + onboarding** (« ramène ton agent au registre, on t'aide à le mettre en conformité ») plutôt que la chasse. On convertit la sprawl en flotte plutôt que de la combattre.
 
-> Renvois : ch.23 (AI Act — registre par agent), ch.19 (garde-fous).
+> Renvois : ch.25 (AI Act — registre par agent), ch.21 (garde-fous).
 
 ---
 
@@ -100,7 +100,7 @@ L'éval **à l'échelle de la flotte** est un problème nouveau : on ne peut pas
 - **Détection de collision** : deux agents au périmètre qui se chevauchent et divergent.
 - **Validation continue, pas one-shot** (leçon de l'évaluation continue généralisée à la flotte) : la dérive d'un agent passe inaperçue si l'éval n'est pas mutualisée et permanente.
 
-> Renvois : ch.17 (évaluation), ch.18 (observabilité / audit trail).
+> Renvois : ch.19 (évaluation), ch.20 (observabilité / audit trail).
 
 ---
 
@@ -116,7 +116,7 @@ L'éval **à l'échelle de la flotte** est un problème nouveau : on ne peut pas
 
 - Le ROI **n'est pas par agent** mais au niveau **portefeuille**. Le socle a un coût fixe (plateforme + CoE) qui s'amortit sur N agents : sous ~10-15 agents, pas besoin de socle lourd ; **au-delà, le socle devient rentable** (mutualisation éval + MCP + garde-fous). **C'est le crossover du socle** — l'analogue flotte du crossover build/buy.
 - **Les 8 postes appliqués au portefeuille** : inférence (somme des agents), infra (le socle), équipe (le CoE/AgentOps), data, **évaluation (le harness partagé)**, **gouvernance (registre + comité)**, sécurité (gateway), change (enablement métier).
-- **Le paradoxe agentique au carré** : à l'échelle flotte, l'inférence par agent baisse (LLMflation, ch.21.2.1) mais le **coût de coordination** (socle, gouvernance, éval transverse) devient le poste dominant. L'unité de mesure se déplace de l'agent vers la **flotte**.
+- **Le paradoxe agentique au carré** : à l'échelle flotte, l'inférence par agent baisse (LLMflation, ch.23.2.1) mais le **coût de coordination** (socle, gouvernance, éval transverse) devient le poste dominant. L'unité de mesure se déplace de l'agent vers la **flotte**.
 - **Axe ROI principal** : `cout` (TCO du portefeuille, fin des doublons/zombies) ; secondaires `qualite` (cohérence inter-agents), `bienetre`. **Gardien** : taux d'usage réel (un agent non utilisé est un coût pur, pas un actif).
 
 ---
@@ -152,7 +152,7 @@ Sinon la sprawl coûte plus qu'elle ne rapporte. Conditions :
 
 ## Renvois livre
 
-ch.11 (orchestration multi-agent) · ch.12 (MCP plateforme = socle) · ch.13 (sécurité MCP = gateway/identité agent) · ch.14 (surfaces agentiques) · ch.17 (éval) · ch.18 (observabilité/audit) · ch.19 (garde-fous) · ch.20 (runtime managé) · ch.21.2.1 (LLMflation) · ch.21.7 (paradoxe agentique au niveau flotte) · ch.23 (AI Act — registre par agent) · ch.24 (métier vs DSI).
+ch.11 (orchestration multi-agent) · ch.15 (MCP plateforme = socle) · ch.16 (sécurité MCP = gateway/identité agent) · ch.13 (surfaces agentiques) · ch.19 (éval) · ch.20 (observabilité/audit) · ch.21 (garde-fous) · ch.22 (runtime managé) · ch.23.2.1 (LLMflation) · ch.23.7 (paradoxe agentique au niveau flotte) · ch.25 (AI Act — registre par agent) · ch.26 (métier vs DSI).
 
 ---
 

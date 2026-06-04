@@ -1,5 +1,5 @@
 ---
-chapitre: 25
+chapitre: 27
 titre: "Politique : procès Musk v. Altman"
 acte: 4
 acte_titre: "Mesures et garde-fous"
@@ -9,43 +9,43 @@ statut: v1
 date_maj: 2026-05-29
 ---
 
-# Chapitre 25 — Politique : procès Musk v. Altman
+# Chapitre 27 — Politique : procès Musk v. Altman
 
 > **Acte IV — Mesures et garde-fous · Court encart, ~12 pages**
-> _**Lundi 18 mai 2026, 14 h 27 PT, Ronald V. Dellums Federal Building, Oakland.** La juge Yvonne Gonzalez Rogers prononce un *directed verdict* sous *Fed. R. Civ. P. 50(a)* pour les défendeurs. Cinq heures de délibération du jury *advisory*, douze minutes de lecture, seize jours d'audience refermés sur la doctrine la moins couverte par la presse pendant tout le procès : la prescription. Le verrou Dudney a tenu — le forensic accountant d'AlixPartners a démontré, dollar par dollar sur les 38 M$ Musk de 2015-2017, que toute la fenêtre temporelle utile était déjà éteinte au 5 août 2021, trois ans avant le dépôt de la plainte fédérale. Les trois griefs survivants (breach of charitable trust, unjust enrichment, aiding & abetting Microsoft) sont morts en équité civile sans qu'une seule conclusion doctrinale ne soit rédigée. ==**Encart méthodologique** Lecture figée au 27 mai 2026== — neuf jours après le verdict, à un moment où le dossier s'est déjà redistribué sur trois arènes parallèles que ni le verdict ni la presse n'avaient anticipées. Court encart, structurellement asymétrique avec les autres chapitres : ce n'est pas l'instanciation d'une discipline d'ingénierie ; c'est le test contentieux d'une question politique posée au [Ch. 24](ch24-ia-et-travail.md)._
+> _**Lundi 18 mai 2026, 14 h 27 PT, Ronald V. Dellums Federal Building, Oakland.** La juge Yvonne Gonzalez Rogers prononce un *directed verdict* sous *Fed. R. Civ. P. 50(a)* pour les défendeurs. Cinq heures de délibération du jury *advisory*, douze minutes de lecture, seize jours d'audience refermés sur la doctrine la moins couverte par la presse pendant tout le procès : la prescription. Le verrou Dudney a tenu — le forensic accountant d'AlixPartners a démontré, dollar par dollar sur les 38 M$ Musk de 2015-2017, que toute la fenêtre temporelle utile était déjà éteinte au 5 août 2021, trois ans avant le dépôt de la plainte fédérale. Les trois griefs survivants (breach of charitable trust, unjust enrichment, aiding & abetting Microsoft) sont morts en équité civile sans qu'une seule conclusion doctrinale ne soit rédigée. ==**Encart méthodologique** Lecture figée au 27 mai 2026== — neuf jours après le verdict, à un moment où le dossier s'est déjà redistribué sur trois arènes parallèles que ni le verdict ni la presse n'avaient anticipées. Court encart, structurellement asymétrique avec les autres chapitres : ce n'est pas l'instanciation d'une discipline d'ingénierie ; c'est le test contentieux d'une question politique posée au [Ch. 26](ch26-ia-et-travail.md)._
 
 > [!QUESTION] Question d'ouverture
-> Le [Ch. 24](ch24-ia-et-travail.md) a posé la question politique de la direction de l'IA : qui en décide, au bénéfice de qui ? Le procès Musk v. Altman — ouvert à Oakland le 27 avril 2026, clos par *directed verdict* le 18 mai — est le premier test contentieux à grande échelle de cette question dans le droit américain. ==Qui contrôle la frontière entre *safety narrative* et marché ouvert — et que dit le verdict du 18 mai 2026 du contrat moral implicite des labs frontière, à la fois pour les obligations légales qu'il fixe et pour les questions doctrinales qu'il a soigneusement laissées indéterminées ?==
+> Le [Ch. 26](ch26-ia-et-travail.md) a posé la question politique de la direction de l'IA : qui en décide, au bénéfice de qui ? Le procès Musk v. Altman — ouvert à Oakland le 27 avril 2026, clos par *directed verdict* le 18 mai — est le premier test contentieux à grande échelle de cette question dans le droit américain. ==Qui contrôle la frontière entre *safety narrative* et marché ouvert — et que dit le verdict du 18 mai 2026 du contrat moral implicite des labs frontière, à la fois pour les obligations légales qu'il fixe et pour les questions doctrinales qu'il a soigneusement laissées indéterminées ?==
 
 > [!TLDR] TL;DR décideur
 > - ==Le procès cristallise **trois positions doctrinales incompatibles**== sur ce qu'un lab frontière doit être : (1) ***safety hard*** — la safety est un devoir fiduciaire dérivé d'une charte caritative, opposable à tout pivot commercial ultérieur (la position Musk) ; (2) ***scaling efficient*** — la safety se fait à l'échelle, et l'échelle exige un capital privé qu'une *nonprofit* pure ne peut pas mobiliser (la position OpenAI/Microsoft) ; (3) ***governance-as-service*** — la safety est un produit de gouvernance (PBC, *Public Benefit Corporation*, Foundation Board, *Long-Term Benefit Trust*) qui se calibre à l'institutionnel, pas au charitable (la position Anthropic-xAI implicite, devenue dominante après le 18 mai). Le verdict ne tranche aucune des trois — il tranche une prescription.
 > - **L'entonnoir judiciaire — 26 griefs → 4 → 2 → 0 tranchés au fond.** Complainte amendée novembre 2024 : 26 chefs. Décision Gonzalez Rogers 15 janvier 2026 : 4 survivants après *summary judgment*. Retrait volontaire 24 avril 2026 : 2 griefs (*breach of charitable trust*, *unjust enrichment*). Verdict 18 mai 2026 : 0 griefs tranchés au fond — tous éteints en prescription. ==Le procès est mort sur un *threshold*, pas sur une doctrine.==
 > - **Le *directed verdict* du 18 mai produit une *jurisprudence négative*** : six questions doctrinales restent ouvertes après le procès (formation du *charitable trust* d'un donateur historique d'AI lab, *self-dealing* sous Cal. Corp. Code §5233, *safe harbor Casey* étendu aux partenariats frontière, plafond *Liu v. SEC* en équité civile, périmètre *parens patriae* AG, *constructive knowledge* d'un *settlor* historique). Aucune n'est tranchée. Pour les futurs défendeurs (Anthropic, xAI), le silence doctrinal vaut **bouclier proleptique**.
 > - **Le dossier ne se referme pas, il se *redistribue* sur trois arènes parallèles.** Arène judiciaire (appellate 18-24 mois, proba remand ≈ 5 %), arène opérationnelle (secondary 8-12 Md$ pré-armé en six heures lundi soir post-verdict, *tender closing* visé fin Q3 2026), arène civile et administrative (pétition §12598 EyesOnOpenAI déposée le 22 mai, délai de réponse Bonta 60-90 jours — collision calendaire avec le *tender closing* fin juillet-août 2026).
-> - ==Trois positions doctrinales, trois arènes post-verdict, un précédent jurisprudentiel par défaut.== Le procès n'a pas répondu à la question politique du [Ch. 24](ch24-ia-et-travail.md). Il a transféré la réponse à des institutions tierces — régulateurs civils, ONG mobilisées, marchés privés. Et il a, par son silence doctrinal, prolongé de 5 à 10 ans la fenêtre dans laquelle un lab frontière peut convertir son non-profit en PBC sans risque jurisprudentiel matériel.
+> - ==Trois positions doctrinales, trois arènes post-verdict, un précédent jurisprudentiel par défaut.== Le procès n'a pas répondu à la question politique du [Ch. 26](ch26-ia-et-travail.md). Il a transféré la réponse à des institutions tierces — régulateurs civils, ONG mobilisées, marchés privés. Et il a, par son silence doctrinal, prolongé de 5 à 10 ans la fenêtre dans laquelle un lab frontière peut convertir son non-profit en PBC sans risque jurisprudentiel matériel.
 > - **Pour le lecteur français**, le procès offre un précédent comparatif sur trois questions actives en Europe : la frontière entre intérêt général et profit dans les modèles hybrides (PBC, *société à mission* française, B Corp) ; la capacité d'un donateur structurant à enforcer les termes implicites d'une charte caritative ; et la prise en compte juridique des risques systémiques de l'AGI dans la gouvernance corporate.
 > - ==**Encart méthodologique**== Lecture figée au **27 mai 2026** — neuf jours après le verdict. La grille de lecture stabilisée à fin mai est cristallisée ici ; le journal quotidien (publié séparément en ligne) reste la source vivante. Seul dossier *veille en temps réel* du livre — assumé comme tel.
 
 ---
 
-## 25.1 Le contrefort politique du livre
+## 27.1 Le contrefort politique du livre
 
-Le [Ch. 24](ch24-ia-et-travail.md) a posé la question politique de la direction de l'IA — ==qui en décide, au bénéfice de qui, et combien de temps reste-t-il aux institutions pour orienter la trajectoire avant que le palier économique soit franchi==. Comment elle se cristallise dans un contentieux judiciaire concret. Pas une affaire interne à la *Silicon Valley* ; le premier test contentieux à grande échelle de la question « *qui contrôle un lab frontière, et au nom de quelle mission* » dans le droit américain.
+Le [Ch. 26](ch26-ia-et-travail.md) a posé la question politique de la direction de l'IA — ==qui en décide, au bénéfice de qui, et combien de temps reste-t-il aux institutions pour orienter la trajectoire avant que le palier économique soit franchi==. Comment elle se cristallise dans un contentieux judiciaire concret. Pas une affaire interne à la *Silicon Valley* ; le premier test contentieux à grande échelle de la question « *qui contrôle un lab frontière, et au nom de quelle mission* » dans le droit américain.
 
 ==**Trois propriétés** orchestrent une asymétrie structurelle avec les autres chapitres de l'Acte IV.==
 
-**Première propriété — court encart, pas chapitre standard.** Les [Ch. 17](ch17-evaluation-benchmarks.md) à [Ch. 23](ch23-gouvernance-ai-act.md) instancient chacun une discipline d'ingénierie ou de conformité (évaluation, observabilité, garde-fous, runtime, ROI, IA frugale, gouvernance) sur 22 pages. Ici, **12 pages**, parce que la matière n'est pas une discipline mais un événement — un procès, un verdict, une redistribution institutionnelle. Le format suit la matière.
+**Première propriété — court encart, pas chapitre standard.** Les [Ch. 19](ch19-evaluation-benchmarks.md) à [Ch. 25](ch25-gouvernance-ai-act.md) instancient chacun une discipline d'ingénierie ou de conformité (évaluation, observabilité, garde-fous, runtime, ROI, IA frugale, gouvernance) sur 22 pages. Ici, **12 pages**, parce que la matière n'est pas une discipline mais un événement — un procès, un verdict, une redistribution institutionnelle. Le format suit la matière.
 
 **Deuxième propriété — encart « veille en temps réel ».** La veille a démarré le **27 avril 2026** — le jour même de l'ouverture du procès à Oakland — avec un *journal quotidien* qui n'existe pour aucun autre sujet du corpus[^journal-proces]. Le journal a couru du 1ᵉʳ mai 2026 au 24 mai 2026 et continue de courir. La présente **lecture est figée au 27 mai 2026** — neuf jours après le verdict — à un moment où la grille de lecture stabilisée (« le procès n'a pas refermé le dossier — il l'a *partagé* ») s'est imposée comme convergence éditoriale entre le *New York Times*, le *Financial Times* et le *Wall Street Journal* le week-end du 23-24 mai. Le journal en ligne reste la source vivante pour les évolutions post-27 mai.
 
-**Troisième propriété — clôture sans conclusion.** Le procès ne tranche pas la question politique du [Ch. 24](ch24-ia-et-travail.md). Il en pose les positions doctrinales en termes juridiquement opposables, il les laisse indéterminées par silence doctrinal, et il transfère la suite aux institutions tierces (régulateurs civils, ONG mobilisées, marchés privés). ==C'est précisément ce silence qui fait le bon contrefort de clôture==. Une clôture sur une réponse politique nette aurait surdéterminé la trajectoire ; ici, on ferme sur l'observation que la trajectoire reste, en fin mai 2026, ouverte.
+**Troisième propriété — clôture sans conclusion.** Le procès ne tranche pas la question politique du [Ch. 26](ch26-ia-et-travail.md). Il en pose les positions doctrinales en termes juridiquement opposables, il les laisse indéterminées par silence doctrinal, et il transfère la suite aux institutions tierces (régulateurs civils, ONG mobilisées, marchés privés). ==C'est précisément ce silence qui fait le bon contrefort de clôture==. Une clôture sur une réponse politique nette aurait surdéterminé la trajectoire ; ici, on ferme sur l'observation que la trajectoire reste, en fin mai 2026, ouverte.
 
-> [!INFO] Voir [Ch. 24 — Société : IA et travail](ch24-ia-et-travail.md) · Épilogue — Sept paris à dater 2027-2028
-> Le [Ch. 24](ch24-ia-et-travail.md) a posé la question politique de la direction de l'IA ; ici, comment elle se cristallise dans un contentieux qui finit par *ne pas* trancher au fond. L'Épilogue mobilisera ce silence doctrinal comme l'un des sept paris à dater 2027-2028 — la question d'une nouvelle vague contentieuse (Anthropic, xAI, ou un *Musk v. Altman 2.0* sous un nouvel angle doctrinal) reste explicitement ouverte. ==Question (qui contrôle la direction) au [Ch. 24](ch24-ia-et-travail.md), test contentieux ici, paris à dater à l'Épilogue : la séquence politique du livre== — chacun pose une question, aucun ne prétend la fermer définitivement.
+> [!INFO] Voir [Ch. 26 — Société : IA et travail](ch26-ia-et-travail.md) · Épilogue — Sept paris à dater 2027-2028
+> Le [Ch. 26](ch26-ia-et-travail.md) a posé la question politique de la direction de l'IA ; ici, comment elle se cristallise dans un contentieux qui finit par *ne pas* trancher au fond. L'Épilogue mobilisera ce silence doctrinal comme l'un des sept paris à dater 2027-2028 — la question d'une nouvelle vague contentieuse (Anthropic, xAI, ou un *Musk v. Altman 2.0* sous un nouvel angle doctrinal) reste explicitement ouverte. ==Question (qui contrôle la direction) au [Ch. 26](ch26-ia-et-travail.md), test contentieux ici, paris à dater à l'Épilogue : la séquence politique du livre== — chacun pose une question, aucun ne prétend la fermer définitivement.
 
 ---
 
-## 25.2 Chronologie 2015-2026 — du courriel fondateur au verdict
+## 27.2 Chronologie 2015-2026 — du courriel fondateur au verdict
 
 ![Chronologie 2015-2026 — onze années de bascule sur trois pistes parallèles (gouvernance, contentieux, écosystème commercial)|1300](../../proces-musk-altman/images/20260427-01-chronologie.svg)
 
@@ -63,13 +63,13 @@ Musk dépose une première plainte en *California Superior Court* le **29 févri
 
 ---
 
-## 25.3 Anatomie du procès — l'entonnoir 26 → 4 → 2 → 0
+## 27.3 Anatomie du procès — l'entonnoir 26 → 4 → 2 → 0
 
 ![Entonnoir judiciaire — du « kitchen sink » de novembre 2024 au resserrement de la veille de procès le 25 avril 2026|1300](../../proces-musk-altman/images/20260427-02-entonnoir-griefs.svg)
 
 Le schéma dispose la **trajectoire d'attrition** des griefs en trois temps. La complainte amendée de novembre 2024 ratisse large : 26 chefs incluant antitrust fédéral, RICO, fraude, rupture de contrat, concurrence déloyale, *false advertising*, *breach of fiduciary duty* et *breach of charitable trust*[^findlaw-musk-openai]. La logique est défensive — multiplier les angles pour résister au filtre des *motions to dismiss* — mais elle s'érode rapidement sous les rulings successifs de Gonzalez Rogers.
 
-### 25.3.1 L'attrition en trois temps
+### 27.3.1 L'attrition en trois temps
 
 **Premier temps**, courant 2025 : la juge écarte les griefs antitrust, RICO, *false advertising* et rupture de contrat sur *motions* de rejet ou *summary judgment* partiel.
 
@@ -77,7 +77,7 @@ Le schéma dispose la **trajectoire d'attrition** des griefs en trois temps. La 
 
 **Troisième temps**, vendredi **24 avril 2026** : Musk demande lui-même le retrait des deux griefs de fraude pour « *streamliner* » l'affaire[^fortune-fraud-drop]. Cette manœuvre tactique est lue de deux manières. ==Du côté Musk, elle élimine la nécessité de prouver une intention dolosive — un seuil de preuve élevé qui aurait orienté le procès vers l'état d'esprit d'Altman plutôt que vers la mission caritative violée==[^afp-fraud-drop]. Du côté OpenAI, c'est une concession de faiblesse : « *Musk fait semblant de changer d'angle alors qu'il s'agit toujours de pouvoir et d'argent.* »
 
-### 25.3.2 Les deux griefs survivants au procès
+### 27.3.2 Les deux griefs survivants au procès
 
 Les deux griefs entrés au procès sont enracinés dans le droit californien des organisations caritatives. Le ***breach of charitable trust*** repose sur la doctrine selon laquelle, dès leur réception, les actifs d'une corporation à but exclusivement caritatif sont « *irrévocablement dédiés* » à la mission de la charte — quand bien même le donateur n'aurait imposé aucune restriction explicite[^takagi-trust-doctrine]. L'***unjust enrichment*** vise plus directement les bénéficiaires individuels (Altman, Brockman) et institutionnels (Microsoft) du basculement structurel, à hauteur des avantages patrimoniaux indus.
 
@@ -85,23 +85,23 @@ Une particularité ajoute du sel : le *California Attorney General* Rob Bonta a 
 
 ---
 
-## 25.4 Trois positions doctrinales incompatibles
+## 27.4 Trois positions doctrinales incompatibles
 
 Au-delà du contentieux juridique, le procès cristallise **trois positions doctrinales** sur ce que doit être un lab frontière — incompatibles entre elles, et dont l'affrontement constitue la véritable matière politique du chapitre.
 
-### 25.4.1 *Safety hard* — la position Musk
+### 27.4.1 *Safety hard* — la position Musk
 
 La safety est un devoir fiduciaire dérivé d'une **charte caritative**, opposable à tout pivot commercial ultérieur. Le donateur historique d'un lab frontière dispose d'un *standing* en équité civile pour faire respecter les termes implicites de la mission, même en l'absence de restriction explicite dans le *deed of gift*. La concentration de capital privé sur le développement des modèles de fondation crée une **incompatibilité structurelle** avec la mission de bénéfice humain universel.
 
 L'expert AGI safety **Stuart Russell** (UC Berkeley), témoin de Musk, devait formaliser cette position au procès : « *les sociétés d'IA ont de très fortes incitations à poursuivre l'AGI malgré les risques de safety* »[^dworetzky-trial-date]. La juge a néanmoins exclu la portion de son rapport qui qualifiait ces risques de « *catastrophiques pour l'humanité* », jugée non quantifiée et préjudiciable — le procès n'a finalement pas atteint son témoignage.
 
-### 25.4.2 *Scaling efficient* — la position OpenAI / Microsoft
+### 27.4.2 *Scaling efficient* — la position OpenAI / Microsoft
 
 ==La safety se fait à l'échelle, et l'échelle exige un capital privé qu'une *nonprofit* pure ne peut pas mobiliser.== La conversion structurelle (nonprofit → *capped-profit* → PBC) n'est pas une trahison de la mission caritative — c'est le moyen opérationnel de la réaliser. Le partenariat Microsoft (13 G$ initial, 100 Md$+ extension étendue jusqu'en 2032 sous l'accord d'octobre 2025) est l'instanciation financière nécessaire ; le *capped-profit* à 100× était l'invention de gouvernance qui rendait cet alignement possible ; la PBC sous Foundation Board est l'évolution institutionnelle qui consolide l'arbitrage sans renier l'origine.
 
 C'est la position formalisée dans la note d'octobre 2025 *Why our structure must evolve to advance our mission*[^openai-evolve] et défendue à l'audience par Wachtell, Lipton, Rosen & Katz (William Savitt) en cabinet d'OpenAI, ainsi que par Cravath, Swaine & Moore (Brad Smith en *amicus de fait*) pour Microsoft. ==Position adversarial avec Musk, dominante institutionnellement post-conversion d'octobre 2025==, ratifiée par les AG californien et delawarien après concessions sur la sécurité, la résidence et le pouvoir de nomination du Foundation Board.
 
-### 25.4.3 *Governance-as-service* — la position Anthropic-xAI implicite
+### 27.4.3 *Governance-as-service* — la position Anthropic-xAI implicite
 
 La safety est un **produit de gouvernance** (PBC, Foundation Board, *Long-Term Benefit Trust*) qui se calibre à l'institutionnel, pas au charitable. **Anthropic** a été fondée fin 2021 par Dario et Daniela Amodei (ex-OpenAI), structurée en *Public Benefit Corporation* dès l'origine, et a installé fin 2023 l'*Anthropic Long-Term Benefit Trust* (LTBT) — un trust en *Class T stock* avec pouvoir d'élire (à terme, à partir de l'année 5) la majorité du board. C'est, en théorie de la gouvernance, le **double exact** du Foundation Board mis en place par l'accord Bonta-Jennings d'octobre 2025 sur OpenAI — avec une différence : Anthropic n'a pas eu de phase non-profit historique à convertir, donc le risque d'un procès « *breach of charitable trust* par un donateur historique » ne lui est, en droit, pas applicable[^journal-2026-05-20].
 
@@ -114,9 +114,9 @@ La safety est un **produit de gouvernance** (PBC, Foundation Board, *Long-Term B
 
 ---
 
-## 25.5 Le verdict du 18 mai 2026 — *filed too late*
+## 27.5 Le verdict du 18 mai 2026 — *filed too late*
 
-### 25.5.1 La séquence du lundi 18 mai
+### 27.5.1 La séquence du lundi 18 mai
 
 Lundi 18 mai 2026, à **14h05 PT**, le jury *advisory* de neuf personnes (six femmes, trois hommes) rend, après cinq heures de délibération à huis clos au Ronald V. Dellums Federal Building, son verdict consultatif sur l'étage 1 du *jury charge*[^reuters-verdict]. Sur les trois griefs : ==*filed too late*==. Pas d'entrée dans l'étage 2. Pas de débat sur la *credibility* d'Altman, sur la pile Sutskever-Murati-Toner-McCauley, sur le pivot Hoffman, sur l'email Scott, sur le mémo Brad Smith. Une seule question, binaire, tranchée.
 
@@ -124,13 +124,13 @@ Lundi 18 mai 2026, à **14h05 PT**, le jury *advisory* de neuf personnes (six fe
 
 À **14h35 PT**, la phase *remedies* qui devait s'ouvrir l'après-midi même est **annulée pour cause de *mootness*** — Steven Molo, qui s'apprêtait à entamer son argumentaire pour le *disgorgement* complet, se voit retirer la parole. L'audience que les commentateurs imaginaient comme une bataille de plusieurs jours sur les remèdes est ouverte puis fermée dans le même quart d'heure[^law360-remedies-mooted].
 
-### 25.5.2 Le verrou Dudney
+### 27.5.2 Le verrou Dudney
 
 Le *pool reporting* organisé mardi matin avec trois des neuf jurés a permis un *informal jury briefing* qui converge sur un point unique : ==Louis Dudney, forensic accountant d'AlixPartners, a structuré à lui seul la délibération sur les trois cutoffs==[^bitcoinworld-pool]. Témoignage technique court (≈ 90 minutes en direct + 50 minutes en cross), tableau Excel dollar-par-dollar des 38 M$ Musk entre 2015-2017, conclusion sous serment que tous les fonds avaient été dépensés en mission charitable avant le 5 août 2021 — il n'a pas été démonté en cross par Molo.
 
 Citation du foreperson rapportée par *Bitcoinworld* via le pool : « *We just looked at the timeline. The donations were spent. The math was the math.* » Le verdict est arrivé en cinq heures — sensiblement plus court que les 2-3 jours qu'imaginait la presse pour l'entrée dans l'étage 2 ; sensiblement plus long que les quatre heures que la lecture procédurale du 16 mai avait posé comme scénario défense optimal. ==La marge supplémentaire correspond, en décompte fin, au temps qu'il a fallu aux jurés pour rejeter la doctrine du *delayed discovery*== sur le grief 2 — argument que Molo avait plaidé en cross-examination du forensic accountant, et qui aurait pu sauver le grief *unjust enrichment* si le jury avait retenu que Musk n'avait pas *constructive knowledge* du préjudice avant 2022. Le départ de Musk du board en février 2018, sept ans avant le dépôt de la plainte en août 2024, valait *constructive knowledge* — ==c'est le bon sens populaire, pas une question doctrinale==.
 
-### 25.5.3 Pourquoi le verdict *advisory* a terminé le procès
+### 27.5.3 Pourquoi le verdict *advisory* a terminé le procès
 
 Un point que la presse mardi matin a, dans une majorité de papiers, mal formulé. Le verdict du jury *advisory* n'est pas, en soi, dispositif — sous *Federal Rule of Civil Procedure 39(c)* et 52(a)(1), la juge écrit seule, en équité, les *findings of fact and conclusions of law*. **Mais sur la prescription** — qui est, doctrinalement, une *defense affirmative* opérant comme *threshold question* — la juge n'a pas besoin d'écrire de *findings of fact* en équité pour conclure le procès. *Rule 50(a)* lui permet, *as a matter of law*, de constater que la base factuelle du jury (les *findings* binaires : la plainte a-t-elle été déposée avant ou après le cutoff ?) est suffisante pour disposer du procès. ==L'étage 1 est, en équité comme en droit, un *kill switch* — pas un *advisory step*==.
 
@@ -138,7 +138,7 @@ Mardi 19 mai, **Steven Molo annonce en sortie d'audience l'intention de Musk de 
 
 ---
 
-## 25.6 Le *partage des arènes* — la grille de lecture post-verdict
+## 27.6 Le *partage des arènes* — la grille de lecture post-verdict
 
 ![Le partage des arènes — bilan post-verdict semaine 1, trois théâtres parallèles, première collision juillet-août 2026|1300](../../proces-musk-altman/images/journal-2026-05-24-partage-arenes.svg)
 
@@ -146,17 +146,17 @@ Le schéma dispose les **trois arènes parallèles** sur lesquelles le dossier O
 
 Trois titres premium qui couvrent OpenAI depuis 2023 — *NYT* (Cade Metz, 23 mai), *FT* (Hannah Murphy, 24 mai), *WSJ* (Deepa Seetharaman, 24 mai) — ont publié à 96 h d'écart trois *weekend takeaways* éditoriaux qui convergent sur cette formule[^journal-2026-05-24]. ==Convergence éditoriale rare entre les trois titres qui sert de signal de cristallisation de frame== : à partir de cette semaine, tout *legal correspondent* qui écrit sur OpenAI partira de la grille « trois arènes en parallèle », pas de la grille initiale du verdict (procès clos, jurisprudence faite).
 
-### 25.6.1 Première arène — judiciaire, fermée à 14h27 PT lundi
+### 27.6.1 Première arène — judiciaire, fermée à 14h27 PT lundi
 
 Le verrou Dudney a tenu sur la prescription. Le *directed verdict* a réglé les trois griefs sans toucher au fond. ==L'arène n'est pas définitivement scellée==[^journal-2026-05-22] — la fenêtre *Fed. R. App. P. 4* court 30 jours, et un *notice of appeal* Molo-Toberoff reste possible avant le 17 juin — mais la probabilité d'un *remand* à la 9th Circuit reste sous les 5 %. L'arène judiciaire est en **standby dormant pour 18-24 mois**, le temps de l'appel. Pendant ce temps, elle ne produit rien — ni doctrine, ni faits nouveaux, ni pression sur les acteurs. Sa seule production résiduelle : la pile d'*amici* académiques en formation (ACTEC, *Harvard Law Review* annonce un *Notes & Comments* à paraître en septembre 2026 sur la *charitable trust formation doctrine* dans le contexte des AI labs) — **précédent intellectuel, pas levier opérationnel**.
 
-### 25.6.2 Deuxième arène — opérationnelle, accélérée à 20h12 PT lundi
+### 27.6.2 Deuxième arène — opérationnelle, accélérée à 20h12 PT lundi
 
 ==Wachtell a transmis un *term sheet* secondary à Morgan Stanley et Goldman Sachs **six heures et seize minutes après le verdict**==[^the-information-secondary]. La cible : 8-12 Md$, valorisation 500 Md$ post-money, *closing* visé fin Q3 2026 (août-septembre). Le *term sheet* avait été pré-armé en trois versions calibrées sur les trois scénarios *liability* du procès : (a) *directed verdict défense* — version 8-12 Md$, 500 Md$ ; (b) *verdict mixte* — version 4-6 Md$, 380 Md$ ; (c) *verdict Musk* — *secondary annulé*. La version (a) est sortie du tiroir lundi 18 mai à 14h32 PT, signée numériquement par Brad Lightcap à 15h08 PT, transmise à Morgan Stanley à 17h45 PT. ==Six heures et seize minutes — délai d'exécution opérationnelle d'une corporation qui avait pré-armé chacun des trois scénarios.==
 
 C'est l'arène la plus rapide — son cycle de décision est mensuel, ses acteurs (Bret Taylor au Foundation Board, Brad Lightcap au *Operating Board*) sont identifiés, ses instruments (mémo « *material transaction* », *recusal* §5233, PPM *Rule 506(c)*) sont prêts. Et c'est, paradoxalement, **l'arène la moins exposée régulatoirement à court terme** : sa logique est commerciale, ses contraintes sont contractuelles, son arbitrage est interne.
 
-### 25.6.3 Troisième arène — civile et administrative, ouverte à 10h PT vendredi
+### 27.6.3 Troisième arène — civile et administrative, ouverte à 10h PT vendredi
 
 Vendredi 22 mai à 10h PT, la coalition **EyesOnOpenAI** (>50 organisations menée par l'*Economic Security Project*, avec Public Citizen, le Midas Project, AI Now Institute et EPIC) a transformé son courrier du 6 mai 2026 en *administrative petition* formelle sous *California Government Code §12598*[^journal-2026-05-22], demandant à l'AG Bonta l'ouverture d'une investigation indépendante sur l'allocation des actifs charitables post-recap d'octobre 2025 et sur le *secondary* Q3 2026. Document de 47 pages, co-signé par cinq ONG pivot.
 
@@ -164,7 +164,7 @@ Vendredi 22 mai à 10h PT, la coalition **EyesOnOpenAI** (>50 organisations men�
 
 C'est l'arène la plus lente (60-90 jours par cycle), mais la seule qui force *publiquement* une institution publique à *publier* sa lecture du seuil de matérialité contestable.
 
-### 25.6.4 Pourquoi le partage est structurel et non conjoncturel
+### 27.6.4 Pourquoi le partage est structurel et non conjoncturel
 
 Trois indices. **(1)** Chaque arène a son **horloge propre** — 18-24 mois pour l'appellate, 30-90 jours pour le secondary, 60-90 jours pour l'administratif. Les cycles ne se synchronisent qu'aux *collision points* — le plus saillant étant la **fenêtre 21 juillet — 20 août 2026** où la réponse Bonta croise le *tender closing*. **(2)** Chaque arène a ses **acteurs spécialisés** — Molo-Toberoff côté appellate, Wachtell-Lightcap-Taylor côté opérationnel, Lieff Cabraser-Public Citizen-Midas Project côté civil. Aucun acteur ne joue dans les trois. **(3)** Chaque arène a ses **instruments propres** — *Fed. R. App. P. 4* + *Aryeh v. Canon* en appellate, *Cal. Corp. Code §5233* + *Smith v. Van Gorkom* + *Rule 506(c)* en opérationnel, *Cal. Gov. Code §12598* + *writ of mandate* en civil. Aucun instrument n'opère dans plus d'une arène.
 
@@ -172,11 +172,11 @@ Trois indices. **(1)** Chaque arène a son **horloge propre** — 18-24 mois pou
 
 > [!QUOTE] Casey Newton — *Platformer*, 23 mai 2026
 > *« The trial wasn't about Musk — it was about whether a frontier lab can refactor its governance under shareholder pressure without judicial review. The answer, this week, is yes. With three asterisks. »*[^journal-2026-05-24]
-> Les trois astérisques de Newton renvoient implicitement aux trois arènes — le *secondary*, la pétition §12598, l'appel à la 9th Circuit. ==Aucune ne ferme l'arbitrage politique du [Ch. 24](ch24-ia-et-travail.md)== ; chacune le déplace vers une institution tierce dotée de sa propre logique. C'est, pour qui regarde la trajectoire de gouvernance frontier lab sur 18-36 mois, **le rythme structurel post-verdict**.
+> Les trois astérisques de Newton renvoient implicitement aux trois arènes — le *secondary*, la pétition §12598, l'appel à la 9th Circuit. ==Aucune ne ferme l'arbitrage politique du [Ch. 26](ch26-ia-et-travail.md)== ; chacune le déplace vers une institution tierce dotée de sa propre logique. C'est, pour qui regarde la trajectoire de gouvernance frontier lab sur 18-36 mois, **le rythme structurel post-verdict**.
 
 ---
 
-## 25.7 La *jurisprudence négative* — six doctrines ouvertes
+## 27.7 La *jurisprudence négative* — six doctrines ouvertes
 
 Une décision tranchée en équité — même partielle, même limitée à un grief — aurait produit, sous *Rule 52(a)*, un *finding of fact* qu'un futur plaignant aurait pu citer en appui (ou un futur défendeur aurait pu citer en bouclier). Un *directed verdict* sous *Rule 50(a)* sur la prescription, lui, **ne produit aucun précédent doctrinal substantif** — il produit seulement la jurisprudence procédurale d'une prescription bien plaidée[^journal-2026-05-20]. ==Pour les futurs défendeurs, c'est l'idéal : le doute doctrinal reste un doute, et le doute doctrinal protège l'incumbent — pas le challenger.==
 
@@ -199,9 +199,9 @@ Six doctrines restent ouvertes après le verdict du 18 mai, par ordre de portée
 
 ---
 
-## 25.8 Coda du livre — ce que le verdict dit, ce qu'il ne dit pas
+## 27.8 Coda du livre — ce que le verdict dit, ce qu'il ne dit pas
 
-Le procès Musk v. Altman a tranché une question juridique précise : la prescription des trois griefs survivants. ==Il n'a pas tranché — par silence doctrinal volontaire ou résultant — la question politique du [Ch. 24](ch24-ia-et-travail.md)== : qui contrôle la direction de l'IA, et au bénéfice de qui. La distance entre la question juridiquement tranchée et la question publiquement attendue est au cœur de la frustration que beaucoup ressentiront — quel que soit le verdict — devant ce procès. Comme le résumaient les manifestants prévus devant le tribunal d'Oakland : « *quel que soit le gagnant, c'est nous les perdants* »[^afp-france-guyane].
+Le procès Musk v. Altman a tranché une question juridique précise : la prescription des trois griefs survivants. ==Il n'a pas tranché — par silence doctrinal volontaire ou résultant — la question politique du [Ch. 26](ch26-ia-et-travail.md)== : qui contrôle la direction de l'IA, et au bénéfice de qui. La distance entre la question juridiquement tranchée et la question publiquement attendue est au cœur de la frustration que beaucoup ressentiront — quel que soit le verdict — devant ce procès. Comme le résumaient les manifestants prévus devant le tribunal d'Oakland : « *quel que soit le gagnant, c'est nous les perdants* »[^afp-france-guyane].
 
 **Trois lectures restent compatibles avec le verdict** :
 
@@ -215,7 +215,7 @@ Le procès Musk v. Altman a tranché une question juridique précise : la prescr
 
 > [!QUOTE] *WIRED* à la veille du procès, 26 avril 2026
 > *« The Oakland trial is a long-delayed appointment with the responsibility of AI labs when founding ideals collide with commercial scale. »*[^wired-trial-eve]
-> L'audience était attendue comme un règlement. ==Elle a livré un déplacement.== L'arbitrage politique du [Ch. 24](ch24-ia-et-travail.md) reste à faire — par les régulateurs, par les ONG, par les marchés privés, par les juges d'appel. Le livre se ferme sur ce constat : la trajectoire reste, en fin mai 2026, ouverte. ==Le livre lui-même, dans sa version texte arrêtée au 28 mai 2026, est une **photographie** de cette indétermination.==
+> L'audience était attendue comme un règlement. ==Elle a livré un déplacement.== L'arbitrage politique du [Ch. 26](ch26-ia-et-travail.md) reste à faire — par les régulateurs, par les ONG, par les marchés privés, par les juges d'appel. Le livre se ferme sur ce constat : la trajectoire reste, en fin mai 2026, ouverte. ==Le livre lui-même, dans sa version texte arrêtée au 28 mai 2026, est une **photographie** de cette indétermination.==
 
 L'Épilogue (à venir) reprendra ce silence doctrinal comme **l'un des sept paris à dater 2027-2028** — la probabilité d'une nouvelle vague contentieuse sur les labs frontière en 2027-2028, par un nouvel angle doctrinal et un nouveau périmètre d'acteurs. Trois indices à surveiller : (i) le périmètre du *notice of appeal* Molo-Toberoff (étroit *Aryeh v. Canon* seul, ou élargi attaquant la formation du *trust*) avant le 17 juin 2026 ; (ii) la réponse formelle Bonta à la pétition §12598 entre le 21 juillet et le 20 août 2026 ; (iii) le maintien ou non par Wachtell du *tender closing* secondary à la fenêtre septembre 2026. ==Trois micro-événements qui, dans les six prochains mois, recalibreront la grille de lecture politique de la stack agentique sur les 18-36 mois qui s'ouvrent.==
 

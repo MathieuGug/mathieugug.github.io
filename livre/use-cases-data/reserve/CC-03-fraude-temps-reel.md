@@ -68,7 +68,7 @@ Les qualifications analystes et les chargebacks confirmés reviennent comme **la
 
 Une autorisation de 1 240 € à 3 h 12, pays étranger, device inconnu.
 
-**1. Features.** Le feature store renvoie : vélocité (3 transactions en 4 min), géoloc incohérente, montant très au-dessus de l'habituel, device jamais vu (cf. [ch. 16](../../chapitres/ch16-analytics-agentique-banque.md)).
+**1. Features.** Le feature store renvoie : vélocité (3 transactions en 4 min), géoloc incohérente, montant très au-dessus de l'habituel, device jamais vu (cf. [ch. 18](../../chapitres/ch18-analytics-agentique-banque.md)).
 
 **2. Score.** Le GBM score 0,92 en moins de 20 ms. Au-dessus du seuil de blocage.
 
@@ -78,7 +78,7 @@ Une autorisation de 1 240 € à 3 h 12, pays étranger, device inconnu.
 
 **5. Action.** Blocage temporaire + SMS au client (*« confirmez-vous cette opération ? »*) — réversible, voie de contestation ouverte.
 
-**6. Feedback.** L'analyste confirme la fraude → label ajouté au training set ; le chargeback éventuel reviendra à J+30/J+90 pour consolider la vérité terrain (cf. [ch. 17](../../chapitres/ch17-evaluation-benchmarks.md), [ch. 18](../../chapitres/ch18-observabilite-cognitive-audit-trail.md)).
+**6. Feedback.** L'analyste confirme la fraude → label ajouté au training set ; le chargeback éventuel reviendra à J+30/J+90 pour consolider la vérité terrain (cf. [ch. 19](../../chapitres/ch19-evaluation-benchmarks.md), [ch. 20](../../chapitres/ch20-observabilite-cognitive-audit-trail.md)).
 
 Le client raccroche rassuré, ou la fraude est arrêtée. Mais l'étape qui compte sur le long terme est la sixième — celle qui nourrit la boucle.
 
@@ -136,7 +136,7 @@ Lecture transverse :
 
 - **La data est lourde** (25 → 220 k€) : features, labels, données consortium. C'est le second poste structurant.
 
-C'est le **paradoxe agentique** ([ch. 21.7](../../chapitres/ch21-roi-paradoxe-agentique.md)) en version traditional ML : l'unité de mesure n'est pas l'inférence (négligeable) mais l'évaluation + la data. **Couper l'éval, c'est programmer la dérive à 18 mois.**
+C'est le **paradoxe agentique** ([ch. 23.7](../../chapitres/ch23-roi-paradoxe-agentique.md)) en version traditional ML : l'unité de mesure n'est pas l'inférence (négligeable) mais l'évaluation + la data. **Couper l'éval, c'est programmer la dérive à 18 mois.**
 
 **Crossover build/buy** déjà franchi : au-delà de ~15-20 M transactions/an, la licence d'un moteur acheté dépasse le coût interne, et l'avantage d'adaptation rapide devient décisif.
 
@@ -170,7 +170,7 @@ Cette boucle n'est pas un nice-to-have. C'est **le mécanisme qui maintient le H
 
 ## 11. ROI — le Hard le plus propre, et son gardien
 
-Axe principal : **Coût**. Axe secondaire : Qualité. Méthode : Hard savings directs + Cigref Hard/Soft + model risk + arbre [ch. 21.6](../../chapitres/ch21-roi-paradoxe-agentique.md).
+Axe principal : **Coût**. Axe secondaire : Qualité. Méthode : Hard savings directs + Cigref Hard/Soft + model risk + arbre [ch. 23.6](../../chapitres/ch23-roi-paradoxe-agentique.md).
 
 | Métrique | Borne basse | Cible | Borne haute | Catégorie |
 | --- | --- | --- | --- | --- |
@@ -183,7 +183,7 @@ Axe principal : **Coût**. Axe secondaire : Qualité. Méthode : Hard savings di
 
 **Non retenues** : `sla-penalties-avoided` (hors périmètre), `nps` (suivi en CSAT/contestations), `cost-per-contact` (c'est le périmètre de CC-02).
 
-## 12. L'équipe, la vélocité, la course permanente
+## 15. L'équipe, la vélocité, la course permanente
 
 **7,8 ETP** au POC, avec un poste qu'il ne faut surtout pas couper :
 
@@ -206,7 +206,7 @@ En Prod, descente à 6 ETP core — **dont 1 responsable évaluation à NE PAS c
 
 **La deadline n'est pas un jalon projet — c'est une course permanente.** Chaque semaine sans ré-évaluation est une semaine de dérive potentielle.
 
-## 13. Le débat — peut-on couper l'éval une fois le modèle en prod ?
+## 16. Le débat — peut-on couper l'éval une fois le modèle en prod ?
 
 **Pour considérer le modèle « fini »** : Hard savings nets et auditables (le ROI le plus propre du livre), build pur justifié (latence, souveraineté, adaptation), réglementairement léger (fraude exclue du haut risque AI Act).
 
@@ -214,23 +214,23 @@ En Prod, descente à 6 ETP core — **dont 1 responsable évaluation à NE PAS c
 
 **Verdict pondéré** : GO_BUILD_PUR — mais l'évaluation continue n'est **pas optionnelle**. KPI primaire = `fraud-avoided`, KPI gardien = false-positive-rate. Le poste responsable évaluation est **sanctuarisé** en prod : sa suppression est l'erreur qui déclenche la dérive à 18 mois.
 
-## 14. Deux choix qu'il faut faire
+## 13. Deux choix qu'il faut faire
 
-### 14.1 Vous héritez d'un moteur de fraude acheté, coûteux et lent à adapter. Vous faites quoi ?
+### 13.1 Vous héritez d'un moteur de fraude acheté, coûteux et lent à adapter. Vous faites quoi ?
 
-**A. Garder le moteur acheté.** Vous évitez le projet, mais la licence explose au volume et l'adaptation prend des mois pendant que les fraudeurs mutent en semaines. Le rappel décroche structurellement. *Confort court terme ; au volume, le crossover est déjà franchi ([ch. 21.6](../../chapitres/ch21-roi-paradoxe-agentique.md)).*
+**A. Garder le moteur acheté.** Vous évitez le projet, mais la licence explose au volume et l'adaptation prend des mois pendant que les fraudeurs mutent en semaines. Le rappel décroche structurellement. *Confort court terme ; au volume, le crossover est déjà franchi ([ch. 23.6](../../chapitres/ch23-roi-paradoxe-agentique.md)).*
 
 **B. GO_BUILD_PUR.** Équipe ML à monter, mais latence maîtrisée, data souveraine, ré-entraînement en heures contre la fraude adaptative. *La bonne réponse à ce volume : l'avantage décisif est la vitesse d'adaptation, que seul le build procure.*
 
 **C. Hybride moteur + challenger.** Transition douce si l'équipe n'existe pas encore, mais double coût et avantage d'adaptation plafonné. *Bon tremplin, pas une cible.*
 
-### 14.2 À 18 mois, le rappel est stable et le DAF veut couper le budget d'évaluation (« le modèle est fini »). Vous faites quoi ?
+### 13.2 À 18 mois, le rappel est stable et le DAF veut couper le budget d'évaluation (« le modèle est fini »). Vous faites quoi ?
 
-**A. Couper l'éval.** Six mois plus tard, le rappel a baissé de 8 points sans que personne ne le voie (vérité terrain retardée). La fraude revient dans le P&L, découverte sur une grosse vague, et il faut tout reprendre dans l'urgence. *Le piège central du cas ([ch. 21.5.3](../../chapitres/ch21-roi-paradoxe-agentique.md)) : un Hard savings n'est pas acquis pour toujours quand l'adversaire s'adapte.*
+**A. Couper l'éval.** Six mois plus tard, le rappel a baissé de 8 points sans que personne ne le voie (vérité terrain retardée). La fraude revient dans le P&L, découverte sur une grosse vague, et il faut tout reprendre dans l'urgence. *Le piège central du cas ([ch. 23.5.3](../../chapitres/ch23-roi-paradoxe-agentique.md)) : un Hard savings n'est pas acquis pour toujours quand l'adversaire s'adapte.*
 
-**B. Maintenir l'éval + montrer la courbe de drift.** Vous gardez le responsable évaluation et présentez au DAF la dérive simulée si on coupe : le Hard savings se reperd. Le budget éval est sanctuarisé comme **coût récurrent**, pas comme projet. *La bonne réponse ([ch. 17](../../chapitres/ch17-evaluation-benchmarks.md)) : l'évaluation est un budget continu. La fraude est une course, pas une livraison.*
+**B. Maintenir l'éval + montrer la courbe de drift.** Vous gardez le responsable évaluation et présentez au DAF la dérive simulée si on coupe : le Hard savings se reperd. Le budget éval est sanctuarisé comme **coût récurrent**, pas comme projet. *La bonne réponse ([ch. 19](../../chapitres/ch19-evaluation-benchmarks.md)) : l'évaluation est un budget continu. La fraude est une course, pas une livraison.*
 
-## 15. Quiz
+## 17. Quiz
 
 **Q1.** Pourquoi build pur ici, alors que CC-04 (maintenance turbines) recommande d'acheter ?
 - Parce que la banque a plus de budget
@@ -256,7 +256,7 @@ En Prod, descente à 6 ETP core — **dont 1 responsable évaluation à NE PAS c
 
 *L'inférence est triviale. Le poste qui décide est l'évaluation (×32 entre POC et Scale) : la fraude est adversariale, le rappel dérive si on ne ré-évalue pas, et la vérité terrain retardée rend la dérive invisible jusqu'au choc P&L.*
 
-## 16. Verdict — go build pur, évaluation sanctuarisée
+## 18. Verdict — go build pur, évaluation sanctuarisée
 
 **GO_BUILD_PUR** — sous condition que la boucle d'évaluation soit budgétée en continu.
 
@@ -274,16 +274,16 @@ Le cas est le plus propre du livre sur le papier — Hard savings auditables, pe
 
 ## Renvois livre
 
-- **[Ch. 16 — Analytics agentique banque](../../chapitres/ch16-analytics-agentique-banque.md)**
-- **[Ch. 17 — Évaluation agent](../../chapitres/ch17-evaluation-benchmarks.md)**
-- **[Ch. 18 — Audit trail cognitif](../../chapitres/ch18-observabilite-cognitive-audit-trail.md)**
-- **[Ch. 19 — Garde-fous](../../chapitres/ch19-gardefous-securite-globale.md)**
-- **[Ch. 21.5 — Hard vs Soft Savings](../../chapitres/ch21-roi-paradoxe-agentique.md)**
-- **[Ch. 21.5.3 — Validation Hard dans le temps](../../chapitres/ch21-roi-paradoxe-agentique.md)**
-- **[Ch. 21.6 — Arbre de décision méthode ROI](../../chapitres/ch21-roi-paradoxe-agentique.md)**
-- **[Ch. 21.7 — Paradoxe agentique](../../chapitres/ch21-roi-paradoxe-agentique.md)**
-- **[Ch. 21.8 — Études empiriques](../../chapitres/ch21-roi-paradoxe-agentique.md)**
-- **[Ch. 23 — Gouvernance AI Act (exclusion fraude Annexe III §5b)](../../chapitres/ch23-gouvernance-ai-act.md)**
+- **[Ch. 18 — Analytics agentique banque](../../chapitres/ch18-analytics-agentique-banque.md)**
+- **[Ch. 19 — Évaluation agent](../../chapitres/ch19-evaluation-benchmarks.md)**
+- **[Ch. 20 — Audit trail cognitif](../../chapitres/ch20-observabilite-cognitive-audit-trail.md)**
+- **[Ch. 21 — Garde-fous](../../chapitres/ch21-gardefous-securite-globale.md)**
+- **[Ch. 23.5 — Hard vs Soft Savings](../../chapitres/ch23-roi-paradoxe-agentique.md)**
+- **[Ch. 23.5.3 — Validation Hard dans le temps](../../chapitres/ch23-roi-paradoxe-agentique.md)**
+- **[Ch. 23.6 — Arbre de décision méthode ROI](../../chapitres/ch23-roi-paradoxe-agentique.md)**
+- **[Ch. 23.7 — Paradoxe agentique](../../chapitres/ch23-roi-paradoxe-agentique.md)**
+- **[Ch. 23.8 — Études empiriques](../../chapitres/ch23-roi-paradoxe-agentique.md)**
+- **[Ch. 25 — Gouvernance AI Act (exclusion fraude Annexe III §5b)](../../chapitres/ch25-gouvernance-ai-act.md)**
 
 ---
 

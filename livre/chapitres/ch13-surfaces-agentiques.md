@@ -1,5 +1,5 @@
 ---
-chapitre: 14
+chapitre: 13
 titre: "Surfaces agentiques : quatre régimes d'accès"
 acte: 3
 acte_titre: "Les interfaces"
@@ -9,10 +9,10 @@ statut: v1
 date_maj: 2026-05-29
 ---
 
-# Chapitre 14 — Surfaces agentiques : quatre régimes d'accès
+# Chapitre 13 — Surfaces agentiques : quatre régimes d'accès
 
 > **Acte III — Les interfaces · Chapitre standard, ~22 pages**
-> _Le [Ch. 12](ch12-mcp-plateforme.md) a posé l'effet de réseau MCP et la trinité MCP × A2A × AG-UI ; le [Ch. 13](ch13-mcp-securite.md) a documenté la facture sécurité. On franchit ici la frontière : ce que voit l'utilisateur final. Quatre régimes d'accès coexistent en 2026 — chat, copilote inline, canvas génératif, agent on-behalf-of — et le bon design consiste à choisir le régime **avant** de coder l'agent, pas à l'inverse. Le wording canonique des niveaux d'autonomie Knight (operator / collaborator / consultant / approver / observer) est aussi fixé ici, et AG-UI promis en [Ch. 12](ch12-mcp-plateforme.md) §12.5 est déroulé._
+> _Le [Ch. 15](ch15-mcp-plateforme.md) a posé l'effet de réseau MCP et la trinité MCP × A2A × AG-UI ; le [Ch. 16](ch16-mcp-securite.md) a documenté la facture sécurité. On franchit ici la frontière : ce que voit l'utilisateur final. Quatre régimes d'accès coexistent en 2026 — chat, copilote inline, canvas génératif, agent on-behalf-of — et le bon design consiste à choisir le régime **avant** de coder l'agent, pas à l'inverse. Le wording canonique des niveaux d'autonomie Knight (operator / collaborator / consultant / approver / observer) est aussi fixé ici, et AG-UI promis en [Ch. 15](ch15-mcp-plateforme.md) §15.5 est déroulé._
 
 > [!QUESTION] Question d'ouverture
 > Ben Thompson signe en mars 2026 ce qu'il appelle *l'aveu fondateur de la quatrième vague* : Microsoft lance Copilot Cowork à 99 $/siège/mois (tier E7) et reconnaît qu'on ne livre pas un produit agentique convaincant en empilant des LLM modulaires — il faut intégrer modèle et harness[^1]. Sierra (Bret Taylor) vaut 15,8 milliards de dollars en mai 2026[^2] sans avoir entraîné un seul modèle ; sa valeur tient à la surface customer-service qu'elle construit autour des LLM existants. Si la **surface mange le modèle** et que le chatbot est désormais étudié comme la surface par défaut **à éviter**, quel régime d'accès choisit-on, dans quel ordre, et avec quel contrat de confiance ?
@@ -21,19 +21,19 @@ date_maj: 2026-05-29
 > - ==Quatre régimes d'accès coexistent, pas un.== Chat (la prise minimale), copilote inline (l'IA dans l'outil — Cursor Tab, GitHub Copilot Agent Mode, M365 Copilot), canvas génératif (l'IA émet une interface — v0, Claude Artifacts, OpenAI Apps SDK), agent on-behalf-of (l'IA exécute en VM ou navigateur — Operator, Devin, Sierra). Choisir le bon régime *avant* de coder l'agent change tout : ce sont des architectures, des contrats utilisateur et des risques différents.
 > - **Le procès du chatbot est instruit et le verdict est tombé.** Wattenberger, Appleton, Lee, Litt, Saarinen, Pike, Nielsen Norman Group : six ans de critique convergent en un diagnostic — pas d'affordance, pas de flow, articulation forcée. Le chat reste utile pour la *découverte d'usage*, l'expression de l'imprécis, et le fallback. Il cesse d'être la surface de référence pour l'usage continu.
 > - ==AG-UI standardise la prise côté frontend ce que MCP standardise côté tools.== Lancé par CopilotKit le 12 mai 2025, AG-UI est un transport bi-directionnel agnostique (SSE par défaut), 17 événements core (lifecycle/text/tool/state/special), `StateDelta` en JSON Patch RFC 6902. Adopté par LangGraph, CrewAI, Microsoft Agent Framework, Google ADK, AWS Strands, Mastra, Pydantic AI, Agno, LlamaIndex, AG2 — et en *community tier* par le Claude Agent SDK[^11].
-> - **L'économie du régime 4 a basculé.** Coût par tâche d'un agent navigateur 0,50–1,50 $ (2024) → **0,05–0,15 $** (2026), précision GUI > 90 % avec Claude Opus 4.7 et GPT-5. C'est cette double bascule qui rend l'on-behalf-of commercialement viable — pas un breakthrough modèle isolé. Détails au [Ch. 15](ch15-computer-use.md).
-> - ==Les 5 niveaux d'autonomie du Knight Institute sont la grille **load-bearing** du livre.== Operator / collaborator / consultant / approver / observer (Yonadav Shavit et al., juillet 2025[^19]). Cette grille est fixée ici une fois pour toutes et réutilisée aux [Ch. 11](ch11-patterns-orchestration.md) (pilote *interne* de la boucle), [Ch. 15](ch15-computer-use.md) (computer use), [Ch. 23](ch23-gouvernance-ai-act.md) (gouvernance). Avec elle, six primitives non négociables : plan visible, escalade contextuelle, warm handoff, autonomy slider explicite, audit log, disclosure non-humain.
+> - **L'économie du régime 4 a basculé.** Coût par tâche d'un agent navigateur 0,50–1,50 $ (2024) → **0,05–0,15 $** (2026), précision GUI > 90 % avec Claude Opus 4.7 et GPT-5. C'est cette double bascule qui rend l'on-behalf-of commercialement viable — pas un breakthrough modèle isolé. Détails au [Ch. 17](ch17-computer-use.md).
+> - ==Les 5 niveaux d'autonomie du Knight Institute sont la grille **load-bearing** du livre.== Operator / collaborator / consultant / approver / observer (Yonadav Shavit et al., juillet 2025[^19]). Cette grille est fixée ici une fois pour toutes et réutilisée aux [Ch. 11](ch11-patterns-orchestration.md) (pilote *interne* de la boucle), [Ch. 17](ch17-computer-use.md) (computer use), [Ch. 25](ch25-gouvernance-ai-act.md) (gouvernance). Avec elle, six primitives non négociables : plan visible, escalade contextuelle, warm handoff, autonomy slider explicite, audit log, disclosure non-humain.
 
 ---
 
-## 14.1 Pourquoi les surfaces
+## 13.1 Pourquoi les surfaces
 
 Un **régime d'accès** n'est pas un canal de communication — c'est un contrat d'expérience. Il dit *où* l'utilisateur rencontre l'agent (fenêtre dédiée, outil existant, panneau adjacent, observatoire d'exécution), *quels gestes* il peut faire (taper, valider, interrompre, reconfigurer), *quelle classe d'erreurs* est acceptable, et *quelle part de contrôle* il abandonne. Choisir le régime, c'est choisir l'architecture de l'agent, son économie, son risque, et la confiance qui s'y construira ou s'y défera.
 
 > [!INFO] Voir [Ch. 11 — Patterns d'orchestration](ch11-patterns-orchestration.md)
-> Le [Ch. 11](ch11-patterns-orchestration.md) traite les régimes *internes* (code-driven workflow / LLM-driven routines+handoffs / graphe déclaratif / agent autonome) — *qui pilote la boucle dans le code*. Ici, les régimes *externes* — *qui contrôle l'expérience côté utilisateur final*. Les deux taxonomies sont orthogonales : un agent autonome au sens du [Ch. 11](ch11-patterns-orchestration.md) peut s'exposer en régime canvas, en régime on-behalf-of, ou en inline. La passerelle entre les deux est la **grille Knight** (§14.8), qui articule l'autonomie interne et l'autonomie *exposée* à l'utilisateur.
+> Le [Ch. 11](ch11-patterns-orchestration.md) traite les régimes *internes* (code-driven workflow / LLM-driven routines+handoffs / graphe déclaratif / agent autonome) — *qui pilote la boucle dans le code*. Ici, les régimes *externes* — *qui contrôle l'expérience côté utilisateur final*. Les deux taxonomies sont orthogonales : un agent autonome au sens du [Ch. 11](ch11-patterns-orchestration.md) peut s'exposer en régime canvas, en régime on-behalf-of, ou en inline. La passerelle entre les deux est la **grille Knight** (§13.8), qui articule l'autonomie interne et l'autonomie *exposée* à l'utilisateur.
 
-### 14.1.1 La surface mange le modèle
+### 13.1.1 La surface mange le modèle
 
 L'industrie LLM s'est déplacée par bascules. ChatGPT a installé en novembre 2022 l'idée qu'on parle à un agent dans une fenêtre vide. Quarante-deux mois plus tard, l'industrie a passé suffisamment de temps avec cette surface pour savoir qu'elle est faible. Quatre vagues s'enchaînent : **chat, copilote inline, canvas génératif, agent on-behalf-of**. Et toutes les quatre coexistent — elles ne se remplacent pas, elles s'empilent.
 
@@ -47,17 +47,17 @@ Le Nielsen Norman Group apporte le cadre théorique. Dans *AI: First New UI Para
 
 Une formulation venue de la communauté open-source résume la trajectoire : « A chatbot answers, a copilot suggests, an agent acts, and a digital employee persists »[^18]. Cette gradation — *répond / suggère / agit / persiste* — capture la trajectoire d'autonomie croissante des produits AI 2022–2026. À chaque cran, la surface change. Et à chaque cran, l'utilisateur abandonne une part du contrôle de bas niveau qu'il maîtrisait — la frappe (copilot), la composition (canvas), l'exécution (agent autonome).
 
-Le mot *surface* mérite d'être ancré. La **surface d'accès** à un agent désigne l'ensemble des points d'interaction visibles côté utilisateur : la fenêtre, les contrôles, les feedbacks, le rendu des résultats intermédiaires, les options de correction et d'interruption. C'est tout ce qui n'est pas le modèle ni le harness backend (couverts en Acte II). C'est le contrat d'expérience que le produit pose au moment où l'utilisateur s'en sert. ==La surface est aussi ce qui matérialise les choix de design d'autonomie==, et ces choix doivent être exposés explicitement à l'utilisateur — c'est la thèse Knight développée en §14.8.
+Le mot *surface* mérite d'être ancré. La **surface d'accès** à un agent désigne l'ensemble des points d'interaction visibles côté utilisateur : la fenêtre, les contrôles, les feedbacks, le rendu des résultats intermédiaires, les options de correction et d'interruption. C'est tout ce qui n'est pas le modèle ni le harness backend (couverts en Acte II). C'est le contrat d'expérience que le produit pose au moment où l'utilisateur s'en sert. ==La surface est aussi ce qui matérialise les choix de design d'autonomie==, et ces choix doivent être exposés explicitement à l'utilisateur — c'est la thèse Knight développée en §13.8.
 
 ---
 
-## 14.2 Le procès du chatbot — la cause est entendue
+## 13.2 Le procès du chatbot — la cause est entendue
 
 Le procès du chat comme surface universelle est désormais un genre éditorial à part entière dans la communauté design. Il faut le résumer fidèlement, parce que ce procès cadre tout ce qui suit — et parce que les arguments sont solides.
 
 ![Le procès du chatbot — affordance, flow, articulation|1300](../../surfaces-agentiques/images/20260518-02-proces-chatbot.svg)
 
-### 14.2.1 Six contributions convergentes
+### 13.2.1 Six contributions convergentes
 
 **Amelia Wattenberger, *Why Chatbots Are Not the Future of Interfaces*** (2023). Le texte fondateur. Trois arguments load-bearing[^3] :
 
@@ -75,7 +75,7 @@ Le procès du chat comme surface universelle est désormais un genre éditorial 
 
 **Allen Pike, *Post-Chat UI*** (30 avril 2025[^8]). Pike fait la synthèse pratique. Le chat reste utile comme *debug interface* et comme *fallback mode* — quand on ne sait pas ce qu'on cherche, le langage naturel est un point d'entrée acceptable. Pour 90 % des usages routiniers, il propose dix patterns alternatifs : *co-authorship* (Canvas, Cursor), *generative right-click* (Dia), *intuitive search* (Superhuman, Figma), *type instead of pick*, *inline feedback* (writing daemons), *clean up* (Figma Rename Layers), *summary/synthesis* (Apple Intelligence), *voice + pointing*, *do-the-obvious-thing* (tab complete), *completely generated UI* (bolt.new).
 
-### 14.2.2 Le concept central — l'articulation barrier
+### 13.2.2 Le concept central — l'articulation barrier
 
 Le Nielsen Norman Group formalise en 2024 le grief le plus structurel sous le nom d'**articulation barrier**[^9]. La définition opérationnelle : « obliger l'utilisateur à articuler verbalement chaque demande est une charge cognitive lourde, sous-estimée parce que les concepteurs sont eux-mêmes des manieurs de mots ». Ce point a une conséquence stratégique : ==pour un utilisateur qui n'est pas un manieur de mots — un comptable, un chef d'atelier, un opérateur de production — le chat est structurellement défaillant==, et aucune amélioration du modèle sous-jacent ne le corrige. Le concepteur qui pense le chat suffisant fait porter sa propre fluence verbale sur des publics qui ne l'ont pas.
 
@@ -89,31 +89,31 @@ Le Nielsen Norman Group formalise en 2024 le grief le plus structurel sous le no
 
 ---
 
-## 14.3 Régime 1 — Le copilote inline
+## 13.3 Régime 1 — Le copilote inline
 
 Le premier régime alternatif au chat s'est imposé silencieusement entre 2023 et 2025 : le **copilote inline**. L'IA vit *dans* l'outil existant, pas à côté. Trois sub-modes coexistent désormais — l'autocomplete (ghost text), le chat panel (sidebar contextuelle), l'agent mode (l'IA pilote l'éditeur sur plusieurs fichiers). Les bons produits 2026 ont compris qu'il faut les trois, et qu'il faut basculer entre eux sans changer d'application.
 
 ![Trois sub-modes inline — ghost text, sidebar chat, agent mode|1300](../../surfaces-agentiques/images/20260518-03-trois-submodes-inline.svg)
 
-### 14.3.1 Ghost text et autocomplete
+### 13.3.1 Ghost text et autocomplete
 
 Le pattern canonique : l'IA insère une suggestion en texte gris italique à la position du curseur, l'utilisateur accepte par Tab ou rejette par Esc[^20]. GitHub Copilot l'a popularisé en 2021. Cursor a poussé le pattern d'un cran avec **Cursor Tab v2** — un modèle propriétaire RL-trained qui ne prédit plus *les caractères suivants* mais *l'action suivante* (déplacer le curseur ailleurs, ouvrir un fichier, modifier un import). ==C'est la première fois qu'un outil inline matérialise une *intention*, pas un complètement.==
 
 La force du sub-mode : *zéro friction*. L'utilisateur tape, l'IA suggère, l'utilisateur valide ou ignore. Pas de prompt à écrire, pas de fenêtre à ouvrir. Sa limite : *aucune négociation possible*. Si la suggestion est à 70 % juste, il faut l'accepter et corriger derrière, ou tout rejeter. Pas de *« comme ça, mais avec X »*.
 
-### 14.3.2 Sidebar chat contextuelle
+### 13.3.2 Sidebar chat contextuelle
 
 Le pattern : un panneau latéral qui a accès au document, au repo, à la sélection. C'est un chat, mais *contextualisé* — l'utilisateur ne décrit pas le code, il dit *« explique ça »* en pointant. GitHub Copilot Chat, Cursor Chat, Notion AI (`/AI` qui ouvre un panneau), JetBrains AI, Zed AI.
 
-La force du sub-mode : *négociation et raisonnement explicite*. L'utilisateur peut demander pourquoi, demander une alternative, contraindre la sortie. Sa limite : on retombe partiellement dans les griefs de §14.2 — il faut articuler, attendre, évaluer.
+La force du sub-mode : *négociation et raisonnement explicite*. L'utilisateur peut demander pourquoi, demander une alternative, contraindre la sortie. Sa limite : on retombe partiellement dans les griefs de §13.2 — il faut articuler, attendre, évaluer.
 
-### 14.3.3 Agent mode inline
+### 13.3.3 Agent mode inline
 
 Le pattern : l'IA prend la main, modifie plusieurs fichiers, lance le terminal, lit les erreurs, itère. L'utilisateur valide à la fin (ou interrompt en cours). C'est le sub-mode qui a émergé en force en 2024-2025 avec Cursor Composer, Windsurf Cascade, Aider, et finalement GitHub Copilot Agent Mode (GA mars 2026 sur VS Code et JetBrains)[^21]. La preview *Inline Agent Mode* d'avril 2026 mérite mention : l'agent mode s'invoque directement *dans l'inline chat*, sans bascule vers un panneau. C'est l'unification cognitive des trois sub-modes.
 
-La force : *productivité ×3 à ×5 sur les tâches multi-fichiers*. Cursor revendique 2 milliards d'ARR run-rate en février 2026[^22], valorisation discutée à 50 milliards, 40 000 ingénieurs NVIDIA en clients. Windsurf, racheté par Cognition pour ~250 M$ en décembre 2025, défend une variante : **Arena Mode**, deux agents Cascade côte à côte avec identités modèles cachées, l'utilisateur vote — manière élégante de masquer le choix du modèle derrière la qualité du résultat. Sa limite : ==l'observabilité chute brutalement==. L'utilisateur perd la trace des micro-décisions. On y revient au §14.8.
+La force : *productivité ×3 à ×5 sur les tâches multi-fichiers*. Cursor revendique 2 milliards d'ARR run-rate en février 2026[^22], valorisation discutée à 50 milliards, 40 000 ingénieurs NVIDIA en clients. Windsurf, racheté par Cognition pour ~250 M$ en décembre 2025, défend une variante : **Arena Mode**, deux agents Cascade côte à côte avec identités modèles cachées, l'utilisateur vote — manière élégante de masquer le choix du modèle derrière la qualité du résultat. Sa limite : ==l'observabilité chute brutalement==. L'utilisateur perd la trace des micro-décisions. On y revient au §13.8.
 
-### 14.3.4 Hors du code — la productivité inline
+### 13.3.4 Hors du code — la productivité inline
 
 Le pattern n'est pas réservé au développement. Les outils de productivité ont adopté les mêmes trois sub-modes en 2025-2026, parfois avec des variantes intéressantes.
 
@@ -129,15 +129,15 @@ Sa limite structurelle : l'inline ne convient qu'aux tâches *déjà encadrées 
 
 ---
 
-## 14.4 Régime 2 — Le canvas génératif
+## 13.4 Régime 2 — Le canvas génératif
 
 Le canvas est la surface qui a le plus muté entre 2024 et 2026. Lancé comme *« side panel pour artefacts générés »* (Claude Artifacts, juin 2024 ; ChatGPT Canvas, octobre 2024), il s'est transformé en quelques mois en **IDE hébergé full-stack**.
 
-### 14.4.1 Le pattern central
+### 13.4.1 Le pattern central
 
 L'utilisateur décrit un objet — un composant React, une slide, un dashboard, une app entière. L'IA émet cet objet dans un panneau adjacent (ou une page dédiée). L'utilisateur édite ou itère par prompt sur cet objet, pas sur le chat. ==La conversation devient la commande ; l'artefact devient le résultat.==
 
-### 14.4.2 Quatre régimes de generative UI
+### 13.4.2 Quatre régimes de generative UI
 
 Sous le terme *generative UI*, quatre régimes coexistent — ce sont des architectures et des risques différents. CopilotKit propose la taxonomie la plus claire à date[^27] :
 
@@ -146,9 +146,9 @@ Sous le terme *generative UI*, quatre régimes coexistent — ce sont des archit
 1. **Controlled / Static.** L'agent appelle un composant React pré-existant comme une tool ; les arguments du tool call deviennent les props. Couplage fort, prévisible. C'est ce que fait CopilotKit en mode classique.
 2. **Declarative.** L'agent émet un schéma JSON qui décrit l'UI à rendre parmi un catalogue connu côté frontend. Le client choisit le composant matching, applique les props. C'est le pattern de **A2UI** (Google, décembre 2025[^28]) — délibérément sans exécution de code, pour la sécurité.
 3. **Open-ended.** L'agent émet directement du HTML/JS exécuté en sandbox (typiquement iframe ou shadow DOM). C'est ce que font Claude Artifacts, ChatGPT Canvas, Vercel v0. Liberté maximale, risque maximal.
-4. **Dynamic data-driven.** L'UI elle-même est pré-codée, mais ses paramètres et son contenu varient selon une requête NL → SQL → visualisation. C'est le régime de la BI conversationnelle (Tableau Pulse, ThoughtSpot Spotter, Sigma AI, Sisense GenBI). Le [Ch. 16](ch16-analytics-agentique-banque.md) le décortique sur la stack data GCP.
+4. **Dynamic data-driven.** L'UI elle-même est pré-codée, mais ses paramètres et son contenu varient selon une requête NL → SQL → visualisation. C'est le régime de la BI conversationnelle (Tableau Pulse, ThoughtSpot Spotter, Sigma AI, Sisense GenBI). Le [Ch. 18](ch18-analytics-agentique-banque.md) le décortique sur la stack data GCP.
 
-### 14.4.3 Les acteurs centraux
+### 13.4.3 Les acteurs centraux
 
 - **Vercel v0** — lancé en septembre 2023 comme générateur de composants React + shadcn/ui. Rebrand v0.dev → **v0.app** en janvier 2026, signalant le passage à « générateur d'apps full-stack ». Février 2026 : intégration Git, éditeur VS Code-like, sandbox Next.js complet (API Routes + Server Actions), connectivité Supabase/Snowflake/AWS. Guillermo Rauch revendique 3 millions d'utilisateurs au podcast Sequoia *Training Data* (2026) ; ==10 % des nouveaux signups Vercel viennent désormais de ChatGPT qui recommande v0==[^12]. La boucle est révélatrice : ChatGPT → v0 → Vercel. shadcn/ui joue un rôle structurel souvent sous-estimé — c'est la couche qui permet à v0, Claude Artifacts et autres de produire du code esthétiquement décent sans entraînement spécifique[^29].
 
@@ -164,7 +164,7 @@ Sous le terme *generative UI*, quatre régimes coexistent — ce sont des archit
 
 - **Lovable, Bolt, Replit Agent.** Le canvas full-stack consumer/dev. **Lovable** : 100 M$ d'ARR en 8 mois, 330 M$ Series B à 6,6 Md $ de valo (fin 2025)[^14] — opinionated stack (auth + DB + paiements inclus). **Bolt.new** : flexibilité JS-only, browser-based, focus prototypage rapide. **Replit Agent 4** lancé mars 2026 — revenus 10 M$ → 100 M$ en 9 mois post-Agent[^32].
 
-### 14.4.4 La convergence MCP
+### 13.4.4 La convergence MCP
 
 Trois standards de generative UI s'affrontaient en 2025 ; ils convergent vers MCP en 2026.
 
@@ -179,7 +179,7 @@ Trois standards de generative UI s'affrontaient en 2025 ; ils convergent vers MC
 
 ---
 
-## 14.5 Régime 3 — L'expérience narrative orientée tâche
+## 13.5 Régime 3 — L'expérience narrative orientée tâche
 
 Le troisième régime est moins documenté que les autres, et c'est pourtant celui qui prend le plus de vitesse en 2026. Il ressemble au canvas, mais il n'est pas générique : ==l'IA construit une mini-app éditoriale orientée vers une tâche précise de l'utilisateur, avec un scénario, des points d'arrêt, et des contrôles calibrés==.
 
@@ -195,22 +195,22 @@ Trois principes pour designer une expérience narrative agentique, tirés des se
 2. **Des poignées calibrées, pas une liberté totale.** L'utilisateur peut zoomer sur une cellule, demander un détail, intervenir à un point précis du parcours. Mais il ne peut pas tout reconfigurer — ça casserait la cohérence narrative.
 3. **Une métrique de qualité explicite.** Une expérience narrative est *bonne* quand l'utilisateur a compris quelque chose qu'il ne savait pas avant, et qu'il peut agir dessus. Ce n'est ni *la couverture* (régime dashboard) ni *la mémorisation* (régime infographique) — c'est *la conversion en décision*.
 
-> [!INFO] Voir [Ch. 16 — Analytics agentique](ch16-analytics-agentique-banque.md), encart Expériences narratives génératives
-> Le [Ch. 16](ch16-analytics-agentique-banque.md) fait redescendre ce régime sur le cas analytics banque : un comité crédit reçoit un dashboard fixe (signé, audité, distribué), pose une question hors-périmètre — la conversation ouvre la profondeur — puis si la question demande une analyse sur-mesure, un agent compose une page d'analyse à la demande qui combine données internes, données externes, et qui expose son lineage. La généalogie complète (Segel-Heer, Bertin, Tufte, Cairo, le tournant humaniste Lupi/Posavec/Fragapane) est en encart §16.14.
+> [!INFO] Voir [Ch. 18 — Analytics agentique](ch18-analytics-agentique-banque.md), encart Expériences narratives génératives
+> Le [Ch. 18](ch18-analytics-agentique-banque.md) fait redescendre ce régime sur le cas analytics banque : un comité crédit reçoit un dashboard fixe (signé, audité, distribué), pose une question hors-périmètre — la conversation ouvre la profondeur — puis si la question demande une analyse sur-mesure, un agent compose une page d'analyse à la demande qui combine données internes, données externes, et qui expose son lineage. La généalogie complète (Segel-Heer, Bertin, Tufte, Cairo, le tournant humaniste Lupi/Posavec/Fragapane) est en encart §18.14.
 
 Le régime 3 est souvent la *façade* d'un régime 4. Sierra fait du customer-service en surface (régime 3) mais agit en backend (annule la commande, crédite le compte, envoie un voucher — régime 4). Tableau Pulse pousse un brief (régime 3) puis exécute une action sur Salesforce si l'utilisateur clique (régime 4). C'est ce couplage qui fait la valeur — la narrative orientée tâche conduit à l'action, et l'action est exécutée par l'agent on-behalf-of.
 
 ---
 
-## 14.6 Régime 4 — L'agent on-behalf-of
+## 13.6 Régime 4 — L'agent on-behalf-of
 
 Le quatrième régime est celui qui occupe le plus de presse en 2026 et qui demande le plus de précautions de design. ==L'agent agit *pour* vous : il ouvre un navigateur, clique, remplit des formulaires, paye, envoie des emails, refactore un projet, scheduler un appel.== La surface devient une *fenêtre d'observation* sur le travail de l'agent — plus un terrain d'action direct pour l'utilisateur.
 
 ![La surface de l'agent on-behalf-of — quatre questions UX et leurs patterns dominants|1300](../../surfaces-agentiques/images/20260518-05-surface-onbehalfof.svg)
 
-### 14.6.1 Quatre sous-familles
+### 13.6.1 Quatre sous-familles
 
-**Browser agents** — Operator (OpenAI), Claude Computer Use (Anthropic), Convergence AI Proxy, Browser Use, Multion, Microsoft Copilot Vision, Project Mariner (Google). Ils opèrent dans un navigateur cloud (Operator, Proxy) ou local (Computer Use, Browser Use). Benchmarks 2026 : OSWorld 38,1 % (Operator), 44 % (Computer Use, ×3 en un an) ; WebVoyager 87 % (Operator), 88 % (Convergence Proxy)[^15]. Le déroulé technique est en [Ch. 15](ch15-computer-use.md).
+**Browser agents** — Operator (OpenAI), Claude Computer Use (Anthropic), Convergence AI Proxy, Browser Use, Multion, Microsoft Copilot Vision, Project Mariner (Google). Ils opèrent dans un navigateur cloud (Operator, Proxy) ou local (Computer Use, Browser Use). Benchmarks 2026 : OSWorld 38,1 % (Operator), 44 % (Computer Use, ×3 en un an) ; WebVoyager 87 % (Operator), 88 % (Convergence Proxy)[^15]. Le déroulé technique est en [Ch. 17](ch17-computer-use.md).
 
 **Engineering agents** — Devin (Cognition), Cursor Background Agent, Claude Code en mode agent, GitHub Spark, Replit Agent. Le pattern : l'utilisateur assigne un ticket Slack ou Linear, l'agent livre une PR. Devin a fait son repricing massif : 20 $/mo Core (contre 500 $/mo avant) en début 2026, clients Goldman Sachs (pilote sur 12 000 devs), Nubank[^36].
 
@@ -218,14 +218,14 @@ Le quatrième régime est celui qui occupe le plus de presse en 2026 et qui dema
 
 **Enterprise workflow agents** — Salesforce Agentforce (~800 M$ ARR FY26, 18 500 clients, 29 000 deals)[^39], Microsoft Copilot Studio + Agent 365 (GA mai 2026), ServiceNow AI Agents.
 
-### 14.6.2 La double bascule économique 2026
+### 13.6.2 La double bascule économique 2026
 
 L'économie a basculé en 2026. ==Le coût par tâche d'un agent navigateur est passé de 0,50–1,50 $ (2024) à 0,05–0,15 $ (2026), et la précision GUI a franchi 90 %==[^15]. C'est cette double bascule — coût ÷ 10 *et* précision > 90 % — qui rend le régime 4 commercialement viable. Anthropic Claude Opus 4.7 et OpenAI GPT-5 sont à l'origine du saut de précision. Les modèles deviennent assez bons pour comprendre des screenshots complexes, et assez cheap pour qu'on les laisse cliquer mille fois par jour.
 
-> [!INFO] Voir [Ch. 15 — Computer use : le régime extrême](ch15-computer-use.md)
-> Le on-behalf-of est ici traité comme régime UX. Le [Ch. 15](ch15-computer-use.md) zoome sur le **sous-régime extrême du pilotage écran** — boucle observe·plan·ground·act·verify à cinq phases, trois architectures concurrentes (vision pure / vision+parseur OmniParser / agent intégré perception-action UI-TARS), trajectoire OSWorld 12,2 % avril 2024 → 76,26 % octobre 2025 (premier dépassement humain), cliff UI-CUBE (87 % → 32 % tier complexe), surface insolite VPI + CVE-2025-55322 control plane, latence 24× humain en coût caché. Les chiffres business mentionnés ici (Cursor, Devin, Sierra, Harvey, Agentforce) ne sont pas répétés au [Ch. 15](ch15-computer-use.md) — discipline éditoriale.
+> [!INFO] Voir [Ch. 17 — Computer use : le régime extrême](ch17-computer-use.md)
+> Le on-behalf-of est ici traité comme régime UX. Le [Ch. 17](ch17-computer-use.md) zoome sur le **sous-régime extrême du pilotage écran** — boucle observe·plan·ground·act·verify à cinq phases, trois architectures concurrentes (vision pure / vision+parseur OmniParser / agent intégré perception-action UI-TARS), trajectoire OSWorld 12,2 % avril 2024 → 76,26 % octobre 2025 (premier dépassement humain), cliff UI-CUBE (87 % → 32 % tier complexe), surface insolite VPI + CVE-2025-55322 control plane, latence 24× humain en coût caché. Les chiffres business mentionnés ici (Cursor, Devin, Sierra, Harvey, Agentforce) ne sont pas répétés au [Ch. 17](ch17-computer-use.md) — discipline éditoriale.
 
-### 14.6.3 Les quatre questions UX critiques
+### 13.6.3 Les quatre questions UX critiques
 
 Quand l'agent agit pour vous, quatre questions UX dominent. Les réponses convergent à travers l'industrie, et un produit qui ne propose pas ces quatre primitives part avec un déficit de confiance.
 
@@ -245,17 +245,17 @@ Quand l'agent agit pour vous, quatre questions UX dominent. Les réponses conver
 
 *Pattern dominant : extended thinking visible et narrate-as-you-go.* Claude (claude.ai) et OpenAI o1/o3 affichent désormais le raisonnement intermédiaire dans un bloc dépliable. C'est une réponse directe au besoin de comprendre *pourquoi*. Le papier académique **WaitGPT** (UIST 2024[^45]) formalise ce besoin : transformer le code généré par un agent LLM d'analyse de données en une représentation visuelle interactive, étape par étape, que l'utilisateur peut comprendre, vérifier, modifier — *en cours d'exécution*. ==Une bonne surface on-behalf-of sépare **trois flux d'information** : le *plan* (todo-list), le *state* (où l'agent en est), le *reasoning* (pourquoi cette étape).== Les confondre dans un seul stream de texte tue la lisibilité.
 
-### 14.6.4 Le warm handoff to human
+### 13.6.4 Le warm handoff to human
 
 Pattern critique systématisé par Salesforce[^46]. L'agent identifie les scenarios sensibles ou complexes — sentiment utilisateur négatif, tâche requérant des permissions humaines — et fait un *warm hand-off* à un humain. Le handoff porte le contexte de la conversation. C'est *warm* parce qu'il ne force pas l'utilisateur à tout recommencer. Le warm handoff n'est pas une feature optionnelle pour un agent customer-service en production — c'est ce qui transforme la fiabilité moyenne d'un agent (~75 %) en fiabilité produit acceptable (~99 %) en escalant les 25 % difficiles.
 
 ---
 
-## 14.7 AG-UI — le protocole qui standardise la prise
+## 13.7 AG-UI — le protocole qui standardise la prise
 
-Quatre régimes posés. Reste un problème pratique : comment câbler une UI quelconque à un agent quelconque ? Chaque framework (LangGraph, Mastra, Pydantic AI, Claude Agent SDK, OpenAI Agent SDK…) a son propre format de stream ; chaque frontend (React, Angular, Svelte, Vue…) attend des événements différents. Sans standard, chaque projet réinvente son transport — c'est précisément le problème que MCP a résolu côté tools, et que **AG-UI** résout côté UI. Le [Ch. 12](ch12-mcp-plateforme.md) a annoncé AG-UI comme le troisième pilier de la trinité protocolaire ; déroulé ici.
+Quatre régimes posés. Reste un problème pratique : comment câbler une UI quelconque à un agent quelconque ? Chaque framework (LangGraph, Mastra, Pydantic AI, Claude Agent SDK, OpenAI Agent SDK…) a son propre format de stream ; chaque frontend (React, Angular, Svelte, Vue…) attend des événements différents. Sans standard, chaque projet réinvente son transport — c'est précisément le problème que MCP a résolu côté tools, et que **AG-UI** résout côté UI. Le [Ch. 15](ch15-mcp-plateforme.md) a annoncé AG-UI comme le troisième pilier de la trinité protocolaire ; déroulé ici.
 
-### 14.7.1 Identité et gouvernance
+### 13.7.1 Identité et gouvernance
 
 **AG-UI** (*Agent-User Interaction Protocol*) est créé et maintenu par **CopilotKit** (Seattle, CEO Atai Barkai, ex-Meta / ex-Doximity). Lancement public le 12 mai 2025[^10]. Repo sous l'organisation GitHub `ag-ui-protocol`, licence MIT, 13 600 stars à mai 2026. CopilotKit a levé 27 M$ en Series A en mai 2026 sur la promesse de faire d'AG-UI un standard de fait[^47].
 
@@ -263,7 +263,7 @@ Le pitch officiel : « an open, lightweight, event-based protocol that standardi
 
 ![Trois piliers — MCP côté tools, A2A entre agents, AG-UI côté utilisateur|1300](../../surfaces-agentiques/images/20260518-06-trois-piliers.svg)
 
-### 14.7.2 Spécification technique
+### 13.7.2 Spécification technique
 
 **Modèle de communication** : bi-directionnel, séquence ordonnée d'événements JSON. Une session est identifiée par `threadId` (fil de conversation) et `runId` (exécution unique de l'agent).
 
@@ -297,7 +297,7 @@ Le pitch officiel : « an open, lightweight, event-based protocol that standardi
 
 ![Flux d'événements AG-UI — séquence type d'un run avec text, tool call et state delta|1300](../../surfaces-agentiques/images/20260518-07-flux-agui.svg)
 
-### 14.7.3 Shared state vs Generative UI — distinction load-bearing
+### 13.7.3 Shared state vs Generative UI — distinction load-bearing
 
 AG-UI transporte deux choses orthogonales que la presse confond souvent :
 
@@ -306,7 +306,7 @@ AG-UI transporte deux choses orthogonales que la presse confond souvent :
 
 La distinction essentielle : *shared state* = « qu'est-ce que l'agent sait » ; *generative UI* = « qu'est-ce que l'agent montre ». AG-UI transporte les deux, mais ce sont des patterns architecturaux orthogonaux. La confusion entre les deux est l'erreur de design la plus fréquente sur les implémentations 2026.
 
-### 14.7.4 Adoption et écosystème
+### 13.7.4 Adoption et écosystème
 
 À mai 2026, l'écosystème AG-UI s'étend sur trois cercles[^11] :
 
@@ -319,7 +319,7 @@ La distinction essentielle : *shared state* = « qu'est-ce que l'agent sait » ;
 
 **Côté frontend**, la référence est **CopilotKit React/Angular SDK** (hooks `useAgent`, `useCoAgent`, `useCoAgentStateRender`). Le hook `useAgent` (v1.50, décembre 2025) donne accès brut au flux AG-UI ; `useCoAgent` est une abstraction haut niveau pour les patterns courants[^49]. Pas d'alternative frontend mainstream à ce jour — c'est le verrou écosystémique de CopilotKit.
 
-### 14.7.5 Quand AG-UI vs streamUI vs WebSocket maison
+### 13.7.5 Quand AG-UI vs streamUI vs WebSocket maison
 
 ==AG-UI n'est ni un framework ni une UI library — c'est un transport.== Sa valeur se révèle dès qu'on découple le framework agentic (LangGraph, Mastra, Pydantic AI…) du framework frontend (React, Angular), ou qu'on veut survivre à un changement de runtime agent sans réécrire l'UI.
 
@@ -335,11 +335,11 @@ La distinction essentielle : *shared state* = « qu'est-ce que l'agent sait » ;
 
 ---
 
-## 14.8 Patterns de confiance — la grille transverse
+## 13.8 Patterns de confiance — la grille transverse
 
-L'agent qui agit pour vous pose deux problèmes de confiance distincts : *est-ce qu'il fait bien ?* (qualité) et *est-ce qu'il fait ce que j'ai autorisé ?* (gouvernance). La surface est ce qui rend ces deux questions concrètes pour l'utilisateur. Cette section pose la grille **load-bearing du livre** — réutilisée aux [Ch. 11](ch11-patterns-orchestration.md) (régimes internes), [Ch. 15](ch15-computer-use.md) (computer use), [Ch. 23](ch23-gouvernance-ai-act.md) (gouvernance régulaire).
+L'agent qui agit pour vous pose deux problèmes de confiance distincts : *est-ce qu'il fait bien ?* (qualité) et *est-ce qu'il fait ce que j'ai autorisé ?* (gouvernance). La surface est ce qui rend ces deux questions concrètes pour l'utilisateur. Cette section pose la grille **load-bearing du livre** — réutilisée aux [Ch. 11](ch11-patterns-orchestration.md) (régimes internes), [Ch. 17](ch17-computer-use.md) (computer use), [Ch. 25](ch25-gouvernance-ai-act.md) (gouvernance régulaire).
 
-### 14.8.1 Le cadre Knight Institute — cinq rôles utilisateur
+### 13.8.1 Le cadre Knight Institute — cinq rôles utilisateur
 
 Le papier le plus important de 2025 sur ces questions est *Levels of Autonomy for AI Agents* du Knight First Amendment Institute de Columbia (juillet 2025, Yonadav Shavit et al.)[^19]. Il définit cinq rôles utilisateur, du moins au plus autonome :
 
@@ -356,9 +356,9 @@ Le papier le plus important de 2025 sur ces questions est *Levels of Autonomy fo
 ==La thèse-clé du papier : *l'autonomie n'est pas un sous-produit de la capacité du modèle, c'est une décision de design*.== Le papier propose des **autonomy certificates** — documents numériques qui prescrivent le niveau maximum d'autonomie autorisé pour un agent donné dans un environnement opérationnel donné. C'est la version régulation-friendly du *capability negotiation* entre user et agent.
 
 > [!IMPORTANT] La grille Knight comme référentiel transverse du livre
-> Cette taxonomie à cinq rôles est fixée ici une fois pour toutes. Elle est citée au [Ch. 11](ch11-patterns-orchestration.md) §11.3 pour articuler les régimes de pilotage *interne* (code-driven / LLM-driven / graphe / autonome) avec les niveaux d'autonomie *exposés* à l'utilisateur — les deux ne se confondent pas mais s'articulent. Elle est réutilisée au [Ch. 15](ch15-computer-use.md) pour situer le computer use (typiquement *approver* ou *observer*, jamais *operator*). Elle est reprise au [Ch. 23](ch23-gouvernance-ai-act.md) sous l'angle obligation régulaire : ==l'AI Act art. 14 sur la supervision humaine peut être lu comme l'imposition d'un niveau Knight maximum selon le caractère haut-risque du système==. Aucun chapitre ne redéfinit les cinq rôles ; tous y renvoient.
+> Cette taxonomie à cinq rôles est fixée ici une fois pour toutes. Elle est citée au [Ch. 11](ch11-patterns-orchestration.md) §11.3 pour articuler les régimes de pilotage *interne* (code-driven / LLM-driven / graphe / autonome) avec les niveaux d'autonomie *exposés* à l'utilisateur — les deux ne se confondent pas mais s'articulent. Elle est réutilisée au [Ch. 17](ch17-computer-use.md) pour situer le computer use (typiquement *approver* ou *observer*, jamais *operator*). Elle est reprise au [Ch. 25](ch25-gouvernance-ai-act.md) sous l'angle obligation régulaire : ==l'AI Act art. 14 sur la supervision humaine peut être lu comme l'imposition d'un niveau Knight maximum selon le caractère haut-risque du système==. Aucun chapitre ne redéfinit les cinq rôles ; tous y renvoient.
 
-### 14.8.2 Le cadre Anthropic — graduated trust
+### 13.8.2 Le cadre Anthropic — graduated trust
 
 Anthropic publie en 2026 un cadre opérationnel de quatre principes[^43] :
 
@@ -367,9 +367,9 @@ Anthropic publie en 2026 un cadre opérationnel de quatre principes[^43] :
 3. **Defense in depth.** Plusieurs couches imparfaites. Cf. le schéma *gruyère suisse* déjà introduit au [Ch. 7](ch07-boucle-agentique.md) pour l'alignement modèle, et étendu ici à la sécurité de la surface (alignement modèle + harness controls + sandbox env + surface guardrails).
 4. **Reversibility-weighted risk.** Un risque irréversible (envoyer un mail, valider un paiement) mérite une friction plus haute qu'un risque réversible (créer un fichier qu'on peut supprimer).
 
-Le **modèle de responsabilité partagée** d'Anthropic, en quatre couches : *Model* (owned par le provider), *Harness* (instructions et policies, partagé), *Tools* (MCP servers, APIs, owned par l'organisation déployante), *Environment* (sandboxes, data, owned par l'orga). Cette répartition cadre les obligations DORA / AI Act que le [Ch. 23](ch23-gouvernance-ai-act.md) déroule.
+Le **modèle de responsabilité partagée** d'Anthropic, en quatre couches : *Model* (owned par le provider), *Harness* (instructions et policies, partagé), *Tools* (MCP servers, APIs, owned par l'organisation déployante), *Environment* (sandboxes, data, owned par l'orga). Cette répartition cadre les obligations DORA / AI Act que le [Ch. 25](ch25-gouvernance-ai-act.md) déroule.
 
-### 14.8.3 Le Trust Layer Salesforce
+### 13.8.3 Le Trust Layer Salesforce
 
 Cinq mécanismes ancrent l'agent dans l'entreprise[^52] :
 
@@ -381,13 +381,13 @@ Cinq mécanismes ancrent l'agent dans l'entreprise[^52] :
 
 Côté UX, le pattern Salesforce est *« jamais un pop-up qui se bat pour l'attention »* — l'assistant est un pane intégré à la console, toujours visible, jamais intrusif. Quand l'agent suggère une action, le raisonnement est affiché à côté.
 
-### 14.8.4 Microsoft Responsible AI et la métaphore Karpathy
+### 13.8.4 Microsoft Responsible AI et la métaphore Karpathy
 
 Sept principes Microsoft Copilot Studio[^53] : *fairness, reliability & safety, privacy & security, inclusiveness, transparency, accountability* + couche opérationnelle *continuous monitoring*. Le pattern UX dominant : disclaimers et badges qui indiquent explicitement « ceci est généré par IA », visibilité sur où la donnée est stockée et comment elle est utilisée, feedback mechanisms intégrés pour signaler les inexactitudes.
 
 Au YC AI Startup School (juin 2025, *Software Is Changing Again*[^54]), Karpathy défend une métaphore qui a circulé : ==« on ne devrait pas viser à construire des robots Iron Man — autonomie totale, démos flashy — mais des suits Iron Man, augmentations partielles avec un slider d'autonomie ajustable par l'utilisateur »==. Sa formule subsidiaire « build for agents » a un corollaire pour la surface : créer du markdown lisible par agent, des docs `llms.txt`, éviter les affordances GUI-only — la *surface de l'agent* devient une couche d'infrastructure.
 
-### 14.8.5 Convergence — six primitives non négociables
+### 13.8.5 Convergence — six primitives non négociables
 
 À travers Anthropic, Salesforce, Microsoft, Karpathy et le Knight Institute, on retrouve la même grammaire :
 
@@ -402,7 +402,7 @@ Au YC AI Startup School (juin 2025, *Software Is Changing Again*[^54]), Karpathy
 
 ---
 
-## 14.9 Architecture canonique d'une surface agentique
+## 13.9 Architecture canonique d'une surface agentique
 
 On peut maintenant assembler les pièces. Quels composants techniques produit-on pour livrer une surface agentique de production, indépendamment du régime choisi ?
 
@@ -418,8 +418,8 @@ On peut maintenant assembler les pièces. Quels composants techniques produit-on
 
 **Couche 5 — Guardrails et observability.** Les hooks d'interception (cf. [Ch. 7](ch07-boucle-agentique.md) §7 couche harness), le permission system, le logging exhaustif, l'audit log côté UI, les pop-up de confirmation contextuelle. Pour la production, ajouter le monitoring de coûts par tâche et la *replay capability* — pouvoir rejouer une session pour débugger.
 
-> [!INFO] Voir [Ch. 18 — Observabilité agentique et cognitive audit trail](ch18-observabilite-cognitive-audit-trail.md)
-> La couche 5 reste ici descriptive. Le déroulé canonique — six piliers OpenTelemetry GenAI Semantic Conventions, cognitive audit trail, vendor landscape (Langfuse, Braintrust, Arize, LangSmith, Dynatrace, AgentCore), échelle de maturité — est au [Ch. 18](ch18-observabilite-cognitive-audit-trail.md). Ici, la couche 5 est posée comme non-optionnelle ; comment la peupler relève du [Ch. 18](ch18-observabilite-cognitive-audit-trail.md).
+> [!INFO] Voir [Ch. 20 — Observabilité agentique et cognitive audit trail](ch20-observabilite-cognitive-audit-trail.md)
+> La couche 5 reste ici descriptive. Le déroulé canonique — six piliers OpenTelemetry GenAI Semantic Conventions, cognitive audit trail, vendor landscape (Langfuse, Braintrust, Arize, LangSmith, Dynatrace, AgentCore), échelle de maturité — est au [Ch. 20](ch20-observabilite-cognitive-audit-trail.md). Ici, la couche 5 est posée comme non-optionnelle ; comment la peupler relève du [Ch. 20](ch20-observabilite-cognitive-audit-trail.md).
 
 ==Aucune surface sérieuse ne fait l'économie des cinq couches.== Beaucoup de produits 2024-2025 ont fait l'erreur de skipper la couche 5 (les démos flashy ne montrent pas les guardrails) et l'ont payé en perte de confiance utilisateur. Le choix d'architecture par régime :
 
@@ -433,7 +433,7 @@ On peut maintenant assembler les pièces. Quels composants techniques produit-on
 
 ---
 
-## 14.10 Matrice de décision — quel régime pour quel cas
+## 13.10 Matrice de décision — quel régime pour quel cas
 
 Pour fermer le chapitre, voici la grille de décision opératoire. Le choix du régime dépend de quatre axes : nature du résultat attendu, fréquence d'usage, niveau d'enjeu, profil d'utilisateur.
 
@@ -446,10 +446,10 @@ Pour fermer le chapitre, voici la grille de décision opératoire. Le choix du r
 | Écriture de document | **Inline copilot** + **canvas** | Slash menu, sélection + instruction | Cohérence stylistique inter-sessions |
 | Présentation, deck | **Canvas génératif** | Layout pré-défini, narration AI | Dérive de la marque, hallucinations visuelles |
 | Mini-app interne ad hoc | **Canvas génératif** full-stack | v0, Lovable, Replit Agent | Sécurité du code exécuté, sandboxing |
-| Dashboard sur métriques pré-définies | **Narratif orienté tâche** | Tableau Pulse, Live Artifacts | Semantic layer gouvernée ([Ch. 16](ch16-analytics-agentique-banque.md)) |
+| Dashboard sur métriques pré-définies | **Narratif orienté tâche** | Tableau Pulse, Live Artifacts | Semantic layer gouvernée ([Ch. 18](ch18-analytics-agentique-banque.md)) |
 | Analyse exploratoire ad hoc | **Inline copilot** + **canvas** | Hex Magic, Mode AI | Vérification des résultats |
 | Customer-service à la demande | **On-behalf-of vertical** | Sierra, Agentforce | Warm handoff, escalade |
-| Recherche web exploratoire | **On-behalf-of browser** | Operator, Computer Use, Proxy | Coût par tâche, fiabilité GUI ([Ch. 15](ch15-computer-use.md)) |
+| Recherche web exploratoire | **On-behalf-of browser** | Operator, Computer Use, Proxy | Coût par tâche, fiabilité GUI ([Ch. 17](ch17-computer-use.md)) |
 | Refactor de code multi-fichier | **On-behalf-of engineering** | Devin, Cursor Background, Claude Code | Audit log, PR review humaine |
 | Voice — call inbound/outbound | **On-behalf-of vertical voice** | Sierra, Vapi, Retell | Latence, naturalité, escalade |
 | Automation Slack / Telegram | **On-behalf-of enterprise** | Slack AI, Agentforce | Permissions cross-app, audit |
@@ -482,11 +482,11 @@ Et toujours, deux principes pour ne pas se tromper :
 
 Trois objets à retenir :
 
-- **La grille Knight à cinq niveaux** (operator / collaborator / consultant / approver / observer) — taxonomie load-bearing du livre, fixée ici, citée aux [Ch. 11](ch11-patterns-orchestration.md), [Ch. 15](ch15-computer-use.md), [Ch. 23](ch23-gouvernance-ai-act.md).
+- **La grille Knight à cinq niveaux** (operator / collaborator / consultant / approver / observer) — taxonomie load-bearing du livre, fixée ici, citée aux [Ch. 11](ch11-patterns-orchestration.md), [Ch. 17](ch17-computer-use.md), [Ch. 25](ch25-gouvernance-ai-act.md).
 - **Les six primitives non négociables** (plan visible, escalade contextuelle, warm handoff, autonomy slider, audit log, disclosure non-humain) — minima 2026 pour toute surface qui prétend à la production.
 - **La matrice de décision à 12 cas d'usage** — outil pratique pour cadrer un régime avant de cadrer un agent.
 
-Le [Ch. 15](ch15-computer-use.md) enchaîne sur le sous-régime extrême — le pilotage écran, où la surface devient une fenêtre d'observation et où la surface d'attaque change qualitativement. Le [Ch. 16](ch16-analytics-agentique-banque.md) ferme l'Acte sur une instanciation sectorielle : trois surfaces agentiques GCP, banque française tier 1, pivot sémantique, régulation 2 août 2026.
+Le [Ch. 17](ch17-computer-use.md) enchaîne sur le sous-régime extrême — le pilotage écran, où la surface devient une fenêtre d'observation et où la surface d'attaque change qualitativement. Le [Ch. 18](ch18-analytics-agentique-banque.md) ferme l'Acte sur une instanciation sectorielle : trois surfaces agentiques GCP, banque française tier 1, pivot sémantique, régulation 2 août 2026.
 
 ---
 

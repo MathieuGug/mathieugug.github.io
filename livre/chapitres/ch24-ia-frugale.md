@@ -1,5 +1,5 @@
 ---
-chapitre: 22
+chapitre: 24
 titre: "Externalité énergétique : IA frugale"
 acte: 4
 acte_titre: "Mesures et garde-fous"
@@ -9,10 +9,10 @@ statut: v1
 date_maj: 2026-05-29
 ---
 
-# Chapitre 22 — Externalité énergétique : IA frugale
+# Chapitre 24 — Externalité énergétique : IA frugale
 
 > **Acte IV — Mesures et garde-fous · Gabarit standard, ~22 pages**
-> _Le débat public sur l'empreinte de l'IA est saturé de chiffres viraux faux d'un ordre de grandeur — 3 Wh par requête, 500 ml d'eau pour dix réponses, des datacenters qui « boivent » des fleuves. Reposer l'arithmétique honnête 2026, lire la matrice GHG à neuf cases (3 scopes × 3 phases), nommer les leviers qui marchent (Patterson 100-1 000×) et l'effet qui les neutralise (Jevons). Clôture du triptyque tarifaire de l'Acte IV — [Ch. 5](ch05-economie-inference.md) mesure le prix par token, [Ch. 21](ch21-roi-paradoxe-agentique.md) la valeur par outcome, ici l'externalité énergétique qui n'apparaît sur aucune facture. Et bascule §22.9 vers le [Ch. 23](ch23-gouvernance-ai-act.md) : la question de l'IA frugale n'est plus technique, elle est devenue politique._
+> _Le débat public sur l'empreinte de l'IA est saturé de chiffres viraux faux d'un ordre de grandeur — 3 Wh par requête, 500 ml d'eau pour dix réponses, des datacenters qui « boivent » des fleuves. Reposer l'arithmétique honnête 2026, lire la matrice GHG à neuf cases (3 scopes × 3 phases), nommer les leviers qui marchent (Patterson 100-1 000×) et l'effet qui les neutralise (Jevons). Clôture du triptyque tarifaire de l'Acte IV — [Ch. 5](ch05-economie-inference.md) mesure le prix par token, [Ch. 23](ch23-roi-paradoxe-agentique.md) la valeur par outcome, ici l'externalité énergétique qui n'apparaît sur aucune facture. Et bascule §24.9 vers le [Ch. 25](ch25-gouvernance-ai-act.md) : la question de l'IA frugale n'est plus technique, elle est devenue politique._
 
 > [!QUESTION] Question d'ouverture
 > Une requête ChatGPT consomme 0,3 Wh ou 3 Wh ? Une vidéo IA générée, 50 Wh ou 1 000 Wh ? Google a divisé par dix l'énergie par requête depuis 2019 — et ses émissions globales ont monté de **48 %** sur la même période[^google-2025]. ==Si chaque levier d'efficience est mangé par le volume qu'il rend possible, qu'est-ce qu'il reste à décider — et qui le décide ?==
@@ -29,12 +29,12 @@ date_maj: 2026-05-29
 
 ---
 
-## 22.1 La fabrique des chiffres viraux
+## 24.1 La fabrique des chiffres viraux
 
-> [!INFO] Voir [Ch. 5 — Économie de l'inférence](ch05-economie-inference.md) · [Ch. 21 — Mesurer le ROI (et le paradoxe agentique)](ch21-roi-paradoxe-agentique.md)
+> [!INFO] Voir [Ch. 5 — Économie de l'inférence](ch05-economie-inference.md) · [Ch. 23 — Mesurer le ROI (et le paradoxe agentique)](ch23-roi-paradoxe-agentique.md)
 > Le [Ch. 5](ch05-economie-inference.md) traite des **mêmes leviers techniques** — MoE, distillation, quantization, liquid cooling, geo-aware — sous l'angle *direct cost* (sept couches d'optimisation côté facture token). Ici, on les reprend sous l'angle *externalité environnementale*. La frontière est claire : [Ch. 5](ch05-economie-inference.md) = TWh qui se traduisent en lignes de facture cloud ; ici = TWh qui se traduisent en grid stress local, embodied carbon, eau. Les deux se lisent côte à côte sur les chantiers FinOps + RSE.
 
-### 22.1.1 Quatre chiffres viraux et leur correction
+### 24.1.1 Quatre chiffres viraux et leur correction
 
 Avant de mesurer, il faut comprendre d'où viennent les phrases qui circulent. Quatre chiffres dominent le débat public depuis cinq ans, et trois sur quatre sont mal cités. La carte des jalons éditoriaux raconte l'histoire :
 
@@ -55,13 +55,13 @@ Ce n'est pas une querelle de virgules. C'est un facteur dix sur la grandeur la p
 
 ---
 
-## 22.2 La grille de mesure — 3 scopes × 3 phases
+## 24.2 La grille de mesure — 3 scopes × 3 phases
 
 L'écart entre Strubell 2019 et Epoch 2025 ne vient pas que de l'évolution du hardware. Il vient surtout du fait que **l'empreinte d'un système d'IA est une matrice à deux dimensions** que peu d'études couvrent en entier. Sans la matrice, on additionne des chiffres incomparables ; avec la matrice, on situe chaque chiffre dans une case et la conversation devient possible.
 
 ![Matrice scope × phase × outils|1300](../../ia-frugale/images/20260513-02-frameworks-mesure.svg)
 
-### 22.2.1 Les trois scopes du GHG Protocol
+### 24.2.1 Les trois scopes du GHG Protocol
 
 Le **GHG Protocol** (Greenhouse Gas Protocol, *Corporate Standard* publié dès 2001) découpe l'empreinte d'une organisation en trois scopes :
 
@@ -69,17 +69,17 @@ Le **GHG Protocol** (Greenhouse Gas Protocol, *Corporate Standard* publié dès 
 - **Scope 2** — électricité achetée. C'est le poste dominant en exploitation ; sa valeur dépend du mix régional (~180 gCO₂/kWh en France, ~380 en Allemagne, ~600 dans le Wyoming).
 - **Scope 3** — tout le reste : fabrication du GPU, du bâtiment, du réseau, transport, fin de vie. ==C'est l'angle mort historique==, et c'est aussi là que se logent les émissions « cachées » des chips fabriqués à Taïwan.
 
-### 22.2.2 Les trois phases du cycle de vie
+### 24.2.2 Les trois phases du cycle de vie
 
 L'**axe perpendiculaire** est temporel.
 
 - **Entraînement** — un événement ponctuel et discret. GPT-3 est estimé à 552 tCO₂eq ; BLOOM à 50,5 tCO₂eq[^luccioni-bloom] ; Llama 3.1 405B à 8 930 tCO₂eq selon Meta. ==C'est le poste qui a alimenté l'effroi entre 2019 et 2023, mais ce n'est plus le poste dominant.==
 - **Inférence** — continu, distribué, dépendant du trafic. Selon Meta et Google, l'inférence pèse aujourd'hui ==entre 65 % et 80 % du total opérationnel== d'un modèle déployé, et la part monte avec la diffusion.
-- **Fabrication / embodied** — amortie sur la durée de vie matérielle (typiquement 5 à 7 ans pour un GPU de production). Selon Patterson et Gupta[^gupta-2021], elle peut représenter 25 à 40 % de l'empreinte totale d'un chip une fois l'opérationnel décarboné — voir §22.6.
+- **Fabrication / embodied** — amortie sur la durée de vie matérielle (typiquement 5 à 7 ans pour un GPU de production). Selon Patterson et Gupta[^gupta-2021], elle peut représenter 25 à 40 % de l'empreinte totale d'un chip une fois l'opérationnel décarboné — voir §24.6.
 
 Le croisement des deux axes donne une matrice 3×3, soit neuf cases distinctes. Un chiffre publié sans précision sur sa case n'est pas comparable à un autre chiffre publié sans précision sur la sienne. C'est aussi simple, et c'est aussi systématiquement ignoré.
 
-### 22.2.3 Outils et normes — l'arsenal métrique
+### 24.2.3 Outils et normes — l'arsenal métrique
 
 Une floraison d'outils s'est imposée pour instrumenter les neuf cases :
 
@@ -95,37 +95,37 @@ Côté **normes**, la base reste l'**ISO/IEC 30134**, qui définit PUE (*Power U
 
 ---
 
-## 22.3 L'arithmétique honnête 2026
+## 24.3 L'arithmétique honnête 2026
 
 Reprenons à zéro, avec les chiffres de mai 2026.
 
 ![Énergie par interaction IA en échelle logarithmique|1300](../../ia-frugale/images/20260513-03-arithmetique-requete.svg)
 
-### 22.3.1 Texte direct — 0,3 Wh
+### 24.3.1 Texte direct — 0,3 Wh
 
 **Modèles « directs » (GPT-4o, Gemini 2.5 Flash, Claude Sonnet).** Une requête typique fait 200 tokens d'entrée et 150 tokens de sortie. Sur un H100 batché à 80 % d'occupation, le compteur tombe entre 0,2 et 0,4 Wh selon le modèle. ==Référence consolidée : 0,3 Wh par requête (Scope 2, inférence, GPT-4o, février 2025), soit moins qu'une seconde de four micro-ondes, ou 1/12 d'une recherche Google avec AI Overview.== Cette valeur est triangulée par trois sources indépendantes : Epoch AI[^epoch-2025], OpenAI (blog Altman février 2025), et Google Cloud[^google-2025-gcp].
 
-### 22.3.2 Texte avec raisonnement — 5 à 20 Wh, l'explosion silencieuse
+### 24.3.2 Texte avec raisonnement — 5 à 20 Wh, l'explosion silencieuse
 
 **Modèles thinking (o3, Claude Opus thinking, DeepSeek R1, Gemini 2.5 Thinking).** Le modèle « réfléchit » avant de répondre, parfois plusieurs dizaines de secondes. La chaîne de raisonnement multiplie le coût par 20 à 70× : ==5 à 20 Wh par requête==. Sur du raisonnement long (preuve mathématique, agent autonome multi-étapes), des cas extrêmes dépassent 100 Wh — l'équivalent d'une heure d'ampoule LED. C'est exactement le facteur 10-74 documenté en [Ch. 2](ch02-modeles-raisonnement.md) sur AIME et en [Ch. 5](ch05-economie-inference.md) sur les régimes de scaling — vu sous l'angle énergétique, il devient l'**explosion silencieuse du thinking** : la même requête, sur un modèle de raisonnement, consomme un à deux ordres de grandeur de plus qu'en direct, et ce coût ne se voit nulle part dans l'interface utilisateur.
 
-### 22.3.3 Image générée — 2 à 4 Wh
+### 24.3.3 Image générée — 2 à 4 Wh
 
 **Imagen 4, Flux 1.1 Pro, Midjourney v7.** Diffusion latente 28 à 50 étapes sur une image 1024×1024 : 2 à 4 Wh. Plus haute résolution ou plus d'étapes : multiplication linéaire. C'est un ordre de grandeur au-dessus du texte direct, et c'est massivement industrialisé en marketing, e-commerce, design.
 
-### 22.3.4 Vidéo générée — 50 à 1 000 Wh, le poste qui explose
+### 24.3.4 Vidéo générée — 50 à 1 000 Wh, le poste qui explose
 
 **Sora 2, Veo 3, Kling 2.** Un clip de 6 secondes en 720p : 50 à 200 Wh. Un clip 4K de 30 secondes : ==jusqu'à 1 000 Wh==, soit trois ordres de grandeur au-dessus d'une requête texte. C'est le poste qui explose silencieusement parce qu'il est le plus jeune (industrialisation 2025-2026), le plus visible côté usage grand public, et celui que personne ne quantifie dans les *sustainability reports* — la plupart des opérateurs publient des chiffres consolidés *par requête*, en mélangeant texte direct (98 % du volume, 2 % de l'énergie) et vidéo (0,1 % du volume, 30 % de l'énergie selon plusieurs estimations internes).
 
-### 22.3.5 Le débat de l'agrégat — 2 % vs 98 %
+### 24.3.5 Le débat de l'agrégat — 2 % vs 98 %
 
 Hannah Ritchie résume[^ritchie-2025] le point structurel le plus important du débat 2026 : ==dix requêtes texte ChatGPT équivalent à dix secondes de four micro-ondes ; cent requêtes texte = 30 Wh, soit une minute de consommation moyenne d'un Américain.== Le point n'est pas que la requête est gratuite — c'est qu'elle est négligeable individuellement, et que **le débat doit se déplacer vers l'agrégat**.
 
 Et l'agrégat raconte une autre histoire. ==Si l'on prend les estimations de consommation totale des datacenters IA et qu'on les divise par le trafic public d'inférence, le texte explique 2 % de la facture. Les 98 % restants sont distribués entre entraînement (one-shot mais massif), génération image/vidéo, embeddings d'enterprise, search summaries, et tout ce qui n'est pas une conversation visible==. C'est là que le débat « combien de Wh par ChatGPT » bute : ==la métrique mesurable n'est pas la métrique qui pèse==. Le citoyen qui se demande s'il doit culpabiliser de taper un prompt regarde la mauvaise variable. Le sponsor IA qui présente un dashboard centré requête texte présente le mauvais dashboard.
 
-### 22.3.6 Cas concret — une équipe agentique en 2026
+### 24.3.6 Cas concret — une équipe agentique en 2026
 
-Pour matérialiser, prenons un profil 2026 type : un développeur en stack MCP + agents, dont le quotidien est documenté en [Ch. 7](ch07-boucle-agentique.md) et [Ch. 12](ch12-mcp-plateforme.md).
+Pour matérialiser, prenons un profil 2026 type : un développeur en stack MCP + agents, dont le quotidien est documenté en [Ch. 7](ch07-boucle-agentique.md) et [Ch. 15](ch15-mcp-plateforme.md).
 
 ![Stack-up énergétique d'une équipe agentique 2026|1300](../../ia-frugale/images/20260513-10-equipe-agentique.svg)
 
@@ -141,13 +141,13 @@ Profil journalier : 200 chats directs (60 Wh) + 50 turns de raisonnement (400 Wh
 
 ---
 
-## 22.4 Eau — trois scopes, un seul vrai sujet
+## 24.4 Eau — trois scopes, un seul vrai sujet
 
 Le débat de l'eau est l'exemple parfait d'un faux scandale qui en cache un vrai. Les chiffres viraux (« 500 ml par requête ») agrègent trois scopes incommensurables, et masquent la seule variable qui compte vraiment : la **concentration locale**.
 
 ![Eau — trois scopes et trois sites locaux|1300](../../ia-frugale/images/20260513-04-eau-scope-sites.svg)
 
-### 22.4.1 Scope 1 — évaporation directe (cooling)
+### 24.4.1 Scope 1 — évaporation directe (cooling)
 
 Quand un datacenter utilise un *cooling tower* à eau perdue, une fraction de l'eau qui circule s'évapore pour évacuer la chaleur. Le ratio dépend du climat, de la saison et de la technologie. La métrique standard est le **WUE** (*Water Usage Effectiveness*), en L/kWh.
 
@@ -155,15 +155,15 @@ Quand un datacenter utilise un *cooling tower* à eau perdue, une fraction de l'
 - **Google** moyenne 2024 : ~1,1 L/kWh sur sa flotte évaporative ; ~0 sur ses nouveaux sites *air-cooled* ou direct-to-chip
 - **AWS** : ne publie pas de WUE moyenne flotte
 
-### 22.4.2 Scope 2 — eau thermique pour produire l'électricité
+### 24.4.2 Scope 2 — eau thermique pour produire l'électricité
 
 Les centrales thermiques (nucléaire, gaz, charbon) consomment massivement de l'eau pour leur cycle de refroidissement : 1,8 à 7,5 L/kWh selon le type. Cette eau est généralement *prélevée puis retournée* (cycle ouvert), mais 1 à 3 L/kWh s'évaporent réellement. ==C'est le scope 2 hydrique, et il est souvent *plus important* que le scope 1== — un détail qui ne figure presque jamais dans les communications opérateurs, parce qu'il pointe une responsabilité externalisée à la chaîne électrique.
 
-### 22.4.3 Scope 3 — fabrication
+### 24.4.3 Scope 3 — fabrication
 
 TSMC consomme ==200 millions de litres par jour== pour ses fabs taïwanaises, soit ~0,1 % de la consommation d'eau de Taïwan. La fabrication d'un GPU H100 mobilise environ 700 à 1 500 L d'eau ultrapure[^tsmc-2024], dont l'essentiel est recyclé en boucle de fab (~85 % en moyenne TSMC 2024). Ce scope est invisible dans les bilans hyperscaler — il appartient au scope 1+2 de TSMC, sous-traité d'une géographie unique.
 
-### 22.4.4 Le bilan d'une session GPT-4o de 50 requêtes
+### 24.4.4 Le bilan d'une session GPT-4o de 50 requêtes
 
 Réagrégeons. Une session GPT-4o de 50 requêtes consomme typiquement :
 
@@ -174,7 +174,7 @@ Réagrégeons. Une session GPT-4o de 50 requêtes consomme typiquement :
 
 Loin du « 500 ml par requête » qui circule encore en 2026 dans les éditoriaux grand public.
 
-### 22.4.5 Le vrai sujet — la concentration locale
+### 24.4.5 Le vrai sujet — la concentration locale
 
 L'eau IA globale, rapportée à l'irrigation agricole, est négligeable. ==Le vrai problème n'est pas le bilan global — c'est la concentration spatiale sur des aquifères fragiles.==
 
@@ -184,25 +184,25 @@ L'eau IA globale, rapportée à l'irrigation agricole, est négligeable. ==Le vr
 - **Taïwan (Taoyuan, Hsinchu, Tainan)** : 200 ML/jour pour TSMC, alors que le pays a connu sa pire sécheresse historique en 2021.
 
 > [!INFO] Dublin et la Virginie — la concentration en chiffres
-> **Dublin** absorbe 79 % de l'électricité urbaine en datacenters. **Virginie du Nord** (Loudoun, Prince William, Fairfax) absorbe ==26 % de la consommation électrique de l'État== — un État de 8,7 millions d'habitants. Le débat eau et électricité est municipal et national, pas mondial. C'est aussi ce qui prépare le bascule politique du [Ch. 23](ch23-gouvernance-ai-act.md) — les régulateurs qui agiront en premier seront municipaux.
+> **Dublin** absorbe 79 % de l'électricité urbaine en datacenters. **Virginie du Nord** (Loudoun, Prince William, Fairfax) absorbe ==26 % de la consommation électrique de l'État== — un État de 8,7 millions d'habitants. Le débat eau et électricité est municipal et national, pas mondial. C'est aussi ce qui prépare le bascule politique du [Ch. 25](ch25-gouvernance-ai-act.md) — les régulateurs qui agiront en premier seront municipaux.
 
-### 22.4.6 La réponse industrielle — Microsoft 12/2024
+### 24.4.6 La réponse industrielle — Microsoft 12/2024
 
 Microsoft a annoncé en décembre 2024[^microsoft-zero-water] que **tous ses nouveaux designs depuis août 2024 utilisent un cooling à boucle fermée à remplissage unique**. L'eau est versée à la construction, recircule entre les serveurs et des chillers mécaniques, ne s'évapore jamais. Économie : ==125 millions de litres par DC par an==. Coût : un PUE légèrement dégradé (besoin de chillers mécaniques en plus). Pilotes : Phoenix et Mt Pleasant en 2026. Google déploie du *direct-to-chip liquid cooling* sur ses TPU v6 ; Equinix généralise l'immersion à partir de 2027.
 
 ![Sankey des flux d'eau — évaporatif vs boucle fermée|1300](../../ia-frugale/images/20260513-11-sankey-eau.svg)
 
-==En dix-huit mois, l'industrie a tranché : l'eau d'évaporation, c'est fini sur les nouveaux sites.== Le scandale court-circuite l'industrie qui l'a déjà résolu. Le facteur ×120 sur le WUE annuel (1 200 m³/MW/an évaporatif → 10 m³/MW/an closed-loop, après remplissage initial) est l'une des inflexions les plus brutales jamais observées dans une infrastructure industrielle. Le scope 1 hydrique IA est en train de devenir un faux problème — il reste à régler le scope 2 thermique (qui dépend du mix électrique) et la concentration locale (qui ne se règle que politiquement, voir §22.8 et [Ch. 23](ch23-gouvernance-ai-act.md)).
+==En dix-huit mois, l'industrie a tranché : l'eau d'évaporation, c'est fini sur les nouveaux sites.== Le scandale court-circuite l'industrie qui l'a déjà résolu. Le facteur ×120 sur le WUE annuel (1 200 m³/MW/an évaporatif → 10 m³/MW/an closed-loop, après remplissage initial) est l'une des inflexions les plus brutales jamais observées dans une infrastructure industrielle. Le scope 1 hydrique IA est en train de devenir un faux problème — il reste à régler le scope 2 thermique (qui dépend du mix électrique) et la concentration locale (qui ne se règle que politiquement, voir §24.8 et [Ch. 25](ch25-gouvernance-ai-act.md)).
 
 ---
 
-## 22.5 Électricité — annualisé vs pic local
+## 24.5 Électricité — annualisé vs pic local
 
 C'est ici que se loge le vrai problème. L'eau a été tranchée par l'industrie en dix-huit mois. L'électricité ne se tranche pas — elle se distribue, et la grille américaine n'a pas été dimensionnée pour absorber un triplement de la demande datacenter en cinq ans.
 
 ![Trajectoire mondiale, mix nouveau, rush nucléaire|1300](../../ia-frugale/images/20260513-05-electricite-trajectoire-mix.svg)
 
-### 22.5.1 Les chiffres consolidés AIE 2025
+### 24.5.1 Les chiffres consolidés AIE 2025
 
 L'**Energy and AI** publié par l'Agence Internationale de l'Énergie en avril 2025[^iea-2025] documente :
 
@@ -213,7 +213,7 @@ L'**Energy and AI** publié par l'Agence Internationale de l'Énergie en avril 2
 
 Aux **États-Unis** (rapport LBNL décembre 2024[^lbnl-2024]) : datacenters US à 58 TWh en 2014 → 176 TWh en 2023 → ==325 à 580 TWh en 2028==, soit 6,7 % à 12 % de la consommation US selon le scénario. ==Le triplement en cinq ans est le plus brutal qu'aura jamais connu la grid américaine en temps de paix.==
 
-### 22.5.2 Le point méthodologique important — l'IA et le reste
+### 24.5.2 Le point méthodologique important — l'IA et le reste
 
 Carbon Brief[^carbonbrief-2025] rappelle que dans la projection AIE, **les datacenters expliquent 8 % de la croissance électrique mondiale d'ici 2030** — derrière les véhicules électriques (838 TWh ajoutés) et l'industrie (1 936 TWh). ==L'IA n'est pas la cause dominante de la croissance électrique mondiale ; elle est la cause la plus médiatisée.== Cela n'enlève rien à son intensité locale, mais cadre le débat global.
 
@@ -221,7 +221,7 @@ Carbon Brief[^carbonbrief-2025] rappelle que dans la projection AIE, **les datac
 
 L'échelle logarithmique en TWh annuels remet les choses à plat. L'IA accélérée (~155 TWh estimés 2025) est de l'ordre du crypto-mining (~150 TWh), en-dessous du streaming vidéo (~200 TWh), et **200× plus petite que la production électrique mondiale** (~30 000 TWh). Le rapport à l'aviation civile (~1 400 TWh) est d'un facteur 9. ==Le slogan « l'IA va consommer plus que des pays entiers » est techniquement vrai (Pays-Bas ~110 TWh, Belgique ~80 TWh) et globalement trompeur== : aucune autre activité industrielle moderne ne consomme moins que des pays moyens, et l'IA n'y fait pas exception.
 
-### 22.5.3 Le mix de la nouvelle demande
+### 24.5.3 Le mix de la nouvelle demande
 
 Sur les **530 TWh additionnels** de datacenters mondiaux d'ici 2030 :
 
@@ -232,7 +232,7 @@ Sur les **530 TWh additionnels** de datacenters mondiaux d'ici 2030 :
 
 Le nucléaire est le grand retour. ==Microsoft a signé en septembre 2024 un PPA 20 ans avec Constellation Energy pour rouvrir Three Mile Island Unit 1== (835 MW, démarrage 2028)[^tmi-2024] — première fois qu'un réacteur retiré aux US est ressuscité pour un client unique. Amazon a injecté 20 milliards de dollars dans Susquehanna (Pennsylvania, 1 920 MW). Google a signé avec Kairos Power un fleet deal SMR (500 MW, 2030). Meta a engagé Vistra sur quatre sites. **Big Tech a signé plus de 10 GW de nucléaire en douze mois** — un volume jamais vu depuis les années 1970.
 
-### 22.5.4 Le vrai bottleneck — interconnexion grid local
+### 24.5.4 Le vrai bottleneck — interconnexion grid local
 
 C'est le point que la presse rate systématiquement. Une AI factory de 1 GW consomme autant qu'**une ville de 700 000 habitants — en permanence, 24/7**. La grid moyenne d'un État américain absorbe difficilement plus de 50 à 100 MW de nouvelle demande baseload par an sans renforcement de lignes haute tension. Or, NVIDIA livre des clusters de 100 000 GPU (~150 MW chacun) en deux ans.
 
@@ -243,13 +243,13 @@ C'est le point que la presse rate systématiquement. Une AI factory de 1 GW cons
 
 ---
 
-## 22.6 Le carbone fantôme — embodied carbon des GPU
+## 24.6 Le carbone fantôme — embodied carbon des GPU
 
 C'est le poste que personne ne regarde — et qui devient dominant à mesure que l'opérationnel se décarbone. C'est l'angle mort 2026 le plus structurel, et c'est la raison principale pour laquelle les annonces *« datacenter zero carbon »* sont vraies en scope 2 et trompeuses en scope 3.
 
 ![Embodied carbon H100 et courbe d'amortissement|1300](../../ia-frugale/images/20260513-06-embodied-amortissement.svg)
 
-### 22.6.1 Anatomie d'un H100
+### 24.6.1 Anatomie d'un H100
 
 80 milliards de transistors, 814 mm² de silicium gravé sur le process TSMC 4N. Chaque carte intègre 80 Go de HBM3 (SK Hynix dominant), assemblée via le procédé CoWoS de TSMC sur un interposeur silicium, soudée à un baseboard SXM. NVIDIA publie une *Product Carbon Footprint Summary*[^nvidia-pcf] : ==1 312 kg CO₂eq par baseboard HGX H100, soit environ 164 kg par carte==.
 
@@ -264,18 +264,18 @@ Ventilation par sous-système :
 
 C'est un détail méconnu : **la mémoire HBM domine l'empreinte fabrication d'un GPU IA moderne**, davantage que le die de calcul lui-même. Ce qui place SK Hynix, Samsung et Micron au cœur de la décarbonation embodied, au même titre que TSMC.
 
-### 22.6.2 Le B200 — l'arithmétique se retourne
+### 24.6.2 Le B200 — l'arithmétique se retourne
 
 Le B200 (génération Blackwell) a 208 milliards de transistors (×2,6 vs H100), un die de ~1 600 mm² (×2), et double HBM3E. Par carte, l'empreinte fabrication grimpe — mais l'**efficacité par FLOP** s'améliore : NVIDIA revendique 0,50 gCO₂eq par exaflop sur B200 vs 0,66 sur H100[^nvidia-b200], soit -24 % d'embodied par exaflop. ==Le bilan dépend entièrement de la durée d'usage opérationnel== : un B200 utilisé pleinement 5 ans amortit son embodied surdimensionné ; un B200 obsolète à 3 ans laisse une dette carbone par exaflop **supérieure** à celle d'un H100.
 
-### 22.6.3 La règle d'amortissement — l'inversion silencieuse
+### 24.6.3 La règle d'amortissement — l'inversion silencieuse
 
 Pour un GPU à mix électrique européen (~250 gCO₂/kWh moyen) et 300 W d'usage actif, l'opérationnel annuel est ~660 kg CO₂eq par carte. L'embodied de 164 kg s'amortit donc en **environ 3 mois d'utilisation à pleine charge**. À mix décarboné (nucléaire dédié, ~30 gCO₂/kWh), l'opérationnel tombe à ~80 kg par an : ==l'embodied devient égal à l'opérationnel à 2 ans, et dominant à 5 ans.==
 
 > [!IMPORTANT] L'inversion silencieuse — scope 3 silicium = le prochain front
 > ==Tant que le grid est carboné, l'opérationnel domine et l'embodied semble anecdotique. À mesure que les hyperscalers décarbonent l'opérationnel (PPA renouvelables, nucléaire dédié, geo-aware carbon), la **fabrication devient le poste numéro un** — et il dépend d'un seul fournisseur (TSMC) dans une géographie unique (Taïwan), dont le mix électrique reste à 80-83 % fossile.== La décarbonation de l'IA passe par TSMC, pas seulement par les opérateurs cloud. C'est une inversion silencieuse parce qu'elle ne se voit pas dans les *sustainability reports* annuels, qui consolident scope 2 (à la baisse, opérationnel décarboné) et omettent scope 3 (à la hausse, embodied stable ou en hausse en valeur absolue).
 
-### 22.6.4 TSMC — géographie unique, monoculture fossile
+### 24.6.4 TSMC — géographie unique, monoculture fossile
 
 Le rapport Greenpeace *Energy Consumption of AI*[^greenpeace-2025] documente que l'industrie semi-conducteurs taïwanaise a augmenté sa consommation électrique de **25 % en deux ans**, principalement pour la production d'AI chips, et que ses fabs restent alimentées à **83 % par des fossiles** (mix Taïwan 2024). Le scope 3 des hyperscalers américains est largement le scope 1+2 de TSMC. La résilience géopolitique du dossier (concentration sur Taïwan, exposition au détroit, monopole 4nm et 3nm) double la résilience environnementale (mix fossile, dépendance gaz LNG importé).
 
@@ -283,41 +283,41 @@ Le rapport Greenpeace *Energy Consumption of AI*[^greenpeace-2025] documente que
 
 ---
 
-## 22.7 Les leviers structurels — ce qui marche
+## 24.7 Les leviers structurels — ce qui marche
 
 Cinq familles de leviers, classées par ordre de grandeur du gain potentiel et par horizon d'action. Le facteur combiné — la règle Patterson 2021[^patterson-2021] — est la nouvelle qui devrait dominer la couverture médiatique et qui ne circule presque pas.
 
 ![Leviers structurels par niveau et gain potentiel|1300](../../ia-frugale/images/20260513-07-leviers-structurels.svg)
 
-### 22.7.1 Architecture des modèles — ×3 à ×30
+### 24.7.1 Architecture des modèles — ×3 à ×30
 
 - **Mixture-of-Experts (MoE) sparse** : Mixtral 8×22B active ~39 B paramètres sur 141 B au total, gain énergétique 3 à 6×[^mixtral]. GPT-4o et Claude utilisent désormais des variantes MoE. ==Patterson 2021 chiffrait déjà un gain potentiel ×10 sur les DNN sparses vs denses.==
 - **Distillation et quantization** : Phi-4-mini (3,8 B paramètres) bat GPT-4o sur MATH et GPQA tout en consommant ~30× moins par requête. La quantization int8 et int4 divise la mémoire par 2 à 4 sans perte significative sur les modèles modernes.
 - **Modèles compacts dédiés (SLM)** : Gemma 4 dans AICore Android, Phi-4 sur PC Copilot+, SmolLM3 sur edge — l'inférence migre du cloud vers le device. Effet collatéral : l'empreinte se déplace de scope 2 cloud vers scope 3 device, mais sur des durées de vie matérielle bien supérieures (5-7 ans pour un téléphone, ~3 ans pour un cycle de remplacement GPU datacenter).
 
-### 22.7.2 Hardware spécialisé — ×2 à ×5
+### 24.7.2 Hardware spécialisé — ×2 à ×5
 
 - **Accélérateurs dédiés** : TPU v6 (Trillium) à 4,7× la perf/watt de v5e ; AWS Trainium2 ; Meta MTIA. Patterson estime que *ML-purpose-built* > GPU généraliste sur un facteur 2 à 5×.
-- **Refroidissement** : *direct-to-chip liquid* (Google, Meta), immersion biphasique (Microsoft, Equinix). Un PUE qui passe de 1,4 à 1,1 économise 25 % de l'électricité totale du DC. Sur l'eau, voir §22.4.6.
+- **Refroidissement** : *direct-to-chip liquid* (Google, Meta), immersion biphasique (Microsoft, Equinix). Un PUE qui passe de 1,4 à 1,1 économise 25 % de l'électricité totale du DC. Sur l'eau, voir §24.4.6.
 
-### 22.7.3 Localisation et timing — ×1,5 à ×20
+### 24.7.3 Localisation et timing — ×1,5 à ×20
 
 - **Géo-distribution carbon-aware** : Google bât ses workloads non urgents sur les régions et les heures où le mix carbone est le plus propre (Iowa nuit, Finlande hiver). Gain typique : 30 à 50 % sur le carbone d'un workload donné. Patterson chiffre l'effet combiné DC × DNN × processeur à **un facteur 100 à 1 000×** sur l'empreinte d'un entraînement.
 - **Mix énergétique dédié** : Three Mile Island, Susquehanna, Kairos SMR — l'objectif est de découpler la nouvelle demande du grid public. Gain : facteur ×10 à ×20 sur l'intensité carbone d'un kWh consommé (de 400 gCO₂/kWh grid mixte à 20-30 gCO₂/kWh nucléaire dédié).
 
-### 22.7.4 Mesure et régulation — multiplicateur d'effort
+### 24.7.4 Mesure et régulation — multiplicateur d'effort
 
 - **Disclosure obligatoire** : EU Data Centre EE Package Q2 2026 force le rating et la publication PUE/WUE/CUE par site. ==Les opérateurs hors UE le suivront pour vendre en UE== — effet Bruxelles classique.
 - **AI Energy Score** (Hugging Face, Sasha Luccioni) : grille publique pour les modèles open-weights ; les modèles propriétaires doivent opt-in, et peu le font.
 - **Prix carbone interne** : Microsoft et Google appliquent déjà un *internal carbon fee* (~100 $/tCO₂) qui finance leurs PPA renouvelables. Apple, Meta, AWS suivent.
 
-### 22.7.5 Comportement et design produit — ×5 à ×30
+### 24.7.5 Comportement et design produit — ×5 à ×30
 
 - **Routage modèle** : le routeur GPT-5 d'OpenAI choisit dynamiquement entre mini, standard et thinking selon la difficulté. ==Un bon routage économise 80 % d'énergie sur l'usage agrégé.==
 - **Caching agressif** : 30 à 50 % des requêtes texte se rejouent. Le prompt caching d'Anthropic et le KV cache global de DeepSeek divisent le coût par 5 à 10 sur la portion répétée. Renvoi [Ch. 5](ch05-economie-inference.md) §5.4 pour la mécanique fine.
 - **SLM on-device** : la migration de l'inférence vers le téléphone/PC déplace la facture du scope 2 cloud (centralisé) vers le scope 3 device (distribué), avec un effet net globalement favorable au-delà d'un seuil d'usage.
 
-### 22.7.6 Patterson combiné — le facteur 100 à 1 000×
+### 24.7.6 Patterson combiné — le facteur 100 à 1 000×
 
 Patterson 2021 résume en une phrase : ==le choix combiné du DC, du DNN, et du processeur peut réduire l'empreinte carbone d'un entraînement par un facteur 100 à 1 000×.== C'est la nouvelle qui devrait dominer la couverture médiatique, et pourtant elle ne circule presque pas — sans doute parce qu'elle implique de citer une décision technique au lieu d'un slogan moral.
 
@@ -326,28 +326,28 @@ Patterson 2021 résume en une phrase : ==le choix combiné du DC, du DNN, et du 
 
 ---
 
-## 22.8 Jevons — pourquoi tout ça peut ne servir à rien
+## 24.8 Jevons — pourquoi tout ça peut ne servir à rien
 
 Le paradoxe de Jevons (1865) : ==l'amélioration de l'efficacité d'usage d'une ressource ne réduit pas sa consommation totale ; elle l'augmente==, parce que l'efficacité fait baisser le coût marginal, donc le volume explose. Stanley Jevons l'observait sur le charbon britannique au XIXᵉ siècle ; la mécanique se rejoue en 2025-2026 sur l'IA, et c'est la seule histoire qui compte vraiment pour le débat 2030.
 
-### 22.8.1 L'évidence empirique — Google +48 %
+### 24.8.1 L'évidence empirique — Google +48 %
 
 ==Google. Émissions globales : 11,5 MtCO₂eq en 2019 → 17 MtCO₂eq en 2024 (rapport environnemental 2025[^google-2025]). +48 % en cinq ans, alors que l'empreinte par requête a chuté d'un facteur 5 à 10 sur la même période.== Le facteur volume a écrasé le facteur efficacité.
 
 C'est l'illustration empirique la plus nette du paradoxe Jevons appliqué à l'IA. Google a optimisé chaque levier technique disponible — TPU v5/v6, MoE sur Gemini, direct-to-chip cooling, geo-aware scheduling, PPA renouvelables — et a vu ses émissions absolues monter de la moitié. La raison est triviale : à mesure que chaque requête devient moins chère, plus de requêtes deviennent possibles ; à mesure que les modèles deviennent plus capables, de nouveaux usages s'ouvrent ; à mesure que l'IA s'industrialise, le volume explose.
 
-### 22.8.2 DeepSeek-V3 — Jevons en action
+### 24.8.2 DeepSeek-V3 — Jevons en action
 
 **DeepSeek-V3, janvier 2025.** Modèle entraîné pour ~6 M$ et 2 048 H800, soit ~10× moins de compute que GPT-4. NPR Planet Money[^npr-jevons] documente la réaction : dans les trois mois qui suivent, ==la demande mondiale de compute IA *augmente*== parce que l'efficacité de DeepSeek convainc les financiers que la barrière à l'entrée a baissé, qu'il faut investir *plus*, pas moins. Capex hyperscalers Q1 2025 record. Nvidia : commandes records. Equinix : carnets pleins.
 
 C'est exactement le mécanisme Jevons : un gain d'efficience massif (×10 sur l'entraînement) déclenche une vague d'investissement qui amplifie la consommation totale au lieu de la diminuer. Le retour boursier de l'efficience n'est jamais une réduction de la demande — c'est un repricing du marché qui augmente la demande.
 
-### 22.8.3 Les trois leviers politiques — Hilton et al. FAccT 2025
+### 24.8.3 Les trois leviers politiques — Hilton et al. FAccT 2025
 
 L'article ACM FAccT 2025 *From Efficiency Gains to Rebound Effects*[^hilton-faact-2025] formalise la mécanique et nomme trois familles de politiques. Ce sont **les seules interventions** documentées dans la littérature qui découplent efficience et consommation totale.
 
 > [!QUOTE] Hilton et al., FAccT 2025
-> *« La trajectoire de l'IA dépend des incitations business, de la gouvernance et des normes sociales, pas seulement de l'efficacité technique. Sans intervention politique, l'efficacité ne réduit jamais le total. »*[^hilton-faact-2025] ==La conclusion est dure== : tous les leviers du §22.7, additionnés et multipliés, ne suffisent pas. Il faut une décision politique pour fermer la boucle.
+> *« La trajectoire de l'IA dépend des incitations business, de la gouvernance et des normes sociales, pas seulement de l'efficacité technique. Sans intervention politique, l'efficacité ne réduit jamais le total. »*[^hilton-faact-2025] ==La conclusion est dure== : tous les leviers du §24.7, additionnés et multipliés, ne suffisent pas. Il faut une décision politique pour fermer la boucle.
 
 **1. Prix carbone élevé sur le compute IA.** Un prix qui force l'internalisation du coût climatique, indépendant du marché de l'électricité (parce que le marché électricité est saturé par les hyperscalers). Ce prix serait par exaflop consommé, pas par tonne de CO₂eq émise — l'angle métier importe plus que l'angle physique.
 
@@ -355,7 +355,7 @@ L'article ACM FAccT 2025 *From Efficiency Gains to Rebound Effects*[^hilton-faac
 
 **3. Allocation vers usages à fort retour social.** Santé, énergie, climat, recherche fondamentale. C'est le moins discuté politiquement, et probablement le plus efficace : reorienter le compute disponible plutôt que limiter sa croissance. Modèle inspiré du *spectrum allocation* en télécom — l'État alloue la ressource rare par enchère ou par usage prioritaire.
 
-### 22.8.4 Les trois trajectoires 2030
+### 24.8.4 Les trois trajectoires 2030
 
 Trois trajectoires possibles à l'horizon 2030 selon les politiques activées :
 
@@ -369,7 +369,7 @@ Trois trajectoires possibles à l'horizon 2030 selon les politiques activées :
 
 ---
 
-## 22.9 Conclusion — quatre points pour ranger le débat
+## 24.9 Conclusion — quatre points pour ranger le débat
 
 Quatre points tiennent le chapitre, et le quatrième bascule vers le chapitre suivant.
 
@@ -383,11 +383,11 @@ Quatre points tiennent le chapitre, et le quatrième bascule vers le chapitre su
 
 L'IA frugale existe. Elle s'appelle Phi-4 sur un Copilot+ PC, Gemma 4 sur Android, un H100 en Iowa la nuit, un PPA nucléaire en Pennsylvanie, un cap urbain à Dublin. Elle n'a juste rien à voir avec la culpabilité du prompt qu'un utilisateur tape à 21 h depuis son canapé.
 
-> [!INFO] Voir [Ch. 23 — Gouvernance : AI Act, banque, machine unlearning](ch23-gouvernance-ai-act.md)
-> Le quatrième point est l'amorce du [Ch. 23](ch23-gouvernance-ai-act.md). ==Là où s'arrête le mesurable, commence le politique.== Le triptyque tarifaire complet ([Ch. 5](ch05-economie-inference.md) coût token, [Ch. 21](ch21-roi-paradoxe-agentique.md) valeur outcome, ici externalité énergétique) cesse d'être un sujet de mesure et devient un sujet de **décision collective**. Le [Ch. 23](ch23-gouvernance-ai-act.md) traite de la gouvernance — six référentiels convergents (DORA, AI Act art. 9-15, EBA, BCBS 239, RGPD, ACPR) et la fenêtre du 2 août 2026 pour l'AI Act haut-risque. Le Jevons politique du §22.8 est ce qui transforme la mesure d'externalité en obligation réglementaire (prix carbone interne, caps régionaux, disclosure obligatoire EU DC EE Q2 2026, AI Energy Score). Le passage est direct : la mesure produit le diagnostic ; la gouvernance produit la décision ; l'AI Act produit l'obligation.
+> [!INFO] Voir [Ch. 25 — Gouvernance : AI Act, banque, machine unlearning](ch25-gouvernance-ai-act.md)
+> Le quatrième point est l'amorce du [Ch. 25](ch25-gouvernance-ai-act.md). ==Là où s'arrête le mesurable, commence le politique.== Le triptyque tarifaire complet ([Ch. 5](ch05-economie-inference.md) coût token, [Ch. 23](ch23-roi-paradoxe-agentique.md) valeur outcome, ici externalité énergétique) cesse d'être un sujet de mesure et devient un sujet de **décision collective**. Le [Ch. 25](ch25-gouvernance-ai-act.md) traite de la gouvernance — six référentiels convergents (DORA, AI Act art. 9-15, EBA, BCBS 239, RGPD, ACPR) et la fenêtre du 2 août 2026 pour l'AI Act haut-risque. Le Jevons politique du §24.8 est ce qui transforme la mesure d'externalité en obligation réglementaire (prix carbone interne, caps régionaux, disclosure obligatoire EU DC EE Q2 2026, AI Energy Score). Le passage est direct : la mesure produit le diagnostic ; la gouvernance produit la décision ; l'AI Act produit l'obligation.
 
 > [!WARNING] Trois pièges classiques (100 % traçables)
-> **Citer un chiffre énergie sans scope/date/phase** — produit un slogan, pas une mesure (cf. la mécanique des chiffres viraux §22.1). · **Confondre annualisé global et pic local** — l'IA mondiale est négligeable rapportée à l'aviation civile, mais elle absorbe 79 % de Dublin et 26 % de la Virginie. Le bon dénominateur dépend de la décision visée. · **Croire que MoE + nucléaire suffit** — sans plafond Jevons, tous les gains techniques sont mangés par le volume. Google +48 % d'émissions en cinq ans malgré -10× par requête en est la preuve empirique la plus nette.
+> **Citer un chiffre énergie sans scope/date/phase** — produit un slogan, pas une mesure (cf. la mécanique des chiffres viraux §24.1). · **Confondre annualisé global et pic local** — l'IA mondiale est négligeable rapportée à l'aviation civile, mais elle absorbe 79 % de Dublin et 26 % de la Virginie. Le bon dénominateur dépend de la décision visée. · **Croire que MoE + nucléaire suffit** — sans plafond Jevons, tous les gains techniques sont mangés par le volume. Google +48 % d'émissions en cinq ans malgré -10× par requête en est la preuve empirique la plus nette.
 
 ---
 

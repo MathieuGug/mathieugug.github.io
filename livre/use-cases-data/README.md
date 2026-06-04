@@ -89,7 +89,7 @@ Le détail (statut, axe ROI, gabarit, thèse, renvois livre) est dans [`cases-in
 
 ## Règles éditoriales
 
-- **Pas de "Klarna" explicite.** Paraphraser ("pattern fintech BNPL 2024", "cas d'école de la remontée échouée"). Renvois `ch.21.7.2` par numéro, pas par titre.
+- **Pas de "Klarna" explicite.** Paraphraser ("pattern fintech BNPL 2024", "cas d'école de la remontée échouée"). Renvois `ch.23.7.2` par numéro, pas par titre.
 - **Pas de prénoms inventés** pour les personas — toujours `[FONCTION]` (cf. `shared/personas.json`).
 - **Pas de noms de villes réelles** sans nécessité — placeholders `[VILLE]` / `[REGION]` quand le nom propre n'ajoute rien.
 - **Pas de mention Lincoln**, ni dans le corps, ni dans les sources/légendes des schémas (cf. `CLAUDE.md` racine).

@@ -1,5 +1,5 @@
 ---
-chapitre: 23
+chapitre: 25
 titre: "Gouvernance : AI Act, banque, machine unlearning"
 acte: 4
 acte_titre: "Mesures et garde-fous"
@@ -9,10 +9,10 @@ statut: v1
 date_maj: 2026-05-29
 ---
 
-# Chapitre 23 — Gouvernance : AI Act, banque, machine unlearning
+# Chapitre 25 — Gouvernance : AI Act, banque, machine unlearning
 
 > **Acte IV — Mesures et garde-fous · Chapitre standard, ~22 pages**
-> _Le compteur tourne. Au 28 mai 2026, il reste **75 jours** avant que les articles 9 à 15 de l'AI Act ne deviennent opposables aux systèmes haut-risque déployés en Union européenne. Pour une banque française tier 1, la fenêtre se ferme alors que six référentiels — DORA, AI Act, EBA Outsourcing, BCBS 239, RGPD, ACPR — convergent sur un même périmètre : la chaîne agentique de bout en bout. Synthèse réglementaire qui s'appuie sur la mécanique technique exposée ailleurs dans le livre (mémoire au [Ch. 9](ch09-memoire-agentique.md), compaction au [Ch. 10](ch10-compaction.md), MCP aux [Ch. 12](ch12-mcp-plateforme.md)-[13](ch13-mcp-securite.md), threat model au [Ch. 19](ch19-gardefous-securite-globale.md), instanciation banque au [Ch. 16](ch16-analytics-agentique-banque.md)) : le calendrier réglementaire unifié, les quatre rôles pivot, le modèle des trois lignes de défense adapté aux agents, et ce que veut dire « oublier » dans un système où la mémoire opérationnelle se distingue radicalement de la mémoire paramétrique._
+> _Le compteur tourne. Au 28 mai 2026, il reste **75 jours** avant que les articles 9 à 15 de l'AI Act ne deviennent opposables aux systèmes haut-risque déployés en Union européenne. Pour une banque française tier 1, la fenêtre se ferme alors que six référentiels — DORA, AI Act, EBA Outsourcing, BCBS 239, RGPD, ACPR — convergent sur un même périmètre : la chaîne agentique de bout en bout. Synthèse réglementaire qui s'appuie sur la mécanique technique exposée ailleurs dans le livre (mémoire au [Ch. 9](ch09-memoire-agentique.md), compaction au [Ch. 10](ch10-compaction.md), MCP aux [Ch. 15](ch15-mcp-plateforme.md)-[13](ch16-mcp-securite.md), threat model au [Ch. 21](ch21-gardefous-securite-globale.md), instanciation banque au [Ch. 18](ch18-analytics-agentique-banque.md)) : le calendrier réglementaire unifié, les quatre rôles pivot, le modèle des trois lignes de défense adapté aux agents, et ce que veut dire « oublier » dans un système où la mémoire opérationnelle se distingue radicalement de la mémoire paramétrique._
 
 > [!QUESTION] Question d'ouverture
 > Le 2 août 2026, les articles 9 à 15 de l'AI Act deviennent effectifs sur les systèmes IA haut-risque. **Soixante-quinze jours**. Pour une banque française tier 1 qui déploie un agent de scoring crédit, la chaîne de responsabilité couvre désormais le modèle, le harness, la mémoire, les outils MCP, le runtime, l'observabilité, le lineage des données. ==Qui porte quoi, sous quel délai, contrôlé par qui — et que reste-t-il dans l'angle mort entre le DPO solitaire qui hérite de la mémoire paramétrique et le sponsor IA qui se croit hors-périmètre tant que l'agent n'est « pas en prod » ?==
@@ -24,17 +24,17 @@ date_maj: 2026-05-29
 > - **Trois lignes de défense adaptées aux agents** : 1ʳᵉ ligne ops, 2ᵉ ligne risk / compliance, 3ᵉ ligne audit. Le SR 11-7 reste pertinent mais ne suffit plus — pensé pour des **modèles**, pas pour des **agents** qui appellent des outils et reformulent leur stratégie en cours de route.
 > - **Machine unlearning : la distinction load-bearing** entre mémoire opérationnelle (le `DELETE` est faisable, RGPD art. 17 satisfait) et mémoire paramétrique (technologie émergente, aucune solution production stable en 2026). ==La transparence honnête au titre de l'art. 25 AI Act est la réponse acceptable en 2026.==
 > - **Calendrier 2026-2028, deux dates pivot** : 2 août 2026 (AI Act art. 9-15), puis automne 2026 (spec MCP v2 avec Sigstore obligatoire). Hiver-printemps 2027 : convergence MCP / A2A sous AAIF. Plus court qu'une migration ERP — et il ne se négocie pas.
-> - **La matrice 6 référentiels × 9 couches stack** s'instancie en banque française GCP au [Ch. 16](ch16-analytics-agentique-banque.md) ; la version générique applicable à tout déployeur est ici.
+> - **La matrice 6 référentiels × 9 couches stack** s'instancie en banque française GCP au [Ch. 18](ch18-analytics-agentique-banque.md) ; la version générique applicable à tout déployeur est ici.
 > - **Trois pièges 100 % traçables** : croire que l'art. 9-15 ne touche que le scoring crédit (faux — tout cas Annexe III) · attendre la CNIL ou l'ACPR pour commencer · déléguer la mémoire au DPO seul.
 
 ---
 
-> [!INFO] Voir [Ch. 16 — Analytics agentique banque](ch16-analytics-agentique-banque.md) · [Ch. 9 — Mémoire agentique](ch09-memoire-agentique.md) · [Ch. 10 — Compaction](ch10-compaction.md) · [Ch. 13 — Sécurité MCP](ch13-mcp-securite.md) · [Ch. 19 — Garde-fous, jailbreaking et sécurité globale](ch19-gardefous-securite-globale.md)
-> Face réglementaire de cinq chapitres techniques déjà déroulés. [Ch. 16](ch16-analytics-agentique-banque.md) instancie la matrice 6 référentiels × stack sur GCP banque française ; ici, la version générique. [Ch. 9](ch09-memoire-agentique.md) et [Ch. 10](ch10-compaction.md) décrivent la mécanique mémoire et compaction ; ici, l'angle RGPD art. 17 et AI Act art. 25. [Ch. 13](ch13-mcp-securite.md) décrit les 10 vecteurs MCP et les 4 patterns load-bearing ; ici, seulement le calendrier (Sigstore automne 2026). [Ch. 19](ch19-gardefous-securite-globale.md) décrit le threat model unifié 2026 ; ici, on le mobilise en arrière-plan sans le redéployer.
+> [!INFO] Voir [Ch. 18 — Analytics agentique banque](ch18-analytics-agentique-banque.md) · [Ch. 9 — Mémoire agentique](ch09-memoire-agentique.md) · [Ch. 10 — Compaction](ch10-compaction.md) · [Ch. 16 — Sécurité MCP](ch16-mcp-securite.md) · [Ch. 21 — Garde-fous, jailbreaking et sécurité globale](ch21-gardefous-securite-globale.md)
+> Face réglementaire de cinq chapitres techniques déjà déroulés. [Ch. 18](ch18-analytics-agentique-banque.md) instancie la matrice 6 référentiels × stack sur GCP banque française ; ici, la version générique. [Ch. 9](ch09-memoire-agentique.md) et [Ch. 10](ch10-compaction.md) décrivent la mécanique mémoire et compaction ; ici, l'angle RGPD art. 17 et AI Act art. 25. [Ch. 16](ch16-mcp-securite.md) décrit les 10 vecteurs MCP et les 4 patterns load-bearing ; ici, seulement le calendrier (Sigstore automne 2026). [Ch. 21](ch21-gardefous-securite-globale.md) décrit le threat model unifié 2026 ; ici, on le mobilise en arrière-plan sans le redéployer.
 
 ---
 
-## 23.2 Calendrier réglementaire unifié 2026-2028
+## 25.2 Calendrier réglementaire unifié 2026-2028
 
 La première chose qu'un sponsor IA doit avoir sous les yeux est un calendrier. Pas un texte juridique annoté ; un calendrier opposable. La matrice ci-dessous unifie les six référentiels sur dix-huit mois et nomme leurs dates pivot.
 
@@ -42,11 +42,11 @@ La première chose qu'un sponsor IA doit avoir sous les yeux est un calendrier. 
 
 Le schéma dispose **sept lignes de référentiels** (DORA, AI Act art. 9-15, EBA Outsourcing, BCBS 239, RGPD, ACPR Supervision IA, MCP Spec v2 / AAIF) sur sept fenêtres temporelles, de juin 2026 à l'horizon 2028. La colonne pivot est celle du **2 août 2026** — bandeau rouge traversant — sur laquelle un bloc détaille les cinq articles AI Act qui deviennent opposables (art. 9 risk management, art. 11-12 documentation et logs, art. 14 supervision humaine, art. 15 cybersécurité). Le code couleur des cellules sépare les deadlines absolues (rouge), les jalons préparatoires (orange), les certifications (vert) et le monitoring continu (gris). Une colonne « responsable » à gauche colore les responsabilités par fonction (DPO bleu, RSSI rouge, CDO / Sponsor IA vert, CRO violet). Le bandeau bas formalise **six dépendances critiques** inter-référentiels — par exemple le plan de sortie DORA art. 28 qui alimente le contingency plan EBA (T3 2026), l'art. 10 AI Act data governance qui partage le périmètre du lineage BCBS 239, ou l'art. 15 AI Act cybersécurité dont la réponse technique est mutualisée avec la spec MCP v2 Sigstore (automne 2026).
 
-### 23.2.1 La fenêtre des soixante-quinze jours
+### 25.2.1 La fenêtre des soixante-quinze jours
 
 Au 28 mai 2026, la fenêtre vers le 2 août fait **soixante-quinze jours**. La métaphore de la migration ERP est utile parce qu'elle est trompeuse — un projet ERP se négocie, le calendrier réglementaire ne se négocie pas. La date butoir est inscrite au Journal officiel de l'Union européenne, dans le Règlement 2024/1689 du 13 juin 2024[^reg-aiact]. La banque qui n'aurait pas qualifié son agent en haut-risque ou non, qui n'aurait pas écrit le plan de gestion des risques (art. 9), qui n'aurait pas instrumenté la journalisation requise (art. 11-12), qui n'aurait pas mis en place la supervision humaine effective (art. 14), ne se verra pas accorder de période de grâce.
 
-### 23.2.2 Six référentiels, deux dates pivot
+### 25.2.2 Six référentiels, deux dates pivot
 
 Le calendrier R18 fait apparaître deux dates pivot. La première — **2 août 2026** — concentre l'AI Act art. 9-15. La seconde — **automne 2026** — n'est pas une date réglementaire mais une date technique : la spec MCP v2 portée par l'AAIF (Agent and AI Interoperability Forum, successeur de la Linux Foundation Project AI Connectivity) rendra Sigstore obligatoire sur les registries officiels[^mcp-spec-v2]. Pour un RSSI banque qui déploie une fleet d'agents équipés de serveurs MCP, la deuxième date est aussi structurante que la première : c'est elle qui transforme la sécurité MCP d'une *discipline* en un *produit*.
 
@@ -55,17 +55,17 @@ Le calendrier R18 fait apparaître deux dates pivot. La première — **2 août 
 
 ---
 
-## 23.3 Les six référentiels en détail
+## 25.3 Les six référentiels en détail
 
 Le calendrier R18 ne suffit pas. Il faut comprendre, pour chacune des six lignes, **ce qui est exigé**, **par qui**, et **comment on prouve qu'on s'y conforme**. Ce paragraphe résume — chaque référentiel a fait l'objet de manuels entiers ; on tient ici le strict nécessaire pour qu'un sponsor IA ne se trompe pas de scope.
 
-### 23.3.1 DORA — la résilience opérationnelle est un sujet du conseil
+### 25.3.1 DORA — la résilience opérationnelle est un sujet du conseil
 
 Le *Digital Operational Resilience Act* (Règlement 2022/2554) est entré en vigueur le **17 janvier 2025**[^dora]. Sa logique de fond : ==les défaillances IT et cloud d'un fournisseur critique deviennent le risque opérationnel de la banque cliente==, pas du fournisseur. La banque est désormais opérationnellement responsable de la résilience de ses fournisseurs cloud, et doit le prouver à son régulateur.
 
 Pour une chaîne agentique, trois articles structurent l'effort : **art. 28** (exigences contractuelles sur les TPSP — *Third-Party Service Providers*), **art. 29** (concentration risk, exit plans testables) et **art. 30** (key contractual provisions). Google Cloud, AWS et Azure ont été désignés *Critical Third-Party Service Providers* — leur supervision est désormais directe par les ESAs (EBA, ESMA, EIOPA), en plus de la supervision contractuelle exercée par chaque banque cliente. Pour la stack data agentique, cela signifie que les contrats cloud signés avant 2025 doivent être amendés sur les articles 28-30, que chaque service critique utilisé doit faire l'objet d'un plan de sortie documenté et testable, et que les incidents majeurs côté provider doivent être notifiés à l'ACPR sous délais explicites.
 
-### 23.3.2 AI Act art. 9-15 — le cœur du calendrier
+### 25.3.2 AI Act art. 9-15 — le cœur du calendrier
 
 Le Règlement 2024/1689 du 13 juin 2024[^reg-aiact] entre dans sa phase critique le **2 août 2026**. Pour une banque, le périmètre Annexe III est explicite : tout système d'IA utilisé pour évaluer la solvabilité d'une personne physique ou attribuer un score de crédit (à l'exception de la détection de fraude) est ==haut-risque==. Les obligations art. 9 à 15 couvrent :
 
@@ -76,28 +76,28 @@ Le Règlement 2024/1689 du 13 juin 2024[^reg-aiact] entre dans sa phase critique
 - **Art. 14** — supervision humaine effective (*oversight*).
 - **Art. 15** — exactitude, robustesse, cybersécurité.
 
-L'art. 25 introduit par ailleurs, pour les modèles GPAI (*general-purpose AI*), une obligation de transparence sur les **capacités et limites** du modèle qui devient le pivot de l'angle *machine unlearning* développé au §23.6. À ces obligations européennes s'ajoutent les cadres internationaux convergents — **ISO/IEC 42001:2023** sur les systèmes de management de l'IA[^iso-42001], **ISO/IEC 23894:2023** sur la gestion des risques IA[^iso-23894], le **NIST AI Risk Management Framework**[^nist-airmf] et son *Generative AI Profile*, les **35 recommandations ANSSI** pour les systèmes IA générative[^anssi], et l'**EDPB Opinion 28/2024** sur le traitement des données personnelles dans les modèles IA[^edpb-ai]. Aucun ne se substitue à l'AI Act ; tous le complètent sur des angles spécifiques (sécurité, RGPD, management).
+L'art. 25 introduit par ailleurs, pour les modèles GPAI (*general-purpose AI*), une obligation de transparence sur les **capacités et limites** du modèle qui devient le pivot de l'angle *machine unlearning* développé au §25.6. À ces obligations européennes s'ajoutent les cadres internationaux convergents — **ISO/IEC 42001:2023** sur les systèmes de management de l'IA[^iso-42001], **ISO/IEC 23894:2023** sur la gestion des risques IA[^iso-23894], le **NIST AI Risk Management Framework**[^nist-airmf] et son *Generative AI Profile*, les **35 recommandations ANSSI** pour les systèmes IA générative[^anssi], et l'**EDPB Opinion 28/2024** sur le traitement des données personnelles dans les modèles IA[^edpb-ai]. Aucun ne se substitue à l'AI Act ; tous le complètent sur des angles spécifiques (sécurité, RGPD, management).
 
 ==Pour un agent data utilisé sur scoring crédit, toutes ces obligations s'appliquent à l'agent==, pas seulement au modèle de scoring sous-jacent. C'est un changement de périmètre qui surprend encore beaucoup d'équipes en 2026. À l'inverse, un agent de monitoring qualité données ou de génération de reporting interne **n'est pas haut-risque** au sens Annexe III — il reste soumis à RGPD, BCBS 239, EBA, mais pas à l'arsenal art. 9-15.
 
-> [!INFO] Voir [Ch. 16 — Analytics agentique banque française](ch16-analytics-agentique-banque.md)
-> La profondeur sectorielle du cas scoring crédit est au [Ch. 16](ch16-analytics-agentique-banque.md) §16.11 : qu'est-ce qu'un agent NL→SQL sous Annexe III, quelle est la documentation à produire pour chacun des cinq articles, quelle est la pile GCP qui répond (Vertex Agent Engine sous Assured Workloads EU + Dataplex pour le lineage + Model Armor pour la robustesse art. 15 + audit logs pour les art. 11-12). Ici on cite les articles ; le [Ch. 16](ch16-analytics-agentique-banque.md) déroule la profondeur métier.
+> [!INFO] Voir [Ch. 18 — Analytics agentique banque française](ch18-analytics-agentique-banque.md)
+> La profondeur sectorielle du cas scoring crédit est au [Ch. 18](ch18-analytics-agentique-banque.md) §18.11 : qu'est-ce qu'un agent NL→SQL sous Annexe III, quelle est la documentation à produire pour chacun des cinq articles, quelle est la pile GCP qui répond (Vertex Agent Engine sous Assured Workloads EU + Dataplex pour le lineage + Model Armor pour la robustesse art. 15 + audit logs pour les art. 11-12). Ici on cite les articles ; le [Ch. 18](ch18-analytics-agentique-banque.md) déroule la profondeur métier.
 
-### 23.3.3 EBA Outsourcing — l'audit, la localisation, le contingency
+### 25.3.3 EBA Outsourcing — l'audit, la localisation, le contingency
 
 Les *EBA Guidelines on outsourcing arrangements* (EBA/GL/2019/02, applicables depuis le 30 septembre 2019)[^eba-out] couvrent l'audit, la sécurité, la localisation des données, le sub-outsourcing, les contingency plans et les exit strategies pour tout outsourcing cloud d'une banque. L'ACPR supervise leur application en France. Le pattern qui s'installe sur la chaîne agentique : ==chaque composant externalisé (modèle, runtime agentique, serveur MCP commercial, base vectorielle managée) doit être tracé dans le registre d'outsourcing==, avec son criticité, sa localisation, son plan de sortie. Les serveurs MCP tiers utilisés en production rejoignent ce périmètre par construction.
 
-### 23.3.4 BCBS 239 — le lineage, l'angle mort historique
+### 25.3.4 BCBS 239 — le lineage, l'angle mort historique
 
 Le *Principles for effective risk data aggregation and risk reporting* (Comité de Bâle, janvier 2013, en vigueur depuis 2016)[^bcbs239] impose à toute G-SIB de tracer chaque métrique de risque depuis sa source jusqu'au reporting. Quatorze principes couvrent la gouvernance, l'architecture data, la précision et l'intégrité, la complétude, l'opportunité, l'adaptabilité du reporting. PwC mesurait fin 2024 que ==seules **2 G-SIBs sur 31** étaient *fully compliant* sur les 14 principes==[^bcbs239-pwc]. Le chiffre est choquant et il reste à mai 2026 le meilleur indicateur disponible sur la maturité réelle du lineage de données en banque mondiale.
 
 C'est précisément ce qu'un agent data bien architecturé peut adresser : automatiser la production du graphe de lineage, détecter les ruptures, générer la documentation demandée en audit. Mais l'inverse est vrai aussi : ==un agent qui produit des chiffres sans lineage les rend invisibles au régulateur==. L'art. 10 AI Act sur la *data governance* et BCBS 239 partagent le même périmètre — un seul effort de lineage couvre les deux.
 
-### 23.3.5 RGPD art. 17 + machine unlearning émergent
+### 25.3.5 RGPD art. 17 + machine unlearning émergent
 
-Le Règlement 2016/679 (RGPD)[^rgpd] reste l'épine dorsale de la protection des données personnelles en UE. Pour la chaîne agentique, c'est l'**article 17** (droit à l'effacement) qui produit la question opérationnelle inédite traitée au §23.6 : qu'est-ce qu'« oublier » dans un système où l'information a été compactée, résumée, paraphrasée, et fondue dans un embedding vectoriel ? L'article 22 (décisions individuelles automatisées et droit à l'explication) converge avec l'art. 14 AI Act sur la supervision humaine — un agent qui produit un refus de crédit doit être explicable au demandeur sous une forme qui satisfait simultanément les deux régimes.
+Le Règlement 2016/679 (RGPD)[^rgpd] reste l'épine dorsale de la protection des données personnelles en UE. Pour la chaîne agentique, c'est l'**article 17** (droit à l'effacement) qui produit la question opérationnelle inédite traitée au §25.6 : qu'est-ce qu'« oublier » dans un système où l'information a été compactée, résumée, paraphrasée, et fondue dans un embedding vectoriel ? L'article 22 (décisions individuelles automatisées et droit à l'explication) converge avec l'art. 14 AI Act sur la supervision humaine — un agent qui produit un refus de crédit doit être explicable au demandeur sous une forme qui satisfait simultanément les deux régimes.
 
-### 23.3.6 ACPR — la supervision FR
+### 25.3.6 ACPR — la supervision FR
 
 L'Autorité de contrôle prudentiel et de résolution (ACPR) prépare la supervision AI Act en banque française[^acpr]. Elle a co-organisé avec le Lab Banque de France un *Tech Sprint IA générative* qui a produit huit prototypes en trois jours avec des data scientists externes, et elle cadre actuellement les méthodes pratiques de mise en œuvre et de supervision. Ses lignes directrices d'avril 2026 conjointement avec l'EBA[^acpr-eba-ld] clarifient l'interprétation pour le secteur bancaire — notamment sur la qualification haut-risque, la documentation art. 11, et l'oversight art. 14. Côté UE, l'**EBA** vient de publier son rapport sectoriel sur l'usage de l'IA dans le secteur bancaire[^eba-airmf] et la **BCE** précise dans une note de supervision les attentes pour les *significant institutions*[^ecb-genai]. Côté souveraineté FR, deux niveaux d'exigence s'installent : **Assured Workloads for EU**[^assured-wl] sur les workloads internes, **S3NS / Premi3NS** sous certification SecNumCloud 3.2 ANSSI[^s3ns] pour les workloads OIV (Opérateurs d'Importance Vitale), périmètre qui inclut les banques systémiques françaises. La doctrine de supervision ACPR consolidée par sa note d'avril 2026[^acpr-doctrine] reste le document à avoir sous la main.
 
@@ -107,7 +107,7 @@ L'Autorité de contrôle prudentiel et de résolution (ACPR) prépare la supervi
 
 ---
 
-## 23.4 Modèle des trois lignes de défense adapté aux agents
+## 25.4 Modèle des trois lignes de défense adapté aux agents
 
 Tous les référentiels précédents s'appuient implicitement sur un même modèle organisationnel — le **modèle des trois lignes de défense**, hérité de la banque (notamment du *Federal Reserve SR 11-7*[^sr11-7] sur le model risk management), formalisé par l'IIA en 2020[^iia-3lod] et désormais standard ISO 31000. Le Hub France IA[^hubfia], dans sa note de juillet 2025 sur la gouvernance des agents, en propose une adaptation explicite aux systèmes agentiques.
 
@@ -115,15 +115,15 @@ Tous les référentiels précédents s'appuient implicitement sur un même modè
 
 *Le schéma S23.1 — modèle des trois lignes de défense adapté aux agents, en demi-page — fait apparaître trois colonnes alignées sur trois rôles distincts. **1ʳᵉ ligne** (gauche) : équipes opérationnelles — dev, ops, PO — qui développent, testent, monitorent les agents et gèrent les incidents au premier degré. **2ᵉ ligne** (centre) : risk management, compliance, legal — qui définissent les politiques, les contrôles, le reporting, la formation. **3ᵉ ligne** (droite) : audit interne et audit externe — qui produisent l'assurance, la certification, les recommandations. Au-dessus, deux bandeaux : direction générale (stratégie IA, ressources) et conseil d'administration (supervision globale, appétit risque). Au-dessous, un bandeau « propre aux agents » qui ajoute les spécificités non-traitées par le SR 11-7 historique : surveillance des trajectoires, audit des tool calls, gouvernance de la mémoire persistante, threat model agentique.*
 
-### 23.4.1 Première ligne — équipes opérationnelles
+### 25.4.1 Première ligne — équipes opérationnelles
 
-La première ligne porte la responsabilité **directe** sur le produit. Pour un agent en production, cela couvre le développement, les tests (incluant les *capability evals* et *régression evals* du [Ch. 17](ch17-evaluation-benchmarks.md)), le monitoring (OTel GenAI, voir [Ch. 18](ch18-observabilite-cognitive-audit-trail.md)), la gestion des incidents au premier degré. Le pivot par rapport aux modèles classiques : ==la première ligne doit désormais instrumenter la trajectoire== — pas seulement les inputs et outputs, mais la séquence complète des tool calls, des décisions intermédiaires et des escalades.
+La première ligne porte la responsabilité **directe** sur le produit. Pour un agent en production, cela couvre le développement, les tests (incluant les *capability evals* et *régression evals* du [Ch. 19](ch19-evaluation-benchmarks.md)), le monitoring (OTel GenAI, voir [Ch. 20](ch20-observabilite-cognitive-audit-trail.md)), la gestion des incidents au premier degré. Le pivot par rapport aux modèles classiques : ==la première ligne doit désormais instrumenter la trajectoire== — pas seulement les inputs et outputs, mais la séquence complète des tool calls, des décisions intermédiaires et des escalades.
 
-### 23.4.2 Deuxième ligne — risk / compliance / legal
+### 25.4.2 Deuxième ligne — risk / compliance / legal
 
-La deuxième ligne définit les politiques, les contrôles, le reporting. Sur un agent haut-risque, elle est responsable du **registre des risques** (art. 9 AI Act), du **registre de gouvernance des données** (art. 10), du suivi de la supervision humaine effective (art. 14), du dispositif cybersécurité (art. 15). C'est aussi elle qui produit la matrice risques / mitigations consultable en audit ACPR. Le rôle pivot DPO appartient à cette ligne — mais ne s'y limite pas, comme on va le voir §23.5.
+La deuxième ligne définit les politiques, les contrôles, le reporting. Sur un agent haut-risque, elle est responsable du **registre des risques** (art. 9 AI Act), du **registre de gouvernance des données** (art. 10), du suivi de la supervision humaine effective (art. 14), du dispositif cybersécurité (art. 15). C'est aussi elle qui produit la matrice risques / mitigations consultable en audit ACPR. Le rôle pivot DPO appartient à cette ligne — mais ne s'y limite pas, comme on va le voir §25.5.
 
-### 23.4.3 Troisième ligne — audit interne + autorité externe
+### 25.4.3 Troisième ligne — audit interne + autorité externe
 
 La troisième ligne assure, certifie, recommande. Sur un agent haut-risque, elle conduit l'audit interne périodique (programme annuel à minima), prépare l'audit externe ACPR, vérifie l'application effective des politiques de la deuxième ligne sur le terrain. ==C'est elle qui détecte les angles morts entre lignes== — typiquement, une mémoire opérationnelle correctement gouvernée par la deuxième ligne mais une mémoire paramétrique laissée sans politique parce qu'elle « relève de l'éditeur du modèle ».
 
@@ -132,23 +132,23 @@ La troisième ligne assure, certifie, recommande. Sur un agent haut-risque, elle
 
 ---
 
-## 23.5 Les quatre rôles pivot et leur articulation
+## 25.5 Les quatre rôles pivot et leur articulation
 
 Les trois lignes de défense décrivent une structure, pas des personnes. Sur le terrain, quatre rôles pivot doivent **s'aligner sur chaque décision agentique haut-risque** — et c'est leur articulation, pas leur existence individuelle, qui produit la gouvernance.
 
-### 23.5.1 DPO — RGPD et la chaîne mémoire
+### 25.5.1 DPO — RGPD et la chaîne mémoire
 
-Le *Data Protection Officer* (RGPD art. 37-39) porte la responsabilité sur la protection des données personnelles. Sur un agent agentique, son périmètre couvre le consentement, la rétention bornée, la base légale, le droit à l'effacement, le droit à l'explication (art. 22). Il est nécessairement impliqué sur **toute la chaîne mémoire opérationnelle** — store séparé vectoriel, sessions, profils utilisateurs (cf. §23.6).
+Le *Data Protection Officer* (RGPD art. 37-39) porte la responsabilité sur la protection des données personnelles. Sur un agent agentique, son périmètre couvre le consentement, la rétention bornée, la base légale, le droit à l'effacement, le droit à l'explication (art. 22). Il est nécessairement impliqué sur **toute la chaîne mémoire opérationnelle** — store séparé vectoriel, sessions, profils utilisateurs (cf. §25.6).
 
-### 23.5.2 RSSI — AI Act art. 15, MCP, threat model
+### 25.5.2 RSSI — AI Act art. 15, MCP, threat model
 
-Le RSSI (ou *CISO*) porte la cybersécurité du système IA — art. 15 AI Act au premier chef, mais aussi les obligations DORA sur la résilience. Pour un agent moderne, son périmètre couvre la robustesse aux inputs adverses, le threat model (voir [Ch. 19](ch19-gardefous-securite-globale.md) §19.10), la chaîne MCP (signature Sigstore automne 2026, tool tagging, allowlist namespace — voir [Ch. 13](ch13-mcp-securite.md)), l'identité fédérée, l'observabilité des trajectoires. ==Le RSSI ne peut pas raisonnablement assurer son rôle sans une équipe sécurité formée à la spécificité agentique== — ce n'est pas la même discipline que la sécurité applicative classique.
+Le RSSI (ou *CISO*) porte la cybersécurité du système IA — art. 15 AI Act au premier chef, mais aussi les obligations DORA sur la résilience. Pour un agent moderne, son périmètre couvre la robustesse aux inputs adverses, le threat model (voir [Ch. 21](ch21-gardefous-securite-globale.md) §21.10), la chaîne MCP (signature Sigstore automne 2026, tool tagging, allowlist namespace — voir [Ch. 16](ch16-mcp-securite.md)), l'identité fédérée, l'observabilité des trajectoires. ==Le RSSI ne peut pas raisonnablement assurer son rôle sans une équipe sécurité formée à la spécificité agentique== — ce n'est pas la même discipline que la sécurité applicative classique.
 
-### 23.5.3 Sponsor IA / CDO — stratégie, arbitrage
+### 25.5.3 Sponsor IA / CDO — stratégie, arbitrage
 
-Le sponsor IA (souvent CDO en banque, parfois COO ou CTO selon les organisations) porte la stratégie agentique : quels cas d'usage, quel niveau de risque acceptable, quel ROI cible, quelle architecture. C'est lui qui arbitre entre vitesse et conformité, entre capacités frontière et souveraineté, entre dette d'évaluation et déploiement rapide. La checklist en sept questions de signature du [Ch. 21](ch21-roi-paradoxe-agentique.md) §21.9 alimente directement ses *gates* — un projet qui n'a pas répondu aux sept ne devrait pas franchir la première ligne de défense.
+Le sponsor IA (souvent CDO en banque, parfois COO ou CTO selon les organisations) porte la stratégie agentique : quels cas d'usage, quel niveau de risque acceptable, quel ROI cible, quelle architecture. C'est lui qui arbitre entre vitesse et conformité, entre capacités frontière et souveraineté, entre dette d'évaluation et déploiement rapide. La checklist en sept questions de signature du [Ch. 23](ch23-roi-paradoxe-agentique.md) §23.9 alimente directement ses *gates* — un projet qui n'a pas répondu aux sept ne devrait pas franchir la première ligne de défense.
 
-### 23.5.4 CRO / COO — accountability finale en banque haut-risque
+### 25.5.4 CRO / COO — accountability finale en banque haut-risque
 
 En banque tier 1 sur un cas d'usage haut-risque, l'*accountability* finale ne peut pas s'arrêter au CDO. C'est le **CRO** (*Chief Risk Officer*) ou le **COO** (*Chief Operating Officer*) — selon l'organisation et la nature du risque dominant — qui porte la signature finale au COMEX, et qui répond devant l'ACPR. Cette accountability finale est conforme au principe DORA — ==la défaillance d'un fournisseur reste le risque opérationnel de la banque==, donc du CRO.
 
@@ -159,39 +159,39 @@ En banque tier 1 sur un cas d'usage haut-risque, l'*accountability* finale ne pe
 > Une banque française tier 1 déploie un agent NL→SQL au-dessus de son Datawarehouse pour assister les analystes crédit dans la qualification des dossiers PME. L'agent interroge le DWH, agrège les ratios financiers, croise avec la base historique, propose une note de pré-qualification et déclenche un workflow d'instruction. Le cas est qualifié **haut-risque** au sens Annexe III AI Act (évaluation de solvabilité). À 75 jours du 2 août 2026, le mapping art. 9-15 se lit ainsi :
 >
 > - **Art. 9 — Risk management plan.** Le sponsor IA (CDO) et la 2ᵉ ligne (compliance) co-signent le plan de gestion des risques sur le cycle de vie de l'agent : risques d'erreur, de biais (genre, géographie, taille d'entreprise), d'hallucination sur les ratios, de dérive temporelle. Le plan est revu trimestriellement.
-> - **Art. 10 — Data governance.** Le CDO et la première ligne data documentent les datasets : sources DWH, fraîcheur, échantillonnage, qualité, biais détectés et corrigés. Le lineage Dataplex est l'outil opérationnel (cf. [Ch. 16](ch16-analytics-agentique-banque.md)). ==Le périmètre couvre l'agent en entier, pas seulement le modèle de scoring sous-jacent.==
-> - **Art. 11-12 — Documentation technique + logs.** Le RSSI et la 1ʳᵉ ligne ops produisent la documentation technique (architecture, modèles, prompts, outils, mémoire) et configurent la journalisation OTel GenAI (voir [Ch. 18](ch18-observabilite-cognitive-audit-trail.md)) — chaque appel agent, chaque tool call, chaque décision intermédiaire, conservés cinq ans (exigence DORA art. 28 sur les TPSP critiques).
+> - **Art. 10 — Data governance.** Le CDO et la première ligne data documentent les datasets : sources DWH, fraîcheur, échantillonnage, qualité, biais détectés et corrigés. Le lineage Dataplex est l'outil opérationnel (cf. [Ch. 18](ch18-analytics-agentique-banque.md)). ==Le périmètre couvre l'agent en entier, pas seulement le modèle de scoring sous-jacent.==
+> - **Art. 11-12 — Documentation technique + logs.** Le RSSI et la 1ʳᵉ ligne ops produisent la documentation technique (architecture, modèles, prompts, outils, mémoire) et configurent la journalisation OTel GenAI (voir [Ch. 20](ch20-observabilite-cognitive-audit-trail.md)) — chaque appel agent, chaque tool call, chaque décision intermédiaire, conservés cinq ans (exigence DORA art. 28 sur les TPSP critiques).
 > - **Art. 13 — Transparence vis-à-vis du déployeur.** Documentation utilisateur destinée aux analystes crédit : capacités, limites, biais connus, contraintes d'usage. Le fournisseur du modèle (Anthropic, OpenAI, Google, Mistral selon le choix) produit la model card art. 25 ; la banque produit la *system card* qui décrit son agent au-dessus.
 > - **Art. 14 — Human oversight effective.** La 1ʳᵉ ligne et la compliance définissent le dispositif d'oversight : l'analyste crédit ne peut pas valider automatiquement la pré-qualification ; l'agent propose, l'humain décide. Le seuil de confiance qui déclenche une escalade est calibré sur les données historiques. ==Pas d'oversight = pas de production.==
-> - **Art. 15 — Cybersecurity + robustesse.** Le RSSI configure Model Armor[^model-armor] (firewall AI runtime), DLP sur les outputs, audit log sur tous les MCP, threat model documenté (voir [Ch. 19](ch19-gardefous-securite-globale.md)), red team annuelle aligné sur l'**OWASP Top 10 for Agentic AI Security Initiative**[^owasp-asi] et sur l'**OWASP Top 10 LLM**[^owasp-llm]. Au 2 août 2026, le dispositif doit être *audit-ready* — l'ACPR peut demander à voir les artefacts à tout moment.
+> - **Art. 15 — Cybersecurity + robustesse.** Le RSSI configure Model Armor[^model-armor] (firewall AI runtime), DLP sur les outputs, audit log sur tous les MCP, threat model documenté (voir [Ch. 21](ch21-gardefous-securite-globale.md)), red team annuelle aligné sur l'**OWASP Top 10 for Agentic AI Security Initiative**[^owasp-asi] et sur l'**OWASP Top 10 LLM**[^owasp-llm]. Au 2 août 2026, le dispositif doit être *audit-ready* — l'ACPR peut demander à voir les artefacts à tout moment.
 >
 > Le DPO supervise transversalement l'application du RGPD (art. 17, art. 22), le CRO porte l'accountability finale, le sponsor IA arbitre les tradeoffs. **Quatre rôles co-signent, l'agent passe.** Trois rôles sur quatre, l'agent ne passe pas. Un DPO seul, l'agent n'aurait jamais dû quitter le pilote.
 
 ---
 
-## 23.6 Machine unlearning et les limites de l'oubli
+## 25.6 Machine unlearning et les limites de l'oubli
 
 C'est ici que la gouvernance des agents touche son point le plus sensible — et le plus mal compris en mai 2026. L'**article 17 du RGPD** impose qu'une personne puisse demander la suppression de ses données personnelles d'un système. Appliqué à un agent IA, cela soulève une question opérationnelle inédite : ==qu'est-ce qu'« oublier » dans un système où l'information a été compactée, résumée, paraphrasée, et fondue dans un embedding vectoriel ?==
 
-### 23.6.1 La distinction load-bearing — opérationnel vs paramétrique
+### 25.6.1 La distinction load-bearing — opérationnel vs paramétrique
 
 Les contributeurs de l'Initiative IA Maîtrisée — repris dans le rapport mémoire agentique[^memoire] — proposent une distinction qui doit devenir un acquis de gouvernance en 2026 :
 
 - **Mémoire opérationnelle / explicite** — fichiers, vecteurs, blocs structurés, sessions, profils utilisateurs. L'effacement est techniquement faisable : un `DELETE WHERE user_id = X` sur la base vectorielle suffit, sous réserve que l'ID utilisateur soit propagé sur chaque fait stocké. La preuve d'exécution est produisible. ==C'est l'angle où le DPO peut tenir l'art. 17 RGPD== sans difficulté technique majeure.
 - **Mémoire implicite / paramétrique** — poids du modèle entraînés sur des données passées. L'effacement ciblé reste une **technologie émergente**. Le *machine unlearning* — désentraîner sélectivement un modèle sans le réentraîner intégralement — fait l'objet de recherches actives (Bourtoule et al. *Machine Unlearning* IEEE S&P 2021[^unlearning-bourtoule] ; Gupta et al. *Adaptive Machine Unlearning* NeurIPS 2021[^unlearning-gupta] ; lignes directrices CNIL juin 2025[^cnil-unlearning] et EDPS WG novembre 2025-février 2026[^edps-wg]), mais aucune solution production stable n'existe encore. La transparence sur cette limite est indispensable à la confiance — pas un aveu de faiblesse.
 
-### 23.6.2 La transparence honnête comme réponse réglementaire 2026
+### 25.6.2 La transparence honnête comme réponse réglementaire 2026
 
 L'**article 25 de l'AI Act**[^reg-aiact] impose, pour les modèles GPAI, une obligation de transparence sur les *capacités et limites* du modèle. Appliqué à la mémoire, cela ouvre une voie pragmatique : ==en 2026, la transparence honnête sur ce qu'on sait oublier et ce qu'on ne sait pas encore oublier est la réponse réglementaire acceptable==. Trois conditions pour que cette transparence tienne :
 
 1. **L'opérationnel doit être effectivement effacé sur demande**, avec délai et preuve. Pas de tolérance ici — un `DELETE` qui ne s'exécute pas vide la conformité RGPD de toute substance.
-2. **Le ledger des compactions doit être traçable** (cf. [Ch. 10](ch10-compaction.md) sur la mécanique, [Ch. 18](ch18-observabilite-cognitive-audit-trail.md) sur l'instrumentation OTel `gen_ai.compaction.*` en cours de standardisation par le groupe de travail GenAI semconv[^otel-genai]). Un déployeur qui ne peut pas démontrer ce qu'il a oublié, et quand, ne pourra pas démontrer sa conformité art. 25.
+2. **Le ledger des compactions doit être traçable** (cf. [Ch. 10](ch10-compaction.md) sur la mécanique, [Ch. 20](ch20-observabilite-cognitive-audit-trail.md) sur l'instrumentation OTel `gen_ai.compaction.*` en cours de standardisation par le groupe de travail GenAI semconv[^otel-genai]). Un déployeur qui ne peut pas démontrer ce qu'il a oublié, et quand, ne pourra pas démontrer sa conformité art. 25.
 3. **La limite paramétrique doit être nommée publiquement** dans la *system card* du déployeur, avec un état de l'art à jour des techniques de *machine unlearning* explorées et le calendrier prévisible de leur disponibilité en production.
 
-> [!INFO] Voir [Ch. 9 — Mémoire agentique](ch09-memoire-agentique.md) · [Ch. 10 — Compaction](ch10-compaction.md) · [Ch. 18 — Observabilité agentique et cognitive audit trail](ch18-observabilite-cognitive-audit-trail.md)
-> Le [Ch. 9](ch09-memoire-agentique.md) §9.2 décrit l'architecture mémoire aux quatre piliers (stockage / accès / mise à jour / oubli) qui sous-tend la distinction opérationnel / paramétrique reprise ici. Le [Ch. 10](ch10-compaction.md) §10.5-7 décrit la mécanique des cinq familles de compaction et le ledger transparent (`gen_ai.compaction.tokens_in`, `gen_ai.compaction.summary_hash`, `gen_ai.compaction.policy`, etc.) — son instrumentation OTel est traitée au [Ch. 18](ch18-observabilite-cognitive-audit-trail.md). Ici, on ne refait pas la mécanique : on déclare seulement que ==le ledger transparent requis par l'art. 25 AI Act devient une obligation documentaire pour les déployeurs en production==, et que l'observabilité de la compaction passe ainsi du statut « bon à avoir » au statut « obligatoire » en 2026-2027.
+> [!INFO] Voir [Ch. 9 — Mémoire agentique](ch09-memoire-agentique.md) · [Ch. 10 — Compaction](ch10-compaction.md) · [Ch. 20 — Observabilité agentique et cognitive audit trail](ch20-observabilite-cognitive-audit-trail.md)
+> Le [Ch. 9](ch09-memoire-agentique.md) §9.2 décrit l'architecture mémoire aux quatre piliers (stockage / accès / mise à jour / oubli) qui sous-tend la distinction opérationnel / paramétrique reprise ici. Le [Ch. 10](ch10-compaction.md) §10.5-7 décrit la mécanique des cinq familles de compaction et le ledger transparent (`gen_ai.compaction.tokens_in`, `gen_ai.compaction.summary_hash`, `gen_ai.compaction.policy`, etc.) — son instrumentation OTel est traitée au [Ch. 20](ch20-observabilite-cognitive-audit-trail.md). Ici, on ne refait pas la mécanique : on déclare seulement que ==le ledger transparent requis par l'art. 25 AI Act devient une obligation documentaire pour les déployeurs en production==, et que l'observabilité de la compaction passe ainsi du statut « bon à avoir » au statut « obligatoire » en 2026-2027.
 
-### 23.6.3 Trois actions tactiques de gouvernance mémoire
+### 25.6.3 Trois actions tactiques de gouvernance mémoire
 
 Le rapport mémoire agentique[^memoire] propose trois actions tactiques que toute organisation déployant un agent à mémoire persistante doit avoir mises en place avant la fin 2026 :
 
@@ -207,15 +207,15 @@ Le schéma — repris du [Ch. 9](ch09-memoire-agentique.md) §9.7 — déroule l
 
 ---
 
-## 23.7 Matrice réglementaire × stack — instanciation générique
+## 25.7 Matrice réglementaire × stack — instanciation générique
 
-Reste à projeter les six référentiels sur la pile technique de l'agent. La matrice ci-dessous est l'**instanciation générique** — applicable à tout déployeur, indépendamment du cloud retenu. Sa version banque française GCP — avec les briques concrètes (Looker semantic, BigQuery, Dataplex, Assured Workloads, S3NS, Model Armor) — est au [Ch. 16](ch16-analytics-agentique-banque.md) §16.11.
+Reste à projeter les six référentiels sur la pile technique de l'agent. La matrice ci-dessous est l'**instanciation générique** — applicable à tout déployeur, indépendamment du cloud retenu. Sa version banque française GCP — avec les briques concrètes (Looker semantic, BigQuery, Dataplex, Assured Workloads, S3NS, Model Armor) — est au [Ch. 18](ch18-analytics-agentique-banque.md) §18.11.
 
 ![Matrice réglementaire × couches stack — instanciation banque française GCP|1300](../../analytics-agentique-gcp/images/20260519-09-matrice-regu.svg)
 
-Le schéma ci-dessus est l'**instanciation banque française GCP** issue du [Ch. 16](ch16-analytics-agentique-banque.md) §16.11 : la même grille projette les six référentiels (DORA, AI Act art. 9-15, EBA Outsourcing, BCBS 239, RGPD, ACPR / souveraineté FR) sur les couches techniques d'une chaîne agentique — **model** (le modèle de fondation), **orchestration** (le scaffold, la boucle multi-tours, les patterns multi-agent), **mémoire** (stores, sessions, profils, ledger compaction), **outils** (MCP, A2A[^a2a-google], tool gateway, allowlist), **runtime** (Agent Engine, conteneurs, isolation), **data** (DWH, lineage Dataplex[^dataplex] ou équivalent, qualité, semantic layer), **réseau** (VPC, firewall AI runtime, DLP egress), **identités** (IAM, tokens d'agent, identité fédérée), **observabilité** (OTel GenAI, audit logs, monitoring trajectoires). Chaque cellule indique l'obligation portée par le référentiel sur la couche et la 1ʳᵉ / 2ᵉ / 3ᵉ ligne de défense responsable. ==On lit la même matrice à un niveau d'abstraction supérieur== — sans les briques GCP spécifiques (Looker semantic, BigQuery, Dataplex, Assured Workloads, S3NS, Model Armor) qui restent au [Ch. 16](ch16-analytics-agentique-banque.md). La forme est identique, la lecture change : [Ch. 16](ch16-analytics-agentique-banque.md) lit comme une checklist d'achat ; ici, une grille générique de conformité.
+Le schéma ci-dessus est l'**instanciation banque française GCP** issue du [Ch. 18](ch18-analytics-agentique-banque.md) §18.11 : la même grille projette les six référentiels (DORA, AI Act art. 9-15, EBA Outsourcing, BCBS 239, RGPD, ACPR / souveraineté FR) sur les couches techniques d'une chaîne agentique — **model** (le modèle de fondation), **orchestration** (le scaffold, la boucle multi-tours, les patterns multi-agent), **mémoire** (stores, sessions, profils, ledger compaction), **outils** (MCP, A2A[^a2a-google], tool gateway, allowlist), **runtime** (Agent Engine, conteneurs, isolation), **data** (DWH, lineage Dataplex[^dataplex] ou équivalent, qualité, semantic layer), **réseau** (VPC, firewall AI runtime, DLP egress), **identités** (IAM, tokens d'agent, identité fédérée), **observabilité** (OTel GenAI, audit logs, monitoring trajectoires). Chaque cellule indique l'obligation portée par le référentiel sur la couche et la 1ʳᵉ / 2ᵉ / 3ᵉ ligne de défense responsable. ==On lit la même matrice à un niveau d'abstraction supérieur== — sans les briques GCP spécifiques (Looker semantic, BigQuery, Dataplex, Assured Workloads, S3NS, Model Armor) qui restent au [Ch. 18](ch18-analytics-agentique-banque.md). La forme est identique, la lecture change : [Ch. 18](ch18-analytics-agentique-banque.md) lit comme une checklist d'achat ; ici, une grille générique de conformité.
 
-### 23.7.1 Où chaque obligation s'applique
+### 25.7.1 Où chaque obligation s'applique
 
 Quatre lectures de la matrice se dégagent :
 
@@ -224,24 +224,24 @@ Quatre lectures de la matrice se dégagent :
 - **BCBS 239 se concentre sur data, mémoire, observabilité** — c'est le lineage et l'auditabilité du chemin de la donnée jusqu'au reporting de risque.
 - **RGPD traverse data, mémoire, identités, observabilité** — c'est la protection des données personnelles et le droit à l'effacement.
 
-### 23.7.2 Qui vérifie quoi
+### 25.7.2 Qui vérifie quoi
 
 Sur chaque cellule, deux questions complémentaires se posent : **qui produit l'artefact** (1ʳᵉ ligne ops/data le plus souvent) et **qui contrôle l'application** (2ᵉ ligne compliance / risk au quotidien, 3ᵉ ligne audit en revue périodique). ==La matrice ne se substitue pas à un RACI agentique formalisé== — elle en est l'amorce. Un projet qui n'a pas son RACI agentique au 2 août 2026 entre en non-conformité art. 9 (pas de gouvernance des risques formalisée) presque mécaniquement.
 
-> [!INFO] Voir [Ch. 16 — Analytics agentique banque](ch16-analytics-agentique-banque.md)
-> La même matrice à six référentiels × neuf couches devient au [Ch. 16](ch16-analytics-agentique-banque.md) §16.11 une matrice à six référentiels × neuf couches **avec les briques GCP qui répondent** : Assured Workloads EU et S3NS sur la souveraineté, BigQuery + Dataplex sur le data et le lineage, Looker semantic + Tool Governance sur l'orchestration, Vertex Agent Engine + Model Armor sur le runtime, Cloud Audit Logs + OTel GenAI sur l'observabilité. ==Le [Ch. 16](ch16-analytics-agentique-banque.md) lit comme une checklist d'achat GCP banque française ; ici, une grille générique de conformité.==
+> [!INFO] Voir [Ch. 18 — Analytics agentique banque](ch18-analytics-agentique-banque.md)
+> La même matrice à six référentiels × neuf couches devient au [Ch. 18](ch18-analytics-agentique-banque.md) §18.11 une matrice à six référentiels × neuf couches **avec les briques GCP qui répondent** : Assured Workloads EU et S3NS sur la souveraineté, BigQuery + Dataplex sur le data et le lineage, Looker semantic + Tool Governance sur l'orchestration, Vertex Agent Engine + Model Armor sur le runtime, Cloud Audit Logs + OTel GenAI sur l'observabilité. ==Le [Ch. 18](ch18-analytics-agentique-banque.md) lit comme une checklist d'achat GCP banque française ; ici, une grille générique de conformité.==
 
 ---
 
-## 23.8 Les deux dates pivot 2026-2027 et leur enchaînement
+## 25.8 Les deux dates pivot 2026-2027 et leur enchaînement
 
 Au-delà du 2 août 2026, le calendrier R18 fait apparaître un second pivot — **automne 2026 — spec MCP v2 avec Sigstore obligatoire**. Cette section enchaîne les deux dates pour montrer pourquoi elles ne se traitent pas séparément.
 
-### 23.8.1 Été 2026 — AI Act art. 15 effectif
+### 25.8.1 Été 2026 — AI Act art. 15 effectif
 
-À partir du **2 août 2026**, l'art. 15 AI Act impose des exigences de cybersécurité aux systèmes IA haut-risque déployés en UE, incluant la **résistance à la manipulation par entrée adverse**. Pour un agent banque sur cas Annexe III, cela signifie un threat model documenté (voir [Ch. 19](ch19-gardefous-securite-globale.md)), une red team annuelle, un dispositif de mitigation aux dix vecteurs MCP du [Ch. 13](ch13-mcp-securite.md), et un audit-ready du dispositif. L'EBA et l'ACPR ont publié en avril 2026 leurs lignes directrices d'interprétation pour le secteur bancaire[^acpr-eba-ld] — un agent MCP qui interagit avec un système de scoring crédit ou de KYC devra démontrer sa robustesse contre les vecteurs documentés.
+À partir du **2 août 2026**, l'art. 15 AI Act impose des exigences de cybersécurité aux systèmes IA haut-risque déployés en UE, incluant la **résistance à la manipulation par entrée adverse**. Pour un agent banque sur cas Annexe III, cela signifie un threat model documenté (voir [Ch. 21](ch21-gardefous-securite-globale.md)), une red team annuelle, un dispositif de mitigation aux dix vecteurs MCP du [Ch. 16](ch16-mcp-securite.md), et un audit-ready du dispositif. L'EBA et l'ACPR ont publié en avril 2026 leurs lignes directrices d'interprétation pour le secteur bancaire[^acpr-eba-ld] — un agent MCP qui interagit avec un système de scoring crédit ou de KYC devra démontrer sa robustesse contre les vecteurs documentés.
 
-### 23.8.2 Automne 2026 — Spec MCP v2
+### 25.8.2 Automne 2026 — Spec MCP v2
 
 La révision majeure de la spec MCP, en discussion à l'AAIF (*Agent and AI Interoperability Forum*, le successeur de la Linux Foundation Project AI Connectivity) depuis février 2026, intègre quatre éléments structurants[^mcp-spec-v2] :
 
@@ -252,20 +252,20 @@ La révision majeure de la spec MCP, en discussion à l'AAIF (*Agent and AI Inte
 
 La compatibilité ascendante est préservée — les serveurs MCP v1 continueront à fonctionner — mais les registries officiels (Anthropic Hub, le futur registry AAIF) refuseront les nouveaux serveurs non-signés à partir de **janvier 2027**.
 
-### 23.8.3 Hiver-printemps 2027 — Convergence MCP / A2A + AAIF
+### 25.8.3 Hiver-printemps 2027 — Convergence MCP / A2A + AAIF
 
 Le projet **A2A** de Google (*Agent-to-Agent communication*[^a2a-google]), donné lui aussi à la Linux Foundation en janvier 2026, converge progressivement avec MCP[^anthropic-mcp-spec] via le mécanisme de *sampling* (un agent peut invoquer un autre agent comme outil). Cette convergence augmente la surface — chaque agent A2A devient un point d'entrée MCP — mais elle force aussi la standardisation des patterns défensifs (notamment identité fédérée et content provenance) sur les deux protocoles simultanément. Le printemps 2027 verra la première version stable de la fusion sous gouvernance AAIF[^aaif]. Des incidents récents — l'injection cross-document MCP documentée par Anthropic en juin 2025[^ema-mcp-incident] et l'exfiltration cross-tool WhatsApp via Asana documentée par Pillar Security en avril 2026[^pillar-mcp] — rappellent que la spec v2 arrive après des familles d'attaques déjà industrialisées, pas avant.
 
 ![Roadmap MCP 12 mois — du *signing only* à la fusion MCP × A2A sous AAIF|1300](../../mcp-securite/images/20260520-07-roadmap.svg)
 
-Le schéma — repris du [Ch. 13](ch13-mcp-securite.md) §13.7 — déroule la trajectoire complète : été 2026 *Sigstore-ready* sur registries officiels, automne 2026 spec v2 (signature obligatoire + tool tagging + allowlist namespace + OTel audit schema), janvier 2027 refus des serveurs non-signés, printemps 2027 fusion MCP × A2A sous gouvernance AAIF. ==L'enchaînement temporel et la convergence avec l'AI Act art. 15 sont ce qui compte ici== : un agent banque sur cas Annexe III qui n'aura pas migré son tool stack sur la spec v2 à l'automne 2026 entrera en non-conformité art. 15 (cybersécurité) au prochain audit ACPR — la matrice défensive du [Ch. 13](ch13-mcp-securite.md) et les obligations art. 15 partagent quatre patterns load-bearing communs.
+Le schéma — repris du [Ch. 16](ch16-mcp-securite.md) §16.7 — déroule la trajectoire complète : été 2026 *Sigstore-ready* sur registries officiels, automne 2026 spec v2 (signature obligatoire + tool tagging + allowlist namespace + OTel audit schema), janvier 2027 refus des serveurs non-signés, printemps 2027 fusion MCP × A2A sous gouvernance AAIF. ==L'enchaînement temporel et la convergence avec l'AI Act art. 15 sont ce qui compte ici== : un agent banque sur cas Annexe III qui n'aura pas migré son tool stack sur la spec v2 à l'automne 2026 entrera en non-conformité art. 15 (cybersécurité) au prochain audit ACPR — la matrice défensive du [Ch. 16](ch16-mcp-securite.md) et les obligations art. 15 partagent quatre patterns load-bearing communs.
 
-> [!INFO] Voir [Ch. 13 — Sécurité MCP](ch13-mcp-securite.md)
-> Le [Ch. 13](ch13-mcp-securite.md) §13.2-6 décrit la matrice complète des **dix vecteurs d'attaque MCP** (Tool Poisoning Attack statique, rug pull, Unicode tags, cross-tool exfiltration, compromission upstream, dépendance transitive, namespace squat, descriptor injection, prompt injection cross-document, exfiltration via le sampling A2A) et les **quatre patterns load-bearing** (signature Sigstore + hash pinning, tool tagging à l'install, allowlist namespace, audit log OTel). Le [Ch. 13](ch13-mcp-securite.md) §13.7 déroule la roadmap 12 mois reprise ici. On ne reprend que **les dates pivot**, pas la mécanique.
+> [!INFO] Voir [Ch. 16 — Sécurité MCP](ch16-mcp-securite.md)
+> Le [Ch. 16](ch16-mcp-securite.md) §16.2-6 décrit la matrice complète des **dix vecteurs d'attaque MCP** (Tool Poisoning Attack statique, rug pull, Unicode tags, cross-tool exfiltration, compromission upstream, dépendance transitive, namespace squat, descriptor injection, prompt injection cross-document, exfiltration via le sampling A2A) et les **quatre patterns load-bearing** (signature Sigstore + hash pinning, tool tagging à l'install, allowlist namespace, audit log OTel). Le [Ch. 16](ch16-mcp-securite.md) §16.7 déroule la roadmap 12 mois reprise ici. On ne reprend que **les dates pivot**, pas la mécanique.
 
 ---
 
-## 23.9 Checklist opérationnelle 18 mois — où commencer
+## 25.9 Checklist opérationnelle 18 mois — où commencer
 
 Pour une banque tier 1 qui sort de PoC et entre en production agentique haut-risque, la séquence ci-dessous absorbe les contraintes des six référentiels sur dix-huit mois. Elle est calibrée pour qu'une organisation qui démarre le 28 mai 2026 soit *audit-ready* à l'automne 2027 sur ses premiers cas Annexe III.
 
@@ -273,25 +273,25 @@ Pour une banque tier 1 qui sort de PoC et entre en production agentique haut-ris
 
 Le schéma déroule **cinq jalons** sur une frise temporelle : 0-3 mois (audit + charte), 3-6 mois (classification + plan art. 9), 6-12 mois (controls implémentés), 12-18 mois (audit + simulation ACPR), 18+ mois (review continu + machine unlearning). Les deux pivots **2 août 2026** (AI Act art. 9-15) et **automne 2026** (spec MCP v2) tombent entre les jalons 1 et 2, et entre 2 et 3 — c'est ce qui calibre la séquence des deux premières marches. Le bandeau bas formalise les **pré-requis de passage d'un jalon au suivant** : sans ces artefacts, l'organisation ne peut pas franchir l'étape. Le code couleur des rôles co-signataires (DPO bleu, RSSI rouge, CDO / Sponsor vert, CRO violet) sur chaque carte rappelle qu'==aucun jalon n'est porté par un rôle seul== — la chaîne de responsabilité agentique est par construction collective.
 
-### 23.9.1 0-3 mois — Audit risques + charte de gouvernance
+### 25.9.1 0-3 mois — Audit risques + charte de gouvernance
 
 Audit complet des cas d'usage candidats. Qualification Annexe III ligne par ligne (haut-risque y/n). Charte de gouvernance agentique signée par le COMEX : politique de rétention mémoire, mécanismes d'effacement, transparence sur les limites du *machine unlearning*, RACI agentique (DPO / RSSI / sponsor IA / CRO). Revue contractuelle DORA art. 28-30 sur les providers cloud déjà engagés. Référencer en parallèle les *implementation guides* sectoriels disponibles (BSA pour les services financiers[^bsa-aiact], enquête de maturité opérationnelle AI for Finance Institute[^aifi-2026]) pour benchmarker la trajectoire.
 
-### 23.9.2 3-6 mois — Classification + plan de risques art. 9
+### 25.9.2 3-6 mois — Classification + plan de risques art. 9
 
 Classification définitive des agents (haut-risque y/n, données sensibles y/n, qualification Annexe III précise). Plan de gestion des risques art. 9 pour chaque cas haut-risque. Documentation art. 11 et journalisation OTel art. 12 activées. Plan de sortie DORA pour chaque service critique externalisé.
 
-### 23.9.3 6-12 mois — Controls implementation
+### 25.9.3 6-12 mois — Controls implementation
 
 Lineage Dataplex (ou équivalent) actif sur toutes les sources data. DLP / SDP sur les outputs sensibles. MCP Sigstore activé sur les serveurs internes ; pinning par hash pour les serveurs tiers en attendant la spec v2. *Human-in-the-loop* obligatoire sur les actions à effet externe (art. 14). Dashboard mémoire utilisateur pour les agents à mémoire persistante.
 
-### 23.9.4 12-18 mois — Certification interne + audit ACPR simulation
+### 25.9.4 12-18 mois — Certification interne + audit ACPR simulation
 
-Audit interne complet sur les cas Annexe III. Simulation d'audit ACPR — la 3ᵉ ligne d'audit interne joue le rôle de l'autorité externe. Red team annuelle sur les vecteurs [Ch. 19](ch19-gardefous-securite-globale.md) + [Ch. 13](ch13-mcp-securite.md). Certification interne — l'agent passe en production *high-confidence*. Première revue ACPR effective sur dossier. La discipline d'évaluation (cf. [Ch. 17](ch17-evaluation-benchmarks.md)) et l'instrumentation OTel (cf. [Ch. 18](ch18-observabilite-cognitive-audit-trail.md)) sont les preuves opposables ; sans ces deux briques, l'audit ne peut pas reconstituer la trajectoire de l'agent et la non-conformité art. 12 (logs) est mécaniquement actée.
+Audit interne complet sur les cas Annexe III. Simulation d'audit ACPR — la 3ᵉ ligne d'audit interne joue le rôle de l'autorité externe. Red team annuelle sur les vecteurs [Ch. 21](ch21-gardefous-securite-globale.md) + [Ch. 16](ch16-mcp-securite.md). Certification interne — l'agent passe en production *high-confidence*. Première revue ACPR effective sur dossier. La discipline d'évaluation (cf. [Ch. 19](ch19-evaluation-benchmarks.md)) et l'instrumentation OTel (cf. [Ch. 20](ch20-observabilite-cognitive-audit-trail.md)) sont les preuves opposables ; sans ces deux briques, l'audit ne peut pas reconstituer la trajectoire de l'agent et la non-conformité art. 12 (logs) est mécaniquement actée.
 
-### 23.9.5 18+ mois — Review continu + machine unlearning governance
+### 25.9.5 18+ mois — Review continu + machine unlearning governance
 
-Monitoring continu de la conformité (KPIs Hub France IA : % agents documentés, % audités, taux conformité AI Act, incidents non résolus). Veille active sur les progrès du *machine unlearning* paramétrique. Mise à jour annuelle de la charte. Préparation des évolutions réglementaires en discussion (cf. AAIF printemps 2027). Le pilote MIT NANDA *State of AI in Business*[^mit-nanda] reste l'indicateur indirect le plus utile pour comparer la maturité de l'organisation à celle du marché — moins comme benchmark que comme garde-fou contre l'auto-satisfaction. Pour les organisations qui veulent croiser conformité et création de valeur, la note Cigref sur le ROI agentique[^cigref-roi] aligne les *gates* sur la grille de mesure du [Ch. 21](ch21-roi-paradoxe-agentique.md).
+Monitoring continu de la conformité (KPIs Hub France IA : % agents documentés, % audités, taux conformité AI Act, incidents non résolus). Veille active sur les progrès du *machine unlearning* paramétrique. Mise à jour annuelle de la charte. Préparation des évolutions réglementaires en discussion (cf. AAIF printemps 2027). Le pilote MIT NANDA *State of AI in Business*[^mit-nanda] reste l'indicateur indirect le plus utile pour comparer la maturité de l'organisation à celle du marché — moins comme benchmark que comme garde-fou contre l'auto-satisfaction. Pour les organisations qui veulent croiser conformité et création de valeur, la note Cigref sur le ROI agentique[^cigref-roi] aligne les *gates* sur la grille de mesure du [Ch. 23](ch23-roi-paradoxe-agentique.md).
 
 > [!QUOTE] Hub France IA — Note Gouvernance des Agents d'IA Générative, juillet 2025
 > *« Alors que les agents IA passent de l'expérimentation à la production, les cadres de gouvernance traditionnels ne suffisent plus. Le modèle des trois lignes de défense reste pertinent, mais doit être adapté aux spécificités agentiques — propagation d'erreurs entre agents, escalade non contrôlée des permissions, mémoire persistante comme nouvelle surface d'attaque, orchestration multi-agent comme objet de gouvernance à part entière. »*[^hubfia]
@@ -299,9 +299,9 @@ Monitoring continu de la conformité (KPIs Hub France IA : % agents documentés,
 
 ---
 
-## 23.10 Récap chapitre — six référentiels, deux dates pivot, quatre rôles
+## 25.10 Récap chapitre — six référentiels, deux dates pivot, quatre rôles
 
-Six référentiels convergents : DORA, AI Act art. 9-15, EBA Outsourcing, BCBS 239, RGPD, ACPR. Deux dates pivot : **2 août 2026** (AI Act art. 9-15) et **automne 2026** (spec MCP v2). Quatre rôles pivot qui doivent s'aligner sur chaque décision : DPO, RSSI, Sponsor IA / CDO, CRO ou COO. Trois lignes de défense — opérationnel, risk / compliance, audit — adaptées aux agents. Une distinction load-bearing : mémoire opérationnelle (RGPD art. 17 satisfait) vs mémoire paramétrique (AI Act art. 25 transparence honnête en 2026). Une matrice générique 6 référentiels × 9 couches stack, instanciée en banque française GCP au [Ch. 16](ch16-analytics-agentique-banque.md). Une checklist 18 mois pour entrer en conformité.
+Six référentiels convergents : DORA, AI Act art. 9-15, EBA Outsourcing, BCBS 239, RGPD, ACPR. Deux dates pivot : **2 août 2026** (AI Act art. 9-15) et **automne 2026** (spec MCP v2). Quatre rôles pivot qui doivent s'aligner sur chaque décision : DPO, RSSI, Sponsor IA / CDO, CRO ou COO. Trois lignes de défense — opérationnel, risk / compliance, audit — adaptées aux agents. Une distinction load-bearing : mémoire opérationnelle (RGPD art. 17 satisfait) vs mémoire paramétrique (AI Act art. 25 transparence honnête en 2026). Une matrice générique 6 référentiels × 9 couches stack, instanciée en banque française GCP au [Ch. 18](ch18-analytics-agentique-banque.md). Une checklist 18 mois pour entrer en conformité.
 
 ![Calendrier réglementaire unifié 2026-2028 — récap chapitre|1300](../../gouvernance/images/20260421-r18-calendrier-reglementaire.svg)
 
@@ -312,7 +312,7 @@ C'est la grille minimale qui permet à une équipe banque tier 1 de tenir une co
 > [!WARNING] Trois pièges classiques (100 % traçables)
 > **Croire que l'art. 9-15 ne s'applique qu'au scoring crédit** — tout cas Annexe III est concerné, et le périmètre couvre l'agent en entier, pas seulement le modèle sous-jacent · **Attendre la CNIL ou l'ACPR pour commencer** — le 2 août 2026 ne décale pas, et l'autorité de supervision ne produira pas le travail à la place du déployeur · **Déléguer la gouvernance mémoire au DPO seul** — la chaîne paramétrique excède son périmètre, les quatre rôles doivent co-signer la charte.
 
-Le [Ch. 24](ch24-ia-et-travail.md) ouvre la suite — *IA et travail* — qui prend le débat à un autre niveau : que produit-on, qui le fait, qui en bénéficie. Le [Ch. 25](ch25-proces-musk-altman.md) ferme le livre sur le procès Musk vs Altman, où la question de gouvernance devient une question de droit privé entre cofondateurs et une question publique sur le contrôle des frontières capacitaires. ==Les garde-fous formels formalisés ici sont une condition nécessaire ; ils ne sont pas la totalité du sujet politique que les agents posent.==
+Le [Ch. 26](ch26-ia-et-travail.md) ouvre la suite — *IA et travail* — qui prend le débat à un autre niveau : que produit-on, qui le fait, qui en bénéficie. Le [Ch. 27](ch27-proces-musk-altman.md) ferme le livre sur le procès Musk vs Altman, où la question de gouvernance devient une question de droit privé entre cofondateurs et une question publique sur le contrôle des frontières capacitaires. ==Les garde-fous formels formalisés ici sont une condition nécessaire ; ils ne sont pas la totalité du sujet politique que les agents posent.==
 
 ---
 
