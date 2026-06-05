@@ -20,7 +20,9 @@ La promesse a un précédent : le namespace `http.*`, scellé en 2023 après cin
 
 La OTel GenAI SIG (Special Interest Group) est devenu le forum de cette convergence. Co-piloté par des contributeurs de Microsoft (Azure AI Foundry), de Google (Vertex AI), d'Elastic, de Honeycomb et de quelques vendeurs purs LLM (Langfuse, Arize), il se réunit toutes les deux semaines depuis janvier 2024 et publie ses minutes publiquement[^2]. Anthropic, OpenAI et Mistral ne sont pas membres actifs du SIG mais respectent la convention dans leurs SDK officiels — ils observent le résultat plutôt que de le co-écrire.
 
-[SCHEMA-01]
+![Anatomie du namespace gen_ai.* — six familles d'attributs, trois statuts de maturité|1200](images/20260605-01-anatomie-namespace.svg)
+
+*Schéma 1 — Le tronc commun `gen_ai.*` et ses six branches. Trois sont stables (request, response, usage), trois en release candidate ou draft (agent, evaluation, compaction). C'est précisément sur ces trois dernières que se joue la bataille 2026-2027.*
 
 ## 2. Anatomie du namespace `gen_ai.*`
 
