@@ -154,7 +154,9 @@ events:
   gen_ai.compaction.summary    (le résumé produit, gated par capture flag)
 ```
 
-[SCHEMA-05]
+![Le ledger compaction gen_ai.compaction.* — draft visant mi-2027|1200](images/20260605-05-ledger-compaction.svg)
+
+*Schéma 5 — Avant/après une compaction : 203 412 tokens → 8 240. Les trois familles d'attributs proposées (forme, contenu retenu, fidélité jugée) rendent l'opération observable pour la première fois.*
 
 Le débat principal porte sur le **lien avec l'éval**. Une compaction réussie devrait être *jugée* : combien d'information critique a survécu ? Le SIG propose un compromis — un attribut `gen_ai.compaction.judge.score` optionnel, calculé par un LLM-as-judge ou une métrique programmatique (recall sur un set de faits-clés). Cela ferait de la compaction la première opération nativement instrumentée avec son propre verdict, là où le LLM-call standard reste neutre.
 
