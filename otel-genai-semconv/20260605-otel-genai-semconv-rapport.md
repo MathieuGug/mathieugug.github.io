@@ -119,7 +119,9 @@ gen_ai.client.chat  [span principal]
 
 Attributs clés : `gen_ai.evaluation.name` (nom du critère), `gen_ai.evaluation.score` (valeur normalisée 0-1), `gen_ai.evaluation.threshold`, `gen_ai.evaluation.passed` (bool), `gen_ai.evaluation.judge.model` (si LLM-as-judge), `gen_ai.evaluation.judge.system`[^4].
 
-[SCHEMA-04]
+![L'éval comme span — bascule architecturale legacy vs RC|1200](images/20260605-04-eval-as-span.svg)
+
+*Schéma 4 — À gauche le pattern legacy (éval en sidecar batch). À droite la convention `gen_ai.evaluation.*` en RC : les évals deviennent des spans enfants du span jugé, ce qui débloque triggers temps réel et audit trail régulatoire.*
 
 L'éval-as-span débloque trois usages que l'éval-as-sidecar ne pouvait pas servir :
 
