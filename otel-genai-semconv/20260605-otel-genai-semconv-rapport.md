@@ -92,7 +92,9 @@ gen_ai.agent.invocation  [duration = end-to-end de la boucle]
 
 L'attribut clé est `gen_ai.agent.id` (UUID stable d'une instance d'agent) plus `gen_ai.agent.name` (nom logique : « researcher », « executor »). Les outils sont décrits par `gen_ai.tool.name`, `gen_ai.tool.call_id` (id donné par le LLM dans son JSON tool_call), et `gen_ai.tool.type` (function | code_interpreter | retrieval | computer_use)[^1].
 
-[SCHEMA-03]
+![Hiérarchie agent → tool → llm — l'arbre de spans canonique d'une boucle agent OTel|900](images/20260605-03-hierarchie-agent-tool-llm.svg)
+
+*Schéma 3 — Le span racine `gen_ai.agent.invocation` et ses enfants (chat + tool + chat + eval). En bas, l'angle mort multi-agent : trois options coexistent sans verdict du SIG.*
 
 ==L'angle mort, fin 2026, c'est le multi-agent.== Quand un agent A délègue à un agent B (handoff dans le pattern Swarm/OpenAI Agents SDK ; supervisor → worker dans LangGraph ; agent-to-agent via le protocole A2A de Google), il n'y a pas de convention claire pour modéliser la transition. Trois pratiques cohabitent :
 
