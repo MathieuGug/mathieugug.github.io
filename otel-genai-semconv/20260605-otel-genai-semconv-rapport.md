@@ -71,7 +71,9 @@ events:
 
 Deux métriques l'accompagnent : `gen_ai.client.operation.duration` (histogramme par `gen_ai.system` × `gen_ai.request.model` × `gen_ai.operation.name`) et `gen_ai.client.token.usage` (histogramme par `gen_ai.token.type=input|output`)[^1]. Le SDK OTel auto-instrumenté émet ces deux métriques systématiquement, ce qui permet aux dashboards génériques (« latence p95 par modèle », « tokens consommés par jour ») de fonctionner sans configuration applicative.
 
-[SCHEMA-02]
+![Le span LLM canonique gen_ai.client.chat — cinq étapes et leurs attributs|1200](images/20260605-02-span-llm-canonique.svg)
+
+*Schéma 2 — Les cinq étapes d'un span `chat` synchrone (start, request, TTFT, response, end). Le piège de streaming, marqué en carmine, est la source de la majorité des bugs d'instrumentation observés en 2024-2025.*
 
 Le point critique — et la source de la majorité des bugs d'instrumentation observés en 2025 — concerne **le streaming**. Pour un appel non-streamé, `duration` est sans ambiguïté ; pour un appel streamé, le SIG a tranché en faveur du *time to last token* (du premier byte d'envoi de requête au dernier delta reçu), avec une métrique séparée optionnelle `gen_ai.client.time_to_first_token`. Les premiers SDK avaient traité le streaming comme un appel instantané (duration = aller-retour HTTP), ce qui produisait des p95 absurdement bas par rapport à l'expérience utilisateur — un point que Honeycomb a documenté publiquement en juin 2024[^3].
 
