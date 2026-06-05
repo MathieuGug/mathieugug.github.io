@@ -166,7 +166,9 @@ Le débat principal porte sur le **lien avec l'éval**. Une compaction réussie 
 
 À fin mai 2026, le paysage de l'adoption est lisible mais inégal. Tous les acteurs majeurs émettent ou reçoivent `gen_ai.*` mais avec des niveaux de couverture distincts.
 
-[SCHEMA-06]
+![Cartographie vendeurs × familles d'attributs gen_ai.* — état mai 2026|1200](images/20260605-06-cartographie-vendeurs.svg)
+
+*Schéma 6 — Matrice 10 vendeurs × 6 familles + draft compaction. La fracture observable n'est pas entre vendeurs mais entre couche stable (homogène) et couches RC/draft (hétérogène, chacun ajoute ses extensions).*
 
 **Émetteurs (SDK applicatif)** :
 
