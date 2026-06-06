@@ -1,0 +1,2168 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OpenTelemetry GenAI semconv en production</title>
+  <meta name="description" content="OpenTelemetry GenAI semconv en production · le namespace gen_ai.* comme grammaire d'observabilité IA partagée, et ses trois fronts ouverts (eval, compaction, multi-agent) — deep dive par Mathieu Guglielmino, 5 juin 2026.">
+  <!-- og:start -->
+<meta name="author" content="Mathieu Guglielmino">
+<link rel="canonical" href="https://mathieugug.github.io/observabilite-agents-ia/20260430-observabilite-agents-ia-app.html">
+<meta name="keywords" content="IA agentique, Mathieu Guglielmino, agents IA, étude, observabilite, agents, ia">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Mathieu Guglielmino">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:url" content="https://mathieugug.github.io/observabilite-agents-ia/20260430-observabilite-agents-ia-app.html">
+<meta property="og:title" content="Observabilité des agents IA">
+<meta property="og:description" content="Observabilité des agents IA · du monitoring au cognitive audit trail. État de l'art OpenTelemetry GenAI, six piliers, architecture, vendor landscape, feuille de route 2026 — étude par Mathieu Guglielmino.">
+<meta property="og:image" content="https://mathieugug.github.io/observabilite-agents-ia/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Observabilité des agents IA — couverture social">
+<meta property="article:published_time" content="2026-04-30">
+<meta property="article:author" content="Mathieu Guglielmino">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Observabilité des agents IA">
+<meta name="twitter:description" content="Observabilité des agents IA · du monitoring au cognitive audit trail. État de l'art OpenTelemetry GenAI, six piliers, architecture, vendor landscape, feuille de route 2026 — étude par Mathieu Guglielmino.">
+<meta name="twitter:image" content="https://mathieugug.github.io/observabilite-agents-ia/og.png">
+<script type="application/ld+json">
+{"@context": "https://schema.org","@type": "Article","headline": "Observabilité des agents IA","description": "Observabilité des agents IA · du monitoring au cognitive audit trail. État de l'art OpenTelemetry GenAI, six piliers, architecture, vendor landscape, feuille de route 2026 — étude par Mathieu Guglielmino.","image": "https://mathieugug.github.io/observabilite-agents-ia/og.png","url": "https://mathieugug.github.io/observabilite-agents-ia/20260430-observabilite-agents-ia-app.html","datePublished": "2026-04-30","inLanguage": "fr-FR","author": {"@type": "Person","name": "Mathieu Guglielmino","url": "https://mathieugug.github.io/"},"publisher": {"@type": "Person","name": "Mathieu Guglielmino","url": "https://mathieugug.github.io/"}}
+</script>
+<!-- og:end -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/dossier-app.css">
+  <style>
+    /* ───────── Tokens ───────── */
+    :root {
+      --paper:    #FAF8F3;
+      --paper-2:  #F2EFE7;
+      --ink:      #1A1A1A;
+      --graphite: #5A5A5A;
+      --mist:     #B8B5AE;
+      --rule:     #E5E1D8;
+      --carmine:  #B7332C;
+      --teal:     #1F5560;
+      --mustard:  #B58A2C;
+
+      --serif: 'Spectral', 'Playfair Display', Georgia, serif;
+      --sans:  'Inter', system-ui, sans-serif;
+      --mono:  'JetBrains Mono', 'IBM Plex Mono', monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; max-width: 100vw; }
+    body {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    header.site {
+      grid-column: 1 / -1;
+      padding: 24px 32px;
+      border-bottom: 1px solid var(--rule);
+      display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap;
+    }
+    header.site .marker {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--carmine);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    header.site h1 {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 1.4rem;
+      margin: 0;
+      letter-spacing: -0.01em;
+    }
+    header.site .meta {
+      margin-left: auto;
+      font-size: 0.85rem;
+      color: var(--graphite);
+    }
+    header.site .meta a { color: var(--carmine); text-decoration: none; }
+    header.site .meta a:hover { text-decoration: underline; }
+    header.site .back {
+      font-family: var(--mono); font-size: 0.72rem;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--graphite); text-decoration: none;
+      white-space: nowrap;
+    }
+    header.site .back:hover { color: var(--carmine); }
+    .menu-toggle {
+      display: none;
+      background: none; border: 1px solid var(--rule);
+      padding: 6px 12px; border-radius: 4px; cursor: pointer;
+      font-family: var(--mono); font-size: 0.8rem;
+    }
+    @media (max-width: 1024px) { .menu-toggle { display: inline-block; } }
+
+    /* ───────── TOC (left) ───────── */
+    #toc {
+      padding: 32px 24px;
+      border-right: 1px solid var(--rule);
+      position: sticky; top: 56px; align-self: start;
+      height: calc(100vh - 56px); overflow-y: auto;
+    }
+    #toc h2 {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--graphite);
+      margin: 0 0 16px;
+    }
+    #toc ol {
+      list-style: none; padding: 0; margin: 0;
+      counter-reset: toc-counter;
+    }
+    #toc li {
+      counter-increment: toc-counter;
+      margin: 0 0 12px;
+      font-size: 0.92rem;
+      line-height: 1.4;
+    }
+    #toc li::before {
+      content: counter(toc-counter, decimal-leading-zero) ".";
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--mist);
+      margin-right: 8px;
+    }
+    #toc a {
+      color: var(--ink);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+    }
+    #toc a:hover, #toc a.active {
+      color: var(--carmine);
+      border-bottom-color: currentColor;
+    }
+
+    /* ───────── Main report ───────── */
+    main#report {
+      padding: 56px 48px 96px;
+      min-width: 0;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+    main#report > .lead {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 1.2rem;
+      color: var(--graphite);
+      line-height: 1.5;
+      margin: 0 0 48px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--rule);
+    }
+    main h1.report-title {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 2.6rem;
+      line-height: 1.1;
+      letter-spacing: -0.025em;
+      margin: 0 0 16px;
+    }
+    main h2 {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 1.55rem;
+      letter-spacing: -0.01em;
+      margin: 3.5rem 0 1rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--rule);
+    }
+    main h3 {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 1.18rem;
+      margin: 2rem 0 0.6rem;
+    }
+    main p { margin: 0 0 1.1rem; }
+    main ul, main ol { margin: 0 0 1.1rem; padding-left: 1.4rem; }
+    main li { margin-bottom: 0.4rem; }
+    main blockquote {
+      margin: 1.5rem 0;
+      padding: 12px 20px;
+      border-left: 3px solid var(--carmine);
+      background: var(--paper-2);
+      font-style: italic;
+      color: var(--graphite);
+    }
+    main code {
+      font-family: var(--mono);
+      font-size: 0.88em;
+      background: var(--paper-2);
+      padding: 2px 5px; border-radius: 3px;
+      overflow-wrap: anywhere;
+    }
+    main pre {
+      margin: 1.5rem 0;
+      padding: 14px 16px;
+      background: var(--paper-2);
+      border-radius: 4px;
+      overflow-x: auto;
+      max-width: 100%;
+      font-size: 0.85em;
+      line-height: 1.5;
+      -webkit-overflow-scrolling: touch;
+    }
+    main pre code {
+      background: transparent;
+      padding: 0;
+      border-radius: 0;
+      font-size: 1em;
+      overflow-wrap: normal;
+    }
+    main mark {
+      background: linear-gradient(transparent 58%, rgba(178, 59, 27, 0.14) 58%);
+      color: inherit;
+      padding: 0 2px;
+    }
+
+    /* ───────── Figures ───────── */
+    .figure {
+      margin: 3rem 0;
+      padding: 24px 0;
+      border-top: 1px solid var(--rule);
+      border-bottom: 1px solid var(--rule);
+      position: relative;
+    }
+    .figure svg {
+      width: 100%; height: auto;
+      display: block;
+      margin: 0 auto;
+    }
+    /* State-aware figure breakout on desktop — figure adapts to sources panel state:
+       - Default (sources expanded): fills main-cell only (between TOC and sources)
+       - .layout.sources-collapsed: extends from TOC-right to viewport-right
+       Neither state overlaps a visible sidebar. Smooth 280ms transition.
+       Full math + derivation: skill illustrated-deep-research, companion-app.md § 5. */
+    @media (min-width: 1025px) {
+      .figure {
+        margin-left: calc(-1 * max(0px, (100vw - 1320px) / 2 + 48px));
+        margin-right: calc(-1 * max(0px, (100vw - 1320px) / 2 + 48px));
+        transition: margin-left 280ms ease, margin-right 280ms ease;
+        padding-left: clamp(16px, 3vw, 48px);
+        padding-right: clamp(16px, 3vw, 48px);
+        border-radius: 0;
+      }
+      .layout.sources-collapsed .figure {
+        margin-left: calc(-1 * max(0px, (100vw - 904px) / 2));
+        margin-right: calc(-1 * max(0px, (100vw - 904px) / 2));
+      }
+      .figure-caption {
+        max-width: 760px;
+        margin-left: auto;
+        margin-right: auto;
+        padding: 0 48px;
+      }
+    }
+    .figure-caption {
+      font-size: 0.88rem;
+      color: var(--graphite);
+      font-style: italic;
+      margin-top: 12px;
+      padding: 0 8px;
+    }
+    .figure svg .interactive { cursor: pointer; transition: filter 140ms; }
+    .figure svg .interactive:hover,
+    .figure svg .interactive:focus-visible { outline: none; }
+    .figure svg .interactive:hover rect,
+    .figure svg .interactive:focus-visible rect,
+    .figure svg .interactive:hover path:not([fill="none"]),
+    .figure svg .interactive:focus-visible path:not([fill="none"]),
+    .figure svg .interactive:hover circle,
+    .figure svg .interactive:focus-visible circle {
+      stroke: var(--carmine);
+      stroke-width: 2.5;
+    }
+    .figure svg .interactive:focus-visible {
+      filter: drop-shadow(0 0 0 var(--carmine));
+    }
+
+    /* ───────── Sources sidebar (right) ───────── */
+    #sources {
+      padding: 32px 24px;
+      border-left: 1px solid var(--rule);
+      background: var(--paper-2);
+      position: sticky; top: 56px; align-self: start;
+      height: calc(100vh - 56px); overflow-y: auto;
+      transition: transform 280ms ease, opacity 200ms ease;
+    }
+    #sources .sources-inner { display: block; }
+
+    @media (max-width: 1024px) {
+      .menu-toggle { display: inline-block !important; }
+      header.site { padding: 14px 16px; gap: 10px; flex-wrap: wrap; }
+      header.site h1 { font-size: 1.05rem; min-width: 0; overflow-wrap: break-word; word-break: break-word; }
+      header.site .meta { font-size: 0.75rem; }
+      header.site .back { font-size: 0.7rem; letter-spacing: 0.08em; }
+      main#report { padding: 28px 18px 56px; max-width: 100%; min-width: 0; }
+      main h1.report-title { font-size: 1.8rem; overflow-wrap: break-word; word-break: break-word; }
+      main#report > .lead { font-size: 1.02rem; margin-bottom: 32px; padding-bottom: 18px; }
+      main h2 { font-size: 1.25rem; margin: 2.4rem 0 0.8rem; overflow-wrap: break-word; word-break: break-word; }
+      main h3 { font-size: 1.05rem; overflow-wrap: break-word; }
+      main p, main ul, main ol { overflow-wrap: break-word; word-break: break-word; }
+      .figure { margin: 2rem 0; padding: 16px 0; max-width: 100%; overflow: hidden; }
+      .figure svg { width: 100%; max-width: 100%; height: auto; }
+      main table {
+        display: block; max-width: 100%;
+        overflow-x: auto; -webkit-overflow-scrolling: touch;
+      }
+      main th, main td { white-space: normal; }
+    }
+    #sources h2 {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--graphite);
+      margin: 0 0 16px;
+    }
+    #sources ol { list-style: none; padding: 0; margin: 0; }
+    #sources li {
+      font-size: 0.82rem;
+      line-height: 1.5;
+      margin: 0 0 16px;
+      padding: 12px 14px;
+      border-radius: 4px;
+      border: 1px solid transparent;
+      transition: border-color 220ms, background 220ms;
+    }
+    #sources li .cite-num {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--carmine);
+      margin-right: 6px;
+    }
+    #sources li a {
+      display: inline-block;
+      margin-top: 4px;
+      color: var(--teal);
+      text-decoration: none;
+      font-size: 0.78rem;
+    }
+    #sources li a:hover { text-decoration: underline; }
+    #sources li .accessed {
+      display: block;
+      margin-top: 4px;
+      color: var(--mist);
+      font-style: italic;
+      font-size: 0.74rem;
+    }
+    #sources li.highlight {
+      background: var(--paper);
+      border-color: var(--carmine);
+    }
+
+    /* ───────── Print ───────── */
+    @media print {
+      .layout { grid-template-columns: 1fr; }
+      #toc, #sources, #modal-root, #zoom-overlay, .menu-toggle, .zoom-btn { display: none; }
+      main#report { max-width: none; padding: 0; }
+      .figure { page-break-inside: avoid; }
+    }
+
+    /* === infographie A4 portrait (exec sum visuelle) — pattern partagé === */
+    main .figure.figure--portrait,
+    .layout main .figure.figure--portrait,
+    .layout.sources-collapsed main .figure.figure--portrait {
+      margin-top: 3rem; margin-bottom: 3rem;
+      padding: 0 !important; border: none !important;
+      border-top: none !important; border-bottom: none !important;
+      width: auto;
+    }
+    @media (max-width: 1024px) {
+      main .figure.figure--portrait {
+        margin-left: auto !important; margin-right: auto !important;
+        max-width: 100%;
+      }
+    }
+    @media (min-width: 1025px) {
+      main .figure.figure--portrait,
+      .layout main .figure.figure--portrait,
+      .layout.sources-collapsed main .figure.figure--portrait {
+        margin-left: -60px !important; margin-right: -60px !important;
+        max-width: calc(100% + 120px);
+      }
+    }
+    @media (min-width: 1440px) {
+      main .figure.figure--portrait,
+      .layout main .figure.figure--portrait,
+      .layout.sources-collapsed main .figure.figure--portrait {
+        margin-left: -100px !important; margin-right: -100px !important;
+        max-width: calc(100% + 200px);
+      }
+    }
+    main .figure--portrait .figure-portrait-link { display: block; width: 100%; border: 1px solid var(--rule); background: var(--paper); border-radius: 2px; cursor: zoom-in; transition: box-shadow 220ms ease, border-color 220ms ease; overflow: hidden; }
+    main .figure--portrait .figure-portrait-link:hover { box-shadow: 0 8px 28px rgba(30,30,42,0.14); border-color: var(--accent); }
+    main .figure--portrait img { display: block; width: 100%; height: auto; }
+    main .figure--portrait .figure-caption { max-width: 100%; margin: 14px auto 0; padding: 0 8px; text-align: center; }
+    /* Sigil MG remonté sur les A4 portrait (au-dessus du header SVG, pas sur le titre) */
+    main .figure--portrait .schema-sigil {
+      top: 10px !important;
+      right: 14px !important;
+      width: 30px !important; height: 30px !important;
+      opacity: 0.60 !important;
+    }
+    @media (max-width: 640px) {
+      main .figure--portrait .schema-sigil { top: 8px !important; right: 10px !important; width: 24px !important; height: 24px !important; }
+    }
+
+    /* === quiz cards (vérification de compréhension) — pattern partagé avec evaluation-agentique === */
+    .quiz-card {
+      margin: 2rem 0 2.4rem;
+      padding: 18px 22px;
+      background: var(--paper-2);
+      border-left: 3px solid var(--carmine);
+      border-radius: 2px;
+    }
+    .quiz-card__head {
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .quiz-card__eyebrow {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--graphite);
+      flex-basis: 100%;
+      margin: 0 0 0.25rem;
+    }
+    .quiz-card__title {
+      font-family: var(--serif);
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin: 0;
+      flex: 1 1 auto;
+      color: var(--ink);
+    }
+    .quiz-card__toggle {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.06em;
+      background: transparent;
+      border: 1px solid var(--mist);
+      color: var(--ink);
+      padding: 6px 14px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: color .15s, border-color .15s;
+    }
+    .quiz-card__toggle:hover, .quiz-card__toggle:focus-visible {
+      color: var(--carmine);
+      border-color: var(--carmine);
+      outline: none;
+    }
+    .quiz-card__body {
+      margin-top: 1.2rem;
+      padding-top: 1rem;
+      border-top: 1px dashed var(--rule);
+    }
+    .quiz-card__body[hidden] { display: none; }
+
+    .quiz-q { margin: 0; padding: 0; }
+    .quiz-q + .quiz-q { margin-top: 1.6rem; padding-top: 1.6rem; border-top: 1px dashed var(--rule); }
+    .quiz-q fieldset { border: 0; padding: 0; margin: 0; }
+    .quiz-q__stem {
+      font-family: var(--serif);
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--ink);
+      padding: 0;
+      margin: 0 0 0.9rem;
+    }
+    .quiz-q__options { list-style: none; padding: 0; margin: 0 0 1rem; }
+    .quiz-q__options li {
+      margin: 0;
+      padding: 8px 0;
+      border-top: 1px solid var(--rule);
+    }
+    .quiz-q__options li:last-child { border-bottom: 1px solid var(--rule); }
+    .quiz-q__options label {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      cursor: pointer;
+      padding: 4px 0;
+    }
+    .quiz-q__options input { margin: 0.3em 0 0; flex: 0 0 auto; accent-color: var(--carmine); }
+    .quiz-q__options label > span { flex: 1; line-height: 1.5; }
+
+    .quiz-q__explain {
+      font-size: 0.92rem;
+      margin: 0.5rem 0 0 1.7rem;
+      padding: 8px 12px;
+      background: var(--paper);
+      border-left: 2px solid var(--mist);
+      color: var(--graphite);
+    }
+    .quiz-q__explain[hidden] { display: none; }
+    .quiz-q__options li.is-correct .quiz-q__explain,
+    .quiz-q__options li.expected .quiz-q__explain { border-left-color: var(--teal); }
+    .quiz-q__options li.is-wrong .quiz-q__explain { border-left-color: var(--carmine); }
+    .quiz-q__options li.is-correct > label > span,
+    .quiz-q__options li.expected > label > span {
+      background-image: linear-gradient(transparent 60%, rgba(31, 85, 96, 0.14) 60%);
+      background-size: 100% 1.5em;
+      background-repeat: repeat-y;
+    }
+    .quiz-q__options li.is-wrong > label > span {
+      background-image: linear-gradient(transparent 60%, rgba(183, 51, 44, 0.14) 60%);
+      background-size: 100% 1.5em;
+      background-repeat: repeat-y;
+    }
+
+    .quiz-q__check {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      background: var(--ink);
+      color: var(--paper);
+      border: 0;
+      padding: 8px 16px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .quiz-q__check:hover, .quiz-q__check:focus-visible { background: var(--carmine); outline: none; }
+    .quiz-q__check:disabled { background: var(--mist); cursor: not-allowed; }
+
+    .quiz-q__verdict {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      margin: 1rem 0 0;
+      padding: 8px 12px;
+      border-left: 2px solid var(--graphite);
+    }
+    .quiz-q__verdict[hidden] { display: none; }
+    .quiz-q__verdict.is-correct { border-left-color: var(--teal); color: var(--teal); }
+    .quiz-q__verdict.is-wrong { border-left-color: var(--carmine); color: var(--carmine); }
+
+    .quiz-q__retry {
+      font-family: var(--mono);
+      font-size: 0.74rem;
+      letter-spacing: 0.06em;
+      background: transparent;
+      border: 0;
+      color: var(--graphite);
+      padding: 6px 0;
+      margin: 0.6rem 0 0;
+      cursor: pointer;
+      text-decoration: underline;
+      text-decoration-color: var(--mist);
+      text-underline-offset: 3px;
+    }
+    .quiz-q__retry:hover, .quiz-q__retry:focus-visible { color: var(--ink); text-decoration-color: var(--carmine); outline: none; }
+    .quiz-q__retry[hidden] { display: none; }
+
+    /* === callouts de renvoi vers d'autres dossiers (pattern partagé avec agent-sdk) === */
+    main .callout { display: grid; grid-template-columns: 280px 1fr; gap: 0; align-items: stretch; margin: 2.4rem 0; padding: 0; background: var(--paper); border-left: 3px solid var(--teal); border-radius: 2px; transition: grid-template-columns 320ms cubic-bezier(.2,.7,.2,1); }
+    main .callout:hover { grid-template-columns: 440px 1fr; }
+    main .callout > .callout-thumb-link { position: relative; display: block; width: 100%; height: 100%; min-height: 200px; overflow: hidden; border-radius: 0; background: transparent; border: 0; border-right: 1px solid var(--rule); cursor: zoom-in; padding: 0; -webkit-appearance: none; appearance: none; font: inherit; color: inherit; text-align: left; transition: filter 200ms ease; }
+    main .callout > .callout-thumb-link:hover { filter: drop-shadow(0 4px 14px rgba(183,51,44,0.18)); border-right-color: var(--carmine); }
+    main .callout > .callout-thumb-link:focus-visible { outline: 2px solid var(--carmine); outline-offset: -2px; }
+    main .callout > .callout-thumb-link img.callout-thumb { width: 100%; height: 100%; object-fit: contain; object-position: center center; display: block; padding: 0; }
+    main .callout > .callout-thumb-link::after { content: '⛶ AGRANDIR'; position: absolute; top: 10px; right: 10px; padding: 4px 9px; font-family: var(--mono); font-size: 9.5px; font-weight: 600; letter-spacing: 0.10em; background: rgba(250,248,243,0.94); border: 1px solid var(--rule); border-radius: 2px; color: var(--graphite); opacity: 0; transition: opacity 180ms ease, color 180ms ease, border-color 180ms ease; pointer-events: none; }
+    main .callout > .callout-thumb-link:hover::after, main .callout > .callout-thumb-link:focus-visible::after { opacity: 1; color: var(--carmine); border-color: var(--carmine); }
+    main .callout > .callout-body { min-width: 0; padding: 22px 26px 22px 26px; align-self: center; }
+    main .callout .callout-eyebrow { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--teal); margin: 0 0 0.45rem; font-weight: 600; }
+    main .callout > .callout-body p { margin: 0; font-size: 0.95rem; line-height: 1.55; color: var(--ink); }
+    main .callout > .callout-body p a { color: var(--carmine); text-decoration: none; border-bottom: 1px dotted var(--carmine); }
+    main .callout > .callout-body p a:hover { color: var(--teal); border-bottom-color: var(--teal); }
+
+    @media (max-width: 1024px) {
+      /* === quiz cards : variantes mobile === */
+      .quiz-card { padding: 14px 16px; margin: 1.6rem 0 2rem; }
+      .quiz-card__head { gap: 0.6rem; }
+      .quiz-card__title { flex-basis: 100%; overflow-wrap: break-word; }
+      .quiz-card__toggle { width: 100%; padding: 12px; min-height: 44px; font-size: 0.82rem; }
+      .quiz-q__check { width: 100%; padding: 12px; min-height: 44px; font-size: 0.82rem; }
+      .quiz-q__options li { padding: 10px 0; }
+      .quiz-q__options label { padding: 8px 0; min-height: 44px; align-items: center; }
+      .quiz-q__explain { margin: 0.5rem 0 0 0; padding: 10px 12px; }
+      .quiz-q__retry { padding: 10px 0; min-height: 44px; }
+    }
+    @media (max-width: 640px) {
+      main .callout, main .callout:hover { grid-template-columns: 1fr; gap: 0; padding: 0; }
+      main .callout > .callout-thumb-link { min-height: 180px; border-right: 0; border-bottom: 1px solid var(--rule); }
+      main .callout > .callout-body { padding: 18px 20px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar" id="topbar">
+    <a href="../index.html">Mathieu <em>Guglielmino</em></a>
+    <span class="dossier-context">OpenTelemetry GenAI semconv</span>
+    <div class="topbar-tools">
+      <button class="menu-toggle" id="toggle-toc">Sommaire</button>
+      <button class="menu-toggle" id="toggle-sources">Sources</button>
+    </div>
+    <nav class="back-nav" aria-label="Navigation retour">
+      <a href="index.html" class="back" title="Revenir au hub du dossier">← Hub</a>
+      <span class="back-sep" aria-hidden="true">·</span>
+      <a href="../index.html#series" class="back" title="Revenir à l'accueil">Accueil</a>
+    </nav>
+  </header>
+  <div class="layout">
+
+    <header class="site">
+      <span class="marker">Deep dive · Observabilité agents IA</span>
+      <h1>OpenTelemetry GenAI semconv en production</h1>
+      <span class="meta">
+        Mathieu Guglielmino · 5 juin 2026
+      </span>
+    </header>
+
+    <nav id="toc" aria-label="Sommaire">
+      <button class="panel-close" type="button" aria-label="Fermer le sommaire">Fermer ✕</button>
+      <h2>Sommaire</h2>
+      <ol>
+        <li><a href="#synthese-executive">Synthèse exécutive</a></li>
+        <li><a href="#sec-1">1. Pourquoi une grammaire commune</a></li>
+        <li><a href="#sec-2">2. Anatomie du namespace gen_ai.*</a></li>
+        <li><a href="#sec-3">3. Le span LLM canonique</a></li>
+        <li><a href="#sec-4">4. Agents et outils — la couche RC</a></li>
+        <li><a href="#sec-5">5. L'éval comme span</a></li>
+        <li><a href="#sec-6">6. Le front compaction — un draft ouvert</a></li>
+        <li><a href="#sec-7">7. Cartographie vendeurs</a></li>
+        <li><a href="#sec-8">8. Trajectoire 2026-2028</a></li>
+      </ol>
+    </nav>
+
+    <main id="report">
+<h1 class="report-title">OpenTelemetry GenAI semconv en production</h1>
+      <p class="lead">Les <em>semantic conventions</em> OpenTelemetry GenAI sont devenues, en deux ans, la première grammaire d'observabilité partagée entre éditeurs, vendeurs APM et plateformes agentiques — mais le namespace <code>gen_ai.*</code> n'est stable que sur le LLM-call seul ; l'agent et l'éval sont en <em>release candidate</em>, et la compaction est encore un draft.</p>
+
+      <h2 id="synthese-executive">Synthèse exécutive</h2>
+      <ul>
+        <li>En <strong>mai 2026</strong>, le namespace <code>gen_ai.*</code> d'OpenTelemetry sort officiellement de <strong>stable</strong> pour la couche LLM-call : <code>gen_ai.client.operation.duration</code>, <code>gen_ai.client.token.usage</code>, et le <span class="term" data-tooltip="Une unité de travail tracée — début, fin, attributs, événements, parent. Brique de base d'OpenTelemetry.">span</span> <code>chat</code> agrégé deviennent canoniques. Tous les <span class="term" data-tooltip="Application Performance Monitoring — catégorie d'outils qui surveillent latence, erreurs et débit des applications en production.">APM</span> tier-1 (Datadog, New Relic, Honeycomb, Grafana, Dynatrace) émettent et reçoivent ces signaux nativement<a class="cite" data-cite="1" href="#source-1">1</a><a class="cite" data-cite="2" href="#source-2">2</a>.</li>
+        <li><strong>L'éval reste en release candidate.</strong> <code>gen_ai.evaluation.*</code> (score, judge_model, threshold, passed) est dessiné mais non scellé ; les vendeurs spécialisés (Langfuse, Arize, Braintrust, Patronus) injectent leurs propres extensions en attendant le vote final, prévu fin 2026<a class="cite" data-cite="3" href="#source-3">3</a><a class="cite" data-cite="4" href="#source-4">4</a>.</li>
+        <li><strong>La compaction est un draft ouvert.</strong> Le groupe de travail GenAI <span class="term" data-tooltip="Special Interest Group — comité d'animation d'un sous-domaine au sein du projet OpenTelemetry, ouvert aux contributeurs et aux utilisateurs.">SIG</span> a démarré début 2026 le namespace <code>gen_ai.compaction.*</code> (operation, ratio, retained_tokens, lost_information_score, strategy) pour rendre observable ce qui se passe entre deux tours d'agent quand 200 k tokens deviennent 8 k. Pas de release avant <strong>mi-2027</strong><a class="cite" data-cite="5" href="#source-5">5</a>.</li>
+        <li><strong>Multi-agent : pas de convention.</strong> La conversation <code>gen_ai.agent.*</code> couvre l'agent unique avec sa boucle outil. L'orchestration agent-à-agent — <span class="term" data-tooltip="Pattern d'orchestration où un agent transfère explicitement le contrôle à un autre agent — popularisé par Swarm puis OpenAI Agents SDK.">handoffs</span>, supervisor-workers, swarm — reste hors convention : chaque framework (LangGraph, AutoGen, Google ADK, Claude Agent SDK) trace à sa façon. Le SIG attend que l'écosystème converge avant de standardiser<a class="cite" data-cite="6" href="#source-6">6</a>.</li>
+        <li><strong>L'AI Act et le NIST AI RMF rendent l'observabilité contractuelle.</strong> Article 12 du règlement européen (record-keeping) + AI RMF MEASURE 2.5 (transparency of operations) imposent un audit trail. <mark>L'OTel GenAI semconv devient de facto la lingua franca de cette obligation</mark>, même si aucun texte régulatoire ne la cite nommément<a class="cite" data-cite="7" href="#source-7">7</a><a class="cite" data-cite="8" href="#source-8">8</a>.</li>
+      </ul>
+
+      <h2 id="sec-1">1. Pourquoi une grammaire commune</h2>
+      <p>Entre la sortie de ChatGPT (novembre 2022) et fin 2025, chaque vendeur d'observabilité a inventé son propre dialecte. Datadog traçait les LLM via <code>llm.request.model</code>, <code>llm.usage.prompt_tokens</code> ; Langfuse via <code>model</code>, <code>usage.input</code> ; Helicone via <code>helicone-llm-model</code> en header HTTP. La conséquence : un agent instrumenté pour Honeycomb n'était pas relisible sur Datadog sans une couche d'adaptation custom, et migrer d'un APM à l'autre signifiait réinstrumenter tout le code applicatif.</p>
+      <p><mark>Le projet <code>gen_ai.*</code> d'OpenTelemetry, démarré au sein du <em>Semantic Conventions Working Group</em> en septembre 2023, naît précisément pour casser ce verrouillage.</mark> Le pari est qu'une <em>application</em> qui émet des spans conformes à la convention OTel peut être reçue par n'importe quel backend qui parle <span class="term" data-tooltip="OpenTelemetry Protocol — le protocole de transport (gRPC ou HTTP) qui transfère spans, métriques et logs depuis l'application vers le backend d'observabilité.">OTLP</span> (le protocole de transport OTel) sans une ligne de code spécifique au vendeur<a class="cite" data-cite="1" href="#source-1">1</a>.</p>
+      <p>La promesse a un précédent : le namespace <code>http.*</code>, scellé en 2023 après cinq ans d'itération, a unifié l'observabilité des appels HTTP entre tous les SDK et tous les backends. Personne, en 2026, ne nomme un attribut <code>myapp.request.method</code> quand <code>http.request.method</code> existe — c'est la même bataille qui se rejoue, dix ans plus tard, sur la couche LLM.</p>
+      <p>La OTel GenAI SIG (Special Interest Group) est devenu le forum de cette convergence. Co-piloté par des contributeurs de Microsoft (Azure AI Foundry), de Google (Vertex AI), d'Elastic, de Honeycomb et de quelques vendeurs purs LLM (Langfuse, Arize), il se réunit toutes les deux semaines depuis janvier 2024 et publie ses minutes publiquement<a class="cite" data-cite="2" href="#source-2">2</a>. Anthropic, OpenAI et Mistral ne sont pas membres actifs du SIG mais respectent la convention dans leurs SDK officiels — ils observent le résultat plutôt que de le co-écrire.</p>
+
+      <figure class="figure" id="fig-01">
+        <svg data-schema-id="schema-01" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+    <marker id="arrow01" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#5A5A5A"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- HEADER -->
+  <text x="60" y="55" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 01</text>
+  <text x="60" y="92" class="display" font-size="26" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Anatomie du namespace <tspan class="mono" font-size="22">gen_ai.*</tspan></text>
+  <text x="60" y="118" class="display" font-size="16" font-style="italic" fill="#5A5A5A">Six familles d'attributs, trois statuts de maturité — la grammaire OpenTelemetry pour les systèmes génératifs</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- Root node -->
+  <g>
+    <rect x="540" y="180" width="120" height="46" rx="3" fill="#1A1A1A"/>
+    <text x="600" y="201" class="mono" font-size="10" font-weight="600" letter-spacing="0.16em" fill="#FAF8F3" text-anchor="middle">NAMESPACE</text>
+    <text x="600" y="219" class="mono" font-size="14" font-weight="500" fill="#FAF8F3" text-anchor="middle">gen_ai.*</text>
+  </g>
+
+  <!-- Trunk lines descending to 6 branches -->
+  <line x1="600" y1="226" x2="600" y2="270" stroke="#5A5A5A" stroke-width="1.25"/>
+  <line x1="155" y1="270" x2="1045" y2="270" stroke="#5A5A5A" stroke-width="1.25"/>
+
+  <!-- 6 vertical drops -->
+  <line x1="155" y1="270" x2="155" y2="295" stroke="#5A5A5A" stroke-width="1.25"/>
+  <line x1="333" y1="270" x2="333" y2="295" stroke="#5A5A5A" stroke-width="1.25"/>
+  <line x1="511" y1="270" x2="511" y2="295" stroke="#5A5A5A" stroke-width="1.25"/>
+  <line x1="689" y1="270" x2="689" y2="295" stroke="#5A5A5A" stroke-width="1.25"/>
+  <line x1="867" y1="270" x2="867" y2="295" stroke="#5A5A5A" stroke-width="1.25"/>
+  <line x1="1045" y1="270" x2="1045" y2="295" stroke="#5A5A5A" stroke-width="1.25"/>
+
+  <!-- Branch 1: request -->
+  <g class="interactive" data-card="request" tabindex="0" role="button" aria-label="Famille gen_ai.request">
+    <rect x="80" y="295" width="150" height="180" rx="3" fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="155" y="319" class="mono" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#1F5560" text-anchor="middle">REQUEST</text>
+    <text x="155" y="343" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">Côté demande</text>
+    <line x1="100" y1="356" x2="210" y2="356" stroke="#1F5560" stroke-width="0.5" stroke-dasharray="2 3"/>
+    <text x="155" y="375" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">.model</text>
+    <text x="155" y="390" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">.temperature</text>
+    <text x="155" y="405" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">.max_tokens</text>
+    <text x="155" y="420" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">.top_p</text>
+    <text x="155" y="435" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">.stop_sequences</text>
+    <rect x="115" y="450" width="80" height="16" rx="2" fill="#1F5560"/>
+    <text x="155" y="461" class="mono" font-size="9" font-weight="600" letter-spacing="0.12em" fill="#FAF8F3" text-anchor="middle">STABLE</text>
+  </g>
+
+  <!-- Branch 2: response -->
+  <g class="interactive" data-card="response" tabindex="0" role="button" aria-label="Famille gen_ai.response">
+    <rect x="258" y="295" width="150" height="180" rx="3" fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="333" y="319" class="mono" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#1F5560" text-anchor="middle">RESPONSE</text>
+    <text x="333" y="343" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">Côté réponse</text>
+    <line x1="278" y1="356" x2="388" y2="356" stroke="#1F5560" stroke-width="0.5" stroke-dasharray="2 3"/>
+    <text x="333" y="375" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">.id</text>
+    <text x="333" y="390" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">.model</text>
+    <text x="333" y="405" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">.finish_reasons</text>
+    <text x="333" y="420" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">.choices_count</text>
+    <text x="333" y="435" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">.system_fingerprint</text>
+    <rect x="293" y="450" width="80" height="16" rx="2" fill="#1F5560"/>
+    <text x="333" y="461" class="mono" font-size="9" font-weight="600" letter-spacing="0.12em" fill="#FAF8F3" text-anchor="middle">STABLE</text>
+  </g>
+
+  <!-- Branch 3: usage -->
+  <g class="interactive" data-card="usage" tabindex="0" role="button" aria-label="Famille gen_ai.usage">
+    <rect x="436" y="295" width="150" height="180" rx="3" fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="511" y="319" class="mono" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#1F5560" text-anchor="middle">USAGE</text>
+    <text x="511" y="343" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">Comptage tokens</text>
+    <line x1="456" y1="356" x2="566" y2="356" stroke="#1F5560" stroke-width="0.5" stroke-dasharray="2 3"/>
+    <text x="511" y="375" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">.input_tokens</text>
+    <text x="511" y="390" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">.output_tokens</text>
+    <text x="511" y="405" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">.total_tokens</text>
+    <text x="511" y="420" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">.cached_tokens</text>
+    <text x="511" y="435" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">.cost (optionnel)</text>
+    <rect x="471" y="450" width="80" height="16" rx="2" fill="#1F5560"/>
+    <text x="511" y="461" class="mono" font-size="9" font-weight="600" letter-spacing="0.12em" fill="#FAF8F3" text-anchor="middle">STABLE</text>
+  </g>
+
+  <!-- Branch 4: agent -->
+  <g class="interactive" data-card="agent" tabindex="0" role="button" aria-label="Famille gen_ai.agent">
+    <rect x="614" y="295" width="150" height="180" rx="3" fill="#B58A2C" fill-opacity="0.08" stroke="#B58A2C" stroke-width="1.5"/>
+    <text x="689" y="319" class="mono" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#B58A2C" text-anchor="middle">AGENT</text>
+    <text x="689" y="343" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">Boucle agent</text>
+    <line x1="634" y1="356" x2="744" y2="356" stroke="#B58A2C" stroke-width="0.5" stroke-dasharray="2 3"/>
+    <text x="689" y="375" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">.id</text>
+    <text x="689" y="390" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">.name</text>
+    <text x="689" y="405" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">.type</text>
+    <text x="689" y="420" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">.description</text>
+    <text x="689" y="435" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">.tool_calls[]</text>
+    <rect x="649" y="450" width="80" height="16" rx="2" fill="#B58A2C"/>
+    <text x="689" y="461" class="mono" font-size="9" font-weight="600" letter-spacing="0.12em" fill="#FAF8F3" text-anchor="middle">RELEASE CAND.</text>
+  </g>
+
+  <!-- Branch 5: evaluation -->
+  <g class="interactive" data-card="evaluation" tabindex="0" role="button" aria-label="Famille gen_ai.evaluation">
+    <rect x="792" y="295" width="150" height="180" rx="3" fill="#B58A2C" fill-opacity="0.08" stroke="#B58A2C" stroke-width="1.5"/>
+    <text x="867" y="319" class="mono" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#B58A2C" text-anchor="middle">EVALUATION</text>
+    <text x="867" y="343" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">Éval comme span</text>
+    <line x1="812" y1="356" x2="922" y2="356" stroke="#B58A2C" stroke-width="0.5" stroke-dasharray="2 3"/>
+    <text x="867" y="375" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">.name</text>
+    <text x="867" y="390" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">.score</text>
+    <text x="867" y="405" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">.threshold</text>
+    <text x="867" y="420" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">.passed</text>
+    <text x="867" y="435" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">.judge.model</text>
+    <rect x="827" y="450" width="80" height="16" rx="2" fill="#B58A2C"/>
+    <text x="867" y="461" class="mono" font-size="9" font-weight="600" letter-spacing="0.12em" fill="#FAF8F3" text-anchor="middle">RELEASE CAND.</text>
+  </g>
+
+  <!-- Branch 6: compaction -->
+  <g class="interactive" data-card="compaction" tabindex="0" role="button" aria-label="Famille gen_ai.compaction">
+    <rect x="970" y="295" width="150" height="180" rx="3" fill="#B7332C" fill-opacity="0.06" stroke="#B7332C" stroke-width="1.5" stroke-dasharray="4 3"/>
+    <text x="1045" y="319" class="mono" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#B7332C" text-anchor="middle">COMPACTION</text>
+    <text x="1045" y="343" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">Ledger résumé</text>
+    <line x1="990" y1="356" x2="1100" y2="356" stroke="#B7332C" stroke-width="0.5" stroke-dasharray="2 3"/>
+    <text x="1045" y="375" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">.operation</text>
+    <text x="1045" y="390" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">.strategy.name</text>
+    <text x="1045" y="405" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">.ratio</text>
+    <text x="1045" y="420" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">.retained_segments</text>
+    <text x="1045" y="435" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">.judge.score</text>
+    <rect x="1005" y="450" width="80" height="16" rx="2" fill="#B7332C"/>
+    <text x="1045" y="461" class="mono" font-size="9" font-weight="600" letter-spacing="0.12em" fill="#FAF8F3" text-anchor="middle">DRAFT</text>
+  </g>
+
+  <!-- Spans cross-cutting layer -->
+  <line x1="60" y1="520" x2="1140" y2="520" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="548" class="mono" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#5A5A5A">SPANS &amp; MÉTRIQUES — ÉMETTEURS PAR LA CONVENTION</text>
+
+  <g>
+    <rect x="60" y="568" width="240" height="42" rx="3" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1"/>
+    <text x="180" y="584" class="mono" font-size="10" font-weight="600" fill="#1A1A1A" text-anchor="middle">gen_ai.client.chat</text>
+    <text x="180" y="600" class="body" font-size="9" font-style="italic" fill="#5A5A5A" text-anchor="middle">span CLIENT — appel LLM synchrone</text>
+  </g>
+  <g>
+    <rect x="320" y="568" width="240" height="42" rx="3" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1"/>
+    <text x="440" y="584" class="mono" font-size="10" font-weight="600" fill="#1A1A1A" text-anchor="middle">gen_ai.agent.invocation</text>
+    <text x="440" y="600" class="body" font-size="9" font-style="italic" fill="#5A5A5A" text-anchor="middle">span racine — boucle agent</text>
+  </g>
+  <g>
+    <rect x="580" y="568" width="240" height="42" rx="3" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1"/>
+    <text x="700" y="584" class="mono" font-size="10" font-weight="600" fill="#1A1A1A" text-anchor="middle">gen_ai.tool.execution</text>
+    <text x="700" y="600" class="body" font-size="9" font-style="italic" fill="#5A5A5A" text-anchor="middle">span enfant — outil invoqué</text>
+  </g>
+  <g>
+    <rect x="840" y="568" width="240" height="42" rx="3" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1"/>
+    <text x="960" y="584" class="mono" font-size="10" font-weight="600" fill="#1A1A1A" text-anchor="middle">gen_ai.compaction.execution</text>
+    <text x="960" y="600" class="body" font-size="9" font-style="italic" fill="#5A5A5A" text-anchor="middle">span CLIENT — résumé (draft)</text>
+  </g>
+
+  <text x="60" y="640" class="mono" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#5A5A5A">MÉTRIQUES HISTOGRAMME</text>
+  <g>
+    <rect x="60" y="658" width="500" height="34" rx="3" fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="0.75"/>
+    <text x="80" y="680" class="mono" font-size="10" fill="#1F5560">gen_ai.client.operation.duration</text>
+    <text x="345" y="680" class="body" font-size="9" font-style="italic" fill="#5A5A5A">par system × model × operation</text>
+  </g>
+  <g>
+    <rect x="580" y="658" width="500" height="34" rx="3" fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="0.75"/>
+    <text x="600" y="680" class="mono" font-size="10" fill="#1F5560">gen_ai.client.token.usage</text>
+    <text x="855" y="680" class="body" font-size="9" font-style="italic" fill="#5A5A5A">par type=input | output</text>
+  </g>
+
+  <!-- Footer -->
+  <line x1="60" y1="730" x2="1140" y2="730" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="755" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Source : OpenTelemetry Semantic Conventions for Generative AI (model/gen-ai/), version mai 2026.</text>
+  <text x="60" y="772" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Lecture : seules les trois familles encadrées en teal sont scellées en stable. Les trois autres restent en cours d'itération SIG.</text>
+</svg>
+
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-01" title="Lien direct vers ce schéma">¶</a>Schéma 1 — Le tronc commun <code>gen_ai.*</code> et ses six branches. Trois sont stables (request, response, usage), trois en release candidate ou draft (agent, evaluation, compaction). C'est précisément sur ces trois dernières que se joue la bataille 2026-2027.</figcaption>
+      </figure>
+
+      <h2 id="sec-2">2. Anatomie du namespace <code>gen_ai.*</code></h2>
+      <p>Le namespace est arborescent. Sa racine <code>gen_ai</code> se ramifie en <strong>six familles</strong> d'attributs, chacune avec un statut de maturité distinct.</p>
+
+      <table>
+        <thead><tr><th>Famille</th><th>Statut (juin 2026)</th><th>Couvre</th></tr></thead>
+        <tbody>
+          <tr><td><code>gen_ai.request.*</code></td><td><strong>Stable</strong></td><td>Le côté demande : modèle, paramètres (temperature, max_tokens, top_p), messages d'entrée</td></tr>
+          <tr><td><code>gen_ai.response.*</code></td><td><strong>Stable</strong></td><td>Le côté réponse : id, modèle effectif, finish_reasons, choix multiples</td></tr>
+          <tr><td><code>gen_ai.usage.*</code></td><td><strong>Stable</strong></td><td>Comptage tokens (input/output/total), coût optionnel</td></tr>
+          <tr><td><code>gen_ai.agent.*</code></td><td><strong>Release candidate</strong></td><td>Boucle agent : id, name, type, tool_calls</td></tr>
+          <tr><td><code>gen_ai.tool.*</code></td><td><strong>Release candidate</strong></td><td>Outils invoqués : name, call_id, type, description</td></tr>
+          <tr><td><code>gen_ai.evaluation.*</code></td><td><strong>Release candidate</strong></td><td>Éval comme span : score, threshold, judge_model, passed</td></tr>
+          <tr><td><code>gen_ai.compaction.*</code></td><td><strong>Draft</strong></td><td>Compaction de contexte : operation, ratio, retained_tokens, strategy</td></tr>
+        </tbody>
+      </table>
+
+      <p>À cette taxonomie d'attributs s'ajoute une famille de <strong>spans</strong> (<code>gen_ai.client.chat</code>, <code>gen_ai.client.text_completion</code>, <code>gen_ai.agent.invocation</code>, <code>gen_ai.tool.execution</code>) et une famille de <strong>métriques</strong> (<code>gen_ai.client.operation.duration</code>, <code>gen_ai.client.token.usage</code>)<a class="cite" data-cite="1" href="#source-1">1</a>.</p>
+      <p>La règle de <span class="term" data-tooltip="Nombre de valeurs distinctes qu'un attribut peut prendre. Une cardinalité explosive (millions de valeurs) fait exploser le coût d'indexation des backends APM.">cardinalité</span> est stricte : un attribut peut prendre un nombre <strong>borné</strong> de valeurs distinctes (model, finish_reason, role, …) ; un attribut à cardinalité illimitée (un prompt entier, une réponse complète) n'est jamais un attribut de span, mais un <strong>événement de log</strong> corrélé. Cette distinction, héritée du namespace <code>http.*</code>, évite que les backends APM facturent à la dimension explosive des prompts.</p>
+      <p>L'élément le plus discuté du WG depuis dix-huit mois reste précisément cette séparation : <mark>faut-il émettre les prompts et complétions en clair dans les spans, ou les confiner aux logs corrélés ?</mark> La position retenue en mai 2026 est un compromis : un attribut optionnel <code>gen_ai.input.messages</code> peut être attaché au span sous forme JSON sérialisée, désactivé par défaut, à activer explicitement via une variable d'environnement (<code>OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true</code>). Les déploiements régulés (santé, banque) le laissent off ; les déploiements de R&amp;D internes l'activent pour débugger.</p>
+
+      <h2 id="sec-3">3. Le span LLM canonique</h2>
+      <p>Le span le plus courant — et le seul stable — est <code>gen_ai.client.chat</code>. Il couvre un appel synchrone à un modèle conversationnel (OpenAI Chat Completions, Anthropic Messages API, Vertex AI <code>generateContent</code>, …). Sa forme est rigide.</p>
+
+      <pre><code>span name:        chat &lt;model_name&gt;
+span kind:        CLIENT
+duration:         from request emit to last token received
+attributes:
+  gen_ai.system            string  required   "openai" | "anthropic" | "azure.ai.inference" | …
+  gen_ai.operation.name    string  required   "chat" | "text_completion" | "embeddings"
+  gen_ai.request.model     string  required   "claude-sonnet-4-6"
+  gen_ai.request.temperature  double  optional
+  gen_ai.request.max_tokens   int     optional
+  gen_ai.response.id          string  optional
+  gen_ai.response.model       string  optional   (modèle effectif, peut différer de request)
+  gen_ai.response.finish_reasons  string[]  optional   ["stop"] | ["length"] | ["tool_calls"]
+  gen_ai.usage.input_tokens   int     optional
+  gen_ai.usage.output_tokens  int     optional
+events:
+  gen_ai.user.message       (optionnel, gated par capture flag)
+  gen_ai.assistant.message  (optionnel, gated par capture flag)
+  gen_ai.tool.message       (optionnel, gated par capture flag)</code></pre>
+
+      <p>Deux métriques l'accompagnent : <code>gen_ai.client.operation.duration</code> (histogramme par <code>gen_ai.system</code> × <code>gen_ai.request.model</code> × <code>gen_ai.operation.name</code>) et <code>gen_ai.client.token.usage</code> (histogramme par <code>gen_ai.token.type=input|output</code>)<a class="cite" data-cite="1" href="#source-1">1</a>. Le SDK OTel auto-instrumenté émet ces deux métriques systématiquement, ce qui permet aux dashboards génériques (« latence p95 par modèle », « tokens consommés par jour ») de fonctionner sans configuration applicative.</p>
+
+      <figure class="figure" id="fig-02">
+        <svg data-schema-id="schema-02" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+    <marker id="arrow02" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#1A1A1A"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- HEADER -->
+  <text x="60" y="55" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 02</text>
+  <text x="60" y="92" class="display" font-size="26" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Le span LLM canonique <tspan class="mono" font-size="20">gen_ai.client.chat</tspan></text>
+  <text x="60" y="118" class="display" font-size="16" font-style="italic" fill="#5A5A5A">Cinq étapes d'un appel synchrone, leurs attributs et leurs événements OTel</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- Timeline rail -->
+  <line x1="120" y1="280" x2="1080" y2="280" stroke="#1A1A1A" stroke-width="1.25" marker-end="url(#arrow02)"/>
+  <text x="60" y="284" class="mono" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#5A5A5A">TEMPS →</text>
+  <text x="1110" y="284" class="mono" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#5A5A5A">t</text>
+
+  <!-- Step 1: span start -->
+  <g class="interactive" data-card="span-start" tabindex="0" role="button" aria-label="Étape span start">
+    <circle cx="200" cy="280" r="12" fill="#FAF8F3" stroke="#B7332C" stroke-width="2"/>
+    <text x="200" y="285" class="mono" font-size="11" font-weight="600" fill="#B7332C" text-anchor="middle">1</text>
+    <rect x="120" y="320" width="160" height="170" rx="3" fill="#B7332C" fill-opacity="0.06" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="200" y="343" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#B7332C" text-anchor="middle">SPAN START</text>
+    <text x="200" y="362" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">Ouverture du span</text>
+    <line x1="135" y1="378" x2="265" y2="378" stroke="#B7332C" stroke-width="0.5" stroke-dasharray="2 3"/>
+    <text x="200" y="397" class="mono" font-size="9" fill="#1A1A1A" text-anchor="middle">name = chat &lt;model&gt;</text>
+    <text x="200" y="412" class="mono" font-size="9" fill="#1A1A1A" text-anchor="middle">kind = CLIENT</text>
+    <text x="200" y="427" class="mono" font-size="9" fill="#1A1A1A" text-anchor="middle">gen_ai.system</text>
+    <text x="200" y="442" class="mono" font-size="9" fill="#1A1A1A" text-anchor="middle">gen_ai.operation.name</text>
+    <text x="200" y="465" class="body" font-size="9" font-style="italic" fill="#5A5A5A" text-anchor="middle">SDK auto-instrumenté</text>
+    <text x="200" y="478" class="body" font-size="9" font-style="italic" fill="#5A5A5A" text-anchor="middle">démarre le chrono</text>
+  </g>
+
+  <!-- Step 2: request emitted -->
+  <g class="interactive" data-card="request-emit" tabindex="0" role="button" aria-label="Étape requête émise">
+    <circle cx="395" cy="280" r="12" fill="#FAF8F3" stroke="#1F5560" stroke-width="2"/>
+    <text x="395" y="285" class="mono" font-size="11" font-weight="600" fill="#1F5560" text-anchor="middle">2</text>
+    <rect x="315" y="320" width="160" height="170" rx="3" fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="395" y="343" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#1F5560" text-anchor="middle">REQUEST</text>
+    <text x="395" y="362" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">Attributs côté demande</text>
+    <line x1="330" y1="378" x2="460" y2="378" stroke="#1F5560" stroke-width="0.5" stroke-dasharray="2 3"/>
+    <text x="395" y="397" class="mono" font-size="9" fill="#1A1A1A" text-anchor="middle">request.model</text>
+    <text x="395" y="412" class="mono" font-size="9" fill="#1A1A1A" text-anchor="middle">request.temperature</text>
+    <text x="395" y="427" class="mono" font-size="9" fill="#1A1A1A" text-anchor="middle">request.max_tokens</text>
+    <text x="395" y="442" class="mono" font-size="9" fill="#1A1A1A" text-anchor="middle">request.top_p</text>
+    <text x="395" y="465" class="body" font-size="9" font-style="italic" fill="#5A5A5A" text-anchor="middle">Événement optionnel</text>
+    <text x="395" y="478" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">gen_ai.user.message</text>
+  </g>
+
+  <!-- Step 3: streaming / time-to-first-token -->
+  <g class="interactive" data-card="ttft" tabindex="0" role="button" aria-label="Étape time to first token">
+    <circle cx="590" cy="280" r="12" fill="#FAF8F3" stroke="#B58A2C" stroke-width="2"/>
+    <text x="590" y="285" class="mono" font-size="11" font-weight="600" fill="#B58A2C" text-anchor="middle">3</text>
+    <rect x="510" y="320" width="160" height="170" rx="3" fill="#B58A2C" fill-opacity="0.08" stroke="#B58A2C" stroke-width="1.5"/>
+    <text x="590" y="343" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#B58A2C" text-anchor="middle">TTFT</text>
+    <text x="590" y="362" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">Premier token reçu</text>
+    <line x1="525" y1="378" x2="655" y2="378" stroke="#B58A2C" stroke-width="0.5" stroke-dasharray="2 3"/>
+    <text x="590" y="397" class="mono" font-size="9" fill="#1A1A1A" text-anchor="middle">client.time_to_</text>
+    <text x="590" y="409" class="mono" font-size="9" fill="#1A1A1A" text-anchor="middle">first_token</text>
+    <text x="590" y="427" class="body" font-size="9" font-style="italic" fill="#5A5A5A" text-anchor="middle">métrique séparée</text>
+    <text x="590" y="453" class="body" font-size="9" font-style="italic" fill="#5A5A5A" text-anchor="middle">Critique pour UX</text>
+    <text x="590" y="466" class="body" font-size="9" font-style="italic" fill="#5A5A5A" text-anchor="middle">streaming — éviter</text>
+    <text x="590" y="479" class="body" font-size="9" font-style="italic" fill="#5A5A5A" text-anchor="middle">le piège duration=AR HTTP</text>
+  </g>
+
+  <!-- Step 4: response -->
+  <g class="interactive" data-card="response-end" tabindex="0" role="button" aria-label="Étape réponse complète">
+    <circle cx="785" cy="280" r="12" fill="#FAF8F3" stroke="#1F5560" stroke-width="2"/>
+    <text x="785" y="285" class="mono" font-size="11" font-weight="600" fill="#1F5560" text-anchor="middle">4</text>
+    <rect x="705" y="320" width="160" height="170" rx="3" fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="785" y="343" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#1F5560" text-anchor="middle">RESPONSE</text>
+    <text x="785" y="362" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">Attributs côté réponse</text>
+    <line x1="720" y1="378" x2="850" y2="378" stroke="#1F5560" stroke-width="0.5" stroke-dasharray="2 3"/>
+    <text x="785" y="397" class="mono" font-size="9" fill="#1A1A1A" text-anchor="middle">response.id</text>
+    <text x="785" y="412" class="mono" font-size="9" fill="#1A1A1A" text-anchor="middle">response.model</text>
+    <text x="785" y="427" class="mono" font-size="9" fill="#1A1A1A" text-anchor="middle">response.finish_reasons</text>
+    <text x="785" y="442" class="mono" font-size="9" fill="#1A1A1A" text-anchor="middle">usage.input_tokens</text>
+    <text x="785" y="457" class="mono" font-size="9" fill="#1A1A1A" text-anchor="middle">usage.output_tokens</text>
+    <text x="785" y="478" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">gen_ai.assistant.message</text>
+  </g>
+
+  <!-- Step 5: span end -->
+  <g class="interactive" data-card="span-end" tabindex="0" role="button" aria-label="Étape span end">
+    <circle cx="980" cy="280" r="12" fill="#FAF8F3" stroke="#B7332C" stroke-width="2"/>
+    <text x="980" y="285" class="mono" font-size="11" font-weight="600" fill="#B7332C" text-anchor="middle">5</text>
+    <rect x="900" y="320" width="160" height="170" rx="3" fill="#B7332C" fill-opacity="0.06" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="980" y="343" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#B7332C" text-anchor="middle">SPAN END</text>
+    <text x="980" y="362" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">Fermeture &amp; export</text>
+    <line x1="915" y1="378" x2="1045" y2="378" stroke="#B7332C" stroke-width="0.5" stroke-dasharray="2 3"/>
+    <text x="980" y="397" class="mono" font-size="9" fill="#1A1A1A" text-anchor="middle">duration =</text>
+    <text x="980" y="409" class="mono" font-size="9" fill="#1A1A1A" text-anchor="middle">end - start</text>
+    <text x="980" y="427" class="mono" font-size="9" fill="#1A1A1A" text-anchor="middle">status.code</text>
+    <text x="980" y="453" class="body" font-size="9" font-style="italic" fill="#5A5A5A" text-anchor="middle">Export OTLP →</text>
+    <text x="980" y="466" class="body" font-size="9" font-style="italic" fill="#5A5A5A" text-anchor="middle">collector → backend</text>
+    <text x="980" y="479" class="body" font-size="9" font-style="italic" fill="#5A5A5A" text-anchor="middle">(Honeycomb, Datadog…)</text>
+  </g>
+
+  <!-- Metric pipe below -->
+  <line x1="120" y1="565" x2="1080" y2="565" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="600" class="mono" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#5A5A5A">MÉTRIQUES SYSTÉMATIQUES (HISTOGRAMMES)</text>
+
+  <g>
+    <rect x="60" y="615" width="500" height="48" rx="3" fill="#FAF8F3" stroke="#1A1A1A" stroke-width="1"/>
+    <text x="80" y="638" class="mono" font-size="11" font-weight="500" fill="#1A1A1A">gen_ai.client.operation.duration</text>
+    <text x="80" y="655" class="body" font-size="10" font-style="italic" fill="#5A5A5A">bucketé par gen_ai.system × gen_ai.request.model × gen_ai.operation.name</text>
+  </g>
+  <g>
+    <rect x="580" y="615" width="500" height="48" rx="3" fill="#FAF8F3" stroke="#1A1A1A" stroke-width="1"/>
+    <text x="600" y="638" class="mono" font-size="11" font-weight="500" fill="#1A1A1A">gen_ai.client.token.usage</text>
+    <text x="600" y="655" class="body" font-size="10" font-style="italic" fill="#5A5A5A">bucketé par gen_ai.token.type = input | output</text>
+  </g>
+
+  <!-- The streaming pitfall callout -->
+  <rect x="60" y="690" width="1080" height="40" rx="3" fill="#B7332C" fill-opacity="0.06" stroke="#B7332C" stroke-width="0.75"/>
+  <text x="78" y="714" class="body" font-size="11" fill="#1A1A1A"><tspan font-weight="600" fill="#B7332C">Piège streaming :</tspan> duration = time-to-last-token, pas time-to-HTTP-roundtrip. Mesurer time_to_first_token séparément pour ne pas masquer la latence ressentie.</text>
+
+  <!-- Footer -->
+  <line x1="60" y1="745" x2="1140" y2="745" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="772" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Source : OpenTelemetry Semantic Conventions, gen_ai.client.chat span spec (mai 2026). Honeycomb 2024 pour le retex streaming.</text>
+</svg>
+
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-02" title="Lien direct vers ce schéma">¶</a>Schéma 2 — Les cinq étapes d'un span <code>chat</code> synchrone (start, request, TTFT, response, end). Le piège de streaming, marqué en carmine, est la source de la majorité des bugs d'instrumentation observés en 2024-2025.</figcaption>
+      </figure>
+
+      <p>Le point critique — et la source de la majorité des bugs d'instrumentation observés en 2025 — concerne <strong>le streaming</strong>. Pour un appel non-streamé, <code>duration</code> est sans ambiguïté ; pour un appel streamé, le SIG a tranché en faveur du <em><span class="term" data-tooltip="Time to last token — durée totale entre l'émission de la requête et la réception du dernier delta de réponse.">time to last token</span></em> (du premier byte d'envoi de requête au dernier delta reçu), avec une métrique séparée optionnelle <code>gen_ai.client.time_to_first_token</code>. Les premiers SDK avaient traité le streaming comme un appel instantané (duration = aller-retour HTTP), ce qui produisait des p95 absurdement bas par rapport à l'expérience utilisateur — un point que Honeycomb a documenté publiquement en juin 2024<a class="cite" data-cite="3" href="#source-3">3</a>.</p>
+
+      <h2 id="sec-4">4. Agents et outils — la couche RC</h2>
+      <p>Au-dessus du span LLM-call vient la couche agentique, en <em>release candidate</em> depuis mars 2026. Un agent dans la convention OTel est modélisé comme un <strong>span parent</strong> qui contient zéro ou plusieurs spans <code>gen_ai.tool.execution</code> et <code>gen_ai.client.chat</code> enfants.</p>
+
+      <pre><code>gen_ai.agent.invocation  [duration = end-to-end de la boucle]
+├── gen_ai.client.chat   [appel 1 — planning]
+├── gen_ai.tool.execution  name=read_file  duration=12ms
+├── gen_ai.client.chat   [appel 2 — réflexion après outil]
+├── gen_ai.tool.execution  name=write_file  duration=8ms
+└── gen_ai.client.chat   [appel 3 — synthèse finale]</code></pre>
+
+      <p>L'attribut clé est <code>gen_ai.agent.id</code> (UUID stable d'une instance d'agent) plus <code>gen_ai.agent.name</code> (nom logique : « researcher », « executor »). Les outils sont décrits par <code>gen_ai.tool.name</code>, <code>gen_ai.tool.call_id</code> (id donné par le LLM dans son JSON <code>tool_call</code>), et <code>gen_ai.tool.type</code> (<code>function</code> | <code>code_interpreter</code> | <code>retrieval</code> | <code>computer_use</code>)<a class="cite" data-cite="1" href="#source-1">1</a>.</p>
+
+      <figure class="figure" id="fig-03">
+        <svg data-schema-id="schema-03" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 900">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+  </defs>
+
+  <rect width="900" height="900" fill="#FAF8F3"/>
+
+  <!-- HEADER -->
+  <text x="60" y="55" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 03</text>
+  <text x="60" y="92" class="display" font-size="26" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Hiérarchie agent → outil → LLM</text>
+  <text x="60" y="118" class="display" font-size="16" font-style="italic" fill="#5A5A5A">L'arbre de spans canonique d'une boucle agent OTel — release candidate mars 2026</text>
+  <line x1="60" y1="140" x2="840" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- Agent root span -->
+  <g class="interactive" data-card="agent-root" tabindex="0" role="button" aria-label="Span racine agent.invocation">
+    <rect x="60" y="180" width="780" height="56" rx="3" fill="#B58A2C" fill-opacity="0.10" stroke="#B58A2C" stroke-width="2"/>
+    <text x="80" y="206" class="mono" font-size="13" font-weight="600" fill="#B58A2C">gen_ai.agent.invocation</text>
+    <text x="80" y="225" class="body" font-size="11" font-style="italic" fill="#1A1A1A">name=&quot;researcher&quot; · type=&quot;tool_using&quot; · duration = end-to-end boucle</text>
+    <text x="820" y="212" class="mono" font-size="11" fill="#1A1A1A" text-anchor="end">1240 ms</text>
+    <text x="820" y="228" class="mono" font-size="9" fill="#5A5A5A" text-anchor="end">3 children</text>
+  </g>
+
+  <!-- Vertical guide -->
+  <line x1="100" y1="246" x2="100" y2="780" stroke="#B8B5AE" stroke-width="0.5" stroke-dasharray="1 3"/>
+
+  <!-- Child 1: first LLM chat (planning) -->
+  <g class="interactive" data-card="chat-1" tabindex="0" role="button" aria-label="Premier appel LLM — planning">
+    <rect x="130" y="270" width="600" height="50" rx="3" fill="#1F5560" fill-opacity="0.07" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="148" y="293" class="mono" font-size="11" font-weight="600" fill="#1F5560">gen_ai.client.chat claude-sonnet-4-6</text>
+    <text x="148" y="310" class="body" font-size="10" font-style="italic" fill="#5A5A5A">1ᵉʳ tour — planification, demande tool_calls : [read_file, search_docs]</text>
+    <text x="720" y="298" class="mono" font-size="10" fill="#1A1A1A" text-anchor="end">320 ms</text>
+  </g>
+  <line x1="100" y1="295" x2="130" y2="295" stroke="#B8B5AE" stroke-width="0.5"/>
+  <text x="745" y="285" class="mono" font-size="9" fill="#5A5A5A">attrs:</text>
+  <text x="745" y="298" class="mono" font-size="8" fill="#5A5A5A">request.model</text>
+  <text x="745" y="310" class="mono" font-size="8" fill="#5A5A5A">usage.*_tokens</text>
+
+  <!-- Child 2: tool execution read_file -->
+  <g class="interactive" data-card="tool-read" tabindex="0" role="button" aria-label="Outil read_file">
+    <rect x="170" y="360" width="320" height="44" rx="3" fill="#B7332C" fill-opacity="0.06" stroke="#B7332C" stroke-width="1.25"/>
+    <text x="188" y="380" class="mono" font-size="10" font-weight="600" fill="#B7332C">gen_ai.tool.execution</text>
+    <text x="188" y="395" class="body" font-size="9" font-style="italic" fill="#5A5A5A">name=&quot;read_file&quot; · type=&quot;function&quot; · call_id=tool_12</text>
+    <text x="478" y="386" class="mono" font-size="9" fill="#1A1A1A" text-anchor="end">12 ms</text>
+  </g>
+  <line x1="140" y1="382" x2="170" y2="382" stroke="#B8B5AE" stroke-width="0.5"/>
+  <text x="170" y="346" class="mono" font-size="8" font-weight="600" letter-spacing="0.12em" fill="#5A5A5A">PARALLEL TOOLS — DEMANDÉS DANS CHAT 1</text>
+
+  <!-- Child 3: tool execution search_docs -->
+  <g class="interactive" data-card="tool-search" tabindex="0" role="button" aria-label="Outil search_docs">
+    <rect x="510" y="360" width="320" height="44" rx="3" fill="#B7332C" fill-opacity="0.06" stroke="#B7332C" stroke-width="1.25"/>
+    <text x="528" y="380" class="mono" font-size="10" font-weight="600" fill="#B7332C">gen_ai.tool.execution</text>
+    <text x="528" y="395" class="body" font-size="9" font-style="italic" fill="#5A5A5A">name=&quot;search_docs&quot; · type=&quot;retrieval&quot; · call_id=tool_13</text>
+    <text x="818" y="386" class="mono" font-size="9" fill="#1A1A1A" text-anchor="end">85 ms</text>
+  </g>
+
+  <!-- Child 4: second chat (after tools) -->
+  <g class="interactive" data-card="chat-2" tabindex="0" role="button" aria-label="Second appel LLM après outils">
+    <rect x="130" y="440" width="600" height="50" rx="3" fill="#1F5560" fill-opacity="0.07" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="148" y="463" class="mono" font-size="11" font-weight="600" fill="#1F5560">gen_ai.client.chat claude-sonnet-4-6</text>
+    <text x="148" y="480" class="body" font-size="10" font-style="italic" fill="#5A5A5A">2ᵉ tour — réflexion après tool results, synthèse</text>
+    <text x="720" y="468" class="mono" font-size="10" fill="#1A1A1A" text-anchor="end">580 ms</text>
+  </g>
+  <line x1="100" y1="465" x2="130" y2="465" stroke="#B8B5AE" stroke-width="0.5"/>
+
+  <!-- Child 5: evaluation span -->
+  <g>
+    <rect x="170" y="525" width="560" height="44" rx="3" fill="#B58A2C" fill-opacity="0.08" stroke="#B58A2C" stroke-width="1.25" stroke-dasharray="3 2"/>
+    <text x="188" y="545" class="mono" font-size="10" font-weight="600" fill="#B58A2C">gen_ai.evaluation</text>
+    <text x="188" y="560" class="body" font-size="9" font-style="italic" fill="#5A5A5A">name=&quot;answer_relevance&quot; · score=0.87 · passed=true · judge.model=gpt-4o-mini</text>
+    <text x="718" y="551" class="mono" font-size="9" fill="#1A1A1A" text-anchor="end">95 ms</text>
+  </g>
+  <line x1="100" y1="547" x2="170" y2="547" stroke="#B8B5AE" stroke-width="0.5"/>
+  <text x="170" y="515" class="mono" font-size="8" font-weight="600" letter-spacing="0.12em" fill="#5A5A5A">ÉVAL ATTACHÉE — RC</text>
+
+  <!-- Multi-agent escape zone -->
+  <rect x="60" y="610" width="780" height="160" rx="3" fill="#1A1A1A" fill-opacity="0.04" stroke="#1A1A1A" stroke-width="0.75" stroke-dasharray="4 3"/>
+  <text x="80" y="638" class="mono" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#1A1A1A">ANGLE MORT — MULTI-AGENT NON CONVENTIONNÉ (FIN 2026)</text>
+
+  <g class="interactive" data-card="multi-agent-options" tabindex="0" role="button" aria-label="Trois options multi-agent">
+    <rect x="78" y="650" width="240" height="105" rx="3" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="0.75"/>
+    <text x="92" y="671" class="mono" font-size="10" font-weight="600" fill="#1A1A1A">Option 1 — parent unique</text>
+    <text x="92" y="688" class="body" font-size="9" fill="#5A5A5A">A reste root, B devient child.</text>
+    <text x="92" y="702" class="body" font-size="9" fill="#5A5A5A">Simple mais ment sur la responsabilité.</text>
+    <text x="92" y="725" class="body" font-size="9" font-style="italic" fill="#1A1A1A">Pratique : pattern par défaut</text>
+    <text x="92" y="738" class="body" font-size="9" font-style="italic" fill="#1A1A1A">de la plupart des SDK.</text>
+  </g>
+
+  <g class="interactive" data-card="multi-agent-link" tabindex="0" role="button" aria-label="Option lien causal">
+    <rect x="330" y="650" width="240" height="105" rx="3" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="0.75"/>
+    <text x="344" y="671" class="mono" font-size="10" font-weight="600" fill="#1A1A1A">Option 2 — span link OTel</text>
+    <text x="344" y="688" class="body" font-size="9" fill="#5A5A5A">B = root indépendant, lié à A</text>
+    <text x="344" y="702" class="body" font-size="9" fill="#5A5A5A">via attribut natif `link`.</text>
+    <text x="344" y="725" class="body" font-size="9" font-style="italic" fill="#1A1A1A">Pratique : fidèle mais</text>
+    <text x="344" y="738" class="body" font-size="9" font-style="italic" fill="#1A1A1A">UI APM rend mal les liens.</text>
+  </g>
+
+  <g class="interactive" data-card="multi-agent-parent" tabindex="0" role="button" aria-label="Option parent_id">
+    <rect x="582" y="650" width="240" height="105" rx="3" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="0.75"/>
+    <text x="596" y="671" class="mono" font-size="10" font-weight="600" fill="#1A1A1A">Option 3 — agent.parent_id</text>
+    <text x="596" y="688" class="body" font-size="9" fill="#5A5A5A">Attribut logique séparé,</text>
+    <text x="596" y="702" class="body" font-size="9" fill="#5A5A5A">proposé par Microsoft avril 2026.</text>
+    <text x="596" y="725" class="body" font-size="9" font-style="italic" fill="#1A1A1A">Pratique : non voté ;</text>
+    <text x="596" y="738" class="body" font-size="9" font-style="italic" fill="#1A1A1A">attente convergence frameworks.</text>
+  </g>
+
+  <!-- Footer -->
+  <line x1="60" y1="810" x2="840" y2="810" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="836" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Source : OpenTelemetry Semantic Conventions, gen_ai.agent.invocation + gen_ai.tool.execution (RC mars 2026).</text>
+  <text x="60" y="852" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Lecture : la hiérarchie mono-agent + outils est canonique. Le multi-agent (en bas) reste hors-convention.</text>
+</svg>
+
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-03" title="Lien direct vers ce schéma">¶</a>Schéma 3 — Le span racine <code>gen_ai.agent.invocation</code> et ses enfants (chat + tool + chat + eval). En bas, l'angle mort multi-agent : trois options coexistent sans verdict du SIG.</figcaption>
+      </figure>
+
+      <p><mark>L'angle mort, fin 2026, c'est le multi-agent.</mark> Quand un agent A délègue à un agent B (handoff dans le pattern Swarm/OpenAI Agents SDK ; supervisor → worker dans LangGraph ; agent-to-agent via le protocole <span class="term" data-tooltip="Agent-to-Agent — protocole d'orchestration cross-vendor proposé par Google en avril 2025, donné à la Linux Foundation en juin 2025.">A2A</span> de Google), il n'y a pas de convention claire pour modéliser la transition. Trois pratiques cohabitent :</p>
+      <ol>
+        <li><strong>Span parent unique</strong> — l'agent A reste le span racine, B devient un child. Simple mais ment sur la responsabilité : c'est B qui a échoué, mais c'est A qu'on voit en haut de la trace.</li>
+        <li><strong>Lien causal explicite</strong> — l'agent B démarre un span racine indépendant, lié au span A via <code>link</code> (attribut natif OTel). Plus fidèle, mais les UIs APM rendent mal les liens (Datadog, Grafana Tempo) et les traces apparaissent fragmentées.</li>
+        <li><strong>Convention <code>gen_ai.agent.parent_id</code></strong> — proposée par Microsoft en avril 2026 mais non encore votée. Permet de reconstruire la hiérarchie logique sans casser la hiérarchie de spans.</li>
+      </ol>
+      <p>Le SIG attend que les frameworks principaux (LangGraph, OpenAI Agents SDK, Google ADK, Claude Agent SDK) convergent sur l'une des trois avant de trancher. Pour l'instant, qui veut tracer un système multi-agent en production écrit sa propre extension<a class="cite" data-cite="6" href="#source-6">6</a>.</p>
+
+      <h2 id="sec-5">5. L'éval comme span — la couche RC qui change de nature</h2>
+      <p>Historiquement, l'évaluation des LLM se faisait <em>en sidecar</em> : un job batch qui rejoue des prompts contre une réf, ou un script qui calcule BLEU/Rouge/F1. La trace de production était une chose, l'éval une autre — les deux ne se croisaient pas.</p>
+      <p>La convention <code>gen_ai.evaluation.*</code>, en <em>release candidate</em> depuis mars 2026, change de nature : <mark>l'éval devient un span enfant du span LLM-call</mark> ou agent qu'elle juge.</p>
+
+      <pre><code>gen_ai.client.chat  [span principal]
+├── gen_ai.evaluation  name="hallucination_check"  status="passed"
+├── gen_ai.evaluation  name="toxicity_check"       status="passed"
+└── gen_ai.evaluation  name="answer_relevance"     status="failed"  score=0.42  threshold=0.5</code></pre>
+
+      <p>Attributs clés : <code>gen_ai.evaluation.name</code> (nom du critère), <code>gen_ai.evaluation.score</code> (valeur normalisée 0-1), <code>gen_ai.evaluation.threshold</code>, <code>gen_ai.evaluation.passed</code> (bool), <code>gen_ai.evaluation.judge.model</code> (si <span class="term" data-tooltip="LLM-as-judge — pattern où un LLM évalue la sortie d'un autre (ou du même) LLM selon une rubrique. Devenu standard 2024-2026.">LLM-as-judge</span>), <code>gen_ai.evaluation.judge.system</code><a class="cite" data-cite="4" href="#source-4">4</a>.</p>
+
+      <figure class="figure" id="fig-04">
+        <svg data-schema-id="schema-04" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+    <marker id="arrow04" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#5A5A5A"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- HEADER -->
+  <text x="60" y="55" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 04</text>
+  <text x="60" y="92" class="display" font-size="26" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">L'éval comme span — bascule architecturale</text>
+  <text x="60" y="118" class="display" font-size="16" font-style="italic" fill="#5A5A5A">De l'éval batch en sidecar à l'éval attachée au span jugé — convention <tspan class="mono" font-size="14">gen_ai.evaluation.*</tspan></text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- LEFT side: LEGACY -->
+  <text x="60" y="180" class="mono" font-size="11" font-weight="600" letter-spacing="0.15em" fill="#5A5A5A">AVANT — ÉVAL EN SIDECAR (LEGACY)</text>
+  <rect x="60" y="200" width="520" height="380" rx="3" fill="#5A5A5A" fill-opacity="0.05" stroke="#5A5A5A" stroke-width="0.75"/>
+
+  <g class="interactive" data-card="legacy-side" tabindex="0" role="button" aria-label="Architecture éval legacy en sidecar">
+    <!-- Production trace -->
+    <rect x="80" y="225" width="220" height="100" rx="3" fill="#1F5560" fill-opacity="0.08" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="92" y="247" class="mono" font-size="10" font-weight="600" fill="#1F5560">Production trace</text>
+    <text x="92" y="266" class="body" font-size="10" fill="#1A1A1A">chat → tool → chat</text>
+    <text x="92" y="282" class="body" font-size="9" font-style="italic" fill="#5A5A5A">prompt + completion</text>
+    <text x="92" y="298" class="body" font-size="9" font-style="italic" fill="#5A5A5A">stockés en logs séparés</text>
+    <text x="92" y="316" class="mono" font-size="9" fill="#5A5A5A">→ APM (Honeycomb, DD…)</text>
+
+    <!-- Export pipeline arrow -->
+    <line x1="180" y1="345" x2="180" y2="395" stroke="#5A5A5A" stroke-width="1" stroke-dasharray="3 3" marker-end="url(#arrow04)"/>
+    <text x="195" y="370" class="body" font-size="9" font-style="italic" fill="#5A5A5A">export batch nuit</text>
+
+    <!-- Eval job -->
+    <rect x="80" y="410" width="440" height="80" rx="3" fill="#B58A2C" fill-opacity="0.10" stroke="#B58A2C" stroke-width="1.25"/>
+    <text x="92" y="432" class="mono" font-size="10" font-weight="600" fill="#B58A2C">Job batch éval</text>
+    <text x="92" y="452" class="body" font-size="10" fill="#1A1A1A">Rejouage prompts vs réf · BLEU, ROUGE, F1</text>
+    <text x="92" y="467" class="body" font-size="9" font-style="italic" fill="#5A5A5A">tableau de bord séparé · pas de retour au span</text>
+    <text x="92" y="481" class="body" font-size="9" font-style="italic" fill="#5A5A5A">latence corrélation = 24 h</text>
+
+    <!-- Dashboard -->
+    <rect x="80" y="510" width="440" height="50" rx="3" fill="#FAF8F3" stroke="#1A1A1A" stroke-width="0.75"/>
+    <text x="92" y="532" class="mono" font-size="10" fill="#1A1A1A">Dashboard sidecar</text>
+    <text x="92" y="549" class="body" font-size="9" font-style="italic" fill="#5A5A5A">Moyennes hebdo · pas de drill-down vers le span d'origine</text>
+  </g>
+
+  <!-- RIGHT side: NEW -->
+  <text x="620" y="180" class="mono" font-size="11" font-weight="600" letter-spacing="0.15em" fill="#B7332C">APRÈS — ÉVAL ATTACHÉE AU SPAN (RC)</text>
+  <rect x="620" y="200" width="520" height="380" rx="3" fill="#B7332C" fill-opacity="0.04" stroke="#B7332C" stroke-width="1.25"/>
+
+  <g class="interactive" data-card="new-side" tabindex="0" role="button" aria-label="Architecture éval-as-span">
+    <!-- Single trace with eval child -->
+    <rect x="640" y="225" width="480" height="44" rx="3" fill="#1F5560" fill-opacity="0.08" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="652" y="246" class="mono" font-size="11" font-weight="600" fill="#1F5560">gen_ai.client.chat (span parent)</text>
+    <text x="652" y="261" class="body" font-size="9" font-style="italic" fill="#5A5A5A">prompt envoyé · completion reçue</text>
+
+    <!-- Eval children -->
+    <line x1="680" y1="275" x2="680" y2="430" stroke="#B7332C" stroke-width="0.5" stroke-dasharray="1 3"/>
+
+    <rect x="700" y="285" width="400" height="34" rx="3" fill="#B7332C" fill-opacity="0.08" stroke="#B7332C" stroke-width="1"/>
+    <line x1="680" y1="302" x2="700" y2="302" stroke="#B7332C" stroke-width="0.5"/>
+    <text x="712" y="302" class="mono" font-size="9" font-weight="600" fill="#B7332C">gen_ai.evaluation</text>
+    <text x="712" y="314" class="body" font-size="9" fill="#1A1A1A">name=&quot;hallucination_check&quot; · passed=true · score=0.92</text>
+
+    <rect x="700" y="333" width="400" height="34" rx="3" fill="#B7332C" fill-opacity="0.08" stroke="#B7332C" stroke-width="1"/>
+    <line x1="680" y1="350" x2="700" y2="350" stroke="#B7332C" stroke-width="0.5"/>
+    <text x="712" y="350" class="mono" font-size="9" font-weight="600" fill="#B7332C">gen_ai.evaluation</text>
+    <text x="712" y="362" class="body" font-size="9" fill="#1A1A1A">name=&quot;toxicity_check&quot; · passed=true · score=0.98</text>
+
+    <rect x="700" y="381" width="400" height="34" rx="3" fill="#B7332C" fill-opacity="0.18" stroke="#B7332C" stroke-width="1.5"/>
+    <line x1="680" y1="398" x2="700" y2="398" stroke="#B7332C" stroke-width="0.5"/>
+    <text x="712" y="398" class="mono" font-size="9" font-weight="600" fill="#B7332C">gen_ai.evaluation</text>
+    <text x="712" y="410" class="body" font-size="9" font-weight="600" fill="#B7332C">name=&quot;answer_relevance&quot; · passed=false · score=0.42</text>
+
+    <!-- Real-time response triggers -->
+    <rect x="640" y="445" width="480" height="120" rx="3" fill="#FAF8F3" stroke="#1A1A1A" stroke-width="0.75"/>
+    <text x="652" y="466" class="mono" font-size="10" font-weight="600" fill="#1A1A1A">Triggers temps réel débloqués</text>
+    <line x1="652" y1="475" x2="1108" y2="475" stroke="#E5E1D8" stroke-width="0.5"/>
+    <text x="652" y="491" class="body" font-size="9" fill="#1A1A1A"><tspan font-weight="600">·</tspan> re-routing : si failed → retry, fallback humain, modèle plus gros</text>
+    <text x="652" y="506" class="body" font-size="9" fill="#1A1A1A"><tspan font-weight="600">·</tspan> corrélation : régression visible immédiatement, drill vers prompt/completion</text>
+    <text x="652" y="521" class="body" font-size="9" fill="#1A1A1A"><tspan font-weight="600">·</tspan> audit trail : éval = partie intégrante du record (AI Act art. 12)</text>
+    <text x="652" y="538" class="body" font-size="9" fill="#1A1A1A"><tspan font-weight="600">·</tspan> filtrage : SLO observable (« 95% des chats passent toxicity_check »)</text>
+    <text x="652" y="555" class="body" font-size="9" font-style="italic" fill="#5A5A5A">latence corrélation = millisecondes</text>
+  </g>
+
+  <!-- Debate band at bottom -->
+  <rect x="60" y="610" width="1080" height="110" rx="3" fill="#1A1A1A" fill-opacity="0.04" stroke="#1A1A1A" stroke-width="0.75"/>
+  <text x="80" y="638" class="mono" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#1A1A1A">DÉBAT ACTIF AU SIG — GRANULARITÉ DES ATTRIBUTS</text>
+
+  <g class="interactive" data-card="debate-flat" tabindex="0" role="button" aria-label="Position attribut libre">
+    <rect x="80" y="654" width="500" height="56" rx="3" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="0.75"/>
+    <text x="92" y="673" class="mono" font-size="10" font-weight="600" fill="#5A5A5A">Position APM généralistes (Datadog, NR)</text>
+    <text x="92" y="690" class="body" font-size="9" fill="#1A1A1A">Un seul attribut <tspan class="mono">gen_ai.evaluation.metadata</tspan> en JSON libre</text>
+    <text x="92" y="703" class="body" font-size="9" font-style="italic" fill="#5A5A5A">Moins de cardinalité à modéliser côté backend</text>
+  </g>
+
+  <g class="interactive" data-card="debate-typed" tabindex="0" role="button" aria-label="Position attributs typés">
+    <rect x="600" y="654" width="520" height="56" rx="3" fill="#FAF8F3" stroke="#B58A2C" stroke-width="1"/>
+    <text x="612" y="673" class="mono" font-size="10" font-weight="600" fill="#B58A2C">Position vendeurs éval (Langfuse, Arize, Braintrust)</text>
+    <text x="612" y="690" class="body" font-size="9" fill="#1A1A1A">Familles typées : <tspan class="mono">judge.*</tspan>, <tspan class="mono">rubric.*</tspan>, <tspan class="mono">dataset.*</tspan></text>
+    <text x="612" y="703" class="body" font-size="9" font-style="italic" fill="#5A5A5A">Intégration mécanique depuis le schéma OpenInference</text>
+  </g>
+
+  <!-- Footer -->
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="765" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Source : OpenTelemetry GenAI SIG, gen_ai.evaluation.* RC (mars 2026). OpenInference (Arize), Langfuse docs.</text>
+  <text x="60" y="781" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Lecture : le passage de l'éval en sidecar à l'éval en span débloque le filtrage temps réel et l'audit trail régulatoire.</text>
+</svg>
+
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-04" title="Lien direct vers ce schéma">¶</a>Schéma 4 — À gauche le pattern legacy (éval en sidecar batch). À droite la convention <code>gen_ai.evaluation.*</code> en RC : les évals deviennent des spans enfants du span jugé, ce qui débloque triggers temps réel et audit trail régulatoire.</figcaption>
+      </figure>
+
+      <p>L'éval-as-span débloque trois usages que l'éval-as-sidecar ne pouvait pas servir :</p>
+      <ul>
+        <li><strong>Filtrage en production</strong> — un span dont une éval est <code>failed</code> peut déclencher un re-routing automatique (modèle plus gros, retry, fallback humain) sans quitter la chaîne d'instrumentation.</li>
+        <li><strong>Corrélation temps réel</strong> — quand une régression apparaît (baisse de score moyen sur un critère), le dashboard montre directement les prompts et complétions associés, sans pipeline d'export batch.</li>
+        <li><strong>Audit trail régulatoire</strong> — les évals deviennent partie intégrante du record (article 12 AI Act, AI RMF MEASURE), pas un artefact détaché.</li>
+      </ul>
+      <p>Le débat actif du SIG en juin 2026 porte sur la <strong>granularité</strong>. Faut-il un seul attribut <code>gen_ai.evaluation.metadata</code> (JSON libre) ou une famille typée (<code>gen_ai.evaluation.judge.*</code>, <code>gen_ai.evaluation.rubric.*</code>, <code>gen_ai.evaluation.dataset.*</code>) ? Les vendeurs spécialisés (Langfuse, Arize, Braintrust, Patronus, Confident) poussent pour la version typée — c'est ce qu'ils émettent déjà sous leur propre schéma <span class="term" data-tooltip="Convention d'instrumentation LLM créée par Arize en 2024, en cours d'absorption par OpenTelemetry GenAI semconv depuis 2025-2026.">OpenInference</span>, et l'intégration mécanique vers OTel les simplifierait. Les APM généralistes préfèrent la version libre — moins de cardinalité à modéliser côté backend<a class="cite" data-cite="4" href="#source-4">4</a><a class="cite" data-cite="5" href="#source-5">5</a>.</p>
+
+      <h2 id="sec-6">6. Le front compaction — un draft ouvert</h2>
+      <p>C'est le front le plus jeune de la convention. <mark>La compaction de contexte — résumer 200 k tokens en 8 k pour que l'agent garde la main sur sa boucle outil — est devenue, en 2025-2026, une primitive de la pile agentique.</mark> Claude Code la fait via la commande <code>/compact</code>, Cursor automatiquement entre deux sessions longues, Mem0 et Letta la pratiquent comme cœur de produit.</p>
+      <p>Le problème : <strong>avant le draft <code>gen_ai.compaction.*</code>, la compaction était invisible dans les traces</strong>. Le span LLM-call qui ré-injectait un contexte compacté ne signalait pas qu'une compaction avait eu lieu, ni laquelle, ni avec quelle perte d'information. Pour les équipes qui audit la conformité (RGPD, AI Act), c'est un trou noir : un fait privé révélé par un utilisateur à l'agent peut disparaître d'un cycle au suivant, sans laisser de trace de cette disparition<a class="cite" data-cite="5" href="#source-5">5</a>.</p>
+
+      <div class="callout">
+        <a class="callout-thumb-link" href="../compaction-agentique/">
+          <div class="callout-thumb-fallback" aria-hidden="true">Dossier voisin</div>
+        </a>
+        <div class="callout-body">
+          <div class="callout-eyebrow">Dossier voisin · Compaction agentique</div>
+          <h4 class="callout-title">Pourquoi la compaction est devenue une primitive — et pourquoi le ledger OTel arrive maintenant</h4>
+          <p class="callout-lead">Le dossier <em>compaction-agentique</em> détaille la taxonomie en 5 familles (summarization, eviction attention-based, hiérarchique, retrieval-augmentée, compactors appris) et le triangle fidélité × coût × oubliabilité. La couche <code>gen_ai.compaction.*</code> présentée ici est l'aboutissement attendu de ce triangle côté observabilité.</p>
+          <a class="callout-cta" href="../compaction-agentique/">Ouvrir le dossier →</a>
+        </div>
+      </div>
+
+      <p>Le SIG a démarré le draft en janvier 2026 sous l'impulsion conjointe de Honeycomb (qui le réclamait pour ses retex agents) et de Langfuse (qui l'instrumentait déjà unilatéralement). Le draft de juin 2026 propose :</p>
+
+      <pre><code>gen_ai.compaction.execution  span (CLIENT)
+attributes:
+  gen_ai.compaction.operation       "summarize" | "evict" | "hierarchical" | "retrieve"
+  gen_ai.compaction.strategy.name   "claude-code-/compact" | "h2o-eviction" | "memgpt-paging" | …
+  gen_ai.compaction.input_tokens    int   (avant)
+  gen_ai.compaction.output_tokens   int   (après)
+  gen_ai.compaction.ratio           double  (output/input)
+  gen_ai.compaction.retained_segments  int  (nombre de segments gardés intacts)
+  gen_ai.compaction.evicted_segments   int
+  gen_ai.compaction.judge.score        double  (optionnel — fidélité estimée)
+events:
+  gen_ai.compaction.summary    (le résumé produit, gated par capture flag)</code></pre>
+
+      <figure class="figure" id="fig-05">
+        <svg data-schema-id="schema-05" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+    <marker id="arrow05" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#B7332C"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- HEADER -->
+  <text x="60" y="55" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 05</text>
+  <text x="60" y="92" class="display" font-size="26" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Le ledger compaction <tspan class="mono" font-size="20">gen_ai.compaction.*</tspan></text>
+  <text x="60" y="118" class="display" font-size="16" font-style="italic" fill="#5A5A5A">Rendre observable ce qui se passe quand 200 k tokens deviennent 8 k — draft, mi-2027 visé</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- LEFT: AVANT compaction -->
+  <text x="60" y="180" class="mono" font-size="11" font-weight="600" letter-spacing="0.15em" fill="#5A5A5A">AVANT COMPACTION — CONTEXTE COMPLET</text>
+
+  <g class="interactive" data-card="before-context" tabindex="0" role="button" aria-label="Contexte avant compaction">
+    <rect x="60" y="200" width="440" height="280" rx="3" fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="80" y="226" class="mono" font-size="11" fill="#1F5560">turn_001 user message</text>
+    <rect x="80" y="232" width="400" height="6" fill="#1F5560" opacity="0.7"/>
+    <text x="80" y="252" class="mono" font-size="11" fill="#1F5560">turn_002 assistant + tool</text>
+    <rect x="80" y="258" width="400" height="14" fill="#1F5560" opacity="0.7"/>
+    <text x="80" y="288" class="mono" font-size="11" fill="#1F5560">turn_003 tool result + user</text>
+    <rect x="80" y="294" width="400" height="20" fill="#1F5560" opacity="0.7"/>
+    <text x="80" y="330" class="mono" font-size="11" fill="#1F5560">turn_004…turn_037</text>
+    <rect x="80" y="336" width="400" height="100" fill="#1F5560" opacity="0.7"/>
+    <text x="80" y="455" class="mono" font-size="11" fill="#1F5560">turn_038 dernier user</text>
+    <rect x="80" y="461" width="400" height="8" fill="#1F5560" opacity="0.7"/>
+
+    <text x="280" y="485" class="mono" font-size="13" font-weight="600" fill="#1F5560" text-anchor="middle">203 412 tokens</text>
+  </g>
+
+  <!-- Compaction arrow with span -->
+  <g>
+    <line x1="520" y1="340" x2="660" y2="340" stroke="#B7332C" stroke-width="2.5" marker-end="url(#arrow05)"/>
+    <rect x="510" y="270" width="170" height="60" rx="3" fill="#B7332C" fill-opacity="0.10" stroke="#B7332C" stroke-width="1.5" stroke-dasharray="3 2"/>
+    <text x="595" y="292" class="mono" font-size="10" font-weight="600" fill="#B7332C" text-anchor="middle">gen_ai.compaction</text>
+    <text x="595" y="306" class="mono" font-size="10" font-weight="600" fill="#B7332C" text-anchor="middle">.execution</text>
+    <text x="595" y="321" class="body" font-size="9" font-style="italic" fill="#5A5A5A" text-anchor="middle">span CLIENT — durée 1.8s</text>
+  </g>
+
+  <!-- RIGHT: APRÈS compaction -->
+  <text x="700" y="180" class="mono" font-size="11" font-weight="600" letter-spacing="0.15em" fill="#5A5A5A">APRÈS — CONTEXTE COMPACTÉ</text>
+
+  <g class="interactive" data-card="after-context" tabindex="0" role="button" aria-label="Contexte après compaction">
+    <rect x="700" y="200" width="440" height="280" rx="3" fill="#B58A2C" fill-opacity="0.08" stroke="#B58A2C" stroke-width="1.25"/>
+    <text x="720" y="226" class="mono" font-size="11" fill="#B58A2C">summary segment</text>
+    <rect x="720" y="232" width="400" height="30" fill="#B58A2C" opacity="0.7"/>
+    <text x="720" y="282" class="mono" font-size="11" fill="#B58A2C">turn_038 dernier user (retained)</text>
+    <rect x="720" y="288" width="400" height="8" fill="#B58A2C" opacity="0.7"/>
+    <text x="720" y="316" class="mono" font-size="11" fill="#B58A2C">turn_037 (retained intact)</text>
+    <rect x="720" y="322" width="400" height="14" fill="#B58A2C" opacity="0.7"/>
+    <text x="720" y="356" class="mono" font-size="11" fill="#B58A2C">turn_036 (retained intact)</text>
+    <rect x="720" y="362" width="400" height="10" fill="#B58A2C" opacity="0.7"/>
+
+    <text x="720" y="455" class="body" font-size="11" font-style="italic" fill="#5A5A5A">summary + 3 derniers tours</text>
+    <text x="920" y="485" class="mono" font-size="13" font-weight="600" fill="#B58A2C" text-anchor="middle">8 240 tokens</text>
+  </g>
+
+  <!-- Attributes of the compaction span -->
+  <text x="60" y="525" class="mono" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#5A5A5A">ATTRIBUTS DU SPAN COMPACTION (DRAFT)</text>
+
+  <g class="interactive" data-card="attrs-shape" tabindex="0" role="button" aria-label="Attributs de forme">
+    <rect x="60" y="545" width="340" height="120" rx="3" fill="#B7332C" fill-opacity="0.05" stroke="#B7332C" stroke-width="1" stroke-dasharray="3 2"/>
+    <text x="80" y="566" class="mono" font-size="10" font-weight="600" fill="#B7332C">Famille — forme de la réduction</text>
+    <line x1="80" y1="572" x2="380" y2="572" stroke="#B7332C" stroke-width="0.5" stroke-dasharray="2 3"/>
+    <text x="80" y="588" class="mono" font-size="9" fill="#1A1A1A">.operation = "summarize" | "evict" | "hierarchical"</text>
+    <text x="80" y="603" class="mono" font-size="9" fill="#1A1A1A">.strategy.name = "claude-code-/compact"</text>
+    <text x="80" y="618" class="mono" font-size="9" fill="#1A1A1A">.input_tokens = 203412</text>
+    <text x="80" y="633" class="mono" font-size="9" fill="#1A1A1A">.output_tokens = 8240</text>
+    <text x="80" y="648" class="mono" font-size="9" font-weight="600" fill="#B7332C">.ratio = 0.0405</text>
+  </g>
+
+  <g class="interactive" data-card="attrs-content" tabindex="0" role="button" aria-label="Attributs de contenu retenu">
+    <rect x="420" y="545" width="340" height="120" rx="3" fill="#B7332C" fill-opacity="0.05" stroke="#B7332C" stroke-width="1" stroke-dasharray="3 2"/>
+    <text x="440" y="566" class="mono" font-size="10" font-weight="600" fill="#B7332C">Famille — contenu retenu</text>
+    <line x1="440" y1="572" x2="740" y2="572" stroke="#B7332C" stroke-width="0.5" stroke-dasharray="2 3"/>
+    <text x="440" y="588" class="mono" font-size="9" fill="#1A1A1A">.retained_segments = 4</text>
+    <text x="440" y="603" class="mono" font-size="9" fill="#1A1A1A">.evicted_segments = 33</text>
+    <text x="440" y="618" class="mono" font-size="9" fill="#1A1A1A">events:</text>
+    <text x="440" y="633" class="mono" font-size="9" fill="#5A5A5A">  gen_ai.compaction.summary</text>
+    <text x="440" y="648" class="body" font-size="8" font-style="italic" fill="#5A5A5A">  (gated, capture flag off par défaut)</text>
+  </g>
+
+  <g class="interactive" data-card="attrs-judge" tabindex="0" role="button" aria-label="Attributs de jugement">
+    <rect x="780" y="545" width="340" height="120" rx="3" fill="#B7332C" fill-opacity="0.15" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="800" y="566" class="mono" font-size="10" font-weight="600" fill="#B7332C">Famille — fidélité jugée</text>
+    <line x1="800" y1="572" x2="1100" y2="572" stroke="#B7332C" stroke-width="0.5" stroke-dasharray="2 3"/>
+    <text x="800" y="588" class="mono" font-size="9" fill="#1A1A1A">.judge.score = 0.78</text>
+    <text x="800" y="603" class="mono" font-size="9" fill="#1A1A1A">.judge.model = "claude-haiku-4-5"</text>
+    <text x="800" y="618" class="mono" font-size="9" fill="#1A1A1A">.judge.method = "fact_recall"</text>
+    <text x="800" y="640" class="body" font-size="9" font-style="italic" fill="#5A5A5A">Crée le premier verdict natif</text>
+    <text x="800" y="653" class="body" font-size="9" font-style="italic" fill="#5A5A5A">sur une opération — vs LLM-call neutre.</text>
+  </g>
+
+  <!-- Footer -->
+  <rect x="60" y="685" width="1080" height="38" rx="3" fill="#B7332C" fill-opacity="0.06" stroke="#B7332C" stroke-width="0.75"/>
+  <text x="78" y="709" class="body" font-size="11" fill="#1A1A1A"><tspan font-weight="600" fill="#B7332C">Pourquoi observer la compaction :</tspan> sans ledger, un fait privé révélé par un utilisateur peut disparaître entre deux cycles sans laisser de trace.</text>
+
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="765" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Source : OpenTelemetry GenAI SIG, gen_ai.compaction.* draft (janvier 2026, draft de juin 2026).</text>
+  <text x="60" y="781" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Voir aussi le dossier compaction-agentique pour la taxonomie 5 familles et le triangle fidélité × coût × oubliabilité.</text>
+</svg>
+
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-05" title="Lien direct vers ce schéma">¶</a>Schéma 5 — Avant/après une compaction : 203 412 tokens → 8 240. Les trois familles d'attributs proposées (forme, contenu retenu, fidélité jugée) rendent l'opération observable pour la première fois.</figcaption>
+      </figure>
+
+      <p>Le débat principal porte sur le <strong>lien avec l'éval</strong>. Une compaction réussie devrait être <em>jugée</em> : combien d'information critique a survécu ? Le SIG propose un compromis — un attribut <code>gen_ai.compaction.judge.score</code> optionnel, calculé par un LLM-as-judge ou une métrique programmatique (recall sur un set de faits-clés). Cela ferait de la compaction la première opération nativement instrumentée avec son propre verdict, là où le LLM-call standard reste neutre.</p>
+      <p><mark>L'ironie historique est que cette couche, embryonnaire au moment où elle aurait été la plus utile (2023-2024), arrive en 2026 alors que les contextes de 1 M+ tokens commencent à rendre la compaction moins critique pour les usages courants.</mark> Mais elle reste indispensable pour les agents long-running (Claude Code en mode <code>--continue</code>, Devin, Manus) qui dépassent toute fenêtre native.</p>
+
+      <h2 id="sec-7">7. Cartographie vendeurs — qui ship quoi</h2>
+      <p>À fin mai 2026, le paysage de l'adoption est lisible mais inégal. Tous les acteurs majeurs émettent ou reçoivent <code>gen_ai.*</code> mais avec des niveaux de couverture distincts.</p>
+
+      <figure class="figure" id="fig-06">
+        <svg data-schema-id="schema-06" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- HEADER -->
+  <text x="60" y="55" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 06</text>
+  <text x="60" y="92" class="display" font-size="26" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Cartographie vendeurs × familles d'attributs</text>
+  <text x="60" y="118" class="display" font-size="16" font-style="italic" fill="#5A5A5A">État de la couverture <tspan class="mono" font-size="14">gen_ai.*</tspan> par les principaux émetteurs et récepteurs — mai 2026</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- Column headers - 6 families -->
+  <text x="60" y="180" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#5A5A5A">VENDEUR / SDK</text>
+
+  <g font-family="Inter, sans-serif" font-size="9" font-weight="600" fill="#1A1A1A">
+    <text x="365" y="180" text-anchor="middle">request</text>
+    <text x="435" y="180" text-anchor="middle">response</text>
+    <text x="505" y="180" text-anchor="middle">usage</text>
+    <text x="575" y="180" text-anchor="middle">agent</text>
+    <text x="645" y="180" text-anchor="middle">tool</text>
+    <text x="715" y="180" text-anchor="middle">evaluation</text>
+    <text x="790" y="180" text-anchor="middle">compaction</text>
+  </g>
+
+  <!-- Maturity badges row -->
+  <g font-family="JetBrains Mono, monospace" font-size="7" font-weight="600" letter-spacing="0.08em">
+    <rect x="340" y="186" width="50" height="13" rx="2" fill="#1F5560"/>
+    <text x="365" y="195" text-anchor="middle" fill="#FAF8F3">STABLE</text>
+    <rect x="410" y="186" width="50" height="13" rx="2" fill="#1F5560"/>
+    <text x="435" y="195" text-anchor="middle" fill="#FAF8F3">STABLE</text>
+    <rect x="480" y="186" width="50" height="13" rx="2" fill="#1F5560"/>
+    <text x="505" y="195" text-anchor="middle" fill="#FAF8F3">STABLE</text>
+    <rect x="550" y="186" width="50" height="13" rx="2" fill="#B58A2C"/>
+    <text x="575" y="195" text-anchor="middle" fill="#FAF8F3">RC</text>
+    <rect x="620" y="186" width="50" height="13" rx="2" fill="#B58A2C"/>
+    <text x="645" y="195" text-anchor="middle" fill="#FAF8F3">RC</text>
+    <rect x="690" y="186" width="50" height="13" rx="2" fill="#B58A2C"/>
+    <text x="715" y="195" text-anchor="middle" fill="#FAF8F3">RC</text>
+    <rect x="765" y="186" width="50" height="13" rx="2" fill="#B7332C"/>
+    <text x="790" y="195" text-anchor="middle" fill="#FAF8F3">DRAFT</text>
+  </g>
+
+  <text x="900" y="180" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#5A5A5A">RÔLE</text>
+  <text x="1080" y="180" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#5A5A5A">DEPUIS</text>
+
+  <line x1="60" y1="210" x2="1140" y2="210" stroke="#5A5A5A" stroke-width="1"/>
+
+  <!-- Helper: density circles -->
+  <!-- Densité 0 = vide ; 25 = quart ; 50 = moitié ; 75 = trois-quarts ; 100 = plein. Carmine pour rempli. -->
+
+  <!-- Rows: 10 vendors -->
+  <!-- Row 1: Honeycomb -->
+  <g>
+    <text x="80" y="248" class="body" font-size="11" font-weight="500" fill="#1A1A1A">Honeycomb</text>
+    <text x="80" y="263" class="body" font-size="9" font-style="italic" fill="#5A5A5A">évangéliste du SIG, retex public</text>
+    <!-- 100/100/100/75/75/50/25 -->
+    <circle cx="365" cy="252" r="9" fill="#B7332C"/>
+    <circle cx="435" cy="252" r="9" fill="#B7332C"/>
+    <circle cx="505" cy="252" r="9" fill="#B7332C"/>
+    <circle cx="575" cy="252" r="9" fill="none" stroke="#B7332C" stroke-width="1.5"/>
+    <path d="M575 261 A9 9 0 0 1 575 243 L575 252 Z" fill="#B7332C" transform="rotate(-90 575 252)"/>
+    <circle cx="645" cy="252" r="9" fill="none" stroke="#B7332C" stroke-width="1.5"/>
+    <path d="M645 261 A9 9 0 0 1 645 243 L645 252 Z" fill="#B7332C" transform="rotate(-90 645 252)"/>
+    <circle cx="715" cy="252" r="9" fill="none" stroke="#B7332C" stroke-width="1.5"/>
+    <path d="M715 252 m-9 0 a9 9 0 0 1 18 0 Z" fill="#B7332C"/>
+    <circle cx="790" cy="252" r="9" fill="none" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="900" y="256" class="mono" font-size="9" fill="#1A1A1A">backend APM</text>
+    <text x="1080" y="256" class="mono" font-size="9" fill="#1A1A1A">2024</text>
+  </g>
+  <line x1="60" y1="278" x2="1140" y2="278" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- Row 2: Datadog -->
+  <g>
+    <text x="80" y="298" class="body" font-size="11" font-weight="500" fill="#1A1A1A">Datadog LLM Observability</text>
+    <text x="80" y="313" class="body" font-size="9" font-style="italic" fill="#5A5A5A">reçoit gen_ai.*, mappe sur llm.* legacy</text>
+    <circle cx="365" cy="302" r="9" fill="#B7332C"/>
+    <circle cx="435" cy="302" r="9" fill="#B7332C"/>
+    <circle cx="505" cy="302" r="9" fill="#B7332C"/>
+    <circle cx="575" cy="302" r="9" fill="none" stroke="#B7332C" stroke-width="1.5"/>
+    <path d="M575 311 A9 9 0 0 1 575 293 L575 302 Z" fill="#B7332C" transform="rotate(-90 575 302)"/>
+    <circle cx="645" cy="302" r="9" fill="none" stroke="#B7332C" stroke-width="1.5"/>
+    <path d="M645 311 A9 9 0 0 1 645 293 L645 302 Z" fill="#B7332C" transform="rotate(-90 645 302)"/>
+    <circle cx="715" cy="302" r="9" fill="none" stroke="#B7332C" stroke-width="1.5"/>
+    <path d="M715 302 m-4.5 0 a4.5 4.5 0 0 1 9 0 Z" fill="#B7332C"/>
+    <circle cx="790" cy="302" r="9" fill="none" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="900" y="306" class="mono" font-size="9" fill="#1A1A1A">backend APM</text>
+    <text x="1080" y="306" class="mono" font-size="9" fill="#1A1A1A">2025</text>
+  </g>
+  <line x1="60" y1="328" x2="1140" y2="328" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- Row 3: New Relic -->
+  <g>
+    <text x="80" y="348" class="body" font-size="11" font-weight="500" fill="#1A1A1A">New Relic, Grafana, Dynatrace, Elastic</text>
+    <text x="80" y="363" class="body" font-size="9" font-style="italic" fill="#5A5A5A">indexent gen_ai.* tel quel, dashboards GenAI fin 2025</text>
+    <circle cx="365" cy="352" r="9" fill="#B7332C"/>
+    <circle cx="435" cy="352" r="9" fill="#B7332C"/>
+    <circle cx="505" cy="352" r="9" fill="#B7332C"/>
+    <circle cx="575" cy="352" r="9" fill="none" stroke="#B7332C" stroke-width="1.5"/>
+    <path d="M575 361 A9 9 0 0 1 575 343 L575 352 Z" fill="#B7332C" transform="rotate(-90 575 352)"/>
+    <circle cx="645" cy="352" r="9" fill="none" stroke="#B7332C" stroke-width="1.5"/>
+    <path d="M645 361 A9 9 0 0 1 645 343 L645 352 Z" fill="#B7332C" transform="rotate(-90 645 352)"/>
+    <circle cx="715" cy="352" r="9" fill="none" stroke="#B7332C" stroke-width="1.5"/>
+    <circle cx="790" cy="352" r="9" fill="none" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="900" y="356" class="mono" font-size="9" fill="#1A1A1A">backends APM</text>
+    <text x="1080" y="356" class="mono" font-size="9" fill="#1A1A1A">2025</text>
+  </g>
+  <line x1="60" y1="378" x2="1140" y2="378" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- Row 4: Langfuse -->
+  <g>
+    <text x="80" y="398" class="body" font-size="11" font-weight="500" fill="#1A1A1A">Langfuse</text>
+    <text x="80" y="413" class="body" font-size="9" font-style="italic" fill="#5A5A5A">émetteur SDK + récepteur, expérimentations compaction</text>
+    <circle cx="365" cy="402" r="9" fill="#B7332C"/>
+    <circle cx="435" cy="402" r="9" fill="#B7332C"/>
+    <circle cx="505" cy="402" r="9" fill="#B7332C"/>
+    <circle cx="575" cy="402" r="9" fill="#B7332C"/>
+    <circle cx="645" cy="402" r="9" fill="#B7332C"/>
+    <circle cx="715" cy="402" r="9" fill="#B7332C"/>
+    <circle cx="790" cy="402" r="9" fill="none" stroke="#B7332C" stroke-width="1.5"/>
+    <path d="M790 411 A9 9 0 0 1 790 393 L790 402 Z" fill="#B7332C" transform="rotate(-90 790 402)"/>
+    <text x="900" y="406" class="mono" font-size="9" fill="#1A1A1A">spécialiste éval</text>
+    <text x="1080" y="406" class="mono" font-size="9" fill="#1A1A1A">v3 fév. 2026</text>
+  </g>
+  <line x1="60" y1="428" x2="1140" y2="428" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- Row 5: Arize Phoenix -->
+  <g>
+    <text x="80" y="448" class="body" font-size="11" font-weight="500" fill="#1A1A1A">Arize Phoenix / OpenInference</text>
+    <text x="80" y="463" class="body" font-size="9" font-style="italic" fill="#5A5A5A">convention concurrente absorbée, mapping bidirectionnel</text>
+    <circle cx="365" cy="452" r="9" fill="#B7332C"/>
+    <circle cx="435" cy="452" r="9" fill="#B7332C"/>
+    <circle cx="505" cy="452" r="9" fill="#B7332C"/>
+    <circle cx="575" cy="452" r="9" fill="#B7332C"/>
+    <circle cx="645" cy="452" r="9" fill="#B7332C"/>
+    <circle cx="715" cy="452" r="9" fill="#B7332C"/>
+    <circle cx="790" cy="452" r="9" fill="none" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="900" y="456" class="mono" font-size="9" fill="#1A1A1A">spécialiste éval</text>
+    <text x="1080" y="456" class="mono" font-size="9" fill="#1A1A1A">Phoenix 5</text>
+  </g>
+  <line x1="60" y1="478" x2="1140" y2="478" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- Row 6: OpenLLMetry -->
+  <g>
+    <text x="80" y="498" class="body" font-size="11" font-weight="500" fill="#1A1A1A">OpenLLMetry (Traceloop)</text>
+    <text x="80" y="513" class="body" font-size="9" font-style="italic" fill="#5A5A5A">SDK open-source, auto-instrumente OpenAI, Anthropic, Cohere…</text>
+    <circle cx="365" cy="502" r="9" fill="#B7332C"/>
+    <circle cx="435" cy="502" r="9" fill="#B7332C"/>
+    <circle cx="505" cy="502" r="9" fill="#B7332C"/>
+    <circle cx="575" cy="502" r="9" fill="none" stroke="#B7332C" stroke-width="1.5"/>
+    <path d="M575 511 A9 9 0 0 1 575 493 L575 502 Z" fill="#B7332C" transform="rotate(-90 575 502)"/>
+    <circle cx="645" cy="502" r="9" fill="none" stroke="#B7332C" stroke-width="1.5"/>
+    <path d="M645 511 A9 9 0 0 1 645 493 L645 502 Z" fill="#B7332C" transform="rotate(-90 645 502)"/>
+    <circle cx="715" cy="502" r="9" fill="none" stroke="#B7332C" stroke-width="1.5"/>
+    <circle cx="790" cy="502" r="9" fill="none" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="900" y="506" class="mono" font-size="9" fill="#1A1A1A">SDK émetteur</text>
+    <text x="1080" y="506" class="mono" font-size="9" fill="#1A1A1A">fin 2025</text>
+  </g>
+  <line x1="60" y1="528" x2="1140" y2="528" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- Row 7: Anthropic Claude SDK -->
+  <g class="interactive" data-card="anthropic-sdk" tabindex="0" role="button" aria-label="Anthropic Claude SDK">
+    <text x="80" y="548" class="body" font-size="11" font-weight="500" fill="#1A1A1A">Anthropic SDK / Claude Agent SDK</text>
+    <text x="80" y="563" class="body" font-size="9" font-style="italic" fill="#5A5A5A">émet gen_ai.* depuis Python SDK 0.45 (avril 2026)</text>
+    <circle cx="365" cy="552" r="9" fill="#B7332C"/>
+    <circle cx="435" cy="552" r="9" fill="#B7332C"/>
+    <circle cx="505" cy="552" r="9" fill="#B7332C"/>
+    <circle cx="575" cy="552" r="9" fill="none" stroke="#B7332C" stroke-width="1.5"/>
+    <path d="M575 561 A9 9 0 0 1 575 543 L575 552 Z" fill="#B7332C" transform="rotate(-90 575 552)"/>
+    <circle cx="645" cy="552" r="9" fill="none" stroke="#B7332C" stroke-width="1.5"/>
+    <path d="M645 561 A9 9 0 0 1 645 543 L645 552 Z" fill="#B7332C" transform="rotate(-90 645 552)"/>
+    <circle cx="715" cy="552" r="9" fill="none" stroke="#B7332C" stroke-width="1.5"/>
+    <circle cx="790" cy="552" r="9" fill="none" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="900" y="556" class="mono" font-size="9" fill="#1A1A1A">SDK vendeur LLM</text>
+    <text x="1080" y="556" class="mono" font-size="9" fill="#1A1A1A">avr. 2026</text>
+  </g>
+  <line x1="60" y1="578" x2="1140" y2="578" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- Row 8: OpenAI SDK -->
+  <g>
+    <text x="80" y="598" class="body" font-size="11" font-weight="500" fill="#1A1A1A">OpenAI Python SDK</text>
+    <text x="80" y="613" class="body" font-size="9" font-style="italic" fill="#5A5A5A">via wrapper communautaire, pas natif côté SDK officiel</text>
+    <circle cx="365" cy="602" r="9" fill="#B7332C"/>
+    <circle cx="435" cy="602" r="9" fill="#B7332C"/>
+    <circle cx="505" cy="602" r="9" fill="#B7332C"/>
+    <circle cx="575" cy="602" r="9" fill="none" stroke="#B7332C" stroke-width="1.5"/>
+    <path d="M575 602 m-4.5 0 a4.5 4.5 0 0 1 9 0 Z" fill="#B7332C"/>
+    <circle cx="645" cy="602" r="9" fill="none" stroke="#B7332C" stroke-width="1.5"/>
+    <path d="M645 602 m-4.5 0 a4.5 4.5 0 0 1 9 0 Z" fill="#B7332C"/>
+    <circle cx="715" cy="602" r="9" fill="none" stroke="#B7332C" stroke-width="1.5"/>
+    <circle cx="790" cy="602" r="9" fill="none" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="900" y="606" class="mono" font-size="9" fill="#1A1A1A">SDK vendeur LLM</text>
+    <text x="1080" y="606" class="mono" font-size="9" fill="#1A1A1A">via wrapper</text>
+  </g>
+  <line x1="60" y1="628" x2="1140" y2="628" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- Row 9: Azure AI Foundry -->
+  <g>
+    <text x="80" y="648" class="body" font-size="11" font-weight="500" fill="#1A1A1A">Microsoft Azure AI Foundry</text>
+    <text x="80" y="663" class="body" font-size="9" font-style="italic" fill="#5A5A5A">premier hyperscaler natif gen_ai.*, GA été 2025</text>
+    <circle cx="365" cy="652" r="9" fill="#B7332C"/>
+    <circle cx="435" cy="652" r="9" fill="#B7332C"/>
+    <circle cx="505" cy="652" r="9" fill="#B7332C"/>
+    <circle cx="575" cy="652" r="9" fill="#B7332C"/>
+    <circle cx="645" cy="652" r="9" fill="#B7332C"/>
+    <circle cx="715" cy="652" r="9" fill="none" stroke="#B7332C" stroke-width="1.5"/>
+    <path d="M715 661 A9 9 0 0 1 715 643 L715 652 Z" fill="#B7332C" transform="rotate(-90 715 652)"/>
+    <circle cx="790" cy="652" r="9" fill="none" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="900" y="656" class="mono" font-size="9" fill="#1A1A1A">plateforme cloud</text>
+    <text x="1080" y="656" class="mono" font-size="9" fill="#1A1A1A">été 2025</text>
+  </g>
+  <line x1="60" y1="678" x2="1140" y2="678" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- Row 10: Google Vertex AI -->
+  <g>
+    <text x="80" y="698" class="body" font-size="11" font-weight="500" fill="#1A1A1A">Google Vertex AI + ADK</text>
+    <text x="80" y="713" class="body" font-size="9" font-style="italic" fill="#5A5A5A">émet via google-cloud-trace, intégré Agent Engine</text>
+    <circle cx="365" cy="702" r="9" fill="#B7332C"/>
+    <circle cx="435" cy="702" r="9" fill="#B7332C"/>
+    <circle cx="505" cy="702" r="9" fill="#B7332C"/>
+    <circle cx="575" cy="702" r="9" fill="#B7332C"/>
+    <circle cx="645" cy="702" r="9" fill="#B7332C"/>
+    <circle cx="715" cy="702" r="9" fill="none" stroke="#B7332C" stroke-width="1.5"/>
+    <path d="M715 711 A9 9 0 0 1 715 693 L715 702 Z" fill="#B7332C" transform="rotate(-90 715 702)"/>
+    <circle cx="790" cy="702" r="9" fill="none" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="900" y="706" class="mono" font-size="9" fill="#1A1A1A">plateforme cloud</text>
+    <text x="1080" y="706" class="mono" font-size="9" fill="#1A1A1A">2026</text>
+  </g>
+  <line x1="60" y1="728" x2="1140" y2="728" stroke="#5A5A5A" stroke-width="1"/>
+
+  <!-- Legend -->
+  <g>
+    <text x="60" y="755" class="body" font-size="9" font-weight="600" fill="#5A5A5A">DENSITÉ :</text>
+    <circle cx="125" cy="752" r="9" fill="none" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="138" y="756" class="body" font-size="9" fill="#5A5A5A">aucun</text>
+    <circle cx="175" cy="752" r="9" fill="none" stroke="#B7332C" stroke-width="1.5"/>
+    <path d="M175 752 m-4.5 0 a4.5 4.5 0 0 1 9 0 Z" fill="#B7332C"/>
+    <text x="188" y="756" class="body" font-size="9" font-style="italic" fill="#5A5A5A">partiel</text>
+    <circle cx="230" cy="752" r="9" fill="none" stroke="#B7332C" stroke-width="1.5"/>
+    <path d="M230 761 A9 9 0 0 1 230 743 L230 752 Z" fill="#B7332C" transform="rotate(-90 230 752)"/>
+    <text x="243" y="756" class="body" font-size="9" font-style="italic" fill="#5A5A5A">moitié</text>
+    <circle cx="285" cy="752" r="9" fill="#B7332C"/>
+    <text x="298" y="756" class="body" font-size="9" font-style="italic" fill="#5A5A5A">complet</text>
+  </g>
+
+  <text x="60" y="780" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Source : revue des SDK & docs vendeurs en mai 2026. Lecture : la fracture n'est pas vendeur×vendeur, mais couche stable contre couches RC/draft.</text>
+</svg>
+
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-06" title="Lien direct vers ce schéma">¶</a>Schéma 6 — Matrice 10 vendeurs × 6 familles + draft compaction. La fracture observable n'est pas entre vendeurs mais entre couche stable (homogène) et couches RC/draft (hétérogène, chacun ajoute ses extensions).</figcaption>
+      </figure>
+
+      <p><strong>Émetteurs (SDK applicatif) :</strong></p>
+      <ul>
+        <li><strong>OpenInference (Arize)</strong> — convention concurrente lancée en 2024, en cours d'absorption dans OTel. Émet <code>gen_ai.*</code> natif depuis Phoenix 5.0 (avril 2026) avec un mapping bidirectionnel vers son ancien schéma <code>openinference.*</code><a class="cite" data-cite="4" href="#source-4">4</a>.</li>
+        <li><strong>OpenLLMetry (Traceloop)</strong> — SDK open-source qui auto-instrumente OpenAI, Anthropic, Cohere, Mistral, Vertex AI. Émet <code>gen_ai.*</code> v1 stable depuis fin 2025<a class="cite" data-cite="9" href="#source-9">9</a>.</li>
+        <li><strong>Langfuse SDK</strong> — émet <code>gen_ai.*</code> en parallèle de son propre schéma, depuis la v3 (février 2026). Le pont OTel ↔ Langfuse a été l'une des migrations marketing les plus visibles de l'année<a class="cite" data-cite="3" href="#source-3">3</a>.</li>
+        <li><strong>Anthropic SDK / Claude Agent SDK</strong> — émet <code>gen_ai.*</code> pour les appels Messages API depuis le SDK Python 0.45 (avril 2026), Java/Go en suivent.</li>
+        <li><strong>OpenAI Python SDK</strong> — l'auto-instrumentation OTel existe via les wrappers communautaires (<code>opentelemetry-instrumentation-openai-v2</code>), pas encore natif côté SDK officiel.</li>
+        <li><strong>Google ADK + Vertex AI SDK</strong> — émet <code>gen_ai.*</code> natif via le <code>google-cloud-trace</code> exporter, intégré au runtime Agent Engine<a class="cite" data-cite="10" href="#source-10">10</a>.</li>
+        <li><strong>Microsoft Azure AI Foundry</strong> — émet <code>gen_ai.*</code> natif, premier hyperscaler à l'avoir fait (préversion début 2025, GA été 2025)<a class="cite" data-cite="11" href="#source-11">11</a>.</li>
+      </ul>
+
+      <p><strong>Récepteurs (backends APM) :</strong></p>
+      <ul>
+        <li><strong>Datadog LLM Observability</strong> — reçoit <code>gen_ai.*</code> nativement, mappe en interne sur son ancien schéma <code>llm.*</code> pour rétrocompat<a class="cite" data-cite="2" href="#source-2">2</a>.</li>
+        <li><strong>Honeycomb</strong> — backend OTel natif depuis 2019 ; pas de schéma propriétaire, montre <code>gen_ai.*</code> tel quel. Évangéliste du SIG<a class="cite" data-cite="3" href="#source-3">3</a>.</li>
+        <li><strong>New Relic, Grafana (Tempo + Loki), Dynatrace, Elastic</strong> — reçoivent et indexent <code>gen_ai.*</code> ; tous sont passés à un dashboard « GenAI » natif fin 2025.</li>
+        <li><strong>Langfuse, Arize Phoenix, Braintrust</strong> — vendeurs spécialisés LLM, reçoivent <code>gen_ai.*</code> via OTLP ; complètent avec leurs extensions propriétaires sur l'éval.</li>
+      </ul>
+      <p><mark>La fracture observable n'est pas vendeur contre vendeur, mais couche stable contre couche RC/draft.</mark> Tous parlent fluently le LLM-call (stable). Sur l'éval (RC), chacun ajoute ses extensions — les dashboards ne sont pas identiques d'un APM à l'autre. Sur la compaction (draft), seuls Langfuse et Honeycomb shippent des aperçus expérimentaux.</p>
+
+      <h2 id="sec-8">8. Trajectoire 2026-2028</h2>
+      <p>Trois forces structurent la suite, et elles ne convergent pas au même rythme.</p>
+      <p><strong>Force 1 — la stabilisation de l'éval.</strong> Le SIG vise le scellement de <code>gen_ai.evaluation.*</code> pour fin 2026. Cela débloquera l'éval en production comme primitive standard. Conséquence : les vendeurs purs éval (Langfuse, Arize, Braintrust, Patronus) verront leur barrière à l'entrée s'effriter — leur valeur ajoutée se déplacera vers la qualité des juges (datasets, rubriques, LLM-as-judge calibrés) et l'UX d'analyse, plus vers la mécanique d'instrumentation. C'est exactement la trajectoire de la première vague APM (2010-2015) quand <code>http.*</code> s'est stabilisé.</p>
+      <p><strong>Force 2 — la pression régulatoire.</strong> L'AI Act entre en application progressive en 2026-2027 ; l'article 12 (record-keeping pour systèmes à haut risque) et l'article 13 (transparency) imposent un audit trail technique. Aucun texte ne nomme OpenTelemetry, mais l'écosystème vendeur le pousse comme <em>de facto</em> la solution la moins coûteuse à mettre en conformité — c'est la même dynamique que SOX vs HTTP logs en 2003. Côté américain, le NIST AI RMF (mises à jour 2024-2025) recommande explicitement « interoperable telemetry standards » sous la fonction MEASURE 2.5<a class="cite" data-cite="7" href="#source-7">7</a><a class="cite" data-cite="8" href="#source-8">8</a>.</p>
+      <p><mark>Le ledger compaction, encore draft fin 2026, deviendra contractuel en 2027-2028.</mark> Quand un utilisateur invoque son droit à l'effacement (RGPD article 17) et qu'un agent doit prouver qu'un fait a bien été retiré non seulement du LLM-call courant mais aussi des résumés compactés qui le précédent, seul un trace stockée selon <code>gen_ai.compaction.*</code> rendra cette preuve techniquement faisable.</p>
+      <p><strong>Force 3 — le multi-agent qui mûrit.</strong> L'orchestration multi-agent (handoffs, supervisor-workers, A2A protocol) entrera dans le SIG en 2027 quand l'écosystème framework aura convergé. La probable victoire — sous réserve d'inflexion — est la convention <code>gen_ai.agent.parent_id</code> + des liens OTel natifs, qui permettent à la fois la hiérarchie logique et la fidélité causale. Mais il faut s'attendre à 12-18 mois supplémentaires de RC avant scellement, contre 24 mois pour <code>gen_ai.evaluation.*</code>.</p>
+      <p>L'horizon final, à 24-36 mois, est celui d'un namespace <code>gen_ai.*</code> complet (stable du LLM-call jusqu'au multi-agent compacté en passant par l'éval) qui sera mécaniquement référencé par un standard cousin émergent : le <strong>Cloud-Native AI Validation (<code>cnav.*</code>)</strong>, projet expérimental de la CNCF lancé courant 2026 pour les contrats de SLO appliqués aux systèmes IA. Si <code>cnav.*</code> s'impose, il consommera <code>gen_ai.*</code> comme primitive d'entrée et lui ajoutera la couche promesse (« 95% de mes spans LLM-call doivent finir en &lt; 2s avec score d'hallucination &lt; 0.1 »). C'est l'horizon <span class="term" data-tooltip="Service Level Objective — engagement chiffré sur la qualité de service (par ex. 99.5% de disponibilité, p95 de latence sous 200 ms).">SLO</span> de l'observabilité IA — symétrique à ce qu'Istio + Prometheus ont fait pour les microservices entre 2018 et 2022.</p>
+    </main>
+
+    <aside id="sources" aria-label="Sources">
+      <button class="panel-close" type="button" aria-label="Fermer les sources">Fermer ✕</button>
+      <div class="sources-inner">
+      <h2>Sources</h2>
+      <ol id="sources-list">
+<li id="source-1">
+          <span class="cite-num">[1]</span> OpenTelemetry Authors, <em>Semantic Conventions for Generative AI Systems</em>, repo officiel <code>open-telemetry/semantic-conventions</code> (dossier <code>model/gen-ai/</code>), version mai 2026.<br>
+          <a href="https://github.com/open-telemetry/semantic-conventions/tree/main/model/gen-ai" target="_blank" rel="noopener">github.com/open-telemetry/semantic-conventions ↗</a>
+          <span class="accessed">consulté le 5 juin 2026</span>
+        </li>
+        <li id="source-2">
+          <span class="cite-num">[2]</span> OpenTelemetry GenAI SIG, <em>Charter, meeting notes &amp; roadmap</em>. Réunions bi-mensuelles publiques depuis janvier 2024.<br>
+          <a href="https://github.com/open-telemetry/community/tree/main/projects/gen-ai" target="_blank" rel="noopener">github.com/open-telemetry/community ↗</a>
+          <span class="accessed">consulté le 5 juin 2026</span>
+        </li>
+        <li id="source-3">
+          <span class="cite-num">[3]</span> Honeycomb, <em>Observing LLMs in production with OpenTelemetry</em> — série de billets 2024-2026 couvrant le retex streaming, l'éval, les tests internes.<br>
+          <a href="https://www.honeycomb.io/blog/observing-llms-in-production-with-opentelemetry" target="_blank" rel="noopener">honeycomb.io ↗</a>
+          <span class="accessed">consulté le 5 juin 2026</span>
+        </li>
+        <li id="source-4">
+          <span class="cite-num">[4]</span> Arize AI, <em>OpenInference specification — convergence with OpenTelemetry GenAI</em>. Schéma précurseur 2024 en cours d'absorption.<br>
+          <a href="https://github.com/Arize-ai/openinference" target="_blank" rel="noopener">github.com/Arize-ai/openinference ↗</a>
+          <span class="accessed">consulté le 5 juin 2026</span>
+        </li>
+        <li id="source-5">
+          <span class="cite-num">[5]</span> Langfuse, <em>OpenTelemetry export support &amp; GenAI semconv coverage</em>. Documentation officielle du pont OTel ↔ Langfuse.<br>
+          <a href="https://langfuse.com/docs/opentelemetry" target="_blank" rel="noopener">langfuse.com/docs ↗</a>
+          <span class="accessed">consulté le 5 juin 2026</span>
+        </li>
+        <li id="source-6">
+          <span class="cite-num">[6]</span> OpenTelemetry Blog, <em>The observability of agentic systems — notes du SIG GenAI sur le multi-agent</em>, 2025.<br>
+          <a href="https://opentelemetry.io/blog/" target="_blank" rel="noopener">opentelemetry.io/blog ↗</a>
+          <span class="accessed">consulté le 5 juin 2026</span>
+        </li>
+        <li id="source-7">
+          <span class="cite-num">[7]</span> National Institute of Standards and Technology, <em>AI Risk Management Framework (AI RMF 1.0)</em>, janvier 2023, mises à jour 2024-2025.<br>
+          <a href="https://www.nist.gov/itl/ai-risk-management-framework" target="_blank" rel="noopener">nist.gov ↗</a>
+          <span class="accessed">consulté le 5 juin 2026</span>
+        </li>
+        <li id="source-8">
+          <span class="cite-num">[8]</span> Union européenne, <em>Règlement (UE) 2024/1689 du 13 juin 2024 (AI Act)</em>, articles 12 (record-keeping) et 13 (transparency).<br>
+          <a href="https://eur-lex.europa.eu/eli/reg/2024/1689/oj" target="_blank" rel="noopener">eur-lex.europa.eu ↗</a>
+          <span class="accessed">consulté le 5 juin 2026</span>
+        </li>
+        <li id="source-9">
+          <span class="cite-num">[9]</span> Traceloop / OpenLLMetry, <em>OpenLLMetry SDK — GenAI semconv v1 adoption</em>. Auto-instrumentation OpenAI, Anthropic, Cohere, Mistral.<br>
+          <a href="https://github.com/traceloop/openllmetry" target="_blank" rel="noopener">github.com/traceloop/openllmetry ↗</a>
+          <span class="accessed">consulté le 5 juin 2026</span>
+        </li>
+        <li id="source-10">
+          <span class="cite-num">[10]</span> Google Cloud, <em>Vertex AI Agent Engine — OpenTelemetry tracing</em>. Documentation de l'intégration runtime.<br>
+          <a href="https://cloud.google.com/vertex-ai/generative-ai/docs/agent-engine/tracing" target="_blank" rel="noopener">cloud.google.com/vertex-ai ↗</a>
+          <span class="accessed">consulté le 5 juin 2026</span>
+        </li>
+        <li id="source-11">
+          <span class="cite-num">[11]</span> Microsoft, <em>Azure AI Foundry — Trace &amp; monitor your AI applications with OpenTelemetry</em>. Premier hyperscaler à supporter gen_ai.* natif.<br>
+          <a href="https://learn.microsoft.com/azure/ai-foundry/concepts/trace-monitor-applications" target="_blank" rel="noopener">learn.microsoft.com ↗</a>
+          <span class="accessed">consulté le 5 juin 2026</span>
+        </li>
+        <li id="source-12">
+          <span class="cite-num">[12]</span> W3C, <em>Trace Context, W3C Recommendation</em>. Foundation des spans distribués au-dessus de laquelle OTel construit.<br>
+          <a href="https://www.w3.org/TR/trace-context/" target="_blank" rel="noopener">w3.org/TR/trace-context ↗</a>
+          <span class="accessed">consulté le 5 juin 2026</span>
+        </li>
+        </ol>
+      </div>
+    </aside>
+
+  </div>
+
+
+  <div id="zoom-overlay" hidden role="dialog" aria-modal="true" aria-label="Schéma agrandi">
+    <header id="zoom-header">
+      <span id="zoom-caption"></span>
+      <div class="zoom-controls">
+        <button type="button" class="zoom-out" aria-label="Dézoomer" title="Dézoomer (−)">−</button>
+        <button type="button" class="zoom-reset" aria-label="Ajuster à l'écran" title="Ajuster à l'écran">Reset</button>
+        <button type="button" class="zoom-in" aria-label="Zoomer" title="Zoomer (+)">+</button>
+        <button type="button" class="zoom-close" aria-label="Fermer (Échap)" title="Fermer (Échap)">×</button>
+      </div>
+    </header>
+    <div id="zoom-stage" tabindex="-1">
+      <div id="zoom-content"></div>
+      <div id="zoom-hint">Molette pour zoomer · glisser pour déplacer · Échap pour fermer</div>
+      <a class="schema-sigil zoom-sigil" href="https://mathieugug.github.io/" target="_blank" rel="noopener" aria-label="Mathieu Guglielmino — visiter mathieugug.github.io" title="Mathieu Guglielmino · mathieugug.github.io">
+        <svg class="sigil-mark" viewBox="0 0 44 44" aria-hidden="true" focusable="false">
+          <circle class="sigil-bg" cx="22" cy="22" r="20.5"/>
+          <circle class="sigil-ring" cx="22" cy="22" r="17.5"/>
+          <g class="sigil-letters"><text x="7.5" y="29">M</text><text x="22" y="29">G</text></g>
+        </svg>
+      </a>
+    </div>
+  </div>
+
+  <div id="modal-root" hidden role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card">
+      <button class="modal-close" data-close aria-label="Fermer">×</button>
+      <p class="modal-eyebrow" id="modal-eyebrow"></p>
+      <h3 class="modal-title" id="modal-title"></h3>
+      <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <script>
+    // ─────────────────────────────────────────────────
+    // DATA — replace these placeholders with real content
+    // ─────────────────────────────────────────────────
+
+    const SCHEMAS = {
+  "schema-01": {
+    "request": {
+      title: "gen_ai.request.*",
+      eyebrow: "Famille stable",
+      body: "<p>La famille la plus ancienne et la plus stable. Couvre tout ce qui part de l'application vers le modèle : modèle visé (<code>request.model</code>), paramètres d'inférence (<code>temperature</code>, <code>max_tokens</code>, <code>top_p</code>, <code>stop_sequences</code>), et identifiants applicatifs.</p><p>La règle de cardinalité borne ces attributs à un set fini de valeurs (le nom du modèle, pas le prompt). Les prompts eux-mêmes vivent en événements de log corrélés, désactivés par défaut via <code>OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT</code>.</p>"
+    },
+    "response": {
+      title: "gen_ai.response.*",
+      eyebrow: "Famille stable",
+      body: "<p>Symétrique du <code>request</code>, côté retour. <code>response.id</code> (identifiant du provider), <code>response.model</code> (modèle effectivement servi — peut différer du modèle demandé si le router fait du fallback), <code>response.finish_reasons</code> (array : <code>stop</code>, <code>length</code>, <code>tool_calls</code>, …), <code>choices_count</code> pour les API qui retournent plusieurs alternatives.</p><p>Le <code>system_fingerprint</code> (introduit par OpenAI puis adopté ailleurs) est l'attribut le plus discuté : tous les providers ne l'émettent pas, et la convention le laisse optionnel.</p>"
+    },
+    "usage": {
+      title: "gen_ai.usage.*",
+      eyebrow: "Famille stable",
+      body: "<p>Comptage des tokens — la base de la facturation et de la métrique opérationnelle la plus universelle. <code>input_tokens</code>, <code>output_tokens</code>, <code>total_tokens</code>, <code>cached_tokens</code> (depuis que prompt caching est devenu standard). L'attribut <code>cost</code> reste optionnel et controversé : peu de providers exposent un coût stable, et le calcul côté SDK est volatile.</p><p>C'est la dimension qui alimente la métrique <code>gen_ai.client.token.usage</code>, l'histogramme standard que tous les dashboards reprennent.</p>"
+    },
+    "agent": {
+      title: "gen_ai.agent.* — release candidate",
+      eyebrow: "Statut RC depuis mars 2026",
+      body: "<p>La famille qui décrit la boucle agent. <code>agent.id</code> (UUID stable d'une instance), <code>agent.name</code> (nom logique : « researcher », « executor »), <code>agent.type</code>, <code>agent.description</code>, <code>agent.tool_calls</code> (array des outils demandés sur ce tour).</p><p>RC depuis mars 2026 — devrait sceller fin 2026 ou début 2027. Le blocage principal est la convention multi-agent : la SIG attend que les frameworks (LangGraph, OpenAI Agents SDK, ADK, Claude Agent SDK) convergent avant de figer.</p>"
+    },
+    "evaluation": {
+      title: "gen_ai.evaluation.* — release candidate",
+      eyebrow: "Statut RC depuis mars 2026",
+      body: "<p>Le pivot conceptuel : l'éval devient un span enfant du span jugé. Attributs : <code>evaluation.name</code>, <code>evaluation.score</code> (0-1 normalisé), <code>evaluation.threshold</code>, <code>evaluation.passed</code> (bool), et la sous-famille <code>evaluation.judge.*</code> quand un LLM-as-judge est utilisé.</p><p>Débat actif : flat (un seul JSON libre) vs typé (familles judge/rubric/dataset). Les vendeurs spécialisés poussent pour typé, les APM généralistes pour flat. Vote prévu fin 2026.</p>"
+    },
+    "compaction": {
+      title: "gen_ai.compaction.* — draft",
+      eyebrow: "Statut DRAFT depuis janvier 2026",
+      body: "<p>Le front le plus jeune. Rend observable ce qui se passe entre deux tours d'agent quand le contexte passe de 200 k à 8 k tokens. Attributs : <code>operation</code> (summarize / evict / hierarchical / retrieve), <code>strategy.name</code>, <code>input_tokens</code> / <code>output_tokens</code> / <code>ratio</code>, <code>retained_segments</code>, et — pivot — <code>judge.score</code> qui rend la compaction la première opération nativement jugée.</p><p>Pas de release attendue avant mi-2027. Voir le dossier <a href=\"../compaction-agentique/\">compaction-agentique</a> pour la taxonomie côté algorithmes.</p>"
+    }
+  },
+  "schema-02": {
+    "span-start": {
+      title: "1 — Span start",
+      eyebrow: "Ouverture du span",
+      body: "<p>Le SDK OTel auto-instrumenté ouvre le span dès l'entrée dans le wrapper d'appel LLM. Le span est nommé <code>chat &lt;model&gt;</code>, son kind est CLIENT (l'application est cliente du service LLM externe). Les attributs <code>gen_ai.system</code> (provider — openai, anthropic, azure.ai.inference, …) et <code>gen_ai.operation.name</code> (chat / text_completion / embeddings) sont obligatoires dès cette étape.</p><p>Le chrono démarre. Pour un appel non-streamé, sa fin sera triviale. Pour un appel streamé, la définition de la fin sera la première question architecturale (voir étape TTFT).</p>"
+    },
+    "request-emit": {
+      title: "2 — Request emitted",
+      eyebrow: "Attributs côté demande",
+      body: "<p>Tous les attributs <code>gen_ai.request.*</code> sont posés sur le span : modèle visé, paramètres d'inférence (temperature, max_tokens, top_p, stop_sequences). Si le capture flag <code>OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT</code> est on, l'événement <code>gen_ai.user.message</code> ajoute le prompt en log corrélé — désactivé par défaut pour des raisons de coût et de confidentialité.</p><p>La requête HTTP part vers le provider. Le span attend.</p>"
+    },
+    "ttft": {
+      title: "3 — Time-to-first-token (TTFT)",
+      eyebrow: "Métrique séparée",
+      body: "<p>Pour un appel streamé, le premier delta arrive. C'est le moment où l'utilisateur voit les premiers mots — la métrique perçue de réactivité. La métrique <code>gen_ai.client.time_to_first_token</code> est émise séparément.</p><p>Erreur classique observée sur les SDK 2023-2024 : marquer le span comme terminé à ce point (duration = aller-retour HTTP). Les p95 paraissaient excellents alors que l'utilisateur attendait 8 secondes pour la fin de la réponse. La convention OTel a tranché en mai 2024 : <code>duration = time-to-last-token</code>, et TTFT est une métrique distincte.</p>"
+    },
+    "response-end": {
+      title: "4 — Response complete",
+      eyebrow: "Attributs côté réponse",
+      body: "<p>Le dernier token arrive. Le SDK pose les attributs <code>gen_ai.response.*</code> (id, model effectif, finish_reasons) et <code>gen_ai.usage.*</code> (input_tokens, output_tokens, total_tokens, cached_tokens si applicable).</p><p>Si capture flag on, l'événement <code>gen_ai.assistant.message</code> ajoute la completion en log corrélé. Pour un tool call, l'attribut <code>finish_reasons=[\"tool_calls\"]</code> signale qu'un span <code>gen_ai.tool.execution</code> va suivre.</p>"
+    },
+    "span-end": {
+      title: "5 — Span end & export",
+      eyebrow: "Fermeture et export",
+      body: "<p>Le SDK ferme le span. <code>duration = end - start</code>, <code>status.code</code> est posé (OK, ERROR avec le code provider). Le span part dans le batch d'export OTLP vers le collector, qui le route vers le backend (Honeycomb, Datadog, New Relic, Grafana Tempo, …).</p><p>Côté backend, deux métriques sont automatiquement agrégées sans configuration applicative : <code>gen_ai.client.operation.duration</code> (histogramme) et <code>gen_ai.client.token.usage</code> (histogramme). Les dashboards GenAI génériques fonctionnent à partir de ces deux signaux.</p>"
+    }
+  },
+  "schema-03": {
+    "agent-root": {
+      title: "gen_ai.agent.invocation (span racine)",
+      eyebrow: "Famille agent — RC mars 2026",
+      body: "<p>Le span parent qui englobe toute la boucle agent. Attributs clés : <code>agent.id</code> (UUID stable de l'instance), <code>agent.name</code> (« researcher »), <code>agent.type</code> (« tool_using »). Sa <code>duration</code> est end-to-end : du premier appel LLM au dernier token de la synthèse finale.</p><p>Sur une trace agent typique (Claude Code, Devin, Manus), ce span dure de quelques secondes à plusieurs minutes. C'est le « parent » que toute UI APM affiche en haut de la trace.</p>"
+    },
+    "chat-1": {
+      title: "Premier appel LLM — planning",
+      eyebrow: "Enfant gen_ai.client.chat",
+      body: "<p>Premier span <code>gen_ai.client.chat</code> enfant. C'est le tour de planification : l'agent reçoit l'instruction utilisateur, raisonne, et demande des tool_calls.</p><p>Le <code>finish_reasons</code> sera <code>[\"tool_calls\"]</code>. Les attributs <code>usage.input_tokens</code> / <code>output_tokens</code> sont posés. Sur un agent moyen, ce premier tour consomme 30-50% des tokens totaux car l'instruction est la plus longue.</p>"
+    },
+    "tool-read": {
+      title: "Tool execution — read_file",
+      eyebrow: "Enfant gen_ai.tool.execution",
+      body: "<p>Span <code>gen_ai.tool.execution</code>. Attributs : <code>tool.name=\"read_file\"</code>, <code>tool.type=\"function\"</code>, <code>tool.call_id=\"tool_12\"</code> (id donné par le LLM dans son JSON tool_call, qui sert à matcher la réponse).</p><p>Duration courte (12 ms ici) — c'est juste un read filesystem. Pour un retrieval vectoriel ou un appel API externe, la durée serait plus longue et l'arbre OTel descendrait dans des sous-spans HTTP.</p>"
+    },
+    "tool-search": {
+      title: "Tool execution — search_docs",
+      eyebrow: "Enfant gen_ai.tool.execution",
+      body: "<p>Second tool span, parallèle au précédent. Le LLM a demandé read_file ET search_docs dans le même tour ; le harness les exécute en parallèle. <code>tool.type=\"retrieval\"</code> indique que c'est un retrieval (RAG), pas une simple fonction — la convention distingue function / code_interpreter / retrieval / computer_use.</p><p>85 ms ici car la recherche vectorielle a touché un index distant.</p>"
+    },
+    "chat-2": {
+      title: "Second appel LLM — réflexion après outils",
+      eyebrow: "Enfant gen_ai.client.chat",
+      body: "<p>Deuxième span chat. L'agent a reçu les tool_results (read_file → contenu du fichier, search_docs → liste de chunks). Il les ingère, réfléchit, et produit la synthèse finale.</p><p>Plus de tokens (580 ms vs 320 ms du premier appel) car le contexte est plus chargé : prompt original + tool calls + tool results. Le <code>finish_reasons</code> sera <code>[\"stop\"]</code>.</p>"
+    },
+    "multi-agent-options": {
+      title: "Option 1 — span parent unique",
+      eyebrow: "Pratique par défaut",
+      body: "<p>Quand l'agent A délègue à l'agent B, B devient simplement un child span de A. C'est la pratique par défaut de la plupart des SDK (LangGraph, OpenAI Agents SDK, AutoGen).</p><p>Avantage : la trace reste un arbre cohérent, lisible dans n'importe quelle UI APM. Inconvénient : si B échoue, c'est A qu'on voit en haut. La hiérarchie de spans ment sur la responsabilité.</p>"
+    },
+    "multi-agent-link": {
+      title: "Option 2 — span link OTel",
+      eyebrow: "Plus fidèle, moins lisible",
+      body: "<p>L'agent B démarre un span racine indépendant. Le lien causal avec A est exprimé via un <code>link</code> (attribut natif OTel, qui existe depuis la spec initiale).</p><p>Avantage : représentation fidèle de la causalité — A et B sont co-responsables, pas hiérarchiques. Inconvénient : les UIs APM (Datadog, Grafana Tempo, Honeycomb) rendent mal les links. Les traces apparaissent fragmentées et difficiles à corréler à l'œil nu.</p>"
+    },
+    "multi-agent-parent": {
+      title: "Option 3 — agent.parent_id",
+      eyebrow: "Proposé par Microsoft, non voté",
+      body: "<p>Compromis proposé par Microsoft en avril 2026. La hiérarchie de spans reste classique (B = child de A pour les UIs) mais un attribut logique <code>gen_ai.agent.parent_id</code> code la relation agent-niveau séparément.</p><p>Permettrait de filtrer dans Honeycomb « tous les spans où agent.id=B mais agent.parent_id=A » sans casser la lisibilité de l'arbre. Non encore voté — le SIG attend que les frameworks convergent.</p>"
+    }
+  },
+  "schema-04": {
+    "legacy-side": {
+      title: "Pattern legacy — éval en sidecar",
+      eyebrow: "Avant 2026",
+      body: "<p>Les évals vivaient à part. La trace de production allait dans l'APM (Honeycomb, Datadog) ; les prompts et complétions étaient exportés en batch nuit vers un job d'éval séparé qui calculait BLEU/ROUGE/F1 ou rejouait contre des jeux de référence.</p><p>Deux conséquences : latence de corrélation de 24h (impossible de réagir en temps réel), et drill-down impossible du dashboard d'éval vers le span d'origine — quand un score baissait, retrouver les exemples concrets demandait un pipeline de jointure manuel.</p>"
+    },
+    "new-side": {
+      title: "Pattern nouveau — éval-as-span (RC)",
+      eyebrow: "Convention gen_ai.evaluation.*",
+      body: "<p>Les évals deviennent des spans enfants du span jugé. Chaque critère (hallucination_check, toxicity_check, answer_relevance) est un span séparé avec ses attributs propres : name, score, threshold, passed, judge.model.</p><p>L'application décide quelles évals lancer ; le span parent les attend ou les lance en async. Trois usages débloqués : filtrage temps réel (re-routing si failed), corrélation immédiate (drill du dashboard au prompt), et audit trail régulatoire (les évals font partie du record, art. 12 AI Act).</p>"
+    },
+    "debate-flat": {
+      title: "Débat : un attribut libre",
+      eyebrow: "Position APM généralistes",
+      body: "<p>Les APM généralistes (Datadog, New Relic) poussent pour un seul attribut <code>gen_ai.evaluation.metadata</code> en JSON libre. Moins de cardinalité à modéliser côté backend, plus de souplesse pour les vendeurs spécialisés qui peuvent y mettre ce qu'ils veulent.</p><p>Inconvénient : impossible de filtrer cross-vendor (« montre-moi tous les spans dont la rubrique X était évaluée »).</p>"
+    },
+    "debate-typed": {
+      title: "Débat : familles typées",
+      eyebrow: "Position vendeurs éval",
+      body: "<p>Langfuse, Arize, Braintrust, Patronus poussent pour des familles typées : <code>evaluation.judge.*</code>, <code>evaluation.rubric.*</code>, <code>evaluation.dataset.*</code>. C'est ce qu'ils émettent déjà sous leur propre schéma OpenInference — le pont vers OTel serait mécanique.</p><p>Avantage : queries cross-vendor possibles, dashboards portables. Inconvénient : plus rigide, plus de cardinalité à indexer. Vote final prévu fin 2026.</p>"
+    }
+  },
+  "schema-05": {
+    "before-context": {
+      title: "Avant compaction — contexte complet",
+      eyebrow: "203 412 tokens",
+      body: "<p>Un agent long-running (Claude Code en mode --continue, Devin sur tâche multi-heure) accumule turn après turn. Au bout de 37 tours, le contexte fait 203 412 tokens — au-delà de la fenêtre native de la plupart des modèles.</p><p>Avant le draft OTel compaction, ce moment était invisible dans les traces : le LLM-call suivant émettait un prompt « réduit » sans signaler qu'une opération de compaction avait précédé. Impossible d'auditer ce qui avait été perdu.</p>"
+    },
+    "after-context": {
+      title: "Après compaction — contexte réduit",
+      eyebrow: "8 240 tokens (ratio 0.04)",
+      body: "<p>La stratégie « keep last 3 turns + summarize the rest » a réduit le contexte à 8 240 tokens : un summary segment dense + les trois derniers tours retenus intacts.</p><p>Le ratio 0.04 est typique pour Claude Code <code>/compact</code> sur un long thread. Cursor ou Mem0 visent des ratios proches (0.03 à 0.08). MemGPT/Letta avec leur paging hiérarchique peuvent descendre plus bas mais sur des sessions plus longues.</p>"
+    },
+    "attrs-shape": {
+      title: "Forme de la réduction",
+      eyebrow: "Famille draft",
+      body: "<p>Première famille d'attributs du draft : ce qui décrit la forme de l'opération. <code>operation</code> énumère summarize / evict (StreamingLLM, H2O, Quest) / hierarchical (MemGPT, Letta) / retrieve (Mem0, Zep). <code>strategy.name</code> nomme l'implémentation précise.</p><p>Les compteurs <code>input_tokens</code>, <code>output_tokens</code>, <code>ratio</code> permettent les requêtes agrégées : « ratio moyen de compaction sur les agents Claude Code de la dernière semaine ».</p>"
+    },
+    "attrs-content": {
+      title: "Contenu retenu",
+      eyebrow: "Famille draft",
+      body: "<p>Seconde famille : ce qui décrit ce qui a survécu. <code>retained_segments</code> (4 ici : summary + 3 derniers tours), <code>evicted_segments</code> (33 turns expulsés). L'événement <code>gen_ai.compaction.summary</code> peut transporter le résumé produit — gated par capture flag, off par défaut pour des raisons de confidentialité (le summary peut contenir des données utilisateur).</p>"
+    },
+    "attrs-judge": {
+      title: "Fidélité jugée — pivot",
+      eyebrow: "Famille draft, optionnelle",
+      body: "<p>Troisième famille — la plus innovante. <code>judge.score</code> (0-1), <code>judge.model</code> (qui a jugé), <code>judge.method</code> (fact_recall, semantic_similarity, …). Calculé par un LLM-as-judge ou une métrique programmatique (recall sur un set de faits-clés extraits avant compaction).</p><p>C'est la première fois qu'une opération est nativement instrumentée avec son propre verdict — un LLM-call standard est neutre (le span ne dit pas « bonne réponse »), mais une compaction porte un score de fidélité. Le débat porte sur l'obligation : la SIG penche pour optionnel.</p>"
+    }
+  },
+  "schema-06": {
+    "anthropic-sdk": {
+      title: "Anthropic SDK / Claude Agent SDK",
+      eyebrow: "SDK vendeur LLM — avril 2026",
+      body: "<p>Le SDK Python d'Anthropic émet <code>gen_ai.*</code> nativement depuis la version 0.45 (avril 2026). Le Claude Agent SDK ajoute la couche agent (<code>gen_ai.agent.*</code>, <code>gen_ai.tool.*</code>) avec un effort particulier sur la hiérarchie de spans pour les tool calls multi-niveaux.</p><p>Versions Java et Go suivront fin 2026. Pas d'extension OpenInference — Anthropic mise tout sur la convention OTel native.</p>"
+    }
+  }
+};
+    /* shape:
+      {
+        'schema-01': {
+          'region-id': { title: '...', body: '<p>...</p>', eyebrow: 'Schéma 1' },
+          ...
+        },
+        ...
+      }
+    */
+
+    const TOOLTIPS = {
+  "ttft": "Time to first token : délai entre l'envoi de la requête et l'arrivée du premier token de la réponse. Métrique critique pour l'expérience utilisateur en streaming.",
+  "llm-judge": "LLM-as-judge : utilisation d'un LLM pour scorer la qualité d'une autre sortie LLM (factualité, pertinence, ton). Permet l'évaluation à l'échelle, mais introduit ses propres biais.",
+  "mcp": "Model Context Protocol : standard ouvert de communication entre LLMs et outils externes, lancé par Anthropic en novembre 2024. Adopté par OpenAI, Google, Microsoft en 2025.",
+  "otlp": "OpenTelemetry Protocol : protocole standardisé (gRPC ou HTTP) pour transporter les signaux d'observabilité (traces, metrics, logs) vers un backend.",
+  "melt": "Metrics, Events, Logs, Traces : les quatre signaux fondamentaux de l'observabilité moderne, popularisés par l'écosystème cloud-native.",
+  "rag": "Retrieval-Augmented Generation : technique qui enrichit le contexte d'un LLM avec des documents récupérés dynamiquement depuis une base vectorielle.",
+  "slo": "Service Level Objective : cible mesurable de qualité de service (ex. 99,9 % des réponses sous 2 secondes). Base contractuelle de l'observabilité opérationnelle."
+};
+    /* shape: { 'CoT': 'Chain-of-Thought : ...', ... } */
+
+    const SOURCES = [
+  {
+    "n": 1,
+    "citation": "OpenTelemetry, <em>AI Agent Observability Standards</em>, OpenTelemetry Blog, mars 2025.",
+    "url": "https://opentelemetry.io/blog/2025/ai-agent-observability/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 2,
+    "citation": "InsightFinder, <em>AI Observability vs Traditional Monitoring</em>, décembre 2025.",
+    "url": "https://insightfinder.com/blog/ai-observability-vs-traditional-monitoring/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 3,
+    "citation": "IBM Think, <em>Observability Trends 2026</em>, IBM Institute for Business Value, mars 2026.",
+    "url": "https://www.ibm.com/think/insights/observability-trends",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 4,
+    "citation": "Dynatrace, <em>Six Observability Predictions for 2026</em>, décembre 2025.",
+    "url": "https://www.dynatrace.com/news/blog/six-observability-predictions-for-2026/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 5,
+    "citation": "Kore.ai, <em>AI Observability: Monitoring &amp; Governing AI Agents</em>, mars 2026.",
+    "url": "https://www.kore.ai/blog/what-is-ai-observability",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 6,
+    "citation": "Voiceflow, <em>What Is AI Agent Observability? A 2026 Guide</em>, mars 2026.",
+    "url": "https://www.voiceflow.com/blog/what-is-ai-agent-observability",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 7,
+    "citation": "Anthropic, <em>Building Effective Agents</em>, whitepaper, décembre 2024.",
+    "url": "https://www.anthropic.com/research/building-effective-agents",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 8,
+    "citation": "Groundcover, <em>AI Agent Observability Guide: Telemetry, Traces, Metrics</em>, février 2026.",
+    "url": "https://www.groundcover.com/learn/observability/ai-agent-observability",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 9,
+    "citation": "N-iX, <em>AI Agent Observability: Practical Framework</em>, décembre 2025.",
+    "url": "https://www.n-ix.com/ai-agent-observability/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 10,
+    "citation": "Langfuse, <em>AI Agent Observability, Tracing &amp; Evaluation</em>, février 2026.",
+    "url": "https://langfuse.com/blog/2024-07-ai-agent-observability-with-langfuse",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 11,
+    "citation": "OpenTelemetry, <em>GenAI Semantic Conventions (specification)</em>, version 1.37, 2026.",
+    "url": "https://opentelemetry.io/docs/specs/semconv/gen-ai/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 12,
+    "citation": "OpenTelemetry, <em>GenAI Agent Spans, Model Spans, Tool Spans, Events</em>, 2026.",
+    "url": "https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-agent-spans/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 13,
+    "citation": "Datadog, <em>LLM Observability + OTel GenAI Semantic Convention support</em>, décembre 2025.",
+    "url": "https://www.datadoghq.com/blog/llm-otel-semantic-convention/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 14,
+    "citation": "Braintrust, <em>AI Observability Tools: Buyer's Guide 2026</em>, janvier 2026.",
+    "url": "https://www.braintrust.dev/articles/best-ai-observability-tools-2026",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 15,
+    "citation": "GetMaxim, <em>Top 5 AI Agent Observability Platforms 2026</em>, décembre 2025.",
+    "url": "https://www.getmaxim.ai/articles/top-5-ai-agent-observability-platforms-in-2026/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 16,
+    "citation": "Traceloop, <em>OpenLLMetry — auto-instrumentation OTel pour 44+ providers LLM</em>, GitHub, 2026.",
+    "url": "https://github.com/traceloop/openllmetry",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 17,
+    "citation": "OpenLIT, <em>OpenLIT SDK — auto-instrumentation 1 ligne LLMs/vector DBs/GPUs</em>, GitHub, 2026.",
+    "url": "https://github.com/openlit/openlit",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 18,
+    "citation": "Gartner, <em>Magic Quadrant for Observability Platforms 2025</em>, juillet 2025.",
+    "url": "https://www.gartner.com/en/documents/6688834",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 19,
+    "citation": "OneUptime, <em>AI Workloads Observability: Cost Crisis</em>, avril 2026.",
+    "url": "https://oneuptime.com/blog/ai-workloads-observability-cost-crisis",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 20,
+    "citation": "Dynatrace, <em>Dynatrace Intelligence — Agentic OS announcement at Perform 2026</em>, février 2026.",
+    "url": "https://www.dynatrace.com/news/blog/dynatrace-intelligence-platform/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 21,
+    "citation": "Splunk, <em>Q1 2026 Observability Update — AI Agent Monitoring</em>, février 2026.",
+    "url": "https://www.splunk.com/en_us/blog/observability/splunk-observability-ai-agent-monitoring-innovations.html",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 22,
+    "citation": "Grafana Labs, <em>Leader Gartner Magic Quadrant Observability 2025 — #1 Completeness of Vision</em>, 2025.",
+    "url": "https://grafana.com/about/press/2025/07/",
+    "accessed": "2026-04-30"
+  }
+];
+    window.SCHEMAS = SCHEMAS;
+
+  </script>
+  <script src="/assets/dossier-app.js" defer></script>
+</body>
+</html>
