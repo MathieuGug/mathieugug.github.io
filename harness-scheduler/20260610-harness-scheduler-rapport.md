@@ -209,11 +209,11 @@ Les MCP servers en production 2026 documentent généralement leur degré d'idem
 
 ## 6. L'état de l'art 2026
 
-Huit systèmes dominent le paysage 2026 — cinq côté agents-code (Claude Code, Cursor, Codex CLI, OpenHands, Aider), un côté framework ouvert (LangGraph), deux côté agents managés multi-domaines (Devin, Manus). Leur politique de scheduling diffère substantiellement.
+Huit systèmes plus un nouveau venu dominent le paysage 2026 — cinq côté agents-code (Claude Code, Cursor, Codex CLI, OpenHands, Aider), un IDE agentique Google (Antigravity), un côté framework ouvert (LangGraph), deux côté agents managés multi-domaines (Devin, Manus). Leur politique de scheduling diffère substantiellement.
 
-![Matrice 8 systèmes × 6 dimensions de scheduling|1200](images/20260610-05-matrice-systemes.svg)
+![Matrice 9 systèmes × 6 dimensions de scheduling|1200](images/20260610-05-matrice-systemes.svg)
 
-*Schéma 5 — Huit harness × six dimensions : parallélisation, DAG-planning, budget multi-axes, retry-aware, back-pressure, scheduler appris. Les cellules pleines indiquent un câblage natif, les demi-cellules un support partiel, les vides l'absence.*
+*Schéma 5 — Neuf harness × six dimensions : parallélisation, DAG-planning, budget multi-axes, retry-aware, back-pressure, scheduler appris. Les cellules pleines indiquent un câblage natif, les demi-cellules un support partiel, les vides l'absence.*
 
 ### 6.1 Claude Code
 
@@ -227,30 +227,36 @@ Architecture similaire à Claude Code côté boucle, avec une couche IDE — l'�
 
 Annoncé par OpenAI en avril 2025, Codex CLI est l'agent ouvert open-source d'OpenAI — un homologue direct de Claude Code, bâti sur l'API Responses et les modèles GPT. Parallel-batch oui (Responses API supporte les appels d'outils parallèles), DAG non, budgets tokens explicites, retry-policy déléguée à la couche API. Pas de back-pressure documenté, pas de scheduler appris[^16]. Son intérêt par rapport à Claude Code : l'open-source. Le code de la boucle scheduler est lisible, forkable, et a généré une dérivée vivante (variantes communautaires qui expérimentent DAG-planning et budgets multi-axes).
 
-### 6.4 OpenHands
+### 6.4 Antigravity
+
+Annoncé par Google en novembre 2025, Antigravity est l'IDE agentique de Google bâti sur Gemini 3 — un fork de VSCode qui ne pilote pas seulement l'éditeur mais aussi un terminal sandboxé et un navigateur. C'est l'implémentation la plus proche d'un agent généraliste *desktop-side* en environnement intégré. Parallel tool use natif (Gemini 3 supporte le parallel function calling), DAG-planning partiel via la décomposition multi-surface (le scheduler distribue les actions entre éditeur, terminal et navigateur). Budgets côté Google côté serveur, retry géré par l'API. Pas de back-pressure documenté.
+
+Son intérêt : Antigravity fait du *parallélisme inter-surface* — pendant que l'éditeur fait un edit, le navigateur peut continuer à scraper et le terminal à compiler. C'est une variante intéressante du parallel-batch, étendue à des outils hétérogènes par nature (bureautique vs HTTP vs CLI).
+
+### 6.5 OpenHands
 
 Le harness ouvert le plus structuré côté scheduler. L'`EventStream` est une queue typée, le scheduler distingue explicitement les actions de l'agent et les observations[^5]. Support natif des budgets multi-axes (tokens, temps). DAG-planning partiel via la microagent architecture. Retry policy paramétrable. Pas de scheduler appris.
 
-### 6.5 Aider
+### 6.6 Aider
 
 Léger, séquentiel par design. Pas de parallélisation ; le pari est qu'un agent de codage interactif a peu à gagner du batch (l'humain valide à chaque tour). Budget tokens via context window naïf. Retry léger. Pas de DAG ni de scheduler appris. C'est délibéré : la lisibilité du flux prime sur la performance brute.
 
-### 6.6 LangGraph
+### 6.7 LangGraph
 
 Pas un agent en soi mais un *framework* pour construire des schedulers. Sa primitive est le DAG : nœuds (étapes), arêtes (transitions conditionnelles), state shared. Parallélisation native sur les nœuds indépendants. Budgets et retries sont laissés à l'utilisateur (configurables via les nœuds). C'est le framework qui pousse le plus loin la sophistication du scheduler explicite[^6].
 
-### 6.7 Devin
+### 6.8 Devin
 
 Agent managé propriétaire (Cognition AI). Architecture séquentielle pure documentée publiquement[^11], horizon long (sessions multi-heures). Budgets implicites côté Cognition. Retry géré côté plateforme. Le pari : pour les sessions longues, la sophistication du DAG est moins importante que la stabilité de l'horizon.
 
-### 6.8 Manus
+### 6.9 Manus
 
 L'autre agent managé multi-domaines. Public retex documente une architecture multi-machines : sandbox parallèle pour les tâches indépendantes (recherche web, analyse, codage), avec un coordinateur central qui orchestre les retours[^12]. C'est l'implémentation la plus proche d'un DAG en production sur agent managé. Budgets multi-axes documentés (tokens / latence / $). Pas de scheduler appris au sens RL — mais des politiques d'ordonnancement heuristiques fortement codées.
 
-### 6.9 Lecture transverse
+### 6.10 Lecture transverse
 
 Trois clusters émergent :
-- **Riche par tour, séquentiel par horizon** : Claude Code, Cursor, Codex CLI, Aider — parallélisent localement, séquentialisent l'arc.
+- **Riche par tour, séquentiel par horizon** : Claude Code, Cursor, Codex CLI, Antigravity, Aider — parallélisent localement (et entre surfaces pour Antigravity), séquentialisent l'arc.
 - **DAG explicite, fragmenté** : OpenHands, LangGraph — exposent le DAG comme primitive.
 - **Plateforme propriétaire, opaque** : Devin, Manus — encapsulent la politique côté serveur, exposent l'agent comme boîte noire.
 

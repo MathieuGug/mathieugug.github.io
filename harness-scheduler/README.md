@@ -2,7 +2,7 @@
 
 > 10 juin 2026 — Mathieu Guglielmino
 
-Deep dive sur la couche scheduler du harness agentique : selector, queue, budget tracker, parallelizer, retry / timeout. Cinq stratégies (sequential, parallel-batch, DAG-planned, speculative, anytime), trois budgets orthogonaux (tokens × latence × $), matrice retry × idempotence à quatre quadrants, matrice de sept harness production (Claude Code, Cursor, OpenHands, Aider, LangGraph, Devin, Manus), trajectoires 2026-2028.
+Deep dive sur la couche scheduler du harness agentique : selector, queue, budget tracker, parallelizer, retry / timeout. Cinq stratégies (sequential, parallel-batch, DAG-planned, speculative, anytime), trois budgets orthogonaux (tokens × latence × $), matrice retry × idempotence à quatre quadrants, matrice de neuf harness production (Claude Code, Cursor, Codex CLI, Antigravity, OpenHands, Aider, LangGraph, Devin, Manus), trajectoires 2026-2028.
 
 ## Formats
 
@@ -15,5 +15,5 @@ Deep dive sur la couche scheduler du harness agentique : selector, queue, budget
 2. **Cinq stratégies de scheduling** — taxonomie radiale.
 3. **Triangle des budgets** — tokens × latence × $ + politique de dégradation.
 4. **Matrice retry × idempotence** — quatre quadrants.
-5. **Sept harness × six dimensions** — comparaison production.
+5. **Neuf harness × six dimensions** — comparaison production.
 6. **Trajectoires 2026-2028** — quatre futurs parallèles.
