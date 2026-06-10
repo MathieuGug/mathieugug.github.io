@@ -1,10 +1,10 @@
 # Le scheduler du harness agentique
 
-> **Le scheduler — la couche qui décide quel outil appeler, dans quel ordre, avec quels budgets et quelle file d'attente — est devenu le maillon load-bearing qui détermine la latence, le coût et la fiabilité d'un agent en production. La frontière 2026 sort du tool-calling séquentiel piloté par le LLM vers une orchestration explicite : DAG planifié, exécution parallèle, budgets multi-axes, retries adaptatifs idempotents, back-pressure — bientôt scheduler appris.** — 10 juin 2026, Mathieu Guglielmino
+> **Le scheduler — la couche qui décide quel outil appeler, dans quel ordre, avec quels budgets et quelle file d'attente — est devenu le maillon décisif qui détermine la latence, le coût et la fiabilité d'un agent en production. La frontière 2026 sort du tool-calling séquentiel piloté par le LLM vers une orchestration explicite : DAG planifié, exécution parallèle, budgets multi-axes, retries adaptatifs idempotents, back-pressure — bientôt scheduler appris.** — 10 juin 2026, Mathieu Guglielmino
 
 ## Synthèse exécutive
 
-- **Le scheduler est devenu le bottleneck mesurable des agents en production.** Sur SWE-bench Verified, la même paire modèle × harness peut varier de 32 % à 49 % de réussite selon la politique de scheduling — la décision « quel outil, quand, en combien d'essais » pèse plus que le passage de Sonnet à Opus dans la même classe[^1][^10].
+- **Le scheduler est devenu le goulot d'étranglement mesurable des agents en production.** Sur SWE-bench Verified, la même paire modèle × harness peut varier de 32 % à 49 % de réussite selon la politique de scheduling — la décision « quel outil, quand, en combien d'essais » pèse plus que le passage de Sonnet à Opus dans la même classe[^1][^10].
 - **Le tool-calling séquentiel pur est un anti-pattern 2026.** Anthropic, OpenAI et Google ont tous activé le *parallel tool use* par défaut sur leurs API depuis 2024 ; Claude Code émet jusqu'à six appels par tour quand les outils sont commutatifs. Le gain typique : ==2,3× à 3,1× sur la latence end-to-end== d'un cycle d'agent multi-outils, sans changement de modèle[^2][^3].
 - **Les budgets ne sont plus monolithiques.** Les harness sérieux maintiennent trois compteurs orthogonaux — tokens, latence wall-clock, dollars — et dégradent proprement (anytime) plutôt que de couper sec. Manus public retex (mars 2026) documente une perte de qualité de seulement 4 points quand le budget tokens passe de 200 k à 50 k, *à condition* que la politique de dégradation soit explicite[^11][^12].
 - **Idempotence et retry forment une matrice à quatre quadrants** qu'aucun framework grand public ne câble nativement. La majorité des incidents agent en production de 2025 (paiements doublons, fichiers réécrits, emails envoyés deux fois) viennent de retries sur des outils non-idempotents — un problème connu des systèmes distribués depuis vingt ans mais qui réapparaît tel quel dans le harness LLM[^7][^8].
@@ -24,7 +24,7 @@ Concrètement, à chaque tour d'agent, le harness reçoit du modèle un objet de
 
 Ces cinq questions paraissent triviales sur l'agent jouet de démo (une boucle ReAct[^4] avec un seul outil `search`). Elles deviennent le point de rupture économique sur l'agent réel de 2026 : Claude Code orchestre plus de 30 outils ; OpenHands ICLR 2025 documente 45 outils sur son cluster d'évaluation[^5] ; Manus en revendique « plusieurs centaines, organisés en namespaces »[^12]. Sur ces volumes, la politique de scheduling devient la variable de premier ordre.
 
-L'intuition la plus contre-intuitive : ==la qualité d'un agent est plus sensible à son scheduler qu'à son modèle de base==, à coût comparable. Princeton a publié en 2024 le matériel reproductible de SWE-bench Verified ; en croisant les harness publics (SWE-agent, Aider, OpenHands, AutoCodeRover) sur Claude Sonnet 3.7 puis Sonnet 4, le delta inter-harness (32 % vs 49 % de résolutions) dépasse le delta inter-modèles (49 % vs 56 % à harness constant)[^10]. La conclusion n'est pas que le modèle ne compte pas — elle est que **la couche scheduler récupère ou jette une part majeure de l'intelligence brute du modèle**.
+L'intuition la plus contre-intuitive : ==la qualité d'un agent est plus sensible à son scheduler qu'à son modèle de base==, à coût comparable. La conclusion n'est pas que le modèle ne compte pas — elle est que **la couche scheduler récupère ou jette une part majeure de l'intelligence brute du modèle**. Princeton a publié en 2024 le matériel reproductible de SWE-bench Verified ; en croisant les harness publics (SWE-agent, Aider, OpenHands, AutoCodeRover) sur Claude Sonnet 3.7 puis Sonnet 4, le delta inter-harness (32 % vs 49 % de résolutions) dépasse le delta inter-modèles (49 % vs 56 % à harness constant)[^10].
 
 ![Anatomie du scheduler — cinq sous-composants en pipeline|1200](images/20260610-01-anatomie-scheduler.svg)
 
@@ -209,11 +209,11 @@ Les MCP servers en production 2026 documentent généralement leur degré d'idem
 
 ## 6. L'état de l'art 2026
 
-Sept systèmes dominent le paysage 2026 — quatre côté agents-code (Claude Code, Cursor, OpenHands, Aider), un côté framework ouvert (LangGraph), deux côté agents managés multi-domaines (Devin, Manus). Leur politique de scheduling diffère substantiellement.
+Huit systèmes dominent le paysage 2026 — cinq côté agents-code (Claude Code, Cursor, Codex CLI, OpenHands, Aider), un côté framework ouvert (LangGraph), deux côté agents managés multi-domaines (Devin, Manus). Leur politique de scheduling diffère substantiellement.
 
-![Matrice 7 systèmes × 6 dimensions de scheduling|1200](images/20260610-05-matrice-systemes.svg)
+![Matrice 8 systèmes × 6 dimensions de scheduling|1200](images/20260610-05-matrice-systemes.svg)
 
-*Schéma 5 — Sept harness × six dimensions : parallélisation, DAG-planning, budget multi-axes, retry-aware, back-pressure, scheduler appris. Les cellules pleines indiquent un câblage natif, les demi-cellules un support partiel, les vides l'absence.*
+*Schéma 5 — Huit harness × six dimensions : parallélisation, DAG-planning, budget multi-axes, retry-aware, back-pressure, scheduler appris. Les cellules pleines indiquent un câblage natif, les demi-cellules un support partiel, les vides l'absence.*
 
 ### 6.1 Claude Code
 
@@ -223,32 +223,36 @@ Le harness le plus mûr côté parallélisation et budgets. Parallel-batch agres
 
 Architecture similaire à Claude Code côté boucle, avec une couche IDE — l'éditeur expose des outils contextuels (auto-suggestion, ligne courante, sélection). Parallélisation oui, DAG non, budgets gérés au niveau IDE (timeout par opération). Le retry est délégué à l'API du modèle sous-jacent.
 
-### 6.3 OpenHands
+### 6.3 Codex CLI
+
+Annoncé par OpenAI en avril 2025, Codex CLI est l'agent ouvert open-source d'OpenAI — un homologue direct de Claude Code, bâti sur l'API Responses et les modèles GPT. Parallel-batch oui (Responses API supporte les appels d'outils parallèles), DAG non, budgets tokens explicites, retry-policy déléguée à la couche API. Pas de back-pressure documenté, pas de scheduler appris[^16]. Son intérêt par rapport à Claude Code : l'open-source. Le code de la boucle scheduler est lisible, forkable, et a généré une dérivée vivante (variantes communautaires qui expérimentent DAG-planning et budgets multi-axes).
+
+### 6.4 OpenHands
 
 Le harness ouvert le plus structuré côté scheduler. L'`EventStream` est une queue typée, le scheduler distingue explicitement les actions de l'agent et les observations[^5]. Support natif des budgets multi-axes (tokens, temps). DAG-planning partiel via la microagent architecture. Retry policy paramétrable. Pas de scheduler appris.
 
-### 6.4 Aider
+### 6.5 Aider
 
 Léger, séquentiel par design. Pas de parallélisation ; le pari est qu'un agent de codage interactif a peu à gagner du batch (l'humain valide à chaque tour). Budget tokens via context window naïf. Retry léger. Pas de DAG ni de scheduler appris. C'est délibéré : la lisibilité du flux prime sur la performance brute.
 
-### 6.5 LangGraph
+### 6.6 LangGraph
 
 Pas un agent en soi mais un *framework* pour construire des schedulers. Sa primitive est le DAG : nœuds (étapes), arêtes (transitions conditionnelles), state shared. Parallélisation native sur les nœuds indépendants. Budgets et retries sont laissés à l'utilisateur (configurables via les nœuds). C'est le framework qui pousse le plus loin la sophistication du scheduler explicite[^6].
 
-### 6.6 Devin
+### 6.7 Devin
 
 Agent managé propriétaire (Cognition AI). Architecture séquentielle pure documentée publiquement[^11], horizon long (sessions multi-heures). Budgets implicites côté Cognition. Retry géré côté plateforme. Le pari : pour les sessions longues, la sophistication du DAG est moins importante que la stabilité de l'horizon.
 
-### 6.7 Manus
+### 6.8 Manus
 
 L'autre agent managé multi-domaines. Public retex documente une architecture multi-machines : sandbox parallèle pour les tâches indépendantes (recherche web, analyse, codage), avec un coordinateur central qui orchestre les retours[^12]. C'est l'implémentation la plus proche d'un DAG en production sur agent managé. Budgets multi-axes documentés (tokens / latence / $). Pas de scheduler appris au sens RL — mais des politiques d'ordonnancement heuristiques fortement codées.
 
-### 6.8 Lecture transverse
+### 6.9 Lecture transverse
 
 Trois clusters émergent :
-- **Heavy par tour, séquentiel par horizon** : Claude Code, Cursor, Aider — parallélisent localement, séquentialisent l'arc.
-- **Heavy DAG, fragmenté** : OpenHands, LangGraph — exposent le DAG comme primitive.
-- **Heavy plateforme, opaque** : Devin, Manus — encapsulent la politique côté serveur, exposent l'agent comme boîte noire.
+- **Riche par tour, séquentiel par horizon** : Claude Code, Cursor, Codex CLI, Aider — parallélisent localement, séquentialisent l'arc.
+- **DAG explicite, fragmenté** : OpenHands, LangGraph — exposent le DAG comme primitive.
+- **Plateforme propriétaire, opaque** : Devin, Manus — encapsulent la politique côté serveur, exposent l'agent comme boîte noire.
 
 Aucun n'a encore franchi le pas du **scheduler appris** — c'est la frontière 2027-2028.
 
@@ -278,7 +282,7 @@ L'aboutissement commercial. Une offre SaaS qui prend la politique de scheduling 
 
 ## 8. Conclusion
 
-Le scheduler du harness est passé en deux ans d'un détail d'implémentation à la couche load-bearing de l'agentic AI. Cinq sous-composants, cinq stratégies, trois budgets orthogonaux, une matrice de retry à quatre quadrants — ce qui ressemble à de la plomberie distribuée est en réalité la frontière de productivité.
+Le scheduler du harness est passé en deux ans d'un détail d'implémentation à la couche pivot de l'IA agentique. Cinq sous-composants, cinq stratégies, trois budgets orthogonaux, une matrice de retry à quatre quadrants — ce qui ressemble à de la plomberie distribuée est en réalité la frontière de productivité.
 
 ==Les harness qui gagnent en 2026 sont ceux qui rendent le scheduler explicite, observable et configurable== — pas ceux qui le laissent implicitement piloté par le LLM. La trajectoire 2027-2028 le rend appris : le LLM décide *quoi* faire, mais une politique apprise décide *comment*, *quand*, *à quel coût*. Cette séparation des responsabilités — déjà familière en systèmes distribués depuis vingt ans — est la prochaine vague de maturation du harness.
 

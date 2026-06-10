@@ -651,12 +651,12 @@
 
     <main id="report">
 <h1 class="report-title">Le scheduler du harness agentique</h1>
-      <p class="lead">Le scheduler — la couche qui décide quel outil appeler, dans quel ordre, avec quels budgets et quelle file d'attente — est devenu le maillon load-bearing qui détermine la latence, le coût et la fiabilité d'un agent en production. La frontière 2026 sort du tool-calling séquentiel piloté par le LLM vers une orchestration explicite : DAG planifié, exécution parallèle, budgets multi-axes, retries adaptatifs idempotents, back-pressure — bientôt <em>scheduler appris</em>.</p>
+      <p class="lead">Le scheduler — la couche qui décide quel outil appeler, dans quel ordre, avec quels budgets et quelle file d'attente — est devenu le maillon décisif qui détermine la latence, le coût et la fiabilité d'un agent en production. La frontière 2026 sort du tool-calling séquentiel piloté par le LLM vers une orchestration explicite : DAG planifié, exécution parallèle, budgets multi-axes, retries adaptatifs idempotents, back-pressure — bientôt <em>scheduler appris</em>.</p>
       <p class="byline"><em>10 juin 2026 — Mathieu Guglielmino</em></p>
 
       <h2 id="synthese-executive">Synthèse exécutive</h2>
       <ul>
-        <li><strong>Le scheduler est devenu le bottleneck mesurable des agents en production.</strong> Sur <span class="term" data-tooltip="Benchmark Princeton agentic-coding sur 2 294 issues GitHub réelles ; version Verified = sous-ensemble 500 issues filtrées par annotateurs humains pour validité.">SWE-bench Verified</span>, la même paire modèle × harness peut varier de 32 % à 49 % de réussite selon la politique de scheduling — la décision « quel outil, quand, en combien d'essais » pèse plus que le passage de Sonnet à Opus dans la même classe<a class="cite" data-cite="1" href="#source-1">1</a><a class="cite" data-cite="10" href="#source-10">10</a>.</li>
+        <li><strong>Le scheduler est devenu le goulot d'étranglement mesurable des agents en production.</strong> Sur <span class="term" data-tooltip="Benchmark Princeton agentic-coding sur 2 294 issues GitHub réelles ; version Verified = sous-ensemble 500 issues filtrées par annotateurs humains pour validité.">SWE-bench Verified</span>, la même paire modèle × harness peut varier de 32 % à 49 % de réussite selon la politique de scheduling — la décision « quel outil, quand, en combien d'essais » pèse plus que le passage de Sonnet à Opus dans la même classe<a class="cite" data-cite="1" href="#source-1">1</a><a class="cite" data-cite="10" href="#source-10">10</a>.</li>
         <li><strong>Le tool-calling séquentiel pur est un anti-pattern 2026.</strong> Anthropic, OpenAI et Google ont tous activé le <em>parallel tool use</em> par défaut sur leurs API depuis 2024 ; Claude Code émet jusqu'à six appels par tour quand les outils sont commutatifs. Le gain typique : <mark>2,3× à 3,1× sur la latence end-to-end</mark> d'un cycle d'agent multi-outils, sans changement de modèle<a class="cite" data-cite="2" href="#source-2">2</a><a class="cite" data-cite="3" href="#source-3">3</a>.</li>
         <li><strong>Les budgets ne sont plus monolithiques.</strong> Les harness sérieux maintiennent trois compteurs orthogonaux — tokens, latence wall-clock, dollars — et dégradent proprement (<em>anytime</em>) plutôt que de couper sec. Manus public retex (mars 2026) documente une perte de qualité de seulement 4 points quand le budget tokens passe de 200 k à 50 k, <em>à condition</em> que la politique de dégradation soit explicite<a class="cite" data-cite="11" href="#source-11">11</a><a class="cite" data-cite="12" href="#source-12">12</a>.</li>
         <li><strong><span class="term" data-tooltip="Propriété d'une opération : l'exécuter N fois donne le même résultat observable. Une écriture de fichier au même contenu est idempotente ; un POST de paiement sans clé ne l'est pas.">Idempotence</span> et retry forment une matrice à quatre quadrants</strong> qu'aucun framework grand public ne câble nativement. La majorité des incidents agent en production de 2025 (paiements doublons, fichiers réécrits, emails envoyés deux fois) viennent de retries sur des outils non-idempotents — un problème connu des systèmes distribués depuis vingt ans mais qui réapparaît tel quel dans le harness LLM<a class="cite" data-cite="7" href="#source-7">7</a><a class="cite" data-cite="8" href="#source-8">8</a>.</li>
@@ -674,7 +674,7 @@
         <li><strong>Que faire si la file d'attente déborde ?</strong> (<span class="term" data-tooltip="Back-pressure : propagation de pression du composant aval vers le composant amont, pour éviter qu'une file ne déborde. Hérité des systèmes distribués (Hystrix, Sentinel).">back-pressure</span>)</li>
       </ul>
       <p>Ces cinq questions paraissent triviales sur l'agent jouet de démo (une boucle <span class="term" data-tooltip="ReAct (Reasoning + Acting) : pattern où le LLM alterne pas-de-raisonnement et pas-d'action outil dans une trace unique. Yao et al. ICLR 2023.">ReAct</span><a class="cite" data-cite="4" href="#source-4">4</a> avec un seul outil <code>search</code>). Elles deviennent le point de rupture économique sur l'agent réel de 2026 : Claude Code orchestre plus de 30 outils ; OpenHands ICLR 2025 documente 45 outils sur son cluster d'évaluation<a class="cite" data-cite="5" href="#source-5">5</a> ; Manus en revendique « plusieurs centaines, organisés en namespaces »<a class="cite" data-cite="12" href="#source-12">12</a>. Sur ces volumes, la politique de scheduling devient la variable de premier ordre.</p>
-      <p>L'intuition la plus contre-intuitive : <mark>la qualité d'un agent est plus sensible à son scheduler qu'à son modèle de base</mark>, à coût comparable. Princeton a publié en 2024 le matériel reproductible de SWE-bench Verified ; en croisant les harness publics (SWE-agent, Aider, OpenHands, AutoCodeRover) sur Claude Sonnet 3.7 puis Sonnet 4, le delta inter-harness (32 % vs 49 % de résolutions) dépasse le delta inter-modèles (49 % vs 56 % à harness constant)<a class="cite" data-cite="10" href="#source-10">10</a>. La conclusion n'est pas que le modèle ne compte pas — elle est que <strong>la couche scheduler récupère ou jette une part majeure de l'intelligence brute du modèle</strong>.</p>
+      <p>L'intuition la plus contre-intuitive : <mark>la qualité d'un agent est plus sensible à son scheduler qu'à son modèle de base</mark>, à coût comparable. La conclusion n'est pas que le modèle ne compte pas — elle est que <strong>la couche scheduler récupère ou jette une part majeure de l'intelligence brute du modèle</strong>. Princeton a publié en 2024 le matériel reproductible de SWE-bench Verified ; en croisant les harness publics (SWE-agent, Aider, OpenHands, AutoCodeRover) sur Claude Sonnet 3.7 puis Sonnet 4, le delta inter-harness (32 % vs 49 % de résolutions) dépasse le delta inter-modèles (49 % vs 56 % à harness constant)<a class="cite" data-cite="10" href="#source-10">10</a>.</p>
 
       <figure class="figure" id="fig-01">
         <svg data-schema-id="schema-01" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
@@ -858,7 +858,7 @@
       <ul>
         <li><strong>tokens</strong> (cumul input + output, par modèle, par session) ;</li>
         <li><strong>latence wall-clock</strong> (timeout dur de la session — un agent ne doit pas tourner six heures pour un ticket simple) ;</li>
-        <li><strong>dollars</strong> (cumul $ basé sur le pricing du modèle et des outils payants).</li>
+        <li><strong>dollars</strong> (cumul $ basé sur la tarification du modèle et des outils payants).</li>
       </ul>
       <p>Quand l'un des trois budgets approche son seuil, le tracker déclenche une <strong>politique de dégradation</strong> : passage à un modèle moins cher, désactivation d'outils onéreux, compactage agressif du contexte, ou <em>anytime answer</em> (livraison de la meilleure réponse trouvée jusqu'ici). Ces politiques sont détaillées en §4.</p>
 
@@ -887,9 +887,6 @@
       .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
       .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
     </style>
-    <marker id="arrow02" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-      <path d="M0 0 L10 5 L0 10 z" fill="#5A5A5A"/>
-    </marker>
   </defs>
 
   <rect width="900" height="900" fill="#FAF8F3"/>
@@ -900,14 +897,19 @@
   <text x="60" y="118" class="display" font-size="16" font-style="italic" fill="#5A5A5A">Du séquentiel naïf au DAG planifié — chacune gagne sur un profil d'usage précis</text>
   <line x1="60" y1="140" x2="840" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
 
+  <!-- Lines from hub edge to box edges (drawn first so boxes overlap them cleanly) -->
+  <line x1="410" y1="451" x2="283" y2="330" stroke="#5A5A5A" stroke-width="1.25"/>
+  <line x1="490" y1="451" x2="617" y2="330" stroke="#B7332C" stroke-width="2.5"/>
+  <line x1="506" y1="490" x2="510" y2="490" stroke="#5A5A5A" stroke-width="1.25"/>
+  <line x1="490" y1="529" x2="617" y2="650" stroke="#5A5A5A" stroke-width="1.25" stroke-dasharray="3 3"/>
+  <line x1="410" y1="529" x2="283" y2="650" stroke="#5A5A5A" stroke-width="1.25"/>
+
   <!-- Center label -->
   <circle cx="450" cy="490" r="56" fill="#1A1A1A"/>
   <text x="450" y="486" class="mono" font-size="10" font-weight="600" letter-spacing="0.16em" fill="#FAF8F3" text-anchor="middle">SCHEDULING</text>
   <text x="450" y="504" class="mono" font-size="10" font-weight="400" letter-spacing="0.04em" fill="#FAF8F3" text-anchor="middle">strategies</text>
 
-  <!-- Five branches radiating -->
   <!-- 1. Sequential (top-left) -->
-  <line x1="411" y1="450" x2="245" y2="295" stroke="#5A5A5A" stroke-width="1.25"/>
   <g class="interactive" data-card="sequential" tabindex="0" role="button" aria-label="Sequential — un outil à la fois">
     <rect x="100" y="200" width="290" height="130" rx="3" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1.25"/>
     <text x="120" y="230" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#5A5A5A">SEQUENTIAL</text>
@@ -919,7 +921,6 @@
   </g>
 
   <!-- 2. Parallel-batch (top-right) -->
-  <line x1="489" y1="450" x2="655" y2="295" stroke="#B7332C" stroke-width="2.5"/>
   <g class="interactive" data-card="parallel-batch" tabindex="0" role="button" aria-label="Parallel-batch — plusieurs outils simultanés">
     <rect x="510" y="200" width="290" height="130" rx="3" fill="#B7332C" fill-opacity="0.06" stroke="#B7332C" stroke-width="1.5"/>
     <text x="530" y="230" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#B7332C">PARALLEL-BATCH</text>
@@ -931,7 +932,6 @@
   </g>
 
   <!-- 3. DAG-planned (right) -->
-  <line x1="500" y1="490" x2="700" y2="490" stroke="#5A5A5A" stroke-width="1.25"/>
   <g class="interactive" data-card="dag-planned" tabindex="0" role="button" aria-label="DAG-planned — graphe de dépendances">
     <rect x="510" y="425" width="290" height="130" rx="3" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1.25"/>
     <text x="530" y="455" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#5A5A5A">DAG-PLANNED</text>
@@ -943,7 +943,6 @@
   </g>
 
   <!-- 4. Speculative (bottom-right) -->
-  <line x1="489" y1="530" x2="655" y2="685" stroke="#5A5A5A" stroke-width="1.25" stroke-dasharray="3 3"/>
   <g class="interactive" data-card="speculative" tabindex="0" role="button" aria-label="Speculative — plans concurrents">
     <rect x="510" y="650" width="290" height="130" rx="3" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1.25" stroke-dasharray="3 3"/>
     <text x="530" y="680" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#5A5A5A">SPECULATIVE</text>
@@ -955,7 +954,6 @@
   </g>
 
   <!-- 5. Anytime (bottom-left) -->
-  <line x1="411" y1="530" x2="245" y2="685" stroke="#5A5A5A" stroke-width="1.25"/>
   <g class="interactive" data-card="anytime" tabindex="0" role="button" aria-label="Anytime — réponse meilleure à tout instant">
     <rect x="100" y="650" width="290" height="130" rx="3" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1.25"/>
     <text x="120" y="680" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#5A5A5A">ANYTIME</text>
@@ -971,7 +969,6 @@
   <text x="60" y="852" class="body" font-size="11" fill="#1A1A1A">Parallel-batch (en carmine) est le gain le plus rentable du décennie en ratio impact / effort. DAG-planned domine les pipelines structurés.</text>
   <text x="60" y="868" class="body" font-size="11" fill="#1A1A1A">Sequential reste imbattable sur les arcs longs ; speculative est à observer. Anytime est une discipline transverse, pas une stratégie alternative.</text>
 
-  <!-- FOOTER -->
   <line x1="60" y1="876" x2="840" y2="876" stroke="#E5E1D8" stroke-width="0.5"/>
 </svg>
 
@@ -1018,9 +1015,6 @@
       .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
       .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
     </style>
-    <marker id="arrow03" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-      <path d="M0 0 L10 5 L0 10 z" fill="#5A5A5A"/>
-    </marker>
   </defs>
 
   <rect width="900" height="900" fill="#FAF8F3"/>
@@ -1031,85 +1025,68 @@
   <text x="60" y="118" class="display" font-size="16" font-style="italic" fill="#5A5A5A">Trois axes orthogonaux et la politique de dégradation associée</text>
   <line x1="60" y1="140" x2="840" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
 
-  <!-- Triangle vertices -->
-  <!-- Top: tokens. Bottom-left: latency. Bottom-right: $ -->
-  <polygon points="450,250 200,640 700,640" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1.25"/>
+  <!-- Triangle: vertices at TOKENS (top), LATENCE (bottom-left), DOLLARS (bottom-right) -->
+  <polygon points="450,290 220,620 680,620" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1.25"/>
 
-  <!-- Subtle inner triangles indicating dégradé interior -->
-  <polygon points="450,310 270,608 630,608" fill="#B7332C" fill-opacity="0.04" stroke="none"/>
-  <polygon points="450,370 340,576 560,576" fill="#B7332C" fill-opacity="0.08" stroke="none"/>
+  <!-- Inner shaded triangles indicating gradient toward viable center -->
+  <polygon points="450,340 290,580 610,580" fill="#B7332C" fill-opacity="0.05" stroke="none"/>
+  <polygon points="450,390 360,540 540,540" fill="#B7332C" fill-opacity="0.10" stroke="none"/>
 
   <!-- Center sweet spot -->
-  <circle cx="450" cy="510" r="14" fill="#B7332C"/>
-  <text x="450" y="514" class="mono" font-size="11" font-weight="600" fill="#FAF8F3" text-anchor="middle">✓</text>
-  <text x="450" y="546" class="body" font-size="11" font-style="italic" fill="#1A1A1A" text-anchor="middle">enveloppe viable</text>
+  <circle cx="450" cy="500" r="16" fill="#B7332C"/>
+  <text x="450" y="505" class="mono" font-size="11" font-weight="600" fill="#FAF8F3" text-anchor="middle">✓</text>
+  <text x="450" y="540" class="body" font-size="11" font-style="italic" fill="#1A1A1A" text-anchor="middle">enveloppe viable</text>
 
-  <!-- Vertex: tokens -->
+  <!-- Vertex: tokens (top) -->
   <g class="interactive" data-card="tokens-axis" tabindex="0" role="button" aria-label="Axe tokens">
-    <circle cx="450" cy="250" r="36" fill="#1F5560"/>
-    <text x="450" y="248" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#FAF8F3" text-anchor="middle">TOKENS</text>
-    <text x="450" y="266" class="mono" font-size="10" fill="#FAF8F3" text-anchor="middle">cumul</text>
+    <circle cx="450" cy="290" r="38" fill="#1F5560"/>
+    <text x="450" y="288" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#FAF8F3" text-anchor="middle">TOKENS</text>
+    <text x="450" y="306" class="mono" font-size="10" fill="#FAF8F3" text-anchor="middle">cumul</text>
   </g>
-  <text x="450" y="208" class="display" font-size="16" font-weight="500" fill="#1F5560" text-anchor="middle">80 k – 2 M par session</text>
-  <text x="450" y="225" class="body" font-size="11" font-style="italic" fill="#5A5A5A" text-anchor="middle">multi-niveau : tour / session / compte</text>
+  <text x="450" y="234" class="display" font-size="16" font-weight="500" fill="#1F5560" text-anchor="middle">80 k – 2 M par session</text>
+  <text x="450" y="252" class="body" font-size="11" font-style="italic" fill="#5A5A5A" text-anchor="middle">multi-niveau : tour / session / compte</text>
 
-  <!-- Vertex: latency -->
+  <!-- Vertex: latence (bottom-left) -->
   <g class="interactive" data-card="latency-axis" tabindex="0" role="button" aria-label="Axe latence">
-    <circle cx="200" cy="640" r="36" fill="#2F5D3F"/>
-    <text x="200" y="638" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#FAF8F3" text-anchor="middle">LATENCE</text>
-    <text x="200" y="656" class="mono" font-size="10" fill="#FAF8F3" text-anchor="middle">wall-clock</text>
+    <circle cx="220" cy="620" r="38" fill="#2F5D3F"/>
+    <text x="220" y="618" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#FAF8F3" text-anchor="middle">LATENCE</text>
+    <text x="220" y="636" class="mono" font-size="10" fill="#FAF8F3" text-anchor="middle">wall-clock</text>
   </g>
-  <text x="200" y="700" class="display" font-size="16" font-weight="500" fill="#2F5D3F" text-anchor="middle">8 s ↔ 30 min</text>
-  <text x="200" y="717" class="body" font-size="11" font-style="italic" fill="#5A5A5A" text-anchor="middle">deadline propagée aux outils</text>
+  <text x="220" y="685" class="display" font-size="16" font-weight="500" fill="#2F5D3F" text-anchor="middle">8 s ↔ 30 min</text>
+  <text x="220" y="703" class="body" font-size="11" font-style="italic" fill="#5A5A5A" text-anchor="middle">deadline propagée aux outils</text>
 
-  <!-- Vertex: $ -->
+  <!-- Vertex: dollars (bottom-right) -->
   <g class="interactive" data-card="cost-axis" tabindex="0" role="button" aria-label="Axe dollars">
-    <circle cx="700" cy="640" r="36" fill="#B58A2C"/>
-    <text x="700" y="638" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#FAF8F3" text-anchor="middle">DOLLARS</text>
-    <text x="700" y="656" class="mono" font-size="10" fill="#FAF8F3" text-anchor="middle">pricing</text>
+    <circle cx="680" cy="620" r="38" fill="#B58A2C"/>
+    <text x="680" y="618" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#FAF8F3" text-anchor="middle">DOLLARS</text>
+    <text x="680" y="636" class="mono" font-size="10" fill="#FAF8F3" text-anchor="middle">pricing</text>
   </g>
-  <text x="700" y="700" class="display" font-size="16" font-weight="500" fill="#B58A2C" text-anchor="middle">0,01 $ ↔ 200 $</text>
-  <text x="700" y="717" class="body" font-size="11" font-style="italic" fill="#5A5A5A" text-anchor="middle">modèle + outils + sandbox</text>
-
-  <!-- Axis labels along edges -->
-  <text x="305" y="445" class="body" font-size="10" font-style="italic" fill="#5A5A5A" transform="rotate(-58 305 445)">budget tokens × latence</text>
-  <text x="615" y="425" class="body" font-size="10" font-style="italic" fill="#5A5A5A" transform="rotate(58 615 425)">budget tokens × $</text>
-  <text x="450" y="675" class="body" font-size="10" font-style="italic" fill="#5A5A5A" text-anchor="middle">budget latence × $</text>
+  <text x="680" y="685" class="display" font-size="16" font-weight="500" fill="#B58A2C" text-anchor="middle">0,01 $ ↔ 200 $</text>
+  <text x="680" y="703" class="body" font-size="11" font-style="italic" fill="#5A5A5A" text-anchor="middle">modèle + outils + sandbox</text>
 
   <!-- Degradation policy block -->
   <g class="interactive" data-card="degradation-policy" tabindex="0" role="button" aria-label="Politique de dégradation">
-    <rect x="60" y="760" width="780" height="120" rx="3" fill="#1A1A1A"/>
-    <text x="80" y="788" class="mono" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#B7332C">POLITIQUE DE DÉGRADATION — DÉCLENCHÉE À 70-80 % D'UN AXE</text>
-    <line x1="80" y1="798" x2="820" y2="798" stroke="#5A5A5A" stroke-width="0.5"/>
+    <rect x="60" y="740" width="780" height="120" rx="3" fill="#1A1A1A"/>
+    <text x="80" y="768" class="mono" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#B7332C">POLITIQUE DE DÉGRADATION — DÉCLENCHÉE À 70-80 % D'UN AXE</text>
+    <line x1="80" y1="778" x2="820" y2="778" stroke="#5A5A5A" stroke-width="0.5"/>
 
-    <text x="80" y="822" class="mono" font-size="10" font-weight="600" fill="#FAF8F3">1 · downgrade</text>
-    <text x="80" y="838" class="body" font-size="10" fill="#B8B5AE">Opus → Sonnet → Haiku</text>
+    <text x="80" y="802" class="mono" font-size="10" font-weight="600" fill="#FAF8F3">1 · rétrogradation</text>
+    <text x="80" y="818" class="body" font-size="10" fill="#B8B5AE">Opus → Sonnet → Haiku</text>
 
-    <text x="240" y="822" class="mono" font-size="10" font-weight="600" fill="#FAF8F3">2 · compaction</text>
-    <text x="240" y="838" class="body" font-size="10" fill="#B8B5AE">/compact, eviction, retrieval</text>
+    <text x="240" y="802" class="mono" font-size="10" font-weight="600" fill="#FAF8F3">2 · compaction</text>
+    <text x="240" y="818" class="body" font-size="10" fill="#B8B5AE">/compact, eviction, retrieval</text>
 
-    <text x="400" y="822" class="mono" font-size="10" font-weight="600" fill="#FAF8F3">3 · désactivation</text>
-    <text x="400" y="838" class="body" font-size="10" fill="#B8B5AE">outils chers, LLM-judge</text>
+    <text x="400" y="802" class="mono" font-size="10" font-weight="600" fill="#FAF8F3">3 · désactivation</text>
+    <text x="400" y="818" class="body" font-size="10" fill="#B8B5AE">outils chers, LLM-juge</text>
 
-    <text x="560" y="822" class="mono" font-size="10" font-weight="600" fill="#FAF8F3">4 · anytime answer</text>
-    <text x="560" y="838" class="body" font-size="10" fill="#B8B5AE">meilleure réponse à date</text>
+    <text x="560" y="802" class="mono" font-size="10" font-weight="600" fill="#FAF8F3">4 · réponse anytime</text>
+    <text x="560" y="818" class="body" font-size="10" fill="#B8B5AE">meilleure réponse à date</text>
 
-    <text x="720" y="822" class="mono" font-size="10" font-weight="600" fill="#B7332C">5 · hard fail</text>
-    <text x="720" y="838" class="body" font-size="10" fill="#B8B5AE">terminer, notifier</text>
+    <text x="720" y="802" class="mono" font-size="10" font-weight="600" fill="#B7332C">5 · arrêt terminal</text>
+    <text x="720" y="818" class="body" font-size="10" fill="#B8B5AE">terminer, notifier</text>
 
-    <text x="80" y="868" class="body" font-size="10" font-style="italic" fill="#B8B5AE">Manus 2026 : perte de qualité 4 pts (politique explicite) vs 18 pts (sans politique) quand le budget tokens passe de 200 k à 50 k.</text>
+    <text x="80" y="848" class="body" font-size="10" font-style="italic" fill="#B8B5AE">Manus 2026 : perte de qualité 4 pts (politique explicite) vs 18 pts (sans politique) quand le budget tokens passe de 200 k à 50 k.</text>
   </g>
-
-  <!-- Lateral axis note -->
-  <text x="60" y="245" class="mono" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#B7332C">AXES</text>
-  <text x="60" y="265" class="body" font-size="11" fill="#1A1A1A">Trois</text>
-  <text x="60" y="280" class="body" font-size="11" fill="#1A1A1A">compteurs</text>
-  <text x="60" y="295" class="body" font-size="11" fill="#1A1A1A">orthogonaux.</text>
-
-  <text x="60" y="325" class="body" font-size="11" fill="#5A5A5A">Aucun</text>
-  <text x="60" y="340" class="body" font-size="11" fill="#5A5A5A">n'est dérivé</text>
-  <text x="60" y="355" class="body" font-size="11" fill="#5A5A5A">des deux</text>
-  <text x="60" y="370" class="body" font-size="11" fill="#5A5A5A">autres.</text>
 </svg>
 
         <figcaption class="figure-caption"><a class="anchor" href="#fig-03" title="Lien direct vers ce schéma">¶</a> <em>Schéma 3 — Les trois budgets orthogonaux d'un agent (<strong>tokens</strong>, <strong>latence</strong>, <strong>$</strong>) et leur politique de dégradation. Le triangle n'est pas une frontière de Pareto stricte — il faut combiner les trois.</em></figcaption>
@@ -1122,18 +1099,18 @@
         <li>un timeout dur par session (souvent 30 minutes pour un agent batch, 8 s pour un agent conversationnel) ;</li>
         <li>une <em>deadline</em> propagée à chaque outil sous forme d'argument injecté ou de contexte d'exécution — l'outil l'utilise pour décider lui-même de couper.</li>
       </ul>
-      <p><strong>Dollars.</strong> Cumul à partir du pricing modèle (input/output) + pricing des outils payants (API tierces, compute coding-sandbox). En 2026, le pricing Claude Sonnet est à 3 $ / Mtok input et 15 $ / Mtok output ; une session Devin de plusieurs heures peut dépasser 200 $. Le budget $ est typiquement une enveloppe par tâche, plus rarement par utilisateur ou par compte.</p>
+      <p><strong>Dollars.</strong> Cumul à partir de la tarification modèle (input/output) + tarification des outils payants (API tierces, compute coding-sandbox). En 2026, le coût Claude Sonnet est à 3 $ / Mtok input et 15 $ / Mtok output ; une session Devin de plusieurs heures peut dépasser 200 $. Le budget $ est typiquement une enveloppe par tâche, plus rarement par utilisateur ou par compte.</p>
 
       <h3 id="sec-4-2">4.2 La politique de dégradation</h3>
       <p>Quand un budget est dépassé à 70-80 %, le scheduler peut :</p>
       <ol>
-        <li><strong>Downgrade modèle</strong> : passer de Opus à Sonnet, voire à Haiku, pour les tours suivants ;</li>
+        <li><strong>Rétrograder le modèle</strong> : passer de Opus à Sonnet, voire à Haiku, pour les tours suivants ;</li>
         <li><strong>Compaction agressive</strong> : déclencher <code>/compact</code> (Claude Code), eviction (StreamingLLM, H2O), résumé hiérarchique ;</li>
-        <li><strong>Désactivation d'outils onéreux</strong> : couper l'accès aux outils API payants (LLM-as-judge cher) ;</li>
-        <li><strong>Anytime answer</strong> : rendre la meilleure réponse trouvée et arrêter ;</li>
-        <li><strong>Hard fail</strong> : terminer l'agent et notifier — la moins préférable mais parfois la seule choix.</li>
+        <li><strong>Désactivation d'outils onéreux</strong> : couper l'accès aux outils API payants (LLM-juge cher) ;</li>
+        <li><strong>Réponse anytime</strong> : rendre la meilleure réponse trouvée et arrêter ;</li>
+        <li><strong>Arrêt terminal</strong> : terminer l'agent et notifier — la moins préférable mais parfois la seule choix.</li>
       </ol>
-      <p>Manus public retex documente que <mark>la perte de qualité finale d'un agent passé d'un budget 200 k à 50 k tokens est seulement de 4 points</mark> sur leur benchmark interne, <em>à condition</em> que la politique de dégradation soit explicite (downgrade + compaction + désactivation des outils chers)<a class="cite" data-cite="12" href="#source-12">12</a>. Sans politique explicite, la perte est de 18 points — l'agent se trouve coupé en plein milieu d'une trajectoire et redémarre avec un contexte tronqué incohérent.</p>
+      <p>Manus public retex documente que <mark>la perte de qualité finale d'un agent passé d'un budget 200 k à 50 k tokens est seulement de 4 points</mark> sur leur benchmark interne, <em>à condition</em> que la politique de dégradation soit explicite (rétrogradation + compaction + désactivation des outils chers)<a class="cite" data-cite="12" href="#source-12">12</a>. Sans politique explicite, la perte est de 18 points — l'agent se trouve coupé en plein milieu d'une trajectoire et redémarre avec un contexte tronqué incohérent.</p>
 
       <h3 id="sec-4-3">4.3 Back-pressure</h3>
       <p>Le pendant côté outils : quand un outil ralentit (API tierce en rate-limit), le scheduler doit propager la pression vers le modèle. Trois canaux :</p>
@@ -1305,7 +1282,7 @@
       <p>Les MCP servers en production 2026 documentent généralement leur degré d'idempotence dans leur manifest — un point que la révision MCP v2 attendue automne 2026 prévoit de standardiser<a class="cite" data-cite="14" href="#source-14">14</a>. Sans ce contrat explicite, le scheduler est dans le brouillard.</p>
 
       <h2 id="sec-6">6. L'état de l'art 2026</h2>
-      <p>Sept systèmes dominent le paysage 2026 — quatre côté agents-code (Claude Code, Cursor, OpenHands, Aider), un côté framework ouvert (LangGraph), deux côté agents managés multi-domaines (Devin, Manus). Leur politique de scheduling diffère substantiellement.</p>
+      <p>Huit systèmes dominent le paysage 2026 — cinq côté agents-code (Claude Code, Cursor, Codex CLI, OpenHands, Aider), un côté framework ouvert (LangGraph), deux côté agents managés multi-domaines (Devin, Manus). Leur politique de scheduling diffère substantiellement.</p>
 
       <figure class="figure" id="fig-05">
         <svg data-schema-id="schema-05" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
@@ -1321,12 +1298,12 @@
 
   <!-- HEADER -->
   <text x="60" y="55" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 05</text>
-  <text x="60" y="92" class="display" font-size="26" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Sept harness × six dimensions</text>
+  <text x="60" y="92" class="display" font-size="26" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Huit harness × six dimensions</text>
   <text x="60" y="118" class="display" font-size="16" font-style="italic" fill="#5A5A5A">Cellule pleine = câblage natif · demi = support partiel · vide = absence</text>
   <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
 
   <!-- Column headers (dimensions) - tilted -->
-  <g transform="translate(0,0)">
+  <g>
     <text x="380" y="195" class="mono" font-size="10" font-weight="600" letter-spacing="0.06em" fill="#1A1A1A" text-anchor="middle" transform="rotate(-30 380 195)">Parallel-batch</text>
     <text x="490" y="195" class="mono" font-size="10" font-weight="600" letter-spacing="0.06em" fill="#1A1A1A" text-anchor="middle" transform="rotate(-30 490 195)">DAG-planning</text>
     <text x="600" y="195" class="mono" font-size="10" font-weight="600" letter-spacing="0.06em" fill="#1A1A1A" text-anchor="middle" transform="rotate(-30 600 195)">Budget multi-axes</text>
@@ -1336,120 +1313,132 @@
   </g>
   <line x1="200" y1="220" x2="1010" y2="220" stroke="#5A5A5A" stroke-width="1.25"/>
 
-  <!-- Row : Claude Code -->
+  <!-- Row 1 : Claude Code -->
   <g class="interactive" data-card="claude-code" tabindex="0" role="button" aria-label="Claude Code">
-    <rect x="60" y="234" width="1080" height="52" rx="3" fill="#FAF8F3"/>
-    <text x="76" y="262" class="display" font-size="14" font-weight="500" fill="#1A1A1A">Claude Code</text>
-    <text x="76" y="278" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Anthropic, agent CLI tour-par-tour</text>
-    <!-- cells -->
-    <circle cx="380" cy="260" r="11" fill="#B7332C"/>
-    <circle cx="490" cy="260" r="11" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1"/>
-    <circle cx="600" cy="260" r="11" fill="#B7332C" fill-opacity="0.5" stroke="#B7332C" stroke-width="1"/>
-    <circle cx="710" cy="260" r="11" fill="#B7332C" fill-opacity="0.5" stroke="#B7332C" stroke-width="1"/>
-    <circle cx="820" cy="260" r="11" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1"/>
-    <circle cx="930" cy="260" r="11" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1"/>
+    <rect x="60" y="234" width="1080" height="50" rx="3" fill="#FAF8F3"/>
+    <text x="76" y="261" class="display" font-size="13" font-weight="500" fill="#1A1A1A">Claude Code</text>
+    <text x="76" y="277" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Anthropic · agent CLI tour-par-tour</text>
+    <circle cx="380" cy="259" r="11" fill="#B7332C"/>
+    <circle cx="490" cy="259" r="11" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1"/>
+    <circle cx="600" cy="259" r="11" fill="#B7332C" fill-opacity="0.5" stroke="#B7332C" stroke-width="1"/>
+    <circle cx="710" cy="259" r="11" fill="#B7332C" fill-opacity="0.5" stroke="#B7332C" stroke-width="1"/>
+    <circle cx="820" cy="259" r="11" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1"/>
+    <circle cx="930" cy="259" r="11" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1"/>
   </g>
-  <line x1="60" y1="290" x2="1140" y2="290" stroke="#E5E1D8" stroke-width="0.5"/>
+  <line x1="60" y1="288" x2="1140" y2="288" stroke="#E5E1D8" stroke-width="0.5"/>
 
-  <!-- Row : Cursor -->
+  <!-- Row 2 : Cursor -->
   <g class="interactive" data-card="cursor" tabindex="0" role="button" aria-label="Cursor">
-    <rect x="60" y="294" width="1080" height="52" rx="3" fill="#FAF8F3"/>
-    <text x="76" y="322" class="display" font-size="14" font-weight="500" fill="#1A1A1A">Cursor</text>
-    <text x="76" y="338" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Anysphere, agent intégré IDE</text>
-    <circle cx="380" cy="320" r="11" fill="#B7332C"/>
-    <circle cx="490" cy="320" r="11" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1"/>
-    <circle cx="600" cy="320" r="11" fill="#B7332C" fill-opacity="0.5" stroke="#B7332C" stroke-width="1"/>
-    <circle cx="710" cy="320" r="11" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1"/>
-    <circle cx="820" cy="320" r="11" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1"/>
-    <circle cx="930" cy="320" r="11" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1"/>
+    <rect x="60" y="292" width="1080" height="50" rx="3" fill="#FAF8F3"/>
+    <text x="76" y="319" class="display" font-size="13" font-weight="500" fill="#1A1A1A">Cursor</text>
+    <text x="76" y="335" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Anysphere · agent intégré IDE</text>
+    <circle cx="380" cy="317" r="11" fill="#B7332C"/>
+    <circle cx="490" cy="317" r="11" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1"/>
+    <circle cx="600" cy="317" r="11" fill="#B7332C" fill-opacity="0.5" stroke="#B7332C" stroke-width="1"/>
+    <circle cx="710" cy="317" r="11" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1"/>
+    <circle cx="820" cy="317" r="11" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1"/>
+    <circle cx="930" cy="317" r="11" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1"/>
   </g>
-  <line x1="60" y1="350" x2="1140" y2="350" stroke="#E5E1D8" stroke-width="0.5"/>
+  <line x1="60" y1="346" x2="1140" y2="346" stroke="#E5E1D8" stroke-width="0.5"/>
 
-  <!-- Row : OpenHands -->
+  <!-- Row 3 : Codex CLI -->
+  <g class="interactive" data-card="codex-cli" tabindex="0" role="button" aria-label="Codex CLI">
+    <rect x="60" y="350" width="1080" height="50" rx="3" fill="#FAF8F3"/>
+    <text x="76" y="377" class="display" font-size="13" font-weight="500" fill="#1A1A1A">Codex CLI</text>
+    <text x="76" y="393" class="body" font-size="10" font-style="italic" fill="#5A5A5A">OpenAI · agent CLI open-source, Responses API</text>
+    <circle cx="380" cy="375" r="11" fill="#B7332C"/>
+    <circle cx="490" cy="375" r="11" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1"/>
+    <circle cx="600" cy="375" r="11" fill="#B7332C" fill-opacity="0.5" stroke="#B7332C" stroke-width="1"/>
+    <circle cx="710" cy="375" r="11" fill="#B7332C" fill-opacity="0.5" stroke="#B7332C" stroke-width="1"/>
+    <circle cx="820" cy="375" r="11" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1"/>
+    <circle cx="930" cy="375" r="11" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1"/>
+  </g>
+  <line x1="60" y1="404" x2="1140" y2="404" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- Row 4 : OpenHands -->
   <g class="interactive" data-card="openhands" tabindex="0" role="button" aria-label="OpenHands">
-    <rect x="60" y="354" width="1080" height="52" rx="3" fill="#FAF8F3"/>
-    <text x="76" y="382" class="display" font-size="14" font-weight="500" fill="#1A1A1A">OpenHands</text>
-    <text x="76" y="398" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Open-source, EventStream queue typée</text>
-    <circle cx="380" cy="380" r="11" fill="#B7332C"/>
-    <circle cx="490" cy="380" r="11" fill="#B7332C" fill-opacity="0.5" stroke="#B7332C" stroke-width="1"/>
-    <circle cx="600" cy="380" r="11" fill="#B7332C"/>
-    <circle cx="710" cy="380" r="11" fill="#B7332C"/>
-    <circle cx="820" cy="380" r="11" fill="#B7332C" fill-opacity="0.5" stroke="#B7332C" stroke-width="1"/>
-    <circle cx="930" cy="380" r="11" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1"/>
+    <rect x="60" y="408" width="1080" height="50" rx="3" fill="#FAF8F3"/>
+    <text x="76" y="435" class="display" font-size="13" font-weight="500" fill="#1A1A1A">OpenHands</text>
+    <text x="76" y="451" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Open-source · EventStream queue typée</text>
+    <circle cx="380" cy="433" r="11" fill="#B7332C"/>
+    <circle cx="490" cy="433" r="11" fill="#B7332C" fill-opacity="0.5" stroke="#B7332C" stroke-width="1"/>
+    <circle cx="600" cy="433" r="11" fill="#B7332C"/>
+    <circle cx="710" cy="433" r="11" fill="#B7332C"/>
+    <circle cx="820" cy="433" r="11" fill="#B7332C" fill-opacity="0.5" stroke="#B7332C" stroke-width="1"/>
+    <circle cx="930" cy="433" r="11" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1"/>
   </g>
-  <line x1="60" y1="410" x2="1140" y2="410" stroke="#E5E1D8" stroke-width="0.5"/>
+  <line x1="60" y1="462" x2="1140" y2="462" stroke="#E5E1D8" stroke-width="0.5"/>
 
-  <!-- Row : Aider -->
+  <!-- Row 5 : Aider -->
   <g class="interactive" data-card="aider" tabindex="0" role="button" aria-label="Aider">
-    <rect x="60" y="414" width="1080" height="52" rx="3" fill="#FAF8F3"/>
-    <text x="76" y="442" class="display" font-size="14" font-weight="500" fill="#1A1A1A">Aider</text>
-    <text x="76" y="458" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Léger, séquentiel par design</text>
-    <circle cx="380" cy="440" r="11" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1"/>
-    <circle cx="490" cy="440" r="11" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1"/>
-    <circle cx="600" cy="440" r="11" fill="#B7332C" fill-opacity="0.5" stroke="#B7332C" stroke-width="1"/>
-    <circle cx="710" cy="440" r="11" fill="#B7332C" fill-opacity="0.5" stroke="#B7332C" stroke-width="1"/>
-    <circle cx="820" cy="440" r="11" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1"/>
-    <circle cx="930" cy="440" r="11" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1"/>
+    <rect x="60" y="466" width="1080" height="50" rx="3" fill="#FAF8F3"/>
+    <text x="76" y="493" class="display" font-size="13" font-weight="500" fill="#1A1A1A">Aider</text>
+    <text x="76" y="509" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Léger · séquentiel par design</text>
+    <circle cx="380" cy="491" r="11" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1"/>
+    <circle cx="490" cy="491" r="11" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1"/>
+    <circle cx="600" cy="491" r="11" fill="#B7332C" fill-opacity="0.5" stroke="#B7332C" stroke-width="1"/>
+    <circle cx="710" cy="491" r="11" fill="#B7332C" fill-opacity="0.5" stroke="#B7332C" stroke-width="1"/>
+    <circle cx="820" cy="491" r="11" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1"/>
+    <circle cx="930" cy="491" r="11" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1"/>
   </g>
-  <line x1="60" y1="470" x2="1140" y2="470" stroke="#E5E1D8" stroke-width="0.5"/>
+  <line x1="60" y1="520" x2="1140" y2="520" stroke="#E5E1D8" stroke-width="0.5"/>
 
-  <!-- Row : LangGraph -->
+  <!-- Row 6 : LangGraph -->
   <g class="interactive" data-card="langgraph" tabindex="0" role="button" aria-label="LangGraph">
-    <rect x="60" y="474" width="1080" height="52" rx="3" fill="#FAF8F3"/>
-    <text x="76" y="502" class="display" font-size="14" font-weight="500" fill="#1A1A1A">LangGraph</text>
-    <text x="76" y="518" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Framework, DAG comme primitive</text>
-    <circle cx="380" cy="500" r="11" fill="#B7332C"/>
-    <circle cx="490" cy="500" r="11" fill="#B7332C"/>
-    <circle cx="600" cy="500" r="11" fill="#B7332C" fill-opacity="0.5" stroke="#B7332C" stroke-width="1"/>
-    <circle cx="710" cy="500" r="11" fill="#B7332C" fill-opacity="0.5" stroke="#B7332C" stroke-width="1"/>
-    <circle cx="820" cy="500" r="11" fill="#B7332C" fill-opacity="0.5" stroke="#B7332C" stroke-width="1"/>
-    <circle cx="930" cy="500" r="11" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1"/>
+    <rect x="60" y="524" width="1080" height="50" rx="3" fill="#FAF8F3"/>
+    <text x="76" y="551" class="display" font-size="13" font-weight="500" fill="#1A1A1A">LangGraph</text>
+    <text x="76" y="567" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Framework · DAG comme primitive</text>
+    <circle cx="380" cy="549" r="11" fill="#B7332C"/>
+    <circle cx="490" cy="549" r="11" fill="#B7332C"/>
+    <circle cx="600" cy="549" r="11" fill="#B7332C" fill-opacity="0.5" stroke="#B7332C" stroke-width="1"/>
+    <circle cx="710" cy="549" r="11" fill="#B7332C" fill-opacity="0.5" stroke="#B7332C" stroke-width="1"/>
+    <circle cx="820" cy="549" r="11" fill="#B7332C" fill-opacity="0.5" stroke="#B7332C" stroke-width="1"/>
+    <circle cx="930" cy="549" r="11" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1"/>
   </g>
-  <line x1="60" y1="530" x2="1140" y2="530" stroke="#E5E1D8" stroke-width="0.5"/>
+  <line x1="60" y1="578" x2="1140" y2="578" stroke="#E5E1D8" stroke-width="0.5"/>
 
-  <!-- Row : Devin -->
+  <!-- Row 7 : Devin -->
   <g class="interactive" data-card="devin" tabindex="0" role="button" aria-label="Devin">
-    <rect x="60" y="534" width="1080" height="52" rx="3" fill="#FAF8F3"/>
-    <text x="76" y="562" class="display" font-size="14" font-weight="500" fill="#1A1A1A">Devin</text>
-    <text x="76" y="578" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Cognition AI, séquentiel long-horizon</text>
-    <circle cx="380" cy="560" r="11" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1"/>
-    <circle cx="490" cy="560" r="11" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1"/>
-    <circle cx="600" cy="560" r="11" fill="#B7332C"/>
-    <circle cx="710" cy="560" r="11" fill="#B7332C"/>
-    <circle cx="820" cy="560" r="11" fill="#B7332C" fill-opacity="0.5" stroke="#B7332C" stroke-width="1"/>
-    <circle cx="930" cy="560" r="11" fill="#B7332C" fill-opacity="0.5" stroke="#B7332C" stroke-width="1"/>
+    <rect x="60" y="582" width="1080" height="50" rx="3" fill="#FAF8F3"/>
+    <text x="76" y="609" class="display" font-size="13" font-weight="500" fill="#1A1A1A">Devin</text>
+    <text x="76" y="625" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Cognition AI · séquentiel long-horizon</text>
+    <circle cx="380" cy="607" r="11" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1"/>
+    <circle cx="490" cy="607" r="11" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1"/>
+    <circle cx="600" cy="607" r="11" fill="#B7332C"/>
+    <circle cx="710" cy="607" r="11" fill="#B7332C"/>
+    <circle cx="820" cy="607" r="11" fill="#B7332C" fill-opacity="0.5" stroke="#B7332C" stroke-width="1"/>
+    <circle cx="930" cy="607" r="11" fill="#B7332C" fill-opacity="0.5" stroke="#B7332C" stroke-width="1"/>
   </g>
-  <line x1="60" y1="590" x2="1140" y2="590" stroke="#E5E1D8" stroke-width="0.5"/>
+  <line x1="60" y1="636" x2="1140" y2="636" stroke="#E5E1D8" stroke-width="0.5"/>
 
-  <!-- Row : Manus -->
+  <!-- Row 8 : Manus -->
   <g class="interactive" data-card="manus" tabindex="0" role="button" aria-label="Manus">
-    <rect x="60" y="594" width="1080" height="52" rx="3" fill="#FAF8F3"/>
-    <text x="76" y="622" class="display" font-size="14" font-weight="500" fill="#1A1A1A">Manus</text>
-    <text x="76" y="638" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Multi-machines, sandbox parallèle</text>
-    <circle cx="380" cy="620" r="11" fill="#B7332C"/>
-    <circle cx="490" cy="620" r="11" fill="#B7332C"/>
-    <circle cx="600" cy="620" r="11" fill="#B7332C"/>
-    <circle cx="710" cy="620" r="11" fill="#B7332C"/>
-    <circle cx="820" cy="620" r="11" fill="#B7332C"/>
-    <circle cx="930" cy="620" r="11" fill="#B7332C" fill-opacity="0.5" stroke="#B7332C" stroke-width="1"/>
+    <rect x="60" y="640" width="1080" height="50" rx="3" fill="#FAF8F3"/>
+    <text x="76" y="667" class="display" font-size="13" font-weight="500" fill="#1A1A1A">Manus</text>
+    <text x="76" y="683" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Multi-machines · sandbox parallèle</text>
+    <circle cx="380" cy="665" r="11" fill="#B7332C"/>
+    <circle cx="490" cy="665" r="11" fill="#B7332C"/>
+    <circle cx="600" cy="665" r="11" fill="#B7332C"/>
+    <circle cx="710" cy="665" r="11" fill="#B7332C"/>
+    <circle cx="820" cy="665" r="11" fill="#B7332C"/>
+    <circle cx="930" cy="665" r="11" fill="#B7332C" fill-opacity="0.5" stroke="#B7332C" stroke-width="1"/>
   </g>
-  <line x1="60" y1="650" x2="1140" y2="650" stroke="#E5E1D8" stroke-width="0.5"/>
+  <line x1="60" y1="694" x2="1140" y2="694" stroke="#E5E1D8" stroke-width="0.5"/>
 
   <!-- Legend -->
-  <text x="60" y="685" class="mono" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#B7332C">LÉGENDE</text>
-  <circle cx="60" cy="709" r="9" fill="#B7332C"/>
-  <text x="78" y="713" class="body" font-size="11" fill="#1A1A1A">câblage natif documenté</text>
-  <circle cx="260" cy="709" r="9" fill="#B7332C" fill-opacity="0.5" stroke="#B7332C" stroke-width="1"/>
-  <text x="278" y="713" class="body" font-size="11" fill="#1A1A1A">support partiel ou via configuration</text>
-  <circle cx="540" cy="709" r="9" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1"/>
-  <text x="558" y="713" class="body" font-size="11" fill="#1A1A1A">non câblé</text>
+  <text x="60" y="720" class="mono" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#B7332C">LÉGENDE</text>
+  <circle cx="60" cy="744" r="9" fill="#B7332C"/>
+  <text x="78" y="748" class="body" font-size="11" fill="#1A1A1A">câblage natif documenté</text>
+  <circle cx="260" cy="744" r="9" fill="#B7332C" fill-opacity="0.5" stroke="#B7332C" stroke-width="1"/>
+  <text x="278" y="748" class="body" font-size="11" fill="#1A1A1A">support partiel ou via configuration</text>
+  <circle cx="540" cy="744" r="9" fill="#FAF8F3" stroke="#5A5A5A" stroke-width="1"/>
+  <text x="558" y="748" class="body" font-size="11" fill="#1A1A1A">non câblé</text>
 
-  <!-- FOOTER -->
-  <line x1="60" y1="745" x2="1140" y2="745" stroke="#E5E1D8" stroke-width="0.5"/>
-  <text x="60" y="768" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Source : documentations officielles (Claude Code, LangGraph, Cursor), papier OpenHands ICLR 2025, blog Cognition (Devin), public retex Manus AI (mars 2026).</text>
+  <line x1="60" y1="765" x2="1140" y2="765" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="785" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Source : documentations officielles (Claude Code, Codex CLI, LangGraph, Cursor), papier OpenHands ICLR 2025, blog Cognition (Devin), public retex Manus AI (mars 2026).</text>
 </svg>
 
-        <figcaption class="figure-caption"><a class="anchor" href="#fig-05" title="Lien direct vers ce schéma">¶</a> <em>Schéma 5 — Sept harness × six dimensions : <strong>parallélisation, DAG-planning, budget multi-axes, retry-aware, back-pressure, scheduler appris</strong>. Les cellules pleines indiquent un câblage natif, les demi-cellules un support partiel, les vides l'absence.</em></figcaption>
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-05" title="Lien direct vers ce schéma">¶</a> <em>Schéma 5 — Huit harness × six dimensions : <strong>parallélisation, DAG-planning, budget multi-axes, retry-aware, back-pressure, scheduler appris</strong>. Les cellules pleines indiquent un câblage natif, les demi-cellules un support partiel, les vides l'absence.</em></figcaption>
       </figure>
 
       <h3 id="sec-6-1">6.1 Claude Code</h3>
@@ -1458,27 +1447,31 @@
       <h3 id="sec-6-2">6.2 Cursor</h3>
       <p>Architecture similaire à Claude Code côté boucle, avec une couche IDE — l'éditeur expose des outils contextuels (auto-suggestion, ligne courante, sélection). Parallélisation oui, DAG non, budgets gérés au niveau IDE (timeout par opération). Le retry est délégué à l'API du modèle sous-jacent.</p>
 
-      <h3 id="sec-6-3">6.3 OpenHands</h3>
+      <h3 id="sec-6-3">6.3 Codex CLI</h3>
+      <p>Annoncé par OpenAI en avril 2025, Codex CLI est l'agent CLI <em>open-source</em> d'OpenAI — un homologue direct de Claude Code, bâti sur l'API Responses et les modèles GPT<a class="cite" data-cite="16" href="#source-16">16</a>. Parallel-batch oui (Responses API supporte les appels d'outils parallèles), DAG non, budgets tokens explicites, retry-policy déléguée à la couche API. Pas de back-pressure documenté, pas de scheduler appris.</p>
+      <p>Son intérêt par rapport à Claude Code : l'<em>open-source</em>. Le code de la boucle scheduler est lisible, forkable, et a déjà généré une dérivée vivante de variantes communautaires qui expérimentent DAG-planning et budgets multi-axes.</p>
+
+      <h3 id="sec-6-4">6.4 OpenHands</h3>
       <p>Le harness ouvert le plus structuré côté scheduler. L'EventStream est une queue typée, le scheduler distingue explicitement les actions de l'agent et les observations<a class="cite" data-cite="5" href="#source-5">5</a>. Support natif des budgets multi-axes (tokens, temps). DAG-planning partiel via la microagent architecture. Retry policy paramétrable. Pas de scheduler appris.</p>
 
-      <h3 id="sec-6-4">6.4 Aider</h3>
+      <h3 id="sec-6-5">6.5 Aider</h3>
       <p>Léger, séquentiel par design. Pas de parallélisation ; le pari est qu'un agent de codage interactif a peu à gagner du batch (l'humain valide à chaque tour). Budget tokens via context window naïf. Retry léger. Pas de DAG ni de scheduler appris. C'est délibéré : la lisibilité du flux prime sur la performance brute.</p>
 
-      <h3 id="sec-6-5">6.5 LangGraph</h3>
+      <h3 id="sec-6-6">6.6 LangGraph</h3>
       <p>Pas un agent en soi mais un <em>framework</em> pour construire des schedulers. Sa primitive est le DAG : nœuds (étapes), arêtes (transitions conditionnelles), state shared. Parallélisation native sur les nœuds indépendants. Budgets et retries sont laissés à l'utilisateur (configurables via les nœuds). C'est le framework qui pousse le plus loin la sophistication du scheduler explicite<a class="cite" data-cite="6" href="#source-6">6</a>.</p>
 
-      <h3 id="sec-6-6">6.6 Devin</h3>
+      <h3 id="sec-6-7">6.7 Devin</h3>
       <p>Agent managé propriétaire (Cognition AI). Architecture séquentielle pure documentée publiquement<a class="cite" data-cite="11" href="#source-11">11</a>, horizon long (sessions multi-heures). Budgets implicites côté Cognition. Retry géré côté plateforme. Le pari : pour les sessions longues, la sophistication du DAG est moins importante que la stabilité de l'horizon.</p>
 
-      <h3 id="sec-6-7">6.7 Manus</h3>
+      <h3 id="sec-6-8">6.8 Manus</h3>
       <p>L'autre agent managé multi-domaines. Public retex documente une architecture multi-machines : sandbox parallèle pour les tâches indépendantes (recherche web, analyse, codage), avec un coordinateur central qui orchestre les retours<a class="cite" data-cite="12" href="#source-12">12</a>. C'est l'implémentation la plus proche d'un DAG en production sur agent managé. Budgets multi-axes documentés (tokens / latence / $). Pas de scheduler appris au sens RL — mais des politiques d'ordonnancement heuristiques fortement codées.</p>
 
-      <h3 id="sec-6-8">6.8 Lecture transverse</h3>
-      <p>Trois clusters émergent :</p>
+      <h3 id="sec-6-9">6.9 Lecture transverse</h3>
+      <p>Trois grappes émergent :</p>
       <ul>
-        <li><strong>Heavy par tour, séquentiel par horizon</strong> : Claude Code, Cursor, Aider — parallélisent localement, séquentialisent l'arc.</li>
-        <li><strong>Heavy DAG, fragmenté</strong> : OpenHands, LangGraph — exposent le DAG comme primitive.</li>
-        <li><strong>Heavy plateforme, opaque</strong> : Devin, Manus — encapsulent la politique côté serveur, exposent l'agent comme boîte noire.</li>
+        <li><strong>Riche par tour, séquentiel par horizon</strong> : Claude Code, Cursor, Codex CLI, Aider — parallélisent localement, séquentialisent l'arc.</li>
+        <li><strong>DAG explicite, fragmenté</strong> : OpenHands, LangGraph — exposent le DAG comme primitive.</li>
+        <li><strong>Plateforme propriétaire, opaque</strong> : Devin, Manus — encapsulent la politique côté serveur, exposent l'agent comme boîte noire.</li>
       </ul>
       <p>Aucun n'a encore franchi le pas du <strong>scheduler appris</strong> — c'est la frontière 2027-2028.</p>
 
@@ -1506,100 +1499,99 @@
   <text x="60" y="118" class="display" font-size="16" font-style="italic" fill="#5A5A5A">Quatre futurs parallèles du scheduler agentique</text>
   <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
 
-  <!-- Horizon axis -->
-  <line x1="120" y1="700" x2="1100" y2="700" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#arrow06)"/>
-  <line x1="120" y1="695" x2="120" y2="705" stroke="#5A5A5A" stroke-width="1.25"/>
-  <line x1="330" y1="695" x2="330" y2="705" stroke="#5A5A5A" stroke-width="1.25"/>
-  <line x1="560" y1="695" x2="560" y2="705" stroke="#5A5A5A" stroke-width="1.25"/>
-  <line x1="780" y1="695" x2="780" y2="705" stroke="#5A5A5A" stroke-width="1.25"/>
-  <line x1="1010" y1="695" x2="1010" y2="705" stroke="#5A5A5A" stroke-width="1.25"/>
-  <text x="120" y="725" class="mono" font-size="11" font-weight="500" fill="#5A5A5A" text-anchor="middle">2026 S1</text>
-  <text x="330" y="725" class="mono" font-size="11" font-weight="500" fill="#5A5A5A" text-anchor="middle">2026 S2</text>
-  <text x="560" y="725" class="mono" font-size="11" font-weight="500" fill="#5A5A5A" text-anchor="middle">2027 S1</text>
-  <text x="780" y="725" class="mono" font-size="11" font-weight="500" fill="#5A5A5A" text-anchor="middle">2027 S2</text>
-  <text x="1010" y="725" class="mono" font-size="11" font-weight="500" fill="#5A5A5A" text-anchor="middle">2028</text>
-
-  <!-- Today marker -->
-  <line x1="200" y1="180" x2="200" y2="710" stroke="#B7332C" stroke-width="1" stroke-dasharray="4 4"/>
-  <text x="200" y="170" class="mono" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#B7332C" text-anchor="middle">JUIN 2026</text>
+  <!-- "Aujourd'hui" marker (compact, on the legend bar — no vertical line crossing the tracks) -->
+  <g>
+    <circle cx="200" cy="170" r="5" fill="#B7332C"/>
+    <text x="212" y="174" class="mono" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#B7332C">AUJOURD'HUI · JUIN 2026</text>
+  </g>
 
   <!-- Track 1: Learned scheduler (top) -->
   <g class="interactive" data-card="learned-scheduler" tabindex="0" role="button" aria-label="Scheduler appris">
-    <text x="60" y="210" class="mono" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#B7332C">TRACK 1</text>
-    <text x="60" y="232" class="display" font-size="14" font-weight="500" fill="#1A1A1A">Scheduler appris</text>
-    <text x="60" y="248" class="body" font-size="10" font-style="italic" fill="#5A5A5A">RL sur trajectoires</text>
+    <text x="60" y="220" class="mono" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#B7332C">TRACK 1</text>
+    <text x="60" y="242" class="display" font-size="14" font-weight="500" fill="#1A1A1A">Scheduler appris</text>
+    <text x="60" y="258" class="body" font-size="10" font-style="italic" fill="#5A5A5A">RL sur trajectoires</text>
 
-    <!-- Phase blocks -->
-    <rect x="120" y="200" width="210" height="38" rx="3" fill="#1F5560" fill-opacity="0.10" stroke="#1F5560" stroke-width="1.5"/>
-    <text x="225" y="223" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">Recherche académique</text>
+    <rect x="240" y="210" width="170" height="38" rx="3" fill="#1F5560" fill-opacity="0.10" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="325" y="233" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">Recherche académique</text>
 
-    <rect x="330" y="200" width="230" height="38" rx="3" fill="#B58A2C" fill-opacity="0.12" stroke="#B58A2C" stroke-width="1.5"/>
-    <text x="445" y="223" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">Prototypes Tool-LLM</text>
+    <rect x="420" y="210" width="240" height="38" rx="3" fill="#B58A2C" fill-opacity="0.12" stroke="#B58A2C" stroke-width="1.5"/>
+    <text x="540" y="233" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">Prototypes Tool-LLM</text>
 
-    <rect x="560" y="200" width="220" height="38" rx="3" fill="#B7332C" fill-opacity="0.12" stroke="#B7332C" stroke-width="1.5"/>
-    <text x="670" y="223" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">Agents managés (Devin, Manus)</text>
+    <rect x="670" y="210" width="240" height="38" rx="3" fill="#B7332C" fill-opacity="0.12" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="790" y="233" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">Agents managés (Devin, Manus)</text>
 
-    <rect x="780" y="200" width="290" height="38" rx="3" fill="#B7332C" fill-opacity="0.20" stroke="#B7332C" stroke-width="2.5"/>
-    <text x="925" y="223" class="body" font-size="11" font-weight="500" fill="#FAF8F3" text-anchor="middle">SDK ouverts</text>
-    <circle cx="1010" cy="219" r="6" fill="#B7332C"/>
+    <rect x="920" y="210" width="170" height="38" rx="3" fill="#B7332C" fill-opacity="0.20" stroke="#B7332C" stroke-width="2.5"/>
+    <text x="1005" y="233" class="body" font-size="11" font-weight="500" fill="#FAF8F3" text-anchor="middle">SDK ouverts</text>
   </g>
 
   <!-- Track 2: RL-guided ordering -->
   <g class="interactive" data-card="rl-guided" tabindex="0" role="button" aria-label="RL-guided ordering">
-    <text x="60" y="320" class="mono" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#B7332C">TRACK 2</text>
-    <text x="60" y="342" class="display" font-size="14" font-weight="500" fill="#1A1A1A">RL-guided ordering</text>
-    <text x="60" y="358" class="body" font-size="10" font-style="italic" fill="#5A5A5A">classifieur ordering</text>
+    <text x="60" y="330" class="mono" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#B7332C">TRACK 2</text>
+    <text x="60" y="352" class="display" font-size="14" font-weight="500" fill="#1A1A1A">RL-guided ordering</text>
+    <text x="60" y="368" class="body" font-size="10" font-style="italic" fill="#5A5A5A">classifieur ordering</text>
 
-    <rect x="120" y="310" width="200" height="38" rx="3" fill="#1F5560" fill-opacity="0.10" stroke="#1F5560" stroke-width="1.5"/>
-    <text x="220" y="333" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">Décor. spec-decoding</text>
+    <rect x="240" y="320" width="170" height="38" rx="3" fill="#1F5560" fill-opacity="0.10" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="325" y="343" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">Décor. spec-decoding</text>
 
-    <rect x="330" y="310" width="220" height="38" rx="3" fill="#B58A2C" fill-opacity="0.12" stroke="#B58A2C" stroke-width="1.5"/>
-    <text x="440" y="333" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">Publications fin 2026</text>
+    <rect x="420" y="320" width="240" height="38" rx="3" fill="#B58A2C" fill-opacity="0.12" stroke="#B58A2C" stroke-width="1.5"/>
+    <text x="540" y="343" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">Publications fin 2026</text>
 
-    <rect x="560" y="310" width="510" height="38" rx="3" fill="#B7332C" fill-opacity="0.15" stroke="#B7332C" stroke-width="1.5"/>
-    <text x="815" y="333" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">Intégration vLLM-style dans les harness ouverts</text>
+    <rect x="670" y="320" width="420" height="38" rx="3" fill="#B7332C" fill-opacity="0.15" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="880" y="343" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">Intégration vLLM-style dans les harness ouverts</text>
   </g>
 
   <!-- Track 3: SLO-driven scheduling -->
   <g class="interactive" data-card="slo-driven" tabindex="0" role="button" aria-label="SLO-driven scheduling">
-    <text x="60" y="430" class="mono" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#B7332C">TRACK 3</text>
-    <text x="60" y="452" class="display" font-size="14" font-weight="500" fill="#1A1A1A">SLO-driven</text>
-    <text x="60" y="468" class="body" font-size="10" font-style="italic" fill="#5A5A5A">contrôleur PID budgets</text>
+    <text x="60" y="440" class="mono" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#B7332C">TRACK 3</text>
+    <text x="60" y="462" class="display" font-size="14" font-weight="500" fill="#1A1A1A">SLO-driven</text>
+    <text x="60" y="478" class="body" font-size="10" font-style="italic" fill="#5A5A5A">contrôleur PID budgets</text>
 
-    <rect x="120" y="420" width="430" height="38" rx="3" fill="#1F5560" fill-opacity="0.10" stroke="#1F5560" stroke-width="1.5"/>
-    <text x="335" y="443" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">OTel GenAI semconv mature (juin 2026)</text>
+    <rect x="240" y="430" width="420" height="38" rx="3" fill="#1F5560" fill-opacity="0.10" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="450" y="453" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">OTel GenAI semconv mature (juin 2026)</text>
 
-    <rect x="560" y="420" width="290" height="38" rx="3" fill="#B58A2C" fill-opacity="0.12" stroke="#B58A2C" stroke-width="1.5"/>
-    <text x="705" y="443" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">Premiers patterns production</text>
+    <rect x="670" y="430" width="240" height="38" rx="3" fill="#B58A2C" fill-opacity="0.12" stroke="#B58A2C" stroke-width="1.5"/>
+    <text x="790" y="453" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">Premiers patterns production</text>
 
-    <rect x="850" y="420" width="220" height="38" rx="3" fill="#B7332C" fill-opacity="0.15" stroke="#B7332C" stroke-width="1.5"/>
-    <text x="960" y="443" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">SLA-driven généralisé</text>
+    <rect x="920" y="430" width="170" height="38" rx="3" fill="#B7332C" fill-opacity="0.15" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="1005" y="453" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">SLA-driven généralisé</text>
   </g>
 
   <!-- Track 4: Scheduler-as-a-service -->
   <g class="interactive" data-card="scheduler-as-a-service" tabindex="0" role="button" aria-label="Scheduler-as-a-service">
-    <text x="60" y="540" class="mono" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#B7332C">TRACK 4</text>
-    <text x="60" y="562" class="display" font-size="14" font-weight="500" fill="#1A1A1A">Scheduler-as-a-service</text>
-    <text x="60" y="578" class="body" font-size="10" font-style="italic" fill="#5A5A5A">offre SaaS découplée</text>
+    <text x="60" y="550" class="mono" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#B7332C">TRACK 4</text>
+    <text x="60" y="572" class="display" font-size="14" font-weight="500" fill="#1A1A1A">Scheduler-as-a-service</text>
+    <text x="60" y="588" class="body" font-size="10" font-style="italic" fill="#5A5A5A">offre SaaS découplée</text>
 
-    <rect x="120" y="530" width="210" height="38" rx="3" fill="#1F5560" fill-opacity="0.10" stroke="#1F5560" stroke-width="1.5"/>
-    <text x="225" y="553" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">MCP révision v2</text>
+    <rect x="240" y="540" width="170" height="38" rx="3" fill="#1F5560" fill-opacity="0.10" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="325" y="563" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">MCP révision v2</text>
 
-    <rect x="330" y="530" width="450" height="38" rx="3" fill="#B58A2C" fill-opacity="0.12" stroke="#B58A2C" stroke-width="1.5"/>
-    <text x="555" y="553" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">Premières offres Datadog / Honeycomb / vendeurs MCP</text>
+    <rect x="420" y="540" width="490" height="38" rx="3" fill="#B58A2C" fill-opacity="0.12" stroke="#B58A2C" stroke-width="1.5"/>
+    <text x="665" y="563" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">Premières offres Datadog / Honeycomb / vendeurs MCP</text>
 
-    <rect x="780" y="530" width="290" height="38" rx="3" fill="#B7332C" fill-opacity="0.15" stroke="#B7332C" stroke-width="1.5"/>
-    <text x="925" y="553" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">Marché établi · catégorie nommée</text>
+    <rect x="920" y="540" width="170" height="38" rx="3" fill="#B7332C" fill-opacity="0.15" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="1005" y="563" class="body" font-size="11" font-weight="500" fill="#1A1A1A" text-anchor="middle">Marché établi</text>
   </g>
 
-  <!-- Convergence call-out -->
-  <text x="60" y="625" class="mono" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#B7332C">POINT DE CONVERGENCE — 2028</text>
-  <text x="60" y="650" class="body" font-size="11" fill="#1A1A1A">Les quatre trajectoires se rejoignent : un scheduler appris, asservi à des SLO, exposé comme service découplé du modèle.</text>
-  <text x="60" y="668" class="body" font-size="11" fill="#1A1A1A">Le LLM décide quoi faire ; la politique apprise décide comment, quand, à quel coût — séparation des responsabilités à la distribué-2000s.</text>
+  <!-- Horizon axis (BELOW the tracks) -->
+  <line x1="120" y1="635" x2="1100" y2="635" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#arrow06)"/>
+  <line x1="120" y1="630" x2="120" y2="640" stroke="#5A5A5A" stroke-width="1.25"/>
+  <line x1="330" y1="630" x2="330" y2="640" stroke="#5A5A5A" stroke-width="1.25"/>
+  <line x1="560" y1="630" x2="560" y2="640" stroke="#5A5A5A" stroke-width="1.25"/>
+  <line x1="780" y1="630" x2="780" y2="640" stroke="#5A5A5A" stroke-width="1.25"/>
+  <line x1="1010" y1="630" x2="1010" y2="640" stroke="#5A5A5A" stroke-width="1.25"/>
+  <text x="120" y="660" class="mono" font-size="11" font-weight="500" fill="#5A5A5A" text-anchor="middle">2026 S1</text>
+  <text x="330" y="660" class="mono" font-size="11" font-weight="500" fill="#5A5A5A" text-anchor="middle">2026 S2</text>
+  <text x="560" y="660" class="mono" font-size="11" font-weight="500" fill="#5A5A5A" text-anchor="middle">2027 S1</text>
+  <text x="780" y="660" class="mono" font-size="11" font-weight="500" fill="#5A5A5A" text-anchor="middle">2027 S2</text>
+  <text x="1010" y="660" class="mono" font-size="11" font-weight="500" fill="#5A5A5A" text-anchor="middle">2028</text>
 
-  <!-- FOOTER -->
-  <line x1="60" y1="745" x2="1140" y2="745" stroke="#E5E1D8" stroke-width="0.5"/>
-  <text x="60" y="768" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Source : extrapolation à partir des dossiers OTel GenAI semconv (juin 2026), MCP-sécurité (mai 2026), decode-speculative (mai 2026).</text>
+  <!-- Convergence call-out -->
+  <text x="60" y="700" class="mono" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#B7332C">POINT DE CONVERGENCE — 2028</text>
+  <text x="60" y="722" class="body" font-size="11" fill="#1A1A1A">Les quatre trajectoires se rejoignent : un scheduler appris, asservi à des SLO, exposé comme service découplé du modèle.</text>
+  <text x="60" y="740" class="body" font-size="11" fill="#1A1A1A">Le LLM décide quoi faire ; la politique apprise décide comment, quand, à quel coût — séparation des responsabilités à la distribué-2000s.</text>
+
+  <line x1="60" y1="755" x2="1140" y2="755" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="778" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Source : extrapolation à partir des dossiers OTel GenAI semconv (juin 2026), MCP-sécurité (mai 2026), decode-speculative (mai 2026).</text>
 </svg>
 
         <figcaption class="figure-caption"><a class="anchor" href="#fig-06" title="Lien direct vers ce schéma">¶</a> <em>Schéma 6 — Timeline 2026-2028. Quatre trajectoires parallèles : <strong>scheduler appris</strong> (recherche → prototypes 2027 → production 2028), <strong>RL-guided ordering</strong> (publications fin 2026), <strong>SLO-driven scheduling</strong> (production 2027), <strong>scheduler-as-a-service</strong> (offre commerciale 2027-2028).</em></figcaption>
@@ -1612,13 +1604,13 @@
       <p>Variante plus tactique : un petit modèle dédié décide, à chaque tour, si parallélisation ou sérialisation, sur la base d'un classifieur entraîné. Plus simple à déployer qu'un scheduler appris complet. Analogie directe avec le RL-guided drafting prévu pour le speculative decoding (cf. dossier <a href="../decode-speculative/">decode-speculative</a> mai 2026).</p>
 
       <h3 id="sec-7-3">7.3 SLO-driven scheduling</h3>
-      <p>L'observabilité OTel (cf. dossier <a href="../otel-genai-semconv/">otel-genai-semconv</a> juin 2026) rend mesurable la latence et le coût en production. La prochaine étape : asservir le scheduler à des <span class="term" data-tooltip="Service Level Objective : cible chiffrée de qualité de service (p95 < 8 s, taux d'erreur < 0,5 %). Pattern SRE.">SLO</span> explicites (« p95 latence &lt; 8 s », « coût moyen par session &lt; 0,50 $ »). Le tracker budget devient un contrôleur PID qui ajuste downgrade, compaction et parallélisation en boucle fermée. Premiers patterns en production 2027.</p>
+      <p>L'observabilité OTel (cf. dossier <a href="../otel-genai-semconv/">otel-genai-semconv</a> juin 2026) rend mesurable la latence et le coût en production. La prochaine étape : asservir le scheduler à des <span class="term" data-tooltip="Service Level Objective : cible chiffrée de qualité de service (p95 < 8 s, taux d'erreur < 0,5 %). Pattern SRE.">SLO</span> explicites (« p95 latence &lt; 8 s », « coût moyen par session &lt; 0,50 $ »). Le tracker budget devient un contrôleur PID qui ajuste rétrogradation, compaction et parallélisation en boucle fermée. Premiers patterns en production 2027.</p>
 
       <h3 id="sec-7-4">7.4 Scheduler-as-a-service</h3>
       <p>L'aboutissement commercial. Une offre SaaS qui prend la politique de scheduling en charge : le client expose ses outils (via MCP<a class="cite" data-cite="14" href="#source-14">14</a>), choisit ses budgets, et la plateforme orchestre. C'est ce que Devin et Manus font déjà en pratique, mais comme partie d'un agent monolithique ; l'offre découplée — scheduler seul, modèle laissé au client — n'existe pas encore. Probable à horizon 2027-2028, portée par les vendeurs MCP et les APM (Datadog, Honeycomb) qui veulent monétiser la couche d'orchestration.</p>
 
       <h2 id="sec-8">8. Conclusion</h2>
-      <p>Le scheduler du harness est passé en deux ans d'un détail d'implémentation à la couche load-bearing de l'agentic AI. Cinq sous-composants, cinq stratégies, trois budgets orthogonaux, une matrice de retry à quatre quadrants — ce qui ressemble à de la plomberie distribuée est en réalité la frontière de productivité.</p>
+      <p>Le scheduler du harness est passé en deux ans d'un détail d'implémentation à la couche pivot de l'IA agentique. Cinq sous-composants, cinq stratégies, trois budgets orthogonaux, une matrice de retry à quatre quadrants — ce qui ressemble à de la plomberie distribuée est en réalité la frontière de productivité.</p>
       <p><mark>Les harness qui gagnent en 2026 sont ceux qui rendent le scheduler explicite, observable et configurable</mark> — pas ceux qui le laissent implicitement piloté par le LLM. La trajectoire 2027-2028 le rend appris : le LLM décide <em>quoi</em> faire, mais une politique apprise décide <em>comment</em>, <em>quand</em>, <em>à quel coût</em>. Cette séparation des responsabilités — déjà familière en systèmes distribués depuis vingt ans — est la prochaine vague de maturation du harness.</p>
       <p>Le risque : que cette couche reste enfermée dans des produits propriétaires (Devin, Manus, futurs Anthropic / OpenAI agents managés) et que les SDK ouverts (Aider, OpenHands) restent un cran en arrière. La parade existe — LangGraph a déjà tracé la voie d'un scheduler explicite et configurable côté framework. Reste à le rendre <em>appris</em> sans le rendre <em>fermé</em>.</p>
     </main>
@@ -1704,7 +1696,7 @@
           <span class="accessed">consulté le 10 juin 2026</span>
         </li>
         <li id="source-16">
-          <span class="cite-num">[16]</span> OpenAI, <em>New tools for building agents</em> (mars 2025). Documentation officielle du Responses API et de la Agents SDK GA.<br>
+          <span class="cite-num">[16]</span> OpenAI, <em>New tools for building agents</em> (mars 2025) — Responses API, Agents SDK GA, et lancement de <em>Codex CLI</em> open-source en avril 2025. Documentation officielle du parallel tool use OpenAI et du harness Codex CLI.<br>
           <a href="https://openai.com/index/new-tools-for-building-agents/" target="_blank" rel="noopener">openai.com/index/new-tools-for-building-agents ↗</a>
           <span class="accessed">consulté le 10 juin 2026</span>
         </li>
@@ -1773,7 +1765,7 @@
     "budget-tracker": {
       title: "Budget tracker — trois compteurs orthogonaux",
       eyebrow: "3 · contrôle",
-      body: "<p>Le budget tracker suit en temps réel la consommation sur trois axes orthogonaux : <strong>tokens</strong> (cumul input + output, par modèle, par session), <strong>latence wall-clock</strong> (timeout dur de la session), <strong>dollars</strong> (cumul $ basé sur le pricing modèle et outils payants).</p><p>Quand l'un des trois budgets approche son seuil (typiquement 70-80 %), le tracker déclenche une politique de dégradation : downgrade modèle, compaction agressive, désactivation d'outils onéreux, <em>anytime answer</em>, ou hard fail. Voir Schéma 3 pour les politiques détaillées.</p>"
+      body: "<p>Le budget tracker suit en temps réel la consommation sur trois axes orthogonaux : <strong>tokens</strong> (cumul input + output, par modèle, par session), <strong>latence wall-clock</strong> (timeout dur de la session), <strong>dollars</strong> (cumul $ basé sur la tarification modèle et outils payants).</p><p>Quand l'un des trois budgets approche son seuil (typiquement 70-80 %), le tracker déclenche une politique de dégradation : rétrogradation du modèle, compaction agressive, désactivation d'outils onéreux, <em>réponse anytime</em>, ou arrêt terminal. Voir Schéma 3 pour les politiques détaillées.</p>"
     },
     "parallelizer": {
       title: "Parallelizer — exécution simultanée",
@@ -1826,13 +1818,13 @@
     },
     "cost-axis": {
       title: "Axe dollars",
-      eyebrow: "Cumul pricing modèle + outils",
-      body: "<p>Cumul à partir du pricing modèle (input / output) plus pricing des outils payants : API tierces, compute coding-sandbox, LLM-as-judge externe.</p><p>En 2026, le pricing Claude Sonnet est à 3 $ / Mtok input et 15 $ / Mtok output ; une session Devin de plusieurs heures peut dépasser 200 $. Le budget $ est typiquement une enveloppe par tâche, plus rarement par utilisateur ou par compte.</p><p>L'attribut OTel <code>gen_ai.usage.cost</code> reste optionnel — peu de providers exposent un coût stable et le calcul côté SDK est volatile.</p>"
+      eyebrow: "Cumul tarification modèle + outils",
+      body: "<p>Cumul à partir de la tarification modèle (input / output) plus celle des outils payants : API tierces, compute coding-sandbox, LLM-juge externe.</p><p>En 2026, Claude Sonnet est à 3 $ / Mtok input et 15 $ / Mtok output ; une session Devin de plusieurs heures peut dépasser 200 $. Le budget $ est typiquement une enveloppe par tâche, plus rarement par utilisateur ou par compte.</p><p>L'attribut OTel <code>gen_ai.usage.cost</code> reste optionnel — peu de providers exposent un coût stable et le calcul côté SDK est volatile.</p>"
     },
     "degradation-policy": {
       title: "Politique de dégradation",
       eyebrow: "Déclenchée à 70-80 % d'un axe",
-      body: "<p>Cinq actions, à composer selon l'axe contraint :</p><ol><li><strong>Downgrade modèle</strong> : Opus → Sonnet → Haiku.</li><li><strong>Compaction agressive</strong> : <code>/compact</code> (Claude Code), eviction (StreamingLLM, H2O), résumé hiérarchique.</li><li><strong>Désactivation d'outils onéreux</strong> : couper l'accès aux API payantes (LLM-as-judge cher).</li><li><strong>Anytime answer</strong> : rendre la meilleure réponse trouvée et arrêter.</li><li><strong>Hard fail</strong> : terminer et notifier — la moins préférable.</li></ol><p>Manus 2026 : perte de qualité de 4 points (politique explicite) vs 18 points (sans politique) quand le budget passe de 200 k à 50 k tokens.</p>"
+      body: "<p>Cinq actions, à composer selon l'axe contraint :</p><ol><li><strong>Rétrogradation du modèle</strong> : Opus → Sonnet → Haiku.</li><li><strong>Compaction agressive</strong> : <code>/compact</code> (Claude Code), eviction (StreamingLLM, H2O), résumé hiérarchique.</li><li><strong>Désactivation d'outils onéreux</strong> : couper l'accès aux API payantes (LLM-juge cher).</li><li><strong>Réponse anytime</strong> : rendre la meilleure réponse trouvée et arrêter.</li><li><strong>Arrêt terminal</strong> : terminer et notifier — la moins préférable.</li></ol><p>Manus 2026 : perte de qualité de 4 points (politique explicite) vs 18 points (sans politique) quand le budget passe de 200 k à 50 k tokens.</p>"
     }
   },
   "schema-04": {
@@ -1848,7 +1840,7 @@
     },
     "quadrant-no-retry": {
       title: "No retry — permanent × idempotent",
-      eyebrow: "Log + fail-fast",
+      eyebrow: "Log + échec immédiat",
       body: "<p>La faute est permanente (404 not found, schéma invalide, paramètre OOB, 403 autorisation). Réessayer est un gaspillage net : la même requête échouera de la même façon.</p><p><strong>Politique</strong> : log l'erreur, remonter au LLM. Le LLM peut alors pivoter (reformuler avec d'autres paramètres, choisir un autre outil, ou abandonner cette branche du plan).</p><p>Ne pas masquer l'erreur. Le pivot du LLM dépend de la transparence — si le harness retente silencieusement ou tronque l'erreur, le modèle ne reçoit pas le signal qui lui permettrait d'adapter sa stratégie.</p>"
     },
     "quadrant-compensate": {
@@ -1867,6 +1859,11 @@
       title: "Cursor",
       eyebrow: "Anysphere · agent intégré IDE",
       body: "<p>Architecture similaire à Claude Code côté boucle, avec une couche IDE — l'éditeur expose des outils contextuels (auto-suggestion, ligne courante, sélection).</p><p>Parallélisation oui, DAG non, budgets gérés au niveau IDE (timeout par opération). Le retry est délégué à l'API du modèle sous-jacent — Cursor consomme plusieurs providers et laisse chacun gérer sa propre politique de retry HTTP.</p><p>Pas d'observabilité publique du scheduler — le code est propriétaire et la télémétrie n'est pas exposée côté client.</p>"
+    },
+    "codex-cli": {
+      title: "Codex CLI",
+      eyebrow: "OpenAI · agent CLI open-source",
+      body: "<p>Annoncé par OpenAI en avril 2025, Codex CLI est l'homologue open-source de Claude Code, bâti sur l'API Responses et les modèles GPT. Parallel-batch oui (Responses API supporte les appels d'outils parallèles), DAG non, budgets tokens explicites, retry-policy déléguée à la couche API.</p><p>Pas de back-pressure documenté, pas de scheduler appris. Pas de <code>/compact</code> natif — le compactage est laissé à la stratégie de gestion de contexte côté application.</p><p><strong>Son intérêt</strong> : l'open-source. Le code de la boucle scheduler est lisible, forkable, et a déjà généré une dérivée vivante (variantes communautaires qui expérimentent DAG-planning et budgets multi-axes).</p>"
     },
     "openhands": {
       title: "OpenHands",
@@ -1908,7 +1905,7 @@
     "slo-driven": {
       title: "Track 3 — SLO-driven scheduling",
       eyebrow: "Contrôleur PID budgets",
-      body: "<p>L'observabilité OTel (cf. dossier <a href=\"../otel-genai-semconv/\">otel-genai-semconv</a> juin 2026) rend mesurable la latence et le coût en production. La prochaine étape : asservir le scheduler à des SLO explicites (« p95 latence &lt; 8 s », « coût moyen par session &lt; 0,50 $ »).</p><p>Le tracker budget devient un contrôleur PID qui ajuste downgrade, compaction et parallélisation en boucle fermée selon l'erreur entre SLO cible et mesure courante.</p><p><strong>Premiers patterns en production 2027</strong>, généralisation en 2028 — porté par les vendeurs APM qui veulent monétiser la couche d'orchestration.</p>"
+      body: "<p>L'observabilité OTel (cf. dossier <a href=\"../otel-genai-semconv/\">otel-genai-semconv</a> juin 2026) rend mesurable la latence et le coût en production. La prochaine étape : asservir le scheduler à des SLO explicites (« p95 latence &lt; 8 s », « coût moyen par session &lt; 0,50 $ »).</p><p>Le tracker budget devient un contrôleur PID qui ajuste rétrogradation, compaction et parallélisation en boucle fermée selon l'erreur entre SLO cible et mesure courante.</p><p><strong>Premiers patterns en production 2027</strong>, généralisation en 2028 — porté par les vendeurs APM qui veulent monétiser la couche d'orchestration.</p>"
     },
     "scheduler-as-a-service": {
       title: "Track 4 — Scheduler-as-a-service",
