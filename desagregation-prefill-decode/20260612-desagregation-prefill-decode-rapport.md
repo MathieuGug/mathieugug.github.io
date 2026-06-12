@@ -26,7 +26,9 @@ La première, le **prefill**, ingère le prompt entier d'un coup. Tous les token
 
 La seconde, le **decode**, génère la réponse un token à la fois. À chaque pas, le modèle ne traite qu'**un seul** nouveau token, mais doit relire l'intégralité des poids du modèle *et* tout le KV cache accumulé. L'intensité arithmétique s'effondre : presque aucun calcul par octet transféré. La phase devient **bornée par la bande passante mémoire** (HBM), et les unités de calcul restent largement oisives[^1][^2]. ==Un GPU en phase de decode gaspille la quasi-totalité des FLOPS pour lesquels on l'a payé.==
 
-Placer ces deux régimes sur le même <span class="term" data-tooltip="Roofline model : graphe reliant la performance atteignable à l'intensité arithmétique d'une charge, borné à gauche par la bande passante mémoire, à droite par le pic de calcul.">roofline</span> rend la tension visible : le prefill vit à droite du *ridge point* (zone compute-bound), le decode à gauche (zone memory-bound). Aucun réglage matériel ne peut être optimal pour les deux à la fois. [SCHEMA-01]
+Placer ces deux régimes sur le même <span class="term" data-tooltip="Roofline model : graphe reliant la performance atteignable à l'intensité arithmétique d'une charge, borné à gauche par la bande passante mémoire, à droite par le pic de calcul.">roofline</span> rend la tension visible : le prefill vit à droite du *ridge point* (zone compute-bound), le decode à gauche (zone memory-bound). Aucun réglage matériel ne peut être optimal pour les deux à la fois (voir Schéma 1).
+
+![Modèle roofline : le prefill compute-bound sur le plateau de calcul, le decode memory-bound sur la diagonale mémoire|width=1200](images/20260612-01-deux-charges-antagonistes.svg)
 
 ### 1.1 L'interférence : quand le prefill étrangle le decode
 
@@ -57,6 +59,10 @@ Le chemin d'une requête devient[^1][^5] : [SCHEMA-02]
 3. Le **KV cache** de la requête est **transféré** vers une instance de **decode** (le cœur du système, cf. §3).
 4. L'instance de decode génère la réponse token par token — phase memory-bound, sur du matériel à forte bande passante mémoire.
 5. Un signal de **feedback SLO** alimente l'ordonnanceur pour rééquilibrer dynamiquement la taille des deux pools (cf. §5).
+
+Le Schéma 2 détaille cette anatomie.
+
+![Anatomie d'un serveur désagrégé : routeur, pool de prefill, transfert KV, pool de decode, boucle de feedback SLO|width=1200](images/20260612-02-anatomie-desagregation.svg)
 
 Chaque pool peut désormais être dimensionné, parallélisé et matérialisé **indépendamment**. C'est exactement ce que verrouillait la colocalisation.
 
