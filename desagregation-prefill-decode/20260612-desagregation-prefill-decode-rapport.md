@@ -4,17 +4,17 @@
 
 ## Synthèse exécutive
 
-- **Une requête d'inférence LLM n'est pas une charge homogène : c'est deux régimes matériels opposés.** Le *prefill* (lecture du prompt) sature le calcul ; le *decode* (génération token par token) sature la bande passante mémoire. ==Les exécuter sur le même GPU force un compromis perdant : un long prefill bloque les decodes en cours et fait exploser la latence inter-token.== [^1][^2] [SCHEMA-01]
+- **Une requête d'inférence LLM n'est pas une charge homogène : c'est deux régimes matériels opposés.** Le *prefill* (lecture du prompt) sature le calcul ; le *decode* (génération token par token) sature la bande passante mémoire. ==Les exécuter sur le même GPU force un compromis perdant : un long prefill bloque les decodes en cours et fait exploser la latence inter-token.== [^1][^2]
 
-- **La désagrégation sépare les deux phases en pools matériels distincts**, reliés par un transfert du KV cache. DistServe sert **7,4× plus de requêtes** ou tient un **SLO 12,6× plus serré** à isopérimètre ; Splitwise atteint **2,35× de débit** à coût et puissance constants[^1][^2]. [SCHEMA-02]
+- **La désagrégation sépare les deux phases en pools matériels distincts**, reliés par un transfert du KV cache. DistServe sert **7,4× plus de requêtes** ou tient un **SLO 12,6× plus serré** à isopérimètre ; Splitwise atteint **2,35× de débit** à coût et puissance constants[^1][^2].
 
-- **Le KV cache devient le centre de gravité du système.** Mooncake — la plateforme de Kimi (Moonshot AI), *Best Paper* à FAST 2025 — réorganise toute l'architecture autour d'un pool de KV cache distribué sur la VRAM, la DRAM et le SSD inexploités du cluster[^3][^4]. ==Le goulot d'étranglement n'est plus le FLOP, c'est l'octet de cache et sa bande passante de transfert.== [SCHEMA-03]
+- **Le KV cache devient le centre de gravité du système.** Mooncake — la plateforme de Kimi (Moonshot AI), *Best Paper* à FAST 2025 — réorganise toute l'architecture autour d'un pool de KV cache distribué sur la VRAM, la DRAM et le SSD inexploités du cluster[^3][^4]. ==Le goulot d'étranglement n'est plus le FLOP, c'est l'octet de cache et sa bande passante de transfert.==
 
-- **La bonne métrique n'est pas le débit agrégé mais le *goodput*** : le nombre de requêtes servies *en respectant simultanément* les deux SLO (TTFT pour le prefill, TPOT pour le decode). Un système peut afficher un débit record tout en violant ses SLO sur la moitié des requêtes[^1][^12]. [SCHEMA-04]
+- **La bonne métrique n'est pas le débit agrégé mais le *goodput*** : le nombre de requêtes servies *en respectant simultanément* les deux SLO (TTFT pour le prefill, TPOT pour le decode). Un système peut afficher un débit record tout en violant ses SLO sur la moitié des requêtes[^1][^12].
 
-- **La désagrégation n'est pas gratuite, et elle a un rival intra-instance : le *chunked prefill***. Sarathi-Serve découpe le prefill en morceaux interleavés avec les decodes (ordonnancement *stall-free*, **5,6×** de capacité)[^7]. Le vrai espace de conception 2026 est un continuum : multiplexer dans une instance, ou désagréger en pools — selon l'échelle, la longueur des prompts et l'hétérogénéité du matériel. [SCHEMA-05]
+- **La désagrégation n'est pas gratuite, et elle a un rival intra-instance : le *chunked prefill***. Sarathi-Serve découpe le prefill en morceaux interleavés avec les decodes (ordonnancement *stall-free*, **5,6×** de capacité)[^7]. Le vrai espace de conception 2026 est un continuum : multiplexer dans une instance, ou désagréger en pools — selon l'échelle, la longueur des prompts et l'hétérogénéité du matériel.
 
-- **En 2026, la désagrégation est passée de la recherche au cœur de tous les moteurs majeurs** — vLLM (llm-d), SGLang, TensorRT-LLM, NVIDIA Dynamo. Kimi K2 tourne sur **128 GPU H200** en P/D désagrégé (224k tok/s prefill, 288k tok/s decode) ; DeepSeek-R1 sur **96 H100** atteint 52,3k tokens d'entrée et 22,3k de sortie par nœud[^8][^9]. [SCHEMA-06]
+- **En 2026, la désagrégation est passée de la recherche au cœur de tous les moteurs majeurs** — vLLM (llm-d), SGLang, TensorRT-LLM, NVIDIA Dynamo. Kimi K2 tourne sur **128 GPU H200** en P/D désagrégé (224k tok/s prefill, 288k tok/s decode) ; DeepSeek-R1 sur **96 H100** atteint 52,3k tokens d'entrée et 22,3k de sortie par nœud[^8][^9].
 
 ---
 
@@ -52,7 +52,7 @@ C'est ce triple constat — interférence, couplage du parallélisme, couplage m
 
 L'idée est simple à énoncer : **assigner le prefill et le decode à des GPU différents**, organisés en deux pools spécialisés, et transférer l'état intermédiaire de l'un vers l'autre.
 
-Le chemin d'une requête devient[^1][^5] : [SCHEMA-02]
+Le chemin d'une requête devient[^1][^5] :
 
 1. Un **routeur / ordonnanceur** reçoit la requête et choisit une instance de **prefill**.
 2. L'instance de prefill calcule le KV cache du prompt entier — phase compute-bound, sur du matériel à forts FLOPS.
@@ -118,7 +118,9 @@ La conséquence opérationnelle : le **ratio entre nœuds de prefill et nœuds d
 
 ## 5. Le rival intra-instance : le chunked prefill
 
-La désagrégation n'est pas la seule réponse au problème d'interférence. Son rival le plus sérieux travaille *à l'intérieur* d'une instance unique : le **chunked prefill** de Sarathi-Serve (Agrawal et al., *OSDI 2024*). [SCHEMA-05]
+La désagrégation n'est pas la seule réponse au problème d'interférence. Son rival le plus sérieux travaille *à l'intérieur* d'une instance unique : le **chunked prefill** de Sarathi-Serve (Agrawal et al., *OSDI 2024*). Le Schéma 5 situe les deux approches sur leur continuum.
+
+![Désagréger ou multiplexer : un cadre 2×2 échelle × longueur de prompt, du chunked prefill intra-instance à la désagrégation pleine|width=900](images/20260612-05-desagreger-ou-multiplexer.svg)
 
 Plutôt que d'exiler le prefill sur d'autres GPU, Sarathi-Serve le **découpe** en morceaux de taille à peu près égale, puis **interleave** ces chunks avec les decodes en cours dans des batchs hybrides. Aucun decode n'est plus jamais bloqué derrière un long prefill : l'ordonnancement devient <span class="term" data-tooltip="Stall-free scheduling : ordonnancement qui ajoute de nouvelles requêtes à un batch sans jamais suspendre les decodes en cours, en fractionnant les prefills.">*stall-free*</span>. Le gain : jusqu'à **5,6×** de capacité de service, en domptant l'arbitrage débit/latence sans aucun transfert réseau[^7].
 
@@ -135,7 +137,9 @@ Le point de bascule dépend de trois variables : l'**échelle** du déploiement 
 
 ## 6. L'état de l'art 2026 : qui désagrège quoi
 
-En l'espace de dix-huit mois, la désagrégation est passée du papier de recherche au **socle architectural par défaut** des moteurs d'inférence à grande échelle. [SCHEMA-06]
+En l'espace de dix-huit mois, la désagrégation est passée du papier de recherche au **socle architectural par défaut** des moteurs d'inférence à grande échelle. Le Schéma 6 compare cinq systèmes sur cinq dimensions.
+
+![Matrice : DistServe, Splitwise, Mooncake, NVIDIA Dynamo, SGLang/vLLM comparés sur désagrégation, matériel hétérogène, pool KV, transfert et production|width=1200](images/20260612-06-qui-desagrege-quoi.svg)
 
 | Système | Origine | Spécificité |
 |---|---|---|
@@ -157,7 +161,9 @@ Les déploiements ouverts confirment l'échelle. LMSYS sert **Kimi K2 sur 128 GP
 
 ## 7. Trajectoires 2026-2028
 
-La séparation prefill/decode n'est qu'un premier découpage. La trajectoire est claire : **désagréger à grain de plus en plus fin, et faire du cache un service de premier ordre.** [SCHEMA-07]
+La séparation prefill/decode n'est qu'un premier découpage. La trajectoire est claire : **désagréger à grain de plus en plus fin, et faire du cache un service de premier ordre.** Le Schéma 7 trace les quatre fronts.
+
+![Trajectoires 2026-2028 : granularité (attention, multi-tour), matériel cross-vendor, KVCache global, couplage MoE / parallélisme d'experts|width=1200](images/20260612-07-trajectoires-2026-2028.svg)
 
 - **Désagrégation à grain fin.** Des travaux comme *Adrenaline* désagrègent l'**attention** elle-même — la sous-opération memory-bound — pour récupérer la capacité de calcul oisive du decode et booster l'utilisation des ressources[^11]. La granularité descend de la phase vers l'opérateur. D'autres (PPD) distinguent même les prefills *eux-mêmes* selon qu'il s'agit d'un premier tour ou d'un tour multi-tour avec préfixe déjà en cache.
 
