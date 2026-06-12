@@ -80,7 +80,9 @@ Splitwise (Patel et al., Microsoft Research, *ISCA 2024*) attaque l'angle coût/
 
 ## 3. Le KV cache devient le centre de gravité
 
-Désagréger déplace le problème : il faut maintenant **transférer le KV cache** du pool de prefill vers le pool de decode, par requête. Pour un grand modèle et un long prompt, ce cache pèse plusieurs centaines de mégaoctets à plusieurs gigaoctets. Mal géré, le transfert annule tout le gain. [SCHEMA-03]
+Désagréger déplace le problème : il faut maintenant **transférer le KV cache** du pool de prefill vers le pool de decode, par requête. Pour un grand modèle et un long prompt, ce cache pèse plusieurs centaines de mégaoctets à plusieurs gigaoctets. Mal géré, le transfert annule tout le gain. Le Schéma 3 cartographie cette fabrique de cache.
+
+![Le KV cache comme centre de gravité : transfert NIXL VRAM↔VRAM, pool DRAM/SSD, transfert pipeliné, réutilisation de préfixe|width=1200](images/20260612-03-kv-cache-centre-gravite.svg)
 
 ### 3.1 La fabrique de transfert : RDMA, NVLink, NIXL
 
@@ -100,7 +102,9 @@ Mooncake (arXiv 2407.00079, *Best Paper FAST 2025*), la plateforme de Kimi, pous
 
 ## 4. Goodput, pas throughput : la métrique qui change tout
 
-Le déplacement le plus subtil opéré par la désagrégation est métrologique. La bonne mesure n'est pas le **débit** brut (tokens/seconde agrégés) mais le **goodput** : le nombre de requêtes servies *en respectant simultanément* les deux SLO[^1][^12]. [SCHEMA-04]
+Le déplacement le plus subtil opéré par la désagrégation est métrologique. La bonne mesure n'est pas le **débit** brut (tokens/seconde agrégés) mais le **goodput** : le nombre de requêtes servies *en respectant simultanément* les deux SLO[^1][^12]. Le Schéma 4 oppose les deux mesures.
+
+![Goodput vs throughput : la boîte SLO définie par TTFT et TPOT, la courbe colocalisée qui en sort vite, la courbe désagrégée qui y reste|width=900](images/20260612-04-goodput-vs-throughput.svg)
 
 Pourquoi la distinction est porteuse : un système colocalisé peut afficher un débit agrégé flatteur en empilant d'énormes batchs — tout en violant le SLO de TTFT (prompts qui attendent) ou de TPOT (générations saccadées) sur une fraction importante des requêtes. ==Ce débit-là est en partie du « gaspillage » : des tokens produits hors contrat de latence, donc sans valeur pour l'utilisateur.== Le goodput ne compte que les requêtes *dans la boîte SLO* définie par les deux seuils (TTFT max, TPOT max).
 
