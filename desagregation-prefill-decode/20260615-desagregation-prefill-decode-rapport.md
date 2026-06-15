@@ -71,7 +71,7 @@ Le piège de la désagrégation est qu'elle déplace le goulot sans le supprimer
 
 La règle de viabilité, posée dès DistServe, est simple : ==le transfert du KV cache doit rester négligeable devant la durée d'un pas de decode==[^1]. Tant que cette condition tient, la désagrégation est gratuite ; dès qu'elle se brise (transfert trop lent, contexte trop long, réseau saturé), elle devient nette perte. Tenir cette condition à l'échelle est un problème de transport réseau pur — et c'est devenu un domaine d'ingénierie à part entière.
 
-[SCHEMA-05]
+![Le transport du KV cache : hiérarchie NVLink, RDMA, NVMe, objet, et transfert layer-by-layer|width=1200](images/20260615-05-kv-transport.svg)
 
 La réponse de NVIDIA est **NIXL** (*NVIDIA Inference Transfer Library*), une bibliothèque de transfert point-à-point open-sourcée à GTC 2025[^6]. NIXL déplace les tenseurs de KV cache directement de la VRAM du GPU prefill vers la VRAM du GPU decode, sans copie CPU intermédiaire, et de façon **non bloquante** : le passage avant du GPU peut continuer à servir d'autres requêtes pendant que le transfert s'effectue en arrière-plan[^6][^5]. Elle abstrait une hiérarchie de backends de transport, du plus rapide au plus lent :
 
