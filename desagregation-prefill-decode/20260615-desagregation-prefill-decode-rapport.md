@@ -31,7 +31,7 @@ Un service LLM a deux SLO (*Service Level Objectives*) orthogonaux, hérités de
 
 Ces deux SLO sont indépendants : une application de chat conversationnel exige un TTFT serré (réactivité perçue) ; une application de génération de code long tolère un TTFT lâche mais exige un TPOT régulier (pas de saccades). DistServe introduit la métrique qui réconcilie tout cela : le **goodput** — non pas le débit brut, mais ==le nombre de requêtes par seconde qui respectent *simultanément* leurs deux SLO (TTFT et TPOT)==[^1]. Une requête servie vite mais hors contrat de latence ne compte pas ; elle gonfle le throughput sans satisfaire personne.
 
-[SCHEMA-02]
+![Throughput contre goodput : seules les requêtes dans la zone des deux SLO comptent|width=1200](images/20260615-02-goodput.svg)
 
 Le basculement conceptuel est là. Optimiser le throughput pousse à empiler des requêtes dans des lots toujours plus gros — ce qui dégrade précisément les latences individuelles. Optimiser le goodput force à raisonner par phase, avec un budget de latence par phase. Et dès qu'on raisonne par phase, la conséquence est mécanique : si prefill et decode ont des SLO distincts et des profils matériels opposés, pourquoi les laisser sur le même GPU ? ==Le goodput est la métrique qui rend la désagrégation non pas séduisante mais nécessaire.== DistServe mesure le gain : à SLO constant, son architecture désagrégée sert **7,4× plus de requêtes**, ou tient un **SLO 12,6× plus serré**, tout en gardant plus de 90 % des requêtes dans les bornes de latence[^1].
 
