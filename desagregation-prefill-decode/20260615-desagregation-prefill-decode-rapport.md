@@ -98,7 +98,7 @@ D'où l'émergence d'une troisième voie, la **désagrégation conditionnelle** 
 
 En deux ans, la désagrégation est passée des papiers à l'infrastructure standard. La trajectoire est lisible.
 
-[SCHEMA-06]
+![Bascule production 2024 à 2028 : papiers, NIXL, CNCF, désagrégation conditionnelle, horizon|width=1200](images/20260615-06-bascule.svg)
 
 **2024 — les papiers fondateurs.** DistServe, Splitwise et Sarathi-Serve sortent à quelques mois d'intervalle (ISCA et OSDI), posant la métrique de goodput, l'argument d'efficacité et l'alternative chunked prefill. Mooncake suit en juillet 2024, premier déploiement à l'échelle d'un service grand public[^1][^2][^3][^4].
 
