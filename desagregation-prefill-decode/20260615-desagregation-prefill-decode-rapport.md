@@ -14,7 +14,7 @@ Le **prefill** ingère le prompt. Le modèle traite tous les tokens d'entrée en
 
 Le **decode** génère la suite, un token à la fois. À chaque pas, le modèle lit l'intégralité de ses poids depuis la HBM et relit tout le KV cache accumulé, pour ne produire qu'un seul token. C'est une opération **memory-bound** : ce qui limite n'est pas le calcul mais la bande passante mémoire, et l'utilisation des unités tensor s'effondre[^1][^2]. ==Le decode n'a pas besoin de la puissance de calcul des GPU les plus récents — il peut tourner sur du matériel moins cher et moins gourmand en énergie.==[^2]
 
-[SCHEMA-01]
+![Deux phases, deux profils matériels : prefill compute-bound, decode memory-bound|width=1200](images/20260615-01-deux-phases.svg)
 
 Le problème naît quand on colocalise les deux. La technique standard — le *continuous batching*, où l'on regroupe en continu prefills et decodes de requêtes différentes dans le même lot — fait que les deux phases se disputent le même GPU. Et elles se gênent dans les deux sens. Un long prefill, qui monopolise les unités de calcul pendant des centaines de millisecondes, **bloque les decodes** des autres requêtes : leur production de token suivant est suspendue, et leur *Time Per Output Token* (TPOT) part en pic[^4]. Inversement, intercaler des decodes memory-bound dans un lot de prefill **dilue l'utilisation compute** : le GPU passe son temps à attendre la mémoire au lieu de calculer.
 
