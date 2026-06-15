@@ -55,7 +55,7 @@ L'autre vertu de l'éclatement est l'**autoscaling séparé**. Les deux pools n'
 
 L'idée de séparer les phases a émergé presque simultanément dans trois équipes, avec trois fonctions-objectif différentes. Comprendre la désagrégation, c'est comprendre ce que chacune optimise.
 
-[SCHEMA-04]
+![Trois écoles de désagrégation : DistServe, Splitwise, Mooncake comparées sur cinq dimensions|width=1200](images/20260615-04-trois-ecoles.svg)
 
 **DistServe (OSDI 2024) — l'école du goodput.** L'angle académique, le plus pur. DistServe pose le problème comme une co-optimisation : pour chaque phase, choisir indépendamment le degré de parallélisme et l'allocation de ressources qui maximise le goodput sous contraintes de TTFT et TPOT[^1]. Sa contribution conceptuelle est double : la métrique de goodput elle-même, et un algorithme de placement qui tient compte de la bande passante entre nœuds — quand l'affinité réseau est forte (GPU reliés par NVLink), il place prefill et decode au plus près pour que le transfert KV reste négligeable devant la durée d'un pas de decode[^1]. C'est l'école qui a fourni le vocabulaire.
 
