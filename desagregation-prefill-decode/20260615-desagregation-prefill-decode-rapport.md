@@ -47,7 +47,7 @@ Désagréger, concrètement, c'est éclater le serveur monolithique en quatre or
 
 **Le transfert KV.** Le tendon qui relie les deux pools. Une fois le prefill terminé, le KV cache de la requête — qui peut peser plusieurs gigaoctets pour un long contexte — doit voyager de la VRAM du GPU prefill vers la VRAM du GPU decode. C'est le maillon nouveau, inexistant dans l'architecture colocalisée, et nous y revenons en section 5.
 
-[SCHEMA-03]
+![Anatomie d'une pile désagrégée : routeur, pool prefill, transfert KV, pool decode|width=1200](images/20260615-03-anatomie.svg)
 
 L'autre vertu de l'éclatement est l'**autoscaling séparé**. Les deux pools n'ont aucune raison de monter en charge au même rythme : un trafic riche en prompts longs (RAG, analyse de documents) sature le prefill ; un trafic riche en générations longues (rédaction, agent) sature le decode. En les séparant, chaque pool dimensionne son nombre de répliques indépendamment. Dans `llm-d`, prefill et decode sont deux déploiements Kubernetes distincts, qui scalent chacun via leur propre *Horizontal Pod Autoscaler*[^7]. Splitwise ajoute un troisième pool « mixte » élastique, qui se contracte et s'étend pour absorber les pics et lisser le surdimensionnement[^2].
 
