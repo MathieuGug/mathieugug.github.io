@@ -38,7 +38,7 @@ Le problème est structurel : colocaliser **couple de force** deux décisions qu
 
 ## 3. Deux réponses rivales
 
-[SCHEMA-05]
+![Chunked prefill colocalisé vs désagrégation : cadre de décision|width=900](images/20260617-05-chunked-vs-desagregation.svg)
 
 Deux écoles répondent à l'interférence (cf. Schéma 5).
 
@@ -94,7 +94,7 @@ Le levier décisif y est le **cache hit**. Le tarif DeepSeek distingue explicite
 
 ## 8. Trajectoires 2026-2028
 
-[SCHEMA-06]
+![Trajectoire 2022-2028 : quatre ères de l'inférence|width=1200](images/20260617-06-trajectoire.svg)
 
 Le Schéma 6 retrace la trajectoire et la prolonge. Quatre lignes de force se dessinent.
 
