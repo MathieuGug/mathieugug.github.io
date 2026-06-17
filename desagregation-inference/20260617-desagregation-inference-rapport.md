@@ -64,7 +64,7 @@ La désagrégation est passée du papier à la production en moins de deux ans (
 
 ## 5. Le KV cache, nouvel objet central
 
-[SCHEMA-03]
+![Le KV cache, objet central : paging, partage de préfixes, offloading, pooling|width=900](images/20260617-03-kv-cache-objet.svg)
 
 Si l'on suit le fil rouge de ces systèmes, l'objet qui se déplace au centre de l'architecture n'est plus le modèle : c'est le **KV cache** (cf. Schéma 3). Quatre familles de techniques le gèrent, par sophistication croissante.
 
@@ -78,7 +78,7 @@ Si l'on suit le fil rouge de ces systèmes, l'objet qui se déplace au centre de
 
 ## 6. État de l'art 2026
 
-[SCHEMA-04]
+![Matrice : huit systèmes de serving × six dimensions|width=1200](images/20260617-04-matrice-systemes.svg)
 
 Le Schéma 4 cartographie huit systèmes selon six dimensions : désagrégation prefill/decode, KV cache pagé, partage de préfixes, *offloading* hiérarchique, *chunked prefill*, et maturité en production.
 
