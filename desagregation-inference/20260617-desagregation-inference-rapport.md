@@ -18,7 +18,7 @@
 
 ## 1. Deux régimes, pas un
 
-[SCHEMA-01]
+![Deux régimes : prefill compute-bound vs decode memory-bandwidth-bound|width=1200](images/20260617-01-deux-regimes.svg)
 
 Un appel d'inférence à un modèle autorégressif traverse deux phases physiquement distinctes (cf. Schéma 1).
 
@@ -50,7 +50,7 @@ Le débat n'est pas tranché et la nuance compte. Une analyse de 2025, *Beyond t
 
 ## 4. L'architecture désagrégée en production
 
-[SCHEMA-02]
+![Du moteur monolithique colocalisé à la flotte désagrégée|width=1200](images/20260617-02-monolithe-flotte.svg)
 
 La désagrégation est passée du papier à la production en moins de deux ans (cf. Schéma 2).
 
