@@ -16,7 +16,7 @@
 
 - **La métrique qui tranche est le *goodput* sous SLO.** TTFT (gouverné par le prefill) et TPOT (gouverné par le decode) ont des SLO distincts. Désagréger permet de dimensionner les deux pools *indépendamment* — ratio xP:yD, parallélisme et matériel choisis phase par phase — et de maximiser le nombre de requêtes qui respectent *les deux* contraintes.[^2] En production, NVIDIA Dynamo[^9] et llm-d[^10] industrialisent cette approche ; ==elle paie à l'échelle, pas en deçà.==
 
-[SCHEMA-01]
+![Le roofline des deux régimes : prefill compute-bound sur le plateau, decode memory-bound contre le mur de la bande passante.|width=1200](images/20260619-01-roofline-deux-regimes.svg)
 
 ## 1. Deux régimes, une seule machine
 
