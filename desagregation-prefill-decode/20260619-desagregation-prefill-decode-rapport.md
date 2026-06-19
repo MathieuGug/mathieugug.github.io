@@ -90,7 +90,7 @@ La désagrégation attaque ce problème par la racine : puisque TTFT dépend du 
 
 Mais — et c'est le contre-point honnête — ==la désagrégation a un coût fixe d'entrée qui ne se rentabilise qu'à l'échelle==. Transférer le KV cache ajoute de la latence et de la complexité ; séparer en deux pools suppose assez de GPU pour que chacun soit bien rempli. Sur un petit déploiement, ou sous charge homogène où l'interférence reste marginale, **le chunked prefill co-localisé de Sarathi-Serve est souvent le meilleur choix** : une seule classe de machines, pas de transfert réseau, un *stall-free batching* qui suffit.[^4] Le seuil de bascule dépend de l'échelle, de l'hétérogénéité du trafic et du coût du réseau — c'est une décision d'ingénierie, pas un dogme.
 
-[SCHEMA-06]
+![Cartographie des systèmes 2026 : fondateurs désagrégés, école co-localisée, frameworks de production, adoption open-source.|width=1200](images/20260619-06-cartographie-systemes.svg)
 
 ## 6. Cartographie des systèmes 2026
 
