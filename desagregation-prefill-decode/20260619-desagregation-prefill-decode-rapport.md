@@ -44,7 +44,7 @@ L'**école co-localisée** garde prefill et decode sur la même machine mais ré
 
 L'**école désagrégée** tranche le nœud autrement : si les deux phases s'interfèrent, ==il faut les séparer physiquement==. Prefill sur un pool de GPU, decode sur un autre. Plus aucun prefill ne peut bloquer un decode, puisqu'ils ne tournent plus sur les mêmes machines. C'est le pari de Splitwise[^1], DistServe[^2] et Mooncake[^3]. Le prix à payer : il faut transférer le KV cache d'un pool à l'autre.
 
-[SCHEMA-03]
+![L'architecture désagrégée canonique : routeur global, pool prefill, transfert du KV cache, pool decode.|width=1200](images/20260619-03-architecture-desagregee.svg)
 
 ## 3. L'architecture désagrégée canonique
 
