@@ -78,7 +78,7 @@ Plusieurs leviers le rendent tenable.
 
 ==Le prefix caching transforme l'économie de la désagrégation== : sur des charges à fort recouvrement de contexte (mêmes instructions système, documents RAG récurrents), une grande part du prefill n'est jamais recalculée, et le pool KV devient un cache de second niveau aussi important que le calcul lui-même.[^3]
 
-[SCHEMA-05]
+![Goodput sous SLO : la zone où TTFT et TPOT sont tous deux respectés, et le levier de scaling indépendant xP:yD.|width=1200](images/20260619-05-goodput-slo.svg)
 
 ## 5. Goodput sous SLO : pourquoi désagréger paie
 
