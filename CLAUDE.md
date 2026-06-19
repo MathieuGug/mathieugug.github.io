@@ -18,6 +18,21 @@ Site personnel de Mathieu Guglielmino, hébergé sur GitHub Pages. Il publie des
 
 **Trois règles non négociables** : (1) Lincoln uniquement en footer, jamais en hero / en-tête / sources de schémas. (2) Disclosure IA discrète sur chaque artefact. (3) Pas de tracker, analytics ni tiers (sauf Google Fonts).
 
+## Routine de recherche cloud — protocole anti-doublon
+
+La routine cloud `Illustrated deep research · mer + ven` pioche un sujet dans `BACKLOG.md`, produit le dossier et **ouvre une PR** (titre `Research · <slug> — …`). Elle **branche depuis `main`** et **ne peut pas écrire sur `main`** (PR-only). Conséquence : tant qu'une PR n'est pas mergée, son sujet **ne bascule pas** dans « Déjà couverts » sur `main`, donc une routine naïve **re-pioche le même sujet à chaque run** → doublons (cf. l'épisode #148/#150/#151/#152 « désagrégation prefill/decode »).
+
+**Règle obligatoire — un sujet est « pris » s'il est dans l'UNION :**
+1. la section **« Déjà couverts »** de `BACKLOG.md` sur `main` (mergé) ;
+2. la section **« 🔒 Réservé — PR ouvertes »** en tête de `BACKLOG.md` ;
+3. **les PR ouvertes** `Research · <slug>` sur GitHub.
+
+**Au démarrage de chaque run**, avant de choisir : lister les PR ouvertes (`mcp__github__list_pull_requests` ou recherche `is:pr is:open` titre `Research ·`) et **exclure tout slug déjà en vol**. Ne jamais se fier au seul `main`.
+
+**À l'ouverture de la PR** : ajouter le slug à « 🔒 Réservé — PR ouvertes » dans le commit de la branche (la ligne sera purgée au merge, quand elle bascule en « Déjà couverts »).
+
+**Hygiène backlog** : si le backlog de revue gonfle (plusieurs PR `Research ·` non mergées), dédupliquer d'abord (garder une PR par sujet, fermer les autres) avant de relancer la routine — sinon le statut reste prisonnier des branches. Marquer un sujet pris directement sur `main` (édit de `BACKLOG.md`) est le levier manuel pour débloquer la routine sans tout merger.
+
 ## Cadrage éditorial
 
 - **Tout est publié au nom de Mathieu Guglielmino, à titre personnel.** Ces artefacts ne sont pas des livrables internes.

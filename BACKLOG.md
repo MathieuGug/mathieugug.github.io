@@ -1,6 +1,19 @@
 # Backlog éditorial — illustrated deep research
 _Mis à jour par la routine `Illustrated deep research · mer + ven`._
 
+> **Protocole anti-doublon (à lire avant de choisir un sujet).** Un sujet est
+> « pris » s'il figure dans **« Déjà couverts »** (mergé sur `main`) **OU** dans
+> **« 🔒 Réservé — PR ouvertes »** ci-dessous **OU** s'il existe déjà une PR
+> ouverte `Research · <slug>` sur GitHub. La routine branche depuis `main` : tant
+> qu'une PR n'est pas mergée, son sujet n'apparaît PAS dans « Déjà couverts ».
+> **Donc : avant de piocher, lister les PR ouvertes (`is:pr is:open` titre
+> `Research ·`) et exclure leurs slugs.** À l'ouverture d'une PR, ajouter le slug
+> à « 🔒 Réservé » dans le commit de la branche (purgé au merge quand il bascule
+> en « Déjà couverts »). Détail complet : `CLAUDE.md` § *Routine de recherche cloud*.
+
+## 🔒 Réservé — PR ouvertes (ne pas re-piocher)
+- **désagrégation prefill/decode** (Splitwise / Mooncake) — PR #148, #150, #151, #152 **en doublon**, à dédupliquer (garder une seule, fermer les autres). Bascule en « Déjà couverts » au merge.
+
 ## En cours / prio haute
 - [ ] (vide)
 
@@ -19,7 +32,7 @@ _Mis à jour par la routine `Illustrated deep research · mer + ven`._
 - Souveraineté des semi-conducteurs (TSMC, ASML, Nvidia, AMD MI400)
 - Energy footprint des LLMs en 2026 — data centers et grids
 - Edge AI / on-device — Apple Intelligence, Phi-5, Gemma
-- Decode spéculative — déjà couvert 2026-05-22 (decode-speculative). Suite naturelle : (a) PagedAttention / RadixAttention en détail ; (b) désagrégation prefill/decode (Splitwise/Mooncake) en deep dive ; (c) RL-guided drafting quand le papier sortira fin 2026
+- Decode spéculative — déjà couvert 2026-05-22 (decode-speculative). Suite naturelle : (a) PagedAttention / RadixAttention en détail ; (b) ~~désagrégation prefill/decode (Splitwise/Mooncake)~~ → 🔒 **réservé, PR ouvertes (cf. section dédiée en tête)** ; (c) RL-guided drafting quand le papier sortira fin 2026
 
 ## Watchlist actu
 - Claude 4.7 — sortie Opus / Sonnet, benchmarks
