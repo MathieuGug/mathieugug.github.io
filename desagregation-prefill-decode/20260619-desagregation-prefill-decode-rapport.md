@@ -62,7 +62,7 @@ Cette séparation débloque trois libertés que la co-localisation interdit :
 
 **Splitwise** (Microsoft Azure + Université de Washington, ISCA 2024) a posé le concept de *phase splitting* et démontré ses gains de coût/puissance sur des grappes Azure réelles.[^1] **DistServe** (Peking University + UC San Diego, OSDI 2024) l'a formalisé autour du *goodput* et a montré comment co-optimiser placement et parallélisme par phase.[^2] **TetriInfer** y ajoute une classification des requêtes pour router intelligemment selon leur profil prédit.[^7]
 
-[SCHEMA-04]
+![Le KV cache comme objet réseau : anatomie, transports, pool tiéré, streaming layer-by-layer.|width=1200](images/20260619-04-kv-cache-objet-reseau.svg)
 
 ## 4. Le KV cache comme objet réseau
 
