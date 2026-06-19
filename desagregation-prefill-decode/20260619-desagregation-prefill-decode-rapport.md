@@ -30,7 +30,7 @@ La **phase de decode** (ou *generation*) produit la réponse token par token. Ch
 
 Cette divergence a une conséquence matérielle profonde. Un GPU optimal pour le prefill privilégie le calcul brut (FLOPS) ; un GPU optimal pour le decode privilégie la bande passante mémoire et la capacité HBM. ==Tant que les deux phases partagent la même machine, on paie le prix fort du composant le plus cher pour les deux usages.==[^1]
 
-[SCHEMA-02]
+![L'interférence du batch mixte et les deux écoles : chunked prefill co-localisé contre désagrégation.|width=1200](images/20260619-02-interference-deux-ecoles.svg)
 
 ## 2. L'interférence : le péché du batch mixte
 
