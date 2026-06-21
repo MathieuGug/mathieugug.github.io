@@ -24,6 +24,7 @@ Site personnel de Mathieu Guglielmino, hébergé sur GitHub Pages. Il publie des
 - **Lincoln** : mention légère, footer uniquement (`Mathieu Guglielmino · Practice Manager Lincoln`). Pas dans les hero, pas dans les en-têtes d'articles, pas dans les README, pas dans les sources/légendes des schémas.
 - **Jamais de clients internes** ni de projets internes nommés. Si un nom de client apparaît dans un brouillon, demander avant de publier.
 - **Disclosure IA** : chaque artefact porte une mention discrète `Format co-écrit avec l'aide d'une IA` (ou équivalent contextuel).
+- **Pas d'anglicismes en prose française.** Les textes publiés (rapports, hubs, hero, prose des apps, légendes de schémas) sont en français. Bannis en particulier : `load-bearing` (préférer **porteur · pivot · structurant · décisif · critique**), `bottleneck` (→ goulot d'étranglement), `deep dive` en prose (réservé au format/badge), `fail-fast` (→ échec immédiat), `downgrade` (→ rétrogradation), `pricing` (→ tarification), `hard fail` (→ échec terminal). Les termes techniques sans équivalent stable (DAG, SLO, MCP, RC, batch, scheduler, harness, agent, span, queue, back-pressure, anytime au sens « anytime algorithm », EventStream comme nom propre, time-to-first-token) restent en anglais, idéalement en italique au premier usage avec une glose courte. La règle s'applique aux titres, sous-titres et légendes de schémas SVG comme à la prose.
 
 ## Stack et conventions
 
