@@ -16,7 +16,9 @@ Toute génération autorégressive se décompose en deux temps que tout sépare.
 
 Le **decode** génère ensuite la réponse, un token à la fois. Chaque itération lit l'intégralité du KV cache accumulé, calcule un seul nouveau token, l'ajoute au cache, recommence. Le volume de calcul par pas est minuscule ; ce qui domine, c'est le va-et-vient mémoire — lire les poids du modèle et le cache à chaque token. Cette phase est *memory-bandwidth-bound* : elle laisse les unités de calcul du GPU largement inoccupées[^2].
 
-[SCHEMA-01]
+![Deux phases de l'inférence : prefill compute-bound vs decode memory-bound, autour du KV cache partagé|1200](images/20260622-01-deux-phases.svg)
+
+*Schéma 1 — Les deux phases d'une requête LLM occupent des points opposés de la roofline matérielle : le prefill sature le calcul, le decode s'étrangle sur la bande passante mémoire.*
 
 Comme l'illustre le Schéma 1, ces deux régimes vivent sur des points opposés de la *roofline* matérielle. Le prefill veut le GPU le plus rapide en FLOPs ; le decode veut surtout de la bande passante mémoire et se contente d'un accélérateur moins onéreux. Splitwise documente l'asymétrie sans détour : ==la phase de génération « n'a pas besoin de la capacité de calcul des derniers GPU et peut tourner sur des composants moins puissants, moins coûteux et moins énergivores »==[^2]. C'est l'observation fondatrice. Forcer ces deux charges à cohabiter sur un seul type de matériel revient à payer un GPU de pointe pour passer la majorité de son temps en sous-régime de calcul, à attendre la mémoire.
 
@@ -26,7 +28,9 @@ La durée respective des deux phases varie énormément avec la charge de travai
 
 Les systèmes de serving classiques — vLLM dans sa configuration de base, les premières versions de TensorRT-LLM — colocalisent les deux phases et les *batchent* ensemble sur les mêmes GPU. C'est rationnel en apparence : on remplit le matériel. En pratique, cela crée une **interférence prefill-decode** dont les conséquences sur la latence sont sévères.
 
-[SCHEMA-02]
+![Interférence prefill-decode : un prefill long fige les decodes en cours, pic de TBT|1200](images/20260622-02-interference.svg)
+
+*Schéma 2 — En colocation, l'insertion d'un prefill long dans un batch met en pause tous les decodes en cours (head-of-line blocking) et fait exploser le temps inter-tokens en queue.*
 
 Le mécanisme, schématisé Schéma 2, est un *head-of-line blocking*. Une itération de decode est très rapide — quelques millisecondes. Une passe de prefill sur un long prompt peut prendre des centaines de millisecondes. Quand le *scheduler* insère un prefill dans un batch où des requêtes sont déjà en train de générer, ces decodes en cours sont mis en pause le temps que le prefill s'exécute. Pour l'utilisateur dont la réponse s'écrivait token par token, l'écran se fige. Sarathi-Serve mesure l'ampleur du dégât : le *batching* hybride naïf provoque ==une augmentation allant jusqu'à 28,3× du temps inter-tokens en queue (TBT) par rapport à un batch de decode pur==[^4].
 
@@ -36,7 +40,9 @@ Le problème est structurel parce que les deux phases ont des **objectifs de lat
 
 L'erreur classique de dimensionnement consiste à mesurer le *throughput* — tokens ou requêtes traités par seconde, toutes confondues — et à le maximiser. Or le throughput ignore la qualité de service : il compte autant une requête servie dans les temps qu'une requête dont la première réponse a mis dix secondes à arriver. La métrique pertinente est le **goodput** : ==le nombre de requêtes complétées par seconde qui respectent *simultanément* tous leurs SLO== (TTFT sous le plafond *et* TBT sous le plafond pour chaque token)[^8].
 
-[SCHEMA-03]
+![Throughput vs goodput : le débit brut plafonne, le goodput s'effondre au knee SLO, repoussé par la désagrégation|1200](images/20260622-03-goodput.svg)
+
+*Schéma 3 — Le throughput continue de monter avec la charge ; le goodput s'effondre dès que la latence viole les SLO. La désagrégation déplace ce knee vers la droite.*
 
 Le Schéma 3 oppose les deux courbes en fonction de la charge. Le throughput monte continûment puis plafonne quand le matériel sature. Le goodput, lui, suit le throughput jusqu'à un *knee* — le point où la latence commence à violer les SLO — puis s'effondre : au-delà, le système traite toujours autant de tokens, mais une fraction croissante d'entre eux arrive trop tard pour compter. Tout l'enjeu d'un serving sous contrainte d'expérience utilisateur est de repousser ce knee le plus loin possible.
 
