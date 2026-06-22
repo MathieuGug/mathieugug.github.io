@@ -90,7 +90,9 @@ La troisième parade transforme le coût en bénéfice : le **cache de préfixes
 
 En deux ans, la désagrégation est passée de l'article de recherche au standard de fait. Le Schéma 6 cartographie sept systèmes selon six dimensions : support natif de la désagrégation, transport du KV, cache global, ratio prefill/decode dynamique, échelle de production démontrée, et licence.
 
-[SCHEMA-06]
+![Matrice comparative de sept systèmes de serving désagrégé selon six dimensions|1200](images/20260622-06-cartographie.svg)
+
+*Schéma 6 — Sept systèmes, six dimensions : maturité de la désagrégation, transport KV, cache global, ratio prefill/decode dynamique, échelle de production et licence.*
 
 **DistServe** (Peking University, UC San Diego, StepFun — OSDI 2024) est le papier qui a posé le cadre du goodput et démontré le placement par phase[^1]. **Splitwise** (Microsoft Research — ISCA 2024, Best Paper) a apporté l'argument des pools matériels *hétérogènes* — GPU haut de gamme pour le prefill, GPU plus modestes pour le decode — et la mesure énergétique[^2]. **Mooncake** (Moonshot AI, Tsinghua — FAST 2025, Best Paper) a industrialisé l'approche KVCache-centric en production derrière Kimi, avec le Mooncake Store comme couche de cache distribuée[^3]. Ces trois jalons académiques cadrent le sujet.
 
@@ -102,9 +104,11 @@ Le motif d'adoption mérite d'être nommé. L'inflexion de 2025 n'a pas été te
 
 La désagrégation n'est pas une amélioration de Pareto. Elle introduit un transfert sur le chemin critique, fragmente les ressources en pools moins flexibles aux variations brutales, et exige un fabric et un routeur dédiés. Le travail contrarian *Beyond the Buzz* le rappelle : ==sous un certain seuil de charge et de longueur de contexte, la colocation avec prefill découpé reste compétitive, et la désagrégation peut même dégrader le goodput== en payant un overhead qu'elle ne rentabilise pas[^10].
 
-[SCHEMA-07]
+![Grille de décision 2×2 : longueur de contexte vs charge sous SLO, et horizon 2026-2028|1200](images/20260622-07-quand-desagreger.svg)
 
-Le Schéma 7 propose une grille de décision sur deux axes : la **charge et la longueur de contexte** (horizontalement) et la **tension entre SLO** — l'écart entre les contraintes de TTFT et de TBT, qui mesure l'intensité de l'interférence (verticalement). En bas à gauche — faible charge, contexte court, SLO lâches — la **colocation simple** suffit. Quand la charge monte mais que le contexte reste modéré, le **prefill découpé** capture l'essentiel du gain sans le coût de transfert. C'est seulement dans le quadrant haut-droit — forte charge, longs contextes, SLO serrés et divergents — que la **désagrégation pleine** se justifie ; et à très grande échelle multi-nœuds, avec forte réutilisation de préfixes, l'architecture **KVCache-centric** devient le régime dominant.
+*Schéma 7 — Quatre régimes selon le poids du prefill et l'exigence de débit : colocation simple, prefill découpé, désagrégation, puis architecture KVCache-centric à l'échelle.*
+
+Le Schéma 7 propose une grille de décision sur deux axes : la **longueur de contexte et le poids du prefill** (horizontalement) et la **charge avec l'exigence de débit sous SLO** (verticalement). En bas à gauche — contexte court, charge faible, SLO lâches — la **colocation simple** suffit. Quand les contextes s'allongent mais que la charge reste modérée, le **prefill découpé** absorbe les gros prefills sans payer le coût de deux pools. Dès que la charge et l'exigence de débit montent, la **désagrégation pleine** se justifie ; et lorsqu'à cela s'ajoutent de longs contextes fortement réutilisés à l'échelle multi-nœuds, l'architecture **KVCache-centric** devient le régime dominant.
 
 Trois forces vont étendre ce quadrant haut-droit sur l'horizon 2026-2028. D'abord les **modèles de raisonnement** : leurs longues chaînes de pensée allongent massivement la phase de decode, accentuant l'asymétrie entre les phases et donc le bénéfice de pools séparés — c'est explicitement la cible que Dynamo revendique[^5]. Ensuite les **modèles MoE** (*mixture-of-experts*) avec parallélisme d'experts, dont les schémas de communication se composent différemment avec la désagrégation et amplifient les gains à grande échelle. Enfin, la maturation d'un **KVCache-as-a-service** : à mesure que NIXL, LMCache et les stores distribués se standardisent, le cache KV devient une couche d'infrastructure mutualisée, découplée du modèle servi — la suite logique de la trajectoire amorcée par Mooncake Store.
 
