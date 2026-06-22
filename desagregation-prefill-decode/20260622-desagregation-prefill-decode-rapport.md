@@ -62,7 +62,9 @@ Le prefill découpé est aujourd'hui le *baseline* sérieux que la désagrégati
 
 Désagréger, c'est physiquement séparer les deux pools de GPU et router chaque requête à travers les deux. Le Schéma 4 en donne l'anatomie de référence, convergente entre DistServe, Splitwise, Mooncake et NVIDIA Dynamo malgré leurs différences.
 
-[SCHEMA-04]
+![Architecture désagrégée : routeur KV-aware, pool prefill, transfert KV, pool decode, KV store global, SLO planner|1200](images/20260622-04-architecture.svg)
+
+*Schéma 4 — Anatomie de référence : chaque phase a son pool de GPU, son objectif de latence, et un socle commun de cache global et de planification sous SLO.*
 
 En amont, un **routeur** reçoit les requêtes. Dans les systèmes modernes il est *KV-aware* : il sait quels préfixes sont déjà en cache et où, et oriente le trafic pour maximiser les réutilisations et minimiser les recalculs[^5]. La requête part d'abord vers le **pool prefill** : un petit nombre de GPU haut de gamme, calibrés pour le calcul, qui produisent le KV cache du prompt le plus vite possible (TTFT). Ce cache est ensuite transféré — c'est l'objet de la section 6 — vers le **pool decode** : un plus grand nombre de GPU, éventuellement moins coûteux, optimisés pour la bande passante mémoire, qui génèrent la réponse token par token sous contrainte de TBT.
 
@@ -74,7 +76,9 @@ Le coût de cette élégance est réel : on gère désormais deux systèmes au l
 
 Tout repose sur un déplacement : le KV cache produit par le pool prefill doit rejoindre le pool decode avant que la génération puisse commencer. Pour un long contexte, ce cache pèse plusieurs gigaoctets. Mal géré, ==ce transfert annule le bénéfice de la désagrégation en réintroduisant une latence sur le chemin critique de chaque requête==[^10]. Bien géré, il devient quasi invisible. C'est là que se joue la viabilité de toute l'architecture.
 
-[SCHEMA-05]
+![Le transfert du KV cache : transfert layer-by-layer pipeliné, transport NIXL/RDMA/NVLink, mur de bande passante, hit de préfixe|1200](images/20260622-05-transfert-kv.svg)
+
+*Schéma 5 — Trois parades face au transfert : le recouvrir (layer-by-layer), le transporter au plus vite (NIXL), ou l'éviter (hit de préfixe dans le store global).*
 
 La première parade, schématisée Schéma 5, est le **transfert *layer-by-layer* pipeliné**. Le KV cache se construit couche par couche pendant le prefill ; plutôt que d'attendre la fin du prefill complet pour tout transférer en bloc, on émet le cache de chaque couche dès qu'elle est calculée. Le transfert recouvre ainsi le calcul du prefill : quand la dernière couche est prête, l'essentiel est déjà parti. FlowKV pousse cette logique avec des techniques de réorganisation mémoire et d'allocation par segments, et revendique une **réduction de 96 à 98 %** de la latence de transfert[^11].
 
