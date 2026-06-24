@@ -10,7 +10,7 @@ Pendant dix ans, l'intuition dominante de l'inférence des réseaux de neurones 
 
 Le mécanisme d'attention d'un *transformer* calcule, pour chaque token, une requête (*query*), une clé (*key*) et une valeur (*value*). Lors de la génération auto-régressive, chaque nouveau token doit attendre à *tous* les tokens précédents. Sans cache, produire le token *n* exigerait de recalculer les clés et valeurs des *n−1* tokens antérieurs — un coût quadratique, O(n²), prohibitif. La parade est évidente et universelle : on mémorise les clés et valeurs déjà calculées. C'est le KV-cache. Il transforme une génération O(n²) en O(n) de calcul, au prix d'une occupation mémoire qui croît linéairement avec la longueur de la séquence.
 
-[SCHEMA-01]
+![Schéma 01 — L'attention a une mémoire : formule de taille du KV-cache, recompute O(n²) vs cache O(n), domination du cache sur les poids à contexte long|width=1200](images/20260624-01-anatomie-cout-kv-cache.svg)
 
 Cette mémoire n'est pas anodine. Sa taille suit une formule simple mais implacable :
 
