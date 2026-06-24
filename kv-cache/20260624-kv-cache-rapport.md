@@ -24,7 +24,7 @@ Le facteur 2 vient du couple clé+valeur. Pour un modèle de 13 milliards de par
 
 Avant 2023, les systèmes de service traitaient le KV-cache comme un tenseur contigu. À l'arrivée d'une requête, on réservait un bloc mémoire contigu dimensionné sur la longueur *maximale* possible de la séquence — car on ne sait pas a priori combien de tokens le modèle va générer. Cette stratégie, héritée des frameworks d'entraînement, a une conséquence dévastatrice en service.
 
-[SCHEMA-02]
+![Schéma 02 — La crise de la fragmentation : allocation contiguë sur-réservée, fragmentation interne et externe, 60-80 % de gaspillage, et la cible paginée|width=1200](images/20260624-02-crise-fragmentation.svg)
 
 Le diagnostic posé par l'équipe de vLLM en 2023 est resté célèbre : ==dans les systèmes existants, 60 à 80 % de la mémoire allouée au KV-cache était gaspillée par la fragmentation et la sur-réservation==[^1]. Trois sources de gaspillage se cumulaient. La **fragmentation interne** : on réserve pour 2 048 tokens, la requête en génère 200, le reste est immobilisé mais inutilisé. La **fragmentation externe** : entre deux blocs contigus de tailles différentes, des trous de mémoire trop petits pour accueillir une nouvelle requête. Et la **réservation anticipée** : la mémoire d'une séquence future est bloquée dès le départ, indisponible pour les requêtes présentes. Sur un GPU dont chaque gigaoctet de HBM est compté, gaspiller les quatre cinquièmes du cache, c'est diviser d'autant le nombre de requêtes servies simultanément. La rareté n'était pas physique, elle était *organisationnelle*.
 
