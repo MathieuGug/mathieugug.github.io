@@ -78,7 +78,7 @@ Le coût de la désagrégation est explicite et il a un nom : le **transfert du 
 
 Paginer, partager, désagréger : trois manières de mieux *gérer* un cache dont on tient la taille pour donnée. Reste un quatrième levier, attaqué en parallèle — *réduire la taille du cache à la source*.
 
-[SCHEMA-07]
+![Schéma 07 — Quatre leviers de compression du cache (GQA/MQA, MLA, quantization KIVI, éviction) positionnés sur l'axe mémoire/qualité|width=1200](images/20260624-07-leviers-compression.svg)
 
 Quatre familles de techniques, ordonnées par ce qu'elles sacrifient :
 
