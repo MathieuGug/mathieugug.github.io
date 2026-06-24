@@ -32,7 +32,7 @@ Le diagnostic posé par l'équipe de vLLM en 2023 est resté célèbre : ==dans 
 
 La solution est venue d'une analogie avec un problème résolu depuis cinquante ans par les systèmes d'exploitation : la mémoire virtuelle paginée. PagedAttention, le cœur de vLLM[^1], découpe le KV-cache en **blocs de taille fixe** (typiquement 16 tokens), stockés dans une mémoire physique *non contiguë*. Une **block table** par requête traduit les positions logiques (la vue continue « tokens 0 à n ») en adresses physiques éparpillées — exactement comme la table des pages d'un OS traduit les adresses virtuelles en cadres physiques.
 
-[SCHEMA-03]
+![Schéma 03 — PagedAttention : block table traduisant la vue logique contiguë en blocs physiques épars, et copy-on-write pour le partage de préfixe|width=1200](images/20260624-03-pagedattention-block-table.svg)
 
 Le gain est double et structurel. D'abord la mémoire : ==le gaspillage tombe sous 4 %, et le débit augmente d'un facteur 2 à 4 à latence égale, par rapport à FasterTransformer et Orca==[^1][^7]. On ne réserve plus que les blocs effectivement remplis ; un bloc se matérialise quand le token correspondant est généré. Ensuite le **partage**. Parce qu'un bloc physique peut être référencé par plusieurs block tables, deux requêtes qui partagent un préfixe — un même *system prompt*, un même contexte few-shot — peuvent pointer vers les *mêmes* blocs physiques. Quand l'une des deux diverge et écrit, le bloc partagé est dupliqué à la volée : c'est le **copy-on-write**, là encore emprunté aux OS. L'échantillonnage parallèle (plusieurs complétions d'un même prompt) et le *beam search* deviennent quasi gratuits en mémoire : un seul exemplaire du préfixe pour *k* branches.
 
