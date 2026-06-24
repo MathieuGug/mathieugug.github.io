@@ -42,7 +42,7 @@ Le gain est double et structurel. D'abord la mémoire : ==le gaspillage tombe so
 
 PagedAttention permet le partage de préfixe ; SGLang l'a érigé en discipline de premier ordre avec **RadixAttention**[^2]. L'idée : maintenir l'ensemble des KV-caches actifs non pas comme une collection de séquences indépendantes, mais comme un **arbre radix** — une structure où les préfixes communs sont fusionnés en branches partagées. Chaque requête entrante cherche dans l'arbre le plus long préfixe déjà en cache ; elle ne calcule que le *suffixe* nouveau.
 
-[SCHEMA-04]
+![Schéma 04 — L'arbre radix du préfixe partagé : système commun en racine chaude, branches few-shot/RAG mutualisées, éviction LRU des feuilles froides, cache-aware scheduling|width=900](images/20260624-04-arbre-radix-prefixe.svg)
 
 Deux mécanismes rendent la structure exploitable en production. L'**éviction LRU** au niveau des feuilles : quand la mémoire sature, on libère les nœuds froids (les suffixes les moins récemment utilisés) sans toucher aux préfixes chauds partagés par de nombreuses requêtes. Et le **cache-aware scheduling** : l'ordonnanceur route préférentiellement les requêtes vers le nœud de l'arbre où leur préfixe est déjà chaud, transformant le partage de cache d'opportunité passive en stratégie d'ordonnancement active. Sur les charges à fort recouvrement de préfixe — agents avec un long prompt système, RAG avec un même contexte documentaire, conversations multi-tours — ==RadixAttention multiplie le débit en réduisant à la fois le calcul redondant et la pression mémoire==[^2].
 
