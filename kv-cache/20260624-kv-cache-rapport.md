@@ -64,7 +64,7 @@ Le *continuous batching* introduit par Orca[^7] regroupe des requêtes à l'éch
 
 Si prefill et decode ont des profils opposés, pourquoi les exécuter sur le même matériel ? C'est la question qui a fondé la vague de **désagrégation prefill/decode** de 2024-2025, sans doute le changement architectural le plus profond de l'inférence depuis PagedAttention.
 
-[SCHEMA-06]
+![Schéma 06 — Architecture désagrégée : pool prefill compute-optimisé, transfert du KV-cache sur réseau, pool decode mémoire-optimisé, et pool KVCache global DRAM/SSD (Mooncake)|width=1200](images/20260624-06-architecture-desagregee.svg)
 
 Le principe : deux pools de GPU distincts. Un pool **prefill**, dimensionné et parallélisé pour le calcul ; un pool **decode**, dimensionné pour la bande passante mémoire. Une requête fait son prefill sur le premier pool, *son KV-cache est transféré* sur le second, qui prend en charge la génération. Chaque pool est optimisé pour son régime, et l'interférence disparaît par construction. Les chiffres sont spectaculaires :
 
