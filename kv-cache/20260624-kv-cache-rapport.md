@@ -52,7 +52,7 @@ Ce qui était une astuce système est devenu un produit. Le *prompt caching* off
 
 Jusqu'ici, le cache était traité comme un objet statique à bien ranger. Mais sa *production* et sa *consommation* obéissent à deux régimes de calcul radicalement différents — et leur cohabitation sur un même GPU est une source d'inefficacité longtemps masquée.
 
-[SCHEMA-05]
+![Schéma 05 — Prefill compute-bound vs decode memory-bound sur le roofline, l'interférence du continuous batching naïf, et le remède du chunked prefill|width=1200](images/20260624-05-prefill-decode-roofline.svg)
 
 La phase de **prefill** traite le prompt d'entrée en une passe : tous les tokens en parallèle, ce qui sature les unités de calcul du GPU. Elle est *compute-bound*. La phase de **decode** génère les tokens un par un : à chaque pas, une seule ligne de calcul, mais une lecture complète du KV-cache accumulé. Elle est *memory-bound* — limitée par la bande passante mémoire, pas par les FLOPs. ==Un GPU en decode pur utilise typiquement moins de 10 % de sa puissance de calcul, tout en saturant sa bande passante mémoire== : l'inverse exact du prefill[^3][^4].
 
