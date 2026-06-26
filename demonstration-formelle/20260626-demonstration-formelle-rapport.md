@@ -36,7 +36,7 @@ Le bilan IMO 2024 est nuancé. AlphaProof a résolu les problèmes P1, P2 et le 
 
 AlphaProof reste fermé. Mais une vague de prouveurs ouverts a, en dix-huit mois, rapproché l'état de l'art accessible à tous de la frontière. Trois familles de stratégies se dégagent.
 
-[SCHEMA-05]
+![Taxonomie des quatre stratégies de preuve|width=900](images/20260626-05-taxonomie-strategies.svg)
 
 La première génère la **preuve entière** d'un coup (*whole-proof generation*) et la soumet à Lean ; on rejoue jusqu'à ce qu'une tentative passe. La deuxième **décompose en sous-objectifs** (*subgoal decomposition*) : un grand modèle raisonne en langage naturel sur le plan de preuve, découpe le théorème en lemmes, puis formalise chaque morceau. La troisième combine **recherche arborescente et itération d'expert** (*expert iteration*) : le prouveur explore l'espace des tactiques, garde les preuves trouvées comme nouvelles données d'entraînement, et recommence.
 
@@ -50,7 +50,7 @@ La leçon de cette course est familière à qui suit les [benchmarks contestés]
 
 Si la recherche de preuve progresse vite, c'est l'autre moitié du problème qui résiste : **traduire un énoncé du langage naturel vers Lean** sans en trahir le sens. C'est le goulot d'étranglement structurel de tout le domaine.
 
-[SCHEMA-06]
+![Le mur de l'autoformalisation : entonnoir et modes d'échec|width=1200](images/20260626-06-mur-autoformalisation.svg)
 
 Les modes d'échec sont documentés et tenaces. Les modèles **hallucinent des imports** de lemmes qui n'existent pas dans Mathlib ; ils **mélangent la syntaxe** de Lean avec celle d'autres assistants (Coq, Isabelle) vue à l'entraînement ; et surtout, ils produisent un énoncé formel *syntaxiquement valide mais sémantiquement faux* — une dérive silencieuse qui passe le noyau tout en prouvant le mauvais théorème.[^11] ProofBridge, qui aligne preuves naturelles et formelles dans un espace d'embeddings joint, et des bancs comme IndiMathBench montrent que ==préserver le sens exact lors de la traduction est plus dur que trouver la preuve une fois l'énoncé fixé==.[^11]
 
