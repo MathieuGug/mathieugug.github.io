@@ -26,7 +26,7 @@ Aucun prouveur ne part de zéro. Il s'appuie sur **Mathlib**, la bibliothèque m
 
 AlphaProof est l'illustration la plus aboutie de ce que le RLVR formel permet. Son architecture couple un modèle de langage pré-entraîné à l'algorithme de renforcement **AlphaZero** — celui-là même qui avait appris seul les échecs, le shogi et le go.[^1][^2] La boucle est élégante : confronté à un problème, le système **autoformalise** l'énoncé en Lean, génère des candidats de solution, puis *cherche* parmi les pas de preuve possibles en construisant un arbre de recherche guidé par le réseau. Chaque preuve trouvée et vérifiée par Lean est réinjectée pour renforcer le modèle — qui s'attaque alors à des problèmes plus durs.[^1]
 
-[SCHEMA-03]
+![La boucle AlphaProof : autoformaliseur, recherche, vérification Lean, renforcement|width=1200](images/20260626-03-boucle-alphaproof.svg)
 
 Le verrou que DeepMind a fait sauter, c'est la **rareté des données**. Les énoncés mathématiques formalisés se comptent en dizaines de milliers ; les problèmes en langage naturel, en millions. Pour nourrir AlphaZero, l'équipe a entraîné un réseau d'**autoformalisation** qui a traduit environ un million de problèmes en langage naturel en quelque **cent millions** d'énoncés Lean — un corpus synthétique sur lequel la boucle RL pouvait enfin tourner à l'échelle.[^1][^2] ==C'est l'autoformalisation, et non la recherche de preuve, qui a constitué le vrai déverrouillage d'AlphaProof.==
 
@@ -42,7 +42,7 @@ La première génère la **preuve entière** d'un coup (*whole-proof generation*
 
 **DeepSeek-Prover-V2** incarne la deuxième voie. Le modèle 671B utilise DeepSeek-V3 pour décomposer un théorème en sous-buts, génère une chaîne de raisonnement, puis applique du renforcement (GRPO) sur les preuves vérifiées par Lean. Il atteint **88,9 %** de réussite sur miniF2F-test et résout **49 des 658** problèmes de PutnamBench.[^4] **Goedel-Prover-V2**, sorti quelques mois plus tard, pousse la troisième voie avec une *synthèse de données échafaudée* et une *auto-correction guidée par le vérificateur* : son modèle 32B — vingt fois plus petit — atteint **90,4 %** sur miniF2F en mode auto-correction et **86** problèmes PutnamBench, prenant la tête des modèles ouverts.[^5][^14] Enfin **Aristotle**, du laboratoire Harmonic, revendique une performance de niveau **médaille d'or** à l'IMO 2025 — mais, contrairement à Gemini, *avec vérification formelle en Lean 4*.[^6]
 
-[SCHEMA-04]
+![Matrice provers × benchmarks : miniF2F, PutnamBench, IMO, formel, ouvert|width=1200](images/20260626-04-matrice-provers.svg)
 
 La leçon de cette course est familière à qui suit les [benchmarks contestés](../benchmarks-contestes/) : ==miniF2F sature, et un score de 90 % y signifie moins qu'il n'y paraît==. La barre s'est déplacée vers **PutnamBench**, dérivé de la compétition Putnam de niveau universitaire, où les meilleurs prouveurs ouverts plafonnent encore autour de 13 % — l'écart vertigineux qui sépare « olympiade lycée » de « recherche ». Le benchmark qui était le sommet en 2023 est devenu le plancher en 2025.
 
