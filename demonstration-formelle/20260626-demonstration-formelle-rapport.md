@@ -70,7 +70,7 @@ La bifurcation n'est donc pas un choix de camp mais une **tension productive**. 
 
 Reste la question que tout cela soulève pour les mathématiciens eux-mêmes. La réponse la plus instructive vient de **Terence Tao**, médaillé Fields devenu l'évangéliste le plus lucide de la preuve assistée. Son **Equational Theories Project** a déterminé les **22 028 942** implications du graphe entre les **4 694** lois équationnelles les plus simples sur les magmas — un calcul combinatoire colossal, mené par un mélange de preuves humaines et automatiques, *toutes validées par Lean*.[^8]
 
-[SCHEMA-07]
+![Trajectoire 2024-2028 : vers la convergence naturel × formel|width=1200](images/20260626-07-trajectoire.svg)
 
 L'enseignement n'est pas que l'IA remplace le mathématicien, mais que ==la vérification formelle débloque une échelle de collaboration jusque-là impossible==. Traditionnellement, un projet de recherche réunit une poignée d'experts qui se font confiance ; on ne peut pas accepter la contribution d'un inconnu sans la relire. Lean change l'équation : n'importe qui peut soumettre une preuve, le noyau la valide, et la confiance interpersonnelle devient superflue.[^8] C'est de la mathématique *crowdsourcée* à l'échelle de l'internet — une première. Tao reste pourtant lucide sur les limites : l'IA comprend les énoncés et formalise des propositions correctes, mais *« reste coincée aux moments cruciaux »* d'une démonstration, là où il faut une idée plutôt qu'une manipulation.[^9]
 
