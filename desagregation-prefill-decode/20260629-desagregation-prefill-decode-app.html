@@ -1,0 +1,1880 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Désagréger l'inférence : prefill et decode sur deux pools</title>
+  <meta name="description" content="La désagrégation prefill/decode (DistServe, Splitwise, Mooncake, DeepSeek-V3, NVIDIA Dynamo) sépare les deux phases de l'inférence LLM sur des pools de GPU distincts : goodput sous double SLO, transfert du KV-cache, placement par phase, désagrégation contre chunked prefill. Deep dive par Mathieu Guglielmino, 29 juin 2026.">
+  <!-- og:start -->
+<meta name="author" content="Mathieu Guglielmino">
+<link rel="canonical" href="https://mathieugug.github.io/desagregation-prefill-decode/20260629-desagregation-prefill-decode-app.html">
+<meta name="keywords" content="IA agentique, Mathieu Guglielmino, agents IA, dossier, desagregation, prefill, decode">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Mathieu Guglielmino">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:url" content="https://mathieugug.github.io/desagregation-prefill-decode/20260629-desagregation-prefill-decode-app.html">
+<meta property="og:title" content="Désagréger l'inférence : prefill et decode sur deux pools">
+<meta property="og:description" content="La désagrégation prefill/decode (DistServe, Splitwise, Mooncake, DeepSeek-V3, NVIDIA Dynamo) sépare les deux phases de l'inférence LLM sur des pools de GPU distincts : goodput sous double SLO, transfert du KV-cache, placement par phase, désagrégation contre chunked prefill. Deep dive par Mathieu Guglielmino, 29 juin 2026.">
+<meta property="og:image" content="https://mathieugug.github.io/desagregation-prefill-decode/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Désagréger l'inférence : prefill et decode sur deux pools — couverture social">
+<meta property="article:published_time" content="2026-06-29">
+<meta property="article:author" content="Mathieu Guglielmino">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Désagréger l'inférence : prefill et decode sur deux pools">
+<meta name="twitter:description" content="La désagrégation prefill/decode (DistServe, Splitwise, Mooncake, DeepSeek-V3, NVIDIA Dynamo) sépare les deux phases de l'inférence LLM sur des pools de GPU distincts : goodput sous double SLO, transfert du KV-cache, placement par phase, désagrégation contre chunked prefill. Deep dive par Mathieu Guglielmino, 29 juin 2026.">
+<meta name="twitter:image" content="https://mathieugug.github.io/desagregation-prefill-decode/og.png">
+<script type="application/ld+json">
+{"@context": "https://schema.org","@type": "Article","headline": "Désagréger l'inférence : prefill et decode sur deux pools","description": "La désagrégation prefill/decode (DistServe, Splitwise, Mooncake, DeepSeek-V3, NVIDIA Dynamo) sépare les deux phases de l'inférence LLM sur des pools de GPU distincts : goodput sous double SLO, transfert du KV-cache, placement par phase, désagrégation contre chunked prefill. Deep dive par Mathieu Guglielmino, 29 juin 2026.","image": "https://mathieugug.github.io/desagregation-prefill-decode/og.png","url": "https://mathieugug.github.io/desagregation-prefill-decode/20260629-desagregation-prefill-decode-app.html","datePublished": "2026-06-29","inLanguage": "fr-FR","author": {"@type": "Person","name": "Mathieu Guglielmino","url": "https://mathieugug.github.io/"},"publisher": {"@type": "Person","name": "Mathieu Guglielmino","url": "https://mathieugug.github.io/"}}
+</script>
+<!-- og:end -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/dossier-app.css">
+  <style>
+    /* ───────── Tokens ───────── */
+    :root {
+      --paper:    #FAF8F3;
+      --paper-2:  #F2EFE7;
+      --ink:      #1A1A1A;
+      --graphite: #5A5A5A;
+      --mist:     #B8B5AE;
+      --rule:     #E5E1D8;
+      --carmine:  #B7332C;
+      --teal:     #1F5560;
+      --mustard:  #B58A2C;
+
+      --serif: 'Spectral', 'Playfair Display', Georgia, serif;
+      --sans:  'Inter', system-ui, sans-serif;
+      --mono:  'JetBrains Mono', 'IBM Plex Mono', monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; max-width: 100vw; }
+    body {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    header.site {
+      grid-column: 1 / -1;
+      padding: 24px 32px;
+      border-bottom: 1px solid var(--rule);
+      display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap;
+    }
+    header.site .marker {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--carmine);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    header.site h1 {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 1.4rem;
+      margin: 0;
+      letter-spacing: -0.01em;
+    }
+    header.site .meta {
+      margin-left: auto;
+      font-size: 0.85rem;
+      color: var(--graphite);
+    }
+    header.site .meta a { color: var(--carmine); text-decoration: none; }
+    header.site .meta a:hover { text-decoration: underline; }
+    header.site .back {
+      font-family: var(--mono); font-size: 0.72rem;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--graphite); text-decoration: none;
+      white-space: nowrap;
+    }
+    header.site .back:hover { color: var(--carmine); }
+    .menu-toggle {
+      display: none;
+      background: none; border: 1px solid var(--rule);
+      padding: 6px 12px; border-radius: 4px; cursor: pointer;
+      font-family: var(--mono); font-size: 0.8rem;
+    }
+    @media (max-width: 1024px) { .menu-toggle { display: inline-block; } }
+
+    /* ───────── TOC (left) ───────── */
+    #toc {
+      padding: 32px 24px;
+      border-right: 1px solid var(--rule);
+      position: sticky; top: 56px; align-self: start;
+      height: calc(100vh - 56px); overflow-y: auto;
+    }
+    #toc h2 {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--graphite);
+      margin: 0 0 16px;
+    }
+    #toc ol {
+      list-style: none; padding: 0; margin: 0;
+      counter-reset: toc-counter;
+    }
+    #toc li {
+      counter-increment: toc-counter;
+      margin: 0 0 12px;
+      font-size: 0.92rem;
+      line-height: 1.4;
+    }
+    #toc li::before {
+      content: counter(toc-counter, decimal-leading-zero) ".";
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--mist);
+      margin-right: 8px;
+    }
+    #toc a {
+      color: var(--ink);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+    }
+    #toc a:hover, #toc a.active {
+      color: var(--carmine);
+      border-bottom-color: currentColor;
+    }
+
+    /* ───────── Main report ───────── */
+    main#report {
+      padding: 56px 48px 96px;
+      min-width: 0;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+    main#report > .lead {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 1.2rem;
+      color: var(--graphite);
+      line-height: 1.5;
+      margin: 0 0 48px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--rule);
+    }
+    main h1.report-title {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 2.6rem;
+      line-height: 1.1;
+      letter-spacing: -0.025em;
+      margin: 0 0 16px;
+    }
+    main h2 {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 1.55rem;
+      letter-spacing: -0.01em;
+      margin: 3.5rem 0 1rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--rule);
+    }
+    main h3 {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 1.18rem;
+      margin: 2rem 0 0.6rem;
+    }
+    main p { margin: 0 0 1.1rem; }
+    main ul, main ol { margin: 0 0 1.1rem; padding-left: 1.4rem; }
+    main li { margin-bottom: 0.4rem; }
+    main blockquote {
+      margin: 1.5rem 0;
+      padding: 12px 20px;
+      border-left: 3px solid var(--carmine);
+      background: var(--paper-2);
+      font-style: italic;
+      color: var(--graphite);
+    }
+    main code {
+      font-family: var(--mono);
+      font-size: 0.88em;
+      background: var(--paper-2);
+      padding: 2px 5px; border-radius: 3px;
+      overflow-wrap: anywhere;
+    }
+    main pre {
+      margin: 1.5rem 0;
+      padding: 14px 16px;
+      background: var(--paper-2);
+      border-radius: 4px;
+      overflow-x: auto;
+      max-width: 100%;
+      font-size: 0.85em;
+      line-height: 1.5;
+      -webkit-overflow-scrolling: touch;
+    }
+    main pre code {
+      background: transparent;
+      padding: 0;
+      border-radius: 0;
+      font-size: 1em;
+      overflow-wrap: normal;
+    }
+    main mark {
+      background: linear-gradient(transparent 58%, rgba(178, 59, 27, 0.14) 58%);
+      color: inherit;
+      padding: 0 2px;
+    }
+
+    /* ───────── Figures ───────── */
+    .figure {
+      margin: 3rem 0;
+      padding: 24px 0;
+      border-top: 1px solid var(--rule);
+      border-bottom: 1px solid var(--rule);
+      position: relative;
+    }
+    .figure svg {
+      width: 100%; height: auto;
+      display: block;
+      margin: 0 auto;
+    }
+    /* State-aware figure breakout on desktop — figure adapts to sources panel state:
+       - Default (sources expanded): fills main-cell only (between TOC and sources)
+       - .layout.sources-collapsed: extends from TOC-right to viewport-right
+       Neither state overlaps a visible sidebar. Smooth 280ms transition.
+       Full math + derivation: skill illustrated-deep-research, companion-app.md § 5. */
+    @media (min-width: 1025px) {
+      .figure {
+        margin-left: calc(-1 * max(0px, (100vw - 1320px) / 2 + 48px));
+        margin-right: calc(-1 * max(0px, (100vw - 1320px) / 2 + 48px));
+        transition: margin-left 280ms ease, margin-right 280ms ease;
+        padding-left: clamp(16px, 3vw, 48px);
+        padding-right: clamp(16px, 3vw, 48px);
+        border-radius: 0;
+      }
+      .layout.sources-collapsed .figure {
+        margin-left: calc(-1 * max(0px, (100vw - 904px) / 2));
+        margin-right: calc(-1 * max(0px, (100vw - 904px) / 2));
+      }
+      .figure-caption {
+        max-width: 760px;
+        margin-left: auto;
+        margin-right: auto;
+        padding: 0 48px;
+      }
+    }
+    .figure-caption {
+      font-size: 0.88rem;
+      color: var(--graphite);
+      font-style: italic;
+      margin-top: 12px;
+      padding: 0 8px;
+    }
+    .figure svg .interactive { cursor: pointer; transition: filter 140ms; }
+    .figure svg .interactive:hover,
+    .figure svg .interactive:focus-visible { outline: none; }
+    .figure svg .interactive:hover rect,
+    .figure svg .interactive:focus-visible rect,
+    .figure svg .interactive:hover path:not([fill="none"]),
+    .figure svg .interactive:focus-visible path:not([fill="none"]),
+    .figure svg .interactive:hover circle,
+    .figure svg .interactive:focus-visible circle {
+      stroke: var(--carmine);
+      stroke-width: 2.5;
+    }
+    .figure svg .interactive:focus-visible {
+      filter: drop-shadow(0 0 0 var(--carmine));
+    }
+
+    /* ───────── Sources sidebar (right) ───────── */
+    #sources {
+      padding: 32px 24px;
+      border-left: 1px solid var(--rule);
+      background: var(--paper-2);
+      position: sticky; top: 56px; align-self: start;
+      height: calc(100vh - 56px); overflow-y: auto;
+      transition: transform 280ms ease, opacity 200ms ease;
+    }
+    #sources .sources-inner { display: block; }
+
+    @media (max-width: 1024px) {
+      .menu-toggle { display: inline-block !important; }
+      header.site { padding: 14px 16px; gap: 10px; flex-wrap: wrap; }
+      header.site h1 { font-size: 1.05rem; min-width: 0; overflow-wrap: break-word; word-break: break-word; }
+      header.site .meta { font-size: 0.75rem; }
+      header.site .back { font-size: 0.7rem; letter-spacing: 0.08em; }
+      main#report { padding: 28px 18px 56px; max-width: 100%; min-width: 0; }
+      main h1.report-title { font-size: 1.8rem; overflow-wrap: break-word; word-break: break-word; }
+      main#report > .lead { font-size: 1.02rem; margin-bottom: 32px; padding-bottom: 18px; }
+      main h2 { font-size: 1.25rem; margin: 2.4rem 0 0.8rem; overflow-wrap: break-word; word-break: break-word; }
+      main h3 { font-size: 1.05rem; overflow-wrap: break-word; }
+      main p, main ul, main ol { overflow-wrap: break-word; word-break: break-word; }
+      .figure { margin: 2rem 0; padding: 16px 0; max-width: 100%; overflow: hidden; }
+      .figure svg { width: 100%; max-width: 100%; height: auto; }
+      main table {
+        display: block; max-width: 100%;
+        overflow-x: auto; -webkit-overflow-scrolling: touch;
+      }
+      main th, main td { white-space: normal; }
+    }
+    #sources h2 {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--graphite);
+      margin: 0 0 16px;
+    }
+    #sources ol { list-style: none; padding: 0; margin: 0; }
+    #sources li {
+      font-size: 0.82rem;
+      line-height: 1.5;
+      margin: 0 0 16px;
+      padding: 12px 14px;
+      border-radius: 4px;
+      border: 1px solid transparent;
+      transition: border-color 220ms, background 220ms;
+    }
+    #sources li .cite-num {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--carmine);
+      margin-right: 6px;
+    }
+    #sources li a {
+      display: inline-block;
+      margin-top: 4px;
+      color: var(--teal);
+      text-decoration: none;
+      font-size: 0.78rem;
+    }
+    #sources li a:hover { text-decoration: underline; }
+    #sources li .accessed {
+      display: block;
+      margin-top: 4px;
+      color: var(--mist);
+      font-style: italic;
+      font-size: 0.74rem;
+    }
+    #sources li.highlight {
+      background: var(--paper);
+      border-color: var(--carmine);
+    }
+
+    /* ───────── Print ───────── */
+    @media print {
+      .layout { grid-template-columns: 1fr; }
+      #toc, #sources, #modal-root, #zoom-overlay, .menu-toggle, .zoom-btn { display: none; }
+      main#report { max-width: none; padding: 0; }
+      .figure { page-break-inside: avoid; }
+    }
+
+    /* === infographie A4 portrait (exec sum visuelle) — pattern partagé === */
+    main .figure.figure--portrait,
+    .layout main .figure.figure--portrait,
+    .layout.sources-collapsed main .figure.figure--portrait {
+      margin-top: 3rem; margin-bottom: 3rem;
+      padding: 0 !important; border: none !important;
+      border-top: none !important; border-bottom: none !important;
+      width: auto;
+    }
+    @media (max-width: 1024px) {
+      main .figure.figure--portrait {
+        margin-left: auto !important; margin-right: auto !important;
+        max-width: 100%;
+      }
+    }
+    @media (min-width: 1025px) {
+      main .figure.figure--portrait,
+      .layout main .figure.figure--portrait,
+      .layout.sources-collapsed main .figure.figure--portrait {
+        margin-left: -60px !important; margin-right: -60px !important;
+        max-width: calc(100% + 120px);
+      }
+    }
+    @media (min-width: 1440px) {
+      main .figure.figure--portrait,
+      .layout main .figure.figure--portrait,
+      .layout.sources-collapsed main .figure.figure--portrait {
+        margin-left: -100px !important; margin-right: -100px !important;
+        max-width: calc(100% + 200px);
+      }
+    }
+    main .figure--portrait .figure-portrait-link { display: block; width: 100%; border: 1px solid var(--rule); background: var(--paper); border-radius: 2px; cursor: zoom-in; transition: box-shadow 220ms ease, border-color 220ms ease; overflow: hidden; }
+    main .figure--portrait .figure-portrait-link:hover { box-shadow: 0 8px 28px rgba(30,30,42,0.14); border-color: var(--accent); }
+    main .figure--portrait img { display: block; width: 100%; height: auto; }
+    main .figure--portrait .figure-caption { max-width: 100%; margin: 14px auto 0; padding: 0 8px; text-align: center; }
+    /* Sigil MG remonté sur les A4 portrait (au-dessus du header SVG, pas sur le titre) */
+    main .figure--portrait .schema-sigil {
+      top: 10px !important;
+      right: 14px !important;
+      width: 30px !important; height: 30px !important;
+      opacity: 0.60 !important;
+    }
+    @media (max-width: 640px) {
+      main .figure--portrait .schema-sigil { top: 8px !important; right: 10px !important; width: 24px !important; height: 24px !important; }
+    }
+
+    /* === quiz cards (vérification de compréhension) — pattern partagé avec evaluation-agentique === */
+    .quiz-card {
+      margin: 2rem 0 2.4rem;
+      padding: 18px 22px;
+      background: var(--paper-2);
+      border-left: 3px solid var(--carmine);
+      border-radius: 2px;
+    }
+    .quiz-card__head {
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .quiz-card__eyebrow {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--graphite);
+      flex-basis: 100%;
+      margin: 0 0 0.25rem;
+    }
+    .quiz-card__title {
+      font-family: var(--serif);
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin: 0;
+      flex: 1 1 auto;
+      color: var(--ink);
+    }
+    .quiz-card__toggle {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.06em;
+      background: transparent;
+      border: 1px solid var(--mist);
+      color: var(--ink);
+      padding: 6px 14px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: color .15s, border-color .15s;
+    }
+    .quiz-card__toggle:hover, .quiz-card__toggle:focus-visible {
+      color: var(--carmine);
+      border-color: var(--carmine);
+      outline: none;
+    }
+    .quiz-card__body {
+      margin-top: 1.2rem;
+      padding-top: 1rem;
+      border-top: 1px dashed var(--rule);
+    }
+    .quiz-card__body[hidden] { display: none; }
+
+    .quiz-q { margin: 0; padding: 0; }
+    .quiz-q + .quiz-q { margin-top: 1.6rem; padding-top: 1.6rem; border-top: 1px dashed var(--rule); }
+    .quiz-q fieldset { border: 0; padding: 0; margin: 0; }
+    .quiz-q__stem {
+      font-family: var(--serif);
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--ink);
+      padding: 0;
+      margin: 0 0 0.9rem;
+    }
+    .quiz-q__options { list-style: none; padding: 0; margin: 0 0 1rem; }
+    .quiz-q__options li {
+      margin: 0;
+      padding: 8px 0;
+      border-top: 1px solid var(--rule);
+    }
+    .quiz-q__options li:last-child { border-bottom: 1px solid var(--rule); }
+    .quiz-q__options label {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      cursor: pointer;
+      padding: 4px 0;
+    }
+    .quiz-q__options input { margin: 0.3em 0 0; flex: 0 0 auto; accent-color: var(--carmine); }
+    .quiz-q__options label > span { flex: 1; line-height: 1.5; }
+
+    .quiz-q__explain {
+      font-size: 0.92rem;
+      margin: 0.5rem 0 0 1.7rem;
+      padding: 8px 12px;
+      background: var(--paper);
+      border-left: 2px solid var(--mist);
+      color: var(--graphite);
+    }
+    .quiz-q__explain[hidden] { display: none; }
+    .quiz-q__options li.is-correct .quiz-q__explain,
+    .quiz-q__options li.expected .quiz-q__explain { border-left-color: var(--teal); }
+    .quiz-q__options li.is-wrong .quiz-q__explain { border-left-color: var(--carmine); }
+    .quiz-q__options li.is-correct > label > span,
+    .quiz-q__options li.expected > label > span {
+      background-image: linear-gradient(transparent 60%, rgba(31, 85, 96, 0.14) 60%);
+      background-size: 100% 1.5em;
+      background-repeat: repeat-y;
+    }
+    .quiz-q__options li.is-wrong > label > span {
+      background-image: linear-gradient(transparent 60%, rgba(183, 51, 44, 0.14) 60%);
+      background-size: 100% 1.5em;
+      background-repeat: repeat-y;
+    }
+
+    .quiz-q__check {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      background: var(--ink);
+      color: var(--paper);
+      border: 0;
+      padding: 8px 16px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .quiz-q__check:hover, .quiz-q__check:focus-visible { background: var(--carmine); outline: none; }
+    .quiz-q__check:disabled { background: var(--mist); cursor: not-allowed; }
+
+    .quiz-q__verdict {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      margin: 1rem 0 0;
+      padding: 8px 12px;
+      border-left: 2px solid var(--graphite);
+    }
+    .quiz-q__verdict[hidden] { display: none; }
+    .quiz-q__verdict.is-correct { border-left-color: var(--teal); color: var(--teal); }
+    .quiz-q__verdict.is-wrong { border-left-color: var(--carmine); color: var(--carmine); }
+
+    .quiz-q__retry {
+      font-family: var(--mono);
+      font-size: 0.74rem;
+      letter-spacing: 0.06em;
+      background: transparent;
+      border: 0;
+      color: var(--graphite);
+      padding: 6px 0;
+      margin: 0.6rem 0 0;
+      cursor: pointer;
+      text-decoration: underline;
+      text-decoration-color: var(--mist);
+      text-underline-offset: 3px;
+    }
+    .quiz-q__retry:hover, .quiz-q__retry:focus-visible { color: var(--ink); text-decoration-color: var(--carmine); outline: none; }
+    .quiz-q__retry[hidden] { display: none; }
+
+    /* === callouts de renvoi vers d'autres dossiers (pattern partagé avec agent-sdk) === */
+    main .callout { display: grid; grid-template-columns: 280px 1fr; gap: 0; align-items: stretch; margin: 2.4rem 0; padding: 0; background: var(--paper); border-left: 3px solid var(--teal); border-radius: 2px; transition: grid-template-columns 320ms cubic-bezier(.2,.7,.2,1); }
+    main .callout:hover { grid-template-columns: 440px 1fr; }
+    main .callout > .callout-thumb-link { position: relative; display: block; width: 100%; height: 100%; min-height: 200px; overflow: hidden; border-radius: 0; background: transparent; border: 0; border-right: 1px solid var(--rule); cursor: zoom-in; padding: 0; -webkit-appearance: none; appearance: none; font: inherit; color: inherit; text-align: left; transition: filter 200ms ease; }
+    main .callout > .callout-thumb-link:hover { filter: drop-shadow(0 4px 14px rgba(183,51,44,0.18)); border-right-color: var(--carmine); }
+    main .callout > .callout-thumb-link:focus-visible { outline: 2px solid var(--carmine); outline-offset: -2px; }
+    main .callout > .callout-thumb-link img.callout-thumb { width: 100%; height: 100%; object-fit: contain; object-position: center center; display: block; padding: 0; }
+    main .callout > .callout-thumb-link::after { content: '⛶ AGRANDIR'; position: absolute; top: 10px; right: 10px; padding: 4px 9px; font-family: var(--mono); font-size: 9.5px; font-weight: 600; letter-spacing: 0.10em; background: rgba(250,248,243,0.94); border: 1px solid var(--rule); border-radius: 2px; color: var(--graphite); opacity: 0; transition: opacity 180ms ease, color 180ms ease, border-color 180ms ease; pointer-events: none; }
+    main .callout > .callout-thumb-link:hover::after, main .callout > .callout-thumb-link:focus-visible::after { opacity: 1; color: var(--carmine); border-color: var(--carmine); }
+    main .callout > .callout-body { min-width: 0; padding: 22px 26px 22px 26px; align-self: center; }
+    main .callout .callout-eyebrow { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--teal); margin: 0 0 0.45rem; font-weight: 600; }
+    main .callout > .callout-body p { margin: 0; font-size: 0.95rem; line-height: 1.55; color: var(--ink); }
+    main .callout > .callout-body p a { color: var(--carmine); text-decoration: none; border-bottom: 1px dotted var(--carmine); }
+    main .callout > .callout-body p a:hover { color: var(--teal); border-bottom-color: var(--teal); }
+
+    @media (max-width: 1024px) {
+      /* === quiz cards : variantes mobile === */
+      .quiz-card { padding: 14px 16px; margin: 1.6rem 0 2rem; }
+      .quiz-card__head { gap: 0.6rem; }
+      .quiz-card__title { flex-basis: 100%; overflow-wrap: break-word; }
+      .quiz-card__toggle { width: 100%; padding: 12px; min-height: 44px; font-size: 0.82rem; }
+      .quiz-q__check { width: 100%; padding: 12px; min-height: 44px; font-size: 0.82rem; }
+      .quiz-q__options li { padding: 10px 0; }
+      .quiz-q__options label { padding: 8px 0; min-height: 44px; align-items: center; }
+      .quiz-q__explain { margin: 0.5rem 0 0 0; padding: 10px 12px; }
+      .quiz-q__retry { padding: 10px 0; min-height: 44px; }
+    }
+    @media (max-width: 640px) {
+      main .callout, main .callout:hover { grid-template-columns: 1fr; gap: 0; padding: 0; }
+      main .callout > .callout-thumb-link { min-height: 180px; border-right: 0; border-bottom: 1px solid var(--rule); }
+      main .callout > .callout-body { padding: 18px 20px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar" id="topbar">
+    <a href="../index.html">Mathieu <em>Guglielmino</em></a>
+    <span class="dossier-context">Désagrégation prefill/decode</span>
+    <div class="topbar-tools">
+      <button class="menu-toggle" id="toggle-toc">Sommaire</button>
+      <button class="menu-toggle" id="toggle-sources">Sources</button>
+    </div>
+    <nav class="back-nav" aria-label="Navigation retour">
+      <a href="index.html" class="back" title="Revenir au hub du dossier">← Hub</a>
+      <span class="back-sep" aria-hidden="true">·</span>
+      <a href="../index.html#series" class="back" title="Revenir à l'accueil">Accueil</a>
+    </nav>
+  </header>
+  <div class="layout">
+
+    <header class="site">
+      <span class="marker">Deep dive · Économie de l'inférence</span>
+      <h1>Désagréger l'inférence : prefill et decode sur deux pools</h1>
+      <span class="meta">
+        Mathieu Guglielmino · 29 juin 2026
+      </span>
+    </header>
+
+    <nav id="toc" aria-label="Sommaire">
+      <button class="panel-close" type="button" aria-label="Fermer le sommaire">Fermer ✕</button>
+      <h2>Sommaire</h2>
+      <ol>
+        <li><a href="#desag-1">1. Deux phases, un conflit</a></li>
+        <li><a href="#desag-2">2. Goodput : la métrique</a></li>
+        <li><a href="#desag-3">3. Anatomie d'un système désagrégé</a></li>
+        <li><a href="#desag-4">4. Le placement par phase</a></li>
+        <li><a href="#desag-5">5. Transférer le KV-cache</a></li>
+        <li><a href="#desag-6">6. Deux écoles</a></li>
+        <li><a href="#desag-7">7. La production</a></li>
+        <li><a href="#desag-8">8. Trajectoires 2026-2028</a></li>
+      </ol>
+    </nav>
+
+    <main id="report">
+<h1 class="report-title">Désagréger l'inférence : prefill et decode sur deux pools</h1>
+      <p class="lead">La désagrégation prefill/decode fait passer le service d'inférence d'un problème d'<strong>ordonnancement temporel</strong> — partager un GPU entre deux phases antagonistes — à un problème d'<strong>architecture distribuée</strong> : placer, transférer, router. La phase devient l'unité de déploiement, le KV-cache devient un flux réseau, et le <em>goodput</em> sous double SLO remplace le débit brut comme métrique de vérité.</p>
+      <p class="byline"><em>29 juin 2026 — Mathieu Guglielmino</em></p>
+
+      <p>L'inférence d'un grand modèle de langage n'est pas une opération, c'en est deux. Lire le prompt et générer la réponse mobilisent le matériel de façon si différente qu'on a longtemps cru pouvoir les faire cohabiter sur le même GPU par pur ordonnancement. Cette croyance a tenu jusqu'en 2024. La vague de <strong>désagrégation prefill/decode</strong> qui a suivi — DistServe, Splitwise, Mooncake — repose sur une thèse simple et radicale : si les deux phases veulent du matériel opposé, donnons-leur du matériel séparé. Ce rapport est le récit de cette bascule architecturale, de la métrique qui l'a rendue lisible jusqu'aux systèmes qui servent aujourd'hui des dizaines de milliards de tokens par jour sur ce principe.</p>
+
+      <p>C'est un <em>deep dive</em> qui prolonge le dossier <a href="../kv-cache/">kv-cache</a> : là où ce dernier traitait la mémoire d'attention comme une ressource à <em>gérer</em> (paginer, partager, comprimer), celui-ci traite la désagrégation comme un problème de <em>système distribué</em> — comment on découpe, dimensionne, relie et orchestre deux flottes de GPU autour d'un cache qui circule de l'une à l'autre.</p>
+
+      <h2 id="desag-1">1. Deux phases, un conflit irréductible</h2>
+      <p>Servir un modèle, c'est exécuter deux régimes de calcul que tout oppose. La phase de <strong>prefill</strong> traite le prompt d'entrée en une seule passe : tous les tokens en parallèle, ce qui sature les unités de calcul du GPU. Elle est <span class="term" data-tooltip="Compute-bound : limité par la puissance de calcul (FLOPs) du processeur, pas par la mémoire. Le matériel travaille à plein régime arithmétique.">compute-bound</span> — limitée par les FLOPs. La phase de <strong>decode</strong> génère ensuite la réponse token par token : à chaque pas, une seule ligne de calcul mais une lecture complète du KV-cache accumulé. Elle est <span class="term" data-tooltip="Memory-bound : limité par la bande passante mémoire (lire/écrire les données), pas par le calcul. Les unités de calcul attendent la mémoire.">memory-bound</span> — limitée par la bande passante mémoire, pas par les FLOPs.</p>
+
+      <figure class="figure" id="fig-01">
+        <svg data-schema-id="schema-01" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+    <marker id="arrow01" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#5A5A5A"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- HEADER -->
+  <text x="60" y="55" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 01</text>
+  <text x="60" y="92" class="display" font-size="26" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Deux phases, un conflit irréductible</text>
+  <text x="60" y="118" class="display" font-size="16" font-style="italic" fill="#5A5A5A">Prefill et decode occupent des points opposés du roofline — les co-placer plafonne le service</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- PREFILL CARD (interactive) -->
+  <g class="interactive" data-card="prefill-compute" tabindex="0" role="button" aria-label="Prefill : compute-bound">
+    <rect x="60" y="172" width="455" height="186" rx="3" fill="#B7332C" fill-opacity="0.06" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="84" y="202" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#B7332C">PREFILL · COMPUTE-BOUND</text>
+    <text x="84" y="226" class="body" font-size="13" font-weight="500" fill="#1A1A1A">Traite tout le prompt en une passe parallèle</text>
+    <text x="84" y="246" class="body" font-size="12" fill="#5A5A5A">Sature les unités de calcul — limité par les FLOPs</text>
+    <!-- mini gauge -->
+    <text x="84" y="288" class="body" font-size="10" fill="#5A5A5A">calcul</text>
+    <rect x="150" y="278" width="320" height="12" rx="2" fill="#E5E1D8"/>
+    <rect x="150" y="278" width="300" height="12" rx="2" fill="#B7332C"/>
+    <text x="478" y="288" class="mono" font-size="10" fill="#B7332C" text-anchor="end">~95 %</text>
+    <text x="84" y="318" class="body" font-size="10" fill="#5A5A5A">bande passante</text>
+    <rect x="150" y="308" width="320" height="12" rx="2" fill="#E5E1D8"/>
+    <rect x="150" y="308" width="120" height="12" rx="2" fill="#B7332C" fill-opacity="0.4"/>
+    <text x="84" y="346" class="body" font-size="11" font-style="italic" fill="#B7332C">produit le KV-cache</text>
+  </g>
+
+  <!-- DECODE CARD (interactive) -->
+  <g class="interactive" data-card="decode-memory" tabindex="0" role="button" aria-label="Decode : memory-bound">
+    <rect x="685" y="172" width="455" height="186" rx="3" fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="709" y="202" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#1F5560">DECODE · MEMORY-BOUND</text>
+    <text x="709" y="226" class="body" font-size="13" font-weight="500" fill="#1A1A1A">Génère la réponse token par token</text>
+    <text x="709" y="246" class="body" font-size="12" fill="#5A5A5A">Sature la bande passante — &lt; 10 % du calcul utilisé</text>
+    <text x="709" y="288" class="body" font-size="10" fill="#5A5A5A">calcul</text>
+    <rect x="800" y="278" width="320" height="12" rx="2" fill="#E5E1D8"/>
+    <rect x="800" y="278" width="40" height="12" rx="2" fill="#1F5560" fill-opacity="0.4"/>
+    <text x="1120" y="288" class="mono" font-size="10" fill="#1F5560" text-anchor="end">&lt;10 %</text>
+    <text x="709" y="318" class="body" font-size="10" fill="#5A5A5A">bande passante</text>
+    <rect x="800" y="308" width="320" height="12" rx="2" fill="#E5E1D8"/>
+    <rect x="800" y="308" width="305" height="12" rx="2" fill="#1F5560"/>
+    <text x="709" y="346" class="body" font-size="11" font-style="italic" fill="#1F5560">consomme le KV-cache</text>
+  </g>
+
+  <!-- VS divider -->
+  <text x="600" y="270" class="display" font-size="20" font-style="italic" fill="#B8B5AE" text-anchor="middle">vs</text>
+
+  <!-- INTERFERENCE STRIP (interactive) -->
+  <g class="interactive" data-card="interference-stall" tabindex="0" role="button" aria-label="Interférence : le prefill stalle les decodes">
+    <rect x="60" y="392" width="1080" height="150" rx="3" fill="#B58A2C" fill-opacity="0.06" stroke="#B58A2C" stroke-width="1.25"/>
+    <text x="84" y="420" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#B58A2C">L'INTERFÉRENCE · UN SEUL GPU, DEUX RÉGIMES QUI SE GÊNENT</text>
+    <text x="84" y="440" class="body" font-size="11.5" fill="#5A5A5A">Sur un lot de decodes en cours, l'arrivée d'un prefill lourd monopolise le GPU et <tspan font-style="italic">stalle</tspan> toutes les générations actives</text>
+    <!-- timeline: decode ticks interrupted by a big prefill block -->
+    <line x1="84" y1="500" x2="1116" y2="500" stroke="#B8B5AE" stroke-width="1"/>
+    <g fill="#1F5560">
+      <rect x="100" y="488" width="14" height="24" rx="2"/>
+      <rect x="124" y="488" width="14" height="24" rx="2"/>
+      <rect x="148" y="488" width="14" height="24" rx="2"/>
+      <rect x="172" y="488" width="14" height="24" rx="2"/>
+    </g>
+    <rect x="200" y="476" width="220" height="36" rx="3" fill="#B7332C"/>
+    <text x="310" y="499" class="body" font-size="11" font-weight="600" fill="#FAF8F3" text-anchor="middle">PREFILL (stalle le decode)</text>
+    <g fill="#1F5560" fill-opacity="0.45">
+      <rect x="436" y="488" width="14" height="24" rx="2"/>
+      <rect x="460" y="488" width="14" height="24" rx="2"/>
+    </g>
+    <g fill="#1F5560">
+      <rect x="492" y="488" width="14" height="24" rx="2"/>
+      <rect x="516" y="488" width="14" height="24" rx="2"/>
+      <rect x="540" y="488" width="14" height="24" rx="2"/>
+    </g>
+    <text x="600" y="503" class="body" font-size="10" font-style="italic" fill="#5A5A5A">latence inter-token dégradée pour tous</text>
+  </g>
+
+  <!-- PARALLELISM IMPOSED (interactive) -->
+  <g class="interactive" data-card="parallelisme-impose" tabindex="0" role="button" aria-label="Parallélisme et ratio imposés identiques aux deux phases">
+    <rect x="60" y="576" width="1080" height="118" rx="3" fill="#1A1A1A" fill-opacity="0.04" stroke="#5A5A5A" stroke-width="1.25"/>
+    <text x="84" y="604" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#1A1A1A">LA CONTRAINTE DE FOND · UN SEUL POOL = UN SEUL PLAN</text>
+    <text x="84" y="630" class="body" font-size="11.5" fill="#5A5A5A">Le co-placement force un <tspan font-weight="600" fill="#1A1A1A">parallélisme unique</tspan> (tensor/pipeline) et un <tspan font-weight="600" fill="#1A1A1A">ratio de nœuds figé</tspan> pour deux phases aux optima opposés.</text>
+    <text x="84" y="652" class="body" font-size="11.5" fill="#5A5A5A">On ne peut pas ajouter du matériel pour le decode sans en ajouter, mécaniquement, pour le prefill — et inversement.</text>
+    <text x="84" y="678" class="body" font-size="11.5" font-style="italic" fill="#B7332C">Le chunked prefill (Schéma 6) soigne le symptôme ; la désagrégation supprime la cause.</text>
+  </g>
+
+  <!-- FOOTER -->
+  <text x="60" y="760" class="body" font-size="10" font-style="italic" letter-spacing="0.02em" fill="#5A5A5A">Sources : Zhong et al. (DistServe, OSDI 2024) ; Yu et al. (Orca, OSDI 2022) ; cf. dossier kv-cache §5.</text>
+</svg>
+
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-01" title="Lien direct vers ce schéma">¶</a> <em>Schéma 1 — Deux phases, un conflit irréductible. Prefill (compute-bound) et decode (memory-bound) occupent des points opposés du roofline ; les co-placer crée l'interférence et impose un parallélisme et un ratio de nœuds uniques aux deux régimes.</em></figcaption>
+      </figure>
+
+      <p><mark>Un GPU en decode pur utilise typiquement moins de 10 % de sa puissance de calcul tout en saturant sa bande passante mémoire ; en prefill, c'est l'inverse exact.</mark><a class="cite" data-cite="1" href="#source-1">1</a><a class="cite" data-cite="2" href="#source-2">2</a> Tant qu'on exécute les deux sur le même matériel, trois problèmes se cumulent. D'abord l'<strong>interférence</strong> : quand une nouvelle requête arrive, son prefill (lourd, compute-bound) s'insère dans un lot de decodes en cours (légers, memory-bound) et les <em>stalle</em>, dégradant brutalement la latence inter-token de tous les utilisateurs actifs — un héritage direct du <span class="term" data-tooltip="Continuous batching (Orca, 2022) : regroupement des requêtes à l'échelle de l'itération plutôt que de la requête entière, pour mieux remplir le GPU. Origine de l'interférence prefill/decode.">continuous batching</span> introduit par Orca<a class="cite" data-cite="11" href="#source-11">11</a>. Ensuite le <strong>parallélisme imposé</strong> : un déploiement co-placé doit choisir <em>un seul</em> schéma de parallélisme (tensor, pipeline) pour les deux phases, alors qu'elles n'ont pas le même optimum — le prefill aime le parallélisme tensoriel qui accélère une grosse passe, le decode préfère répartir la pression mémoire. Enfin le <strong>dimensionnement bloqué</strong> : on ne peut pas ajouter du matériel pour le decode sans en ajouter aussi, mécaniquement, pour le prefill.</p>
+
+      <p>Sarathi-Serve<a class="cite" data-cite="4" href="#source-4">4</a> a proposé le premier remède <em>sans changer de matériel</em> — le <span class="term" data-tooltip="Chunked prefill : découpe un prefill long en morceaux de taille bornée, insérés dans les lots de decode sans les interrompre (ordonnancement stall-free).">chunked prefill</span>, qui découpe un prefill long en morceaux insérables dans les lots de decode sans les interrompre (on y revient en §6). Mais le remède reste prisonnier de la contrainte de fond : un seul pool, un seul parallélisme, un seul ratio de nœuds. La désagrégation attaque la cause, pas le symptôme.</p>
+
+      <blockquote><strong>Renvoi — <a href="../kv-cache/">kv-cache</a>.</strong> Le <span class="term" data-tooltip="Roofline : modèle de performance qui situe un calcul entre le plafond compute (FLOPs) et le plafond mémoire (bande passante) selon son intensité arithmétique.">roofline</span> prefill/decode, la mécanique du <em>continuous batching</em> et le chunked prefill sont posés dans le dossier voisin, §5. Ce rapport reprend le fil là où il s'arrêtait : la séparation physique des deux phases.</blockquote>
+
+      <h2 id="desag-2">2. Goodput : la métrique qui change la donne</h2>
+      <p>Pourquoi a-t-on mis si longtemps à voir le conflit ? Parce qu'on mesurait la mauvaise chose. Le <strong>débit brut</strong> — tokens par seconde agrégés sur tout le cluster — est trompeur : on peut le maximiser en empilant les requêtes jusqu'à ce que la latence individuelle devienne inacceptable. Or l'inférence interactive est gouvernée par <em>deux</em> contraintes de latence distinctes, une par phase.</p>
+
+      <figure class="figure" id="fig-02">
+        <svg data-schema-id="schema-02" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+    <pattern id="hatch02" width="8" height="8" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+      <rect width="8" height="8" fill="#B8B5AE" fill-opacity="0.18"/>
+      <line x1="0" y1="0" x2="0" y2="8" stroke="#5A5A5A" stroke-width="1" stroke-opacity="0.5"/>
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- HEADER -->
+  <text x="60" y="55" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 02</text>
+  <text x="60" y="92" class="display" font-size="26" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Goodput : la métrique qui change la donne</text>
+  <text x="60" y="118" class="display" font-size="16" font-style="italic" fill="#5A5A5A">Deux SLO antagonistes — TTFT porté par le prefill, TPOT par le decode — sur un même matériel</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- TTFT card -->
+  <g class="interactive" data-card="ttft-slo" tabindex="0" role="button" aria-label="TTFT : SLO du prefill">
+    <rect x="60" y="172" width="540" height="118" rx="3" fill="#B7332C" fill-opacity="0.06" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="84" y="200" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#B7332C">TTFT · TIME-TO-FIRST-TOKEN</text>
+    <text x="84" y="226" class="body" font-size="13" font-weight="500" fill="#1A1A1A">Délai avant le premier token</text>
+    <text x="84" y="248" class="body" font-size="12" fill="#5A5A5A">Dominé par le <tspan font-weight="600" fill="#B7332C">prefill</tspan> — la passe d'entrée</text>
+    <text x="84" y="276" class="body" font-size="11" font-style="italic" fill="#5A5A5A">« combien de temps avant que ça réponde »</text>
+  </g>
+
+  <!-- TPOT card -->
+  <g class="interactive" data-card="tpot-slo" tabindex="0" role="button" aria-label="TPOT : SLO du decode">
+    <rect x="600" y="172" width="540" height="118" rx="3" fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="624" y="200" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#1F5560">TPOT · TIME-PER-OUTPUT-TOKEN</text>
+    <text x="624" y="226" class="body" font-size="13" font-weight="500" fill="#1A1A1A">Intervalle entre deux tokens</text>
+    <text x="624" y="248" class="body" font-size="12" fill="#5A5A5A">Dominé par le <tspan font-weight="600" fill="#1F5560">decode</tspan> — la génération</text>
+    <text x="624" y="276" class="body" font-size="11" font-style="italic" fill="#5A5A5A">« à quelle vitesse ça défile ensuite »</text>
+  </g>
+
+  <!-- BAR COMPARISON -->
+  <text x="60" y="330" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#1A1A1A">CE QU'ON MESURE CHANGE CE QU'ON OPTIMISE</text>
+  <line x1="60" y1="600" x2="60" y2="350" stroke="#B8B5AE" stroke-width="1"/>
+  <line x1="60" y1="600" x2="760" y2="600" stroke="#B8B5AE" stroke-width="1"/>
+
+  <!-- débit brut bar (interactive) -->
+  <g class="interactive" data-card="debit-trompeur" tabindex="0" role="button" aria-label="Débit brut : métrique trompeuse">
+    <rect x="150" y="368" width="160" height="232" fill="#5A5A5A" fill-opacity="0.18"/>
+    <rect x="150" y="368" width="160" height="232" fill="url(#hatch02)"/>
+    <rect x="150" y="496" width="160" height="104" fill="#5A5A5A" fill-opacity="0.55"/>
+    <text x="230" y="392" class="mono" font-size="13" font-weight="600" fill="#1A1A1A" text-anchor="middle">débit brut</text>
+    <text x="230" y="436" class="body" font-size="10" fill="#5A5A5A" text-anchor="middle">part qui viole</text>
+    <text x="230" y="450" class="body" font-size="10" fill="#5A5A5A" text-anchor="middle">un SLO</text>
+    <text x="230" y="552" class="body" font-size="10" fill="#FAF8F3" text-anchor="middle">requêtes</text>
+    <text x="230" y="566" class="body" font-size="10" fill="#FAF8F3" text-anchor="middle">vraiment utiles</text>
+    <text x="230" y="624" class="body" font-size="11" fill="#1A1A1A" text-anchor="middle">tokens/s agrégés</text>
+  </g>
+
+  <!-- goodput bar (interactive) -->
+  <g class="interactive" data-card="goodput-def" tabindex="0" role="button" aria-label="Goodput : requêtes respectant les deux SLO">
+    <rect x="470" y="496" width="160" height="104" fill="#B7332C"/>
+    <text x="550" y="392" class="mono" font-size="13" font-weight="600" fill="#B7332C" text-anchor="middle">goodput</text>
+    <text x="550" y="540" class="body" font-size="10" fill="#FAF8F3" text-anchor="middle">requêtes/s</text>
+    <text x="550" y="554" class="body" font-size="10" fill="#FAF8F3" text-anchor="middle">tenant les</text>
+    <text x="550" y="568" class="body" font-size="10" fill="#FAF8F3" text-anchor="middle">2 SLO</text>
+    <text x="550" y="624" class="body" font-size="11" fill="#1A1A1A" text-anchor="middle">la seule capacité réelle</text>
+    <line x1="310" y1="496" x2="470" y2="496" stroke="#B7332C" stroke-width="1" stroke-dasharray="3 3"/>
+  </g>
+
+  <!-- arrow annotation -->
+  <text x="660" y="455" class="body" font-size="11" fill="#5A5A5A">Maximiser le débit</text>
+  <text x="660" y="471" class="body" font-size="11" fill="#5A5A5A">agrégé empile les</text>
+  <text x="660" y="487" class="body" font-size="11" fill="#5A5A5A">requêtes jusqu'à la</text>
+  <text x="660" y="503" class="body" font-size="11" font-weight="600" fill="#B7332C">violation des SLO.</text>
+
+  <!-- DEFINITION BOX -->
+  <g>
+    <rect x="800" y="350" width="340" height="250" rx="3" fill="#B7332C" fill-opacity="0.05" stroke="#B7332C" stroke-width="1.25"/>
+    <text x="824" y="380" class="mono" font-size="10" font-weight="600" letter-spacing="0.08em" fill="#B7332C">DÉFINITION · DistServe</text>
+    <text x="824" y="410" class="display" font-size="18" font-style="italic" fill="#1A1A1A">goodput =</text>
+    <text x="824" y="438" class="body" font-size="13" fill="#1A1A1A">requêtes par seconde et par</text>
+    <text x="824" y="458" class="body" font-size="13" fill="#1A1A1A">GPU respectant <tspan font-weight="600">à la fois</tspan></text>
+    <text x="824" y="478" class="body" font-size="13" fill="#1A1A1A">leur cible TTFT <tspan font-style="italic">et</tspan> leur cible TPOT</text>
+    <line x1="824" y1="498" x2="1116" y2="498" stroke="#E5E1D8" stroke-width="0.75"/>
+    <text x="824" y="534" class="display" font-size="28" font-weight="600" fill="#B7332C">×7,4</text>
+    <text x="900" y="528" class="body" font-size="12" fill="#1A1A1A">requêtes servies, ou</text>
+    <text x="900" y="546" class="body" font-size="12" fill="#1A1A1A">×12,6 sur la sévérité SLO</text>
+    <text x="824" y="578" class="body" font-size="11" font-style="italic" fill="#5A5A5A">en tenant les cibles pour &gt; 90 % des requêtes</text>
+  </g>
+
+  <!-- FOOTER -->
+  <text x="60" y="760" class="body" font-size="10" font-style="italic" letter-spacing="0.02em" fill="#5A5A5A">Source : Zhong et al., « DistServe : Disaggregating Prefill and Decoding for Goodput-optimized LLM Serving », OSDI 2024.</text>
+</svg>
+
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-02" title="Lien direct vers ce schéma">¶</a> <em>Schéma 2 — Le goodput sous double SLO. Le TTFT est porté par le prefill, le TPOT par le decode ; le débit brut surestime la capacité utile car il masque les requêtes qui violent l'un des deux SLO. Le goodput ne compte que celles qui tiennent les deux.</em></figcaption>
+      </figure>
+
+      <p>La première est le <span class="term" data-tooltip="TTFT — time-to-first-token : délai avant le premier token généré. Dominé par le prefill.">TTFT</span> (<em>time-to-first-token</em>) : le délai avant le premier token, dominé par le prefill. La seconde est le <span class="term" data-tooltip="TPOT — time-per-output-token : intervalle entre deux tokens successifs. Dominé par le decode.">TPOT</span> (<em>time-per-output-token</em>) : l'intervalle entre deux tokens successifs, dominé par le decode. <mark>DistServe a fait de cette dualité une métrique : le <em>goodput</em>, soit le nombre de requêtes par seconde qui respectent <em>à la fois</em> leur cible de TTFT et leur cible de TPOT.</mark><a class="cite" data-cite="1" href="#source-1">1</a> La distinction est décisive. Un système peut afficher un débit brut flatteur tout en livrant un goodput médiocre, parce qu'une fraction des requêtes viole l'un des deux <span class="term" data-tooltip="SLO — service level objective : cible de qualité de service à respecter (ici, des seuils de latence TTFT et TPOT).">SLO</span>. Optimiser le débit agrégé sur un pool co-placé revient à optimiser une moyenne qui masque la violation de contraintes antagonistes : serrer le TTFT (gros lots de prefill) relâche le TPOT, et inversement.</p>
+
+      <p>Le goodput est la lentille qui rend la désagrégation évidente. Dès lors qu'on mesure le respect simultané de deux SLO portés par deux phases aux profils opposés, séparer ces phases sur du matériel dédié — chacune optimisée pour sa contrainte — cesse d'être une astuce pour devenir la conséquence logique de la métrique. <mark>DistServe (OSDI 2024) rapporte jusqu'à ×7,4 requêtes servies, ou ×12,6 sur la sévérité de la contrainte SLO, tout en tenant les cibles pour plus de 90 % des requêtes.</mark><a class="cite" data-cite="1" href="#source-1">1</a></p>
+
+      <h2 id="desag-3">3. Anatomie d'un système désagrégé</h2>
+      <p>Une fois les phases séparées, l'inférence cesse d'être une boucle locale pour devenir un <em>pipeline distribué</em>. Cinq composants apparaissent, là où le système co-placé n'en exposait qu'un.</p>
+
+      <figure class="figure" id="fig-03">
+        <svg data-schema-id="schema-03" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+    <marker id="arrow03" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#5A5A5A"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- HEADER -->
+  <text x="60" y="55" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 03</text>
+  <text x="60" y="92" class="display" font-size="26" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Anatomie d'un système désagrégé</text>
+  <text x="60" y="118" class="display" font-size="16" font-style="italic" fill="#5A5A5A">L'inférence cesse d'être une boucle locale : elle devient un pipeline distribué à cinq maillons</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- requête in -->
+  <rect x="48" y="252" width="78" height="56" rx="3" fill="#1A1A1A"/>
+  <text x="87" y="276" class="body" font-size="11" font-weight="600" fill="#FAF8F3" text-anchor="middle">requête</text>
+  <text x="87" y="294" class="body" font-size="9" fill="#FAF8F3" text-anchor="middle">+ prompt</text>
+  <line x1="126" y1="280" x2="150" y2="280" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#arrow03)"/>
+
+  <!-- ROUTEUR (interactive) -->
+  <g class="interactive" data-card="routeur" tabindex="0" role="button" aria-label="Routeur cache-aware">
+    <rect x="156" y="232" width="120" height="96" rx="3" fill="#1A1A1A" fill-opacity="0.06" stroke="#1A1A1A" stroke-width="1.5"/>
+    <text x="216" y="258" class="mono" font-size="10" font-weight="600" letter-spacing="0.06em" fill="#1A1A1A" text-anchor="middle">ROUTEUR</text>
+    <text x="216" y="280" class="body" font-size="10" fill="#5A5A5A" text-anchor="middle">place la requête</text>
+    <text x="216" y="296" class="body" font-size="10" fill="#5A5A5A" text-anchor="middle">selon l'état</text>
+    <text x="216" y="312" class="body" font-size="10" font-weight="600" fill="#1A1A1A" text-anchor="middle">des caches chauds</text>
+  </g>
+  <line x1="276" y1="280" x2="300" y2="280" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#arrow03)"/>
+
+  <!-- POOL PREFILL (interactive) -->
+  <g class="interactive" data-card="pool-prefill" tabindex="0" role="button" aria-label="Pool prefill compute-optimisé">
+    <rect x="306" y="216" width="226" height="128" rx="3" fill="#B7332C" fill-opacity="0.06" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="324" y="242" class="mono" font-size="10" font-weight="600" letter-spacing="0.08em" fill="#B7332C">POOL PREFILL</text>
+    <text x="324" y="260" class="body" font-size="10.5" fill="#5A5A5A">compute-optimisé</text>
+    <g fill="#B7332C" fill-opacity="0.85">
+      <rect x="324" y="272" width="50" height="44" rx="3"/>
+      <rect x="382" y="272" width="50" height="44" rx="3"/>
+      <rect x="440" y="272" width="50" height="44" rx="3"/>
+    </g>
+    <text x="349" y="299" class="mono" font-size="8" fill="#FAF8F3" text-anchor="middle">GPU</text>
+    <text x="407" y="299" class="mono" font-size="8" fill="#FAF8F3" text-anchor="middle">GPU</text>
+    <text x="465" y="299" class="mono" font-size="8" fill="#FAF8F3" text-anchor="middle">GPU</text>
+    <text x="324" y="334" class="body" font-size="10" font-style="italic" fill="#B7332C">produit le KV-cache</text>
+  </g>
+  <line x1="532" y1="280" x2="556" y2="280" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#arrow03)"/>
+
+  <!-- TRANSFERT KV (interactive) -->
+  <g class="interactive" data-card="transfert-kv" tabindex="0" role="button" aria-label="Transfert du KV-cache sur le réseau">
+    <rect x="562" y="240" width="148" height="80" rx="3" fill="#B58A2C" fill-opacity="0.08" stroke="#B58A2C" stroke-width="1.5" stroke-dasharray="5 3"/>
+    <text x="636" y="264" class="mono" font-size="10" font-weight="600" letter-spacing="0.06em" fill="#B58A2C" text-anchor="middle">TRANSFERT KV</text>
+    <g fill="#B58A2C">
+      <rect x="584" y="276" width="18" height="18" rx="2"/>
+      <rect x="608" y="276" width="18" height="18" rx="2" fill-opacity="0.7"/>
+      <rect x="632" y="276" width="18" height="18" rx="2" fill-opacity="0.5"/>
+    </g>
+    <text x="636" y="312" class="body" font-size="9.5" font-weight="600" fill="#B58A2C" text-anchor="middle">RDMA / NVLink</text>
+  </g>
+  <line x1="710" y1="280" x2="734" y2="280" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#arrow03)"/>
+
+  <!-- POOL DECODE (interactive) -->
+  <g class="interactive" data-card="pool-decode" tabindex="0" role="button" aria-label="Pool decode mémoire-optimisé">
+    <rect x="740" y="216" width="286" height="128" rx="3" fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="758" y="242" class="mono" font-size="10" font-weight="600" letter-spacing="0.08em" fill="#1F5560">POOL DECODE</text>
+    <text x="758" y="260" class="body" font-size="10.5" fill="#5A5A5A">mémoire-optimisé</text>
+    <g fill="#1F5560" fill-opacity="0.85">
+      <rect x="758" y="272" width="50" height="44" rx="3"/>
+      <rect x="816" y="272" width="50" height="44" rx="3"/>
+      <rect x="874" y="272" width="50" height="44" rx="3"/>
+      <rect x="932" y="272" width="50" height="44" rx="3"/>
+    </g>
+    <text x="783" y="299" class="mono" font-size="8" fill="#FAF8F3" text-anchor="middle">GPU</text>
+    <text x="841" y="299" class="mono" font-size="8" fill="#FAF8F3" text-anchor="middle">GPU</text>
+    <text x="899" y="299" class="mono" font-size="8" fill="#FAF8F3" text-anchor="middle">GPU</text>
+    <text x="957" y="299" class="mono" font-size="8" fill="#FAF8F3" text-anchor="middle">GPU</text>
+    <text x="758" y="334" class="body" font-size="10" font-style="italic" fill="#1F5560">consomme le KV-cache</text>
+  </g>
+  <line x1="1026" y1="280" x2="1050" y2="280" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#arrow03)"/>
+  <rect x="1052" y="252" width="80" height="56" rx="3" fill="#1A1A1A"/>
+  <text x="1092" y="276" class="body" font-size="11" font-weight="600" fill="#FAF8F3" text-anchor="middle">tokens</text>
+  <text x="1092" y="294" class="body" font-size="9" fill="#FAF8F3" text-anchor="middle">en flux</text>
+
+  <!-- POOL KV GLOBAL (interactive) -->
+  <g class="interactive" data-card="pool-kv" tabindex="0" role="button" aria-label="Pool KVCache global Mooncake">
+    <rect x="156" y="412" width="876" height="138" rx="3" fill="#1A1A1A" fill-opacity="0.05" stroke="#5A5A5A" stroke-width="1.25"/>
+    <text x="180" y="440" class="mono" font-size="10" font-weight="600" letter-spacing="0.08em" fill="#1A1A1A">POOL KVCACHE GLOBAL · architecture KVCache-centric (Mooncake)</text>
+    <text x="180" y="460" class="body" font-size="11" fill="#5A5A5A">Le cache n'est plus attaché à un GPU : il vit dans une hiérarchie partagée par le cluster — le placement devient un ordonnancement</text>
+    <g>
+      <rect x="180" y="476" width="180" height="44" rx="3" fill="#1F5560" fill-opacity="0.8"/><text x="270" y="503" class="mono" font-size="11" fill="#FAF8F3" text-anchor="middle">HBM (chaud)</text>
+      <rect x="374" y="476" width="180" height="44" rx="3" fill="#1F5560" fill-opacity="0.55"/><text x="464" y="503" class="mono" font-size="11" fill="#FAF8F3" text-anchor="middle">DRAM</text>
+      <rect x="568" y="476" width="180" height="44" rx="3" fill="#1F5560" fill-opacity="0.32"/><text x="658" y="503" class="mono" font-size="11" fill="#1A1A1A" text-anchor="middle">SSD (froid)</text>
+      <rect x="762" y="476" width="150" height="44" rx="3" fill="#E5E1D8"/><text x="837" y="503" class="mono" font-size="11" fill="#5A5A5A" text-anchor="middle">CPU host</text>
+      <text x="930" y="496" class="body" font-size="10.5" fill="#1A1A1A">DRAM + SSD du</text>
+      <text x="930" y="512" class="body" font-size="10.5" fill="#1A1A1A">cluster, réemployés</text>
+    </g>
+  </g>
+  <line x1="419" y1="344" x2="419" y2="410" stroke="#B8B5AE" stroke-width="1" stroke-dasharray="3 3" marker-end="url(#arrow03)"/>
+  <line x1="883" y1="410" x2="883" y2="346" stroke="#B8B5AE" stroke-width="1" stroke-dasharray="3 3" marker-end="url(#arrow03)"/>
+  <text x="430" y="392" class="body" font-size="9.5" font-style="italic" fill="#5A5A5A">décharge</text>
+  <text x="820" y="392" class="body" font-size="9.5" font-style="italic" fill="#5A5A5A" text-anchor="end">recharge</text>
+
+  <!-- CONTRACT NOTE -->
+  <rect x="156" y="582" width="876" height="92" rx="3" fill="#B7332C" fill-opacity="0.05" stroke="#B7332C" stroke-width="1.25"/>
+  <text x="180" y="610" class="mono" font-size="10" font-weight="600" letter-spacing="0.08em" fill="#B7332C">LE CONTRAT DU PIPELINE</text>
+  <text x="180" y="634" class="body" font-size="11.5" fill="#5A5A5A">Chaque maillon ajoute une latence et un point de défaillance. Le gain n'existe que si le <tspan font-weight="600" fill="#1A1A1A">temps de transfert KV reste largement sous</tspan></text>
+  <text x="180" y="654" class="body" font-size="11.5" fill="#5A5A5A">le temps de calcul qu'il libère. Toute l'ingénierie de la désagrégation tient dans cet équilibre (Schémas 5 et 6).</text>
+
+  <!-- FOOTER -->
+  <text x="60" y="760" class="body" font-size="10" font-style="italic" letter-spacing="0.02em" fill="#5A5A5A">Sources : Qin et al. (Mooncake, FAST 2025) ; Zhong et al. (DistServe) ; Zheng et al. (SGLang/RadixAttention, routage cache-aware).</text>
+</svg>
+
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-03" title="Lien direct vers ce schéma">¶</a> <em>Schéma 3 — Anatomie d'un système désagrégé. Le routeur place la requête, le pool prefill produit le KV-cache, le transfert le déplace sur le réseau, le pool decode le consomme, et un pool KV global le détache de tout GPU précis.</em></figcaption>
+      </figure>
+
+      <p>Le <strong>routeur</strong> (ou orchestrateur global) reçoit la requête et décide où la placer ; dans les systèmes <em>cache-aware</em>, il connaît l'état des KV-caches déjà chauds et route préférentiellement vers une instance qui détient le bon préfixe — la mécanique de l'arbre radix de SGLang<a class="cite" data-cite="9" href="#source-9">9</a> devient ici une décision de routage inter-nœuds. Le <strong>pool prefill</strong> exécute la passe d'entrée, dimensionné et parallélisé pour le calcul ; il <em>produit</em> le KV-cache. Le <strong>transfert KV</strong> déplace ce cache — plusieurs gigaoctets d'états d'attention — sur le réseau vers le pool decode (§5). Le <strong>pool decode</strong> prend en charge la génération auto-régressive, dimensionné pour la bande passante mémoire ; il <em>consomme</em> le cache. Enfin, dans les architectures les plus abouties, un <strong>pool KV global</strong> détache le cache de tout GPU précis : il vit dans une hiérarchie HBM/DRAM/SSD partagée par le cluster, et le placement devient un problème d'ordonnancement de premier ordre — c'est le cœur de l'architecture <em>KVCache-centric</em> de Mooncake<a class="cite" data-cite="3" href="#source-3">3</a>.</p>
+
+      <p>Sous chaque pool, le substrat reste la mémoire paginée de PagedAttention<a class="cite" data-cite="10" href="#source-10">10</a> ; et certains systèmes, comme TetriInfer<a class="cite" data-cite="5" href="#source-5">5</a>, enrichissent le routeur d'une <strong>prédiction de longueur de génération</strong> (par un petit modèle) pour placer les requêtes sans créer de points chauds de decode — réduisant le TTFT jusqu'à 97 %.</p>
+
+      <p>Le contrat de ce pipeline est exigeant. Chaque maillon ajoute une latence et un point de défaillance ; le gain de la désagrégation n'existe que si le transfert KV reste largement sous le temps de calcul qu'il libère. Toute l'ingénierie tient dans cet équilibre.</p>
+
+      <h2 id="desag-4">4. Le placement par phase : parallélisme découplé</h2>
+      <p>Le bénéfice le plus profond de la désagrégation n'est pas la disparition de l'interférence — c'est le <strong>découplage du dimensionnement</strong>. Chaque phase peut désormais choisir indépendamment son schéma de parallélisme, son type de GPU et son nombre de nœuds.</p>
+
+      <figure class="figure" id="fig-04">
+        <svg data-schema-id="schema-04" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- HEADER -->
+  <text x="60" y="55" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 04</text>
+  <text x="60" y="92" class="display" font-size="26" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Le placement par phase : parallélisme découplé</text>
+  <text x="60" y="118" class="display" font-size="16" font-style="italic" fill="#5A5A5A">Chaque phase choisit son parallélisme, son matériel et son nombre de nœuds — l'exemple DeepSeek-V3</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- PREFILL UNIT (interactive) -->
+  <g class="interactive" data-card="parallelisme-prefill" tabindex="0" role="button" aria-label="Unité prefill DeepSeek-V3 : EP32, 4 nœuds">
+    <rect x="60" y="172" width="500" height="248" rx="3" fill="#B7332C" fill-opacity="0.06" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="84" y="200" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#B7332C">UNITÉ PREFILL</text>
+    <text x="84" y="226" class="body" font-size="13" font-weight="500" fill="#1A1A1A">Dimensionnée pour le calcul du prompt</text>
+    <!-- nodes -->
+    <g fill="#B7332C" fill-opacity="0.85">
+      <rect x="84" y="246" width="100" height="48" rx="3"/>
+      <rect x="194" y="246" width="100" height="48" rx="3"/>
+      <rect x="304" y="246" width="100" height="48" rx="3"/>
+      <rect x="414" y="246" width="100" height="48" rx="3"/>
+    </g>
+    <text x="299" y="275" class="mono" font-size="11" fill="#FAF8F3" text-anchor="middle">4 nœuds H800</text>
+    <line x1="84" y1="312" x2="536" y2="312" stroke="#E5E1D8" stroke-width="0.75"/>
+    <text x="84" y="338" class="mono" font-size="14" font-weight="600" fill="#B7332C">EP32</text>
+    <text x="160" y="338" class="body" font-size="12" fill="#1A1A1A">parallélisme d'experts · 32 experts redondants</text>
+    <text x="84" y="362" class="body" font-size="12" fill="#5A5A5A">9 routed + 1 shared expert par GPU</text>
+    <text x="84" y="398" class="display" font-size="24" font-weight="600" fill="#B7332C">~73 700</text>
+    <text x="220" y="392" class="body" font-size="12" fill="#1A1A1A">tokens/s en entrée</text>
+    <text x="220" y="408" class="body" font-size="12" fill="#1A1A1A">par nœud</text>
+  </g>
+
+  <!-- DECODE UNIT (interactive) -->
+  <g class="interactive" data-card="parallelisme-decode" tabindex="0" role="button" aria-label="Unité decode DeepSeek-V3 : EP144, 18 nœuds">
+    <rect x="640" y="172" width="500" height="248" rx="3" fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="664" y="200" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#1F5560">UNITÉ DECODE</text>
+    <text x="664" y="226" class="body" font-size="13" font-weight="500" fill="#1A1A1A">Dimensionnée pour la bande passante</text>
+    <!-- many small nodes -->
+    <g fill="#1F5560" fill-opacity="0.85">
+      <rect x="664" y="246" width="44" height="22" rx="2"/><rect x="714" y="246" width="44" height="22" rx="2"/><rect x="764" y="246" width="44" height="22" rx="2"/><rect x="814" y="246" width="44" height="22" rx="2"/><rect x="864" y="246" width="44" height="22" rx="2"/><rect x="914" y="246" width="44" height="22" rx="2"/><rect x="964" y="246" width="44" height="22" rx="2"/><rect x="1014" y="246" width="44" height="22" rx="2"/><rect x="1064" y="246" width="52" height="22" rx="2"/>
+      <rect x="664" y="272" width="44" height="22" rx="2"/><rect x="714" y="272" width="44" height="22" rx="2"/><rect x="764" y="272" width="44" height="22" rx="2"/><rect x="814" y="272" width="44" height="22" rx="2"/><rect x="864" y="272" width="44" height="22" rx="2"/><rect x="914" y="272" width="44" height="22" rx="2"/><rect x="964" y="272" width="44" height="22" rx="2"/><rect x="1014" y="272" width="44" height="22" rx="2"/><rect x="1064" y="272" width="52" height="22" rx="2"/>
+    </g>
+    <text x="890" y="287" class="mono" font-size="10" fill="#FAF8F3" text-anchor="middle">18 nœuds H800</text>
+    <line x1="664" y1="312" x2="1116" y2="312" stroke="#E5E1D8" stroke-width="0.75"/>
+    <text x="664" y="338" class="mono" font-size="14" font-weight="600" fill="#1F5560">EP144</text>
+    <text x="748" y="338" class="body" font-size="12" fill="#1A1A1A">parallélisme étalé sur 4,5× plus de GPU</text>
+    <text x="664" y="362" class="body" font-size="12" fill="#5A5A5A">2 routed + 1 shared expert par GPU</text>
+    <text x="664" y="398" class="display" font-size="24" font-weight="600" fill="#1F5560">~14 800</text>
+    <text x="800" y="392" class="body" font-size="12" fill="#1A1A1A">tokens/s en sortie</text>
+    <text x="800" y="408" class="body" font-size="12" fill="#1A1A1A">par nœud</text>
+  </g>
+
+  <!-- RATIO DYNAMIQUE (interactive) -->
+  <g class="interactive" data-card="ratio-dynamique" tabindex="0" role="button" aria-label="Ratio prefill:decode ajusté à la charge">
+    <rect x="60" y="446" width="1080" height="120" rx="3" fill="#B58A2C" fill-opacity="0.06" stroke="#B58A2C" stroke-width="1.25"/>
+    <text x="84" y="474" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#B58A2C">LE RATIO PREFILL : DECODE EST UN CADRAN, PAS UNE CONSTANTE</text>
+    <!-- slider -->
+    <line x1="84" y1="516" x2="1116" y2="516" stroke="#B8B5AE" stroke-width="2"/>
+    <circle cx="430" cy="516" r="9" fill="#B58A2C"/>
+    <text x="84" y="500" class="body" font-size="11" fill="#B7332C">+ prefill</text>
+    <text x="84" y="544" class="body" font-size="10.5" fill="#5A5A5A">prompts longs, réponses courtes</text>
+    <text x="84" y="558" class="body" font-size="10.5" fill="#5A5A5A">(RAG, résumé, classification)</text>
+    <text x="1116" y="500" class="body" font-size="11" fill="#1F5560" text-anchor="end">+ decode</text>
+    <text x="1116" y="544" class="body" font-size="10.5" fill="#5A5A5A" text-anchor="end">réponses longues, prompts courts</text>
+    <text x="1116" y="558" class="body" font-size="10.5" fill="#5A5A5A" text-anchor="end">(conversation, raisonnement)</text>
+    <text x="600" y="540" class="body" font-size="11" font-style="italic" fill="#1A1A1A" text-anchor="middle">on règle l'allocation des nœuds selon la composition réelle du trafic</text>
+  </g>
+
+  <!-- CO-OPTIMISATION (interactive) -->
+  <g class="interactive" data-card="co-optimisation" tabindex="0" role="button" aria-label="Co-optimisation DistServe">
+    <rect x="60" y="592" width="1080" height="100" rx="3" fill="#1A1A1A" fill-opacity="0.04" stroke="#5A5A5A" stroke-width="1.25"/>
+    <text x="84" y="620" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#1A1A1A">CE QUE LE DÉCOUPLAGE DÉBLOQUE</text>
+    <text x="84" y="644" class="body" font-size="11.5" fill="#5A5A5A">DistServe en fait un problème d'optimisation : <tspan font-weight="600" fill="#1A1A1A">co-optimiser le parallélisme et le placement de chaque phase</tspan> sous contrainte de bande passante,</text>
+    <text x="84" y="664" class="body" font-size="11.5" fill="#5A5A5A">pour maximiser le goodput par GPU. On peut même composer des flottes hétérogènes : GPU récents pour le prefill, GPU à forte bande passante</text>
+    <text x="84" y="684" class="body" font-size="11.5" fill="#5A5A5A">pour le decode (Splitwise) — un compromis d'architecture jadis figé devient un espace de configuration.</text>
+  </g>
+
+  <!-- FOOTER -->
+  <text x="60" y="760" class="body" font-size="10" font-style="italic" letter-spacing="0.02em" fill="#5A5A5A">Sources : DeepSeek-AI (DeepSeek-V3/R1 Inference System Overview, 2025) ; Zhong et al. (DistServe) ; Patel et al. (Splitwise).</text>
+</svg>
+
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-04" title="Lien direct vers ce schéma">¶</a> <em>Schéma 4 — Le placement par phase. L'exemple DeepSeek-V3 : une unité prefill en EP32 sur 4 nœuds, une unité decode en EP144 sur 18 nœuds, et un ratio prefill:decode réglé comme un cadran selon la composition du trafic.</em></figcaption>
+      </figure>
+
+      <p>DistServe en fait un problème d'optimisation explicite : il <strong>co-optimise le parallélisme et le placement de chaque phase</strong> sous contrainte de bande passante du lien, cherchant la configuration qui maximise le goodput par GPU.<a class="cite" data-cite="1" href="#source-1">1</a> Splitwise<a class="cite" data-cite="2" href="#source-2">2</a> généralise avec trois pools — un pool de machines <em>prompt</em> (prefill), un pool de machines <em>token</em> (decode), et un pool <em>mixte</em> qui absorbe les pics — et montre qu'on peut composer des flottes hétérogènes : du matériel récent et coûteux pour le prefill compute-bound, du matériel plus ancien mais à forte bande passante pour le decode. <mark>Splitwise (Microsoft, ISCA 2024) obtient ×2,35 de débit à coût et enveloppe énergétique constants, ou ×1,4 de débit pour −20 % de coût.</mark><a class="cite" data-cite="2" href="#source-2">2</a></p>
+
+      <p>Le cas de production le plus spectaculaire est <strong>DeepSeek-V3</strong><a class="cite" data-cite="6" href="#source-6">6</a>. Son déploiement sépare radicalement les deux phases avec des degrés de <span class="term" data-tooltip="Expert parallelism (EP) : pour un modèle Mixture-of-Experts, répartition des experts sur différents GPU. EP32 = experts étalés sur 32 GPU ; EP144 = sur 144.">parallélisme d'experts</span> (<em>expert parallelism</em>, EP) très différents : l'unité de prefill tourne en <strong>EP32 sur 4 nœuds</strong> ; l'unité de decode pousse jusqu'à <strong>EP144 sur 18 nœuds</strong> pour répartir la pression mémoire du KV-cache et des 256 experts à travers bien plus de GPU. Les deux unités embarquent <strong>32 experts redondants</strong> pour équilibrer la charge entre nœuds. Le résultat parle de lui-même : <mark>~73 700 tokens/s en entrée par nœud H800 en prefill, ~14 800 tokens/s en sortie par nœud en decode</mark> — deux régimes, deux dimensionnements.<a class="cite" data-cite="6" href="#source-6">6</a> Et le ratio prefill:decode n'est pas figé : il s'ajuste à la composition réelle du trafic — un service à prompts longs et réponses courtes (RAG, résumé) sur-provisionne le prefill ; un service conversationnel à réponses longues sur-provisionne le decode. La désagrégation transforme un compromis d'architecture gravé dans le marbre en un <em>cadran</em> qu'on règle selon la charge.</p>
+
+      <h2 id="desag-5">5. Le coût central : transférer le KV-cache</h2>
+      <p>La désagrégation ne supprime pas la rareté du cache : elle la <strong>déplace dans le réseau</strong>. Le prix à payer a un nom — le transfert du KV-cache — et c'est lui qui décide si l'architecture gagne ou perd.</p>
+
+      <figure class="figure" id="fig-05">
+        <svg data-schema-id="schema-05" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+    <marker id="arrow05" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#5A5A5A"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- HEADER -->
+  <text x="60" y="55" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 05</text>
+  <text x="60" y="92" class="display" font-size="26" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Le coût central : transférer le KV-cache</text>
+  <text x="60" y="118" class="display" font-size="16" font-style="italic" fill="#5A5A5A">La désagrégation ne supprime pas la rareté du cache — elle la déplace dans le réseau</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- TAILLE TRANSFERT (interactive) -->
+  <g class="interactive" data-card="taille-transfert" tabindex="0" role="button" aria-label="Taille du transfert">
+    <rect x="60" y="172" width="500" height="150" rx="3" fill="#B58A2C" fill-opacity="0.06" stroke="#B58A2C" stroke-width="1.5"/>
+    <text x="84" y="200" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#B58A2C">CE QU'IL FAUT DÉPLACER</text>
+    <text x="84" y="226" class="body" font-size="12.5" fill="#1A1A1A">Le KV-cache du prompt entier — pour un long</text>
+    <text x="84" y="244" class="body" font-size="12.5" fill="#1A1A1A">contexte, <tspan font-weight="600">plusieurs gigaoctets par requête</tspan>.</text>
+    <text x="84" y="286" class="display" font-size="22" font-weight="600" fill="#B58A2C">~800 Ko</text>
+    <text x="240" y="280" class="body" font-size="11" fill="#5A5A5A">par token (modèle 13 Md, FP16)</text>
+    <text x="240" y="298" class="body" font-size="11" fill="#5A5A5A">→ 2 000 tokens ≈ 1,6 Go</text>
+    <text x="84" y="312" class="body" font-size="10" font-style="italic" fill="#5A5A5A">cf. dossier kv-cache §1</text>
+  </g>
+
+  <!-- HIERARCHIE LIEN (interactive) -->
+  <g class="interactive" data-card="hierarchie-lien" tabindex="0" role="button" aria-label="Hiérarchie des liens de transfert">
+    <rect x="640" y="172" width="500" height="150" rx="3" fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="664" y="200" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#1F5560">LA HIÉRARCHIE DES LIENS · DÉBIT</text>
+    <!-- ladder bars -->
+    <text x="664" y="228" class="body" font-size="10.5" fill="#1A1A1A">NVLink (intra-nœud)</text>
+    <rect x="664" y="234" width="452" height="14" rx="2" fill="#1F5560"/>
+    <text x="1112" y="245" class="mono" font-size="9" fill="#FAF8F3" text-anchor="end">centaines de Go/s — To/s</text>
+    <text x="664" y="266" class="body" font-size="10.5" fill="#1A1A1A">RDMA RoCE 8×400 Gbps</text>
+    <rect x="664" y="272" width="300" height="14" rx="2" fill="#1F5560" fill-opacity="0.7"/>
+    <text x="958" y="283" class="mono" font-size="9" fill="#FAF8F3" text-anchor="end">190 Go/s</text>
+    <text x="664" y="304" class="body" font-size="10.5" fill="#1A1A1A">TCP (réseau classique)</text>
+    <rect x="664" y="310" width="80" height="14" rx="2" fill="#B7332C" fill-opacity="0.5"/>
+    <text x="752" y="321" class="mono" font-size="9" fill="#B7332C">2,4–4,6× plus lent</text>
+  </g>
+
+  <!-- RECOUVREMENT COUCHES (interactive) -->
+  <g class="interactive" data-card="recouvrement-couches" tabindex="0" role="button" aria-label="Recouvrement couche-par-couche">
+    <rect x="60" y="346" width="1080" height="160" rx="3" fill="#1A1A1A" fill-opacity="0.04" stroke="#5A5A5A" stroke-width="1.25"/>
+    <text x="84" y="374" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#1A1A1A">LE RECOUVREMENT COUCHE-PAR-COUCHE · MASQUER LE TRANSFERT DERRIÈRE LE CALCUL</text>
+    <text x="84" y="396" class="body" font-size="11.5" fill="#5A5A5A">On streame le KV d'une couche dès qu'elle est calculée, sans attendre la fin du prefill complet.</text>
+    <!-- compute lane -->
+    <text x="84" y="432" class="body" font-size="10" fill="#B7332C">calcul prefill</text>
+    <g fill="#B7332C" fill-opacity="0.85">
+      <rect x="180" y="420" width="70" height="20" rx="2"/><rect x="256" y="420" width="70" height="20" rx="2"/><rect x="332" y="420" width="70" height="20" rx="2"/><rect x="408" y="420" width="70" height="20" rx="2"/><rect x="484" y="420" width="70" height="20" rx="2"/>
+    </g>
+    <text x="215" y="434" class="mono" font-size="8" fill="#FAF8F3" text-anchor="middle">L1</text>
+    <text x="291" y="434" class="mono" font-size="8" fill="#FAF8F3" text-anchor="middle">L2</text>
+    <text x="367" y="434" class="mono" font-size="8" fill="#FAF8F3" text-anchor="middle">L3</text>
+    <text x="443" y="434" class="mono" font-size="8" fill="#FAF8F3" text-anchor="middle">L4</text>
+    <text x="519" y="434" class="mono" font-size="8" fill="#FAF8F3" text-anchor="middle">L5</text>
+    <!-- transfer lane offset -->
+    <text x="84" y="472" class="body" font-size="10" fill="#B58A2C">transfert KV</text>
+    <g fill="#B58A2C" fill-opacity="0.85">
+      <rect x="256" y="460" width="70" height="20" rx="2"/><rect x="332" y="460" width="70" height="20" rx="2"/><rect x="408" y="460" width="70" height="20" rx="2"/><rect x="484" y="460" width="70" height="20" rx="2"/><rect x="560" y="460" width="70" height="20" rx="2"/>
+    </g>
+    <line x1="215" y1="442" x2="285" y2="458" stroke="#B8B5AE" stroke-width="0.75" marker-end="url(#arrow05)"/>
+    <text x="700" y="442" class="body" font-size="11" fill="#1A1A1A">Le transfert de la couche L<tspan font-style="italic">n</tspan> recouvre le calcul</text>
+    <text x="700" y="462" class="body" font-size="11" fill="#1A1A1A">de L<tspan font-style="italic">n+1</tspan> : la latence réseau disparaît derrière</text>
+    <text x="700" y="482" class="body" font-size="11" fill="#1A1A1A">le calcul. Exploité par DistServe et Mooncake.</text>
+  </g>
+
+  <!-- POINT DE BASCULE (interactive) -->
+  <g class="interactive" data-card="point-bascule" tabindex="0" role="button" aria-label="Point de bascule : quand la désagrégation gagne">
+    <rect x="60" y="530" width="1080" height="160" rx="3" fill="#B7332C" fill-opacity="0.05" stroke="#B7332C" stroke-width="1.25"/>
+    <text x="84" y="558" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#B7332C">LE POINT DE BASCULE</text>
+    <!-- balance -->
+    <text x="84" y="592" class="display" font-size="17" font-style="italic" fill="#1A1A1A">temps de transfert KV</text>
+    <text x="372" y="592" class="display" font-size="20" fill="#5A5A5A">&lt;</text>
+    <text x="398" y="592" class="display" font-size="17" font-style="italic" fill="#1A1A1A">temps de calcul libéré</text>
+    <text x="700" y="592" class="body" font-size="13" font-weight="600" fill="#B7332C">→ la désagrégation gagne</text>
+    <line x1="84" y1="612" x2="1116" y2="612" stroke="#E5E1D8" stroke-width="0.75"/>
+    <text x="84" y="640" class="body" font-size="11.5" fill="#5A5A5A">Sous un lien lent (TCP) ou pour des prompts courts, le transfert dépasse le gain : <tspan font-weight="600" fill="#1A1A1A">le co-placement reste préférable</tspan>.</text>
+    <text x="84" y="662" class="body" font-size="11.5" fill="#5A5A5A">D'où NIXL (NVIDIA Dynamo), qui déplace le KV <tspan font-weight="600" fill="#1A1A1A">directement de VRAM à VRAM</tspan> derrière 5 backends (RDMA/IB, RoCE, TCP, NVMe-oF, S3),</text>
+    <text x="84" y="684" class="body" font-size="11.5" fill="#5A5A5A">et le routage cache-aware, qui évite carrément le transfert quand le préfixe est déjà chaud sur le bon nœud.</text>
+  </g>
+
+  <!-- FOOTER -->
+  <text x="60" y="760" class="body" font-size="10" font-style="italic" letter-spacing="0.02em" fill="#5A5A5A">Sources : Qin et al. (Mooncake — 87/190 Go/s RDMA RoCE) ; NVIDIA (Dynamo/NIXL) ; Zhong et al. (DistServe — recouvrement).</text>
+</svg>
+
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-05" title="Lien direct vers ce schéma">¶</a> <em>Schéma 5 — Le coût du transfert. La taille à déplacer (gigaoctets/requête), la hiérarchie des liens (NVLink ≫ RDMA RoCE ≫ TCP), le recouvrement couche-par-couche qui masque la latence, et le point de bascule où le co-placement redevient préférable.</em></figcaption>
+      </figure>
+
+      <p>La taille à déplacer est celle du KV-cache du prompt : pour un long contexte, plusieurs gigaoctets par requête (cf. <a href="../kv-cache/">kv-cache</a> §1, ~800 Ko/token pour un modèle de 13 Md en FP16). Trois leviers rendent ce coût supportable. D'abord la <strong>bande passante du lien</strong> : sur <span class="term" data-tooltip="NVLink : interconnexion haute vitesse de NVIDIA entre GPU d'un même nœud (centaines de Go/s à plusieurs To/s).">NVLink</span> intra-nœud (centaines de Go/s) le transfert est quasi gratuit ; sur <span class="term" data-tooltip="RDMA — Remote Direct Memory Access : accès mémoire direct entre machines distantes sans passer par le CPU, sur InfiniBand ou RoCE. Bien plus rapide que TCP.">RDMA</span> InfiniBand inter-nœuds il devient un poste à budgéter ; sur Ethernet classique il peut annuler tout le gain. Ensuite le <strong>recouvrement couche-par-couche</strong> : plutôt que d'attendre la fin du prefill complet, on streame le KV-cache d'une couche dès qu'elle est calculée, masquant la latence de transfert derrière le calcul des couches suivantes — DistServe et Mooncake exploitent ce recouvrement.<a class="cite" data-cite="1" href="#source-1">1</a><a class="cite" data-cite="3" href="#source-3">3</a> Enfin la <strong>localité</strong> : un routeur cache-aware évite carrément le transfert quand le préfixe est déjà chaud sur le bon nœud.</p>
+
+      <p><mark>Le point de bascule est net : la désagrégation gagne tant que le temps de transfert reste inférieur au temps de calcul qu'elle libère ; sous un lien lent ou pour des prompts courts, le co-placement reste préférable.</mark><a class="cite" data-cite="1" href="#source-1">1</a><a class="cite" data-cite="2" href="#source-2">2</a><a class="cite" data-cite="12" href="#source-12">12</a> L'ordre de grandeur du lien est tout : Mooncake mesure un transfert RDMA RoCE de <strong>87 Go/s (4×200 Gbps) à 190 Go/s (8×400 Gbps), soit 2,4 à 4,6 fois plus rapide que TCP</strong><a class="cite" data-cite="3" href="#source-3">3</a> — et le NVLink intra-nœud monte encore d'un cran. C'est pourquoi NVIDIA a fait du transfert une couche logicielle de premier plan : <span class="term" data-tooltip="NIXL — NVIDIA Inference Xfer Library : bibliothèque de transfert point-à-point bas latence qui déplace le KV-cache de VRAM à VRAM, avec backends RDMA/InfiniBand, RoCE, TCP, NVMe-oF et S3.">NIXL</span> (<em>NVIDIA Inference Xfer Library</em>), la bibliothèque au cœur de la plateforme <strong>Dynamo</strong><a class="cite" data-cite="7" href="#source-7">7</a>, déplace le KV-cache <em>directement de VRAM à VRAM</em> entre moteur prefill et moteur decode, derrière cinq backends (RDMA/InfiniBand, RoCE, TCP, NVMe-oF, S3). Mooncake<a class="cite" data-cite="3" href="#source-3">3</a>, lui, s'appuie sur RDMA pour alimenter son pool KV distribué exploitant la DRAM et les SSD sous-utilisés du cluster.</p>
+
+      <h2 id="desag-6">6. Désagrégation contre chunked prefill : deux écoles</h2>
+      <p>La désagrégation n'est pas la seule réponse au conflit prefill/decode. Une école rivale — le <strong>chunked prefill</strong> de Sarathi-Serve<a class="cite" data-cite="4" href="#source-4">4</a> — refuse de séparer les phases et préfère les <em>entrelacer</em> proprement sur un même pool.</p>
+
+      <figure class="figure" id="fig-06">
+        <svg data-schema-id="schema-06" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- HEADER -->
+  <text x="60" y="55" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 06</text>
+  <text x="60" y="92" class="display" font-size="26" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Deux écoles face au même conflit</text>
+  <text x="60" y="118" class="display" font-size="16" font-style="italic" fill="#5A5A5A">Entrelacer proprement sur un pool, ou séparer physiquement en deux pools</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- ÉCOLE CHUNKED (interactive) -->
+  <g class="interactive" data-card="ecole-chunked" tabindex="0" role="button" aria-label="École chunked prefill : entrelacer">
+    <rect x="60" y="172" width="520" height="222" rx="3" fill="#B58A2C" fill-opacity="0.07" stroke="#B58A2C" stroke-width="1.5"/>
+    <text x="84" y="200" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#B58A2C">ÉCOLE A · ENTRELACER — Sarathi-Serve</text>
+    <text x="84" y="226" class="body" font-size="13" font-weight="500" fill="#1A1A1A">Chunked prefill · stall-free batching</text>
+    <text x="84" y="248" class="body" font-size="11.5" fill="#5A5A5A">Découpe le prefill en morceaux bornés, insérés dans</text>
+    <text x="84" y="266" class="body" font-size="11.5" fill="#5A5A5A">les lots de decode sans jamais les interrompre.</text>
+    <!-- mini timeline single pool -->
+    <line x1="84" y1="306" x2="556" y2="306" stroke="#B8B5AE" stroke-width="1"/>
+    <g fill="#1F5560"><rect x="92" y="294" width="12" height="24" rx="2"/><rect x="146" y="294" width="12" height="24" rx="2"/><rect x="232" y="294" width="12" height="24" rx="2"/><rect x="318" y="294" width="12" height="24" rx="2"/><rect x="404" y="294" width="12" height="24" rx="2"/><rect x="490" y="294" width="12" height="24" rx="2"/></g>
+    <g fill="#B58A2C"><rect x="110" y="296" width="30" height="20" rx="2"/><rect x="196" y="296" width="30" height="20" rx="2"/><rect x="282" y="296" width="30" height="20" rx="2"/><rect x="368" y="296" width="30" height="20" rx="2"/><rect x="454" y="296" width="30" height="20" rx="2"/></g>
+    <text x="84" y="338" class="body" font-size="10" font-style="italic" fill="#5A5A5A">un seul pool : chunks de prefill (or) glissés entre decodes (teal)</text>
+    <text x="84" y="372" class="body" font-size="12" font-weight="600" fill="#B58A2C">+ Zéro transfert KV · ×2,6 → ×5,6 vs vLLM</text>
+  </g>
+
+  <!-- ÉCOLE DÉSAGRÉGÉE (interactive) -->
+  <g class="interactive" data-card="ecole-desagregee" tabindex="0" role="button" aria-label="École désagrégée : séparer">
+    <rect x="620" y="172" width="520" height="222" rx="3" fill="#1F5560" fill-opacity="0.07" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="644" y="200" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#1F5560">ÉCOLE B · SÉPARER — DistServe, Splitwise</text>
+    <text x="644" y="226" class="body" font-size="13" font-weight="500" fill="#1A1A1A">Désagrégation prefill / decode</text>
+    <text x="644" y="248" class="body" font-size="11.5" fill="#5A5A5A">Deux pools de GPU dédiés, chacun avec son</text>
+    <text x="644" y="266" class="body" font-size="11.5" fill="#5A5A5A">parallélisme et son dimensionnement ; le KV transite.</text>
+    <!-- two pools -->
+    <rect x="644" y="290" width="150" height="48" rx="3" fill="#B7332C" fill-opacity="0.85"/>
+    <text x="719" y="318" class="body" font-size="11" fill="#FAF8F3" text-anchor="middle">pool prefill</text>
+    <line x1="800" y1="314" x2="838" y2="314" stroke="#B58A2C" stroke-width="2" marker-end="url(#arrow06b)"/>
+    <rect x="844" y="290" width="150" height="48" rx="3" fill="#1F5560" fill-opacity="0.85"/>
+    <text x="919" y="318" class="body" font-size="11" fill="#FAF8F3" text-anchor="middle">pool decode</text>
+    <text x="800" y="300" class="mono" font-size="8" fill="#B58A2C" text-anchor="middle">KV</text>
+    <text x="644" y="372" class="body" font-size="12" font-weight="600" fill="#1F5560">+ Parallélisme dédié · interférence supprimée</text>
+  </g>
+  <defs>
+    <marker id="arrow06b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#B58A2C"/></marker>
+  </defs>
+
+  <!-- WHERE EACH WINS -->
+  <text x="60" y="436" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#1A1A1A">OÙ CHACUNE L'EMPORTE</text>
+
+  <!-- charge favorable chunked (interactive) -->
+  <g class="interactive" data-card="charge-favorable-chunked" tabindex="0" role="button" aria-label="Charges favorables au chunked prefill">
+    <rect x="60" y="448" width="520" height="150" rx="3" fill="#B58A2C" fill-opacity="0.04" stroke="#B58A2C" stroke-width="1.25"/>
+    <text x="84" y="476" class="body" font-size="12" font-weight="600" fill="#B58A2C">L'entrelacement gagne quand…</text>
+    <text x="84" y="502" class="body" font-size="11.5" fill="#5A5A5A">• déploiement modeste (1 à quelques nœuds)</text>
+    <text x="84" y="524" class="body" font-size="11.5" fill="#5A5A5A">• lien inter-nœuds lent ou absent</text>
+    <text x="84" y="546" class="body" font-size="11.5" fill="#5A5A5A">• prompts courts (transfert KV non rentable)</text>
+    <text x="84" y="576" class="body" font-size="11" font-style="italic" fill="#1A1A1A">l'argument décisif : le transfert serait pure perte</text>
+  </g>
+
+  <!-- charge favorable désag (interactive) -->
+  <g class="interactive" data-card="charge-favorable-desag" tabindex="0" role="button" aria-label="Charges favorables à la désagrégation">
+    <rect x="620" y="448" width="520" height="150" rx="3" fill="#1F5560" fill-opacity="0.04" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="644" y="476" class="body" font-size="12" font-weight="600" fill="#1F5560">La séparation gagne quand…</text>
+    <text x="644" y="502" class="body" font-size="11.5" fill="#5A5A5A">• grands clusters, échelle élevée</text>
+    <text x="644" y="524" class="body" font-size="11.5" fill="#5A5A5A">• prompts longs, lien rapide (RDMA/NVLink)</text>
+    <text x="644" y="546" class="body" font-size="11.5" fill="#5A5A5A">• TTFT et TPOT serrés simultanément</text>
+    <text x="644" y="576" class="body" font-size="11" font-style="italic" fill="#1A1A1A">l'argument décisif : dimensionner les phases séparément</text>
+  </g>
+
+  <!-- CONVERGENCE -->
+  <rect x="60" y="622" width="1080" height="76" rx="3" fill="#1A1A1A" fill-opacity="0.04" stroke="#5A5A5A" stroke-width="1.25"/>
+  <text x="84" y="650" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#1A1A1A">ELLES NE S'EXCLUENT PAS</text>
+  <text x="84" y="674" class="body" font-size="11.5" fill="#5A5A5A">Un pool prefill désagrégé peut employer le chunked prefill en interne ; vLLM et SGLang exposent les deux leviers. La vraie</text>
+  <text x="84" y="692" class="body" font-size="11.5" fill="#5A5A5A">question n'est pas « laquelle est la bonne », mais <tspan font-weight="600" fill="#1A1A1A">« à quelle échelle bascule-t-on de l'une à l'autre »</tspan> — débat encore ouvert.</text>
+
+  <!-- FOOTER -->
+  <text x="60" y="760" class="body" font-size="10" font-style="italic" letter-spacing="0.02em" fill="#5A5A5A">Sources : Agrawal et al. (Sarathi-Serve, OSDI 2024) ; Zhong et al. (DistServe) ; « Beyond the Buzz », 2025.</text>
+</svg>
+
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-06" title="Lien direct vers ce schéma">¶</a> <em>Schéma 6 — Deux écoles face au conflit. Entrelacer (chunked prefill, zéro transfert KV) ou séparer (désagrégation, parallélisme dédié) ; les charges où chacune l'emporte, et pourquoi elles finissent par se composer.</em></figcaption>
+      </figure>
+
+      <p>Le principe du chunked prefill : découper un prefill long en morceaux de taille bornée, et insérer chaque morceau dans un lot de decode sans jamais l'interrompre — un ordonnancement <em>stall-free</em> qui exploite les cœurs GPU inactifs pendant le decode. <mark>Sarathi-Serve (OSDI 2024) multiplie ainsi la capacité de service par 2,6 (Mistral-7B sur un A100) à 5,6 (Falcon-180B sur 8 A100) face à vLLM, sans aucun transfert de KV-cache</mark> puisque tout reste sur le même GPU.<a class="cite" data-cite="4" href="#source-4">4</a> C'est l'argument décisif de cette école : <strong>zéro coût réseau</strong>. Elle brille sur les déploiements de taille modeste, à un ou quelques nœuds, où le transfert inter-pools serait pure perte, et sur les charges à prompts courts.</p>
+
+      <p>L'école désagrégée l'emporte quand l'échelle et l'hétérogénéité des SLO le justifient : grands clusters, prompts longs, exigence de TTFT et de TPOT serrés <em>simultanément</em>, besoin de dimensionner les phases indépendamment. Les deux approches ne s'excluent d'ailleurs pas : un pool prefill désagrégé peut lui-même employer le chunked prefill en interne, et les frameworks récents (vLLM, SGLang) exposent les deux leviers. Le débat reste vif — des analyses pragmatiques de 2025-2026<a class="cite" data-cite="12" href="#source-12">12</a> cherchent précisément la frontière, et certains travaux proposent déjà d'<em>unifier</em> agrégation et désagrégation dans un même ordonnanceur. <mark>La question n'est pas « laquelle est la bonne » mais « à quelle échelle bascule-t-on de l'une à l'autre »</mark> — un arbitrage qui dépend du lien réseau, de la distribution des longueurs de prompt et de la sévérité des SLO.</p>
+
+      <h2 id="desag-7">7. La production : qui désagrège, et comment</h2>
+      <p>En 2026, la désagrégation est passée du papier de conférence au mode de déploiement standard des grands services. La cartographie tient en cinq systèmes de référence et leurs choix.</p>
+
+      <figure class="figure" id="fig-07">
+        <svg data-schema-id="schema-07" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- HEADER -->
+  <text x="60" y="55" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 07</text>
+  <text x="60" y="92" class="display" font-size="26" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">La désagrégation en production</text>
+  <text x="60" y="118" class="display" font-size="16" font-style="italic" fill="#5A5A5A">Cinq systèmes de référence et leurs choix de transfert, de pool KV et de routage</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- column headers -->
+  <text x="76" y="186" class="mono" font-size="10" font-weight="600" letter-spacing="0.06em" fill="#5A5A5A">SYSTÈME</text>
+  <text x="320" y="186" class="mono" font-size="10" font-weight="600" letter-spacing="0.06em" fill="#5A5A5A">TRANSFERT KV</text>
+  <text x="540" y="186" class="mono" font-size="10" font-weight="600" letter-spacing="0.06em" fill="#5A5A5A">POOL KV / PLACEMENT</text>
+  <text x="800" y="186" class="mono" font-size="10" font-weight="600" letter-spacing="0.06em" fill="#5A5A5A">ROUTAGE / ORDONNANCEMENT</text>
+  <text x="1130" y="186" class="mono" font-size="10" font-weight="600" letter-spacing="0.06em" fill="#5A5A5A" text-anchor="end">GAIN PHARE</text>
+  <line x1="60" y1="196" x2="1140" y2="196" stroke="#B8B5AE" stroke-width="1"/>
+
+  <!-- ROW Mooncake (interactive) -->
+  <g class="interactive" data-card="mooncake" tabindex="0" role="button" aria-label="Mooncake / Kimi">
+    <rect x="60" y="202" width="1080" height="86" rx="3" fill="#1F5560" fill-opacity="0.07" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="76" y="232" class="body" font-size="14" font-weight="600" fill="#1F5560">Mooncake</text>
+    <text x="76" y="252" class="body" font-size="10.5" fill="#5A5A5A">Moonshot · Kimi</text>
+    <text x="76" y="270" class="body" font-size="10" font-style="italic" fill="#5A5A5A">FAST 2025 Best Paper</text>
+    <text x="320" y="238" class="body" font-size="11" fill="#1A1A1A">RDMA RoCE</text>
+    <text x="320" y="256" class="body" font-size="11" fill="#1A1A1A">87 → 190 Go/s</text>
+    <text x="540" y="238" class="body" font-size="11" fill="#1A1A1A">Pool KV global</text>
+    <text x="540" y="256" class="body" font-size="11" fill="#1A1A1A">DRAM + SSD du cluster</text>
+    <text x="800" y="238" class="body" font-size="11" fill="#1A1A1A">Orienté surcharge :</text>
+    <text x="800" y="256" class="body" font-size="11" fill="#1A1A1A">rejet anticipé prédictif</text>
+    <text x="1130" y="240" class="display" font-size="20" font-weight="600" fill="#1F5560" text-anchor="end">+525 %</text>
+    <text x="1130" y="262" class="body" font-size="10" fill="#5A5A5A" text-anchor="end">sim. · +75 % réel (Kimi)</text>
+  </g>
+
+  <!-- ROW DeepSeek-V3 (interactive) -->
+  <g class="interactive" data-card="deepseek-v3" tabindex="0" role="button" aria-label="DeepSeek-V3">
+    <rect x="60" y="294" width="1080" height="86" rx="3" fill="#B7332C" fill-opacity="0.06" stroke="#B7332C" stroke-width="1.25"/>
+    <text x="76" y="324" class="body" font-size="14" font-weight="600" fill="#B7332C">DeepSeek-V3</text>
+    <text x="76" y="344" class="body" font-size="10.5" fill="#5A5A5A">DeepSeek-AI</text>
+    <text x="76" y="362" class="body" font-size="10" font-style="italic" fill="#5A5A5A">déploiement EP géant</text>
+    <text x="320" y="330" class="body" font-size="11" fill="#1A1A1A">inter-nœuds,</text>
+    <text x="320" y="348" class="body" font-size="11" fill="#1A1A1A">échelle d'experts</text>
+    <text x="540" y="330" class="body" font-size="11" fill="#1A1A1A">Cache on-disk massif :</text>
+    <text x="540" y="348" class="body" font-size="11" fill="#1A1A1A">56,3 % des entrées en cache</text>
+    <text x="800" y="330" class="body" font-size="11" fill="#1A1A1A">Prefill EP32 / 4 nœuds</text>
+    <text x="800" y="348" class="body" font-size="11" fill="#1A1A1A">Decode EP144 / 18 nœuds</text>
+    <text x="1130" y="332" class="display" font-size="20" font-weight="600" fill="#B7332C" text-anchor="end">545 %</text>
+    <text x="1130" y="354" class="body" font-size="10" fill="#5A5A5A" text-anchor="end">marge profit théorique</text>
+  </g>
+
+  <!-- ROW Splitwise (interactive) -->
+  <g class="interactive" data-card="splitwise" tabindex="0" role="button" aria-label="Splitwise / Azure">
+    <rect x="60" y="386" width="1080" height="86" rx="3" fill="#1A1A1A" fill-opacity="0.04" stroke="#5A5A5A" stroke-width="1.25"/>
+    <text x="76" y="416" class="body" font-size="14" font-weight="600" fill="#1A1A1A">Splitwise</text>
+    <text x="76" y="436" class="body" font-size="10.5" fill="#5A5A5A">Microsoft · Azure</text>
+    <text x="76" y="454" class="body" font-size="10" font-style="italic" fill="#5A5A5A">ISCA 2024</text>
+    <text x="320" y="422" class="body" font-size="11" fill="#1A1A1A">InfiniBand</text>
+    <text x="320" y="440" class="body" font-size="11" fill="#1A1A1A">(back-plane rapide)</text>
+    <text x="540" y="422" class="body" font-size="11" fill="#1A1A1A">3 pools : prompt /</text>
+    <text x="540" y="440" class="body" font-size="11" fill="#1A1A1A">token / mixte · hétérogène</text>
+    <text x="800" y="422" class="body" font-size="11" fill="#1A1A1A">GPU récents au prefill,</text>
+    <text x="800" y="440" class="body" font-size="11" fill="#1A1A1A">anciens au decode</text>
+    <text x="1130" y="424" class="display" font-size="20" font-weight="600" fill="#1A1A1A" text-anchor="end">×2,35</text>
+    <text x="1130" y="446" class="body" font-size="10" fill="#5A5A5A" text-anchor="end">coût + énergie constants</text>
+  </g>
+
+  <!-- ROW Dynamo (interactive) -->
+  <g class="interactive" data-card="dynamo" tabindex="0" role="button" aria-label="NVIDIA Dynamo">
+    <rect x="60" y="478" width="1080" height="86" rx="3" fill="#1F5560" fill-opacity="0.07" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="76" y="508" class="body" font-size="14" font-weight="600" fill="#1F5560">NVIDIA Dynamo</text>
+    <text x="76" y="528" class="body" font-size="10.5" fill="#5A5A5A">plateforme · GTC 2025</text>
+    <text x="76" y="546" class="body" font-size="10" font-style="italic" fill="#5A5A5A">disagg. comme produit</text>
+    <text x="320" y="514" class="body" font-size="11" fill="#1A1A1A">NIXL · VRAM → VRAM</text>
+    <text x="320" y="532" class="body" font-size="11" fill="#1A1A1A">5 backends</text>
+    <text x="540" y="514" class="body" font-size="11" fill="#1A1A1A">KV Manager +</text>
+    <text x="540" y="532" class="body" font-size="11" fill="#1A1A1A">Planner (ratio dynamique)</text>
+    <text x="800" y="514" class="body" font-size="11" fill="#1A1A1A">Smart Router KV-aware</text>
+    <text x="800" y="532" class="body" font-size="11" fill="#1A1A1A">(score recouvrement + charge)</text>
+    <text x="1130" y="516" class="display" font-size="20" font-weight="600" fill="#1F5560" text-anchor="end">×30</text>
+    <text x="1130" y="538" class="body" font-size="10" fill="#5A5A5A" text-anchor="end">DeepSeek-R1 (GB200)</text>
+  </g>
+
+  <!-- ROW vLLM/llm-d (interactive) -->
+  <g class="interactive" data-card="vllm-llmd" tabindex="0" role="button" aria-label="vLLM / SGLang / llm-d">
+    <rect x="60" y="570" width="1080" height="86" rx="3" fill="#1A1A1A" fill-opacity="0.04" stroke="#5A5A5A" stroke-width="1.25"/>
+    <text x="76" y="600" class="body" font-size="14" font-weight="600" fill="#1A1A1A">vLLM · SGLang · llm-d</text>
+    <text x="76" y="620" class="body" font-size="10.5" fill="#5A5A5A">open source</text>
+    <text x="76" y="638" class="body" font-size="10" font-style="italic" fill="#5A5A5A">CNCF Sandbox (2026)</text>
+    <text x="320" y="606" class="body" font-size="11" fill="#1A1A1A">Connecteurs LMCache /</text>
+    <text x="320" y="624" class="body" font-size="11" fill="#1A1A1A">NIXL · FlexKV</text>
+    <text x="540" y="606" class="body" font-size="11" fill="#1A1A1A">Offload hiérarchique</text>
+    <text x="540" y="624" class="body" font-size="11" fill="#1A1A1A">GPU / CPU / storage</text>
+    <text x="800" y="606" class="body" font-size="11" fill="#1A1A1A">Prefix-cache-aware</text>
+    <text x="800" y="624" class="body" font-size="11" fill="#1A1A1A">via Inference Gateway</text>
+    <text x="1130" y="608" class="display" font-size="20" font-weight="600" fill="#1A1A1A" text-anchor="end">×3</text>
+    <text x="1130" y="630" class="body" font-size="10" fill="#5A5A5A" text-anchor="end">débit, −½ TTFT (llm-d)</text>
+  </g>
+
+  <!-- takeaway -->
+  <text x="60" y="694" class="body" font-size="11.5" font-style="italic" fill="#1A1A1A">Ce qui était recherche de pointe en 2024 est devenu, en 2026, le mode de déploiement standard des grands services — et une brique d'infrastructure.</text>
+
+  <!-- FOOTER -->
+  <text x="60" y="760" class="body" font-size="10" font-style="italic" letter-spacing="0.02em" fill="#5A5A5A">Sources : Qin et al. (Mooncake) ; DeepSeek-AI ; Patel et al. (Splitwise) ; NVIDIA (Dynamo) ; vLLM &amp; llm-d (Red Hat / Google / IBM).</text>
+</svg>
+
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-07" title="Lien direct vers ce schéma">¶</a> <em>Schéma 7 — La désagrégation en production. Cinq systèmes de référence (Mooncake, DeepSeek-V3, Splitwise, NVIDIA Dynamo, vLLM/llm-d) comparés sur le transfert KV, le pool KV, le routage et leur gain phare.</em></figcaption>
+      </figure>
+
+      <ul>
+        <li><strong>Mooncake / Kimi</strong><a class="cite" data-cite="3" href="#source-3">3</a> — l'architecture la plus aboutie. KVCache-centric : pool KV global sur DRAM/SSD, transfert RDMA, et un <strong>ordonnancement orienté surcharge</strong> (<em>prediction-based early rejection</em>) qui prédit la charge et rejette par avance les requêtes condamnées à violer leur SLO plutôt que de dégrader tout le monde. <mark>Jusqu'à +525 % de débit en simulation sous SLO ; en charge réelle, Kimi traite +75 % de requêtes.</mark></li>
+        <li><strong>DeepSeek-V3</strong><a class="cite" data-cite="6" href="#source-6">6</a> — la désagrégation à très grande échelle d'experts : prefill (EP32, 4 nœuds) et decode (EP144, 18 nœuds) sur des unités aux degrés d'<em>expert parallelism</em> très différents, 32 experts redondants pour l'équilibrage. Démonstration que désagrégation et <span class="term" data-tooltip="MoE — Mixture-of-Experts : architecture où seul un sous-ensemble d'experts (sous-réseaux) est activé par token, réduisant le calcul à paramètres égaux.">MoE</span> se composent — avec un cache massivement réutilisé : 56,3 % des tokens d'entrée servis depuis le cache on-disk, et une marge de profit théorique annoncée à 545 %.</li>
+        <li><strong>Splitwise / Azure</strong><a class="cite" data-cite="2" href="#source-2">2</a> — trois pools (prompt, token, mixte), flottes hétérogènes, transfert InfiniBand. La preuve que la désagrégation est aussi un levier de <em>coût</em> et d'<em>énergie</em>, pas seulement de latence (×2,35 à coût et énergie constants).</li>
+        <li><strong>NVIDIA Dynamo</strong><a class="cite" data-cite="7" href="#source-7">7</a> — la plateforme qui industrialise le pattern : <em>disaggregated serving</em> natif, <em>Smart Router</em> KV-aware, bibliothèque de transfert NIXL, <em>Planner</em> qui ajuste dynamiquement le ratio prefill:decode. <mark>Jusqu'à ×30 de requêtes servies sur DeepSeek-R1 (GB200 NVL72) et &gt;×2 sur Llama 70B (Hopper), à parc GPU constant.</mark> La désagrégation comme produit d'infrastructure.</li>
+        <li><strong>vLLM / SGLang / llm-d</strong><a class="cite" data-cite="8" href="#source-8">8</a> — l'open source qui généralise : support natif du <em>disaggregated prefill</em> (connecteurs LMCache/NIXL), et avec <strong>llm-d</strong> (initiative Kubernetes-native portée par Red Hat, Google et IBM, en <em>CNCF Sandbox</em> depuis mars 2026) une orchestration distribuée standardisée — son routage cache-aware revendique ~×3 de débit de sortie et ~×2 de réduction du TTFT face au round-robin. Ce qui était recherche en 2024 devient brique d'infrastructure en 2026.</li>
+      </ul>
+
+      <h2 id="desag-8">8. Trajectoires 2026-2028</h2>
+      <p>La direction est tracée : la <em>phase</em> s'impose comme unité d'architecture, et le service d'inférence se reconfigure autour d'elle.</p>
+      <ul>
+        <li><strong>Désagrégation par défaut.</strong> Ce qui exigeait un système sur mesure en 2024 est intégré nativement dans vLLM, SGLang et Dynamo en 2026 ; à grande échelle, le co-placement devient l'exception, pas la règle.</li>
+        <li><strong>Désagrégation à N phases.</strong> Après prefill/decode, la séparation se poursuit <em>à l'intérieur</em> des phases : désagrégation du <em>parallélisme d'experts</em> (attention et FFN/MoE sur des pools distincts, comme l'esquisse DeepSeek-V3), ouvrant un espace de placement bien plus large que la simple dualité initiale.</li>
+        <li><strong>KV-cache-as-a-service cross-request.</strong> Le pool KV de Mooncake préfigure des caches <em>partagés entre requêtes et entre tenants</em>, monétisés à l'octet-seconde — avec l'isolation comme nouvelle surface de sécurité (un tenant ne doit pas lire le cache d'un autre).</li>
+        <li><strong>Placement hiérarchique appris.</strong> Le placement du KV-cache sur la hiérarchie HBM/DRAM/SSD/réseau deviendra une politique apprise, à la croisée de l'ordonnancement et du <em>caching</em> — un terrain naturel pour le <a href="../harness-scheduler/">scheduler appris</a> du harness.</li>
+        <li><strong>Observabilité du transfert.</strong> Mesurer le coût du transfert KV, le <em>hit-rate</em> du pool, le ratio de rejet anticipé devient un besoin d'exploitation. Le namespace OpenTelemetry <code>gen_ai.*</code> — détaillé dans <a href="../otel-genai-semconv/">otel-genai-semconv</a> — n'a pas encore d'attributs dédiés au transfert KV, lacune que la pression opérationnelle comblera.</li>
+      </ul>
+
+      <p>Le fil rouge tient en une phrase : <mark>servir un modèle, c'est désormais orchestrer deux flottes autour d'un cache qui circule — l'inférence est devenue un problème de système distribué, et la phase en est l'unité.</mark> Qui sait placer, transférer et router le cache sait servir le modèle à grande échelle.</p>
+
+      <p class="ia-note"><em>Format co-écrit avec l'aide d'une IA. Schémas et synthèse relus par l'auteur.</em></p>
+    </main>
+
+    <aside id="sources" aria-label="Sources">
+      <button class="panel-close" type="button" aria-label="Fermer les sources">Fermer ✕</button>
+      <div class="sources-inner">
+      <h2>Sources</h2>
+      <ol id="sources-list">
+<li id="source-1">
+          <span class="cite-num">[1]</span> Yinmin Zhong et al., <em>DistServe: Disaggregating Prefill and Decoding for Goodput-optimized LLM Serving</em>, OSDI 2024. Introduit le <em>goodput</em> (double SLO TTFT/TPOT) et la co-optimisation parallélisme/placement par phase ; ×7,4 requêtes ou ×12,6 sur la contrainte SLO.<br>
+          <a href="https://arxiv.org/abs/2401.09670" target="_blank" rel="noopener">arxiv.org/2401.09670 ↗</a>
+          <span class="accessed">consulté le 29 juin 2026</span>
+        </li>
+        <li id="source-2">
+          <span class="cite-num">[2]</span> Pratyush Patel et al. (Microsoft), <em>Splitwise: Efficient Generative LLM Inference Using Phase Splitting</em>, ISCA 2024. Pools prompt/token/mixte et flottes hétérogènes ; ×2,35 à coût constant ou ×1,4 à −20 % de coût.<br>
+          <a href="https://www.microsoft.com/en-us/research/publication/splitwise-efficient-generative-llm-inference-using-phase-splitting/" target="_blank" rel="noopener">microsoft.com/research ↗</a>
+          <span class="accessed">consulté le 29 juin 2026</span>
+        </li>
+        <li id="source-3">
+          <span class="cite-num">[3]</span> Ruoyu Qin et al. (Moonshot AI), <em>Mooncake: A KVCache-centric Disaggregated Architecture for LLM Serving</em>, FAST 2025 (Best Paper). Pool KV global DRAM/SSD, transfert RDMA (87→190 Go/s), rejet anticipé prédictif ; +525 % en simulation, +75 % de requêtes pour Kimi.<br>
+          <a href="https://arxiv.org/abs/2407.00079" target="_blank" rel="noopener">arxiv.org/2407.00079 ↗</a>
+          <span class="accessed">consulté le 29 juin 2026</span>
+        </li>
+        <li id="source-4">
+          <span class="cite-num">[4]</span> Amey Agrawal et al., <em>Taming Throughput-Latency Tradeoff in LLM Inference with Sarathi-Serve</em>, OSDI 2024. Chunked prefill <em>stall-free</em> — l'école rivale sans transfert KV ; ×2,6 (Mistral-7B) à ×5,6 (Falcon-180B) vs vLLM.<br>
+          <a href="https://arxiv.org/abs/2403.02310" target="_blank" rel="noopener">arxiv.org/2403.02310 ↗</a>
+          <span class="accessed">consulté le 29 juin 2026</span>
+        </li>
+        <li id="source-5">
+          <span class="cite-num">[5]</span> Cunchen Hu et al., <em>Inference without Interference: Disaggregate LLM Inference for Mixed Downstream Workloads</em> (TetriInfer), 2024. Désagrégation + prédiction de longueur de génération pour l'ordonnancement à deux niveaux ; TTFT réduit jusqu'à 97 %, complétion de job jusqu'à 47 %.<br>
+          <a href="https://arxiv.org/abs/2401.11181" target="_blank" rel="noopener">arxiv.org/2401.11181 ↗</a>
+          <span class="accessed">consulté le 29 juin 2026</span>
+        </li>
+        <li id="source-6">
+          <span class="cite-num">[6]</span> DeepSeek-AI, <em>DeepSeek-V3 Technical Report</em> &amp; <em>DeepSeek-V3/R1 Inference System Overview</em>, 2024-2025. Déploiement de production désagrégé : prefill EP32 (4 nœuds) vs decode EP144 (18 nœuds), 32 experts redondants ; ~73,7k/14,8k tokens/s par nœud, 56,3 % d'entrées en cache on-disk.<br>
+          <a href="https://arxiv.org/abs/2412.19437" target="_blank" rel="noopener">arxiv.org/2412.19437 ↗</a>
+          <span class="accessed">consulté le 29 juin 2026</span>
+        </li>
+        <li id="source-7">
+          <span class="cite-num">[7]</span> NVIDIA, <em>NVIDIA Dynamo: A Datacenter-Scale Distributed Inference Serving Framework</em>, 2025. <em>Disaggregated serving</em> natif, Smart Router KV-aware, bibliothèque de transfert NIXL (VRAM→VRAM, 5 backends), Planner du ratio prefill:decode ; ×30 sur DeepSeek-R1 (GB200), &gt;×2 sur Llama 70B.<br>
+          <a href="https://developer.nvidia.com/blog/introducing-nvidia-dynamo-a-low-latency-distributed-inference-framework-for-scaling-reasoning-ai-models/" target="_blank" rel="noopener">developer.nvidia.com ↗</a>
+          <span class="accessed">consulté le 29 juin 2026</span>
+        </li>
+        <li id="source-8">
+          <span class="cite-num">[8]</span> vLLM, <em>Disaggregated Prefilling</em> &amp; projet <em>llm-d</em> (Red Hat / Google / IBM, CNCF Sandbox 2026). Support open source natif de la désagrégation (connecteurs LMCache/NIXL) ; orchestration Kubernetes-native, routage cache-aware ~×3 débit, ~×2 TTFT vs round-robin.<br>
+          <a href="https://docs.vllm.ai/en/latest/features/disagg_prefill.html" target="_blank" rel="noopener">docs.vllm.ai ↗</a>
+          <span class="accessed">consulté le 29 juin 2026</span>
+        </li>
+        <li id="source-9">
+          <span class="cite-num">[9]</span> Lianmin Zheng et al., <em>SGLang: Efficient Execution of Structured Language Model Programs</em> (RadixAttention), NeurIPS 2024. Arbre radix du préfixe, base du routage cache-aware inter-nœuds.<br>
+          <a href="https://arxiv.org/abs/2312.07104" target="_blank" rel="noopener">arxiv.org/2312.07104 ↗</a>
+          <span class="accessed">consulté le 29 juin 2026</span>
+        </li>
+        <li id="source-10">
+          <span class="cite-num">[10]</span> Woosuk Kwon et al., <em>Efficient Memory Management for Large Language Model Serving with PagedAttention</em>, SOSP 2023. Substrat mémoire (pagination) sur lequel reposent les pools désagrégés.<br>
+          <a href="https://arxiv.org/abs/2309.06180" target="_blank" rel="noopener">arxiv.org/2309.06180 ↗</a>
+          <span class="accessed">consulté le 29 juin 2026</span>
+        </li>
+        <li id="source-11">
+          <span class="cite-num">[11]</span> Gyeong-In Yu et al., <em>Orca: A Distributed Serving System for Transformer-Based Generative Models</em>, OSDI 2022. <em>Continuous batching</em> (iteration-level scheduling), origine de l'interférence prefill/decode.<br>
+          <a href="https://www.usenix.org/conference/osdi22/presentation/yu" target="_blank" rel="noopener">usenix.org/osdi22 ↗</a>
+          <span class="accessed">consulté le 29 juin 2026</span>
+        </li>
+        <li id="source-12">
+          <span class="cite-num">[12]</span> <em>Beyond the Buzz: A Pragmatic Take on Inference Disaggregation</em>, 2025. Analyse des conditions où la désagrégation est réellement bénéfique vs où le chunked prefill co-placé suffit — le débat agrégation ↔ désagrégation reste ouvert.<br>
+          <a href="https://arxiv.org/abs/2506.05508" target="_blank" rel="noopener">arxiv.org/2506.05508 ↗</a>
+          <span class="accessed">consulté le 29 juin 2026</span>
+        </li>
+        </ol>
+      </div>
+    </aside>
+
+  </div>
+
+
+  <div id="zoom-overlay" hidden role="dialog" aria-modal="true" aria-label="Schéma agrandi">
+    <header id="zoom-header">
+      <span id="zoom-caption"></span>
+      <div class="zoom-controls">
+        <button type="button" class="zoom-out" aria-label="Dézoomer" title="Dézoomer (−)">−</button>
+        <button type="button" class="zoom-reset" aria-label="Ajuster à l'écran" title="Ajuster à l'écran">Reset</button>
+        <button type="button" class="zoom-in" aria-label="Zoomer" title="Zoomer (+)">+</button>
+        <button type="button" class="zoom-close" aria-label="Fermer (Échap)" title="Fermer (Échap)">×</button>
+      </div>
+    </header>
+    <div id="zoom-stage" tabindex="-1">
+      <div id="zoom-content"></div>
+      <div id="zoom-hint">Molette pour zoomer · glisser pour déplacer · Échap pour fermer</div>
+      <a class="schema-sigil zoom-sigil" href="https://mathieugug.github.io/" target="_blank" rel="noopener" aria-label="Mathieu Guglielmino — visiter mathieugug.github.io" title="Mathieu Guglielmino · mathieugug.github.io">
+        <svg class="sigil-mark" viewBox="0 0 44 44" aria-hidden="true" focusable="false">
+          <circle class="sigil-bg" cx="22" cy="22" r="20.5"/>
+          <circle class="sigil-ring" cx="22" cy="22" r="17.5"/>
+          <g class="sigil-letters"><text x="7.5" y="29">M</text><text x="22" y="29">G</text></g>
+        </svg>
+      </a>
+    </div>
+  </div>
+
+  <div id="modal-root" hidden role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card">
+      <button class="modal-close" data-close aria-label="Fermer">×</button>
+      <p class="modal-eyebrow" id="modal-eyebrow"></p>
+      <h3 class="modal-title" id="modal-title"></h3>
+      <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <script>
+    // ─────────────────────────────────────────────────
+    // DATA — replace these placeholders with real content
+    // ─────────────────────────────────────────────────
+
+    const SCHEMAS = {
+  "schema-01": {
+    "prefill-compute": {
+      eyebrow: "Phase 1 · compute-bound",
+      title: "Le prefill sature le calcul",
+      body: "<p>Le <strong>prefill</strong> traite tout le prompt d'entrée en une seule passe, tous les tokens en parallèle. Cette parallélisation remplit les unités de calcul du GPU : la phase est <em>compute-bound</em>, limitée par les FLOPs.</p><p>Sur le roofline, elle se place près du plafond de calcul, à haute intensité arithmétique. C'est la phase « chère en calcul, brève » : elle produit d'un coup le KV-cache de toute la requête, puis cède la place au decode.<a class='cite' data-cite='1' href='#source-1'>1</a></p>"
+    },
+    "decode-memory": {
+      eyebrow: "Phase 2 · memory-bound",
+      title: "Le decode sature la mémoire",
+      body: "<p>Le <strong>decode</strong> génère les tokens un par un. Chaque pas ne fait qu'une ligne de calcul, mais doit <em>lire l'intégralité du KV-cache</em> accumulé. La phase est donc <em>memory-bound</em> : limitée par la bande passante mémoire.</p><p>Conséquence frappante : un GPU en decode pur utilise typiquement <strong>moins de 10 % de sa puissance de calcul</strong> tout en saturant sa bande passante — l'exact opposé du prefill. Cette asymétrie est la raison d'être de toute la désagrégation.<a class='cite' data-cite='2' href='#source-2'>2</a></p>"
+    },
+    "interference-stall": {
+      eyebrow: "Le coût caché",
+      title: "L'interférence prefill/decode",
+      body: "<p>Le <em>continuous batching</em> (Orca) regroupe les requêtes à l'échelle de l'itération. Mais quand une nouvelle requête arrive, son prefill lourd s'insère dans un lot de decodes légers et <strong>monopolise le GPU</strong> : les générations en cours se figent.</p><p>Tous les utilisateurs actifs subissent un pic de latence inter-token, le temps que le prefill passe — d'autant plus pénalisant que les prompts sont longs. Deux familles de remèdes : découper le prefill (Schéma 6), ou séparer physiquement les phases.<a class='cite' data-cite='11' href='#source-11'>11</a></p>"
+    },
+    "parallelisme-impose": {
+      eyebrow: "La contrainte de fond",
+      title: "Un seul pool = un seul plan",
+      body: "<p>Au-delà de l'interférence, le co-placement impose un <strong>parallélisme unique</strong> (tensor/pipeline) et un <strong>ratio de nœuds figé</strong> à deux phases aux optima opposés. Le prefill aime le parallélisme tensoriel ; le decode préfère étaler la pression mémoire.</p><p>Et le dimensionnement est bloqué : on ne peut pas ajouter du matériel pour le decode sans en ajouter, mécaniquement, pour le prefill. Le chunked prefill soigne le symptôme ; la désagrégation supprime la cause.<a class='cite' data-cite='4' href='#source-4'>4</a></p>"
+    }
+  },
+  "schema-02": {
+    "ttft-slo": {
+      eyebrow: "SLO du prefill",
+      title: "TTFT — time-to-first-token",
+      body: "<p>Le <strong>TTFT</strong> est le délai avant le premier token : « combien de temps avant que ça réponde ». Il est dominé par le <em>prefill</em>, la passe qui digère le prompt d'entrée.</p><p>Sur une charge interactive, c'est la première promesse de latence à tenir. La serrer pousse à former de gros lots de prefill — au risque de relâcher l'autre contrainte, le TPOT. Les deux SLO tirent en sens inverse sur un pool partagé.<a class='cite' data-cite='1' href='#source-1'>1</a></p>"
+    },
+    "tpot-slo": {
+      eyebrow: "SLO du decode",
+      title: "TPOT — time-per-output-token",
+      body: "<p>Le <strong>TPOT</strong> est l'intervalle entre deux tokens successifs : « à quelle vitesse ça défile ensuite ». Il est dominé par le <em>decode</em>, la génération auto-régressive.</p><p>C'est la seconde promesse de latence. La tenir exige un decode régulier, sans stall — exactement ce que l'arrivée d'un prefill vient briser sur un pool co-placé. TTFT et TPOT sont deux cibles antagonistes que la désagrégation permet d'optimiser séparément.<a class='cite' data-cite='1' href='#source-1'>1</a></p>"
+    },
+    "debit-trompeur": {
+      eyebrow: "Pourquoi la moyenne ment",
+      title: "Le débit brut est trompeur",
+      body: "<p>Le <strong>débit brut</strong> — tokens/s agrégés — se maximise en empilant les requêtes jusqu'à ce que la latence individuelle devienne inacceptable. Une fraction des requêtes viole alors l'un des deux SLO, mais la moyenne reste flatteuse.</p><p>Optimiser ce chiffre revient à optimiser une moyenne qui masque la violation de contraintes antagonistes. C'est précisément ce biais qui a longtemps caché le conflit prefill/decode : on regardait la mauvaise métrique.<a class='cite' data-cite='1' href='#source-1'>1</a></p>"
+    },
+    "goodput-def": {
+      eyebrow: "La métrique de vérité",
+      title: "Le goodput selon DistServe",
+      body: "<p>Le <strong>goodput</strong> ne compte que les requêtes par seconde (et par GPU) qui respectent <em>à la fois</em> leur cible TTFT <em>et</em> leur cible TPOT. C'est la capacité réellement utile, pas le débit nominal.</p><p>Sous cette lentille, séparer les deux phases sur du matériel dédié devient la conséquence logique de la métrique. DistServe rapporte jusqu'à <strong>×7,4 requêtes servies, ou ×12,6 sur la sévérité du SLO</strong>, en tenant les cibles pour &gt; 90 % des requêtes.<a class='cite' data-cite='1' href='#source-1'>1</a></p>"
+    }
+  },
+  "schema-03": {
+    "routeur": {
+      eyebrow: "Maillon 1",
+      title: "Le routeur cache-aware",
+      body: "<p>Le <strong>routeur</strong> reçoit la requête et décide où la placer. Dans les systèmes <em>cache-aware</em>, il connaît l'état des KV-caches déjà chauds et route vers une instance qui détient le bon préfixe.</p><p>La mécanique de l'arbre radix de SGLang devient ici une décision de routage inter-nœuds : maximiser le réutilisé, minimiser le transfert. Le routeur est le cerveau du pipeline désagrégé — c'est lui qui transforme la localité du cache en politique d'ordonnancement.<a class='cite' data-cite='9' href='#source-9'>9</a></p>"
+    },
+    "pool-prefill": {
+      eyebrow: "Maillon 2",
+      title: "Le pool prefill",
+      body: "<p>Premier pool de GPU, dédié au prefill et dimensionné pour le <em>calcul</em>. Une requête y exécute sa passe d'entrée, ce qui <strong>produit</strong> le KV-cache de tout son prompt.</p><p>Isolé du decode, il peut tourner à pleine charge de calcul sans jamais figer une génération en cours. Son parallélisme (tensoriel, taille de lot) est réglé pour le profil compute-bound, indépendamment des contraintes du decode — le premier bénéfice du découplage.<a class='cite' data-cite='1' href='#source-1'>1</a></p>"
+    },
+    "transfert-kv": {
+      eyebrow: "Maillon 3",
+      title: "Le transfert du KV-cache",
+      body: "<p>La séparation a un prix : le KV-cache produit côté prefill doit <strong>transiter</strong> jusqu'au pool decode — plusieurs gigaoctets d'états d'attention, sur le réseau, par requête.</p><p>Si le lien est lent, cette latence annule le gain. D'où l'investissement massif dans le transfert rapide (RDMA, NVLink, NIXL) et la localité. La rareté du cache n'a pas disparu : elle s'est déplacée du GPU vers le réseau. Le Schéma 5 détaille cette économie.<a class='cite' data-cite='3' href='#source-3'>3</a></p>"
+    },
+    "pool-decode": {
+      eyebrow: "Maillon 4",
+      title: "Le pool decode",
+      body: "<p>Second pool, dédié à la génération token par token et dimensionné pour la <em>bande passante mémoire</em> et la capacité de KV-cache. Il <strong>consomme</strong> le cache reçu et produit le flux de tokens.</p><p>Parce qu'aucun prefill ne s'y insère, le decode tourne sans interférence : latence inter-token stable, débit prévisible. C'est ici que la séparation paie son dividende le plus direct — un TPOT enfin tenable.<a class='cite' data-cite='1' href='#source-1'>1</a></p>"
+    },
+    "pool-kv": {
+      eyebrow: "Maillon 5 · Mooncake",
+      title: "Le pool KVCache global",
+      body: "<p>Mooncake pousse la logique à son terme : le KV-cache n'est plus attaché à un GPU, il vit dans un <strong>pool désagrégé</strong> exploitant la DRAM, les SSD et le CPU sous-utilisés du cluster — une hiérarchie HBM (chaud) → DRAM → SSD (froid).</p><p>Le placement du cache devient alors un problème d'ordonnancement de premier ordre. Le cache cesse d'être un sous-produit local pour devenir une ressource cluster gérée comme telle.<a class='cite' data-cite='3' href='#source-3'>3</a></p>"
+    }
+  },
+  "schema-04": {
+    "parallelisme-prefill": {
+      eyebrow: "DeepSeek-V3 · prefill",
+      title: "Unité prefill : EP32, 4 nœuds",
+      body: "<p>L'unité de prefill de DeepSeek-V3 tourne en <strong>EP32 sur 4 nœuds H800</strong>, avec 9 routed + 1 shared expert par GPU et 32 experts redondants pour l'équilibrage.</p><p>Dimensionnée pour digérer vite de gros prompts, elle atteint <strong>~73 700 tokens/s en entrée par nœud</strong> (cache hits inclus). Son parallélisme est choisi pour le régime compute-bound — sans aucune contrainte imposée par le decode, qui vit sur une flotte distincte.<a class='cite' data-cite='6' href='#source-6'>6</a></p>"
+    },
+    "parallelisme-decode": {
+      eyebrow: "DeepSeek-V3 · decode",
+      title: "Unité decode : EP144, 18 nœuds",
+      body: "<p>L'unité de decode pousse jusqu'à <strong>EP144 sur 18 nœuds</strong> — 4,5× plus de GPU que le prefill — avec 2 routed + 1 shared expert par GPU. Le parallélisme d'experts étalé répartit la pression mémoire du KV-cache et des 256 experts.</p><p>Elle débite <strong>~14 800 tokens/s en sortie par nœud</strong>. Deux phases, deux dimensionnements radicalement différents sur le même modèle : c'est le découplage poussé à l'échelle d'experts.<a class='cite' data-cite='6' href='#source-6'>6</a></p>"
+    },
+    "ratio-dynamique": {
+      eyebrow: "Le cadran",
+      title: "Régler le ratio prefill:decode",
+      body: "<p>Le ratio de nœuds entre les deux pools n'est pas figé : il s'ajuste à la <strong>composition réelle du trafic</strong>.</p><p>Un service à prompts longs et réponses courtes (RAG, résumé, classification) sur-provisionne le prefill ; un service conversationnel ou de raisonnement, à réponses longues, sur-provisionne le decode. La désagrégation transforme un compromis d'architecture jadis gravé dans le marbre en un cadran qu'on règle — voire qu'un planificateur ajuste automatiquement (Schéma 7, Dynamo).</p>"
+    },
+    "co-optimisation": {
+      eyebrow: "Ce que ça débloque",
+      title: "Co-optimiser parallélisme et placement",
+      body: "<p>DistServe en fait un problème d'optimisation explicite : <strong>co-optimiser le parallélisme et le placement de chaque phase</strong> sous contrainte de bande passante du lien, pour maximiser le goodput par GPU.</p><p>On peut même composer des flottes hétérogènes : GPU récents et coûteux pour le prefill compute-bound, GPU plus anciens mais à forte bande passante pour le decode (Splitwise). Un compromis jadis figé devient un espace de configuration à explorer.<a class='cite' data-cite='1' href='#source-1'>1</a><a class='cite' data-cite='2' href='#source-2'>2</a></p>"
+    }
+  },
+  "schema-05": {
+    "taille-transfert": {
+      eyebrow: "Ce qu'il faut déplacer",
+      title: "Plusieurs gigaoctets par requête",
+      body: "<p>Le transfert porte sur le KV-cache du prompt entier. À ~800 Ko par token pour un modèle de 13 Md en FP16, une requête de 2 000 tokens immobilise déjà près de 1,6 Go ; sur de longs contextes, c'est plusieurs gigaoctets par requête.</p><p>C'est cette masse qui doit franchir le réseau entre les deux pools. Sa taille fixe le budget de bande passante du lien — et donc la viabilité même de la désagrégation (cf. dossier kv-cache §1).</p>"
+    },
+    "hierarchie-lien": {
+      eyebrow: "Le débit décide",
+      title: "NVLink ≫ RDMA ≫ TCP",
+      body: "<p>Tout dépend du lien. Sur <strong>NVLink</strong> intra-nœud (centaines de Go/s à plusieurs To/s), le transfert est quasi gratuit. Sur <strong>RDMA RoCE</strong>, Mooncake mesure 87 Go/s (4×200 Gbps) à 190 Go/s (8×400 Gbps).</p><p>Sur <strong>TCP</strong>, c'est 2,4 à 4,6 fois plus lent — souvent assez pour annuler le gain. La hiérarchie des liens est la variable cachée qui décide où la désagrégation est rentable.<a class='cite' data-cite='3' href='#source-3'>3</a></p>"
+    },
+    "recouvrement-couches": {
+      eyebrow: "Masquer la latence",
+      title: "Le recouvrement couche-par-couche",
+      body: "<p>Plutôt que d'attendre la fin du prefill complet, on <strong>streame le KV d'une couche dès qu'elle est calculée</strong>. Le transfert de la couche L<em>n</em> recouvre alors le calcul de L<em>n+1</em>.</p><p>La latence réseau disparaît derrière le calcul des couches suivantes — le coût du transfert devient largement invisible. DistServe et Mooncake exploitent ce pipeline couche-par-couche, condition pour que la désagrégation tienne sa promesse.<a class='cite' data-cite='1' href='#source-1'>1</a><a class='cite' data-cite='3' href='#source-3'>3</a></p>"
+    },
+    "point-bascule": {
+      eyebrow: "Gagner ou perdre",
+      title: "Le point de bascule",
+      body: "<p>La règle est simple : la désagrégation gagne tant que le <strong>temps de transfert KV reste inférieur au temps de calcul qu'elle libère</strong>. Sous un lien lent ou pour des prompts courts, le co-placement reste préférable.</p><p>D'où NIXL (NVIDIA Dynamo), qui déplace le KV <em>directement de VRAM à VRAM</em> derrière 5 backends, et le routage cache-aware, qui évite carrément le transfert quand le préfixe est déjà chaud sur le bon nœud.<a class='cite' data-cite='7' href='#source-7'>7</a><a class='cite' data-cite='12' href='#source-12'>12</a></p>"
+    }
+  },
+  "schema-06": {
+    "ecole-chunked": {
+      eyebrow: "École A · entrelacer",
+      title: "Chunked prefill (Sarathi-Serve)",
+      body: "<p>L'école de l'<strong>entrelacement</strong> refuse de séparer les phases. Elle découpe le prefill en morceaux bornés, insérés dans les lots de decode sans jamais les interrompre — un ordonnancement <em>stall-free</em> qui exploite les cœurs GPU inactifs pendant le decode.</p><p>Gain : <strong>×2,6 (Mistral-7B) à ×5,6 (Falcon-180B)</strong> vs vLLM, sans aucune modification matérielle. Son argument décisif : zéro coût réseau, puisque tout reste sur le même GPU.<a class='cite' data-cite='4' href='#source-4'>4</a></p>"
+    },
+    "ecole-desagregee": {
+      eyebrow: "École B · séparer",
+      title: "Désagrégation (DistServe, Splitwise)",
+      body: "<p>L'école de la <strong>séparation</strong> place prefill et decode sur deux pools de GPU dédiés, chacun avec son parallélisme et son dimensionnement ; le KV transite de l'un à l'autre.</p><p>Elle supprime l'interférence par construction et débloque le découplage du dimensionnement. Son prix : le transfert KV, rentable seulement à la bonne échelle et sur le bon lien. C'est l'architecture des grands services à fort trafic.<a class='cite' data-cite='1' href='#source-1'>1</a></p>"
+    },
+    "charge-favorable-chunked": {
+      eyebrow: "Où A gagne",
+      title: "Quand entrelacer suffit",
+      body: "<p>Le chunked prefill l'emporte sur les <strong>déploiements modestes</strong> (un à quelques nœuds), où un transfert inter-pools serait pure perte ; quand le <strong>lien inter-nœuds est lent ou absent</strong> ; et sur les <strong>prompts courts</strong>, où le KV à déplacer ne justifie pas son coût réseau.</p><p>L'argument est économique autant que technique : pourquoi payer un transfert quand un ordonnancement astucieux sur un seul GPU résout déjà l'interférence ?<a class='cite' data-cite='12' href='#source-12'>12</a></p>"
+    },
+    "charge-favorable-desag": {
+      eyebrow: "Où B gagne",
+      title: "Quand séparer s'impose",
+      body: "<p>La désagrégation l'emporte à grande échelle : <strong>grands clusters</strong>, <strong>prompts longs</strong>, lien rapide (RDMA/NVLink), et surtout exigence de <strong>TTFT et TPOT serrés simultanément</strong> avec le besoin de dimensionner les phases indépendamment.</p><p>Les deux écoles ne s'excluent d'ailleurs pas : un pool prefill désagrégé peut employer le chunked prefill en interne. La vraie question est l'échelle de bascule — un débat encore ouvert.<a class='cite' data-cite='12' href='#source-12'>12</a></p>"
+    }
+  },
+  "schema-07": {
+    "mooncake": {
+      eyebrow: "Moonshot · Kimi",
+      title: "Mooncake — l'architecture KVCache-centric",
+      body: "<p>L'architecture la plus aboutie : pool KV global sur DRAM/SSD, transfert RDMA (87→190 Go/s), et un <strong>ordonnancement orienté surcharge</strong> (<em>prediction-based early rejection</em>) qui rejette par avance les requêtes condamnées à violer leur SLO plutôt que de dégrader tout le monde.</p><p>Résultat : jusqu'à <strong>+525 % de débit en simulation</strong> sous SLO ; en charge réelle, Kimi traite <strong>+75 % de requêtes</strong>.<a class='cite' data-cite='3' href='#source-3'>3</a></p>"
+    },
+    "deepseek-v3": {
+      eyebrow: "DeepSeek-AI",
+      title: "DeepSeek-V3 — désagrégation × MoE",
+      body: "<p>La désagrégation à très grande échelle d'experts : prefill (EP32, 4 nœuds) et decode (EP144, 18 nœuds) sur des unités aux degrés d'<em>expert parallelism</em> très différents, 32 experts redondants pour l'équilibrage.</p><p>Démonstration que désagrégation et MoE se composent — avec un cache massivement réutilisé : <strong>56,3 % des tokens d'entrée servis depuis le cache on-disk</strong>, et une marge de profit théorique annoncée à 545 %.<a class='cite' data-cite='6' href='#source-6'>6</a></p>"
+    },
+    "splitwise": {
+      eyebrow: "Microsoft · Azure",
+      title: "Splitwise — le levier coût et énergie",
+      body: "<p>Trois pools — <em>prompt</em>, <em>token</em>, <em>mixte</em> — sur des flottes hétérogènes, avec transfert InfiniBand. Splitwise montre que la désagrégation est aussi un levier de <strong>coût</strong> et d'<strong>énergie</strong>, pas seulement de latence.</p><p>On met les GPU récents au prefill compute-bound, les plus anciens à forte bande passante au decode : <strong>×2,35 de débit à coût et enveloppe énergétique constants</strong>, ou ×1,4 à −20 % de coût.<a class='cite' data-cite='2' href='#source-2'>2</a></p>"
+    },
+    "dynamo": {
+      eyebrow: "NVIDIA · GTC 2025",
+      title: "Dynamo — la désagrégation comme produit",
+      body: "<p>La plateforme qui industrialise le pattern : <em>disaggregated serving</em> natif, <strong>Smart Router</strong> KV-aware (score de recouvrement + charge), bibliothèque de transfert <strong>NIXL</strong> (VRAM→VRAM, 5 backends), et un <strong>Planner</strong> qui ajuste dynamiquement le ratio prefill:decode.</p><p>Jusqu'à <strong>×30 de requêtes servies</strong> sur DeepSeek-R1 (GB200 NVL72) et <strong>&gt;×2 sur Llama 70B</strong> (Hopper), à parc GPU constant.<a class='cite' data-cite='7' href='#source-7'>7</a></p>"
+    },
+    "vllm-llmd": {
+      eyebrow: "Open source",
+      title: "vLLM · SGLang · llm-d",
+      body: "<p>L'open source généralise : support natif du <em>disaggregated prefill</em> (connecteurs LMCache/NIXL), et avec <strong>llm-d</strong> — initiative Kubernetes-native (Red Hat, Google, IBM), en <em>CNCF Sandbox</em> depuis mars 2026 — une orchestration distribuée standardisée.</p><p>Son routage cache-aware revendique <strong>~×3 de débit de sortie et ~×2 de réduction du TTFT</strong> face au round-robin. Ce qui était recherche en 2024 est devenu brique d'infrastructure en 2026.<a class='cite' data-cite='8' href='#source-8'>8</a></p>"
+    }
+  }
+};
+    /* shape:
+      {
+        'schema-01': {
+          'region-id': { title: '...', body: '<p>...</p>', eyebrow: 'Schéma 1' },
+          ...
+        },
+        ...
+      }
+    */
+
+    const TOOLTIPS = {
+  "ttft": "Time to first token : délai entre l'envoi de la requête et l'arrivée du premier token de la réponse. Métrique critique pour l'expérience utilisateur en streaming.",
+  "llm-judge": "LLM-as-judge : utilisation d'un LLM pour scorer la qualité d'une autre sortie LLM (factualité, pertinence, ton). Permet l'évaluation à l'échelle, mais introduit ses propres biais.",
+  "mcp": "Model Context Protocol : standard ouvert de communication entre LLMs et outils externes, lancé par Anthropic en novembre 2024. Adopté par OpenAI, Google, Microsoft en 2025.",
+  "otlp": "OpenTelemetry Protocol : protocole standardisé (gRPC ou HTTP) pour transporter les signaux d'observabilité (traces, metrics, logs) vers un backend.",
+  "melt": "Metrics, Events, Logs, Traces : les quatre signaux fondamentaux de l'observabilité moderne, popularisés par l'écosystème cloud-native.",
+  "rag": "Retrieval-Augmented Generation : technique qui enrichit le contexte d'un LLM avec des documents récupérés dynamiquement depuis une base vectorielle.",
+  "slo": "Service Level Objective : cible mesurable de qualité de service (ex. 99,9 % des réponses sous 2 secondes). Base contractuelle de l'observabilité opérationnelle."
+};
+    /* shape: { 'CoT': 'Chain-of-Thought : ...', ... } */
+
+    const SOURCES = [
+  {
+    "n": 1,
+    "citation": "OpenTelemetry, <em>AI Agent Observability Standards</em>, OpenTelemetry Blog, mars 2025.",
+    "url": "https://opentelemetry.io/blog/2025/ai-agent-observability/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 2,
+    "citation": "InsightFinder, <em>AI Observability vs Traditional Monitoring</em>, décembre 2025.",
+    "url": "https://insightfinder.com/blog/ai-observability-vs-traditional-monitoring/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 3,
+    "citation": "IBM Think, <em>Observability Trends 2026</em>, IBM Institute for Business Value, mars 2026.",
+    "url": "https://www.ibm.com/think/insights/observability-trends",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 4,
+    "citation": "Dynatrace, <em>Six Observability Predictions for 2026</em>, décembre 2025.",
+    "url": "https://www.dynatrace.com/news/blog/six-observability-predictions-for-2026/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 5,
+    "citation": "Kore.ai, <em>AI Observability: Monitoring &amp; Governing AI Agents</em>, mars 2026.",
+    "url": "https://www.kore.ai/blog/what-is-ai-observability",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 6,
+    "citation": "Voiceflow, <em>What Is AI Agent Observability? A 2026 Guide</em>, mars 2026.",
+    "url": "https://www.voiceflow.com/blog/what-is-ai-agent-observability",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 7,
+    "citation": "Anthropic, <em>Building Effective Agents</em>, whitepaper, décembre 2024.",
+    "url": "https://www.anthropic.com/research/building-effective-agents",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 8,
+    "citation": "Groundcover, <em>AI Agent Observability Guide: Telemetry, Traces, Metrics</em>, février 2026.",
+    "url": "https://www.groundcover.com/learn/observability/ai-agent-observability",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 9,
+    "citation": "N-iX, <em>AI Agent Observability: Practical Framework</em>, décembre 2025.",
+    "url": "https://www.n-ix.com/ai-agent-observability/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 10,
+    "citation": "Langfuse, <em>AI Agent Observability, Tracing &amp; Evaluation</em>, février 2026.",
+    "url": "https://langfuse.com/blog/2024-07-ai-agent-observability-with-langfuse",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 11,
+    "citation": "OpenTelemetry, <em>GenAI Semantic Conventions (specification)</em>, version 1.37, 2026.",
+    "url": "https://opentelemetry.io/docs/specs/semconv/gen-ai/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 12,
+    "citation": "OpenTelemetry, <em>GenAI Agent Spans, Model Spans, Tool Spans, Events</em>, 2026.",
+    "url": "https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-agent-spans/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 13,
+    "citation": "Datadog, <em>LLM Observability + OTel GenAI Semantic Convention support</em>, décembre 2025.",
+    "url": "https://www.datadoghq.com/blog/llm-otel-semantic-convention/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 14,
+    "citation": "Braintrust, <em>AI Observability Tools: Buyer's Guide 2026</em>, janvier 2026.",
+    "url": "https://www.braintrust.dev/articles/best-ai-observability-tools-2026",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 15,
+    "citation": "GetMaxim, <em>Top 5 AI Agent Observability Platforms 2026</em>, décembre 2025.",
+    "url": "https://www.getmaxim.ai/articles/top-5-ai-agent-observability-platforms-in-2026/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 16,
+    "citation": "Traceloop, <em>OpenLLMetry — auto-instrumentation OTel pour 44+ providers LLM</em>, GitHub, 2026.",
+    "url": "https://github.com/traceloop/openllmetry",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 17,
+    "citation": "OpenLIT, <em>OpenLIT SDK — auto-instrumentation 1 ligne LLMs/vector DBs/GPUs</em>, GitHub, 2026.",
+    "url": "https://github.com/openlit/openlit",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 18,
+    "citation": "Gartner, <em>Magic Quadrant for Observability Platforms 2025</em>, juillet 2025.",
+    "url": "https://www.gartner.com/en/documents/6688834",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 19,
+    "citation": "OneUptime, <em>AI Workloads Observability: Cost Crisis</em>, avril 2026.",
+    "url": "https://oneuptime.com/blog/ai-workloads-observability-cost-crisis",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 20,
+    "citation": "Dynatrace, <em>Dynatrace Intelligence — Agentic OS announcement at Perform 2026</em>, février 2026.",
+    "url": "https://www.dynatrace.com/news/blog/dynatrace-intelligence-platform/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 21,
+    "citation": "Splunk, <em>Q1 2026 Observability Update — AI Agent Monitoring</em>, février 2026.",
+    "url": "https://www.splunk.com/en_us/blog/observability/splunk-observability-ai-agent-monitoring-innovations.html",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 22,
+    "citation": "Grafana Labs, <em>Leader Gartner Magic Quadrant Observability 2025 — #1 Completeness of Vision</em>, 2025.",
+    "url": "https://grafana.com/about/press/2025/07/",
+    "accessed": "2026-04-30"
+  }
+];
+    window.SCHEMAS = SCHEMAS;
+
+  </script>
+  <script src="/assets/dossier-app.js" defer></script>
+</body>
+</html>
