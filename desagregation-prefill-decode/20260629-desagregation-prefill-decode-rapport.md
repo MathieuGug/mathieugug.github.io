@@ -36,6 +36,8 @@ Une fois les phases séparées, l'inférence cesse d'être une boucle locale pou
 
 Le **routeur** (ou orchestrateur global) reçoit la requête et décide où la placer ; dans les systèmes *cache-aware*, il connaît l'état des KV-caches déjà chauds et route préférentiellement vers une instance qui détient le bon préfixe — la mécanique de l'arbre radix de SGLang[^9] devient ici une décision de routage inter-nœuds. Le **pool prefill** exécute la passe d'entrée, dimensionné et parallélisé pour le calcul ; il *produit* le KV-cache. Le **transfert KV** déplace ce cache — plusieurs gigaoctets d'états d'attention — sur le réseau vers le pool decode (§5). Le **pool decode** prend en charge la génération auto-régressive, dimensionné pour la bande passante mémoire ; il *consomme* le cache. Enfin, dans les architectures les plus abouties, un **pool KV global** détache le cache de tout GPU précis : il vit dans une hiérarchie HBM/DRAM/SSD partagée par le cluster, et le placement devient un problème d'ordonnancement de premier ordre — c'est le cœur de l'architecture *KVCache-centric* de Mooncake[^3].
 
+Sous chaque pool, le substrat reste la mémoire paginée de PagedAttention[^10] ; et certains systèmes, comme TetriInfer[^5], enrichissent le routeur d'une **prédiction de longueur de génération** (par un petit modèle) pour placer les requêtes sans créer de points chauds de decode — réduisant le TTFT jusqu'à 97 %.
+
 Le contrat de ce pipeline est exigeant. Chaque maillon ajoute une latence et un point de défaillance ; le gain de la désagrégation n'existe que si le transfert KV reste largement sous le temps de calcul qu'il libère. Toute l'ingénierie tient dans cet équilibre.
 
 ## 4. Le placement par phase : parallélisme découplé
