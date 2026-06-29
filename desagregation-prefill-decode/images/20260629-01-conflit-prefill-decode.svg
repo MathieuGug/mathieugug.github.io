@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+    <marker id="arrow01" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#5A5A5A"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- HEADER -->
+  <text x="60" y="55" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 01</text>
+  <text x="60" y="92" class="display" font-size="26" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Deux phases, un conflit irréductible</text>
+  <text x="60" y="118" class="display" font-size="16" font-style="italic" fill="#5A5A5A">Prefill et decode occupent des points opposés du roofline — les co-placer plafonne le service</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- PREFILL CARD (interactive) -->
+  <g class="interactive" data-region="prefill-compute" tabindex="0" role="button" aria-label="Prefill : compute-bound">
+    <rect x="60" y="172" width="455" height="186" rx="3" fill="#B7332C" fill-opacity="0.06" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="84" y="202" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#B7332C">PREFILL · COMPUTE-BOUND</text>
+    <text x="84" y="226" class="body" font-size="13" font-weight="500" fill="#1A1A1A">Traite tout le prompt en une passe parallèle</text>
+    <text x="84" y="246" class="body" font-size="12" fill="#5A5A5A">Sature les unités de calcul — limité par les FLOPs</text>
+    <!-- mini gauge -->
+    <text x="84" y="288" class="body" font-size="10" fill="#5A5A5A">calcul</text>
+    <rect x="150" y="278" width="320" height="12" rx="2" fill="#E5E1D8"/>
+    <rect x="150" y="278" width="300" height="12" rx="2" fill="#B7332C"/>
+    <text x="478" y="288" class="mono" font-size="10" fill="#B7332C" text-anchor="end">~95 %</text>
+    <text x="84" y="318" class="body" font-size="10" fill="#5A5A5A">bande passante</text>
+    <rect x="150" y="308" width="320" height="12" rx="2" fill="#E5E1D8"/>
+    <rect x="150" y="308" width="120" height="12" rx="2" fill="#B7332C" fill-opacity="0.4"/>
+    <text x="84" y="346" class="body" font-size="11" font-style="italic" fill="#B7332C">produit le KV-cache</text>
+  </g>
+
+  <!-- DECODE CARD (interactive) -->
+  <g class="interactive" data-region="decode-memory" tabindex="0" role="button" aria-label="Decode : memory-bound">
+    <rect x="685" y="172" width="455" height="186" rx="3" fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="709" y="202" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#1F5560">DECODE · MEMORY-BOUND</text>
+    <text x="709" y="226" class="body" font-size="13" font-weight="500" fill="#1A1A1A">Génère la réponse token par token</text>
+    <text x="709" y="246" class="body" font-size="12" fill="#5A5A5A">Sature la bande passante — &lt; 10 % du calcul utilisé</text>
+    <text x="709" y="288" class="body" font-size="10" fill="#5A5A5A">calcul</text>
+    <rect x="800" y="278" width="320" height="12" rx="2" fill="#E5E1D8"/>
+    <rect x="800" y="278" width="40" height="12" rx="2" fill="#1F5560" fill-opacity="0.4"/>
+    <text x="1120" y="288" class="mono" font-size="10" fill="#1F5560" text-anchor="end">&lt;10 %</text>
+    <text x="709" y="318" class="body" font-size="10" fill="#5A5A5A">bande passante</text>
+    <rect x="800" y="308" width="320" height="12" rx="2" fill="#E5E1D8"/>
+    <rect x="800" y="308" width="305" height="12" rx="2" fill="#1F5560"/>
+    <text x="709" y="346" class="body" font-size="11" font-style="italic" fill="#1F5560">consomme le KV-cache</text>
+  </g>
+
+  <!-- VS divider -->
+  <text x="600" y="270" class="display" font-size="20" font-style="italic" fill="#B8B5AE" text-anchor="middle">vs</text>
+
+  <!-- INTERFERENCE STRIP (interactive) -->
+  <g class="interactive" data-region="interference-stall" tabindex="0" role="button" aria-label="Interférence : le prefill stalle les decodes">
+    <rect x="60" y="392" width="1080" height="150" rx="3" fill="#B58A2C" fill-opacity="0.06" stroke="#B58A2C" stroke-width="1.25"/>
+    <text x="84" y="420" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#B58A2C">L'INTERFÉRENCE · UN SEUL GPU, DEUX RÉGIMES QUI SE GÊNENT</text>
+    <text x="84" y="440" class="body" font-size="11.5" fill="#5A5A5A">Sur un lot de decodes en cours, l'arrivée d'un prefill lourd monopolise le GPU et <tspan font-style="italic">stalle</tspan> toutes les générations actives</text>
+    <!-- timeline: decode ticks interrupted by a big prefill block -->
+    <line x1="84" y1="500" x2="1116" y2="500" stroke="#B8B5AE" stroke-width="1"/>
+    <g fill="#1F5560">
+      <rect x="100" y="488" width="14" height="24" rx="2"/>
+      <rect x="124" y="488" width="14" height="24" rx="2"/>
+      <rect x="148" y="488" width="14" height="24" rx="2"/>
+      <rect x="172" y="488" width="14" height="24" rx="2"/>
+    </g>
+    <rect x="200" y="476" width="220" height="36" rx="3" fill="#B7332C"/>
+    <text x="310" y="499" class="body" font-size="11" font-weight="600" fill="#FAF8F3" text-anchor="middle">PREFILL (stalle le decode)</text>
+    <g fill="#1F5560" fill-opacity="0.45">
+      <rect x="436" y="488" width="14" height="24" rx="2"/>
+      <rect x="460" y="488" width="14" height="24" rx="2"/>
+    </g>
+    <g fill="#1F5560">
+      <rect x="492" y="488" width="14" height="24" rx="2"/>
+      <rect x="516" y="488" width="14" height="24" rx="2"/>
+      <rect x="540" y="488" width="14" height="24" rx="2"/>
+    </g>
+    <text x="600" y="503" class="body" font-size="10" font-style="italic" fill="#5A5A5A">latence inter-token dégradée pour tous</text>
+  </g>
+
+  <!-- PARALLELISM IMPOSED (interactive) -->
+  <g class="interactive" data-region="parallelisme-impose" tabindex="0" role="button" aria-label="Parallélisme et ratio imposés identiques aux deux phases">
+    <rect x="60" y="576" width="1080" height="118" rx="3" fill="#1A1A1A" fill-opacity="0.04" stroke="#5A5A5A" stroke-width="1.25"/>
+    <text x="84" y="604" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#1A1A1A">LA CONTRAINTE DE FOND · UN SEUL POOL = UN SEUL PLAN</text>
+    <text x="84" y="630" class="body" font-size="11.5" fill="#5A5A5A">Le co-placement force un <tspan font-weight="600" fill="#1A1A1A">parallélisme unique</tspan> (tensor/pipeline) et un <tspan font-weight="600" fill="#1A1A1A">ratio de nœuds figé</tspan> pour deux phases aux optima opposés.</text>
+    <text x="84" y="652" class="body" font-size="11.5" fill="#5A5A5A">On ne peut pas ajouter du matériel pour le decode sans en ajouter, mécaniquement, pour le prefill — et inversement.</text>
+    <text x="84" y="678" class="body" font-size="11.5" font-style="italic" fill="#B7332C">Le chunked prefill (Schéma 6) soigne le symptôme ; la désagrégation supprime la cause.</text>
+  </g>
+
+  <!-- FOOTER -->
+  <text x="60" y="760" class="body" font-size="10" font-style="italic" letter-spacing="0.02em" fill="#5A5A5A">Sources : Zhong et al. (DistServe, OSDI 2024) ; Yu et al. (Orca, OSDI 2022) ; cf. dossier kv-cache §5.</text>
+</svg>
