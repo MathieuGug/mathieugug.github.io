@@ -21,7 +21,7 @@ date_maj: 2026-05-29
 > - ==Un world model, c'est une fonction apprise `f(état, action) → état suivant`== : il prédit ce qui va se passer, pas ce qu'il faut dire. Différent en nature d'un LLM, qui prédit le mot suivant dans un espace symbolique discret.
 > - **Trois architectures concurrentes en 2026**, aucune n'a gagné : V/M/C → RSSM/Dreamer (pixel-prédictif, lignée Ha-Schmidhuber-DeepMind), JEPA (latent, école LeCun), autoregressif latent (Genie 3, Cosmos). Le débat pixel vs latent est technique, pas religieux.
 > - ==Pour 95 % des cas d'usage agentiques 2026, ce n'est pas votre problème.== C'est une bordure de recherche, pas un produit mûr — six verrous durs (mémoire courte, physique imparfaite, compute, données vidéo bornées, évaluation immature, sécurité) tiennent encore les déploiements à l'écart.
-> - Pour les 5 % restants — pilotage écran avancé ([Ch. 15](ch15-computer-use.md)), robotique humanoïde, conduite autonome, simulation 3D — c'est central. Un *language-conditioned world model* devient l'architecture de référence dans ces niches.
+> - Pour les 5 % restants — pilotage écran avancé ([Ch. 17](ch17-computer-use.md)), robotique humanoïde, conduite autonome, simulation 3D — c'est central. Un *language-conditioned world model* devient l'architecture de référence dans ces niches.
 > - Signal faible à 18-36 mois. Ce qu'il faut surveiller : les benchmarks robotiques 2027 (V-JEPA 3 vs Cosmos+SIMA) et le coût marginal d'inférence d'un world model temps réel.
 
 ---
@@ -30,7 +30,7 @@ date_maj: 2026-05-29
 
 Un LLM, même excellent, tombe en panne dès qu'on lui demande d'anticiper précisément une trajectoire physique. Décrire un verre qui se renverse, oui — c'est du langage. Anticiper exactement où la flaque va s'étaler, à quelle vitesse, dans quelle forme : non. La grammaire ne fournit pas les contraintes de la gravité, et la statistique des phrases n'apprend pas la cohérence d'un objet à travers le temps.
 
-On pourrait s'en accommoder pour la plupart des cas 2026 — un agent qui rédige un mail, planifie une tournée commerciale, résume un dossier client n'a pas besoin de simuler la physique. Mais la liste des cas où il en faudrait *quand même* s'allonge : pilotage d'écran avancé ([Ch. 15](ch15-computer-use.md)), robotique manipulatrice, conduite autonome, création d'environnements 3D, agents qui apprennent par essai-erreur dans un simulateur. À chaque fois, le même besoin — prédire l'état suivant, pas le mot suivant.
+On pourrait s'en accommoder pour la plupart des cas 2026 — un agent qui rédige un mail, planifie une tournée commerciale, résume un dossier client n'a pas besoin de simuler la physique. Mais la liste des cas où il en faudrait *quand même* s'allonge : pilotage d'écran avancé ([Ch. 17](ch17-computer-use.md)), robotique manipulatrice, conduite autonome, création d'environnements 3D, agents qui apprennent par essai-erreur dans un simulateur. À chaque fois, le même besoin — prédire l'état suivant, pas le mot suivant.
 
 L'idée n'est pas neuve. David Ha et Jürgen Schmidhuber publient en mars 2018 un article fondateur, *World Models*, où ils montrent qu'un agent peut être entraîné *entièrement à l'intérieur de son propre rêve* — un modèle interne génère les futurs, l'agent y apprend une politique, puis on le transfère dans l'environnement réel sans dégradation[^1]. « Apprendre en rêvant », disent-ils. Le terme circulait depuis les années 1990 dans la tradition du *model-based RL* ; 2018 a fixé l'objet dans le deep learning moderne.
 
@@ -104,7 +104,7 @@ Si c'est encore une bordure pour 95 % des cas, pourquoi est-ce que tout le monde
 
 **Front 1 — Le pilotage d'écran.** Un agent qui clique dans une UI Salesforce sans connecteur dédié partage un substrat avec les world models pixel : il faut comprendre une scène visuelle, prédire ce que produira un clic, planifier une séquence d'actions sur un environnement dont la physique (le DOM, les modaux, les hover states) est apprise empiriquement. La frontière est mince entre un système de *computer use* avancé et un world model spécialisé sur les interfaces.
 
-> [!INFO] Voir [Ch. 15 — Computer use : le régime extrême](ch15-computer-use.md)
+> [!INFO] Voir [Ch. 17 — Computer use : le régime extrême](ch17-computer-use.md)
 > Traitement applicatif des modèles vision-action — Claude computer use, OmniParser, Agent S2, UI-TARS, Magma, OSAgent. Trois architectures concurrentes (vision pure, vision + parseur dédié, agent intégré perception-action), saturation OSWorld à 76,26 % en octobre 2025, cliff UI-CUBE 87 % → 32 % sur les workflows enterprise complexes.
 
 **Front 2 — La robotique humanoïde.** 1X a ouvert en octobre 2025 les précommandes de NEO Gamma — son robot consommateur — sur un modèle commercial mixte : 20 000 dollars d'accès anticipé ou 499 dollars par mois en abonnement. En janvier 2026, l'entreprise publie son 1X World Model, qui ne mappe pas directement texte+images vers commandes motrices (la voie *vision-language-action*) mais ==génère d'abord une vidéo de ce qui devrait se passer dans la scène, puis convertit cette imagination en mouvement réel==. C'est l'architecture *language-conditioned world model* — un LLM injecté à la fois en entrée (instructions) et comme signal de supervision auxiliaire dans le world model. Pas un add-on : un changement de boucle.

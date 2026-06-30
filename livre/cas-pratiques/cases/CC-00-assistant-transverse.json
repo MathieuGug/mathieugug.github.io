@@ -1,0 +1,479 @@
+{
+  "meta": {
+    "id": "CC-00",
+    "titre": "Assistant transverse (routines · analyses · veille)",
+    "secteur": "Transverse",
+    "facette_scaling": "build_vs_buy",
+    "facettes_secondaires": ["gouvernance", "trajectoire_couts"],
+    "regime": "buy_cadre",
+    "ia_type": "agentic",
+    "gabarit": "charniere",
+    "thes_e_une_ligne": "L'usage le plus universel de l'IA — l'assistant que tout le monde ouvre — est le plus dur à chiffrer en Hard et le plus risqué en gouvernance : le ROI ne vient pas du siège déployé, mais des cas d'usage cadrés.",
+    "auteur": "Mathieu Guglielmino",
+    "date_v1": "2026-06-03"
+  },
+
+  "mise_en_situation": {
+    "scene": "Salle du COMEX, revue budgétaire de mi-année. Sur le slide : « 9 200 sièges d'assistant IA déployés, 2,8 M€/an. » Le DG est satisfait — l'entreprise est « passée à l'IA ». Le DAF, lui, fait défiler une autre courbe, celle de l'usage réel mesuré par la console d'administration : 38 % des sièges n'ont pas été ouverts une seule fois ce mois-ci, et sur ceux qui le sont, l'usage médian plafonne à « résumer un mail, écrire un message ». Pendant ce temps, la DPO signale que 600 collaborateurs collent du contenu interne dans des outils grand public non gérés — du shadow AI que personne n'a cadré. Le DAF pose la question qui gèle la salle : « on a déployé 9 200 sièges. Combien de valeur on a déployée ? »",
+    "chiffres_bruts": [
+      { "label": "Collaborateurs (cols blancs)", "valeur": "9 200" },
+      { "label": "Sièges d'assistant déployés", "valeur": "9 200 (100 %)" },
+      { "label": "Sièges jamais ouverts / mois", "valeur": "≈ 38 %" },
+      { "label": "Coût licence / siège / mois", "valeur": "≈ 30 €" },
+      { "label": "Collaborateurs en shadow AI", "valeur": "≈ 600 (estim.)" },
+      { "label": "Cas d'usage réellement cadrés", "valeur": "0 → cible 12" }
+    ],
+    "horizon_temporel": "Déploiement déjà fait (les sièges sont là). Le vrai projet : 6 mois pour transformer un parc de sièges en cas d'usage cadrés, puis revue de renouvellement des licences à 12 mois."
+  },
+
+  "architecture_actuelle": {
+    "composants": [
+      {
+        "categorie": "canal_utilisateur",
+        "nom": "Poste de travail (Windows/Mac + navigateur) + mobile MDM",
+        "criticite_pour_le_cas": "read_write",
+        "remarque": "La surface où l'assistant vit vraiment : barre latérale dans la suite bureautique, extension navigateur, app mobile. C'est aussi la surface par laquelle entre le shadow AI (onglet ChatGPT perso à côté de l'intranet)."
+      },
+      {
+        "categorie": "front_metier",
+        "nom": "Suite collaborative (Microsoft 365 ou Google Workspace) — mail, docs, drive, agenda, visio",
+        "criticite_pour_le_cas": "read_write_via_proxy_validation",
+        "remarque": "Le terrain de jeu de 80 % des usages : rédiger, résumer une réunion, trier l'inbox, générer un brouillon. La suite native (Copilot M365 / Gemini Workspace) s'y greffe avec les droits déjà en place — argument time-to-value massif, mais lock-in suite."
+      },
+      {
+        "categorie": "core_metier_regule",
+        "nom": "Annuaire / IdP (Entra ID ou Google) + SSO + politiques de conditional access",
+        "criticite_pour_le_cas": "read_only",
+        "remarque": "L'IdP décide qui voit quoi. L'assistant hérite des droits de l'utilisateur : s'ils sont trop larges (over-permissioning historique des drives), l'assistant rend visible en deux secondes ce qui dormait depuis dix ans. Le socle d'accès devient soudain critique."
+      },
+      {
+        "categorie": "knowledge_base",
+        "nom": "Intranet + SharePoint/Drive + Confluence + bases métier (RH, juridique, commerce)",
+        "criticite_pour_le_cas": "read_only",
+        "remarque": "Le corpus de la veille et de l'analyse internes. Mal rangé, sur-partagé, versionné à la main : c'est lui qui décide si le « deep research interne » est un actif ou un générateur de réponses fausses-mais-confiantes."
+      },
+      {
+        "categorie": "outils_satellites",
+        "nom": "Messagerie d'équipe (Teams/Slack) + CRM + ITSM + BI",
+        "criticite_pour_le_cas": "read_write",
+        "remarque": "Sources et destinations des routines (résumer un canal, créer un ticket, première passe d'analyse sur un export). Connecteurs souvent natifs dans la suite, MCP custom pour les bases métier."
+      },
+      {
+        "categorie": "back_office",
+        "nom": "DLP / CASB + console d'administration des sièges + journal d'audit",
+        "criticite_pour_le_cas": "read_write",
+        "remarque": "Le poste de pilotage du cas : c'est là qu'on mesure l'usage réel (le seul KPI honnête), qu'on encadre le shadow AI (DLP), et qu'on trace les prompts sensibles. Souvent allumé après coup — l'angle mort du déploiement « par siège »."
+      }
+    ],
+    "implications_structurantes": [
+      "L'assistant n'a presque rien à intégrer techniquement — la suite native fait le branchement. Le vrai chantier n'est pas le MCP, c'est le cadrage des usages, l'enablement et la gouvernance. Le coût est dans le change, pas dans l'inférence.",
+      "L'assistant hérite des droits de l'utilisateur : un drive sur-partagé devient une fuite à la demande. Le socle d'accès (IdP, RBAC, ménage des partages) est un prérequis, pas une option — exactement la condition que CC-03 généralise au socle data.",
+      "Le shadow AI n'est pas un dérapage marginal : c'est le vrai point de départ. 600 collaborateurs ont déjà voté avec leurs pieds. Le cadrer (fournir un outil officiel sûr + DLP) bat le combattre.",
+      "Le siège est un coût fixe par tête : il n'y a aucune économie d'échelle sur la licence. Le seul levier de ROI est le taux d'usage cadré — pas le nombre de sièges. C'est le cœur du cas."
+    ],
+    "renvoi_figure": "fig-00"
+  },
+
+  "application_concrete": {
+    "modes_usage": [
+      {
+        "id": "A",
+        "label": "Routines — le quotidien (rédaction, résumé, triage)",
+        "moment": "En continu, dans la suite : barre latérale du mail, des docs, de la visio",
+        "actions": [
+          "Rédige et reformule (mail, note, message) au ton de l'organisation",
+          "Résume une réunion, un fil de mails, un document long — avec actions à reprendre",
+          "Trie et priorise l'inbox, prépare des brouillons de réponse",
+          "Traduit, met en forme, vérifie — la couche d'assistance invisible du poste de travail"
+        ]
+      },
+      {
+        "id": "B",
+        "label": "Analyses — la première passe (synthèse, dataviz commentée)",
+        "moment": "À la demande, sur un export ou une source connectée, par un non-analyste",
+        "sous_modes": [
+          { "id": "B1", "label": "Synthèse de données", "description": "Lit un tableur / export, dégage les tendances, signale les anomalies — une première passe, pas une vérité." },
+          { "id": "B2", "label": "Dataviz commentée", "description": "Génère un graphe pertinent et le commente en langage clair pour un public non technique." },
+          { "id": "B3", "label": "Brouillon d'analyse", "description": "Structure un raisonnement, propose des angles — à charge d'un humain de vérifier les chiffres (le pont vers CC-03)." }
+        ]
+      },
+      {
+        "id": "C",
+        "label": "Veille — le deep research agentique (monitoring, synthèse citée)",
+        "moment": "Sur déclenchement (« fais-moi le point sur X ») ou en routine programmée",
+        "actions": [
+          "Décompose la question, lance des recherches en éventail (web + sources internes via MCP)",
+          "Vérifie en recoupant les sources (fan-out → vérification adverse)",
+          "Synthétise en une note citée, sourcée, datée",
+          "Livre dans un doc partagé / un canal d'équipe — veille concurrentielle, réglementaire, technologique"
+        ]
+      }
+    ],
+    "niveaux_autonomie": [
+      { "id": "L1", "label": "Assistant à la demande", "description": "Prompt → réponse, le collaborateur copie-colle. Aucun accès aux données de l'entreprise.", "active_en": "Immédiat (la suite native, déjà déployée)" },
+      { "id": "L2", "label": "Assistant connecté (lecture)", "description": "Accède en lecture au mail / docs / drive / agenda de l'utilisateur (ses droits), résume, retrouve, répond sur le contexte.", "active_en": "Cadrage mois 1-3 (après ménage des partages)" },
+      { "id": "L3", "label": "Agent cadré (action validée)", "description": "Exécute une routine cadrée de bout en bout — prépare le CR et le poste en brouillon, trie l'inbox, monte la veille hebdo — chaque sortie validée par l'humain.", "active_en": "Cas d'usage cadrés mois 3-9" },
+      { "id": "L4", "label": "Agent transverse pleinement autonome", "description": "Agit sans validation à travers tous les outils (envoie, publie, modifie en autonomie).", "active_en": "ENCADRÉ — réservé à des routines à risque nul et réversibles, avec DLP + audit. Jamais sur du contenu engageant ou diffusé à l'externe sans revue." }
+    ],
+    "trajectoire_multi_step_exemple": {
+      "scenario": "Mode C — « fais-moi le point sur les offres d'assistant IA souverain pour le secteur public européen, ce trimestre »",
+      "etapes": [
+        { "id": 1, "label": "Plan", "description": "Décompose la question en sous-questions (offres, souveraineté, références publiques, prix, conformité) et trace un plan de recherche.", "renvoi_livre": "ch.7 boucle agent (planification)" },
+        { "id": 2, "label": "Fan-out", "description": "Lance des recherches en éventail en parallèle : web + sources internes via MCP (veille déjà archivée, notes d'analystes, CRM partenaires).", "outils_appeles": ["web-search.fanout(queries)", "sharepoint-mcp.search_veille(topic)", "confluence-mcp.search_notes(topic)"] },
+        { "id": 3, "label": "Verify", "description": "Recoupe les affirmations entre sources, écarte les non-corroborées, distingue le sourcé du supposé — vérification adverse.", "renvoi_livre": "ch.7 fan-out → vérification → synthèse" },
+        { "id": 4, "label": "Synthesize", "description": "Rédige une note structurée, citée, datée, avec niveau de confiance par affirmation et zones d'incertitude assumées." },
+        { "id": 5, "label": "Deliver", "description": "Publie dans un doc partagé / un canal, avec les sources cliquables. Trace le prompt et les sources dans le journal d'audit (confidentialité).", "renvoi_livre": "ch.20 audit trail" }
+      ]
+    }
+  },
+
+  "outils_internes": {
+    "mcp_servers": [
+      { "systeme": "Suite collaborative (M365 Graph / Google Workspace)", "mode": "read_write_via_proxy", "type_mcp": "natif dans la suite (Copilot / Gemini) — pas de MCP à monter", "effort_dev": "0 (inclus) — mais ménage des droits/partages à faire", "risque": "moyen", "raison_risque": "l'assistant hérite des droits utilisateur ; un drive sur-partagé devient une fuite à la demande" },
+      { "systeme": "Intranet / SharePoint / Confluence (veille + KB)", "mode": "read", "type_mcp": "officiel / connecteur de la suite + MCP custom pour les bases métier", "effort_dev": "1-2 sem.", "risque": "moyen", "raison_risque": "RBAC + scoping des espaces autorisés ; qualité du corpus (le déterminant de la véracité de la veille)" },
+      { "systeme": "Moteur de recherche web (deep research)", "mode": "read", "type_mcp": "intégré à l'assistant premium (deep research)", "effort_dev": "0 (inclus)", "risque": "bas" },
+      { "systeme": "CRM / ITSM / bases métier", "mode": "read_write_via_proxy", "type_mcp": "custom (pour les routines cadrées qui écrivent)", "effort_dev": "1 sem. par système ciblé", "risque": "moyen", "raison_risque": "ne brancher en écriture que des routines à risque borné et validées" },
+      { "systeme": "DLP / CASB + console d'administration", "mode": "read_write", "type_mcp": "configuration (pas MCP) — politique d'usage acceptable + mesure d'usage réel", "effort_dev": "2-3 sem. (politique + tableau de bord d'usage)", "risque": "haut", "raison_risque": "Le vrai sclérosant n'est pas technique : c'est la gouvernance du shadow AI et la mesure honnête de l'usage. Sans elle, on pilote à l'aveugle un parc de sièges." }
+    ],
+    "effort_total": "L'intégration technique est légère (la suite fait le gros). L'effort réel — 80 % — est non technique : cadrage de 12 cas d'usage, enablement (formation, champions), gouvernance (DLP, usage acceptable, mesure d'usage). 1 product owner usages + 1 data/sécu à temps partiel sur 6 mois.",
+    "renvois_livre": ["ch.13 surfaces agentiques", "ch.15 MCP plateforme (deep research interne)", "ch.16 sécurité MCP (droits hérités)"]
+  },
+
+  "modeles_cibles": {
+    "candidats": [
+      { "modele": "Microsoft 365 Copilot (GPT-5 sur Azure)", "force_pour_le_cas": "Intégration native si l'entreprise est sous M365 — time-to-value imbattable, droits hérités, conformité tenant.", "faiblesse": "Lock-in M365, ROI fantôme si non cadré, coût par siège fixe.", "cout_indicatif": "≈ 30 €/siège/mois" },
+      { "modele": "Gemini for Google Workspace", "force_pour_le_cas": "Équivalent natif si l'entreprise est sous Google Workspace.", "faiblesse": "Lock-in Workspace, même piège du siège déployé.", "cout_indicatif": "≈ 20-30 €/siège/mois" },
+      { "modele": "Assistant deep-research premium (Claude Enterprise / ChatGPT Enterprise)", "force_pour_le_cas": "La veille et l'analyse profondes (fan-out, vérification, synthèse citée) que la suite native fait mal. Réservé aux profils qui en tirent une vraie valeur.", "faiblesse": "Cloud US (à cadrer RGPD), siège plus cher — à ne PAS déployer à tout le monde.", "cout_indicatif": "$30-60 / siège / mois" },
+      { "modele": "Mistral Le Chat Enterprise", "force_pour_le_cas": "Option souveraine (France/UE) pour les populations sensibles (juridique, RH, R&D, secteur public).", "faiblesse": "Écosystème de connecteurs moins dense que les suites dominantes.", "cout_indicatif": "€ par siège, résidence EU" },
+      { "modele": "Modèle open self-hosted (assistant interne souverain)", "force_pour_le_cas": "Souveraineté totale pour le noyau le plus sensible — données qui ne sortent pas.", "faiblesse": "Effort plateforme injustifié pour un usage horizontal grand public : réinventer la suite. À réserver aux cas où la donnée l'exige.", "cout_indicatif": "OpEx infra + équipe" }
+    ],
+    "recommandation": {
+      "regime": "buy cadré, segmenté par population",
+      "modele_primaire": "La suite native déjà en place (M365 Copilot ou Gemini Workspace) pour le quotidien horizontal — on ne réinvente pas la roue",
+      "modele_gardien": "Mesure d'usage réel + DLP/CASB sur le shadow AI ; option souveraine (Mistral / self-hosted) pour les populations à données sensibles",
+      "voice_tier": "non applicable",
+      "embeddings_rag": "Embeddings (souverains si données sensibles) pour le deep research interne sur l'intranet",
+      "argument_cascade": "Ce n'est pas une cascade de modèles mais une segmentation de populations : la suite native pour les 9 200 (le quotidien), un assistant deep-research premium pour les quelques centaines de profils veille/analyse (la vraie valeur profonde), une option souveraine pour les populations sensibles. Déployer le premium à tout le monde, c'est payer cher un usage que la plupart ne feront pas. Le ROI est dans le ciblage, pas dans l'uniformité."
+    }
+  },
+
+  "enjeux": {
+    "enjeux_chiffres": [
+      { "label": "Temps réalloué sur les routines", "chiffre": "30-60 min/jour récupérables (très variable selon le métier)", "consequence": "valeur réelle SEULEMENT si le temps est réinvesti sur de la valeur, pas dissous" },
+      { "label": "Démocratiser la première passe d'analyse", "chiffre": "analyse simple accessible aux non-analystes", "consequence": "désengorge les data analysts du tout-venant (le pont vers CC-03)" },
+      { "label": "Industrialiser la veille", "chiffre": "deep research en minutes vs ½ journée", "consequence": "décision mieux informée — gain Soft, attribution indirecte" }
+    ],
+    "benchmark": {
+      "reference": "Études de productivité knowledge worker 2024-2025 (assistants génératifs en entreprise)",
+      "metrique": "gains réels très hétérogènes — concentrés sur quelques tâches et quelques profils ; l'écart entre sièges déployés et usage à valeur est la règle, pas l'exception",
+      "renvoi_livre": "ch.23.8"
+    },
+    "contre_benchmark": "Le piège classique 2024 : l'organisation qui annonce « X 000 sièges déployés » comme un succès, puis découvre à la revue budgétaire que la moitié des sièges dorment et que le reste sert à « résumer des mails ». Le siège déployé est un indicateur d'input, pas de valeur. Sans cas d'usage cadrés et sans mesure d'usage réel, le ROI est un fantôme qu'on finance chaque mois. Cf. ch.23.5 (le piège du Hard introuvable sur l'horizontal)."
+  },
+
+  "build_buy": {
+    "criteres": ["data_sensitivity", "personnalisation", "volumetrie", "lock_in", "time_to_value", "souverainete"],
+    "options": [
+      {
+        "regime": "interne",
+        "stack": "Assistant maison (orchestrateur + modèle open self-hosted + connecteurs suite + RAG interne)",
+        "scores": { "data_sensitivity": "++", "personnalisation": "++", "volumetrie": "-", "lock_in": "+", "time_to_value": "--", "souverainete": "++" },
+        "verdict": "Réinventer une suite grand public déjà mature. Effort plateforme injustifié pour un usage horizontal — sauf noyau de données souveraines. À NE PAS faire en porte d'entrée."
+      },
+      {
+        "regime": "mainstream",
+        "solution": "Suite native (M365 Copilot / Gemini Workspace) déployée à tous les sièges, sans cadrage",
+        "scores": { "data_sensitivity": "0", "personnalisation": "-", "volumetrie": "++", "lock_in": "--", "time_to_value": "++", "souverainete": "-" },
+        "verdict": "Time-to-value immédiat — mais c'est exactement le piège : déployer des sièges n'est pas déployer de la valeur. Sans cadrage ni mesure, ROI fantôme et facture certaine."
+      },
+      {
+        "regime": "hybride",
+        "stack": "Suite native pour le quotidien + 12 cas d'usage cadrés (templates, agents cadrés, deep research interne via MCP) + enablement (champions) + gouvernance (DLP, usage réel mesuré) + option souveraine pour les populations sensibles",
+        "scores": { "data_sensitivity": "+", "personnalisation": "+", "volumetrie": "+", "lock_in": "0", "time_to_value": "+", "souverainete": "0" },
+        "verdict": "RECOMMANDÉ — buy_cadre. On achète la suite (on ne build pas l'assistant), mais on construit la couche qui crée la valeur : les usages cadrés, l'enablement, la gouvernance et la mesure. Le build est dans le cadrage, pas dans le modèle."
+      }
+    ],
+    "decision_ponderee": "Buy cadré : la suite native est l'évidence technique, mais la décision structurante n'est pas « quel modèle » — c'est « quels 12 cas d'usage on cadre, comment on mesure l'usage réel, et comment on transforme le shadow AI en usage officiel sûr ». Le ROI se décide dans la couche enablement + gouvernance, pas dans le choix de licence.",
+    "renvoi_livre": "ch.23.6 arbre décision"
+  },
+
+  "trajectoire_couts": {
+    "phases": [
+      { "id": "poc",    "label": "Amorçage 3 mois", "perimetre": "200 collaborateurs pilotes, 3 cas d'usage cadrés, mesure d'usage activée" },
+      { "id": "pilote", "label": "Cadrage 6 mois",  "perimetre": "1 500 collaborateurs, 8 cas d'usage cadrés, réseau de champions, DLP" },
+      { "id": "prod",   "label": "Généralisation 12 mois", "perimetre": "9 200 sièges, 12 cas d'usage cadrés, gouvernance shadow AI, option souveraine pop. sensibles" },
+      { "id": "scale",  "label": "Régime 36 mois", "perimetre": "9 200 sièges optimisés par l'usage réel — désabonnement des sièges dormants, segmentation premium/souverain" }
+    ],
+    "postes": {
+      "inference":   { "poc": 18,  "pilote": 140, "prod": 2760, "scale": 1710 },
+      "infra":       { "poc": 4,   "pilote": 10,  "prod": 30,   "scale": 50   },
+      "equipe":      { "poc": 80,  "pilote": 220, "prod": 420,  "scale": 380  },
+      "data":        { "poc": 10,  "pilote": 40,  "prod": 90,   "scale": 80   },
+      "evaluation":  { "poc": 4,   "pilote": 20,  "prod": 60,   "scale": 90   },
+      "gouvernance": { "poc": 10,  "pilote": 50,  "prod": 160,  "scale": 200  },
+      "securite":    { "poc": 8,   "pilote": 40,  "prod": 130,  "scale": 150  },
+      "change":      { "poc": 30,  "pilote": 180, "prod": 520,  "scale": 480  }
+    },
+    "cout_par_interaction": { "poc": 9.50, "pilote": 3.80, "prod": 2.40, "scale": 0.90 },
+    "crossover_point": "Pas un crossover build/buy, mais un SEUIL D'USAGE CADRÉ : tant que le taux d'usage réel à valeur reste sous ~40 % des sièges, le coût par usage utile reste prohibitif (le siège dormant est un coût pur). Au-delà, l'enablement + la gouvernance s'amortissent et le coût par usage à valeur s'effondre. Le levier est l'usage, pas le nombre de sièges.",
+    "commentaire_courbe": "Anomalie vs CC-01/CC-02 : l'inférence ici, ce sont les LICENCES PAR SIÈGE — un coût fixe par tête, sans aucune économie d'échelle. Le poste inférence ne baisse pas en scalant : il baisse en phase Scale uniquement parce qu'on DÉSABONNE les sièges dormants et qu'on segmente (premium/souverain réservés à qui en tire de la valeur). Le coût par usage à valeur (cout_par_interaction) divise par ~11 entre POC et Scale — non par optimisation technique, mais par montée du taux d'usage cadré. Le poste dominant est le change (enablement) + la gouvernance : c'est le paradoxe agentique appliqué à l'horizontal (ch.23.7) — le poste qui crée la valeur (cadrer l'usage humain) est aussi le plus dur à attribuer."
+  },
+
+  "gouvernance": {
+    "raci": {
+      "responsable": "Équipe adoption IA (Product Owner usages + champions métier + référent data/sécu) rattachée à la Transformation",
+      "approbateur": "DG / COMEX (sponsor) — arbitre le renouvellement des licences sur preuve d'usage",
+      "consultes": ["RSSI (shadow AI, DLP, droits hérités)", "DPO (RGPD, confidentialité des prompts)", "DRH (montée en compétences, équité d'accès)", "Contrôle de gestion (mesure du retour)"],
+      "informes": ["Managers de proximité", "CSE (conditions de travail)", "Tous collaborateurs (charte d'usage)"]
+    },
+    "cadence_revue": {
+      "comite_eval": "mensuel sur l'usage réel (taux d'activation, usages cadrés, valeur perçue) ; revue de renouvellement des licences trimestrielle",
+      "alertes": "continues sur le shadow AI (DLP/CASB) et les prompts sensibles (exfiltration potentielle)",
+      "audit_externe": "annuel (RGPD + conformité des connecteurs + revue des droits hérités)"
+    },
+    "ai_act_ligne": {
+      "niveau": "risque_minimal_a_limite",
+      "fondement": "La plupart des usages (productivité interne) relèvent du risque minimal. Obligation de transparence (Art. 50) quand l'assistant génère du contenu diffusé ou interagit en externe. Les obligations GPAI pèsent sur le fournisseur du modèle, pas sur l'entreprise déployeuse — mais l'entreprise reste responsable RGPD et confidentialité.",
+      "echeance": "2026-08 (transparence) — léger ici, l'essentiel est RGPD/confidentialité",
+      "actions": [
+        "Charte d'usage acceptable (ce qu'on peut / ne peut pas coller dans un assistant)",
+        "DLP/CASB pour encadrer le shadow AI plutôt que le combattre (fournir un outil officiel sûr)",
+        "Revue des droits hérités (ménage des partages avant de connecter l'assistant)",
+        "Transparence interne : les collaborateurs savent ce qui est tracé, l'assistant n'est pas un mouchard",
+        "Marquage du contenu généré diffusé à l'externe (transparence Art. 50)"
+      ]
+    },
+    "renvoi_livre": "ch.25 gouvernance AI Act + ch.16 sécurité (droits hérités, shadow AI)"
+  },
+
+  "evaluation": {
+    "regression_suite": {
+      "taille": "Pas une régression suite classique (l'usage est ouvert) : un panel de 30-40 tâches-types par cas d'usage cadré + un échantillon de prompts sensibles pour tester la DLP",
+      "cadence": "revue mensuelle des cas d'usage cadrés + tests DLP à chaque nouvelle politique",
+      "criteres": [
+        "qualité utile de la sortie sur les tâches cadrées (pas un benchmark abstrait)",
+        "absence de fuite sur prompts sensibles (DLP effective)",
+        "respect des droits hérités (l'assistant ne révèle pas plus que ce que l'utilisateur a le droit de voir)",
+        "citation et vérifiabilité sur la veille (pas d'affirmation non sourcée présentée comme un fait)"
+      ]
+    },
+    "metriques_online": [
+      { "id": "doc-search-time", "cible": "-40 % sur la recherche documentaire interne", "alerte": "gain non mesurable = cas d'usage mal cadré" },
+      { "id": "processing-time", "cible": "-30 % sur les routines cadrées (CR, triage, brouillon)", "alerte": "usage non adopté sur la routine ciblée" },
+      { "id": "employee-engagement", "cible": "+ perçu sur la charge cognitive des tâches répétitives", "alerte": "rejet / défiance (assistant vécu comme surveillance)" }
+    ],
+    "detection_derive": {
+      "outil": "Console d'usage (taux d'activation, fréquence, usages cadrés vs ad hoc) + DLP/CASB sur le shadow AI + revue qualité d'un échantillon de veilles produites",
+      "alerte": "chute du taux d'usage actif (signal de cas d'usage mal cadré) ; pic de shadow AI (signal d'un besoin non couvert) ; affirmation non sourcée dans une veille diffusée",
+      "fenetre": "mensuelle sur l'usage ; continue sur la DLP"
+    },
+    "boucle_correction": {
+      "trigger": "comité mensuel d'usage + remontées des champions métier",
+      "delai_re_prompt": "mise à jour des templates / agents cadrés en continu (pas un cycle ML)",
+      "cadence_re_finetune": "non applicable (modèle managé) — l'itération porte sur le cadrage des usages et l'enablement, pas le modèle",
+      "rollback": "retrait d'un cas d'usage cadré qui ne prend pas + réallocation du budget enablement vers ceux qui marchent"
+    },
+    "renvoi_livre": ["ch.19 évaluation agent", "ch.20 audit trail (confidentialité des prompts)"]
+  },
+
+  "roi": {
+    "axe_principal": "bienetre",
+    "axes_secondaires": ["vitesse"],
+    "methode_mobilisee": "Cigref Hard/Soft (qualification) + TEI Forrester (chiffrage prudent) + arbre décision ch.23.6 — avec l'honnêteté que l'horizontal est dominé par le Soft",
+    "metriques": [
+      { "id": "doc-search-time", "borne_basse": "-20 %", "cible": "-40 %", "borne_haute": "-55 %" },
+      { "id": "processing-time", "borne_basse": "-15 %", "cible": "-30 %", "borne_haute": "-45 %" },
+      { "id": "employee-engagement", "borne_basse": "+2", "cible": "+6", "borne_haute": "+10" },
+      { "id": "time-to-market", "borne_basse": "marginal", "cible": "veille → décision plus rapide", "borne_haute": "indirect" }
+    ],
+    "kpi_gardien": {
+      "id": "employee-engagement",
+      "role": "KPI gardien Soft, COUPLÉ au taux d'usage actif cadré : le temps réalloué ne vaut que s'il est réinvesti sur de la valeur ET vécu comme un soulagement, pas une surveillance. Un siège non utilisé est un coût pur — l'usage réel est le seul juge honnête du ROI.",
+      "borne": "taux d'usage actif cadré > seuil + engagement non dégradé ; sinon désabonnement des sièges dormants"
+    },
+    "non_retenu": [
+      { "id": "revenue", "raison": "attribution assistant horizontal ↔ chiffre d'affaires impossible à isoler (le piège du ROI fantôme — ne pas le promettre)" },
+      { "id": "nps", "raison": "pas le périmètre (usage interne)" },
+      { "id": "employee-turnover", "raison": "trop indirect ; le sujet RH se traite en montée en compétences, pas en KPI de ROI" }
+    ],
+    "renvoi_figure": "fig-01"
+  },
+
+  "operation_equipe": {
+    "personas": {
+      "porteur": { "role": "Chief Digital Officer / Dir. Transformation", "posture": "Convaincu, a piloté le déploiement des sièges, veut maintenant prouver la valeur", "citation": "On a mis l'IA dans toutes les mains. Le travail commence maintenant : en faire quelque chose." },
+      "sponsor": { "role": "DG / COMEX", "posture": "Veut la modernité et l'attractivité, mais sent que le sujet du retour va revenir", "citation": "Je ne veux pas qu'on m'explique dans un an qu'on a payé pour des sièges que personne n'ouvre." },
+      "allie": { "role": "DRH + managers champions", "posture": "Voit l'enablement et la montée en compétences comme un levier d'engagement", "citation": "La valeur n'est pas dans l'outil, elle est dans les gens qui apprennent à s'en servir pour ce qui compte." },
+      "opposant": { "role": "Contrôle de gestion / DAF", "posture": "Garde-fou légitime sur le retour — souvent celui qui aura raison à 18 mois : il exige une preuve d'usage, pas un slide de sièges", "citation": "Montrez-moi la valeur, pas le nombre de licences. Un siège déployé n'est pas un euro gagné." }
+    },
+    "equipe_par_phase": {
+      "poc": {
+        "etp_total": 4.6,
+        "composition": [
+          { "role": "Product Owner usages", "etp": 1.0, "profil": "pivot — cadre les cas d'usage, connaît les métiers, traque l'usage réel (pas un chef de projet outil)" },
+          { "role": "Référent enablement / formation", "etp": 1.0, "profil": "Anime le réseau de champions, conçoit les parcours, la pédagogie du prompt utile" },
+          { "role": "Référent data / deep research interne", "etp": 0.8, "profil": "MCP intranet/KB, qualité du corpus de veille, embeddings" },
+          { "role": "Référent sécurité / DLP", "etp": 0.5, "profil": "Shadow AI, droits hérités, politique d'usage acceptable" },
+          { "role": "Analyste usage / mesure", "etp": 0.5, "profil": "Console d'usage, tableau de bord du taux d'usage cadré (le KPI honnête)" },
+          { "role": "Champions métier (réseau)", "etp": 0.5, "profil": "Relais terrain par direction — multiplicateurs d'adoption, à temps partiel" },
+          { "role": "DPO référent", "etp": 0.3, "profil": "Confidentialité des prompts, RGPD, transparence interne" }
+        ]
+      },
+      "prod": { "etp_total": 5.0, "note": "Cœur 5 ETP centre d'enablement + réseau de champions distribué (coût change réparti dans les directions)" }
+    },
+    "velocite": {
+      "poc":    { "duree": "3 mois", "cadence_release": "bi-hebdo (nouveaux templates)", "perimetre": "200 pilotes, 3 cas d'usage cadrés, mesure d'usage activée" },
+      "pilote": { "duree": "6 mois", "cadence_release": "hebdo", "perimetre": "1 500 collaborateurs, 8 cas d'usage, réseau de champions, DLP en place" },
+      "prod":   { "duree": "12 mois", "cadence_release": "mensuel", "perimetre": "9 200 sièges, 12 cas d'usage cadrés, gouvernance shadow AI, segment premium/souverain" },
+      "scale":  { "duree": "36 mois", "cadence_release": "trimestriel", "perimetre": "optimisation par l'usage réel — désabonnement des dormants, premium ciblé sur les profils veille/analyse" }
+    },
+    "sclerosants": [
+      "Le ménage des droits hérités / partages sur-larges : prérequis avant de connecter l'assistant — souvent des années de drives sur-partagés à reprendre.",
+      "La mesure honnête de l'usage : sans console d'usage exploitée, on pilote à l'aveugle et on confond sièges déployés et valeur.",
+      "Le cadrage des cas d'usage : c'est un travail métier, pas IT — il faut du temps de champions et de POs, rare et disputé.",
+      "Le shadow AI : déjà installé. Le cadrer (outil officiel + DLP) demande de la diplomatie, pas de la répression."
+    ],
+    "deadlines_externes": [
+      { "echeance": "2026-08", "label": "AI Act transparence (Art. 50, usages diffusés)", "consequence_si_ratee": "marquage du contenu généré externe ; léger mais à anticiper" },
+      { "echeance": "Trimestriel", "label": "Revue de renouvellement des licences", "consequence_si_ratee": "sans preuve d'usage, le DAF gèle ou coupe le budget — le siège dormant ne se renouvelle pas" }
+    ],
+    "deadline_operationnelle": "Amorçage T3 2026 (3 cas d'usage + mesure) → cadrage T4-T1 (8 cas, champions) → généralisation 2027 avec revue de licences trimestrielle conditionnée à l'usage réel."
+  },
+
+  "debat": {
+    "question": "L'assistant horizontal crée-t-il de la valeur, ou finance-t-on un ROI fantôme par siège déployé ?",
+    "pour": [
+      { "argument": "Soulagement réel sur les routines (rédaction, résumé, triage) pour qui s'en saisit — gain de charge cognitive mesurable par cas d'usage cadré." },
+      { "argument": "La veille et la première passe d'analyse démocratisées désengorgent les experts du tout-venant et accélèrent la décision." },
+      { "argument": "Fournir un outil officiel sûr est la meilleure réponse au shadow AI déjà présent : on cadre plutôt qu'on subit." }
+    ],
+    "contre": [
+      { "argument": "Le siège déployé est un indicateur d'input, pas de valeur : la moitié des sièges dorment, le ROI Hard est introuvable à l'échelle horizontale." },
+      { "argument": "Le temps « gagné » se dissout s'il n'est pas réinvesti sur de la valeur — la productivité horizontale est notoirement difficile à attribuer." },
+      { "argument": "Sans gouvernance du shadow AI et des droits hérités, l'assistant transforme un drive sur-partagé en fuite à la demande." }
+    ],
+    "verdict_pondere": "GO mais buy CADRÉ : on n'achète pas un ROI, on achète une capacité — et le ROI se construit dans la couche enablement + gouvernance + mesure. KPI honnête = taux d'usage actif cadré, pas nombre de sièges. Désabonner les dormants, segmenter le premium, transformer le shadow AI en usage officiel.",
+    "renvois_livre": ["ch.23.5 Hard vs Soft", "ch.23.7 paradoxe agentique", "ch.26 IA et travail"]
+  },
+
+  "choix_lecteur": [
+    {
+      "question": "Vous êtes le DG. Au COMEX, vous mesurez le succès du programme assistant EN PREMIER par…",
+      "options": [
+        { "id": "A", "label": "Le nombre de sièges déployés", "consequence": "Vous affichez 9 200 sièges, 100 % de couverture. Six mois plus tard, le DAF révèle que 38 % n'ont jamais été ouverts et que le reste sert à résumer des mails. Le ROI promis est introuvable, le budget est questionné.", "grille_analyse": "Piège de l'indicateur d'input (ch.23.5) : déployer n'est pas créer de la valeur. Le siège est un coût, pas un retour.", "renvoi_chapitre": "ch.23.5" },
+        { "id": "B", "label": "Le taux de satisfaction déclaré des utilisateurs", "consequence": "Les enquêtes sont bonnes (« j'aime bien »), mais vous ne pouvez ni chiffrer le retour ni savoir si le temps gagné est réinvesti. Le contrôle de gestion reste sceptique, le budget est sous tension.", "grille_analyse": "Piège du Soft seul (ch.23.5.4) : la satisfaction ne suffit pas sans convergence avec un usage réel mesuré.", "renvoi_chapitre": "ch.23.5.4" },
+        { "id": "C", "label": "Le taux d'usage actif cadré + le temps réalloué sur les cas d'usage ciblés", "consequence": "Vous mesurez l'usage réel par cas d'usage, désabonnez les sièges dormants, réinvestissez le budget sur ce qui marche. Le retour devient lisible et défendable — non par siège, par usage.", "grille_analyse": "Le seul cadrage honnête (ch.23.7.3) : l'usage cadré est le KPI, pas le siège.", "renvoi_chapitre": "ch.23.7.3" }
+      ]
+    },
+    {
+      "question": "600 collaborateurs utilisent du shadow AI grand public. Vous faites quoi ?",
+      "options": [
+        { "id": "A", "label": "Bloquer les outils non gérés", "consequence": "Vous coupez l'accès — l'usage continue sur les mobiles perso, hors de toute visibilité. Vous avez perdu le signal et le contrôle sans supprimer le risque.", "grille_analyse": "Antipattern : la répression pousse le shadow AI plus loin dans l'ombre (ch.16).", "renvoi_chapitre": "ch.16" },
+        { "id": "B", "label": "Fournir un outil officiel sûr + DLP + charte d'usage", "consequence": "Vous offrez une alternative au moins aussi bonne, encadrée par la DLP, et vous transformez 600 contournements en 600 usages visibles et sûrs. Le shadow AI devient un signal de besoin, pas une menace.", "grille_analyse": "La bonne réponse (ch.16 + ch.25) : cadrer plutôt que combattre. Le shadow AI est le vrai point de départ.", "renvoi_chapitre": "ch.25" },
+        { "id": "C", "label": "Fermer les yeux", "consequence": "L'usage prospère sans cadre : un jour, un collaborateur colle un document confidentiel dans un outil grand public, et c'est l'incident RGPD. Le risque non géré finit toujours par se présenter.", "grille_analyse": "Le risque différé : l'absence de politique est une politique — la pire.", "renvoi_chapitre": "ch.25" }
+      ]
+    },
+    {
+      "question": "Vous avez un budget premium (deep research) limité. Vous le déployez comment ?",
+      "options": [
+        { "id": "A", "label": "À tout le monde, pour l'équité", "consequence": "Vous diluez un outil cher sur 9 200 sièges dont la plupart ne feront jamais de veille profonde. Le coût explose, l'usage premium reste marginal.", "grille_analyse": "Piège de l'uniformité : payer cher un usage que la majorité ne fera pas.", "renvoi_chapitre": "ch.23.6" },
+        { "id": "B", "label": "Ciblé sur les profils veille / analyse / R&D", "consequence": "Vous réservez le premium aux quelques centaines de profils qui en tirent une vraie valeur profonde (deep research), et laissez la suite native couvrir le quotidien des autres. Le ROI du premium devient lisible.", "grille_analyse": "La bonne réponse : segmentation par population, pas uniformité. Le ROI est dans le ciblage.", "renvoi_chapitre": "ch.23.6" },
+        { "id": "C", "label": "Pas de premium du tout", "consequence": "Vous économisez, mais les profils veille/analyse retournent au shadow AI (ChatGPT perso) pour faire le deep research que la suite native fait mal. Vous avez économisé sur la seule population à fort ROI.", "grille_analyse": "Fausse économie : couper le premium pousse les profils à valeur vers le shadow AI.", "renvoi_chapitre": "ch.16" }
+      ]
+    }
+  ],
+
+  "quiz": [
+    {
+      "question": "Pourquoi le ROI de l'assistant transverse est-il si difficile à chiffrer en Hard ?",
+      "options": [
+        "Parce que le modèle de langage est trop cher",
+        "Parce que le gain est diffus, hétérogène et notoirement difficile à attribuer : déployer des sièges n'est pas créer de la valeur, et le temps gagné se dissout s'il n'est pas réinvesti",
+        "Parce que l'AI Act l'interdit",
+        "Parce qu'il n'y a aucun gain réel"
+      ],
+      "bonne_reponse": 1,
+      "explication": "L'horizontal est dominé par le Soft (ch.23.5) : le gain dépend de l'usage réel, du métier, du réinvestissement du temps. Le seul KPI honnête est le taux d'usage actif cadré — pas le nombre de sièges déployés.",
+      "renvoi_chapitre": "ch.23.5"
+    },
+    {
+      "question": "Quel est le vrai point de départ d'un programme d'assistant transverse ?",
+      "options": [
+        "Le choix du meilleur modèle de langage",
+        "Le shadow AI déjà présent : les collaborateurs utilisent déjà des outils grand public — le cadrer (outil officiel sûr + DLP) bat le combattre",
+        "Le déploiement du maximum de sièges",
+        "La signature d'un contrat suite"
+      ],
+      "bonne_reponse": 1,
+      "explication": "Le shadow AI est le signal d'un besoin réel et le vrai point de départ. Fournir une alternative officielle sûre transforme des contournements invisibles en usages cadrés et mesurables (ch.16 + ch.25).",
+      "renvoi_chapitre": "ch.25"
+    },
+    {
+      "question": "Où se trouve le « build » dans un cas pourtant recommandé en buy ?",
+      "options": [
+        "Dans l'entraînement d'un modèle maison",
+        "Dans la couche de cadrage : les cas d'usage, l'enablement, la gouvernance et la mesure d'usage — pas dans le modèle, qu'on achète",
+        "Dans l'infrastructure GPU",
+        "Il n'y a aucun build"
+      ],
+      "bonne_reponse": 1,
+      "explication": "On achète la suite (on ne build pas l'assistant), mais on construit ce qui crée la valeur : 12 cas d'usage cadrés, l'enablement par les champions, la gouvernance du shadow AI et la mesure de l'usage réel. Le ROI se décide dans cette couche, pas dans la licence.",
+      "renvoi_chapitre": "ch.23.6"
+    }
+  ],
+
+  "verdict": {
+    "stamp": "GO_BUY_CADRE_PAR_USAGE",
+    "label": "GO en buy cadré — la valeur est dans l'usage cadré, pas dans le siège déployé",
+    "conditions": [
+      "KPI honnête = taux d'usage actif cadré + temps réalloué par cas d'usage, jamais le nombre de sièges",
+      "12 cas d'usage cadrés avec enablement (champions) avant toute généralisation",
+      "Gouvernance du shadow AI : outil officiel sûr + DLP + charte, plutôt que répression",
+      "Ménage des droits hérités / partages avant de connecter l'assistant aux données",
+      "Segmentation par population : suite native pour le quotidien, premium deep-research ciblé, option souveraine pour les données sensibles",
+      "Revue de renouvellement des licences conditionnée à l'usage réel — désabonner les sièges dormants"
+    ]
+  },
+
+  "renvois_livre": [
+    "ch.7 boucle agent (deep research : fan-out → vérification → synthèse)",
+    "ch.15 MCP plateforme (deep research interne)",
+    "ch.16 sécurité MCP (droits hérités, shadow AI)",
+    "ch.13 surfaces agentiques (l'assistant dans le poste de travail)",
+    "ch.18 analytics agentique (première passe d'analyse — pont vers CC-03)",
+    "ch.19 évaluation agent",
+    "ch.20 audit trail cognitif (confidentialité des prompts)",
+    "ch.23.5 Hard vs Soft (le ROI fantôme de l'horizontal)",
+    "ch.23.6 arbre de décision méthode ROI",
+    "ch.23.7 paradoxe agentique (le poste qui crée la valeur est le plus dur à attribuer)",
+    "ch.25 gouvernance AI Act (transparence, shadow AI)",
+    "ch.26 IA et travail (réinvestissement du temps, montée en compétences)"
+  ],
+
+  "figures": [
+    {
+      "id": "fig-00",
+      "titre": "Le poste de travail numérique — où vit l'assistant, et où entre le shadow AI",
+      "fichier": "images/CC-00-assistant-transverse/CC-00-fig-00-poste-travail.svg",
+      "caption": "L'architecture réelle de l'assistant transverse : poste de travail + suite collaborative (mail/docs/drive/visio), IdP/SSO qui décide des droits hérités, intranet/KB pour la veille, DLP/CASB et console d'usage en pilotage. Le shadow AI grand public est dessiné comme le vrai point de départ, pas comme un dérapage marginal."
+    },
+    {
+      "id": "fig-01",
+      "titre": "Le ROI fantôme — l'entonnoir du siège déployé à la valeur",
+      "fichier": "images/CC-00-assistant-transverse/CC-00-fig-01-roi-fantome.svg",
+      "caption": "9 200 sièges déployés → sièges activés → usage régulier → usage cadré à valeur. La falaise entre « déployé » et « à valeur » est le ROI fantôme : le siège est un coût fixe par tête, le seul levier est le taux d'usage cadré."
+    },
+    {
+      "id": "fig-02",
+      "titre": "La boucle de deep research agentique — fan-out, vérification, synthèse",
+      "fichier": "images/CC-00-assistant-transverse/CC-00-fig-02-deep-research.svg",
+      "caption": "Le sous-usage le plus transformant : planification → recherche en éventail (web + sources internes via MCP) → vérification adverse → synthèse citée → livraison. La méthode même qui produit les dossiers illustrés — clin d'œil méta du cas."
+    },
+    {
+      "id": "fig-03",
+      "titre": "Huit postes sur quatre phases — l'inférence est une licence par tête",
+      "fichier": "images/CC-00-assistant-transverse/CC-00-fig-03-postes-phases.svg",
+      "caption": "Largeur de chaque colonne ∝ coût total de la phase, hauteur de chaque bloc = part du poste. L'inférence est une licence par tête (coût fixe, sans économie d'échelle, qui ne baisse que par désabonnement des dormants) ; le change (enablement) et la gouvernance dominent. Le coût par usage à valeur baisse par montée du taux d'usage cadré, pas par optimisation technique."
+    }
+  ]
+}

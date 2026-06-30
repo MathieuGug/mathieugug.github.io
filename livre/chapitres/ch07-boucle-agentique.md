@@ -20,7 +20,7 @@ date_maj: 2026-05-29
 > [!TLDR] TL;DR décideur
 > - ==Le modèle s'est banalisé, le harness est devenu différenciant.== 2025 a été l'année des agents ; 2026 est l'année des **harnesses agentiques** (Gupta, janvier 2026)[^3]. Le verrou n'est plus le LLM — c'est le code qui gère `stop_reason`, tools, retries, budget de tours, compaction, hooks.
 > - **Une seule boucle invariante** sous toutes les variantes : *Reason · Act · Observe* (Yao 2022, formalisée ReAct[^4]), instanciée comme *Gather · Act · Verify* dans l'Agent SDK Anthropic et comme *TAOR* dans les SDK vendor. Le harness pivote sur un champ — `stop_reason` — et c'est lui, pas le modèle, qui décide quand rendre la main, quand replanifier, quand demander une approbation humaine.
-> - **Sept couches** structurent un harness production-grade : modèle, boucle de contrôle, contexte, outils & sandbox, mémoire, observabilité, gouvernance. **Aucune couche n'est optionnelle** une fois passé le POC — mais leur **complexité doit décroître** à mesure que les modèles s'améliorent (règle Anthropic : *which scaffolding is still load-bearing ?*).
+> - **Sept couches** structurent un harness production-grade : modèle, boucle de contrôle, contexte, outils & sandbox, mémoire, observabilité, gouvernance. **Aucune couche n'est optionnelle** une fois passé le POC — mais leur **complexité doit décroître** à mesure que les modèles s'améliorent (règle Anthropic : *which scaffolding is still qui porte encore ?*).
 > - **Architecture canonique des tâches longues** : pattern à trois agents inspiré des GAN (planner / generator / evaluator). Sur un build full-stack de 6 heures : mono-agent = 20 min, 9 $, livrables non fonctionnels ; trois agents séparés = 6 h, 200 $, application livrée et testée[^5]. ==La séparation des rôles crée un signal correctif que l'auto-critique ne fournit pas.==
 > - **Une pyramide d'adoption à 4 étages** (§7.9) distribue qui s'en sert : transverse (knowledge workers), data quotidien, data expert, produit/décideurs. Le sommet n'est pas mieux que la base — il est **plus stratégique**, parce qu'il cadre les permissions et les SLA pour les autres étages.
 > - **Trois pièges à 100 % traçables** : laisser tourner la boucle sans budget de tours (loop infinie), exposer `execute_sql` sans scoping ni sandbox (exfiltration en 3 tours), sortir l'artillerie multi-agent pour un besoin qu'un workflow aurait résolu (×10-15 tokens, mois vs semaines, debug exponentiel).
@@ -172,7 +172,7 @@ Le rapport coût/qualité est instructif. Sur l'exemple d'un *retro game maker* 
 
 **Les agents communiquent par fichiers, pas par messages.** Les specs, le journal de progression, la liste des features, les artefacts de test : tout passe par le système de fichiers. Cette discipline garde le travail fidèle aux spécifications sans sur-contraindre les agents — et garde la fenêtre de contexte légère (le sub-agent renvoie un résumé, pas l'intégralité de son travail).
 
-**La complexité du harness doit décroître à mesure que les modèles s'améliorent.** Le harness initial d'Anthropic incluait des *context resets* durs entre sessions (héritage de l'anxiété de contexte de Sonnet 4.5). Avec Opus 4.5 puis 4.6, les context resets ont disparu, la décomposition en sprints a été simplifiée. ==Le test à appliquer périodiquement : quel scaffolding est encore *load-bearing* ? Le reste alourdit sans servir.==
+**La complexité du harness doit décroître à mesure que les modèles s'améliorent.** Le harness initial d'Anthropic incluait des *context resets* durs entre sessions (héritage de l'anxiété de contexte de Sonnet 4.5). Avec Opus 4.5 puis 4.6, les context resets ont disparu, la décomposition en sprints a été simplifiée. ==Le test à appliquer périodiquement : quel scaffolding est encore *pivot* ? Le reste alourdit sans servir.==
 
 **L'evaluator capture les bugs de last-mile.** Même quand le generator est excellent, c'est l'evaluator qui détecte les routes mal câblées, les états cassés, les états initiaux manquants. La critique externalisée force le système à converger sur du fonctionnel, pas sur du *« semble fonctionner »*.
 
@@ -243,7 +243,7 @@ Une app de production combine typiquement les trois. **Tools** pour les ~5 actio
 
 ### 7.5.5 Le cas SQL — un mini-arbre de décision
 
-Pour donner accès à une base à un agent, vous avez le choix entre les trois paradigmes, et ce choix est **load-bearing pour la sécurité** :
+Pour donner accès à une base à un agent, vous avez le choix entre les trois paradigmes, et ce choix est **déterminant pour la sécurité** :
 
 - **Tool** quand vous voulez contrôle strict, masking de colonnes sensibles, et RBAC déterministe. Vous exposez `executeQuery` avec un whitelist de tables et un parser qui retire les colonnes PII. L'agent ne peut faire que ce que le tool permet. C'est la voie pour la prod régulée (BFSI, healthcare, secteur public).
 - **Bash / codegen** quand vous voulez du SQL dynamique avec feedback loop. L'agent écrit une requête, voit l'erreur de syntaxe, corrige, relance. C'est plus puissant pour de l'analyse exploratoire mais beaucoup plus dur à sécuriser — la combinatoire d'attaque sur le shell est ouverte. Réserver à l'exploratoire et au prototype.
@@ -323,17 +323,17 @@ Trois sub-agents built-in chez Claude Code : `Explore` (read-only, parfait pour 
 
 L'observabilité agentique n'est pas l'observabilité classique. Les outils APM (Datadog, Dynatrace, New Relic) instrumentent encore essentiellement la latence, les erreurs et l'utilisation de ressources. ==Sur un agent, ces métriques ratent l'essentiel : *est-ce que la sortie est bonne*.==[^16]
 
-Six piliers structurent une observabilité production-grade. On les résume ici parce qu'ils traversent les six autres couches de la §7.2 — le détail vendor landscape et la grille de maturité sont en **[Ch. 18](ch18-observabilite-cognitive-audit-trail.md)** :
+Six piliers structurent une observabilité production-grade. On les résume ici parce qu'ils traversent les six autres couches de la §7.2 — le détail vendor landscape et la grille de maturité sont en **[Ch. 20](ch20-observabilite-cognitive-audit-trail.md)** :
 
 - **Traces** — OpenTelemetry a ratifié en 2025 ses *GenAI Semantic Conventions* (`gen_ai.system`, `gen_ai.request.model`, `gen_ai.usage.prompt_tokens`). Discipline (Azure SRE Agent à nouveau) : tronquer dans le span, persister le payload complet en sandbox.
 - **Métriques de qualité** — LLM-as-Judge online sur chaque interaction en production (pas seulement en offline) pour détecter les régressions en temps réel. Coinbase l'a institutionnalisé : second LLM as judge pour le spot-checking et le confidence scoring[^17].
 - **Coût** — token economics par session, par utilisateur, par cas d'usage. Le risque de boucle infinie (anxiété de contexte + retry sans limite) coûte cher. **Hard cap par session, kill-switch automatique, alerting sur taux de tool calls > seuil.**
 - **Drift comportemental** — agents en production dérivent. La distribution des inputs change (saisonnalité, nouveaux usages), les modèles backend sont mis à jour par le fournisseur (sans préavis explicite parfois), les outils intégrés évoluent.
 - **Guardrails** — politiques d'usage, détection de PII en sortie, redaction, blocage d'outils hors scope. Les violations sont des alertes critiques (PagerDuty, OpsGenie), pas des incidents informationnels.
-- **Audit trail réglementaire** — pour les secteurs régulés (BFSI, healthcare, legal), un enregistrement immuable de chaque exécution : quelles données ont été utilisées, comment, quel raisonnement, qui a approuvé. ==Le **cognitive audit trail** ([Ch. 18](ch18-observabilite-cognitive-audit-trail.md) §18.3) est devenu en 2026 la nouvelle catégorie de log : rétention longue, signature cryptographique, droit d'accès art. 22 RGPD.==
+- **Audit trail réglementaire** — pour les secteurs régulés (BFSI, healthcare, legal), un enregistrement immuable de chaque exécution : quelles données ont été utilisées, comment, quel raisonnement, qui a approuvé. ==Le **cognitive audit trail** ([Ch. 20](ch20-observabilite-cognitive-audit-trail.md) §20.3) est devenu en 2026 la nouvelle catégorie de log : rétention longue, signature cryptographique, droit d'accès art. 22 RGPD.==
 
-> [!INFO] Voir [Ch. 18 — Observabilité agentique et cognitive audit trail](ch18-observabilite-cognitive-audit-trail.md)
-> L'observabilité est posée ici **comme couche d'un harness**. Le [Ch. 18](ch18-observabilite-cognitive-audit-trail.md) traite la grille complète : vendor landscape (Langfuse, Braintrust, Arize, LangSmith, Dynatrace, AgentCore), échelle de maturité (POC → audit → cognitive trail), et l'attribut `gen_ai.compaction.*` du WG OpenTelemetry actif fin 2026 (cf. [Ch. 10](ch10-compaction.md) §10.9).
+> [!INFO] Voir [Ch. 20 — Observabilité agentique et cognitive audit trail](ch20-observabilite-cognitive-audit-trail.md)
+> L'observabilité est posée ici **comme couche d'un harness**. Le [Ch. 20](ch20-observabilite-cognitive-audit-trail.md) traite la grille complète : vendor landscape (Langfuse, Braintrust, Arize, LangSmith, Dynatrace, AgentCore), échelle de maturité (POC → audit → cognitive trail), et l'attribut `gen_ai.compaction.*` du WG OpenTelemetry actif fin 2026 (cf. [Ch. 10](ch10-compaction.md) §10.9).
 
 ---
 
@@ -350,10 +350,10 @@ Thariq Shihipar (Anthropic, mai 2026) décrit la sécurité d'un agent bash-driv
 **Couche 3 — Sandbox env.** Isolation réseau (l'agent ne peut pas appeler des endpoints arbitraires), filesystem scope (l'agent ne voit que `/workspace`, pas `/etc`), execution scope (pas d'accès root, limites de CPU/RAM). C'est ce qui empêche l'exfiltration de données et limite le *blast radius* en cas de compromission. Les providers cités (Cloudflare Sandbox, Modal, E2B, Daytona) implémentent déjà ces garanties.
 
 > [!WARNING] Le piège classique de la couche outils
-> Exposer `execute_sql` sans scoping ni sandbox. Sous prompt injection indirecte, l'agent exfiltre la base en **trois tours**. Variante : le **tool poisoning** — une description d'outil malicieuse détourne l'intention. OWASP ASI02 documente la famille entière[^13]. ==La défense passe par : tagging des sources (chaque token porte un tag `user` / `system` / `tool:web` / `tool:rag` que le compactor doit préserver — cf. [Ch. 10](ch10-compaction.md) §10.7), sandbox isolée, allowlist namespace pour les tools MCP (cf. [Ch. 13](ch13-mcp-securite.md)).==
+> Exposer `execute_sql` sans scoping ni sandbox. Sous prompt injection indirecte, l'agent exfiltre la base en **trois tours**. Variante : le **tool poisoning** — une description d'outil malicieuse détourne l'intention. OWASP ASI02 documente la famille entière[^13]. ==La défense passe par : tagging des sources (chaque token porte un tag `user` / `system` / `tool:web` / `tool:rag` que le compactor doit préserver — cf. [Ch. 10](ch10-compaction.md) §10.7), sandbox isolée, allowlist namespace pour les tools MCP (cf. [Ch. 16](ch16-mcp-securite.md)).==
 
-> [!INFO] Voir [Ch. 13 — Sécurité MCP](ch13-mcp-securite.md) et [Ch. 19 — Garde-fous et sécurité globale](ch19-gardefous-securite-globale.md)
-> La matrice défensive **10 vecteurs × 10 patterns** pour les serveurs MCP est traitée en [Ch. 13](ch13-mcp-securite.md). La synthèse transverse — modèle / prompt / mémoire / outil / protocole / surface — est en [Ch. 19](ch19-gardefous-securite-globale.md) (schéma E4 du threat model unifié 2026).
+> [!INFO] Voir [Ch. 16 — Sécurité MCP](ch16-mcp-securite.md) et [Ch. 21 — Garde-fous et sécurité globale](ch21-gardefous-securite-globale.md)
+> La matrice défensive **10 vecteurs × 10 patterns** pour les serveurs MCP est traitée en [Ch. 16](ch16-mcp-securite.md). La synthèse transverse — modèle / prompt / mémoire / outil / protocole / surface — est en [Ch. 21](ch21-gardefous-securite-globale.md) (schéma E4 du threat model unifié 2026).
 
 ### 7.8.1 Agent sprawl et cascade d'erreurs — les deux risques systémiques 2026
 
@@ -440,7 +440,7 @@ Trois règles transverses :
 - **Plus les actions sont destructives, plus les tools déclarés gagnent sur le bash libre.** Un agent qui envoie des emails à des clients ou modifie des données de production doit le faire via tools auditables, pas via shell.
 - **Plus l'analyse est ad hoc et exploratoire, plus le codegen + bash gagne.** Un agent de recherche ou de data analysis profite massivement de la flexibilité — la rigueur s'ajoute via les hooks et la vérification.
 
-> [!INFO] Voir [Ch. 20 — Runtime managé et déploiement](ch20-runtime-manage.md)
+> [!INFO] Voir [Ch. 22 — Runtime managé et déploiement](ch22-runtime-manage.md)
 > La voie 4 (Managed Agents) y est traitée en profondeur : matrice vendor (Bedrock AgentCore / Vertex Agent Engine / Foundry Agent Service / Claude Managed Agents / OpenAI Agent Builder), pricing consumption-based, dépendance et **code-first + protocoles ouverts** (MCP, A2A) comme meilleure assurance anti-lock-in.
 
 ---
@@ -461,7 +461,7 @@ La question que pose tout COMEX éclairé en 2026 : *combien*, *combien de temps
 
 **Coûts de fonctionnement.** 3 200 à 13 000 $ par mois pour un agent en production servant des utilisateurs réels, selon le volume et la complexité des requêtes[^22]. La conséquence implicite : ==le **cost-per-successful-task** — pas le cost-per-token — devient l'indicateur central.== Vercel cite un repère : un agent DevOps automatisé résout une erreur de déploiement pour 2 $ de compute là où un ingénieur humain coûte 150 $ de labor chargé pour la même heure.
 
-> [!INFO] Voir [Ch. 21 — Mesurer le ROI (et le paradoxe agentique)](ch21-roi-paradoxe-agentique.md)
+> [!INFO] Voir [Ch. 23 — Mesurer le ROI (et le paradoxe agentique)](ch23-roi-paradoxe-agentique.md)
 > Le chapitre charnière de l'Acte IV traite la **productivity J-curve** (Brynjolfsson), les 5 frameworks de mesure (Cigref, McKinsey, BCG, MIT NANDA, Forrester TEI), et le **paradoxe agentique** — le changement d'unité de mesure à mesure que l'agent monte la pile de valeur (token → tâche → processus → outcome). Le cas Klarna (67 % automatisé puis recul partiel sur les 5 % de cas charge émotionnelle) y est traité comme illustration centrale.
 
 ---

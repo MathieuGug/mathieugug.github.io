@@ -203,7 +203,7 @@ The 280 ms transition matches the layout's `grid-template-columns: 280ms ease` s
 - On viewports between 1025 and 1320 (default state), `main#report` already fills the cell (no centering offset), so the inner `(100vw - 1320) / 2 + 48` is negative-or-small; the `max(0px, …)` clamps the negative case to 0 and you get `margin-inline: 0`. Correct, but worth knowing if you debug a narrow desktop browser.
 - The pattern requires `body { overflow-x: hidden }` (shipped via the mobile-friendliness defensive overflow above). Defensive — this CSS shouldn't actually trigger overflow if the math is right.
 - Below `1025px`, the layout collapses to a single column. Figures naturally fill the column, no override needed.
-- **Don't reintroduce `max-width: 1440px; margin: 0 auto` on `.layout`** — it caps the grid mid-viewport on 1440+ screens, leaves empty bands on the sides, and pushes the Sources collapse button (`right: 320px`) off the panel's left edge. The uncapped layout is the load-bearing assumption of these formulas.
+- **Don't reintroduce `max-width: 1440px; margin: 0 auto` on `.layout`** — it caps the grid mid-viewport on 1440+ screens, leaves empty bands on the sides, and pushes the Sources collapse button (`right: 320px`) off the panel's left edge. The uncapped layout is the pivot assumption of these formulas.
 
 For narrative/journal pages with a simple `.wrap { max-width: 760px }` (no grid, no sidebars), the simple `calc(50% - 50vw)` pattern works pixel-perfectly because the parent IS centered in the viewport. Reference: `proces-musk-altman/journal.html` on the host site.
 

@@ -249,8 +249,8 @@ Les défenses connues couvrent plusieurs niveaux, et aucune n'est suffisante seu
 - **Utilisateur** : *tableau de bord mémoire* permettant de visualiser, corriger et oublier sélectivement — recommandé par les contributeurs IMA[^16] et désormais standard chez Anthropic et OpenAI ; mode Incognito pour les conversations sensibles.
 - **Organisation** : audit régulier, purge périodique, sources de confiance documentées.
 
-> [!INFO] Voir [Ch. 19 — Garde-fous et sécurité globale](ch19-gardefous-securite-globale.md)
-> Le vecteur memory poisoning est l'une des six branches du **schéma essentiel transverse E4** (modèle / prompt / mémoire / outil / protocole / surface) qui agrège, en [Ch. 19](ch19-gardefous-securite-globale.md), l'ensemble des surfaces d'attaque 2026. La verticale mémoire est traitée ici ; le [Ch. 13](ch13-mcp-securite.md) traite la verticale outil/protocole (MCP) ; le [Ch. 19](ch19-gardefous-securite-globale.md) fournit la matrice transverse pour le RSSI.
+> [!INFO] Voir [Ch. 21 — Garde-fous et sécurité globale](ch21-gardefous-securite-globale.md)
+> Le vecteur memory poisoning est l'une des six branches du **schéma essentiel transverse E4** (modèle / prompt / mémoire / outil / protocole / surface) qui agrège, en [Ch. 21](ch21-gardefous-securite-globale.md), l'ensemble des surfaces d'attaque 2026. La verticale mémoire est traitée ici ; le [Ch. 16](ch16-mcp-securite.md) traite la verticale outil/protocole (MCP) ; le [Ch. 21](ch21-gardefous-securite-globale.md) fournit la matrice transverse pour le RSSI.
 
 ### 9.7.3 RGPD, AI Act et le défi du *machine unlearning*
 
@@ -264,8 +264,8 @@ Les contributeurs IMA distinguent à juste titre deux régimes[^16] :
 > [!IMPORTANT] La gouvernance tactique en trois actions
 > (1) **Consentement explicite et durée de rétention bornée** (par exemple 6 mois renouvelables), (2) **gestion documentée de l'effacement** sur le périmètre opérationnel, (3) **reconnaissance explicite des limites** sur le périmètre paramétrique. ==Cette honnêteté technique est un déterminant de confiance, pas un aveu de faiblesse.==
 
-> [!INFO] Voir [Ch. 23 — Gouvernance, machine unlearning et AI Act](ch23-gouvernance-ai-act.md)
-> [Ch. 23](ch23-gouvernance-ai-act.md) traite la grille réglementaire dans son ensemble (calendrier 2026-2027, sous-puits *machine unlearning*, rôle DPO/RSSI/Sponsor). Le détail mémoire persistante est instancié ici.
+> [!INFO] Voir [Ch. 25 — Gouvernance, machine unlearning et AI Act](ch25-gouvernance-ai-act.md)
+> [Ch. 25](ch25-gouvernance-ai-act.md) traite la grille réglementaire dans son ensemble (calendrier 2026-2027, sous-puits *machine unlearning*, rôle DPO/RSSI/Sponsor). Le détail mémoire persistante est instancié ici.
 
 ---
 
@@ -295,8 +295,8 @@ La transformation d'un agent amnésique en partenaire persistant est moins un *b
 - **Déployer en multi-agents** : partage de mémoire gouverné, *Memory Pool* avec scoring de qualité.
 - **Mémoire procédurale induite** : *Agent Workflow Memory* permet à l'agent d'extraire automatiquement de nouveaux workflows à partir des trajectoires passées[^19], réduisant la maintenance manuelle des prompts complexes.
 
-> [!INFO] Voir [Ch. 18 — Observabilité agentique et cognitive audit trail](ch18-observabilite-cognitive-audit-trail.md)
-> La mesure des indicateurs ci-dessus repose sur la **télémétrie OpenTelemetry GenAI semconv** traitée en [Ch. 18](ch18-observabilite-cognitive-audit-trail.md) (six piliers télémétrie + cognitive audit trail). Les attributs `gen_ai.memory.*` (en cours de spécification par le WG fin 2026, en miroir des `gen_ai.compaction.*` du [Ch. 10](ch10-compaction.md)) sont l'infrastructure de mesure obligatoire pour qui veut défendre son ROI mémoire face à un DPO ou à un auditeur AI Act.
+> [!INFO] Voir [Ch. 20 — Observabilité agentique et cognitive audit trail](ch20-observabilite-cognitive-audit-trail.md)
+> La mesure des indicateurs ci-dessus repose sur la **télémétrie OpenTelemetry GenAI semconv** traitée en [Ch. 20](ch20-observabilite-cognitive-audit-trail.md) (six piliers télémétrie + cognitive audit trail). Les attributs `gen_ai.memory.*` (en cours de spécification par le WG fin 2026, en miroir des `gen_ai.compaction.*` du [Ch. 10](ch10-compaction.md)) sont l'infrastructure de mesure obligatoire pour qui veut défendre son ROI mémoire face à un DPO ou à un auditeur AI Act.
 
 ---
 
@@ -306,7 +306,7 @@ La transformation d'un agent amnésique en partenaire persistant est moins un *b
 
 ==**À retenir** : quatre piliers (travail, sémantique, épisodique, procédurale), six opérations (récupération, consolidation, mise à jour, indexation, compression, oubli), cinq architectures de production (Letta, Generative Agents, A-MEM, Zep, Mem0).== Une architecture mémoire d'entreprise se conçoit en croisant ces trois axes — pas en achetant un framework et en espérant que la grille viendra avec.
 
-Le [Ch. 10](ch10-compaction.md) approfondit immédiatement le pilier *travail* sous l'angle de la **compaction** (cinq familles, triangle non-dégénéré fidélité × coût × oubliabilité). Le [Ch. 19](ch19-gardefous-securite-globale.md) agrège la verticale mémoire dans le **threat model unifié 2026** (schéma E4). Le [Ch. 23](ch23-gouvernance-ai-act.md) prend le sujet par le bout réglementaire (RGPD art. 17, AI Act art. 10/25, machine unlearning). Les trois lectures sont complémentaires — pas redondantes.
+Le [Ch. 10](ch10-compaction.md) approfondit immédiatement le pilier *travail* sous l'angle de la **compaction** (cinq familles, triangle non-dégénéré fidélité × coût × oubliabilité). Le [Ch. 21](ch21-gardefous-securite-globale.md) agrège la verticale mémoire dans le **threat model unifié 2026** (schéma E4). Le [Ch. 25](ch25-gouvernance-ai-act.md) prend le sujet par le bout réglementaire (RGPD art. 17, AI Act art. 10/25, machine unlearning). Les trois lectures sont complémentaires — pas redondantes.
 
 ---
 

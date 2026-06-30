@@ -21,8 +21,8 @@ date_maj: 2026-05-29
 > - ==Le choix des outils exposés est la décision d'architecture la plus chargée de la stack.== Chaque tool ajouté élargit la surface d'attaque autant que la surface de valeur — et il n'existe pas de symétrie entre les deux. La défense est cumulative, la nuisance est multiplicative.
 > - **Un tool, c'est trois choses en une** : un nom (que le modèle voit), une description (un prompt qui dit *quand* l'utiliser), un schéma JSON (le contrat technique des arguments). Les trois sont des prompts ; les trois doivent être travaillés avec la même discipline que le system prompt principal.
 > - **Quatre familles structurent l'écosystème 2026** : tools built-in du vendeur (Read, Bash, WebSearch…), tools server-side managés (web_search facturé à la requête, code_execution sandbox jetable), tools custom déclarés en SDK, tools MCP exposés par un serveur externe via JSON-RPC. Les quatre coexistent dans la même boucle ; aucun n'est substituable.
-> - **La limite molle des ~10 tools** est cognitive et économique. Au-delà, le modèle se perd dans le choix et les descriptions consomment une part disproportionnée du contexte. La parade Anthropic : **wide tools** — peu d'outils généralistes (`Bash`, `Read`, `Edit`, `WebFetch`) qui composent. La parade MCP : namespace + chargement lazy à la demande ([Ch. 12](ch12-mcp-plateforme.md)).
-> - ==Le contrat de retour d'un tool est aussi load-bearing que le schéma d'entrée.== Idempotence pour survivre aux retries du harness, format d'erreur lisible pour le modèle (pas une stack trace), truncation des réponses massives (un `SELECT *` mal calibré peut sortir 200 k tokens et tuer la session), retour par référence-fichier plutôt que par contenu inline. Quatre disciplines que les SDK vendeurs n'imposent pas — vous, oui.
+> - **La limite molle des ~10 tools** est cognitive et économique. Au-delà, le modèle se perd dans le choix et les descriptions consomment une part disproportionnée du contexte. La parade Anthropic : **wide tools** — peu d'outils généralistes (`Bash`, `Read`, `Edit`, `WebFetch`) qui composent. La parade MCP : namespace + chargement lazy à la demande ([Ch. 15](ch15-mcp-plateforme.md)).
+> - ==Le contrat de retour d'un tool est aussi pivot que le schéma d'entrée.== Idempotence pour survivre aux retries du harness, format d'erreur lisible pour le modèle (pas une stack trace), truncation des réponses massives (un `SELECT *` mal calibré peut sortir 200 k tokens et tuer la session), retour par référence-fichier plutôt que par contenu inline. Quatre disciplines que les SDK vendeurs n'imposent pas — vous, oui.
 > - **Trois pièges à 100 % traçables** : exposer `execute_sql` sans scoping ni sandbox (exfiltration en 3 tours), décrire un tool comme une doc API au lieu d'une intention (le modèle l'invoque hors contexte), accepter le tool sprawl par accumulation au lieu de gouverner un catalogue versionné (la dette se paie au prochain audit RSSI).
 
 ---
@@ -34,7 +34,7 @@ date_maj: 2026-05-29
 
 ### 8.1.1 La thèse — la décision la plus chargée de la stack
 
-==Le choix des outils exposés à un agent est la décision d'architecture la plus chargée de la stack.== Plus chargée que le choix du modèle (les frontières tiennent à 1,3 point sur SWE-bench Verified, cf. [Ch. 7](ch07-boucle-agentique.md)), plus chargée que le choix de framework (LangGraph, Agent SDK et OpenAI Agents SDK convergent sur la même boucle), plus chargée que le choix de runtime (managé ou self-hosté, cf. [Ch. 20](ch20-runtime-manage.md)).
+==Le choix des outils exposés à un agent est la décision d'architecture la plus chargée de la stack.== Plus chargée que le choix du modèle (les frontières tiennent à 1,3 point sur SWE-bench Verified, cf. [Ch. 7](ch07-boucle-agentique.md)), plus chargée que le choix de framework (LangGraph, Agent SDK et OpenAI Agents SDK convergent sur la même boucle), plus chargée que le choix de runtime (managé ou self-hosté, cf. [Ch. 22](ch22-runtime-manage.md)).
 
 Trois raisons. D'abord, **les tools déterminent ce que l'agent peut faire au monde**. Un agent sans `executeQuery` ne touchera jamais une base, quoi qu'il décide ; un agent qui l'a peut l'utiliser à mauvais escient au premier prompt injection venu. Le périmètre est posé une fois pour toutes par le code qui instancie l'agent — c'est une décision de design pré-déploiement, pas un paramètre de runtime.
 
@@ -94,7 +94,7 @@ OpenAI a introduit le **function calling** en juin 2023[^2] : le modèle pouvait
 
 Anthropic a publié en novembre 2023 son équivalent, puis l'a renommé **tool use** en mai 2024[^3], avec un type de *content block* dédié dans la réponse (`tool_use`) et un type de réponse côté harness (`tool_result`). Sémantiquement identique au function calling d'OpenAI ; lexicalement différent — `tool_use` insiste sur l'idée que le modèle ne *fait* rien, il *propose* un usage. C'est le harness qui décide d'exécuter.
 
-Le **MCP** (Model Context Protocol) est arrivé en novembre 2024, également chez Anthropic. Il ne remplace pas le tool_use — il le **réindexe**. Avec MCP, les tools ne sont plus déclarés dans le code de l'application, ils sont **exposés par un serveur externe** que l'agent découvre à l'exécution via JSON-RPC. Donation à la Linux Foundation en décembre 2025, 7 500 serveurs publics et 97 millions de téléchargements SDK mensuels en avril 2026. Le [Ch. 12](ch12-mcp-plateforme.md) traite la promesse, le [Ch. 13](ch13-mcp-securite.md) documente le coût en surface d'attaque.
+Le **MCP** (Model Context Protocol) est arrivé en novembre 2024, également chez Anthropic. Il ne remplace pas le tool_use — il le **réindexe**. Avec MCP, les tools ne sont plus déclarés dans le code de l'application, ils sont **exposés par un serveur externe** que l'agent découvre à l'exécution via JSON-RPC. Donation à la Linux Foundation en décembre 2025, 7 500 serveurs publics et 97 millions de téléchargements SDK mensuels en avril 2026. Le [Ch. 15](ch15-mcp-plateforme.md) traite la promesse, le [Ch. 16](ch16-mcp-securite.md) documente le coût en surface d'attaque.
 
 ### 8.2.3 Le pivot pratique — `stop_reason: "tool_use"`
 
@@ -121,7 +121,7 @@ Tools dont la description et le schéma sont exposés par le vendeur, mais dont 
 - **`web_search`** — accès live au web, GA depuis avril 2026. Le modèle émet une requête, le vendeur l'exécute sur son infrastructure de search, le résultat (titres + snippets + URLs) revient dans le `tool_result`. Facturation **à la requête** — pas seulement au token. Un agent qui googleerait 50 fois par session coûte autant en search qu'en inférence.
 - **`code_execution`** — sandbox Python/JS jetable entre les tours. L'agent émet du code, le vendeur l'exécute dans un environnement isolé, le stdout/stderr revient. **Gratuit chez Anthropic quand couplé à `web_search`**, ce qui modifie le calcul : un agent de recherche profite massivement de la composition.
 
-Côté gouvernance, ces tools sont une **dépendance vendor explicite**. Vous n'opérez pas la sandbox, vous n'auditez pas l'index de search, vous ne contrôlez pas la propagation d'une nouvelle CVE découverte dans le runtime managé. À mettre en regard de la matrice du [Ch. 20](ch20-runtime-manage.md) (runtime managé vs self-hosté).
+Côté gouvernance, ces tools sont une **dépendance vendor explicite**. Vous n'opérez pas la sandbox, vous n'auditez pas l'index de search, vous ne contrôlez pas la propagation d'une nouvelle CVE découverte dans le runtime managé. À mettre en regard de la matrice du [Ch. 22](ch22-runtime-manage.md) (runtime managé vs self-hosté).
 
 ### 8.3.3 Custom tools déclarés en SDK
 
@@ -133,10 +133,10 @@ C'est le cas générique : vous déclarez un tool dans la config du SDK, le mod�
 
 Tools exposés par un serveur externe via JSON-RPC. L'agent découvre le serveur (URL + auth), liste ses tools, et les invoque comme s'ils étaient locaux. Côté code applicatif, c'est transparent : un tool MCP a la même surface qu'un custom tool, le runtime gère la transport layer.
 
-Côté gouvernance, c'est tout sauf transparent. Un serveur MCP peut être tiers (`@modelcontextprotocol/server-github`), interne (votre propre serveur exposant le data warehouse), ou hostile (le **tool poisoning** OWASP ASI02[^5]). La dyade [Ch. 12](ch12-mcp-plateforme.md) (MCP plateforme) / [Ch. 13](ch13-mcp-securite.md) (sécurité MCP) traite ce sujet en profondeur — retenir ici : ==un tool MCP n'est pas neutre, c'est un tool dont la description et le schéma viennent d'un tiers==. Sigstore + hash pinning, allowlist namespace, HITL writes : les quatre patterns load-bearing du [Ch. 13](ch13-mcp-securite.md) s'appliquent ici.
+Côté gouvernance, c'est tout sauf transparent. Un serveur MCP peut être tiers (`@modelcontextprotocol/server-github`), interne (votre propre serveur exposant le data warehouse), ou hostile (le **tool poisoning** OWASP ASI02[^5]). La dyade [Ch. 15](ch15-mcp-plateforme.md) (MCP plateforme) / [Ch. 16](ch16-mcp-securite.md) (sécurité MCP) traite ce sujet en profondeur — retenir ici : ==un tool MCP n'est pas neutre, c'est un tool dont la description et le schéma viennent d'un tiers==. Sigstore + hash pinning, allowlist namespace, HITL writes : les quatre patterns pivots du [Ch. 16](ch16-mcp-securite.md) s'appliquent ici.
 
-> [!INFO] Voir [Ch. 12 — MCP plateforme](ch12-mcp-plateforme.md) et [Ch. 13 — Sécurité MCP](ch13-mcp-securite.md)
-> [Ch. 12](ch12-mcp-plateforme.md) traite l'effet de réseau et la promesse d'interopérabilité (97 M téléchargements/mois, donation Linux Foundation, layering avec function calling / OpenAPI / A2A). [Ch. 13](ch13-mcp-securite.md) documente le coût : 10 vecteurs × 10 patterns défensifs, 6 trust boundaries, 4 familles d'attaques. MCP est une famille d'outils parmi quatre, qui hérite des disciplines §8.5 et §8.6 *en plus* d'un threat model propre.
+> [!INFO] Voir [Ch. 15 — MCP plateforme](ch15-mcp-plateforme.md) et [Ch. 16 — Sécurité MCP](ch16-mcp-securite.md)
+> [Ch. 15](ch15-mcp-plateforme.md) traite l'effet de réseau et la promesse d'interopérabilité (97 M téléchargements/mois, donation Linux Foundation, layering avec function calling / OpenAPI / A2A). [Ch. 16](ch16-mcp-securite.md) documente le coût : 10 vecteurs × 10 patterns défensifs, 6 trust boundaries, 4 familles d'attaques. MCP est une famille d'outils parmi quatre, qui hérite des disciplines §8.5 et §8.6 *en plus* d'un threat model propre.
 
 ### 8.3.5 Tableau récap — qui fait quoi
 
@@ -182,7 +182,7 @@ Le second levier vient du protocole MCP[^7]. Un serveur MCP peut exposer cinquan
 - **Namespace** — les tools sont préfixés par le nom du serveur (`github:create_issue`, `slack:send_message`). Le modèle voit la liste compacte des serveurs, pas l'inventaire détaillé.
 - **Chargement lazy** — l'agent peut lister les tools d'un serveur uniquement quand il en a besoin (via `tools/list` côté MCP), ce qui transforme la *« cinquantaine de tools »* en *« une dizaine de serveurs »* du point de vue de la charge contextuelle.
 
-==La limite molle des dix tools devient alors une limite molle des dix *serveurs*, ce qui est un ordre de grandeur plus tractable.== À condition d'avoir une gouvernance du catalogue de serveurs MCP — et c'est précisément le sujet du [Ch. 13](ch13-mcp-securite.md).
+==La limite molle des dix tools devient alors une limite molle des dix *serveurs*, ce qui est un ordre de grandeur plus tractable.== À condition d'avoir une gouvernance du catalogue de serveurs MCP — et c'est précisément le sujet du [Ch. 16](ch16-mcp-securite.md).
 
 ---
 
@@ -218,7 +218,7 @@ Conséquence opérationnelle : ==traiter les descriptions de tools comme des pro
 
 ### 8.6.1 Pourquoi le retour mérite autant d'attention que l'entrée
 
-La plupart des SDK et des tutoriels insistent sur le schéma d'**input** — les arguments que le modèle doit produire. Le schéma d'**output** est presque toujours laissé libre, considéré comme la sortie naturelle du handler. C'est une erreur. ==Le contrat de retour est aussi load-bearing que le schéma d'entrée==, parce qu'il détermine ce que le modèle voit au tour suivant et ce qu'il en fait.
+La plupart des SDK et des tutoriels insistent sur le schéma d'**input** — les arguments que le modèle doit produire. Le schéma d'**output** est presque toujours laissé libre, considéré comme la sortie naturelle du handler. C'est une erreur. ==Le contrat de retour est aussi pivot que le schéma d'entrée==, parce qu'il détermine ce que le modèle voit au tour suivant et ce qu'il en fait.
 
 Quatre disciplines structurent un bon contrat de retour. Aucune n'est imposée par les SDK vendeurs — c'est à vous de les coder.
 
@@ -254,7 +254,7 @@ C'est le pendant côté retour de ce que le [Ch. 7](ch07-boucle-agentique.md) §
 
 Dernier discipline, souvent oubliée : chaque invocation d'un tool doit laisser une trace **structurée** auditable a posteriori. Pas un log applicatif générique, un audit log dédié avec : qui (utilisateur final), quoi (nom du tool + arguments), quand (timestamp ms), pour quel agent (session id), résultat (succès/erreur, taille du retour, latence), et — pour les actions destructives — le hash de la confirmation HITL si applicable.
 
-C'est ce qui transforme un agent en système auditable au sens du RGPD art. 22 et de l'AI Act art. 12-13. ==Sans audit log structuré dès le jour 1, vous ne ferez pas le cognitive audit trail du [Ch. 18](ch18-observabilite-cognitive-audit-trail.md) §18.3 — vous le bricolerez en urgence le jour où votre DPO le demandera, en réindexant des logs applicatifs qui ne contiennent pas la moitié des champs nécessaires.==
+C'est ce qui transforme un agent en système auditable au sens du RGPD art. 22 et de l'AI Act art. 12-13. ==Sans audit log structuré dès le jour 1, vous ne ferez pas le cognitive audit trail du [Ch. 20](ch20-observabilite-cognitive-audit-trail.md) §20.3 — vous le bricolerez en urgence le jour où votre DPO le demandera, en réindexant des logs applicatifs qui ne contiennent pas la moitié des champs nécessaires.==
 
 ---
 
@@ -280,7 +280,7 @@ Le second mode d'échec est moins évident. Avec MCP (§8.3.4), la description d
 
 ==Le modèle lit la description et l'exécute comme une instruction.== Il n'a pas de mécanisme natif pour distinguer une description bénigne d'une description hostile. C'est le **tool poisoning** que documente OWASP ASI02[^5]. La famille d'attaques inclut aussi le **cross-server confusion** (deux serveurs qui exposent des tools de même nom, l'agent invoque le mauvais) et le **shadowing** (un tool malicieux qui redéfinit le comportement d'un tool légitime).
 
-La matrice défensive 10 × 10 du [Ch. 13](ch13-mcp-securite.md) traite ces vecteurs en profondeur. Retenir ici : ==la description d'un tool MCP doit être traitée comme un input non-fiable== — signée (Sigstore + hash pinning, roadmap automne 2026), namespace-isolée (allowlist), et validée avant chargement.
+La matrice défensive 10 × 10 du [Ch. 16](ch16-mcp-securite.md) traite ces vecteurs en profondeur. Retenir ici : ==la description d'un tool MCP doit être traitée comme un input non-fiable== — signée (Sigstore + hash pinning, roadmap automne 2026), namespace-isolée (allowlist), et validée avant chargement.
 
 ### 8.7.3 Le principe transverse — least agency appliqué aux tools
 
@@ -290,8 +290,8 @@ Le principe **least agency** (déjà rencontré au [Ch. 7](ch07-boucle-agentique
 - **Scope par tool, pas par agent** — chaque tool a sa propre clé API, son propre RBAC, son propre sandbox. Un agent compromis sur un tool ne donne pas accès aux autres.
 - **HITL sur les actions destructives** — toute action irréversible (envoi de message, mutation de prod, transaction de paiement) passe par une confirmation humaine via le hook `PreToolUse` ([Ch. 7](ch07-boucle-agentique.md) §7.6.2). C'est une friction acceptée par design — la friction est moins coûteuse que l'incident.
 
-> [!INFO] Voir [Ch. 13 — Sécurité MCP](ch13-mcp-securite.md) et [Ch. 19 — Garde-fous et sécurité globale](ch19-gardefous-securite-globale.md)
-> [Ch. 13](ch13-mcp-securite.md) instancie ces disciplines sur le cas spécifique de MCP : matrice 10 vecteurs × 10 patterns, 6 trust boundaries, 4 familles d'attaques. [Ch. 19](ch19-gardefous-securite-globale.md) unifie en un threat model transverse (modèle / prompt / mémoire / outil / protocole / surface) qui pousse à inclure la couche tools dans la posture RSSI dès le premier audit.
+> [!INFO] Voir [Ch. 16 — Sécurité MCP](ch16-mcp-securite.md) et [Ch. 21 — Garde-fous et sécurité globale](ch21-gardefous-securite-globale.md)
+> [Ch. 16](ch16-mcp-securite.md) instancie ces disciplines sur le cas spécifique de MCP : matrice 10 vecteurs × 10 patterns, 6 trust boundaries, 4 familles d'attaques. [Ch. 21](ch21-gardefous-securite-globale.md) unifie en un threat model transverse (modèle / prompt / mémoire / outil / protocole / surface) qui pousse à inclure la couche tools dans la posture RSSI dès le premier audit.
 
 ### 8.7.4 Gouverner un catalogue, pas accumuler des tools
 

@@ -143,8 +143,8 @@ où `α` est l'acceptance rate par token, K le nombre de tokens proposés, `T_ta
 
 EAGLE-3 et Medusa-2 incluent des mécanismes de **draft tree dynamique** qui adaptent la profondeur K et la largeur (nombre de branches dans le tree) à la confiance courante : sur une zone à haute prédictibilité (génération de code structuré), le tree pousse à K=8 et largeur 4 ; sur une zone créative, il retombe à K=3 et largeur 1 — voire désactive temporairement la spéculation jusqu'à ce qu'on quitte la zone difficile. Cette adaptativité est ce qui distingue une intégration GA mature (vLLM 0.6+, TensorRT-LLM 0.9+) d'un prototype académique[^4][^9][^10].
 
-> [!INFO] Voir [Ch. 18 — Observabilité agentique et cognitive audit trail](ch18-observabilite-cognitive-audit-trail.md)
-> L'OpenTelemetry GenAI semconv WG a ouvert mi-2026 un sous-groupe `gen_ai.speculative.*` qui standardise les champs `acceptance_rate`, `draft_model.id`, `draft_model.version`, `accepted_tokens`, `rejected_tokens`, `tree_depth`, `tree_width`. Pour le décideur, c'est la condition pour que l'instrumentation d'α devienne **portable entre vendeurs** au lieu de rester captive de chaque framework — exactement comme `gen_ai.usage.*` a permis de comparer les coûts token cross-provider depuis 2025. Le pattern complet de l'OTel GenAI semconv tient en [Ch. 18](ch18-observabilite-cognitive-audit-trail.md) : cognitive audit trail, 6 piliers télémétrie, vendor landscape.
+> [!INFO] Voir [Ch. 20 — Observabilité agentique et cognitive audit trail](ch20-observabilite-cognitive-audit-trail.md)
+> L'OpenTelemetry GenAI semconv WG a ouvert mi-2026 un sous-groupe `gen_ai.speculative.*` qui standardise les champs `acceptance_rate`, `draft_model.id`, `draft_model.version`, `accepted_tokens`, `rejected_tokens`, `tree_depth`, `tree_width`. Pour le décideur, c'est la condition pour que l'instrumentation d'α devienne **portable entre vendeurs** au lieu de rester captive de chaque framework — exactement comme `gen_ai.usage.*` a permis de comparer les coûts token cross-provider depuis 2025. Le pattern complet de l'OTel GenAI semconv tient en [Ch. 20](ch20-observabilite-cognitive-audit-trail.md) : cognitive audit trail, 6 piliers télémétrie, vendor landscape.
 
 ---
 
@@ -236,7 +236,7 @@ Trois invariants à mémoriser pour qui déploie de la décode spéculative en 2
 
 - Pour le décor économique global de l'inference LLM dans lequel s'inscrit la décode spéculative (LLMflation × 1 000, pile 7 couches, désagrégation prefill/decode, MoE, mix matériel H100/B200/MI300X/Trainium 2/Groq LPU, marges des hyperscalers), voir le **[Ch. 5 — L'économie unitaire de l'inférence](ch05-economie-inference.md)**.
 - Pour la mécanique du raisonnement à l'inférence qui rend la spec économiquement nécessaire (sans spec, le coût × 10 d'un reasoning model deviendrait coût × 10 en latence), voir le **[Ch. 2 — Les modèles de raisonnement et la seconde courbe de scaling](ch02-modeles-raisonnement.md)**.
-- Pour l'instrumentation OTel GenAI de l'acceptance rate dans un *cognitive audit trail* portable cross-vendor, voir le **[Ch. 18 — Observabilité agentique et cognitive audit trail](ch18-observabilite-cognitive-audit-trail.md)**.
+- Pour l'instrumentation OTel GenAI de l'acceptance rate dans un *cognitive audit trail* portable cross-vendor, voir le **[Ch. 20 — Observabilité agentique et cognitive audit trail](ch20-observabilite-cognitive-audit-trail.md)**.
 - Côté sources externes vivantes : la documentation [vLLM Speculative Decoding](https://docs.vllm.ai/), le [SGLang engineering blog](https://github.com/sgl-project/sglang), la doc [TensorRT-LLM Speculative Decoding](https://nvidia.github.io/TensorRT-LLM/advanced/speculative-decoding.html), et le benchmark croisé [Together AI specdec](https://www.together.ai/blog/specdec) restent les références à jour entre deux éditions.
 
 ---

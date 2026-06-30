@@ -1,0 +1,972 @@
+{
+  "meta": {
+    "id": "CC-14",
+    "titre": "Power users & saaspocalypse — apps maison sans coder",
+    "secteur": "Transverse",
+    "facette_scaling": "gouvernance",
+    "facettes_secondaires": [
+      "build_vs_buy",
+      "evaluation"
+    ],
+    "regime": "hybride_federe",
+    "ia_type": "agentic",
+    "gabarit": "charniere",
+    "thes_e_une_ligne": "Quand les power users construisent leurs propres applications avec Claude Code, le SaaS recule visiblement — mais sans socle partagé d'enablers (design system, hébergement SSO, registre, observabilité) ni gouvernance des power users, on troque une prolifération SaaS pour une prolifération artisanale équivalente. Le ROI durable n'est pas dans le livrable, il est dans le socle qui rend la voie conforme la plus simple à emprunter.",
+    "auteur": "Mathieu Guglielmino",
+    "date_v1": "2026-06-04"
+  },
+  "mise_en_situation": {
+    "scene": "CODIR de fin de trimestre, grand groupe / ETI. En 18 mois, les assistants de code (Claude Code en tête, copilote IDE, agents async cloud) ont percolé hors du périmètre dev. Une analyste finance a remplacé un tableur partagé par un suivi budgétaire en HTML statique — tableau filtrable, graphes, export — meilleur que l'outil SaaS précédent ; personne ne sait que ça existe. Une responsable RH génère un livrable HTML interactif par recrutement (scorecards, annotations sur le CV, partage par lien). Le département marketing a abandonné une plateforme de roadmap mainstream (40 €/utilisateur/mois × 50 sièges) pour une app maison écrite en deux jours, hébergée sur un bucket S3 sans revue d'accès. Et puis le déclencheur : un livrable RH contenant des données candidat partagé par lien public est indexé par un moteur de recherche externe ; le DPO découvre trois apps power users stockant des données personnelles hors du périmètre RGPD ; le DAF voit cinq outils internes orphelins au moment où leur power user historique change de poste. Question qui s'impose : « les power users gagnent en vélocité, c'est mesurable et indéniable — mais comment on évite que ça devienne le nouveau shadow IT ? »",
+    "chiffres_bruts": [
+      {
+        "label": "Power users actifs",
+        "valeur": "≈ 30"
+      },
+      {
+        "label": "Apps / livrables maison sur 12 mois",
+        "valeur": "≈ 80"
+      },
+      {
+        "label": "Apps zombies à 6 mois (owner parti, jamais reprises)",
+        "valeur": "≈ 45 %"
+      },
+      {
+        "label": "Apps hébergées sur partages personnels ou bucket non revus",
+        "valeur": "≈ 60 %"
+      },
+      {
+        "label": "Apps utilisant un design system commun",
+        "valeur": "≈ 0 % (chacune son CSS)"
+      },
+      {
+        "label": "Apps touchant des données personnelles sans inscription RGPD",
+        "valeur": "3 connues, N inconnues"
+      },
+      {
+        "label": "Abonnements SaaS supprimés en 12 mois (saaspocalypse en cours)",
+        "valeur": "5 outils, ~140 k€/an récupérés"
+      },
+      {
+        "label": "Registre central des apps power users",
+        "valeur": "0 (n'existe pas)"
+      }
+    ],
+    "horizon_temporel": "La sprawl civile existe déjà (elle a poussé sous les radars). Le vrai projet : 4-6 mois pour poser un socle minimal (design system + hébergement SSO + registre + briques mutualisées), puis 18-24 mois pour fédérer le portefeuille power users, instaurer un comité semestriel et installer la médiation générationnelle PPT/HTML."
+  },
+  "architecture_actuelle": {
+    "composants": [
+      {
+        "categorie": "saas_residuel",
+        "nom": "Stack SaaS classique encore en place — outil de doc collaborative, plateforme de roadmap mainstream, suite bureautique, plateforme de formulaires, BI léger ; ≈ 5 abonnements actifs sur le périmètre power users (en recul)",
+        "criticite_pour_le_cas": "read_write",
+        "remarque": "Le SaaS qui reste — souvent par défaut ou parce que le pattern n'a pas encore été refait en maison. Coût visible (abonnements/siège), gouverné par l'achat. C'est ce stock-là qui recule sous l'effet de la saaspocalypse."
+      },
+      {
+        "categorie": "apps_power_users",
+        "nom": "Sprawl civile — ≈ 80 apps/livrables HTML interactifs montés par ≈ 30 power users (RH, finance, marketing, ops, IT, juridique, commerce), hébergement disparate (partages personnels, buckets non revus, partages d'équipe), aucun design system commun",
+        "criticite_pour_le_cas": "read_write",
+        "remarque": "Le cœur du cas. Self-service métier sans cadre : chaque power user code, héberge, partage à sa main. Certaines apps lisent des extraits de datamart, certaines stockent des données personnelles (candidats, fiches collaborateurs), certaines sont devenues source de vérité d'équipes entières sans owner officiel. Aucune visibilité centralisée."
+      },
+      {
+        "categorie": "shadow_critique",
+        "nom": "≈ 2 apps shadow devenues critiques — un suivi de licences logicielles et un tableau de bord RGPD, construits par des power users, devenus source de vérité d'équipes entières sans owner officiel, sans backup, sans revue sécu",
+        "criticite_pour_le_cas": "read_write",
+        "remarque": "Le risque concentré. Si le power user historique part ou si l'app casse, l'équipe entière perd son outil de travail. À traiter en priorité par amnistie + bascule en projet officiel — pas par la chasse."
+      },
+      {
+        "categorie": "outils_source_des_apps",
+        "nom": "Écosystème des assistants de code — Claude Code en tête (CLI + extension IDE), copilote IDE, quelques agents async cloud côté équipes plus avancées",
+        "criticite_pour_le_cas": "read_only",
+        "remarque": "L'outil-source. Les power users continueront à l'utiliser quoi qu'il arrive — c'est ce qui leur a donné la vélocité. Le socle ne contraint PAS cet usage, il l'enveloppe. Renvoi ch.14."
+      },
+      {
+        "categorie": "identite_acces",
+        "nom": "IAM corporate (SSO Entra/Okta) + groupes AD existants — utilisés pour les SaaS officiels et les apps métier classiques, mais pas câblés sur les apps power users",
+        "criticite_pour_le_cas": "read_only",
+        "remarque": "Le socle d'identité existe déjà côté entreprise. Les apps power users ne le branchent pas par défaut → partage par lien public ou semi-public, accès non révocables, audit absent. Le câbler aux apps power users est un des chantiers du socle."
+      },
+      {
+        "categorie": "socle_manquant",
+        "nom": "L'ANGLE MORT — pas de design system commun, pas d'hébergement standardisé sous domaine officiel, pas de registre des apps, pas d'observabilité légère, pas de briques mutualisées (charts, tableaux, scrolly, exports, MCP servers internes)",
+        "criticite_pour_le_cas": "read_write",
+        "remarque": "Le cœur du cas, comme en CC-11 : ce qui n'existe pas. Sans design system, cacophonie visuelle inter-apps. Sans hébergement officiel, indexation publique accidentelle. Sans registre, on découvre l'app le jour où elle casse. Sans observabilité, pas de détection des zombies. Sans briques mutualisées, chaque power user rebuild son tableau filtrable et son export PDF. C'est ce socle absent qu'il faut construire."
+      }
+    ],
+    "implications_structurantes": [
+      "Le SaaS recule visiblement (5 abonnements supprimés en 12 mois) — c'est mesurable et le DAF le voit. La saaspocalypse n'est pas un slogan, c'est un poste de coût qui baisse. Mais le coût de la sprawl civile (incidents sécu, doublons inter-départements, apps orphelines, dette de maintenance privée) n'est pas comptabilisé — il est diffus, et il monte.",
+      "Le problème n'est pas technique par app : chaque app power user est faisable (Claude Code la produit en quelques heures). Il est de portefeuille — exactement comme en CC-11, mais à la strate du livrable plutôt que de l'agent.",
+      "Les power users ne reviendront pas en arrière. Forcer le passage par la DSI tuerait la vélocité qui a fait naître le mouvement, et déclencherait un retour au shadow. La paved road du socle doit être plus simple que le partage personnel, sinon elle est contournée.",
+      "Le registre n'est pas un inventaire bureaucratique : c'est l'outil qui transforme une collection d'apps invisibles en portefeuille pilotable — et l'outil de conformité RGPD (le statut de chaque app y est porté, comme le statut AI Act des agents en CC-11).",
+      "Le conflit générationnel PPT/HTML interactif est un sujet RH autant qu'éditorial. Sans médiation (export PDF/PPT automatique depuis le HTML), les power users perdent leur public le moins technophile et un sentiment de classe s'installe."
+    ],
+    "renvoi_figure": "fig-00"
+  },
+  "application_concrete": {
+    "modes_usage": [
+      {
+        "id": "A",
+        "label": "Création — la paved road pour démarrer une app",
+        "moment": "Quand un power user a une idée d'app (suivi, dashboard, livrable interactif, mini-outil interne) et ouvre Claude Code",
+        "actions": [
+          "Démarre depuis un template HTML du design system (palette, typo, layout, micro-interactions déjà cadrés)",
+          "Câble les briques mutualisées du catalogue interne (tableau filtrable, scrolly, annotations interactives, deep-link, export PDF/PPT)",
+          "Appelle les MCP servers internes pour les données (datamart, CRM, datalake) au lieu de copier-coller des CSV — accès tracés, scopes par power user",
+          "Pousse vers l'hébergement standardisé sous domaine officiel — URL interne avec SSO entreprise, expiration optionnelle"
+        ]
+      },
+      {
+        "id": "B",
+        "label": "Run — l'app vit dans le cadre (registre + observabilité légère + checks automatiques)",
+        "moment": "En continu, pour toute app dont l'usage dépasse le périmètre personnel (≥ 5 utilisateurs ou ≥ 1 destinataire externe au département)",
+        "sous_modes": [
+          {
+            "id": "B1",
+            "label": "Admission au registre",
+            "description": "Owner power user nommé, finalité déclarée, données utilisées, niveau de risque (tier 1/2/3), statut RGPD. Le registre devient la pièce de conformité par app — comme le registre d'agents de CC-11 pour l'AI Act."
+          },
+          {
+            "id": "B2",
+            "label": "Checks automatisés au push",
+            "description": "Accessibilité de base, responsive, conformité design system, absence de secrets en clair, absence de données personnelles dans le code, dépendances whitelistées. Les checks passent ou bloquent — le power user voit son rapport et corrige."
+          },
+          {
+            "id": "B3",
+            "label": "Observabilité légère",
+            "description": "Compteur d'usage par app, coût d'hébergement (négligeable pour du HTML statique, mesuré quand même), incidents sécu, accès anormaux, dernière utilisation. La console qui détecte les zombies à 3 et 6 mois."
+          }
+        ]
+      },
+      {
+        "id": "C",
+        "label": "Revue — comité semestriel de portefeuille power users",
+        "moment": "Tous les 6 mois, plus alertes continues sur les dérives et les zombies",
+        "actions": [
+          "Arbitre les doublons inter-départements (deux apps couvrant le même périmètre)",
+          "Éteint les zombies (taux d'usage sous seuil → dé-commissionnement actif)",
+          "Bascule en projet officiel les apps devenues critiques (gate explicite : l'app sort du périmètre power user, le power user reste owner fonctionnel, la DSI reprend l'opération)",
+          "Met à jour le tiering et le statut RGPD des apps qui changent de périmètre",
+          "Onboarde les apps shadow ramenées par amnistie"
+        ]
+      }
+    ],
+    "niveaux_autonomie": [
+      {
+        "id": "L1",
+        "label": "Inventaire (observer)",
+        "description": "Le registre catalogue les apps existantes en lecture, l'observabilité légère mesure l'usage : on a enfin la carte de la sprawl civile. Aucun contrôle encore — on voit, on ne tient pas.",
+        "active_en": "Mois 1-2 (le socle minimal de cartographie)"
+      },
+      {
+        "id": "L2",
+        "label": "Paved road active (cadrer l'entrée)",
+        "description": "Le design system, le template HTML, l'hébergement SSO et le registre existent. Toute nouvelle app passe par la paved road — la voie conforme est PLUS simple que le partage personnel. Les checks automatisés bloquent au push.",
+        "active_en": "Mois 2-6 (la paved road + amnistie shadow)"
+      },
+      {
+        "id": "L3",
+        "label": "Portefeuille piloté (réviser, dé-commissionner)",
+        "description": "Comité semestriel actif, dé-commissionnement des zombies, arbitrage des doublons, bascule en projet officiel des apps critiques. La revue par les pairs entre power users fonctionne en autonomie.",
+        "active_en": "Mois 6-24 (le régime fédéré)"
+      },
+      {
+        "id": "L4",
+        "label": "Auto-extinction des hors-politique",
+        "description": "Le socle bloque/éteint automatiquement une app qui pousse du code contenant des secrets ou des données personnelles non déclarées, ou qui dépasse un seuil d'inactivité.",
+        "active_en": "ENCADRÉ — l'auto-extinction est réservée aux violations sans ambiguïté (secrets en clair, données personnelles hors RGPD déclaré, dépassement seuil d'inactivité de 12 mois sans owner) ; toute décision de portefeuille (doublon, bascule projet officiel) reste arbitrée par le comité."
+      }
+    ],
+    "trajectoire_multi_step_exemple": {
+      "scenario": "Mode A — une [ANALYSTE_FINANCE] démarre un suivi budgétaire mensuel : elle aurait l'instinct de coder son HTML sur un partage personnel, le socle l'attire sur la paved road",
+      "etapes": [
+        {
+          "id": 1,
+          "label": "Start",
+          "description": "Elle ouvre Claude Code et tape « je veux un suivi budgétaire HTML avec tableau filtrable et graphes ». Claude lit le template du design system interne (CSS + composants), lit la doc des briques mutualisées (data-table, charts), et propose un squelette d'app prêt à pousser.",
+          "renvoi_livre": "ch.14 assistants de code (Claude Code comme outil-source)"
+        },
+        {
+          "id": 2,
+          "label": "Connect",
+          "description": "L'app appelle les données via les MCP servers internes — datamart, fiches comptes — au lieu d'un export CSV à la main. Accès scopé au périmètre finance, audit des accès tracé par power user.",
+          "outils_appeles": [
+            "datamart-mcp.query_budget(periode, departement)",
+            "design-system-mcp.fetch_template(suivi-financier)",
+            "briques-mcp.load_component(data-table-filtrable)"
+          ],
+          "renvoi_livre": "ch.15 MCP plateforme · ch.16 sécurité MCP"
+        },
+        {
+          "id": 3,
+          "label": "Push",
+          "description": "Push vers l'hébergement standardisé sous domaine officiel. Les checks automatisés tournent : accessibilité OK, responsive OK, design system conforme, pas de secrets en clair, pas de données personnelles dans le code. App déployée sous SSO, accès scoped au département finance.",
+          "renvoi_livre": "ch.21 garde-fous (checks DLP/PII intégrés)"
+        },
+        {
+          "id": 4,
+          "label": "Register",
+          "description": "Quand 5 utilisateurs ouvrent l'app (ou qu'elle est partagée hors département), le socle déclenche une admission au registre : owner nommé, finalité, données, statut RGPD, tiering. Tier 2 : interne, données financières non publiques. Revue par les pairs power users entre directions finance et contrôle de gestion.",
+          "renvoi_livre": "ch.25 gouvernance (le registre = conformité RGPD par app)"
+        },
+        {
+          "id": 5,
+          "label": "Observe",
+          "description": "Compteur d'usage suivi. À 3 mois : 14 utilisateurs récurrents, app active. À 6 mois : le contrôle de gestion l'a adoptée, l'app devient source de vérité d'une équipe — gate de bascule en projet officiel, l'analyste finance reste owner fonctionnel, la DSI reprend l'opération.",
+          "renvoi_livre": "ch.20 observabilité légère · ch.7 boucle agentique"
+        }
+      ]
+    }
+  },
+  "outils_internes": {
+    "mcp_servers": [
+      {
+        "systeme": "Design system + briques UX partagées (CSS + composants + template HTML « page interne » + bibliothèque réutilisable : charts, tableaux filtrables, scrolly, annotations interactives, deep-link figcaption ¶, export PDF/PPT)",
+        "mode": "read",
+        "type_mcp": "build maison léger (le cœur visuel + UX du socle) — distribué via package interne + MCP server pour exposition à Claude Code",
+        "effort_dev": "8-10 sem. (à étaler en plusieurs vagues — priorité aux patterns les plus récurrents : tableau filtrable, export PDF, deep-link)",
+        "risque": "moyen",
+        "raison_risque": "calibrer un design system + une bibliothèque UX qui servent à la fois des dashboards, des livrables narratifs et des mini-outils — sans devenir un carcan ; doit rester lisible par Claude Code via MCP pour génération guidée. C'est le poste qui paie le plus par mutualisation — chaque pattern packagé évite à 30 power users de le rebuilder."
+      },
+      {
+        "systeme": "Hébergement standardisé (buckets statiques sous domaine officiel pour HTML + base de données managée scopée par power user pour apps qui persistent un état + déploiement par push git ou drop folder + SSO entreprise + expiration optionnelle)",
+        "mode": "read_write",
+        "type_mcp": "infra cloud (S3/GCS/Azure Blob pour le statique + DB managée Postgres/MySQL multi-schémas pour l'état) + façade SSO + petit orchestrateur de déploiement",
+        "effort_dev": "4-5 sem.",
+        "risque": "moyen",
+        "raison_risque": "câbler le SSO entreprise existant aux apps power users sans réinventer la roue, ET fournir une DB managée scopée par power user (un schéma par power user, RBAC, sauvegardes) sans que ça devienne un service de stockage anarchique. Garantir que l'isolation par auteur ne casse pas le partage par lien révocable légitime."
+      },
+      {
+        "systeme": "Identité & accès (SSO entreprise Entra/Okta + groupes AD pour scoper les apps + partage par lien révocable + audit des accès)",
+        "mode": "read",
+        "type_mcp": "officiel (OIDC/SAML enterprise) + façade socle qui simplifie la déclaration côté power user",
+        "effort_dev": "3-4 sem.",
+        "risque": "moyen",
+        "raison_risque": "le câblage IAM corporate aux apps power users est le sclérosant identité — 3-4 semaines incompressibles. Mais l'identité est l'enabler qui transforme le partage public par défaut en partage scoped et audité."
+      },
+      {
+        "systeme": "Logs centralisés (collecte uniforme des erreurs, exceptions et audit trail des apps power users — qui a accédé à quoi, quand, depuis où)",
+        "mode": "read_write",
+        "type_mcp": "officiel (stack ELK / Loki / Cloud Logging) + collecteur léger côté apps power users",
+        "effort_dev": "2-3 sem.",
+        "risque": "bas",
+        "raison_risque": "pas un APM lourd — le minimum pour qu'un incident soit traçable et que la conformité RGPD côté accès soit tenue. Risque de glisser vers de l'analytics intrusif si on ne discipline pas le périmètre."
+      },
+      {
+        "systeme": "Observabilité légère (pings de santé, compteur d'usage unique par mois, alerte si app non visitée depuis N jours, détection des zombies)",
+        "mode": "read",
+        "type_mcp": "officiel (OpenTelemetry web) + collecteur maison + dashboard",
+        "effort_dev": "2-3 sem.",
+        "risque": "bas",
+        "raison_risque": "léger par construction — le HTML statique a une instrumentation simple ; la difficulté est de ne PAS basculer en analytics intrusif et tracker comportemental, ce que la doctrine du site interdit. Distincte des logs centralisés (#4) : observabilité = portefeuille ; logs = traçabilité par app."
+      },
+      {
+        "systeme": "Registre d'apps power users (catalogue : owner, finalité, données utilisées, statut RGPD, niveau de risque, date de dernière utilisation, cycle de vie)",
+        "mode": "read_write",
+        "type_mcp": "build maison léger (le pivot conformité du socle) — schéma de métadonnées propre, mais structurellement parent du registre d'agents de CC-11",
+        "effort_dev": "3-4 sem.",
+        "risque": "bas",
+        "raison_risque": "réutilisation possible du schéma registre d'agents CC-11 adapté aux apps (l'unité change : agent → app, mais les champs metadata sont analogues)"
+      },
+      {
+        "systeme": "Gateway LLM + modèles partagés + sous-agents custom (a) tokens scopés par power user vers les LLM Claude/modèles internes, (b) modèles spécialisés mutualisés OCR/vision/embeddings en service partagé, (c) déclaration et exécution de sous-agents custom — le power user décrit un mini-pipeline et le gateway l'exécute avec quota et journalisation",
+        "mode": "read_write",
+        "type_mcp": "build maison léger (API gateway interne + registre de modèles + runtime de sous-agents) — l'enabler le plus critique du socle, et le seul que la plupart des organisations vont build plutôt que buy",
+        "effort_dev": "6-8 sem. (premier lot : gateway tokens + premiers modèles partagés OCR/vision)",
+        "risque": "élevé",
+        "raison_risque": "la pièce la plus dense — mal calibrée (quotas absents, tokens partagés sans scoping, pas d'audit, sous-agents libres de déclencher des appels coûteux ou exfiltrer des données métier), elle devient une porte d'entrée à des incidents sécu et financiers diffus. Bien calibrée (tokens scopés par power user, quotas, journalisation des appels dans les logs centralisés, modèles OCR/vision/embeddings mutualisés), elle transforme les compétences artisanales en enablers de portefeuille — un sous-agent utile à un power user devient utilisable par les autres, son coût se mutualise."
+      },
+      {
+        "systeme": "MCP servers internes pour données métier (datamart, CRM, datalake, fiches RH anonymisées) — partagés entre tous les power users avec scoping par groupe AD",
+        "mode": "read",
+        "type_mcp": "build maison sur API existantes + officiel quand dispo (ex. MCP datalake)",
+        "effort_dev": "4-6 sem. (premier lot)",
+        "risque": "moyen",
+        "raison_risque": "le sclérosant data : ouvrir les données métier aux power users via MCP demande un scoping fin (RBAC par power user, masquage PII, audit) — sinon on remplace les CSV copiés à la main par des fuites tracées. Complémentaire de la gateway LLM (#7) : MCP = données métier ; gateway = modèles + sous-agents."
+      }
+    ],
+    "effort_total": "Socle minimal (design system + briques UX + hébergement buckets/DB + identité + logs + observabilité + registre + gateway LLM avec premiers modèles OCR/vision + MCP servers internes principaux) : ≈ 5-7 mois pour une équipe CoE enablement de 4-5 ETP (Head of Power User Enablement + ingénieur design system + ingénieur plateforme + ingénieur gateway LLM/modèles + UX designer). La gateway LLM (#7) et les MCP internes (#8) sont les sclérosants qui s'étalent au-delà du socle minimal — le socle s'amorce dès que les briques UX, l'hébergement SSO et le registre sont câblés ; la gateway LLM se construit en parallèle et s'enrichit de modèles + sous-agents vague après vague.",
+    "renvois_livre": [
+      "ch.14 assistants de code (Claude Code comme outil-source)",
+      "ch.15 MCP plateforme (MCP servers internes consommés par les power users)",
+      "ch.16 sécurité MCP (tokens scopés par power user, audit des appels gateway)",
+      "ch.18 analytics agentique (consommation gateway par direction)",
+      "ch.20 observabilité légère",
+      "ch.21 garde-fous (checks au push, quota tokens gateway)"
+    ]
+  },
+  "modeles_cibles": {
+    "candidats": [
+      {
+        "modele": "Claude (via Claude Code) — outil-source côté power user",
+        "force_pour_le_cas": "Le moteur de fait des apps power users — vélocité de génération, lecture du design system via MCP, écriture HTML/CSS/JS de qualité production. Hors du périmètre socle (le socle l'enveloppe sans le contraindre).",
+        "faiblesse": "Cloud US (résidence EU via Bedrock pour les usages sensibles) ; coût d'inférence à la charge du power user / du département.",
+        "cout_indicatif": "abonnement Claude Code par siège ou consommation API"
+      },
+      {
+        "modele": "Copilote IDE (alternative pour profils déjà sur IDE classique)",
+        "force_pour_le_cas": "Adoption naturelle pour les power users déjà dans un IDE Microsoft ; intégration native.",
+        "faiblesse": "Moins fluide pour les workflows hors-IDE typiques des power users métier (CLI, terminal, génération de livrables HTML interactifs) ; le socle ne dépend pas du modèle.",
+        "cout_indicatif": "inclus dans les licences corporate"
+      },
+      {
+        "modele": "Agents async cloud (équipes plus avancées qui veulent déléguer la création complète d'apps)",
+        "force_pour_le_cas": "Pour les power users les plus avancés qui veulent lancer la création d'une app et revenir après — utile sur les apps récurrentes (rapports périodiques, dashboards à mise à jour mensuelle).",
+        "faiblesse": "Coût plus élevé ; surface d'attaque plus large ; à encadrer par le gateway MCP du socle.",
+        "cout_indicatif": "consommation API + infra cloud"
+      },
+      {
+        "modele": "Modèle souverain (Mistral Large 3 / équivalent) — option pour apps tier 1 (données personnelles, contenu sensible)",
+        "force_pour_le_cas": "Routage sélectif depuis Claude Code via gateway MCP pour les apps qui touchent à des données candidat/RH sensibles — argument souveraineté résidence EU.",
+        "faiblesse": "Capacité de génération HTML/CSS légèrement en retrait sur les patterns interactifs complexes ; à valider par archétype d'app.",
+        "cout_indicatif": "€ par M tokens, résidence EU"
+      },
+      {
+        "modele": "LLM-as-judge pour la revue par les pairs et les checks qualité (modèle d'éval léger)",
+        "force_pour_le_cas": "Pré-screening des apps poussées au registre — détection des anti-patterns (secrets en clair, code non conforme au design system, accessibilité dégradée).",
+        "faiblesse": "Complément, pas substitut, de la revue par les pairs entre power users ; à calibrer pour ne pas devenir un goulot.",
+        "cout_indicatif": "OpEx socle (mutualisé)"
+      }
+    ],
+    "recommandation": {
+      "regime": "outil-source libre (Claude Code) + socle model-agnostic + routage sélectif",
+      "modele_primaire": "Le socle ne CHOISIT PAS le modèle utilisé par le power user — il enveloppe l'outil-source (Claude Code en pratique pour la majorité, copilote IDE pour certains, agents async pour les avancés). C'est la même logique que CC-11 : le gateway route, il ne décide pas du modèle de chaque app.",
+      "modele_gardien": "LLM-as-judge léger pour les checks automatisés au push + revue par les pairs entre power users sur les apps qui passent tier 2",
+      "voice_tier": "non applicable (les apps power users sont des livrables HTML / dashboards / mini-outils, pas des agents vocaux)",
+      "embeddings_rag": "MCP servers internes partagés (datamart, doc, fiches RH anonymisées) avec embeddings souverains pour les corpus sensibles — mutualisés sur toutes les apps power users plutôt que rebuilder un RAG par app",
+      "argument_cascade": "La question centrale n'est PAS « quel modèle » pour les power users — c'est « comment le socle s'adosse à l'outil-source sans le contraindre ». Le power user continue d'utiliser Claude Code comme il l'entend ; le socle fournit le contexte (design system via MCP, briques mutualisées, données métier sécurisées) qui rend la voie conforme plus simple. Le socle ne route pas, il ENVELOPPE — c'est une différence subtile mais structurante avec CC-11."
+    }
+  },
+  "enjeux": {
+    "enjeux_chiffres": [
+      {
+        "label": "Saaspocalypse mesurable",
+        "chiffre": "5 abonnements SaaS supprimés en 12 mois (~140 k€/an récupérés)",
+        "consequence": "Hard savings que le DAF voit immédiatement — le moteur politique de l'adoption du socle. Plus la sprawl grandit, plus le SaaS recule ; mais sans socle, le coût caché (incidents, doublons, dette privée) rattrape vite."
+      },
+      {
+        "label": "Éteindre les zombies",
+        "chiffre": "≈ 45 % d'apps zombies à 6 mois",
+        "consequence": "Le premier gisement de valeur n'est pas de construire plus d'apps, c'est de mutualiser les patterns récurrents en briques internes et d'éteindre activement ce qui n'est plus utilisé — exactement comme la flotte d'agents de CC-11."
+      },
+      {
+        "label": "Maîtriser le risque RGPD diffus",
+        "chiffre": "3 apps power users connues stockent des données personnelles hors RGPD déclaré ; N inconnues",
+        "consequence": "Un seul incident sérieux (lien public indexé, fuite candidat) peut déclencher un arrêt brutal et un retour au PPT. Le registre est la pièce qui prouve la conformité RGPD — sans lui, on ne peut ni identifier ni documenter les apps à risque."
+      }
+    ],
+    "benchmark": {
+      "reference": "Études productivité assistants de code (DORA 2024, METR 2025, Wattenberger 2025-2026) + littérature sur la J-curve de productivité (Brynjolfsson) + travaux sur l'augmentation vs automation (Acemoglu, Bender)",
+      "metrique": "À l'échelle individuelle, les power users avec Claude Code mesurent des gains de vélocité de 2× à 5× sur des livrables HTML interactifs vs flow PPT classique. À l'échelle organisation, le coût de coordination (socle + gouvernance + médiation générationnelle + accompagnement) devient le poste dominant — paradoxe agentique appliqué aux power users (ch.23.7), exactement comme en CC-11 pour la flotte d'agents.",
+      "renvoi_livre": "ch.23.7"
+    },
+    "contre_benchmark": "Le piège symétrique de CC-11, à la strate du livrable : là où la flotte d'agents prolifère côté outils, la sprawl civile prolifère côté livrables. Chaque power user produit son app, personne ne mesure le portefeuille, et la facture (incidents sécu, apps orphelines, doublons inter-départements, dette de maintenance privée, sentiment de classe PPT/HTML) dépasse silencieusement la valeur visible (saaspocalypse). Sans registre ni comité, l'absence de gouvernance EST une gouvernance — la pire, parce qu'elle laisse le pouvoir politique aux power users qui ne sont pas armés pour le porter."
+  },
+  "build_buy": {
+    "criteres": [
+      "data_sensitivity",
+      "personnalisation",
+      "volumetrie",
+      "lock_in",
+      "time_to_value",
+      "souverainete"
+    ],
+    "options": [
+      {
+        "regime": "interne",
+        "stack": "Build socle maison complet (design system + hébergement + registre + briques mutualisées + MCP internes)",
+        "scores": {
+          "data_sensitivity": "++",
+          "personnalisation": "++",
+          "volumetrie": "+",
+          "lock_in": "+",
+          "time_to_value": "-",
+          "souverainete": "++"
+        },
+        "verdict": "Couvre tout, dans le flux Claude Code que les power users utilisent déjà — mais effort plateforme moyen et équipe CoE dédiée. Plus rapide que pour CC-11 parce que l'unité est plus simple (HTML statique vs agent transverse), mais demande quand même 4-6 mois."
+      },
+      {
+        "regime": "mainstream",
+        "solution": "Buy une plateforme citizen-dev low-code OU une plateforme citizen-dev « IA-native » mainstream",
+        "scores": {
+          "data_sensitivity": "0",
+          "personnalisation": "-",
+          "volumetrie": "++",
+          "lock_in": "--",
+          "time_to_value": "++",
+          "souverainete": "-"
+        },
+        "verdict": "Time-to-value imbattable, mais bridé par l'éditeur visuel et HORS DU FLUX Claude Code que les power users utilisent déjà. Les power users continueront à coder en HTML avec Claude Code en parallèle — la plateforme citizen-dev ne capte qu'une fraction du flux. Lock-in éditeur en prime."
+      },
+      {
+        "regime": "hybride",
+        "stack": "Socle maison léger (design system + hébergement SSO + registre + briques mutualisées + MCP internes) qui ENVELOPPE le flux Claude Code libre + paved road plus simple que le partage personnel",
+        "scores": {
+          "data_sensitivity": "+",
+          "personnalisation": "+",
+          "volumetrie": "+",
+          "lock_in": "+",
+          "time_to_value": "+",
+          "souverainete": "+"
+        },
+        "verdict": "RECOMMANDÉ — hybride fédéré. Le socle ne contraint pas le flux de création (le power user continue d'utiliser Claude Code comme il l'entend) mais rend la voie conforme la plus simple : pousser dans le bucket officiel est plus simple qu'un partage personnel, utiliser le template de design system est plus rapide que de coder son CSS, appeler les MCP servers internes est plus simple que copier-coller des CSV."
+      }
+    ],
+    "decision_ponderee": "Hybride fédéré : socle maison léger qui enveloppe le flux Claude Code des power users sans le contraindre. La règle d'or — la voie conforme doit être STRICTEMENT plus simple que la voie shadow. Si le socle ralentit le power user d'une seule minute, il est contourné. C'est la différence avec une plateforme low-code mainstream qui imposerait son éditeur visuel : ici le socle est invisible quand on ne l'utilise pas, et indispensable quand on en a besoin. NUANCE CRITIQUE sur l'enabler #7 (gateway LLM + modèles partagés + sous-agents) : c'est le SEUL enabler du périmètre que la plupart des organisations vont BUILD en interne plutôt que BUY — la sensibilité des tokens, le scoping par power user, la journalisation des appels dans les logs centralisés (#4) et la conformité RGPD côté audit sont trop fortes pour la sous-traiter à une plateforme tierce. Pour le reste du socle (design system, hébergement statique, SSO, registre), l'hybride avec briques open-source ou cloud managé tient ; pour la gateway LLM, le build domine.",
+    "renvoi_livre": "ch.23.6 arbre décision · ch.14 assistants de code · ch.15 MCP plateforme"
+  },
+  "trajectoire_couts": {
+    "phases": [
+      {
+        "id": "poc",
+        "label": "Socle minimal 2 mois",
+        "perimetre": "Registre + observabilité légère en lecture sur ≈ 15 apps pilotes — on fait la carte de la sprawl civile, sans contrainte encore"
+      },
+      {
+        "id": "pilote",
+        "label": "Paved road 4 mois",
+        "perimetre": "Design system + hébergement SSO + premier lot de briques mutualisées + premiers MCP servers internes ; ≈ 40 apps power users sur la paved road, amnistie shadow lancée"
+      },
+      {
+        "id": "prod",
+        "label": "Régime fédéré 12 mois",
+        "perimetre": "Portefeuille complet (80+ apps) avec design system généralisé, hébergement officiel par défaut, registre tenu, comité semestriel de portefeuille actif, médiation PPT/HTML opérationnelle"
+      },
+      {
+        "id": "scale",
+        "label": "Plateforme mature 36 mois",
+        "perimetre": "150+ apps actives, socle amorti, dé-commissionnement systématique des zombies, briques mutualisées élargies, MCP servers internes en self-service tier 3"
+      }
+    ],
+    "postes": {
+      "inference": {
+        "poc": 4,
+        "pilote": 18,
+        "prod": 55,
+        "scale": 90
+      },
+      "infra": {
+        "poc": 12,
+        "pilote": 40,
+        "prod": 95,
+        "scale": 160
+      },
+      "equipe": {
+        "poc": 90,
+        "pilote": 260,
+        "prod": 580,
+        "scale": 880
+      },
+      "data": {
+        "poc": 10,
+        "pilote": 35,
+        "prod": 70,
+        "scale": 110
+      },
+      "evaluation": {
+        "poc": 6,
+        "pilote": 45,
+        "prod": 140,
+        "scale": 220
+      },
+      "gouvernance": {
+        "poc": 18,
+        "pilote": 70,
+        "prod": 180,
+        "scale": 290
+      },
+      "securite": {
+        "poc": 14,
+        "pilote": 50,
+        "prod": 130,
+        "scale": 210
+      },
+      "change": {
+        "poc": 20,
+        "pilote": 80,
+        "prod": 220,
+        "scale": 320
+      }
+    },
+    "cout_par_interaction": {
+      "poc": 11.5,
+      "pilote": 5.6,
+      "prod": 2.4,
+      "scale": 1.3
+    },
+    "crossover_point": "≈ 20-30 apps power users actives — LE CROSSOVER SAASPOCALYPSE. En dessous, les économies d'abonnements SaaS dépassent à peine le coût du socle (ETP plateforme + UX design system + hébergement). Au-delà, les abonnements supprimés (~140 k€/an aux premières vagues, croissant ensuite) couvrent confortablement le socle, et la mutualisation des briques accélère le rythme de création. C'est l'analogue civil du crossover du socle de CC-11.",
+    "commentaire_courbe": "Comme en CC-11, le « coût par interaction » est ici un COÛT DE GOUVERNANCE PAR APP : il divise par ~9 entre POC et Scale, non par optimisation technique mais par AMORTISSEMENT du socle sur un nombre croissant d'apps. L'inférence (Claude Code côté power user + LLM-as-judge léger côté socle) reste le plus petit poste. Le paradoxe agentique appliqué aux power users (ch.23.7) : à l'échelle individuelle, chaque power user gagne du temps (Claude Code accélère), à l'échelle de l'organisation, le coût de COORDINATION (CoE enablement + UX design system + change manager) devient le poste dominant. Sans socle, le gain individuel se dissipe en désordre collectif."
+  },
+  "gouvernance": {
+    "raci": {
+      "responsable": "Center of Excellence power user enablement (DSI + UX + sécu) — possède le socle, les enablers, le design system, l'hébergement, l'identité, le registre, la formation Claude Code. Rôle pivot : Head of Power User Enablement.",
+      "approbateur": "Comité de portefeuille power users (semestriel) — admission au registre, dé-commissionnement, arbitrage des doublons inter-départements, bascule en projet officiel des apps critiques, escalade niveau risque",
+      "consultes": [
+        "Sécu / RSSI (revue accès écriture, secrets, partage public)",
+        "DPO (statut RGPD par app, tiering, audits)",
+        "Power users (app product owners) — finalité, contenu, ROI de leur app, succession",
+        "Managers directs des power users — reconnaissance de l'activité, priorisation, succession quand le power user part"
+      ],
+      "informes": [
+        "CODIR (KPI portefeuille : taux d'apps actives avec usage récurrent vs zombies, saaspocalypse cumulée, incidents sécu)",
+        "Directions métiers (paved road, standards visuels, médiation PPT/HTML)",
+        "Achats (saaspocalypse — désabonnements coordonnés)"
+      ]
+    },
+    "cadence_revue": {
+      "comite_eval": "Comité de portefeuille semestriel (et non trimestriel comme CC-11 — l'unité « app » a un cycle de vie plus lent que « agent ») ; revue par les pairs entre power users en continu pour les apps qui passent tier 2",
+      "alertes": "continues via observabilité légère (chute d'usage = zombie en formation, accès anormaux, incident sécu, secrets détectés au push) + alertes amnistie shadow (app non déclarée détectée par scan réseau interne)",
+      "audit_externe": "annuel — revue de conformité RGPD sur les apps tier 1 (données personnelles) + audit accès du socle d'hébergement SSO"
+    },
+    "ai_act_ligne": {
+      "niveau": "rgpd_par_app_principalement",
+      "fondement": "La plupart des apps power users sont des livrables internes ou outils opérationnels qui touchent à des données métier (financières, commerciales, opérationnelles) — la conformité dominante est le RGPD pour les apps qui stockent ou traitent des données personnelles (RH, candidats, clients). Pour les apps qui intègrent un agent IA directionnel (ex. un assistant de tri RH), basculement vers AI Act Annexe III (recrutement) avec gate explicite vers projet officiel — l'app sort du périmètre power user. Le registre porte le statut RGPD ET le statut AI Act éventuel.",
+      "echeance": "RGPD permanent (audit annuel + DPIA pour les apps tier 1) ; AI Act 2026-08 transparence + 2027-08 obligations complètes pour toute app qui basculerait haut risque",
+      "actions": [
+        "Statut RGPD renseigné par app au registre (catégorie de données, base légale, durée de conservation, partage, mesures techniques)",
+        "Tiering par le risque qui déclenche la revue proportionnée (DPIA + revue sécu pour les tier 1 ; revue standard pour tier 2 ; self-service cadré pour tier 3)",
+        "Reclassement automatique quand une app change de périmètre (un tier 3 lecture seule qui se met à stocker des données candidat bascule tier 1)",
+        "Gate de bascule en projet officiel pour toute app qui devient source de vérité d'une équipe entière OU qui intègre un agent IA directionnel"
+      ]
+    },
+    "renvoi_livre": "ch.25 RGPD par app + ch.21 garde-fous DLP/PII + ch.26 conduite du changement"
+  },
+  "evaluation": {
+    "regression_suite": {
+      "taille": "Pas une régression suite par app (impraticable sur 80 apps), mais une suite de CHECKS AUTOMATISÉS au push partagée + revue par les pairs entre power users sur les apps qui passent tier 2",
+      "cadence": "Checks automatisés à chaque push (bloquants ou avertissements selon tier) ; revue par les pairs trimestrielle sur les promotions tier 2 ; test d'usage réel à 3 mois (si l'app n'a pas atteint son public cible, déclassement)",
+      "criteres": [
+        "Accessibilité de base (a11y WCAG AA partiel) — checks automatisés",
+        "Responsive (mobile + desktop) — checks automatisés",
+        "Conformité au design system (palette, typo, composants standards) — checks automatisés",
+        "Absence de secrets en clair dans le code — bloquant",
+        "Absence de données personnelles statiques dans le code — bloquant",
+        "Dépendances externes whitelistées (pas de CDN non revus) — bloquant",
+        "Taille raisonnable (< seuil HTML statique pour ne pas devenir une appli déguisée) — avertissement",
+        "Revue par les pairs sur tier 2+ (un autre power user du même domaine relit avant promotion)"
+      ]
+    },
+    "metriques_online": [
+      {
+        "id": "active-app-usage-rate",
+        "cible": "> 70 % d'apps avec ≥ 5 utilisateurs uniques actifs sur les 30 derniers jours",
+        "alerte": "< 50 % → revue extraordinaire du comité, déclassement massif de zombies"
+      },
+      {
+        "id": "regulatory-compliance",
+        "cible": "100 % des apps tier 1 avec statut RGPD à jour + DPIA",
+        "alerte": "app tier 1 sans documentation → blocage hébergement SSO"
+      },
+      {
+        "id": "csat",
+        "cible": "satisfaction power users > 4/5 sur l'expérience du socle (paved road plus simple que le shadow)",
+        "alerte": "< 3.5/5 → revue de l'ergonomie de la paved road (sinon ils repartent en shadow)"
+      },
+      {
+        "id": "gateway-token-quota",
+        "cible": "consommation gateway LLM sous quota mensuel par power user (budget tokens + budget € par direction) ; aucun sous-agent qui dépasse 3× le budget moyen sans gate d'arbitrage",
+        "alerte": "dépassement du quota → blocage temporaire du token + escalade au comité ; explosion de la consommation d'un sous-agent custom → revue d'efficience (pattern à refactorer ou à packager en brique stable)"
+      }
+    ],
+    "detection_derive": {
+      "outil": "Observabilité légère (taux d'usage par app pour les zombies, accès anormaux, incidents sécu) + LLM-as-judge sur le code poussé (anti-patterns, secrets, données personnelles) + scan réseau interne périodique pour détecter les apps shadow non déclarées",
+      "alerte": "chute du taux d'usage (zombie en formation) ; secrets détectés au push ; partage public détecté sur app tier 1 ; app shadow détectée par scan",
+      "fenetre": "continue sur le push (checks automatisés) ; rolling 30 jours sur l'usage (détection zombie) ; mensuel sur le scan shadow"
+    },
+    "boucle_correction": {
+      "trigger": "alerte observabilité, revue par les pairs trimestrielle, ou comité de portefeuille semestriel",
+      "delai_re_prompt": "correction d'une app : sous la responsabilité du power user owner (le socle fournit le rapport de checks, le power user corrige et repousse)",
+      "cadence_re_finetune": "non applicable au socle (modèles managés côté Claude Code) — l'itération porte sur les checks automatisés (ajout de patterns détectés post-incident) et les briques mutualisées (nouvelle brique quand un pattern apparaît ≥ 3 fois dans la sprawl)",
+      "rollback": "l'hébergement SSO peut suspendre une app hors-politique en < 4 h ; le comité dé-commissionne les zombies et arbitre les bascules en projet officiel"
+    },
+    "renvoi_livre": [
+      "ch.19 évaluation adaptée (checks automatisés + revue par les pairs)",
+      "ch.20 observabilité légère",
+      "ch.21 garde-fous (DLP, PII au push)"
+    ]
+  },
+  "roi": {
+    "axe_principal": "vitesse",
+    "axes_secondaires": [
+      "cout",
+      "bienetre"
+    ],
+    "methode_mobilisee": "TCO de portefeuille power users + saaspocalypse cumulée + Cigref Hard/Soft + arbre décision ch.23.6 — le ROI se mesure au niveau du portefeuille, pas de l'app individuelle",
+    "metriques": [
+      {
+        "id": "processing-time",
+        "borne_basse": "-30 %",
+        "cible": "-50 % cycle de création d'un livrable interactif (HTML interactif vs flow PPT classique)",
+        "borne_haute": "-75 %"
+      },
+      {
+        "id": "tco-infrastructure",
+        "borne_basse": "-10 % TCO portefeuille civil (saaspocalypse - coût socle)",
+        "cible": "-25 % TCO portefeuille civil",
+        "borne_haute": "-40 %"
+      },
+      {
+        "id": "employee-engagement",
+        "borne_basse": "+3 (eNPS power users)",
+        "cible": "+8 (paved road simple + reconnaissance de l'activité)",
+        "borne_haute": "+12"
+      },
+      {
+        "id": "regulatory-compliance",
+        "borne_basse": "apps tier 1 documentées",
+        "cible": "registre = conformité RGPD tenue, audit annuel passé",
+        "borne_haute": "0 incident RGPD majeur sur 24 mois"
+      }
+    ],
+    "kpi_gardien": {
+      "id": "active-app-usage-rate",
+      "role": "KPI GARDIEN ET PRINCIPAL DE PORTEFEUILLE (spécifique aux power users, hors catalogue standard) : taux d'apps actives avec usage récurrent prouvé vs apps zombies. Sur 80 apps, souvent moins de 55 % réellement utilisées au-delà du sprint de création. C'est le gardien qui empêche le socle de devenir lui-même une bureaucratie : si le socle ne fait pas monter ce taux (en éteignant les zombies, en mutualisant les patterns), il ne se justifie pas. Le socle se mesure à ce qu'il nettoie et standardise, pas à ce qu'il ajoute.",
+      "borne": "taux d'apps actives en hausse semestre après semestre ; sinon le socle est questionné — bureaucratie ou enablement ?"
+    },
+    "non_retenu": [
+      {
+        "id": "revenue",
+        "raison": "le ROI du socle power users n'est pas du CA direct : il accélère les livrables internes (vélocité métier) et fait reculer le SaaS (TCO), attribution au portefeuille impossible à isoler par app"
+      },
+      {
+        "id": "nps",
+        "raison": "hors périmètre (gouvernance interne, pas relation client) — sauf pour les apps client-facing qui basculent en projet officiel et sortent du périmètre power user"
+      },
+      {
+        "id": "conversion-rate",
+        "raison": "applicable uniquement aux apps marketing/commerciales spécifiques, pas au portefeuille global power users"
+      }
+    ],
+    "renvoi_figure": "fig-02"
+  },
+  "operation_equipe": {
+    "personas": {
+      "porteur": {
+        "role": "Head of Power User Enablement (rôle nouveau, côté plateforme / DSI)",
+        "posture": "Convaincu que les power users sont un actif, pas une menace ; pense portefeuille et paved road plutôt que centralisation ; doit construire un socle qui s'efface quand il n'est pas utilisé",
+        "citation": "Notre travail, c'est de rendre la voie conforme tellement simple que personne n'ait envie d'aller ailleurs. Si le socle ralentit un power user d'une seule minute, on a perdu."
+      },
+      "sponsor": {
+        "role": "CDO / DSI",
+        "posture": "A découvert au CODIR l'incident du lien public indexé + les apps shadow critiques sans owner ; veut reprendre la main sans tuer la vélocité métier",
+        "citation": "Je ne veux ni interdire ni laisser courir. On a goûté à la vélocité que les power users apportent — on ne reviendra pas en arrière. Mais il faut un cadre que personne ne voie comme un cadre."
+      },
+      "allie": {
+        "role": "DAF / Contrôle de gestion",
+        "posture": "Voit dans la saaspocalypse mesurée (5 abonnements supprimés, 140 k€/an) le levier pour financer le socle ; veut le tableau de bord des économies cumulées et l'attribution par département",
+        "citation": "Montrez-moi les abonnements qu'on coupe trimestre après trimestre et l'attribution par département — je signe l'ETP plateforme et l'ETP UX design system."
+      },
+      "opposant": {
+        "role": "Power users eux-mêmes (les early adopters) + une partie des managers qui craignent un retour PPT",
+        "posture": "Garde-fou légitime contre la re-centralisation : craignent que le socle redevienne un goulot d'étranglement IT qui tue leur vélocité — souvent ceux qui ont raison si le socle se bureaucratise. Tiennent au flux Claude Code libre et au partage par lien rapide.",
+        "citation": "On a monté nos apps nous-mêmes parce que la DSI était trop lente. Si votre socle nous oblige à passer par un éditeur visuel ou à attendre une revue, on retournera sur nos partages personnels."
+      }
+    },
+    "equipe_par_phase": {
+      "poc": {
+        "etp_total": 3.8,
+        "composition": [
+          {
+            "role": "Head of Power User Enablement",
+            "etp": 1.0,
+            "profil": "pivot — pense portefeuille + paved road, anime le futur comité semestriel, arbitre build/buy des briques mutualisées (pas un chef de projet outil)"
+          },
+          {
+            "role": "Ingénieur design system",
+            "etp": 1.0,
+            "profil": "CSS/JS, composants, template HTML « page interne », doc des briques mutualisées exposée à Claude Code via MCP"
+          },
+          {
+            "role": "Ingénieur plateforme (hébergement SSO + registre + observabilité)",
+            "etp": 0.8,
+            "profil": "Le sclérosant identité : câbler SSO entreprise au bucket d'hébergement, schéma de registre, OpenTelemetry léger"
+          },
+          {
+            "role": "UX designer",
+            "etp": 0.5,
+            "profil": "Calibrer le design system pour qu'il serve dashboards + livrables narratifs + mini-outils sans devenir un carcan ; ergonomie de la paved road"
+          },
+          {
+            "role": "RSSI référent socle",
+            "etp": 0.2,
+            "profil": "Checks automatisés au push (secrets, dépendances), revue accès écriture, threat model de l'hébergement"
+          },
+          {
+            "role": "DPO référent socle",
+            "etp": 0.2,
+            "profil": "Statut RGPD par app, tiering, DPIA des apps tier 1"
+          },
+          {
+            "role": "Change manager",
+            "etp": 0.1,
+            "profil": "Amnistie shadow, onboarding des power users, médiation générationnelle PPT/HTML"
+          }
+        ]
+      },
+      "prod": {
+        "etp_total": 5.5,
+        "note": "Cœur CoE 5,5 ETP + app product owners distribués dans les métiers (chaque app garde son power user owner — le coût n'est pas centralisé)"
+      }
+    },
+    "velocite": {
+      "poc": {
+        "duree": "2 mois",
+        "cadence_release": "hebdo",
+        "perimetre": "Registre + observabilité légère en lecture sur ≈ 15 apps pilotes — faire la carte de la sprawl civile"
+      },
+      "pilote": {
+        "duree": "4 mois",
+        "cadence_release": "hebdo",
+        "perimetre": "Design system v1 + hébergement SSO + premier lot de briques mutualisées (tableau filtrable, export PDF, deep-link) + premiers MCP servers internes ; ≈ 40 apps sur la paved road, amnistie shadow lancée"
+      },
+      "prod": {
+        "duree": "12 mois",
+        "cadence_release": "2 sem.",
+        "perimetre": "80+ apps sous design system généralisé, hébergement officiel par défaut, registre tenu, comité semestriel actif, dé-commissionnement des premiers zombies, médiation PPT/HTML opérationnelle"
+      },
+      "scale": {
+        "duree": "36 mois",
+        "cadence_release": "mensuel",
+        "perimetre": "150+ apps actives, briques mutualisées élargies, MCP servers internes en self-service tier 3, socle amorti, dé-commissionnement systématique des zombies"
+      }
+    },
+    "sclerosants": [
+      "Le câblage SSO entreprise aux apps power users : aligner Entra/Okta + groupes AD + scope par power user sur le bucket d'hébergement sans réinventer la roue — 3-4 semaines incompressibles.",
+      "L'ergonomie de la paved road : la voie conforme doit être STRICTEMENT plus simple que le partage personnel, sinon elle est contournée. C'est un sujet de design produit + change, pas de tech.",
+      "L'amnistie shadow : faire revenir les 2 apps shadow critiques + les apps non déclarées qui émergeront du scan demande de la diplomatie (aider à se mettre en conformité, pas réprimander) ; sinon elles replongent.",
+      "La médiation générationnelle PPT/HTML : sans export PDF/PPT automatique côté socle, les power users qui ont basculé en HTML perdent leur public le moins technophile et un sentiment de classe s'installe.",
+      "Les MCP servers internes pour données métier : ouvrir le datamart et les fiches RH anonymisées aux power users via MCP demande un scoping fin (RBAC par power user, masquage PII, audit) — sinon on remplace les CSV copiés à la main par des fuites tracées."
+    ],
+    "deadlines_externes": [
+      {
+        "echeance": "RGPD permanent",
+        "label": "Audit annuel + DPIA pour les apps tier 1",
+        "consequence_si_ratee": "incident grave (lien public indexé sur données candidat, fuite RH) = arrêt brutal et retour au PPT — politique de tolérance zéro"
+      },
+      {
+        "echeance": "2026-08",
+        "label": "AI Act transparence (applicable si une app power user intègre un agent IA qui basculerait haut risque, ex. assistant de tri RH)",
+        "consequence_si_ratee": "gate de bascule en projet officiel manqué = non-conformité"
+      },
+      {
+        "echeance": "Semestriel",
+        "label": "Comité de portefeuille power users (KPI taux d'apps actives + saaspocalypse cumulée)",
+        "consequence_si_ratee": "sans dé-commissionnement actif des zombies, la sprawl revient et le socle devient une bureaucratie"
+      },
+      {
+        "echeance": "Annuel",
+        "label": "Revue saaspocalypse — quels abonnements SaaS coupés cette année grâce aux apps power users",
+        "consequence_si_ratee": "le moteur politique du socle s'éteint si la saaspocalypse n'est pas chiffrée chaque année par direction"
+      }
+    ],
+    "deadline_operationnelle": "Socle minimal T3 2026 (carte de la sprawl civile) → paved road active T4 2026 / T1 2027 (design system + hébergement SSO + briques + premiers MCP) → régime fédéré 2027 avec comité de portefeuille semestriel."
+  },
+  "debat": {
+    "question": "Faut-il un socle d'enablers, ou est-ce une couche d'infrastructure qui retardera la vélocité qui a fait naître la sprawl civile ?",
+    "pour": [
+      {
+        "argument": "Passé ~20-30 apps power users actives, la sprawl civile (incidents sécu, doublons inter-départements, apps orphelines, dette de maintenance privée, conflit générationnel PPT/HTML) coûte plus que n'importe quelle app isolée — le ROI est au niveau du portefeuille, pas de l'app."
+      },
+      {
+        "argument": "La saaspocalypse mesurable (abonnements supprimés) est un Hard savings que le DAF voit, et qui paie largement le socle dès quelques dizaines d'apps actives."
+      },
+      {
+        "argument": "Le registre est l'outil de conformité RGPD du portefeuille : sans lui, on ne peut ni identifier ni documenter les apps qui touchent à des données personnelles. Un seul incident sérieux peut tout remettre en cause."
+      },
+      {
+        "argument": "La mutualisation (briques + MCP servers internes + checks automatisés) paie le socle : on arrête de rebuilder 80 fois le même tableau filtrable et 80 fois le même export PDF."
+      }
+    ],
+    "contre": [
+      {
+        "argument": "Les power users ont monté leurs apps eux-mêmes parce que la DSI était trop lente : un socle mal pensé re-centralise, redevient un goulot et repousse les power users vers le shadow."
+      },
+      {
+        "argument": "Le socle a un coût fixe (ETP CoE + UX design system + hébergement) : sous ~20 apps actives, il coûte plus qu'il ne rapporte — l'enablement lourd sur 5 power users est du gâchis."
+      },
+      {
+        "argument": "Un comité semestriel qui ne dé-commissionne jamais devient une bureaucratie de plus : le socle doit se mesurer au taux d'apps actives qu'il fait monter et au volume d'abonnements SaaS qu'il fait reculer."
+      },
+      {
+        "argument": "Le conflit générationnel PPT/HTML est un sujet RH explosif si on l'aborde mal : forcer le HTML côté consommation est inacceptable politiquement."
+      }
+    ],
+    "verdict_pondere": "GO socle d'enablers partagés — MAIS la gouvernance est PROPORTIONNÉE au risque (tiering 3 niveaux, pas uniforme), le modèle est FÉDÉRÉ (le CoE possède le socle, les power users possèdent leurs apps), et la paved road doit être STRICTEMENT plus simple que le shadow. Le socle se justifie par deux KPI : le taux d'apps actives avec ROI prouvé qu'il fait monter en éteignant les zombies + la saaspocalypse cumulée mesurée trimestre après trimestre. Médiation générationnelle obligatoire : export PDF/PPT automatique côté socle, pas d'obligation côté consommation.",
+    "renvois_livre": [
+      "ch.23.5 Hard vs Soft",
+      "ch.23.7 paradoxe agentique appliqué aux power users",
+      "ch.26 IA et travail (conflit générationnel)"
+    ]
+  },
+  "choix_lecteur": [
+    {
+      "question": "Vous êtes le CDO. Face aux ~30 power users + ~80 apps + 2 shadow critiques, votre stratégie d'enablement est…",
+      "options": [
+        {
+          "id": "A",
+          "label": "Laisser-faire complet — on continue, on verra plus tard",
+          "consequence": "Vélocité maximale à court terme — mais c'est exactement la sprawl actuelle, qui grossit. Le jour où le DPO découvre une nouvelle fuite candidat indexée publiquement, vous êtes obligé d'arrêter brutalement et de revenir au PPT. Le coût caché monte sans qu'on le voie.",
+          "grille_analyse": "L'absence de gouvernance EST une gouvernance, la pire (cf. ch.26).",
+          "renvoi_chapitre": "ch.26"
+        },
+        {
+          "id": "B",
+          "label": "DSI re-centralise — toute app passe désormais par un projet officiel DSI",
+          "consequence": "Contrôle maximal sur le papier — mais file d'attente immédiate, mort de la vélocité, retour PPT généralisé. Les power users repartent en shadow, en pire, parce que la confiance est cassée.",
+          "grille_analyse": "Antipattern de la re-centralisation (ch.26) : tue la vélocité qui a fait naître la sprawl.",
+          "renvoi_chapitre": "ch.26"
+        },
+        {
+          "id": "C",
+          "label": "Socle fédéré paved road — le CoE possède le socle, les power users possèdent leurs apps, la voie conforme est strictement plus simple que le shadow",
+          "consequence": "Le CoE tient le design system, l'hébergement SSO, les briques mutualisées, le registre, les MCP internes ; chaque power user garde son owner et son ROI. La paved road plus simple que le shadow capte le flux. La sprawl civile devient un portefeuille piloté.",
+          "grille_analyse": "La bonne réponse (ch.26) : enable sans centraliser l'exécution.",
+          "renvoi_chapitre": "ch.26"
+        }
+      ]
+    },
+    {
+      "question": "Quel socle pour gouverner les apps power users sans tuer le flux Claude Code ?",
+      "options": [
+        {
+          "id": "A",
+          "label": "Buy une plateforme citizen-dev low-code mainstream",
+          "consequence": "Time-to-value rapide côté installation — mais bridé par l'éditeur visuel et HORS DU FLUX Claude Code que les power users utilisent déjà. Ils continueront à coder en parallèle, vous captez une fraction du flux. Lock-in éditeur en prime.",
+          "grille_analyse": "Piège du low-code : il s'impose à l'outil-source au lieu de l'envelopper (cf. ch.14 + ch.15).",
+          "renvoi_chapitre": "ch.14"
+        },
+        {
+          "id": "B",
+          "label": "Hybride fédéré — socle maison léger qui enveloppe le flux Claude Code libre",
+          "consequence": "Le socle (design system + hébergement + registre + briques + MCP internes) rend la voie conforme plus simple que le partage personnel, sans contraindre Claude Code. Le power user continue d'utiliser son outil, le socle l'attire naturellement sur la paved road.",
+          "grille_analyse": "La bonne réponse (ch.14 + ch.15) : enveloppe l'outil-source, ne l'impose pas.",
+          "renvoi_chapitre": "ch.15"
+        },
+        {
+          "id": "C",
+          "label": "Tout build maison complet d'un coup, design system + IDE + workflow imposé",
+          "consequence": "Souverain et homogène — mais effort plateforme lourd, des mois sans rien livrer, et vous réinventez ce que les power users font déjà très bien avec Claude Code. Risque : le socle devient un IDE concurrent que personne n'utilise.",
+          "grille_analyse": "Fausse pureté : on ne réinvente pas le flux Claude Code (cf. ch.14).",
+          "renvoi_chapitre": "ch.14"
+        }
+      ]
+    },
+    {
+      "question": "Le conflit générationnel PPT vs HTML interactif — quelle médiation ?",
+      "options": [
+        {
+          "id": "A",
+          "label": "Forcer le HTML interactif côté consommation aussi — au CODIR, fini les PPT",
+          "consequence": "Inacceptable politiquement. Un CODIR senior qui veut prendre des notes sur un PDF a un mandat légitime à exiger un format traditionnel. Vous transformez une médiation en confrontation et perdez le sponsor.",
+          "grille_analyse": "Antipattern : forcer le format côté consommation.",
+          "renvoi_chapitre": "ch.26"
+        },
+        {
+          "id": "B",
+          "label": "Double sortie automatique — HTML interactif pour la production + export PDF/PPT automatique pour la consommation, fourni par le socle",
+          "consequence": "Les power users gardent la vélocité HTML pour produire et itérer ; les destinataires qui préfèrent un format traditionnel reçoivent l'export sans surcoût. Le sentiment de classe s'efface — l'outil n'est pas la posture.",
+          "grille_analyse": "La bonne réponse (ch.26) : médier sans confronter.",
+          "renvoi_chapitre": "ch.26"
+        },
+        {
+          "id": "C",
+          "label": "Freiner le HTML interactif — on revient au PPT par défaut",
+          "consequence": "Vous tuez la vélocité qui a fait naître la sprawl et la saaspocalypse. Les power users repartent en shadow ou démissionnent. Perte sèche.",
+          "grille_analyse": "Antipattern : abandonner le levier vélocité.",
+          "renvoi_chapitre": "ch.26"
+        }
+      ]
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Pourquoi le ROI d'un portefeuille d'apps power users se mesure-t-il au niveau du portefeuille, et non par app ?",
+      "options": [
+        "Parce que les apps sont trop nombreuses pour être mesurées une par une",
+        "Parce que le socle d'enablers (design system, hébergement, registre, briques mutualisées) a un coût fixe qui s'amortit sur N apps, et que les coûts de la sprawl civile (incidents sécu, doublons, apps orphelines, conflit générationnel) sont des coûts de portefeuille — pas d'app isolée",
+        "Parce que le RGPD l'impose",
+        "Parce que les apps power users n'ont pas de ROI individuel"
+      ],
+      "bonne_reponse": 1,
+      "explication": "Sous ~20-30 apps actives, le socle coûte plus que ce qu'il rapporte. Au-delà, la saaspocalypse + la mutualisation des briques l'amortissent (le crossover saaspocalypse) et le coût de gouvernance par app s'effondre. Le coût de coordination devient le poste dominant — paradoxe agentique appliqué aux power users (ch.23.7).",
+      "renvoi_chapitre": "ch.23.7"
+    },
+    {
+      "question": "Quel est le bon principe directeur d'un socle pour power users qui ont déjà adopté Claude Code ?",
+      "options": [
+        "Imposer une plateforme citizen-dev low-code à la place de Claude Code",
+        "Centraliser via la DSI : toute app passe par un projet officiel",
+        "Construire un socle qui ENVELOPPE l'outil-source (Claude Code) sans le contraindre — la voie conforme strictement plus simple que le partage personnel",
+        "Interdire la création d'apps maison et revenir au SaaS"
+      ],
+      "bonne_reponse": 2,
+      "explication": "Les power users continueront d'utiliser Claude Code quoi qu'il arrive — c'est ce qui leur a donné la vélocité. Le socle ne route pas, il ENVELOPPE (différence subtile avec CC-11 dont le gateway route les modèles). Si la paved road est plus simple que le shadow, elle capte le flux. Sinon elle est contournée (ch.14 + ch.15).",
+      "renvoi_chapitre": "ch.15"
+    },
+    {
+      "question": "Pourquoi le registre d'apps power users est-il plus qu'un inventaire bureaucratique ?",
+      "options": [
+        "Parce qu'il classe les apps par ordre alphabétique",
+        "Parce qu'il porte le statut RGPD de chaque app (catégorie de données, base légale, durée de conservation) : c'est l'outil de conformité du portefeuille, qui permet d'identifier et de documenter les apps tier 1 (données personnelles, RH, candidats) — la pièce qu'on présente à l'audit annuel",
+        "Parce qu'il remplace le design system",
+        "Parce qu'il entraîne les modèles"
+      ],
+      "bonne_reponse": 1,
+      "explication": "Le registre transforme une sprawl invisible en portefeuille pilotable. Surtout, il PORTE le statut RGPD par app : sans lui, on ne peut ni identifier les apps qui touchent à des données personnelles ni prouver la conformité au DPO et à l'audit. C'est l'analogue civil du registre AI Act de la flotte d'agents CC-11 (ch.25).",
+      "renvoi_chapitre": "ch.25"
+    }
+  ],
+  "verdict": {
+    "stamp": "GO_SOCLE_ENABLERS_PARTAGES",
+    "label": "GO socle d'enablers partagés — gouverner le portefeuille, sinon la sprawl civile coûte plus qu'elle ne rapporte",
+    "conditions": [
+      "Socle de 7 enablers — design system + briques UX, hébergement buckets/DB, identité SSO, logs centralisés, observabilité, registre, gateway LLM + modèles partagés + sous-agents. La voie conforme doit être STRICTEMENT plus simple que le partage personnel.",
+      "Registre obligatoire à partir de l'usage dépassant le périmètre personnel (≥ 5 utilisateurs ou destinataire externe au département)",
+      "Tiering par le risque (3 niveaux), pas une revue uniforme",
+      "Modèle fédéré — le CoE enablement possède le socle, les power users possèdent leurs apps, paved road plus simple que le shadow",
+      "Médiation générationnelle PPT/HTML — export automatique depuis le HTML, pas d'obligation côté consommation",
+      "Bascule en projet officiel quand une app devient critique (gate explicite, le power user reste owner fonctionnel)",
+      "Dé-commissionnement actif des zombies (KPI taux d'apps actives avec usage récurrent prouvé)",
+      "Amnistie + onboarding des shadow apps déjà existantes (pas de chasse)",
+      "Saaspocalypse cumulée chiffrée semestre après semestre par direction (moteur politique du socle)",
+      "Quota tokens gateway LLM par power user + journalisation des appels dans les logs centralisés (garde-fou financier + RGPD) ; sous-agents custom utiles refactorés en briques stables du socle"
+    ]
+  },
+  "renvois_livre": [
+    "ch.14 assistants de code (Claude Code comme outil-source)",
+    "ch.13 surfaces agentiques (l'app maison comme nouvelle surface)",
+    "ch.7 boucle agentique appliquée à la création de livrables",
+    "ch.15 MCP plateforme (MCP servers internes consommés par les power users)",
+    "ch.16 sécurité MCP (gateway, scope par power user)",
+    "ch.20 observabilité légère des apps",
+    "ch.21 garde-fous (DLP, PII au push)",
+    "ch.23.5 Hard vs Soft (saaspocalypse Hard + vélocité Soft)",
+    "ch.23.7 paradoxe agentique appliqué aux power users",
+    "ch.25 gouvernance (RGPD par app, AI Act par usage si bascule)",
+    "ch.26 IA et travail (conflit générationnel PPT vs HTML interactif)"
+  ],
+  "figures": [
+    {
+      "id": "fig-00",
+      "titre": "La sprawl civile — l'état actuel du portefeuille power users",
+      "fichier": "images/CC-14-power-users/CC-14-fig-00-architecture-actuelle.svg",
+      "caption": "La carte de la sprawl civile avant socle : ≈ 80 apps power users dispersées par département (RH, finance, marketing, ops, IT, juridique, commerce) + 5 SaaS résiduels qui reculent + 2 shadow critiques sans owner. Les angles morts annotés — pas de design system commun, pas d'hébergement SSO, pas de registre, pas d'observabilité, doublons inter-départements, apps orphelines à 6 mois. Le test de véracité : qui a la carte ? Personne."
+    },
+    {
+      "id": "fig-01",
+      "titre": "Le socle d'enablers — sept services + RACI fédéré",
+      "fichier": "images/CC-14-power-users/CC-14-fig-01-socle-enablers.svg",
+      "caption": "Les sept enablers qui fédèrent sans centraliser : design system + briques UX, hébergement standardisé (buckets statiques + base de données managée), identité & accès, logs centralisés, observabilité légère, registre d'apps, et la gateway LLM + modèles partagés + sous-agents custom mise en exergue (l'enabler pivot qui rend la vraie autonomie possible). En dessous, le RACI fédéré : le CoE enablement possède le socle, les power users possèdent leurs apps, sécu/DPO arbitrent par tiering, comité semestriel de portefeuille."
+    },
+    {
+      "id": "fig-02",
+      "titre": "Cycle de vie d'une app power user + 6 design patterns packagés",
+      "fichier": "images/CC-14-power-users/CC-14-fig-02-cycle-vie-design-patterns.svg",
+      "caption": "À gauche, le cycle de vie : idée → admission au registre quand ≥ 5 utilisateurs ou destinataire externe → tiering par le risque → hébergement SSO → revue 6 mois → dé-commissionnement OU bascule en projet officiel. À droite, les six design patterns packagés dans les briques mutualisées : progressive disclosure, annotations interactives, deep-link figcaption ¶, tableau filtrable, scrolly narrative, export PDF/PPT — un cas d'usage par pattern."
+    },
+    {
+      "id": "fig-03",
+      "titre": "Pipeline gateway — reconstruire un organigramme depuis une capture Teams",
+      "fichier": "images/CC-14-power-users/CC-14-fig-03-pipeline-gateway.svg",
+      "caption": "L'exemple canonique qui fait vivre la gateway LLM (#7) et la mutualisation des modèles partagés. Pipeline en 4 étapes : capture Teams floue → OCR (modèle mutualisé) → vision LLM (extraction hiérarchie) → briques SVG du socle (#1, rendu org chart) → HTML interactif hébergé (#2), lien partageable révocable (#3). Avant : ~2 h manuel dans un outil de présentation. Après : ~3 min via sous-agent custom déclaré dans la gateway. Coût mesuré (~0,03 €) audité dans les logs centralisés (#4) et attribué au token power user (#7). Leçon : la gateway transforme les compétences artisanales en enablers de portefeuille."
+    }
+  ]
+}

@@ -69,7 +69,7 @@ Reçoit le CSS quiz local + note IIFE detection pattern (script `insert-quizzes.
 - `mobile.md` (~350 lignes) — checklist 7 points :
   1. `overflow-x: hidden` sur html/body + exception `overflow-x: clip` pour scrolly avec `position: sticky`
   2. Topbar fixe responsive (padding + tailles sous 560px / 380px)
-  3. Apps `header.site` + `main#report` : typographie mobile dans le **même** `@media (max-width: 1024px)` (load-bearing pour Chrome "Desktop site")
+  3. Apps `header.site` + `main#report` : typographie mobile dans le **même** `@media (max-width: 1024px)` (déterminant pour Chrome "Desktop site")
   4. Schémas SVG `width: 100%; height: auto; max-width: 100%` + zoom plein écran obligatoire
   5. Sidebars `panel-close` (renvoie vers `sidebars.md`)
   6. `<pre>` + `<code>` : 3 règles `main pre` + `main code` + `main pre code`
@@ -86,7 +86,7 @@ Reçoit le CSS quiz local + note IIFE detection pattern (script `insert-quizzes.
 - `sidebars.md` (~300 lignes) — TOC + Sources :
   - Structure HTML + sticky height calc `100vh - 56px` (et pourquoi `height` > `max-height` avec `align-self: start`)
   - Pattern `panel-close` mobile complet (CSS + HTML + JS Escape avec yield zoom/modal)
-  - `#sources-collapse-btn` : `position: fixed` load-bearing (pas absolute)
+  - `#sources-collapse-btn` : `position: fixed` pivot (pas absolute)
   - Format canonique `<li id="source-N">` : `[N]` bracketed littéral + URL complète comme texte de lien + `<br>` + accessed
   - CSS canonique des sources (couleurs, tailles)
   - Convention legacy à migrer au passage

@@ -3,6 +3,8 @@
 _Document de travail pour la mise en livre des 28 dossiers du site. Destiné aux experts data et aux décideurs. Pédagogue, problématisé, dense. Signale explicitement les redondances, les concepts qui s'approfondissent d'un dossier à l'autre, les schémas à fusionner._
 
 > **Date** : 2026-05-27 · **Branche** : `claude/book-outline-concepts-2mRuR` · **Statut** : v0 — outline soumis pour discussion. Ce n'est pas le manuscrit, c'est la carte de bataille.
+>
+> **Révision 2026-06-04** : structure portée de 25 à **27 chapitres**. Deux chapitres ajoutés — **ch. 12 « Construire la boucle : SDK, ADK et frameworks d'agents »** (clôture de l'Acte II ; absorbe `agent-sdk` + la couche ADK d'`orchestration-agentique`, jusque-là noyés au Ch. 7/Ch. 11 → cf. Friction 1 §4.2, tranchée par promotion) et **ch. 14 « Assistants de code »** (Acte III ; promotion de `coding-agents`, instanciation du régime copilote/CLI). **Acte III réordonné** : surfaces (13) → assistants de code (14) → MCP (15) → sécurité MCP (16) → computer use (17) → analytics (18). Tous les numéros de chapitre 12→25 ont glissé (12→15, 13→16, 14→13, 15→17, 16→18, 17-25 → 19-27). Les blocs de specs §3 ci-dessous ont des titres renumérotés mais restent dans leur ordre de rédaction d'origine (à réordonner physiquement plus tard si besoin).
 
 ---
 
@@ -74,7 +76,7 @@ Trois gabarits d'écriture, à signaler en tête de chaque chapitre dans le manu
 
 | Gabarit | Pages cibles | Compte de mots | Usage |
 | --- | --- | --- | --- |
-| **Court / encart** | 8-12 | 2 500-4 000 | Bordures, contreforts, ouvertures. Ch. 1, 6, 8, 16-encart, 20, 25-encart, 26-narrative. |
+| **Court / encart** | 8-12 | 2 500-4 000 | Bordures, contreforts, ouvertures. Ch. 1, 6, 8, 18-encart, 20, 25-encart, 26-narrative. |
 | **Standard** | 16-24 | 5 000-8 000 | La majorité des chapitres. Une thèse, 3-4 sections, 1 récap. |
 | **Charnière** | 28-40 | 10 000-14 000 | Chapitres-pivots qui fusionnent 3+ dossiers. Ch. 7 (boucle), 11 (orchestration), 17 (éval+benchmarks), 21 (ROI). |
 
@@ -167,8 +169,8 @@ Vue d'avion. Le détail chapitre par chapitre suit en §3.
 | --- | --- | --- | --- | --- |
 | **Prologue** | Pourquoi un livre, maintenant | — | (méta) | tout le monde |
 | **Acte I** | Les moteurs | 00 LLM core | `anatomie` (00), `modeles-raisonnement`, `process-reward-models`, `decode-speculative`, `economie-inference`, (`world-models` en horizon) | expert data, FinOps, achats infra |
-| **Acte II** | La boucle | 01-04 (boucle, outils, contexte, patterns) | `anatomie` (01-04), `harness-agentique`, `agent-sdk`, `orchestration-agentique`, `coding-agents`, `fabrique-agent`, `memoire-agentique`, `compaction-agentique` | agent engineer, tech lead, architecte |
-| **Acte III** | Les interfaces | 05 protocoles | `anatomie` (05), `mcp-plateforme`, `mcp-securite`, `surfaces-agentiques`, `agents-computer-use`, `analytics-agentique-gcp`, (`narrative-experiences`) | PM, designer, intégrateur, architecte plateforme |
+| **Acte II** | La boucle | 01-04 (boucle, outils, contexte, patterns) + ADK | `anatomie` (01-04), `harness-agentique`, `memoire-agentique`, `compaction-agentique`, `orchestration-agentique` (patterns), puis **ch. 12** : `agent-sdk` + `orchestration-agentique` (couche ADK) | agent engineer, tech lead, architecte |
+| **Acte III** | Les interfaces | 05 protocoles + surfaces | `anatomie` (05), `surfaces-agentiques`, **ch. 14** : `coding-agents`, `mcp-plateforme`, `mcp-securite`, `agents-computer-use`, `analytics-agentique-gcp`, (`narrative-experiences`) | PM, designer, intégrateur, architecte plateforme, développeur |
 | **Acte IV** | Mesures et garde-fous | 06-09 (guardrails, observabilité, runtime, governance) | `anatomie` (06-09), `evaluation-agentique`, `benchmarks-contestes`, `observabilite-agents-ia`, `llm-jailbreaking`, `measure-roi`, `ia-frugale`, `gouvernance`, `ia-et-travail`, `proces-musk-altman` | décideur, sponsor, RSSI, DPO, FinOps, CDO |
 | **Épilogue** | Sept paris à dater 2027-2028 | — | (transverse) | décideur, stratège |
 | **Annexes** | Schémas à fusionner · Glossaire · Index dossiers source | — | (méta) | tous |
@@ -205,7 +207,7 @@ Vue d'avion. Le détail chapitre par chapitre suit en §3.
 
 **Dossiers absorbés** : `anatomie` couche 00 (`livre-data.js` LAYERS[0]).
 
-**Concepts qui s'approfondissent ailleurs** : `Température`, `Top-p`, `Softmax`, `Seed` → re-référencés en Acte II Ch. 4 (variance qui accumule à chaque tool call) et Acte IV Ch. 16 (trajectory drift en observabilité).
+**Concepts qui s'approfondissent ailleurs** : `Température`, `Top-p`, `Softmax`, `Seed` → re-référencés en Acte II Ch. 4 (variance qui accumule à chaque tool call) et Acte IV Ch. 18 (trajectory drift en observabilité).
 
 **Schéma** : `fig-01` anneau 00 (existant dans `anatomie/`). À garder tel quel — il sert de couverture conceptuelle au chapitre.
 
@@ -221,7 +223,7 @@ Vue d'avion. Le détail chapitre par chapitre suit en §3.
 
 **Dossiers absorbés** : `modeles-raisonnement/` (06 mai · #14). Concepts mobilisés : pivot o1 sept. 2024, RL sur récompense vérifiable (RLVR), GRPO, **« aha moment » R1**, interleaved thinking Claude 4.x, parallel thinking Gemini Deep Think.
 
-**Approfondissement explicite** : le **piège de la fidélité de la chaîne de pensée** (Anthropic mars 2025 : Claude 3.7 fidèle 25 % du temps, R1 39 %). Repris en Acte IV Ch. 16 sous l'angle audit/observabilité.
+**Approfondissement explicite** : le **piège de la fidélité de la chaîne de pensée** (Anthropic mars 2025 : Claude 3.7 fidèle 25 % du temps, R1 39 %). Repris en Acte IV Ch. 18 sous l'angle audit/observabilité.
 
 **Redondance à dédupliquer** : la définition « inference-time compute » apparaît aussi dans `process-reward-models` et `decode-speculative`. **Définition canonique ici**, renvois ailleurs.
 
@@ -275,7 +277,7 @@ Vue d'avion. Le détail chapitre par chapitre suit en §3.
 
 **Approfondissement vs Ch. 4** : Ch. 4 isole une couche d'optim ; Ch. 5 montre la **pile entière** et l'économie qui en résulte.
 
-**Liaison avec Acte IV Ch. 19 (ROI)** et **Ch. 20 (frugalité)** : c'est le même triangle vu sous 3 angles : coût/token (Acte I), coût/cas d'usage (ROI), coût/externalité (frugalité).
+**Liaison avec Acte IV Ch. 21 (ROI)** et **Ch. 22 (frugalité)** : c'est le même triangle vu sous 3 angles : coût/token (Acte I), coût/cas d'usage (ROI), coût/externalité (frugalité).
 
 **Schémas à fusionner** :
 - Schéma 7 couches d'optim de `economie-inference` → **figure de référence** du livre, citée 3 fois.
@@ -291,7 +293,7 @@ Vue d'avion. Le détail chapitre par chapitre suit en §3.
 
 **Thèse** : Trois architectures concurrentes (JEPA latent, diffusion itérative, autoregressive) ; aucune n'a gagné. Pour le décideur 2026, c'est encore une bordure de recherche — sauf si le cas d'usage touche au pilotage écran ou à la robotique.
 
-**Dossiers absorbés** : `world-models/` (05 mai). Court chapitre (~6 pages), positionné comme **encart** entre Acte I et Acte II. Renvoi explicite vers Acte III Ch. 12 (computer use).
+**Dossiers absorbés** : `world-models/` (05 mai). Court chapitre (~6 pages), positionné comme **encart** entre Acte I et Acte II. Renvoi explicite vers Acte III Ch. 15 (computer use).
 
 ---
 
@@ -331,7 +333,7 @@ Vue d'avion. Le détail chapitre par chapitre suit en §3.
 
 **Dossiers absorbés** : `anatomie` couche 02. Renvois forts vers Acte III (MCP) et Acte IV (sécurité).
 
-**Concepts qui s'approfondissent** : `tool_use` (Anthropic), `function calling` (OpenAI), JSON Schema → étendu en Acte III Ch. 11 (MCP comme standardisation cross-vendor) et Acte IV Ch. 18 (tool poisoning).
+**Concepts qui s'approfondissent** : `tool_use` (Anthropic), `function calling` (OpenAI), JSON Schema → étendu en Acte III Ch. 11 (MCP comme standardisation cross-vendor) et Acte IV Ch. 20 (tool poisoning).
 
 **Piège classique** : `execute_sql` sans scoping ni sandbox. Une injection indirecte = exfiltration en 3 tours.
 
@@ -361,7 +363,7 @@ Vue d'avion. Le détail chapitre par chapitre suit en §3.
 
 **Schémas à fusionner / créer** :
 - Le « triangle fidélité × coût × oubliabilité » de `compaction-agentique` → schéma signature du chapitre.
-- La surface d'attaque MITRE ATLAS de `memoire-agentique` + le vecteur SpAIware → **un schéma unifié de threat model mémoire** à placer entre Ch. 9 et Ch. 10, renvoyé en Acte IV Ch. 18.
+- La surface d'attaque MITRE ATLAS de `memoire-agentique` + le vecteur SpAIware → **un schéma unifié de threat model mémoire** à placer entre Ch. 9 et Ch. 10, renvoyé en Acte IV Ch. 20.
 
 **Piège classique** : faire confiance à `/compact` sur un agent à mémoire persistante sans signer les compactions. Une injection paraphrasée 3 mois en arrière reste active.
 
@@ -377,7 +379,7 @@ Vue d'avion. Le détail chapitre par chapitre suit en §3.
 - `anatomie` couche 04 + l'essentiel d'`orchestration-agentique/` (27 mai · #28) — 8 patterns, stack ADK/runtime/produit, 5 problèmes durs prod, **arbre de décision buy/build**.
 - `fabrique-agent/` (15 mai · #21) — 4 stades de maturité, 10 artefacts partagés (positionné en sous-chapitre « équipe »).
 
-**Étude de cas centrale** : Klarna (67 % automatisé puis recul partiel sur les 5 % de cas charges émotionnellement). À utiliser **deux fois** dans le livre : ici comme illustration multi-agent, et en Acte IV Ch. 19 sur le ROI. Pas redondant — deux lectures complémentaires.
+**Étude de cas centrale** : Klarna (67 % automatisé puis recul partiel sur les 5 % de cas charges émotionnellement). À utiliser **deux fois** dans le livre : ici comme illustration multi-agent, et en Acte IV Ch. 21 sur le ROI. Pas redondant — deux lectures complémentaires.
 
 **Schémas à fusionner** :
 - Les 8 patterns d'`orchestration-agentique` → schéma de référence du chapitre (le plus dense du livre).
@@ -388,39 +390,55 @@ Vue d'avion. Le détail chapitre par chapitre suit en §3.
 
 ---
 
+#### Chapitre 12 — Construire la boucle : SDK, ADK et frameworks d'agents
+
+**Question** : Si la boucle Reason · Act · Observe est partout la même, pourquoi une dizaine de frameworks pour l'écrire — et comment choisir sans se tromper de couche ?
+
+**Thèse** : Le choix d'un kit n'est pas un choix d'abstraction (elles convergent toutes vers `Agent` + `tools` + `handoffs`) mais un pari sur un **socle** (modèle, cloud, runtime). Le produit et le SDK sont deux enveloppes du même harness ; le code spécifique tient en ~50 lignes ; *bash is all you need* ; et il faut séparer strictement **ADK** (forme dans le code) / **runtime** (où ça tourne) / **services de plateforme** (mémoire, identité, gateway).
+
+**Dossiers absorbés** : `agent-sdk/` (18 mai · #22) — Claude Code vs Agent SDK, 3 voies, tools/bash/codegen, gather/act/verify, sécurité 3 couches ; `orchestration-agentique/` (27 mai · #28) couche **ADK** (stack 3 couches + cartographie LangGraph/CrewAI/OpenAI Agents SDK/Claude Agent SDK/Google ADK/Microsoft Agent Framework).
+
+**Frontières éditoriales** : la boucle *conceptuelle* reste au Ch. 7 ; les *topologies multi-agents* et le buy/build restent au Ch. 11 ; le *runtime managé* et le déploiement restent au Ch. 22 ; le *catalogue d'outils* reste au Ch. 8. Ici uniquement : le geste de construction d'un agent unique.
+
+**Schémas réutilisés** : `agent-sdk` 03-cc-vs-sdk, 04-trois-voies, 07-matrice-tools-bash-codegen, 08-agent-loop, 09-securite-couches ; `orchestration` 05-stack-trois-couches, 06-cartographie-2026.
+
+**Piège classique** : choisir son framework par comparaison d'abstractions. On choisit un socle (modèle/cloud/runtime), pas une API — et on le regrette quand on a choisi l'API.
+
+---
+
 ### ACTE III — LES INTERFACES
 
 > _Anneau 05 + surfaces. C'est par là que l'utilisateur final touche l'agent — et que se décide la friction d'adoption. Lecteur cible : PM, designer, intégrateur, architecte plateforme._
 
-#### Chapitre 12 — MCP, le HTTP des agents
+#### Chapitre 15 — MCP, le HTTP des agents
 
 **Question** : MCP a gagné par effet de réseau (97 M téléchargements/mois, 7500 serveurs, donation Linux Foundation) — pas par sa rigueur technique. Qu'est-ce que ça change pour le décideur qui standardise sa stack ?
 
-**Thèse** : MCP est **devenu** le standard de facto agent↔outils, A2A le standard de facto agent↔agent (Google avr 2025 → LF juin 2025, 150+ orgs), AG-UI le standard de facto agent↔frontend (CopilotKit, 17 events). La trinité dessine l'**interopérabilité 2026-2027**. Refuser MCP en propriétaire, c'est s'enfermer dans sa chapelle ; l'adopter, c'est accepter une surface d'attaque non triviale (Ch. 13).
+**Thèse** : MCP est **devenu** le standard de facto agent↔outils, A2A le standard de facto agent↔agent (Google avr 2025 → LF juin 2025, 150+ orgs), AG-UI le standard de facto agent↔frontend (CopilotKit, 17 events). La trinité dessine l'**interopérabilité 2026-2027**. Refuser MCP en propriétaire, c'est s'enfermer dans sa chapelle ; l'adopter, c'est accepter une surface d'attaque non triviale (Ch. 16).
 
 **Dossiers absorbés** : `mcp-plateforme/` (08 mai · #16). Genèse novembre 2024, pivot OpenAI mars 2025, donation LF décembre 2025, layering avec function calling / OpenAPI / A2A.
 
-**Schémas** : layering MCP/FC/OpenAPI/A2A de `mcp-plateforme` → schéma de référence. Compléter par schéma trinité MCP×A2A×AG-UI de `surfaces-agentiques` (Ch. 14).
+**Schémas** : layering MCP/FC/OpenAPI/A2A de `mcp-plateforme` → schéma de référence. Compléter par schéma trinité MCP×A2A×AG-UI de `surfaces-agentiques` (Ch. 13).
 
 ---
 
-#### Chapitre 13 — Sécurité MCP : 10 vecteurs × 10 patterns
+#### Chapitre 16 — Sécurité MCP : 10 vecteurs × 10 patterns
 
 **Question** : Si l'agent peut appeler **n'importe quel** serveur MCP, qui valide qu'il ne se fait pas piéger par un outil empoisonné ou un namespace shadowed ?
 
-**Thèse** : 6 trust boundaries, 4 familles d'attaques (tool poisoning / prompt injection cross-document / cross-server confusion / OAuth+supply chain), matrice défensive 10×10 avec **4 patterns load-bearing** : Sigstore + hash pinning, tool tagging, allowlist namespace, HITL writes. Le reste est cosmétique.
+**Thèse** : 6 trust boundaries, 4 familles d'attaques (tool poisoning / prompt injection cross-document / cross-server confusion / OAuth+supply chain), matrice défensive 10×10 avec **4 patterns pivots** : Sigstore + hash pinning, tool tagging, allowlist namespace, HITL writes. Le reste est cosmétique.
 
 **Dossiers absorbés** : `mcp-securite/` (20 mai · #26). Roadmap 12 mois : AI Act art. 15 (août 2026), spec MCP v2 Sigstore (automne 2026), registries signés (janvier 2027), MCP × A2A (printemps 2027).
 
-**Approfondissement vs Ch. 12** : Ch. 12 vend la promesse, Ch. 13 documente le coût. **Strictement complémentaires**, dyade unique.
+**Approfondissement vs Ch. 15** : Ch. 15 vend la promesse, Ch. 16 documente le coût. **Strictement complémentaires**, dyade unique.
 
 **Schémas à fusionner** :
 - Matrice défensive 10×10 de `mcp-securite` → schéma signature du chapitre.
-- À mettre en regard de la matrice sécurité agent computer use (CVE-2025-55322, VPI) de `agents-computer-use` (Ch. 15) → **schéma de synthèse menaces 2026** unifié, renvoyé en Acte IV Ch. 18.
+- À mettre en regard de la matrice sécurité agent computer use (CVE-2025-55322, VPI) de `agents-computer-use` (Ch. 17) → **schéma de synthèse menaces 2026** unifié, renvoyé en Acte IV Ch. 20.
 
 ---
 
-#### Chapitre 14 — Surfaces agentiques : 4 régimes d'accès
+#### Chapitre 13 — Surfaces agentiques : 4 régimes d'accès
 
 **Question** : Le chatbot est-il mort ? Et si non, à quel régime de prise l'utilisateur final accède-t-il vraiment ?
 
@@ -428,27 +446,43 @@ Vue d'avion. Le détail chapitre par chapitre suit en §3.
 
 **Dossiers absorbés** : `surfaces-agentiques/` (18 mai · #23). Generative UI (v0, Claude Artifacts, OpenAI Canvas), on-behalf-of (Operator, Computer Use, Devin, Manus, Sierra, Agentforce, Vapi, Harvey), levels of autonomy (Knight Institute), patterns de confiance (Anthropic graduated trust, Salesforce trust layer), 5 couches d'architecture canonique, matrice de décision.
 
-**Encart Knight levels of autonomy** : à reprendre **tel quel** comme grille de cadrage transverse au livre (renvoyée 4 fois : Ch. 11 orchestration, Ch. 14, Ch. 15 computer use, Ch. 21 governance).
+**Encart Knight levels of autonomy** : à reprendre **tel quel** comme grille de cadrage transverse au livre (renvoyée 4 fois : Ch. 11 orchestration, Ch. 13, Ch. 17 computer use, Ch. 23 governance).
 
 ---
 
-#### Chapitre 15 — Computer use : le régime extrême
+#### Chapitre 14 — Assistants de code : Claude Code, Copilot, Codex, Antigravity
+
+**Question** : Si le même outil accélère un débutant (+55,8 %) et ralentit un expert (−19 %), qu'est-ce qu'on mesure — et comment déléguer ?
+
+**Thèse** : L'assistant de code est l'instanciation du régime copilote/CLI (Ch. 13) sur la verticale dev — devenue, parce que *bash is all you need*, un outil d'automatisation générale. Changement de **nature** (un délégué qui livre une PR), pas de nom. L'IA y est un **amplificateur** : le rendement dépend de la maturité du contexte et de la qualité de la revue. Le bon réflexe n'est pas de remplacer le clavier mais de déléguer un livrable *quand la revue est bornée*.
+
+**Dossiers absorbés** : `coding-agents/` (12 mai · #17) — définition opérationnelle, anatomie 6 composants, panorama Claude Code / Codex CLI / Copilot + Cursor/Devin/Aider, **pyramide d'usage 4 étages**, gains/coûts (retex vs benchmarks vs case studies). **Ajout 2026-06** : Antigravity, Gemini CLI, Jules (absents du dossier, à sourcer sur pages officielles Google).
+
+**Frontières éditoriales** : la *typologie des surfaces* reste au Ch. 13 ; *builder son propre agent* (SDK/ADK) est au Ch. 12 (ici on parle des produits qu'on *utilise*) ; le *cadre ROI général* (frameworks, J-curve, paradoxe) est au Ch. 23 (ici, seulement la déclinaison code) ; sécurité MCP au Ch. 16, computer use au Ch. 17.
+
+**Schémas réutilisés** : `coding-agents` 01-trois-regimes, 02-anatomie, 04-comparatif, 05-pyramide, 06-gains, 07-couts, 08-carte-decision.
+
+**Piège classique** : mettre un score de benchmark (« SWE-bench > 60 % ») dans un RFP au lieu du facteur de productivité *net de revue* sur son propre corpus, à son étage de la pyramide.
+
+---
+
+#### Chapitre 17 — Computer use : le régime extrême
 
 **Question** : Quand l'agent **pilote un écran** comme un humain, à quoi ressemble la boucle, à quoi ressemblent les benchmarks, et quelle surface d'attaque hérite-t-on ?
 
 **Thèse** : Boucle observe·plan·ground·act·verify. Trois architectures concurrentes en 2026. Surface d'attaque inédite : **VPI** (Visual Prompt Injection) + CVE-2025-55322. Profil de latence dégradé. Marché 2026-2030 en repositionnement.
 
-**Dossiers absorbés** : `agents-computer-use/` (02 mai · #09). OSWorld / WebArena / UI-CUBE comme benchmarks de référence — à mettre en regard du chapitre `benchmarks-contestes` (Ch. 17), qui montre comment ils sont contaminés.
+**Dossiers absorbés** : `agents-computer-use/` (02 mai · #09). OSWorld / WebArena / UI-CUBE comme benchmarks de référence — à mettre en regard du chapitre `benchmarks-contestes` (Ch. 19), qui montre comment ils sont contaminés.
 
 ---
 
-#### Chapitre 16 — Analytics agentique : la stack data + IA en sectoriel régulé
+#### Chapitre 18 — Analytics agentique : la stack data + IA en sectoriel régulé
 
 **Question** : Quand l'agent **interroge la data warehouse**, où passe le pivot sémantique, et comment fait-on tenir l'AI Act + DORA + ACPR + souveraineté pour une banque tier 1 française ?
 
 **Thèse** : Trois surfaces agentiques (Conversational Analytics / agents custom Vertex / MCP banque). **Le pivot sémantique** (Looker semantic vs dbt vs Cube) est le goulot d'étranglement. Section régu banque française : échéance 2 août 2026 AI Act, DORA, EBA, ACPR, BCBS 239, Assured Workloads S3NS Premi3NS SecNumCloud. Comparatif Snowflake Cortex / Databricks Genie / Microsoft Fabric.
 
-**Dossiers absorbés** : `analytics-agentique-gcp/` (19 mai · #24). Cas instanciation **sectorielle** du livre. À traiter aussi comme **renvoi anticipé** vers Acte IV Ch. 21 (gouvernance).
+**Dossiers absorbés** : `analytics-agentique-gcp/` (19 mai · #24). Cas instanciation **sectorielle** du livre. À traiter aussi comme **renvoi anticipé** vers Acte IV Ch. 23 (gouvernance).
 
 **Encart** : `narrative-experiences/` (05 mai) en aparté de fin de chapitre — la « troisième voie » d'interaction (ni chat, ni copilote, ni canvas) — 4 pages d'horizon.
 
@@ -458,7 +492,7 @@ Vue d'avion. Le détail chapitre par chapitre suit en §3.
 
 > _Anneaux 06-09. C'est ici que se gagne ou se perd la confiance du décideur — et qu'on sait **tuer** un cas d'usage au bon moment. Lecteur cible : décideur, sponsor, RSSI, DPO, FinOps, CDO, DPO._
 
-#### Chapitre 17 — Évaluer un agent (et débunker les leaderboards)
+#### Chapitre 19 — Évaluer un agent (et débunker les leaderboards)
 
 **Question** : Comment passe-t-on du F1 classique aux trajectoires multi-tours — et pourquoi un score SWE-bench impressionnant ne survit pas à un audit d'entreprise ?
 
@@ -471,7 +505,7 @@ Vue d'avion. Le détail chapitre par chapitre suit en §3.
 **Approfondissement** : `evaluation-agentique` construit, `benchmarks-contestes` détruit. Lus ensemble = grille d'achat complète.
 
 **Schémas à fusionner** :
-- Playbook gruyère 8 étapes d'`evaluation-agentique` → schéma signature du livre, cité 3× (ici, Ch. 18, Ch. 19).
+- Playbook gruyère 8 étapes d'`evaluation-agentique` → schéma signature du livre, cité 3× (ici, Ch. 20, Ch. 21).
 - Matrice 4 vecteurs contamination de `benchmarks-contestes` → en regard, page facing.
 - Le 2×2 contrôlé × ponctuel → annexe « grille d'achat ».
 
@@ -479,7 +513,7 @@ Vue d'avion. Le détail chapitre par chapitre suit en §3.
 
 ---
 
-#### Chapitre 18 — Observabilité agentique et cognitive audit trail
+#### Chapitre 20 — Observabilité agentique et cognitive audit trail
 
 **Question** : L'agent ne crashe pas — il **dérive**. Comment voir sa trajectoire, ses coûts, sa qualité — et qui ça concerne légalement ?
 
@@ -489,22 +523,22 @@ Vue d'avion. Le détail chapitre par chapitre suit en §3.
 
 **Approfondissement transverse** : la couche `gen_ai.compaction.*` (WG actif fin 2026, mentionné dans `compaction-agentique`) → à signaler ici comme front actif.
 
-**Redondance à dédupliquer** : OTel GenAI mentionné dans **5 chapitres** (Ch. 1, 9, 10, 17, 18). **Définition canonique ici**, renvois ailleurs.
+**Redondance à dédupliquer** : OTel GenAI mentionné dans **5 chapitres** (Ch. 1, 9, 10, 19, 20). **Définition canonique ici**, renvois ailleurs.
 
 **Piège classique** : POC sans observabilité = dette technique massive le jour du passage en prod.
 
 ---
 
-#### Chapitre 19 — Garde-fous, jailbreaking et sécurité globale
+#### Chapitre 21 — Garde-fous, jailbreaking et sécurité globale
 
 **Question** : 48 % des pros cyber placent l'agentique en top vecteur d'attaque 2026, 34 % seulement ont des contrôles dédiés — qu'est-ce qu'on met en place concrètement ?
 
-**Thèse** : Trois mouvements convergents — (1) **Least agency** (OWASP ASI Top 10 décembre 2025), (2) **Asymétrie attaque/défense** (jailbreaking documenté depuis 2023), (3) **Patterns load-bearing** (Sigstore + hash pinning, tool tagging, allowlist namespace, HITL writes — déjà introduits Ch. 13).
+**Thèse** : Trois mouvements convergents — (1) **Least agency** (OWASP ASI Top 10 décembre 2025), (2) **Asymétrie attaque/défense** (jailbreaking documenté depuis 2023), (3) **patterns pivots** (Sigstore + hash pinning, tool tagging, allowlist namespace, HITL writes — déjà introduits Ch. 16).
 
 **Dossiers fusionnés** :
 - `anatomie` couche 06.
 - `llm-jailbreaking/` (28 avr) — asymétrie attaque/défense, taxonomie d'attaques.
-- Renvois vers Ch. 10 (memory poisoning SpAIware), Ch. 13 (MCP 10×10), Ch. 15 (computer use CVE).
+- Renvois vers Ch. 10 (memory poisoning SpAIware), Ch. 16 (MCP 10×10), Ch. 17 (computer use CVE).
 
 **Schéma à créer** : **synthèse menaces 2026** unifiée (modèle / prompt / mémoire / outil / protocole / surface), agrégeant les figures dispersées dans `llm-jailbreaking`, `mcp-securite`, `compaction-agentique`, `agents-computer-use`, `memoire-agentique` (MITRE ATLAS). C'est le schéma transverse le plus utile du livre pour un RSSI.
 
@@ -512,7 +546,7 @@ Vue d'avion. Le détail chapitre par chapitre suit en §3.
 
 ---
 
-#### Chapitre 20 — Runtime managé et déploiement
+#### Chapitre 22 — Runtime managé et déploiement
 
 **Question** : Vous opérez ces services au quotidien, ou le cloud le fait pour vous — et à quel prix de portabilité ?
 
@@ -522,7 +556,7 @@ Vue d'avion. Le détail chapitre par chapitre suit en §3.
 
 ---
 
-#### Chapitre 21 — Mesurer le ROI (et le paradoxe agentique)
+#### Chapitre 23 — Mesurer le ROI (et le paradoxe agentique)
 
 **Question** : Comment passe-t-on de « token → tâche → processus → outcome » sans confondre 4 unités de mesure incompatibles ? Et pourquoi Klarna a-t-elle reculé après avoir automatisé 67 % du support ?
 
@@ -533,13 +567,13 @@ Vue d'avion. Le détail chapitre par chapitre suit en §3.
 **Schémas à fusionner** :
 - Productivity J-curve de `measure-roi` → schéma signature du chapitre, à mettre en regard de la « courbe LLMflation » de `economie-inference` (Ch. 5) → **double-page éco** : prix qui baisse (token) vs valeur qui monte lentement (outcome).
 
-**Approfondissement vs Ch. 5** : Ch. 5 mesurait le coût par token ; Ch. 21 mesure la valeur par outcome. Même triangle, deux faces.
+**Approfondissement vs Ch. 5** : Ch. 5 mesurait le coût par token ; Ch. 23 mesure la valeur par outcome. Même triangle, deux faces.
 
 **Piège classique** : RFP au token. Une fois le contrat signé, le vendeur optimise le profil qui maximise sa marge, pas ton outcome.
 
 ---
 
-#### Chapitre 22 — Externalité énergétique : IA frugale
+#### Chapitre 24 — Externalité énergétique : IA frugale
 
 **Question** : Une requête, c'est 0,3 Wh ou 3 Wh ? Une vidéo générée, c'est 50 Wh ou 1000 Wh ? Et le paradoxe de Jevons (Google +48 %, DeepSeek-V3) annule-t-il les gains d'efficience ?
 
@@ -547,7 +581,7 @@ Vue d'avion. Le détail chapitre par chapitre suit en §3.
 
 **Dossiers absorbés** : `ia-frugale/` (13 mai · #20). Frameworks de mesure (ML CO2 Impact, Green Algorithms, MLCO2, ISO/IEC 21031, méthodologie AIE 2026, EU Code of Conduct datacenters).
 
-**Approfondissement vs Ch. 5 et 21** : Ch. 5 coût direct, Ch. 21 ROI métier, Ch. 22 externalité. **Trois lectures complémentaires d'une même facture**.
+**Approfondissement vs Ch. 5 et 23** : Ch. 5 coût direct, Ch. 23 ROI métier, Ch. 24 externalité. **Trois lectures complémentaires d'une même facture**.
 
 **Schémas à fusionner** :
 - 3 trajectoires 2030 de `ia-frugale` → schéma signature du chapitre.
@@ -555,7 +589,7 @@ Vue d'avion. Le détail chapitre par chapitre suit en §3.
 
 ---
 
-#### Chapitre 23 — Gouvernance : AI Act, banque, machine unlearning
+#### Chapitre 25 — Gouvernance : AI Act, banque, machine unlearning
 
 **Question** : Quelles sont les obligations réelles en 2026 pour qui déploie un agent — et pourquoi les calendriers (AI Act art. 12 août 2026, art. 15 août 2026, GPAI documentation, DORA, AAIF) convergent-ils sur les 12 prochains mois ?
 
@@ -569,7 +603,7 @@ Vue d'avion. Le détail chapitre par chapitre suit en §3.
 
 ---
 
-#### Chapitre 24 — Société : IA et travail
+#### Chapitre 26 — Société : IA et travail
 
 **Question** : Frey & Osborne 2013 vs Acemoglu 2024 vs Eloundou 2023 vs FMI 2024 — quel cadre choisir pour estimer l'impact emploi, et qu'est-ce que la « pause d'Engels » (Allen 2009) suggère du calendrier ?
 
@@ -581,7 +615,7 @@ Vue d'avion. Le détail chapitre par chapitre suit en §3.
 
 ---
 
-#### Chapitre 25 — Politique : procès Musk v. Altman
+#### Chapitre 27 — Politique : procès Musk v. Altman
 
 **Question** : Qui contrôle la frontière entre safety narrative et marché ouvert — et que dit le procès de Musk v. Altman du contrat moral des labs frontière ?
 
@@ -619,65 +653,63 @@ Trois passes de contrôle de l'outline avant d'engager la rédaction.
 
 | # | Dossier | Date | Absorbé en | Statut |
 | --- | --- | --- | --- | --- |
-| 1 | `anatomie/` | 14 mai | Squelette transverse (E1) + Ch. 1, 7, 8, 11, 18, 19, 20, 23 | ✓ os du livre |
-| 2 | `agent-sdk/` | 18 mai | Ch. 7 (boucle) + Ch. 20 (managed) | ✓ |
-| 3 | `agents-computer-use/` | 02 mai | Ch. 15 (chapitre dédié) | ✓ |
-| 4 | `analytics-agentique-gcp/` | 19 mai | Ch. 16 (chapitre dédié sectoriel) + renvoi Ch. 23 | ✓ |
-| 5 | `benchmarks-contestes/` | 15 mai | Ch. 17 (dyade avec eval) | ✓ |
-| 6 | `coding-agents/` | 12 mai | Ch. 7 sous-section + pyramide d'usage en encart | ⚠ voir §4.2 |
-| 7 | `compaction-agentique/` | 27 mai | Ch. 10 (chapitre dédié) + renvois Ch. 9, 18, 19, 23 | ✓ |
+| 1 | `anatomie/` | 14 mai | Squelette transverse (E1) + Ch. 1, 7, 8, 11, 20, 21, 22, 25 | ✓ os du livre |
+| 2 | `agent-sdk/` | 18 mai | **Ch. 12 (ADK, chapitre dédié)** + Ch. 22 (managed) | ✓ |
+| 3 | `agents-computer-use/` | 02 mai | Ch. 17 (chapitre dédié) | ✓ |
+| 4 | `analytics-agentique-gcp/` | 19 mai | Ch. 18 (chapitre dédié sectoriel) + renvoi Ch. 25 | ✓ |
+| 5 | `benchmarks-contestes/` | 15 mai | Ch. 19 (dyade avec eval) | ✓ |
+| 6 | `coding-agents/` | 12 mai | **Ch. 14 (chapitre dédié)** + pyramide d'usage intégrée ; Antigravity/Gemini CLI/Jules ajoutés | ✓ (Friction 1 tranchée : promotion) |
+| 7 | `compaction-agentique/` | 27 mai | Ch. 10 (chapitre dédié) + renvois Ch. 9, 20, 21, 25 | ✓ |
 | 8 | `decode-speculative/` | 22 mai | Ch. 4 (chapitre dédié) | ✓ |
 | 9 | `economie-inference/` | 05 mai | Ch. 5 (chapitre dédié) + E2 schéma le plus cité | ✓ |
-| 10 | `evaluation-agentique/` | 01 mai | Ch. 17 (dyade avec benchmarks) | ✓ |
+| 10 | `evaluation-agentique/` | 01 mai | Ch. 19 (dyade avec benchmarks) | ✓ |
 | 11 | `fabrique-agent/` | 15 mai | Ch. 11 sous-section équipe | ✓ |
-| 12 | `gouvernance/` | 21 avr | Ch. 23 (chapitre dédié) | ✓ |
+| 12 | `gouvernance/` | 21 avr | Ch. 25 (chapitre dédié) | ✓ |
 | 13 | `harness-agentique/` | 29 avr | Ch. 7 (charnière) | ✓ |
-| 14 | `ia-et-travail/` | 06 mai | Ch. 24 (chapitre dédié contrefort) | ✓ |
-| 15 | `ia-frugale/` | 13 mai | Ch. 22 (chapitre dédié) | ✓ |
-| 16 | `llm-jailbreaking/` | 28 avr | Ch. 19 (chapitre dédié sécurité globale) | ✓ |
-| 17 | `mcp-plateforme/` | 08 mai | Ch. 12 (dyade avec sécurité) | ✓ |
-| 18 | `mcp-securite/` | 20 mai | Ch. 13 (dyade avec plateforme) | ✓ |
-| 19 | `measure-roi/` | 07 mai | Ch. 21 (charnière) | ✓ |
+| 14 | `ia-et-travail/` | 06 mai | Ch. 26 (chapitre dédié contrefort) | ✓ |
+| 15 | `ia-frugale/` | 13 mai | Ch. 24 (chapitre dédié) | ✓ |
+| 16 | `llm-jailbreaking/` | 28 avr | Ch. 21 (chapitre dédié sécurité globale) | ✓ |
+| 17 | `mcp-plateforme/` | 08 mai | Ch. 15 (dyade avec sécurité) | ✓ |
+| 18 | `mcp-securite/` | 20 mai | Ch. 16 (dyade avec plateforme) | ✓ |
+| 19 | `measure-roi/` | 07 mai | Ch. 23 (charnière) | ✓ |
 | 20 | `memoire-agentique/` | 30 avr | Ch. 9 (chapitre dédié) | ✓ |
 | 21 | `modeles-raisonnement/` | 06 mai | Ch. 2 (chapitre dédié) | ✓ |
-| 22 | `narrative-experiences/` | 05 mai | Encart fin Ch. 16 | ⚠ voir §4.2 |
-| 23 | `observabilite-agents-ia/` | 30 avr | Ch. 18 (chapitre dédié) | ✓ |
-| 24 | `orchestration-agentique/` | 27 mai | Ch. 11 (charnière) + E6 arbre buy/build | ✓ |
-| 25 | `proces-musk-altman/` | 27 avr | Ch. 25 (chapitre dédié contrefort) | ✓ |
+| 22 | `narrative-experiences/` | 05 mai | Encart fin Ch. 18 | ⚠ voir §4.2 |
+| 23 | `observabilite-agents-ia/` | 30 avr | Ch. 20 (chapitre dédié) | ✓ |
+| 24 | `orchestration-agentique/` | 27 mai | Ch. 11 (patterns multi-agents, charnière) + **Ch. 12 (couche ADK/stack 3 couches)** + E6 arbre buy/build | ✓ |
+| 25 | `proces-musk-altman/` | 27 avr | Ch. 27 (chapitre dédié contrefort) | ✓ |
 | 26 | `process-reward-models/` | 13 mai | Ch. 3 (chapitre dédié) | ✓ |
-| 27 | `surfaces-agentiques/` | 18 mai | Ch. 14 (chapitre dédié) | ✓ |
+| 27 | `surfaces-agentiques/` | 18 mai | Ch. 13 (chapitre dédié) | ✓ |
 | 28 | `world-models/` | 05 mai | Ch. 6 encart (bordure Acte I) | ⚠ voir §4.2 |
 
-**Conclusion** : 25/28 en chapitre plein, 3/28 en encart court (`coding-agents` partiel, `narrative-experiences`, `world-models`) — couverture **exhaustive** ; aucune perte de matière.
+**Conclusion** : 26/28 en chapitre plein (depuis la promotion de `coding-agents` au Ch. 14 et la création du Ch. 12 ADK), 2/28 en encart court (`narrative-experiences`, `world-models`) — couverture **exhaustive** ; aucune perte de matière.
 
 ### 4.2 Pertinence — les regroupements résistent-ils à la critique ?
 
 Trois zones de friction identifiées, à arbitrer **avant** la rédaction :
 
-**Friction 1 — `coding-agents` noyé en Ch. 7**
-Le dossier ne décrit pas que le harness du code ; il propose aussi une **pyramide d'usage 4 étages** (transverse / data quotidien / data expert / produit-décideurs) qui est un outil d'adoption à part entière. Le mettre en sous-section du Ch. 7 (boucle) gomme cet angle.
-Options :
-- **(a)** Garder en Ch. 7 sous-section + encart dédié à la pyramide d'usage. **Coût** : la pyramide perd en visibilité.
-- **(b)** Promouvoir en Ch. 7bis « Coding agents en pratique » (gabarit court, 10-12 p). **Coût** : un chapitre de plus, déséquilibre Acte II.
-- **(c)** Déplacer la pyramide d'usage en encart d'ouverture du livre (Prologue ou Ch. 1), traiter le reste en Ch. 7. **Coût** : décale le lecteur dès l'ouverture vers le cas code.
+**Friction 1 — `coding-agents` noyé en Ch. 7** → ✅ **TRANCHÉE 2026-06-04 : promotion (variante de l'option b).**
+Le dossier ne décrivait pas que le harness du code ; il propose aussi une **pyramide d'usage 4 étages** (transverse / data quotidien / data expert / produit-décideurs) qui est un outil d'adoption à part entière. Le mettre en sous-section du Ch. 7 (boucle) gommait cet angle.
+Résolution retenue : **promotion en chapitre dédié, mais dans l'Acte III** (et non « Ch. 7bis » de l'Acte II comme l'envisageait l'option b d'origine), parce qu'un assistant de code est d'abord une **surface** — l'instanciation du régime copilote/CLI de la typologie du Ch. 13. Le chapitre est le **Ch. 14**, placé juste après surfaces (typologie → instanciation). En parallèle, la couche *builder son agent* (`agent-sdk` + couche ADK d'`orchestration-agentique`) est extraite du Ch. 7/Ch. 11 vers un **Ch. 12 dédié** en clôture de l'Acte II. Anciennes options conservées pour mémoire :
+- ~~**(a)** Garder en Ch. 7 sous-section + encart dédié à la pyramide d'usage.~~
+- ~~**(b)** Promouvoir en Ch. 7bis « Coding agents en pratique ».~~ (retenue, mais reclassée en Acte III)
+- ~~**(c)** Déplacer la pyramide d'usage en encart d'ouverture du livre.~~
 
-Recommandation : **(a)** — pyramide d'usage en encart dédié + renvoi croisé Ch. 11 (orchestration → équipe → adoption).
-
-**Friction 2 — Ch. 13 (sécurité MCP) vs Ch. 19 (sécurité globale)**
-Risque de chevauchement matériel. Le Ch. 13 traite la **surface MCP** (10×10 matrice) ; le Ch. 19 reprend en **synthèse transverse** + OWASP ASI Top 10 + jailbreaking historique.
+**Friction 2 — Ch. 16 (sécurité MCP) vs Ch. 21 (sécurité globale)**
+Risque de chevauchement matériel. Le Ch. 16 traite la **surface MCP** (10×10 matrice) ; le Ch. 21 reprend en **synthèse transverse** + OWASP ASI Top 10 + jailbreaking historique.
 Distinction à tenir strictement dans la rédaction :
-- Ch. 13 = matrice spécifique au protocole (R7), 4 patterns load-bearing nommés.
-- Ch. 19 = grille générale + threat model unifié (E4) + asymétrie attaque/défense.
-- **Règle d'écriture** : tout ce qui relève de MCP spécifiquement reste en Ch. 13, et **n'est pas redit** en Ch. 19 (renvoi seulement). Inversement, tout ce qui transcende MCP reste en Ch. 19.
+- Ch. 16 = matrice spécifique au protocole (R7), 4 patterns pivots nommés.
+- Ch. 21 = grille générale + threat model unifié (E4) + asymétrie attaque/défense.
+- **Règle d'écriture** : tout ce qui relève de MCP spécifiquement reste en Ch. 16, et **n'est pas redit** en Ch. 21 (renvoi seulement). Inversement, tout ce qui transcende MCP reste en Ch. 21.
 
 Recommandation : conserver la dyade, **noter en marge** de chaque chapitre la frontière éditoriale.
 
-**Friction 3 — Ch. 16 (analytics banque) vs Ch. 23 (gouvernance)**
-Le Ch. 16 traite déjà de l'AI Act + DORA + ACPR sur le cas banque française ; le Ch. 23 généralise.
+**Friction 3 — Ch. 18 (analytics banque) vs Ch. 25 (gouvernance)**
+Le Ch. 18 traite déjà de l'AI Act + DORA + ACPR sur le cas banque française ; le Ch. 25 généralise.
 Distinction à tenir :
-- Ch. 16 = instanciation **sectorielle** (banque tier 1 française : DORA + EBA + ACPR + BCBS 239 + souveraineté Assured Workloads).
-- Ch. 23 = grille **réglementaire générale** (calendrier 2026-2027, machine unlearning, rôle DPO/RSSI/Sponsor).
-- **Règle d'écriture** : pas de redite des articles AI Act dans les deux chapitres ; le Ch. 23 traite le cadre, le Ch. 16 montre une application.
+- Ch. 18 = instanciation **sectorielle** (banque tier 1 française : DORA + EBA + ACPR + BCBS 239 + souveraineté Assured Workloads).
+- Ch. 25 = grille **réglementaire générale** (calendrier 2026-2027, machine unlearning, rôle DPO/RSSI/Sponsor).
+- **Règle d'écriture** : pas de redite des articles AI Act dans les deux chapitres ; le Ch. 25 traite le cadre, le Ch. 18 montre une application.
 
 Recommandation : conserver, **frontière claire**.
 
@@ -719,11 +751,11 @@ L'annexe ci-dessous détaille seulement **R et E** — les S sortent de l'audit 
 | # | Schéma final | Format | Cité en | Source à fusionner | Note |
 | --- | --- | --- | --- | --- | --- |
 | **E1** | **Anatomie en 10 anneaux concentriques** | A3 paysage (déplié central) | Ouverture livre + renvois 4× | `anatomie/livre-schemas.js` schéma principal | Repris **tel quel**, c'est l'os du livre. Page de garde / dépliable. |
-| **E2** | **Pile 7 couches d'optimisation inference** | A3 paysage | Ch. 5 (principal), Ch. 22 (leviers frugaux), Ch. 21 (économie) | `economie-inference/` schéma 7-couches | Tel quel. Schéma le plus densément cité du livre. |
-| **E3** | **Capability vs Cost — second axe de scaling** | A4 portrait | Ch. 2 (principal), Ch. 5, Ch. 17 | `modeles-raisonnement/` (o1 pivot) + `economie-inference/` (LLMflation) | **À créer** par fusion : double-vue capabilities / coût sur axe temps 2020-2026. |
-| **E4** | **Threat model unifié 2026** (modèle / prompt / mémoire / outil / protocole / surface) | A3 paysage | Ch. 19 (principal), Ch. 10, 13, 15 | `mcp-securite/` (10×10), `llm-jailbreaking/`, `compaction-agentique/` (SpAIware), `agents-computer-use/` (CVE/VPI), `memoire-agentique/` (MITRE ATLAS) | **À créer** — n'existe pas dans le corpus. Schéma signature pour RSSI. Coûteux à produire (~4-6 j de travail SVG + revue sécurité). |
-| **E5** | **Comparatif PRM vs LLM-as-judge vs human eval** (3 lignes × 5 colonnes coût/scalabilité/biais/fidélité/cas d'usage) | A4 portrait | Ch. 3 (principal), Ch. 17 | `process-reward-models/` + `evaluation-agentique/` | **À créer** par fusion. Pivot du chapitre éval. |
-| **E6** | **Arbre de décision buy/build agent** | A3 paysage | Annexe consultative + renvois Ch. 11, 20 | `orchestration-agentique/` arbre buy/build | Tel quel, recadré pour impression. |
+| **E2** | **Pile 7 couches d'optimisation inference** | A3 paysage | Ch. 5 (principal), Ch. 24 (leviers frugaux), Ch. 23 (économie) | `economie-inference/` schéma 7-couches | Tel quel. Schéma le plus densément cité du livre. |
+| **E3** | **Capability vs Cost — second axe de scaling** | A4 portrait | Ch. 2 (principal), Ch. 5, Ch. 19 | `modeles-raisonnement/` (o1 pivot) + `economie-inference/` (LLMflation) | **À créer** par fusion : double-vue capabilities / coût sur axe temps 2020-2026. |
+| **E4** | **Threat model unifié 2026** (modèle / prompt / mémoire / outil / protocole / surface) | A3 paysage | Ch. 21 (principal), Ch. 10, 16, 17 | `mcp-securite/` (10×10), `llm-jailbreaking/`, `compaction-agentique/` (SpAIware), `agents-computer-use/` (CVE/VPI), `memoire-agentique/` (MITRE ATLAS) | **À créer** — n'existe pas dans le corpus. Schéma signature pour RSSI. Coûteux à produire (~4-6 j de travail SVG + revue sécurité). |
+| **E5** | **Comparatif PRM vs LLM-as-judge vs human eval** (3 lignes × 5 colonnes coût/scalabilité/biais/fidélité/cas d'usage) | A4 portrait | Ch. 3 (principal), Ch. 19 | `process-reward-models/` + `evaluation-agentique/` | **À créer** par fusion. Pivot du chapitre éval. |
+| **E6** | **Arbre de décision buy/build agent** | A3 paysage | Annexe consultative + renvois Ch. 11, 22 | `orchestration-agentique/` arbre buy/build | Tel quel, recadré pour impression. |
 
 #### A.2 Récaps chapitre (R) — un par chapitre standard/charnière
 
@@ -734,20 +766,20 @@ L'annexe ci-dessous détaille seulement **R et E** — les S sortent de l'audit 
 | R3 | Triangle fidélité × coût × oubliabilité + 5 familles de compaction | A4 portrait | Ch. 10 | `compaction-agentique/` | Tel quel + légende détaillée. |
 | R4 | 8 patterns canoniques d'orchestration (Anthropic 6 + supervisor-workers + hierarchical + peer-to-peer) | A3 paysage | Ch. 11 (charnière) | `orchestration-agentique/` + `anatomie/` couche 04 | Tel quel ; sous-encart pour les 6 patterns Anthropic. |
 | R5 | 4 stades de maturité fabrique agent + 10 artefacts partagés | A4 portrait | Ch. 11 sous-section équipe | `fabrique-agent/` | Tel quel. |
-| R6 | Trinité protocoles MCP × A2A × AG-UI + layering avec function calling / OpenAPI | A4 portrait | Ch. 12 | `surfaces-agentiques/` + `mcp-plateforme/` | **À unifier** en un seul schéma de référence. |
-| R7 | Matrice défensive MCP 10×10 (vecteurs × patterns) | A3 paysage | Ch. 13 | `mcp-securite/` | Tel quel. |
-| R8 | 4 régimes d'accès + levels of autonomy (Knight) + graduated trust (Anthropic) | A3 paysage | Ch. 14 (+ renvois Ch. 11, 15, 23) | `surfaces-agentiques/` | Grille de cadrage transverse. À recadrer A3. |
-| R9 | Boucle computer use observe·plan·ground·act·verify + 3 architectures | A4 portrait | Ch. 15 | `agents-computer-use/` | Tel quel ; renvoyer à R1 pour la boucle générique. |
-| R10 | 3 surfaces analytics agentique × pile semantic layer | A4 portrait | Ch. 16 | `analytics-agentique-gcp/` | Tel quel, recadré sectoriel. |
-| R11 | Playbook gruyère 8 étapes (Build → Run → Govern) | A3 paysage | Ch. 17 (charnière, principal) + renvois Ch. 18, 19 | `evaluation-agentique/` fig gruyère | Tel quel — schéma signature de l'Acte IV. |
-| R12 | 4 vecteurs de contamination benchmarks publics | A4 portrait | Ch. 17 | `benchmarks-contestes/` | En page facing du gruyère. |
-| R13 | 6 piliers télémétrie OTel GenAI + cognitive audit trail | A3 paysage | Ch. 18 | `observabilite-agents-ia/` | Fusion 6 piliers + cognitive audit trail en un schéma. |
-| R14 | OWASP ASI Top 10 + asymétrie attaque/défense | A4 portrait | Ch. 19 | `llm-jailbreaking/` + OWASP ASI dec 2025 | À créer. En complément de E4 (threat model unifié). |
-| R15 | Vendor landscape runtimes managés (5 vendeurs × 8 dimensions) | A4 portrait | Ch. 20 | `orchestration-agentique/` matrice ADK + `agent-sdk/` managed | À créer par fusion. |
-| R16 | Productivity J-curve × LLMflation × paradoxe agentique | A3 paysage | Ch. 21 (charnière) | `measure-roi/` + `economie-inference/` | **À créer** : double-page « facture qui baisse vs valeur qui monte lentement ». |
-| R17 | 3 trajectoires énergétiques 2030 (laissez-faire / efficience / plafond) | A3 paysage | Ch. 22 | `ia-frugale/` | Tel quel. |
-| R18 | Calendrier réglementaire 2026-2027 (AI Act + DORA + RGPD + AAIF) | A4 portrait | Ch. 23 | À créer à partir de `gouvernance/`, `analytics-agentique-gcp/`, `compaction-agentique/`, `mcp-securite/` | Frise temporelle synthétique. |
-| R19 | 4 scénarios IA et travail 2035 + 6 leviers anti-catastrophe | A4 portrait | Ch. 24 | `ia-et-travail/` | Tel quel. |
+| R6 | Trinité protocoles MCP × A2A × AG-UI + layering avec function calling / OpenAPI | A4 portrait | Ch. 15 | `surfaces-agentiques/` + `mcp-plateforme/` | **À unifier** en un seul schéma de référence. |
+| R7 | Matrice défensive MCP 10×10 (vecteurs × patterns) | A3 paysage | Ch. 16 | `mcp-securite/` | Tel quel. |
+| R8 | 4 régimes d'accès + levels of autonomy (Knight) + graduated trust (Anthropic) | A3 paysage | Ch. 13 (+ renvois Ch. 11, 17, 25) | `surfaces-agentiques/` | Grille de cadrage transverse. À recadrer A3. |
+| R9 | Boucle computer use observe·plan·ground·act·verify + 3 architectures | A4 portrait | Ch. 17 | `agents-computer-use/` | Tel quel ; renvoyer à R1 pour la boucle générique. |
+| R10 | 3 surfaces analytics agentique × pile semantic layer | A4 portrait | Ch. 18 | `analytics-agentique-gcp/` | Tel quel, recadré sectoriel. |
+| R11 | Playbook gruyère 8 étapes (Build → Run → Govern) | A3 paysage | Ch. 19 (charnière, principal) + renvois Ch. 20, 21 | `evaluation-agentique/` fig gruyère | Tel quel — schéma signature de l'Acte IV. |
+| R12 | 4 vecteurs de contamination benchmarks publics | A4 portrait | Ch. 19 | `benchmarks-contestes/` | En page facing du gruyère. |
+| R13 | 6 piliers télémétrie OTel GenAI + cognitive audit trail | A3 paysage | Ch. 20 | `observabilite-agents-ia/` | Fusion 6 piliers + cognitive audit trail en un schéma. |
+| R14 | OWASP ASI Top 10 + asymétrie attaque/défense | A4 portrait | Ch. 21 | `llm-jailbreaking/` + OWASP ASI dec 2025 | À créer. En complément de E4 (threat model unifié). |
+| R15 | Vendor landscape runtimes managés (5 vendeurs × 8 dimensions) | A4 portrait | Ch. 22 | `orchestration-agentique/` matrice ADK + `agent-sdk/` managed | À créer par fusion. |
+| R16 | Productivity J-curve × LLMflation × paradoxe agentique | A3 paysage | Ch. 23 (charnière) | `measure-roi/` + `economie-inference/` | **À créer** : double-page « facture qui baisse vs valeur qui monte lentement ». |
+| R17 | 3 trajectoires énergétiques 2030 (laissez-faire / efficience / plafond) | A3 paysage | Ch. 24 | `ia-frugale/` | Tel quel. |
+| R18 | Calendrier réglementaire 2026-2027 (AI Act + DORA + RGPD + AAIF) | A4 portrait | Ch. 25 | À créer à partir de `gouvernance/`, `analytics-agentique-gcp/`, `compaction-agentique/`, `mcp-securite/` | Frise temporelle synthétique. |
+| R19 | 4 scénarios IA et travail 2035 + 6 leviers anti-catastrophe | A4 portrait | Ch. 26 | `ia-et-travail/` | Tel quel. |
 
 #### A.3 Bilan de production
 
@@ -782,11 +814,11 @@ Liste des 28 dossiers avec : date publication, numéro #, slug, URL `mathieugug.
 Reprendre `ROLE_DEFS` d'`anatomie/livre-data.js` (28 rôles : ML Engineer, Agent Engineer, RSSI, DPO, FinOps, etc.). Ajouter pour chaque rôle : **chapitres prioritaires** (parcours de lecture orienté rôle).
 
 Exemple :
-- **RSSI** → Ch. 13, 19 (priorité), Ch. 10, 15, 23 (compléments).
-- **FinOps** → Ch. 5, 21, 22 (priorité), Ch. 20 (compléments).
-- **DPO** → Ch. 10, 23 (priorité), Ch. 18 (cognitive audit trail).
-- **CDO / Sponsor** → Prologue, Ch. 11, 21, 23, 24, 25 (priorité).
-- **Agent Engineer** → Acte II en entier (Ch. 7-11), Ch. 13, 18 (compléments).
+- **RSSI** → Ch. 16, 21 (priorité), Ch. 10, 17, 25 (compléments).
+- **FinOps** → Ch. 5, 23, 24 (priorité), Ch. 22 (compléments).
+- **DPO** → Ch. 10, 25 (priorité), Ch. 20 (cognitive audit trail).
+- **CDO / Sponsor** → Prologue, Ch. 11, 23, 25, 26, 27 (priorité).
+- **Agent Engineer** → Acte II en entier (Ch. 7-11), Ch. 16, 20 (compléments).
 
 ---
 
@@ -795,7 +827,7 @@ Exemple :
 À garder en tête pendant la rédaction du manuscrit :
 
 1. **Sur-redondance Acte II** : les patterns canoniques Anthropic sont décrits 5 fois dans le corpus, le risque c'est de les redécrire 2 fois dans le livre. Discipline : une seule définition Ch. 7, renvois ailleurs.
-2. **Sous-représentation contreforts** : `world-models`, `narrative-experiences`, `proces-musk-altman` peuvent être noyés. Choix éditorial assumé : ils restent en **encarts** (Ch. 6, fin Ch. 16, Ch. 25), pas en chapitres dédiés sauf le procès qui a son chapitre.
+2. **Sous-représentation contreforts** : `world-models`, `narrative-experiences`, `proces-musk-altman` peuvent être noyés. Choix éditorial assumé : ils restent en **encarts** (Ch. 6, fin Ch. 18, Ch. 27), pas en chapitres dédiés sauf le procès qui a son chapitre.
 3. **Dossiers évolutifs** : `proces-musk-altman` (journal vivant), `compaction-agentique` (compactors RL en cours), `mcp-securite` (roadmap 12 mois) — risque d'obsolescence à l'impression. Solution : encadré « état au 27 mai 2026 » sur ces chapitres, avec renvoi URL vers la version vivante.
 4. **Schéma A4 (threat model unifié) à créer** — n'existe pas encore dans le corpus. C'est un livrable supplémentaire à produire avant impression.
 5. **Niveau d'entrée Acte I** : trop technique pour un décideur pur. Solution : encadré « TL;DR décideur » de 5 lignes en ouverture de chaque chapitre Acte I, qui résume l'enjeu business sans terminologie.

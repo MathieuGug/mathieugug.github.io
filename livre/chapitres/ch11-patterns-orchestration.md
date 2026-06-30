@@ -21,7 +21,7 @@ date_maj: 2026-05-29
 > - ==Le pattern est une décision d'architecture, pas un choix d'outil.== Huit patterns canoniques structurent l'écosystème 2026 (cinq workflows d'Anthropic — chaining, routing, parallelization, orchestrator-workers, evaluator-optimizer — + trois topologies multi-agents : supervisor-workers, hierarchical, peer-to-peer). Tous se composent, aucun ne nécessite un framework dédié.
 > - **Quatre régimes de contrôle** distinguent *qui pilote la boucle* : code-driven (workflow), LLM-driven (routines + handoffs), graphe déclaratif, agent autonome. Plus on monte vers l'autonomie, plus on gagne en flexibilité et plus on perd en prévisibilité — et plus l'observabilité devient critique. 70 % des cas se résolvent en régime 1 ou 2, sans jamais mériter l'étiquette « agentique » au sens fort.
 > - **Le stack se découpe en trois couches** qu'il faut distinguer pour décider sainement : **ADK** (la forme d'un agent dans le code — LangGraph, CrewAI, OpenAI Agents SDK, Claude Agent SDK…), **runtime** (où les sessions tournent — Lambda, container, AgentCore Runtime…), **services de plateforme** (memory, identity, gateway, observability, sandbox, browser tool). « On utilise Bedrock » ne dit rien tant qu'on n'a pas précisé *quelles briques* parmi les six.
-> - ==**Cinq problèmes durs** font crasher les agents en prod== — pas la qualité du modèle. Mémoire qui dérive, observabilité absente, identité non déléguée, idempotence cassée, amplification de tokens. Quatre des cinq sont traités ailleurs dans le livre ([Ch. 9](ch09-memoire-agentique.md), [Ch. 18](ch18-observabilite-cognitive-audit-trail.md), [Ch. 13](ch13-mcp-securite.md)/[Ch. 19](ch19-gardefous-securite-globale.md), [Ch. 10](ch10-compaction.md)) ; ils sont nommés et reliés ici pour qu'aucun ne reste orphelin dans la pile.
+> - ==**Cinq problèmes durs** font crasher les agents en prod== — pas la qualité du modèle. Mémoire qui dérive, observabilité absente, identité non déléguée, idempotence cassée, amplification de tokens. Quatre des cinq sont traités ailleurs dans le livre ([Ch. 9](ch09-memoire-agentique.md), [Ch. 20](ch20-observabilite-cognitive-audit-trail.md), [Ch. 16](ch16-mcp-securite.md)/[Ch. 21](ch21-gardefous-securite-globale.md), [Ch. 10](ch10-compaction.md)) ; ils sont nommés et reliés ici pour qu'aucun ne reste orphelin dans la pile.
 > - **Un arbre de décision à quatre questions** structure le buy/build : (Q1) cas d'usage standard du marché → produit vertical ; (Q2) workflow unique + besoins prod → ADK + runtime managé ; (Q3) spécificité forte + équipe SRE → self-host ; (Q4) contrainte unique (on-prem, edge, modèle maison) → build from scratch. Si toutes les réponses sont *non*, il n'y a probablement pas besoin d'un agent — un workflow Anthropic suffit, à un coût 10× moindre.
 > - **L'équipe est l'angle mort.** La fabrique d'un agent décline quatre stades de maturité (Prototype · Pilote · Production · Mature multi-agents) × dix artefacts partagés. Une équipe qui livre des agents en prod, ce n'est pas un harness — c'est un atelier qui apprend. Le multi-agent est un saut de stade, pas un upgrade de subscription.
 
@@ -141,8 +141,8 @@ Les patterns sont à l'orchestration ce que les *design patterns* étaient à l'
 > [!IMPORTANT] La maxime non-écrite — on compose
 > ==La même règle revient chez Anthropic, chez LangChain et chez AWS : on compose==. Un système réel enchaîne souvent **routing → orchestrator-workers → evaluator-optimizer**, avec une couche **supervisor-workers** par-dessus quand les agents deviennent plusieurs. Les frameworks qui ont gagné en 2026 (LangGraph, l'Agents SDK d'OpenAI, l'ADK Google) ne sont pas ceux qui fournissent le pattern le plus sophistiqué — ce sont **ceux qui rendent la composition lisible**.
 
-> [!INFO] Voir [Ch. 14 — Surfaces agentiques et levels of autonomy](ch14-surfaces-agentiques.md)
-> Les quatre régimes (§11.3) traitent le pilote *interne* de la boucle. Les **quatre régimes d'accès** du [Ch. 14](ch14-surfaces-agentiques.md) (chat / copilote inline / canvas génératif / on-behalf-of) traitent le pilote *côté utilisateur final*. Et la grille **levels of autonomy** du Knight Institute, posée transversalement dans le [Ch. 14](ch14-surfaces-agentiques.md), articule les deux. À lire de pair pour décider de l'expérience de bout en bout, pas seulement de l'architecture interne.
+> [!INFO] Voir [Ch. 13 — Surfaces agentiques et levels of autonomy](ch13-surfaces-agentiques.md)
+> Les quatre régimes (§11.3) traitent le pilote *interne* de la boucle. Les **quatre régimes d'accès** du [Ch. 13](ch13-surfaces-agentiques.md) (chat / copilote inline / canvas génératif / on-behalf-of) traitent le pilote *côté utilisateur final*. Et la grille **levels of autonomy** du Knight Institute, posée transversalement dans le [Ch. 13](ch13-surfaces-agentiques.md), articule les deux. À lire de pair pour décider de l'expérience de bout en bout, pas seulement de l'architecture interne.
 
 ---
 
@@ -176,8 +176,8 @@ Là où **les sessions tournent vraiment**. Le runtime tranche les choses suivan
 
 ==La différence pratique se voit sur des sessions longues.== Une session de huit heures dans un Lambda est impossible (timeout) ; dans un ECS, vous devez gérer le *liveness*, le retry, la persistance. Dans AgentCore Runtime, c'est natif et facturé à la consommation effective. Pour les agents qui passent 80 % du temps à attendre une API externe, c'est la différence entre une facture viable et une facture monstrueuse.
 
-> [!INFO] Voir [Ch. 20 — Runtime managé et déploiement](ch20-runtime-manage.md)
-> La couche 2 (runtime) est traitée en profondeur en [Ch. 20](ch20-runtime-manage.md) : matrice vendor (Bedrock AgentCore / Vertex Agent Engine / Foundry Agent Service / Claude Managed Agents / OpenAI Agent Builder), pricing consumption-based, dépendance et **code-first + protocoles ouverts** (MCP, A2A) comme meilleure assurance anti-lock-in.
+> [!INFO] Voir [Ch. 22 — Runtime managé et déploiement](ch22-runtime-manage.md)
+> La couche 2 (runtime) est traitée en profondeur en [Ch. 22](ch22-runtime-manage.md) : matrice vendor (Bedrock AgentCore / Vertex Agent Engine / Foundry Agent Service / Claude Managed Agents / OpenAI Agent Builder), pricing consumption-based, dépendance et **code-first + protocoles ouverts** (MCP, A2A) comme meilleure assurance anti-lock-in.
 
 ### 11.5.3 Couche 3 — Services de plateforme
 
@@ -185,10 +185,10 @@ Là où les hyperscalers se distinguent vraiment, et où la complexité se cache
 
 - **Memory** — court terme (session), long terme (faits/préférences/résumés persistés). Traité [Ch. 9](ch09-memoire-agentique.md) (cartographie) et [Ch. 10](ch10-compaction.md) (compaction).
 - **Identity** — authentification *on-behalf-of*, compatible avec les fournisseurs d'identité existants. ==L'agent agit *au nom de l'utilisateur*, pas avec les droits du service.== C'est la différence entre une injection bornée et une exfiltration admin.
-- **Gateway** — convertit n'importe quelle API (REST, Lambda, services existants) en outils MCP-compatibles. Permet aussi de fédérer des serveurs MCP existants. Renvoi [Ch. 12](ch12-mcp-plateforme.md) (MCP) et [Ch. 13](ch13-mcp-securite.md) (sécurité MCP).
-- **Observability** — tracing OpenTelemetry, vue unifiée des appels et des erreurs. Traité [Ch. 18](ch18-observabilite-cognitive-audit-trail.md).
+- **Gateway** — convertit n'importe quelle API (REST, Lambda, services existants) en outils MCP-compatibles. Permet aussi de fédérer des serveurs MCP existants. Renvoi [Ch. 15](ch15-mcp-plateforme.md) (MCP) et [Ch. 16](ch16-mcp-securite.md) (sécurité MCP).
+- **Observability** — tracing OpenTelemetry, vue unifiée des appels et des erreurs. Traité [Ch. 20](ch20-observabilite-cognitive-audit-trail.md).
 - **Code Interpreter** — sandbox isolé pour exécuter du Python, JavaScript ou TypeScript — jusqu'à huit heures.
-- **Browser Tool** — navigateur distant : l'agent navigue le web *comme un humain*, sans pourrir la machine locale. Renvoi [Ch. 15](ch15-computer-use.md) (computer use).
+- **Browser Tool** — navigateur distant : l'agent navigue le web *comme un humain*, sans pourrir la machine locale. Renvoi [Ch. 17](ch17-computer-use.md) (computer use).
 
 Google Vertex AI a sa propre déclinaison (Memory Bank, Agent Garden, A2A natif), Azure Foundry aussi. ==Le tableau de bord change selon le cloud ; **la liste des problèmes à régler est la même**==, parce qu'elle découle des modes d'échec de la §11.6.
 
@@ -208,8 +208,8 @@ La cartographie n'a pas vocation à recenser tout l'écosystème — elle a voca
 
 **Protocoles transverses** — MCP (agent ↔ outils, lancé par Anthropic en novembre 2024, désormais quasi-universel) et A2A (agent ↔ agent, donné par Google à la Linux Foundation en juin 2025, 150+ organisations en avril 2026[^8]). Ce sont les deux protocoles qui rendent les agents *inter-opérables* — sans eux, chaque vendeur réinventerait sa colle propriétaire, et le marché se fragmenterait. Ils ne sont pas concurrents : ==MCP est *vertical* (un agent vers ses outils), A2A est *horizontal* (un agent vers un autre agent, possiblement d'un autre vendeur)==.
 
-> [!INFO] Voir [Ch. 12 — MCP plateforme](ch12-mcp-plateforme.md) et [Ch. 13 — Sécurité MCP](ch13-mcp-securite.md)
-> La trinité **MCP × A2A × AG-UI** est traitée en [Ch. 12](ch12-mcp-plateforme.md) (la promesse, le réseau, le layering avec function calling et OpenAPI) et la matrice défensive **10 vecteurs × 10 patterns** pour MCP en [Ch. 13](ch13-mcp-securite.md) (la dette de sécurité que la promesse fait porter). Le rôle des deux protocoles dans le stack est posé ici ; les deux chapitres dédiés creusent la promesse et le coût.
+> [!INFO] Voir [Ch. 15 — MCP plateforme](ch15-mcp-plateforme.md) et [Ch. 16 — Sécurité MCP](ch16-mcp-securite.md)
+> La trinité **MCP × A2A × AG-UI** est traitée en [Ch. 15](ch15-mcp-plateforme.md) (la promesse, le réseau, le layering avec function calling et OpenAPI) et la matrice défensive **10 vecteurs × 10 patterns** pour MCP en [Ch. 16](ch16-mcp-securite.md) (la dette de sécurité que la promesse fait porter). Le rôle des deux protocoles dans le stack est posé ici ; les deux chapitres dédiés creusent la promesse et le coût.
 
 ---
 
@@ -225,11 +225,11 @@ Le problème classique : l'agent oublie ce qu'on lui a dit il y a trente tours, 
 
 ### 11.6.2 Observabilité
 
-L'agent a appelé le mauvais outil 3 % du temps. Sans tracing fin, c'est invisible et indebugable. Le minimum vital, repris par Braintrust[^17] et tous les acteurs sérieux : par exécution, un *job ID*, un *timestamp* début/fin, un *exit code*, le nombre de tokens, la liste des appels d'outils, et le raisonnement par étape. OpenTelemetry GenAI Semantic Conventions est devenu la norme, et les services managés (AgentCore Observability, Langfuse, Braintrust, Arize) sont en train de standardiser la collecte. ==L'orchestration sans observabilité, c'est de la divination.== **Renvoi** : [Ch. 18](ch18-observabilite-cognitive-audit-trail.md) (6 piliers, cognitive audit trail, attribut `gen_ai.compaction.*`).
+L'agent a appelé le mauvais outil 3 % du temps. Sans tracing fin, c'est invisible et indebugable. Le minimum vital, repris par Braintrust[^17] et tous les acteurs sérieux : par exécution, un *job ID*, un *timestamp* début/fin, un *exit code*, le nombre de tokens, la liste des appels d'outils, et le raisonnement par étape. OpenTelemetry GenAI Semantic Conventions est devenu la norme, et les services managés (AgentCore Observability, Langfuse, Braintrust, Arize) sont en train de standardiser la collecte. ==L'orchestration sans observabilité, c'est de la divination.== **Renvoi** : [Ch. 20](ch20-observabilite-cognitive-audit-trail.md) (6 piliers, cognitive audit trail, attribut `gen_ai.compaction.*`).
 
 ### 11.6.3 Sécurité
 
-Trois sous-problèmes empilés. **Sandbox** : si l'agent exécute du code, il doit le faire dans un environnement isolé (microVM, *gVisor*, container restreint) — pas dans le process du runtime. **Identité déléguée** : l'agent agit *au nom* d'un utilisateur, pas avec les droits du service. Sinon, une injection dans un mail lu peut déclencher un transfert bancaire avec les droits *admin*. AgentCore Identity gère ce *on-behalf-of* nativement, compatible OAuth/OIDC. **Allowlist d'outils** : l'agent n'a accès qu'aux outils nécessaires à son rôle — pas à la liste universelle. C'est le principe **least agency** de l'OWASP ASI Top 10 décembre 2025[^18]. **Renvois** : [Ch. 7](ch07-boucle-agentique.md) §7.5.4 (le RBAC passe par l'infra, pas par le prompt), [Ch. 13](ch13-mcp-securite.md) (matrice défensive MCP 10×10), [Ch. 19](ch19-gardefous-securite-globale.md) (threat model unifié).
+Trois sous-problèmes empilés. **Sandbox** : si l'agent exécute du code, il doit le faire dans un environnement isolé (microVM, *gVisor*, container restreint) — pas dans le process du runtime. **Identité déléguée** : l'agent agit *au nom* d'un utilisateur, pas avec les droits du service. Sinon, une injection dans un mail lu peut déclencher un transfert bancaire avec les droits *admin*. AgentCore Identity gère ce *on-behalf-of* nativement, compatible OAuth/OIDC. **Allowlist d'outils** : l'agent n'a accès qu'aux outils nécessaires à son rôle — pas à la liste universelle. C'est le principe **least agency** de l'OWASP ASI Top 10 décembre 2025[^18]. **Renvois** : [Ch. 7](ch07-boucle-agentique.md) §7.5.4 (le RBAC passe par l'infra, pas par le prompt), [Ch. 16](ch16-mcp-securite.md) (matrice défensive MCP 10×10), [Ch. 21](ch21-gardefous-securite-globale.md) (threat model unifié).
 
 ### 11.6.4 Idempotence et retry
 
@@ -255,7 +255,7 @@ La question revient sous toutes les formes : *« on devrait pas plutôt acheter 
 Si la réponse est oui (support client, légal, code, ops support, ventes B2B), **regarder sérieusement les produits verticaux avant tout**. Quelqu'un a déjà payé la dette d'évals, le tuning métier, et le support 24/7. L'expérience Klarna est exemplaire et instructive : ils ont *construit* leur assistant interne dès 2024 avec OpenAI, ont automatisé 67 % des conversations en un mois[^20], puis ont dû *réintroduire des humains* sur les 5 % de cas chargés émotionnellement parce que ces 5 % détruisaient la CSAT[^21]. ==La leçon n'est pas *« n'automatisez pas »* — c'est *« le ticket d'entrée pour un agent métier qui marche en prod est plus haut qu'on ne croit »*.== Les vendeurs verticaux ont en moyenne deux ans d'avance sur ce ticket.
 
 > [!QUOTE] L'angle Klarna — deux lectures, deux chapitres
-> Le cas Klarna est utilisé deux fois dans ce livre. Ici (§11.7.1) comme **arbitrage architectural** : faut-il construire son agent ou prendre Sierra ? La réponse longue est qu'il y a un ticket d'entrée — la dette d'évals + tuning métier + support 24/7 — qu'un éditeur vertical a déjà payée. En **[Ch. 21 (mesurer le ROI)](ch21-roi-paradoxe-agentique.md)**, il est repris comme illustration du **paradoxe agentique** : le changement d'unité de mesure (token → tâche → processus → outcome). Les deux lectures sont complémentaires, pas redondantes.
+> Le cas Klarna est utilisé deux fois dans ce livre. Ici (§11.7.1) comme **arbitrage architectural** : faut-il construire son agent ou prendre Sierra ? La réponse longue est qu'il y a un ticket d'entrée — la dette d'évals + tuning métier + support 24/7 — qu'un éditeur vertical a déjà payée. En **[Ch. 23 (mesurer le ROI)](ch23-roi-paradoxe-agentique.md)**, il est repris comme illustration du **paradoxe agentique** : le changement d'unité de mesure (token → tâche → processus → outcome). Les deux lectures sont complémentaires, pas redondantes.
 
 ### 11.7.2 Q2 — Workflow unique, mais besoin de mémoire, identité, audit production-grade ?
 
@@ -309,9 +309,9 @@ Sur la matrice complète 10 artefacts × 4 stades, cinq cellules sont des **poin
 
 - **Entra Agent ID (ou équivalent)** — l'identité machine rend un agent auditable, révocable, traçable. Tant qu'un agent tourne sous les credentials d'un utilisateur humain, il n'y a pas de gouvernance possible — seulement de l'illusion.
 - **Memory pool** — sa présence dans le registre ne garantit rien ; ce qui compte, c'est le `memory_hit_rate`. Si la lecture mémoire est conditionnelle (par exemple, déclenchée seulement quand le champ `memory_lookup` est à `true`), ==le pool est mort== — un entrepôt auquel personne ne rend visite.
-- **Pass^k** — la métrique qui bascule l'évaluation du qualitatif au quantitatif. Un agent à 75 % de succès par tentative n'a que 42 % de chances de réussir trois interactions consécutives. Sans pass^k, on navigue à l'instinct (renvoi [Ch. 17](ch17-evaluation-benchmarks.md)).
+- **Pass^k** — la métrique qui bascule l'évaluation du qualitatif au quantitatif. Un agent à 75 % de succès par tentative n'a que 42 % de chances de réussir trois interactions consécutives. Sans pass^k, on navigue à l'instinct (renvoi [Ch. 19](ch19-evaluation-benchmarks.md)).
 - **OBO vs Autonome** — un choix de régime d'autorisation qui n'est **pas réversible à bas coût** : la migration OBO → Autonome coûte 13 à 23 points de budget projet, sur six à douze mois de plomberie. Une décision d'architecture de gouvernance, pas une case à cocher.
-- **Réallocation du temps gagné** — l'artefact final, non technique : RH, organisationnel, politique. Son absence dans une fabrique mature signifie que l'équipe a livré des agents sans traiter ce qui change pour les humains autour. Renvoi [Ch. 21](ch21-roi-paradoxe-agentique.md) (ROI) et [Ch. 24](ch24-ia-et-travail.md) (IA et travail).
+- **Réallocation du temps gagné** — l'artefact final, non technique : RH, organisationnel, politique. Son absence dans une fabrique mature signifie que l'équipe a livré des agents sans traiter ce qui change pour les humains autour. Renvoi [Ch. 23](ch23-roi-paradoxe-agentique.md) (ROI) et [Ch. 26](ch26-ia-et-travail.md) (IA et travail).
 
 ---
 

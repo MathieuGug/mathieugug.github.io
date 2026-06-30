@@ -314,7 +314,7 @@ Bloc inséré à la fin du fichier existant :
 }
 ```
 
-Points load-bearing :
+Points pivot :
 
 - `overflow: clip` sur `.hero-intro` (pas `hidden`) — fix iOS Safari pour `position: sticky` documenté dans `CLAUDE.md`. Sur Safari < 16, fallback `overflow-x: hidden` ajouté juste avant si besoin (à valider en test).
 - `overflow: hidden` sur `.hero-intro__sticky` pour empêcher le canvas Three.js de déborder pendant un repaint au scroll iOS.
