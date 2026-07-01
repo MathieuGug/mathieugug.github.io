@@ -37,7 +37,7 @@ GShard, chez Google, a été le premier à industrialiser ce schéma à grande �
 
 Le routage est le talon d'Achille de la MoE, et la source de la plupart de ses difficultés d'entraînement. Le problème fondamental est un cercle vicieux d'auto-renforcement : au début de l'entraînement, un expert légèrement favorisé reçoit plus de tokens, s'entraîne donc plus vite, devient meilleur, et se voit donc favorisé davantage. C'est ==l'effondrement du routage (*routing collapse*) : une poignée d'experts capte tout le trafic, les autres restent sous-entraînés et inutiles==. Le modèle a nominalement N experts mais n'en exploite réellement qu'une fraction.
 
-[SCHEMA-03]
+![Le problème du routage : effondrement, perte auxiliaire, capacité, expert choice|1200](images/20260701-03-probleme-routage.svg)
 
 Trois familles de parades coexistent :
 
