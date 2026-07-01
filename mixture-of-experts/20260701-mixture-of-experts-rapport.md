@@ -79,7 +79,7 @@ Les lois d'échelle classiques (Kaplan, Chinchilla) relient la perte à deux lev
 
 À budget de calcul (FLOPs) fixe, un modèle sparse bat systématiquement un modèle dense en perplexité : il « range » plus de paramètres pour le même coût par token[^3][^10]. La question n'est plus *dense ou sparse*, mais *quel degré de sparsité et quelle granularité* pour un budget donné.
 
-[SCHEMA-06]
+![La sparsité comme troisième axe d'échelle|900](images/20260701-06-troisieme-axe-echelle.svg)
 
 Krajewski et al. ont formalisé cette dimension supplémentaire — la *granularité* — et montré que les configurations MoE optimales pour un budget donné ont une granularité croissante avec l'échelle : plus le modèle est grand, plus il gagne à être découpé en experts fins et nombreux[^11]. C'est la justification théorique de la trajectoire DeepSeek. Les travaux antérieurs de DeepMind sur les *routed language models* avaient déjà esquissé des lois d'échelle unifiées pour la MoE, montrant que les gains persistent sur plusieurs ordres de grandeur avant de plafonner[^2].
 
