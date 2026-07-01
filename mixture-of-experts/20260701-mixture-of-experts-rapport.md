@@ -27,7 +27,7 @@ Concrètement, une couche MoE remplace le sous-bloc FFN d'un ou plusieurs blocs 
 - **N experts** : N FFN indépendants, chacun avec ses propres poids.
 - **Une combinaison pondérée** : les sorties des k experts sélectionnés sont sommées, pondérées par les scores de gate (renormalisés).
 
-[SCHEMA-02]
+![Anatomie d'une couche MoE : routeur, top-k, experts, combinaison|1200](images/20260701-02-anatomie-couche-moe.svg)
 
 Le point subtil, et souvent mal compris, est que ==le routage se fait au niveau du *token*, pas de la séquence ou de la requête==. Dans une même phrase, deux tokens consécutifs peuvent partir vers des experts complètement différents. Le routeur n'a aucune notion sémantique explicite : il apprend, par descente de gradient, une partition de l'espace des représentations qui minimise la perte — pas une partition en « domaines de connaissance » lisibles par un humain (on y revient en section 8).
 
