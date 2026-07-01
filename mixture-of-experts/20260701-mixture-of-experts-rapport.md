@@ -14,7 +14,7 @@ La MoE brise ce lien. Elle remplace le FFN unique par une collection de N FFN �
 
 C'est le découplage central, et il est spectaculaire dans les chiffres : DeepSeek-V3 embarque 671 milliards de paramètres mais n'en active que 37 milliards par token[^8]. Le modèle « sait » comme un 671 Md, il « calcule » comme un 37 Md. Mixtral 8×7B totalise ~47 Md de paramètres mais n'en active que ~13 Md par token[^6]. On paie le savoir en mémoire, pas en calcul.
 
-[SCHEMA-01]
+![Dense contre sparse : le découplage params/FLOPs|1200](images/20260701-01-dense-vs-sparse.svg)
 
 Cette bascule reconfigure toute l'économie du modèle. En entraînement, elle permet d'ingérer plus de connaissances à budget FLOPs fixe. En inférence, elle déplace le goulot d'étranglement du calcul (les FLOPs, ressource abondante sur GPU modernes) vers la mémoire et la bande passante — précisément là où la gestion du KV-cache avait déjà déplacé la contrainte. La MoE et le KV-cache racontent la même histoire sous deux angles : *sur une charge réelle, l'octet prime sur le FLOP*.
 
