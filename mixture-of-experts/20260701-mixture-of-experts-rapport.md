@@ -57,7 +57,7 @@ Le « déjeuner gratuit » de la MoE — plus de paramètres au même coût de c
 
 **La communication.** À l'échelle, les experts sont répartis sur plusieurs accélérateurs — c'est l'*expert parallelism*. Mais les tokens, eux, arrivent en batch sur chaque GPU. Il faut donc, à chaque couche MoE, **acheminer chaque token vers le GPU qui héberge son expert (opération *all-to-all* de *dispatch*), puis rapatrier les sorties (*all-to-all* de *combine*)**[^2]. Ces deux échanges collectifs, répétés à chaque couche, deviennent le goulot d'étranglement dominant sur les grands clusters : le réseau, pas le calcul, dicte le débit.
 
-[SCHEMA-04]
+![La facture communication : expert parallelism et all-to-all|1200](images/20260701-04-facture-communication.svg)
 
 C'est pourquoi une part majeure de l'ingénierie MoE porte sur la communication : chevauchement calcul/communication, topologies de réseau optimisées, et — chez DeepSeek — un schéma de communication sur mesure (*DualPipe*) qui masque le coût all-to-all derrière le calcul[^8]. ==Servir une MoE, c'est d'abord un problème de plomberie réseau, pas d'algèbre linéaire.==
 
