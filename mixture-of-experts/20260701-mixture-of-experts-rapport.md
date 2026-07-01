@@ -69,7 +69,7 @@ L'architecture MoE canonique — quelques gros experts, top-2 — laisse deux in
 
 **La granularité grossière.** Avec peu d'experts, le nombre de combinaisons possibles (quels k parmi N) est faible, ce qui limite la spécialisation. DeepSeek **découpe chaque expert en plusieurs experts plus petits (*fine-grained*)** à budget de paramètres et de calcul constant. En passant de 8 experts top-2 à, disons, 64 experts top-8, on multiplie le nombre de combinaisons de plusieurs ordres de grandeur — le modèle peut composer des « spécialistes » beaucoup plus finement[^7].
 
-[SCHEMA-05]
+![L'architecture DeepSeek : experts fins et expert partagé|1200](images/20260701-05-architecture-deepseek.svg)
 
 DeepSeek-V3 est l'aboutissement de cette ligne : 256 experts routés fins + 1 expert partagé, 8 experts routés activés par token, équilibrage sans perte auxiliaire, 671 Md de paramètres totaux pour 37 Md actifs[^8]. Le tout combiné à la *Multi-head Latent Attention* (qui compresse le KV-cache) et à la prédiction multi-token. C'est aujourd'hui la référence de facto pour une MoE ouverte de frontière — et OLMoE a confirmé, en configuration 100 % ouverte et reproductible, que la combinaison *fine-grained + granularité élevée + expert partagé optionnel* domine les alternatives sur des ablations rigoureuses[^12].
 
