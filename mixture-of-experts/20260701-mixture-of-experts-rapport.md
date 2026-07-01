@@ -89,7 +89,7 @@ Le *sparse upcycling* offre un raccourci économique : plutôt que d'entraîner 
 
 La MoE est passée, en trois ans, du pari exotique au standard de fait pour les modèles de frontière.
 
-[SCHEMA-07]
+![Le paysage MoE 2024-2026 : matrice modèles × dimensions|1200](images/20260701-07-paysage-moe.svg)
 
 Quelques repères : **Mixtral 8×7B** (janvier 2024) a été le déclencheur grand public — la première MoE ouverte compétitive, 8 experts, top-2, ~13 Md actifs[^6]. **DeepSeek-V2 puis V3** ont établi la ligne fine-grained + shared, jusqu'à 671/37 Md[^7][^8]. **Qwen3**, **Llama 4** (Scout et Maverick), **DBRX** (132 Md, 16 experts) et **Grok-1** (314 Md) ont suivi. **OLMoE** (1,3 Md actifs / 6,9 Md totaux) fait figure d'exception précieuse : entièrement ouvert — poids, données, code, logs — il sert de banc d'essai reproductible pour la recherche MoE[^12]. Quant à **GPT-4**, une architecture MoE (rumeur persistante d'une seize-experts ou huit-experts) est largement supposée sans confirmation officielle — signe que même les acteurs fermés ont basculé.
 
