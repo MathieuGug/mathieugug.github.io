@@ -1,0 +1,1810 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>La Mixture-of-Experts : payer le savoir, pas le calcul</title>
+  <meta name="description" content="La Mixture-of-Experts découple les paramètres du calcul par token : le mécanisme, le routage et son effondrement, la facture communication (all-to-all), les experts fins et partagés de DeepSeek, la sparsité comme troisième axe d'échelle. Deep dive par Mathieu Guglielmino, 1er juillet 2026.">
+  <!-- og:start -->
+<meta name="author" content="Mathieu Guglielmino">
+<link rel="canonical" href="https://mathieugug.github.io/mixture-of-experts/20260701-mixture-of-experts-app.html">
+<meta name="keywords" content="IA agentique, Mathieu Guglielmino, agents IA, dossier, mixture, of, experts">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Mathieu Guglielmino">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:url" content="https://mathieugug.github.io/mixture-of-experts/20260701-mixture-of-experts-app.html">
+<meta property="og:title" content="La Mixture-of-Experts : payer le savoir, pas le calcul">
+<meta property="og:description" content="La Mixture-of-Experts découple les paramètres du calcul par token : le mécanisme, le routage et son effondrement, la facture communication (all-to-all), les experts fins et partagés de DeepSeek, la sparsité comme troisième axe d'échelle. Deep dive par Mathieu Guglielmino, 1er juillet 2026.">
+<meta property="og:image" content="https://mathieugug.github.io/mixture-of-experts/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="La Mixture-of-Experts — couverture social">
+<meta property="article:published_time" content="2026-07-01">
+<meta property="article:author" content="Mathieu Guglielmino">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="La Mixture-of-Experts : payer le savoir, pas le calcul">
+<meta name="twitter:description" content="La Mixture-of-Experts découple les paramètres du calcul par token : le mécanisme, le routage et son effondrement, la facture communication (all-to-all), les experts fins et partagés de DeepSeek, la sparsité comme troisième axe d'échelle. Deep dive par Mathieu Guglielmino, 1er juillet 2026.">
+<meta name="twitter:image" content="https://mathieugug.github.io/mixture-of-experts/og.png">
+<script type="application/ld+json">
+{"@context": "https://schema.org","@type": "Article","headline": "La Mixture-of-Experts : payer le savoir, pas le calcul","description": "La Mixture-of-Experts découple les paramètres du calcul par token : mécanisme, routage, communication all-to-all, experts fins et partagés de DeepSeek, sparsité comme troisième axe d'échelle. Deep dive par Mathieu Guglielmino, 1er juillet 2026.","image": "https://mathieugug.github.io/mixture-of-experts/og.png","url": "https://mathieugug.github.io/mixture-of-experts/20260701-mixture-of-experts-app.html","datePublished": "2026-07-01","inLanguage": "fr-FR","author": {"@type": "Person","name": "Mathieu Guglielmino","url": "https://mathieugug.github.io/"},"publisher": {"@type": "Person","name": "Mathieu Guglielmino","url": "https://mathieugug.github.io/"}}
+</script>
+<!-- og:end -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/dossier-app.css">
+  <style>
+    /* ───────── Tokens ───────── */
+    :root {
+      --paper:    #FAF8F3;
+      --paper-2:  #F2EFE7;
+      --ink:      #1A1A1A;
+      --graphite: #5A5A5A;
+      --mist:     #B8B5AE;
+      --rule:     #E5E1D8;
+      --carmine:  #B7332C;
+      --teal:     #1F5560;
+      --mustard:  #B58A2C;
+
+      --serif: 'Spectral', 'Playfair Display', Georgia, serif;
+      --sans:  'Inter', system-ui, sans-serif;
+      --mono:  'JetBrains Mono', 'IBM Plex Mono', monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; max-width: 100vw; }
+    body {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    header.site {
+      grid-column: 1 / -1;
+      padding: 24px 32px;
+      border-bottom: 1px solid var(--rule);
+      display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap;
+    }
+    header.site .marker {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--carmine);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    header.site h1 {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 1.4rem;
+      margin: 0;
+      letter-spacing: -0.01em;
+    }
+    header.site .meta {
+      margin-left: auto;
+      font-size: 0.85rem;
+      color: var(--graphite);
+    }
+    header.site .meta a { color: var(--carmine); text-decoration: none; }
+    header.site .meta a:hover { text-decoration: underline; }
+    header.site .back {
+      font-family: var(--mono); font-size: 0.72rem;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--graphite); text-decoration: none;
+      white-space: nowrap;
+    }
+    header.site .back:hover { color: var(--carmine); }
+    .menu-toggle {
+      display: none;
+      background: none; border: 1px solid var(--rule);
+      padding: 6px 12px; border-radius: 4px; cursor: pointer;
+      font-family: var(--mono); font-size: 0.8rem;
+    }
+    @media (max-width: 1024px) { .menu-toggle { display: inline-block; } }
+
+    /* ───────── TOC (left) ───────── */
+    #toc {
+      padding: 32px 24px;
+      border-right: 1px solid var(--rule);
+      position: sticky; top: 56px; align-self: start;
+      height: calc(100vh - 56px); overflow-y: auto;
+    }
+    #toc h2 {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--graphite);
+      margin: 0 0 16px;
+    }
+    #toc ol {
+      list-style: none; padding: 0; margin: 0;
+      counter-reset: toc-counter;
+    }
+    #toc li {
+      counter-increment: toc-counter;
+      margin: 0 0 12px;
+      font-size: 0.92rem;
+      line-height: 1.4;
+    }
+    #toc li::before {
+      content: counter(toc-counter, decimal-leading-zero) ".";
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--mist);
+      margin-right: 8px;
+    }
+    #toc a {
+      color: var(--ink);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+    }
+    #toc a:hover, #toc a.active {
+      color: var(--carmine);
+      border-bottom-color: currentColor;
+    }
+
+    /* ───────── Main report ───────── */
+    main#report {
+      padding: 56px 48px 96px;
+      min-width: 0;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+    main#report > .lead {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 1.2rem;
+      color: var(--graphite);
+      line-height: 1.5;
+      margin: 0 0 48px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--rule);
+    }
+    main h1.report-title {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 2.6rem;
+      line-height: 1.1;
+      letter-spacing: -0.025em;
+      margin: 0 0 16px;
+    }
+    main h2 {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 1.55rem;
+      letter-spacing: -0.01em;
+      margin: 3.5rem 0 1rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--rule);
+    }
+    main h3 {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 1.18rem;
+      margin: 2rem 0 0.6rem;
+    }
+    main p { margin: 0 0 1.1rem; }
+    main ul, main ol { margin: 0 0 1.1rem; padding-left: 1.4rem; }
+    main li { margin-bottom: 0.4rem; }
+    main blockquote {
+      margin: 1.5rem 0;
+      padding: 12px 20px;
+      border-left: 3px solid var(--carmine);
+      background: var(--paper-2);
+      font-style: italic;
+      color: var(--graphite);
+    }
+    main code {
+      font-family: var(--mono);
+      font-size: 0.88em;
+      background: var(--paper-2);
+      padding: 2px 5px; border-radius: 3px;
+      overflow-wrap: anywhere;
+    }
+    main pre {
+      margin: 1.5rem 0;
+      padding: 14px 16px;
+      background: var(--paper-2);
+      border-radius: 4px;
+      overflow-x: auto;
+      max-width: 100%;
+      font-size: 0.85em;
+      line-height: 1.5;
+      -webkit-overflow-scrolling: touch;
+    }
+    main pre code {
+      background: transparent;
+      padding: 0;
+      border-radius: 0;
+      font-size: 1em;
+      overflow-wrap: normal;
+    }
+    main mark {
+      background: linear-gradient(transparent 58%, rgba(178, 59, 27, 0.14) 58%);
+      color: inherit;
+      padding: 0 2px;
+    }
+
+    /* ───────── Figures ───────── */
+    .figure {
+      margin: 3rem 0;
+      padding: 24px 0;
+      border-top: 1px solid var(--rule);
+      border-bottom: 1px solid var(--rule);
+      position: relative;
+    }
+    .figure svg {
+      width: 100%; height: auto;
+      display: block;
+      margin: 0 auto;
+    }
+    /* State-aware figure breakout on desktop — figure adapts to sources panel state:
+       - Default (sources expanded): fills main-cell only (between TOC and sources)
+       - .layout.sources-collapsed: extends from TOC-right to viewport-right
+       Neither state overlaps a visible sidebar. Smooth 280ms transition.
+       Full math + derivation: skill illustrated-deep-research, companion-app.md § 5. */
+    @media (min-width: 1025px) {
+      .figure {
+        margin-left: calc(-1 * max(0px, (100vw - 1320px) / 2 + 48px));
+        margin-right: calc(-1 * max(0px, (100vw - 1320px) / 2 + 48px));
+        transition: margin-left 280ms ease, margin-right 280ms ease;
+        padding-left: clamp(16px, 3vw, 48px);
+        padding-right: clamp(16px, 3vw, 48px);
+        border-radius: 0;
+      }
+      .layout.sources-collapsed .figure {
+        margin-left: calc(-1 * max(0px, (100vw - 904px) / 2));
+        margin-right: calc(-1 * max(0px, (100vw - 904px) / 2));
+      }
+      .figure-caption {
+        max-width: 760px;
+        margin-left: auto;
+        margin-right: auto;
+        padding: 0 48px;
+      }
+    }
+    .figure-caption {
+      font-size: 0.88rem;
+      color: var(--graphite);
+      font-style: italic;
+      margin-top: 12px;
+      padding: 0 8px;
+    }
+    .figure svg .interactive { cursor: pointer; transition: filter 140ms; }
+    .figure svg .interactive:hover,
+    .figure svg .interactive:focus-visible { outline: none; }
+    .figure svg .interactive:hover rect,
+    .figure svg .interactive:focus-visible rect,
+    .figure svg .interactive:hover path:not([fill="none"]),
+    .figure svg .interactive:focus-visible path:not([fill="none"]),
+    .figure svg .interactive:hover circle,
+    .figure svg .interactive:focus-visible circle {
+      stroke: var(--carmine);
+      stroke-width: 2.5;
+    }
+    .figure svg .interactive:focus-visible {
+      filter: drop-shadow(0 0 0 var(--carmine));
+    }
+
+    /* ───────── Sources sidebar (right) ───────── */
+    #sources {
+      padding: 32px 24px;
+      border-left: 1px solid var(--rule);
+      background: var(--paper-2);
+      position: sticky; top: 56px; align-self: start;
+      height: calc(100vh - 56px); overflow-y: auto;
+      transition: transform 280ms ease, opacity 200ms ease;
+    }
+    #sources .sources-inner { display: block; }
+
+    @media (max-width: 1024px) {
+      .menu-toggle { display: inline-block !important; }
+      header.site { padding: 14px 16px; gap: 10px; flex-wrap: wrap; }
+      header.site h1 { font-size: 1.05rem; min-width: 0; overflow-wrap: break-word; word-break: break-word; }
+      header.site .meta { font-size: 0.75rem; }
+      header.site .back { font-size: 0.7rem; letter-spacing: 0.08em; }
+      main#report { padding: 28px 18px 56px; max-width: 100%; min-width: 0; }
+      main h1.report-title { font-size: 1.8rem; overflow-wrap: break-word; word-break: break-word; }
+      main#report > .lead { font-size: 1.02rem; margin-bottom: 32px; padding-bottom: 18px; }
+      main h2 { font-size: 1.25rem; margin: 2.4rem 0 0.8rem; overflow-wrap: break-word; word-break: break-word; }
+      main h3 { font-size: 1.05rem; overflow-wrap: break-word; }
+      main p, main ul, main ol { overflow-wrap: break-word; word-break: break-word; }
+      .figure { margin: 2rem 0; padding: 16px 0; max-width: 100%; overflow: hidden; }
+      .figure svg { width: 100%; max-width: 100%; height: auto; }
+      main table {
+        display: block; max-width: 100%;
+        overflow-x: auto; -webkit-overflow-scrolling: touch;
+      }
+      main th, main td { white-space: normal; }
+    }
+    #sources h2 {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--graphite);
+      margin: 0 0 16px;
+    }
+    #sources ol { list-style: none; padding: 0; margin: 0; }
+    #sources li {
+      font-size: 0.82rem;
+      line-height: 1.5;
+      margin: 0 0 16px;
+      padding: 12px 14px;
+      border-radius: 4px;
+      border: 1px solid transparent;
+      transition: border-color 220ms, background 220ms;
+    }
+    #sources li .cite-num {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--carmine);
+      margin-right: 6px;
+    }
+    #sources li a {
+      display: inline-block;
+      margin-top: 4px;
+      color: var(--teal);
+      text-decoration: none;
+      font-size: 0.78rem;
+    }
+    #sources li a:hover { text-decoration: underline; }
+    #sources li .accessed {
+      display: block;
+      margin-top: 4px;
+      color: var(--mist);
+      font-style: italic;
+      font-size: 0.74rem;
+    }
+    #sources li.highlight {
+      background: var(--paper);
+      border-color: var(--carmine);
+    }
+
+    /* ───────── Print ───────── */
+    @media print {
+      .layout { grid-template-columns: 1fr; }
+      #toc, #sources, #modal-root, #zoom-overlay, .menu-toggle, .zoom-btn { display: none; }
+      main#report { max-width: none; padding: 0; }
+      .figure { page-break-inside: avoid; }
+    }
+
+    /* === infographie A4 portrait (exec sum visuelle) — pattern partagé === */
+    main .figure.figure--portrait,
+    .layout main .figure.figure--portrait,
+    .layout.sources-collapsed main .figure.figure--portrait {
+      margin-top: 3rem; margin-bottom: 3rem;
+      padding: 0 !important; border: none !important;
+      border-top: none !important; border-bottom: none !important;
+      width: auto;
+    }
+    @media (max-width: 1024px) {
+      main .figure.figure--portrait {
+        margin-left: auto !important; margin-right: auto !important;
+        max-width: 100%;
+      }
+    }
+    @media (min-width: 1025px) {
+      main .figure.figure--portrait,
+      .layout main .figure.figure--portrait,
+      .layout.sources-collapsed main .figure.figure--portrait {
+        margin-left: -60px !important; margin-right: -60px !important;
+        max-width: calc(100% + 120px);
+      }
+    }
+    @media (min-width: 1440px) {
+      main .figure.figure--portrait,
+      .layout main .figure.figure--portrait,
+      .layout.sources-collapsed main .figure.figure--portrait {
+        margin-left: -100px !important; margin-right: -100px !important;
+        max-width: calc(100% + 200px);
+      }
+    }
+    main .figure--portrait .figure-portrait-link { display: block; width: 100%; border: 1px solid var(--rule); background: var(--paper); border-radius: 2px; cursor: zoom-in; transition: box-shadow 220ms ease, border-color 220ms ease; overflow: hidden; }
+    main .figure--portrait .figure-portrait-link:hover { box-shadow: 0 8px 28px rgba(30,30,42,0.14); border-color: var(--accent); }
+    main .figure--portrait img { display: block; width: 100%; height: auto; }
+    main .figure--portrait .figure-caption { max-width: 100%; margin: 14px auto 0; padding: 0 8px; text-align: center; }
+    /* Sigil MG remonté sur les A4 portrait (au-dessus du header SVG, pas sur le titre) */
+    main .figure--portrait .schema-sigil {
+      top: 10px !important;
+      right: 14px !important;
+      width: 30px !important; height: 30px !important;
+      opacity: 0.60 !important;
+    }
+    @media (max-width: 640px) {
+      main .figure--portrait .schema-sigil { top: 8px !important; right: 10px !important; width: 24px !important; height: 24px !important; }
+    }
+
+    /* === quiz cards (vérification de compréhension) — pattern partagé avec evaluation-agentique === */
+    .quiz-card {
+      margin: 2rem 0 2.4rem;
+      padding: 18px 22px;
+      background: var(--paper-2);
+      border-left: 3px solid var(--carmine);
+      border-radius: 2px;
+    }
+    .quiz-card__head {
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .quiz-card__eyebrow {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--graphite);
+      flex-basis: 100%;
+      margin: 0 0 0.25rem;
+    }
+    .quiz-card__title {
+      font-family: var(--serif);
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin: 0;
+      flex: 1 1 auto;
+      color: var(--ink);
+    }
+    .quiz-card__toggle {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.06em;
+      background: transparent;
+      border: 1px solid var(--mist);
+      color: var(--ink);
+      padding: 6px 14px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: color .15s, border-color .15s;
+    }
+    .quiz-card__toggle:hover, .quiz-card__toggle:focus-visible {
+      color: var(--carmine);
+      border-color: var(--carmine);
+      outline: none;
+    }
+    .quiz-card__body {
+      margin-top: 1.2rem;
+      padding-top: 1rem;
+      border-top: 1px dashed var(--rule);
+    }
+    .quiz-card__body[hidden] { display: none; }
+
+    .quiz-q { margin: 0; padding: 0; }
+    .quiz-q + .quiz-q { margin-top: 1.6rem; padding-top: 1.6rem; border-top: 1px dashed var(--rule); }
+    .quiz-q fieldset { border: 0; padding: 0; margin: 0; }
+    .quiz-q__stem {
+      font-family: var(--serif);
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--ink);
+      padding: 0;
+      margin: 0 0 0.9rem;
+    }
+    .quiz-q__options { list-style: none; padding: 0; margin: 0 0 1rem; }
+    .quiz-q__options li {
+      margin: 0;
+      padding: 8px 0;
+      border-top: 1px solid var(--rule);
+    }
+    .quiz-q__options li:last-child { border-bottom: 1px solid var(--rule); }
+    .quiz-q__options label {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      cursor: pointer;
+      padding: 4px 0;
+    }
+    .quiz-q__options input { margin: 0.3em 0 0; flex: 0 0 auto; accent-color: var(--carmine); }
+    .quiz-q__options label > span { flex: 1; line-height: 1.5; }
+
+    .quiz-q__explain {
+      font-size: 0.92rem;
+      margin: 0.5rem 0 0 1.7rem;
+      padding: 8px 12px;
+      background: var(--paper);
+      border-left: 2px solid var(--mist);
+      color: var(--graphite);
+    }
+    .quiz-q__explain[hidden] { display: none; }
+    .quiz-q__options li.is-correct .quiz-q__explain,
+    .quiz-q__options li.expected .quiz-q__explain { border-left-color: var(--teal); }
+    .quiz-q__options li.is-wrong .quiz-q__explain { border-left-color: var(--carmine); }
+    .quiz-q__options li.is-correct > label > span,
+    .quiz-q__options li.expected > label > span {
+      background-image: linear-gradient(transparent 60%, rgba(31, 85, 96, 0.14) 60%);
+      background-size: 100% 1.5em;
+      background-repeat: repeat-y;
+    }
+    .quiz-q__options li.is-wrong > label > span {
+      background-image: linear-gradient(transparent 60%, rgba(183, 51, 44, 0.14) 60%);
+      background-size: 100% 1.5em;
+      background-repeat: repeat-y;
+    }
+
+    .quiz-q__check {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      background: var(--ink);
+      color: var(--paper);
+      border: 0;
+      padding: 8px 16px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .quiz-q__check:hover, .quiz-q__check:focus-visible { background: var(--carmine); outline: none; }
+    .quiz-q__check:disabled { background: var(--mist); cursor: not-allowed; }
+
+    .quiz-q__verdict {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      margin: 1rem 0 0;
+      padding: 8px 12px;
+      border-left: 2px solid var(--graphite);
+    }
+    .quiz-q__verdict[hidden] { display: none; }
+    .quiz-q__verdict.is-correct { border-left-color: var(--teal); color: var(--teal); }
+    .quiz-q__verdict.is-wrong { border-left-color: var(--carmine); color: var(--carmine); }
+
+    .quiz-q__retry {
+      font-family: var(--mono);
+      font-size: 0.74rem;
+      letter-spacing: 0.06em;
+      background: transparent;
+      border: 0;
+      color: var(--graphite);
+      padding: 6px 0;
+      margin: 0.6rem 0 0;
+      cursor: pointer;
+      text-decoration: underline;
+      text-decoration-color: var(--mist);
+      text-underline-offset: 3px;
+    }
+    .quiz-q__retry:hover, .quiz-q__retry:focus-visible { color: var(--ink); text-decoration-color: var(--carmine); outline: none; }
+    .quiz-q__retry[hidden] { display: none; }
+
+    /* === callouts de renvoi vers d'autres dossiers (pattern partagé avec agent-sdk) === */
+    main .callout { display: grid; grid-template-columns: 280px 1fr; gap: 0; align-items: stretch; margin: 2.4rem 0; padding: 0; background: var(--paper); border-left: 3px solid var(--teal); border-radius: 2px; transition: grid-template-columns 320ms cubic-bezier(.2,.7,.2,1); }
+    main .callout:hover { grid-template-columns: 440px 1fr; }
+    main .callout > .callout-thumb-link { position: relative; display: block; width: 100%; height: 100%; min-height: 200px; overflow: hidden; border-radius: 0; background: transparent; border: 0; border-right: 1px solid var(--rule); cursor: zoom-in; padding: 0; -webkit-appearance: none; appearance: none; font: inherit; color: inherit; text-align: left; transition: filter 200ms ease; }
+    main .callout > .callout-thumb-link:hover { filter: drop-shadow(0 4px 14px rgba(183,51,44,0.18)); border-right-color: var(--carmine); }
+    main .callout > .callout-thumb-link:focus-visible { outline: 2px solid var(--carmine); outline-offset: -2px; }
+    main .callout > .callout-thumb-link img.callout-thumb { width: 100%; height: 100%; object-fit: contain; object-position: center center; display: block; padding: 0; }
+    main .callout > .callout-thumb-link::after { content: '⛶ AGRANDIR'; position: absolute; top: 10px; right: 10px; padding: 4px 9px; font-family: var(--mono); font-size: 9.5px; font-weight: 600; letter-spacing: 0.10em; background: rgba(250,248,243,0.94); border: 1px solid var(--rule); border-radius: 2px; color: var(--graphite); opacity: 0; transition: opacity 180ms ease, color 180ms ease, border-color 180ms ease; pointer-events: none; }
+    main .callout > .callout-thumb-link:hover::after, main .callout > .callout-thumb-link:focus-visible::after { opacity: 1; color: var(--carmine); border-color: var(--carmine); }
+    main .callout > .callout-body { min-width: 0; padding: 22px 26px 22px 26px; align-self: center; }
+    main .callout .callout-eyebrow { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--teal); margin: 0 0 0.45rem; font-weight: 600; }
+    main .callout > .callout-body p { margin: 0; font-size: 0.95rem; line-height: 1.55; color: var(--ink); }
+    main .callout > .callout-body p a { color: var(--carmine); text-decoration: none; border-bottom: 1px dotted var(--carmine); }
+    main .callout > .callout-body p a:hover { color: var(--teal); border-bottom-color: var(--teal); }
+
+    @media (max-width: 1024px) {
+      /* === quiz cards : variantes mobile === */
+      .quiz-card { padding: 14px 16px; margin: 1.6rem 0 2rem; }
+      .quiz-card__head { gap: 0.6rem; }
+      .quiz-card__title { flex-basis: 100%; overflow-wrap: break-word; }
+      .quiz-card__toggle { width: 100%; padding: 12px; min-height: 44px; font-size: 0.82rem; }
+      .quiz-q__check { width: 100%; padding: 12px; min-height: 44px; font-size: 0.82rem; }
+      .quiz-q__options li { padding: 10px 0; }
+      .quiz-q__options label { padding: 8px 0; min-height: 44px; align-items: center; }
+      .quiz-q__explain { margin: 0.5rem 0 0 0; padding: 10px 12px; }
+      .quiz-q__retry { padding: 10px 0; min-height: 44px; }
+    }
+    @media (max-width: 640px) {
+      main .callout, main .callout:hover { grid-template-columns: 1fr; gap: 0; padding: 0; }
+      main .callout > .callout-thumb-link { min-height: 180px; border-right: 0; border-bottom: 1px solid var(--rule); }
+      main .callout > .callout-body { padding: 18px 20px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar" id="topbar">
+    <a href="../index.html">Mathieu <em>Guglielmino</em></a>
+    <span class="dossier-context">Mixture-of-Experts</span>
+    <div class="topbar-tools">
+      <button class="menu-toggle" id="toggle-toc">Sommaire</button>
+      <button class="menu-toggle" id="toggle-sources">Sources</button>
+    </div>
+    <nav class="back-nav" aria-label="Navigation retour">
+      <a href="index.html" class="back" title="Revenir au hub du dossier">← Hub</a>
+      <span class="back-sep" aria-hidden="true">·</span>
+      <a href="../index.html#series" class="back" title="Revenir à l'accueil">Accueil</a>
+    </nav>
+  </header>
+  <div class="layout">
+
+    <header class="site">
+      <span class="marker">Deep dive · Architectures de modèles</span>
+      <h1>La Mixture-of-Experts</h1>
+      <span class="meta">
+        Mathieu Guglielmino · 1er juillet 2026
+      </span>
+    </header>
+
+    <nav id="toc" aria-label="Sommaire">
+      <button class="panel-close" type="button" aria-label="Fermer le sommaire">Fermer ✕</button>
+      <h2>Sommaire</h2>
+      <ol>
+        <li><a href="#moe-1">1. Le découplage fondamental</a></li>
+        <li><a href="#moe-2">2. Anatomie d'une couche MoE</a></li>
+        <li><a href="#moe-3">3. Le problème du routage</a></li>
+        <li><a href="#moe-4">4. La facture cachée</a></li>
+        <li><a href="#moe-5">5. Les innovations DeepSeek</a></li>
+        <li><a href="#moe-6">6. La sparsité, 3ᵉ axe d'échelle</a></li>
+        <li><a href="#moe-7">7. Le paysage 2024-2026</a></li>
+        <li><a href="#moe-8">8. Tensions et horizon</a></li>
+      </ol>
+    </nav>
+
+    <main id="report">
+<h1 class="report-title">La Mixture-of-Experts : payer le savoir, pas le calcul</h1>
+      <p class="lead">La Mixture-of-Experts découple le nombre de paramètres — le savoir d'un modèle — du coût de calcul par token : elle laisse croître la capacité sans faire croître les FLOPs, en échange d'une facture <strong>mémoire et communication</strong>. C'est l'architecture qui a rendu les modèles de frontière économiquement soutenables — et la sparsité est devenue un troisième axe d'échelle à côté des paramètres et des données.</p>
+      <p class="byline"><em>1er juillet 2026 — Mathieu Guglielmino</em></p>
+
+      <p>Un modèle de langage dense paie deux fois le même prix : <mark>pour chaque token généré, il allume la totalité de ses paramètres</mark>, qu'il s'agisse de décliner un verbe ou de démontrer un théorème. Le coût de calcul est proportionnel à la taille du modèle, et cette proportionnalité est le mur contre lequel bute le passage à l'échelle : doubler le savoir, c'est doubler la facture d'inférence et d'entraînement.</p>
+
+      <p>La Mixture-of-Experts (MoE) est la réponse architecturale à ce mur, et elle est ancienne : l'idée d'un <em>gating</em> sparse remonte à 2017<a class="cite" data-cite="1" href="#source-1">1</a>. Mais c'est entre 2021 et 2025 qu'elle est passée du laboratoire à la quasi-totalité des modèles de frontière — Mixtral, DeepSeek-V3, Qwen3, Llama 4, DBRX, Grok. Ce dossier est un deep dive du dossier <a href="../economie-inference/">économie de l'inférence</a> : il explique le mécanisme, ses pièges (le routage, la facture cachée de communication), l'état de l'art (les experts fins et partagés de DeepSeek), et pourquoi la sparsité s'est imposée comme une dimension d'échelle à part entière.</p>
+
+      <h2 id="moe-1">1. Le découplage fondamental</h2>
+      <p>Dans un transformer dense, chaque couche applique à chaque token la même transformation : le bloc d'attention, puis un réseau <span class="term" data-tooltip="Feed-Forward Network : le sous-bloc dense d'une couche transformer qui concentre l'essentiel des paramètres — c'est lui que la MoE remplace par des experts.">feed-forward (FFN)</span> qui concentre l'essentiel des paramètres. Le nombre d'opérations à virgule flottante par token est, à l'ordre un, proportionnel au nombre de paramètres actifs. C'est une loi d'airain : <strong>plus de savoir = plus de calcul</strong>, token par token, indéfiniment.</p>
+
+      <p>La MoE brise ce lien. Elle remplace le FFN unique par une collection de N FFN — les <em>experts</em> — et un petit réseau appelé <span class="term" data-tooltip="Routeur (gate) : projection linéaire suivie d'un softmax qui, pour chaque token, attribue un score à chaque expert et sélectionne les k meilleurs.">routeur</span> qui, pour chaque token, sélectionne seulement k experts parmi N (typiquement k=1 ou 2)<a class="cite" data-cite="1" href="#source-1">1</a><a class="cite" data-cite="3" href="#source-3">3</a>. Le token n'est traité que par ces k experts ; les N−k autres restent inertes pour ce token. <mark>La capacité du modèle (N experts, donc N fois plus de paramètres) croît, tandis que le calcul actif (k experts) reste constant.</mark></p>
+
+      <p>C'est le découplage central, et il est spectaculaire dans les chiffres : DeepSeek-V3 embarque 671 milliards de paramètres mais n'en active que 37 milliards par token<a class="cite" data-cite="8" href="#source-8">8</a>. Le modèle « sait » comme un 671 Md, il « calcule » comme un 37 Md. Mixtral 8×7B totalise ~47 Md de paramètres mais n'en active que ~13 Md par token<a class="cite" data-cite="6" href="#source-6">6</a>. On paie le savoir en mémoire, pas en calcul.</p>
+
+      <figure class="figure" id="fig-01">
+        <svg data-schema-id="schema-01" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dense contre sparse — le découplage entre paramètres et FLOPs">
+  <style>
+    .display { font-family: 'Fraunces','Playfair Display',Georgia,serif; }
+    .body    { font-family: 'Inter','Helvetica Neue',system-ui,sans-serif; }
+    .mono    { font-family: 'JetBrains Mono','IBM Plex Mono',monospace; }
+  </style>
+  <defs>
+    <marker id="s1-arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#5A5A5A"/>
+    </marker>
+    <marker id="s1-arrow-c" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#B7332C"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- Header -->
+  <text x="60" y="56" class="mono" font-size="13" fill="#B7332C" letter-spacing="0.18em">SCHÉMA 01</text>
+  <text x="60" y="98" class="display" font-size="30" font-weight="600" fill="#1A1A1A" letter-spacing="-0.01em">Dense contre sparse : le découplage</text>
+  <text x="60" y="128" class="display" font-size="18" font-style="italic" fill="#5A5A5A">Le dense allume tous ses paramètres par token ; la MoE n'en allume que k sur N.</text>
+  <line x1="60" y1="150" x2="1140" y2="150" stroke="#E5E1D8" stroke-width="1"/>
+
+  <!-- vertical divider -->
+  <line x1="600" y1="180" x2="600" y2="690" stroke="#B8B5AE" stroke-width="1" stroke-dasharray="2 3"/>
+
+  <!-- ===== LEFT : DENSE ===== -->
+  <text x="90" y="200" class="mono" font-size="14" font-weight="600" fill="#1A1A1A" letter-spacing="0.12em">DENSE</text>
+
+  <rect x="250" y="212" width="120" height="44" rx="3" fill="#F2EFE7" stroke="#5A5A5A" stroke-width="1.25"/>
+  <text x="310" y="239" class="body" font-size="14" fill="#1A1A1A" text-anchor="middle">token</text>
+  <line x1="310" y1="256" x2="310" y2="292" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#s1-arrow)"/>
+
+  <g class="interactive" data-card="dense-block" tabindex="0" role="button" aria-label="Bloc FFN dense — cliquez pour les détails">
+    <rect x="180" y="302" width="260" height="230" rx="4" fill="#FBEEE7" stroke="#B7332C" stroke-width="1.25"/>
+    <text x="310" y="330" class="body" font-size="14" font-weight="600" fill="#B7332C" text-anchor="middle">FFN — tous les paramètres</text>
+    <!-- grid of all-active cells -->
+    <g fill="#B7332C">
+      <rect x="212" y="348" width="28" height="28" rx="2"/><rect x="248" y="348" width="28" height="28" rx="2"/><rect x="284" y="348" width="28" height="28" rx="2"/><rect x="320" y="348" width="28" height="28" rx="2"/><rect x="356" y="348" width="28" height="28" rx="2"/>
+      <rect x="212" y="384" width="28" height="28" rx="2"/><rect x="248" y="384" width="28" height="28" rx="2"/><rect x="284" y="384" width="28" height="28" rx="2"/><rect x="320" y="384" width="28" height="28" rx="2"/><rect x="356" y="384" width="28" height="28" rx="2"/>
+      <rect x="212" y="420" width="28" height="28" rx="2"/><rect x="248" y="420" width="28" height="28" rx="2"/><rect x="284" y="420" width="28" height="28" rx="2"/><rect x="320" y="420" width="28" height="28" rx="2"/><rect x="356" y="420" width="28" height="28" rx="2"/>
+      <rect x="212" y="456" width="28" height="28" rx="2"/><rect x="248" y="456" width="28" height="28" rx="2"/><rect x="284" y="456" width="28" height="28" rx="2"/><rect x="320" y="456" width="28" height="28" rx="2"/><rect x="356" y="456" width="28" height="28" rx="2"/>
+    </g>
+    <text x="310" y="512" class="mono" font-size="12" fill="#5A5A5A" text-anchor="middle">100 % actifs</text>
+  </g>
+
+  <line x1="310" y1="532" x2="310" y2="568" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#s1-arrow)"/>
+  <rect x="250" y="578" width="120" height="44" rx="3" fill="#F2EFE7" stroke="#5A5A5A" stroke-width="1.25"/>
+  <text x="310" y="605" class="body" font-size="14" fill="#1A1A1A" text-anchor="middle">sortie</text>
+
+  <text x="90" y="662" class="mono" font-size="15" fill="#1A1A1A">FLOPs  ∝  N<tspan font-size="11" dy="4">params</tspan><tspan dy="-4">  (tous)</tspan></text>
+
+  <!-- ===== RIGHT : SPARSE / MoE ===== -->
+  <text x="640" y="200" class="mono" font-size="14" font-weight="600" fill="#1F5560" letter-spacing="0.12em">SPARSE · MoE</text>
+
+  <rect x="700" y="212" width="120" height="44" rx="3" fill="#F2EFE7" stroke="#5A5A5A" stroke-width="1.25"/>
+  <text x="760" y="239" class="body" font-size="14" fill="#1A1A1A" text-anchor="middle">token</text>
+  <line x1="760" y1="256" x2="760" y2="292" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#s1-arrow)"/>
+
+  <g class="interactive" data-card="router" tabindex="0" role="button" aria-label="Routeur — cliquez pour les détails">
+    <rect x="695" y="302" width="130" height="46" rx="3" fill="#E8F0F1" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="760" y="330" class="body" font-size="14" font-weight="600" fill="#1F5560" text-anchor="middle">routeur</text>
+  </g>
+
+  <!-- experts column -->
+  <g class="interactive" data-card="active-expert" tabindex="0" role="button" aria-label="Experts actifs — cliquez pour les détails">
+    <rect x="980" y="352" width="150" height="34" rx="3" fill="#B7332C" stroke="#B7332C" stroke-width="1.25"/>
+    <text x="1055" y="374" class="mono" font-size="12" fill="#FAF8F3" text-anchor="middle">expert 2 · actif</text>
+    <rect x="980" y="480" width="150" height="34" rx="3" fill="#B7332C" stroke="#B7332C" stroke-width="1.25"/>
+    <text x="1055" y="502" class="mono" font-size="12" fill="#FAF8F3" text-anchor="middle">expert 6 · actif</text>
+  </g>
+
+  <g class="interactive" data-card="dormant-expert" tabindex="0" role="button" aria-label="Experts dormants — cliquez pour les détails">
+    <rect x="980" y="310" width="150" height="34" rx="3" fill="#FAF8F3" stroke="#B8B5AE" stroke-width="1.25" stroke-dasharray="3 3"/>
+    <text x="1055" y="332" class="mono" font-size="12" fill="#B8B5AE" text-anchor="middle">expert 1</text>
+    <rect x="980" y="394" width="150" height="34" rx="3" fill="#FAF8F3" stroke="#B8B5AE" stroke-width="1.25" stroke-dasharray="3 3"/>
+    <text x="1055" y="416" class="mono" font-size="12" fill="#B8B5AE" text-anchor="middle">expert 3…5</text>
+    <rect x="980" y="438" width="150" height="34" rx="3" fill="#FAF8F3" stroke="#B8B5AE" stroke-width="1.25" stroke-dasharray="3 3"/>
+    <text x="1055" y="460" class="mono" font-size="12" fill="#B8B5AE" text-anchor="middle">…</text>
+    <rect x="980" y="522" width="150" height="34" rx="3" fill="#FAF8F3" stroke="#B8B5AE" stroke-width="1.25" stroke-dasharray="3 3"/>
+    <text x="1055" y="544" class="mono" font-size="12" fill="#B8B5AE" text-anchor="middle">expert N</text>
+  </g>
+
+  <!-- router to active experts (solid carmine) -->
+  <path d="M825 322 C900 330 905 366 971 369" fill="none" stroke="#B7332C" stroke-width="2.5" marker-end="url(#s1-arrow-c)"/>
+  <path d="M825 336 C900 420 905 494 971 497" fill="none" stroke="#B7332C" stroke-width="2.5" marker-end="url(#s1-arrow-c)"/>
+  <!-- faint lines to dormant -->
+  <path d="M828 314 C900 318 905 325 977 327" fill="none" stroke="#B8B5AE" stroke-width="0.75"/>
+  <path d="M828 340 C900 545 905 537 977 539" fill="none" stroke="#B8B5AE" stroke-width="0.75"/>
+
+  <!-- combine -->
+  <line x1="1055" y1="514" x2="1055" y2="588" stroke="#5A5A5A" stroke-width="1.25"/>
+  <line x1="1055" y1="386" x2="1055" y2="430" stroke="#5A5A5A" stroke-width="0.5"/>
+  <rect x="700" y="578" width="130" height="44" rx="3" fill="#F2EFE7" stroke="#5A5A5A" stroke-width="1.25"/>
+  <text x="765" y="605" class="body" font-size="14" fill="#1A1A1A" text-anchor="middle">combinaison</text>
+  <path d="M980 600 L838 600" fill="none" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#s1-arrow)"/>
+
+  <text x="640" y="662" class="mono" font-size="15" fill="#1F5560">FLOPs  ∝  k experts  (k ≪ N)</text>
+
+  <!-- Footer -->
+  <line x1="60" y1="712" x2="1140" y2="712" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="60" y="746" class="body" font-size="12" font-style="italic" fill="#5A5A5A">Source : Shazeer et al. 2017 ; Fedus, Zoph &amp; Shazeer 2021 ; DeepSeek-V3 (671 Md totaux / 37 Md actifs).</text>
+</svg>
+
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-01" title="Lien direct vers ce schéma">¶</a> <em>Schéma 1 — Dense contre sparse. Le dense allume tous ses paramètres par token (FLOPs ∝ params) ; la MoE n'en allume que k sur N (FLOPs ∝ k). Cliquez le routeur, un expert actif ou dormant.</em></figcaption>
+      </figure>
+
+      <p>Cette bascule reconfigure toute l'économie du modèle. En entraînement, elle permet d'ingérer plus de connaissances à budget FLOPs fixe. En inférence, elle déplace le goulot d'étranglement du calcul (les FLOPs, ressource abondante sur GPU modernes) vers la mémoire et la bande passante — précisément là où la gestion du KV-cache avait déjà déplacé la contrainte. La MoE et le KV-cache racontent la même histoire sous deux angles : <em>sur une charge réelle, l'octet prime sur le FLOP</em>.</p>
+
+      <h2 id="moe-2">2. Anatomie d'une couche MoE</h2>
+      <p>Concrètement, une couche MoE remplace le sous-bloc FFN d'un ou plusieurs blocs transformer par la structure suivante :</p>
+      <ul>
+        <li><strong>Un routeur</strong> : une simple projection linéaire qui, à partir du vecteur d'un token, produit N scores (un par expert), suivie d'un <span class="term" data-tooltip="Softmax : fonction qui transforme des scores bruts en distribution de probabilités — ici, la confiance du routeur envers chaque expert.">softmax</span>. Le routeur est minuscule devant les experts — quelques milliers de paramètres contre des milliards.</li>
+        <li><strong>Une sélection top-k</strong> : on retient les k experts aux plus hauts scores. Switch Transformer a montré que k=1 suffit et simplifie tout<a class="cite" data-cite="3" href="#source-3">3</a> ; Mixtral et la plupart des modèles récents utilisent k=2.</li>
+        <li><strong>N experts</strong> : N FFN indépendants, chacun avec ses propres poids.</li>
+        <li><strong>Une combinaison pondérée</strong> : les sorties des k experts sélectionnés sont sommées, pondérées par les scores de gate (renormalisés).</li>
+      </ul>
+
+      <figure class="figure" id="fig-02">
+        <svg data-schema-id="schema-02" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Anatomie d'une couche Mixture-of-Experts">
+  <style>
+    .display { font-family: 'Fraunces','Playfair Display',Georgia,serif; }
+    .body    { font-family: 'Inter','Helvetica Neue',system-ui,sans-serif; }
+    .mono    { font-family: 'JetBrains Mono','IBM Plex Mono',monospace; }
+  </style>
+  <defs>
+    <marker id="s2-arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#5A5A5A"/>
+    </marker>
+    <marker id="s2-arrow-c" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#B7332C"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- Header -->
+  <text x="60" y="56" class="mono" font-size="13" fill="#B7332C" letter-spacing="0.18em">SCHÉMA 02</text>
+  <text x="60" y="98" class="display" font-size="30" font-weight="600" fill="#1A1A1A" letter-spacing="-0.01em">Anatomie d'une couche MoE</text>
+  <text x="60" y="128" class="display" font-size="18" font-style="italic" fill="#5A5A5A">Le FFN unique devient N experts + un routeur qui en sélectionne k, puis combine.</text>
+  <line x1="60" y1="150" x2="1140" y2="150" stroke="#E5E1D8" stroke-width="1"/>
+
+  <!-- token -->
+  <rect x="60" y="382" width="110" height="50" rx="3" fill="#F2EFE7" stroke="#5A5A5A" stroke-width="1.25"/>
+  <text x="115" y="412" class="body" font-size="14" fill="#1A1A1A" text-anchor="middle">token</text>
+  <line x1="170" y1="407" x2="204" y2="407" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#s2-arrow)"/>
+
+  <!-- gate -->
+  <g class="interactive" data-card="gate" tabindex="0" role="button" aria-label="Routeur (gate) — cliquez pour les détails">
+    <rect x="214" y="360" width="156" height="94" rx="4" fill="#E8F0F1" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="292" y="393" class="body" font-size="14" font-weight="600" fill="#1F5560" text-anchor="middle">routeur</text>
+    <text x="292" y="415" class="mono" font-size="11.5" fill="#5A5A5A" text-anchor="middle">linéaire → softmax</text>
+    <text x="292" y="435" class="mono" font-size="11.5" fill="#5A5A5A" text-anchor="middle">N scores</text>
+  </g>
+  <line x1="370" y1="407" x2="404" y2="407" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#s2-arrow)"/>
+
+  <!-- top-k -->
+  <g class="interactive" data-card="topk" tabindex="0" role="button" aria-label="Sélection top-k — cliquez pour les détails">
+    <rect x="414" y="360" width="156" height="94" rx="4" fill="#F5EEDD" stroke="#B58A2C" stroke-width="1.5"/>
+    <text x="492" y="393" class="body" font-size="14" font-weight="600" fill="#B58A2C" text-anchor="middle">top-k</text>
+    <text x="492" y="415" class="mono" font-size="11.5" fill="#5A5A5A" text-anchor="middle">k = 1 (Switch)</text>
+    <text x="492" y="435" class="mono" font-size="11.5" fill="#5A5A5A" text-anchor="middle">k = 2 (Mixtral)</text>
+  </g>
+
+  <!-- experts column -->
+  <text x="680" y="196" class="mono" font-size="12" fill="#5A5A5A" letter-spacing="0.1em" text-anchor="middle">N EXPERTS (FFN)</text>
+  <g class="interactive" data-card="expert-ffn" tabindex="0" role="button" aria-label="Experts FFN — cliquez pour les détails">
+    <rect x="605" y="230" width="150" height="48" rx="3" fill="#FAF8F3" stroke="#B8B5AE" stroke-width="1.25" stroke-dasharray="3 3"/>
+    <text x="680" y="259" class="mono" font-size="12.5" fill="#B8B5AE" text-anchor="middle">expert 1</text>
+    <rect x="605" y="300" width="150" height="48" rx="3" fill="#FBEEE7" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="680" y="329" class="mono" font-size="12.5" fill="#B7332C" text-anchor="middle">expert 2 ✓</text>
+    <rect x="605" y="370" width="150" height="48" rx="3" fill="#FAF8F3" stroke="#B8B5AE" stroke-width="1.25" stroke-dasharray="3 3"/>
+    <text x="680" y="399" class="mono" font-size="12.5" fill="#B8B5AE" text-anchor="middle">expert 3</text>
+    <rect x="605" y="440" width="150" height="48" rx="3" fill="#FBEEE7" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="680" y="469" class="mono" font-size="12.5" fill="#B7332C" text-anchor="middle">expert 4 ✓</text>
+    <rect x="605" y="510" width="150" height="48" rx="3" fill="#FAF8F3" stroke="#B8B5AE" stroke-width="1.25" stroke-dasharray="3 3"/>
+    <text x="680" y="539" class="mono" font-size="12.5" fill="#B8B5AE" text-anchor="middle">expert N</text>
+  </g>
+
+  <!-- top-k to experts -->
+  <path d="M570 407 C585 407 588 324 599 324" fill="none" stroke="#B7332C" stroke-width="2.5" marker-end="url(#s2-arrow-c)"/>
+  <path d="M570 407 C585 407 588 464 599 464" fill="none" stroke="#B7332C" stroke-width="2.5" marker-end="url(#s2-arrow-c)"/>
+  <path d="M572 400 C585 380 588 256 601 256" fill="none" stroke="#B8B5AE" stroke-width="0.75"/>
+  <path d="M572 402 C585 394 588 394 601 394" fill="none" stroke="#B8B5AE" stroke-width="0.75"/>
+  <path d="M572 414 C585 470 588 534 601 534" fill="none" stroke="#B8B5AE" stroke-width="0.75"/>
+
+  <!-- combine -->
+  <g class="interactive" data-card="combine" tabindex="0" role="button" aria-label="Combinaison pondérée — cliquez pour les détails">
+    <rect x="880" y="360" width="160" height="94" rx="4" fill="#F2EFE7" stroke="#5A5A5A" stroke-width="1.25"/>
+    <text x="960" y="393" class="body" font-size="14" font-weight="600" fill="#1A1A1A" text-anchor="middle">combinaison</text>
+    <text x="960" y="415" class="mono" font-size="11.5" fill="#5A5A5A" text-anchor="middle">Σ gᵢ · Eᵢ(x)</text>
+    <text x="960" y="435" class="mono" font-size="11.5" fill="#5A5A5A" text-anchor="middle">pondérée par le gate</text>
+  </g>
+  <path d="M755 324 C820 324 830 400 874 405" fill="none" stroke="#B7332C" stroke-width="2.5" marker-end="url(#s2-arrow-c)"/>
+  <path d="M755 464 C820 464 830 412 874 408" fill="none" stroke="#B7332C" stroke-width="2.5" marker-end="url(#s2-arrow-c)"/>
+
+  <!-- output -->
+  <line x1="1040" y1="407" x2="1074" y2="407" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#s2-arrow)"/>
+  <rect x="1084" y="382" width="96" height="50" rx="3" fill="#F2EFE7" stroke="#5A5A5A" stroke-width="1.25"/>
+  <text x="1132" y="412" class="body" font-size="14" fill="#1A1A1A" text-anchor="middle">sortie</text>
+
+  <!-- annotation -->
+  <text x="60" y="620" class="body" font-size="13" fill="#5A5A5A">Le routage se fait <tspan font-weight="600" fill="#1A1A1A">par token</tspan> : deux tokens voisins d'une même phrase peuvent partir vers des experts différents.</text>
+
+  <!-- Footer -->
+  <line x1="60" y1="712" x2="1140" y2="712" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="60" y="746" class="body" font-size="12" font-style="italic" fill="#5A5A5A">Source : GShard (Lepikhin et al. 2020) ; Switch Transformer (Fedus et al. 2021) ; Mixtral of Experts (Jiang et al. 2024).</text>
+</svg>
+
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-02" title="Lien direct vers ce schéma">¶</a> <em>Schéma 2 — Anatomie d'une couche MoE : le FFN unique devient routeur + top-k + N experts + combinaison. Cliquez chaque étage pour le détail.</em></figcaption>
+      </figure>
+
+      <p>Le point subtil, et souvent mal compris, est que <mark>le routage se fait au niveau du <em>token</em>, pas de la séquence ou de la requête</mark>. Dans une même phrase, deux tokens consécutifs peuvent partir vers des experts complètement différents. Le routeur n'a aucune notion sémantique explicite : il apprend, par descente de gradient, une partition de l'espace des représentations qui minimise la perte — pas une partition en « domaines de connaissance » lisibles par un humain (on y revient en section 8).</p>
+
+      <p>GShard, chez Google, a été le premier à industrialiser ce schéma à grande échelle, avec un modèle de traduction à 600 milliards de paramètres et le vocabulaire d'ingénierie qui va avec — <span class="term" data-tooltip="Expert parallelism : répartition des experts sur plusieurs accélérateurs ; comme les tokens n'arrivent pas sur le bon GPU, il faut les acheminer par un échange all-to-all.">expert parallelism</span>, all-to-all, capacité d'expert<a class="cite" data-cite="2" href="#source-2">2</a>. Switch Transformer a poussé jusqu'à 1 600 milliards de paramètres en simplifiant à k=1<a class="cite" data-cite="3" href="#source-3">3</a>.</p>
+
+      <h2 id="moe-3">3. Le problème du routage</h2>
+      <p>Le routage est le talon d'Achille de la MoE, et la source de la plupart de ses difficultés d'entraînement. Le problème fondamental est un cercle vicieux d'auto-renforcement : au début de l'entraînement, un expert légèrement favorisé reçoit plus de tokens, s'entraîne donc plus vite, devient meilleur, et se voit donc favorisé davantage. C'est <mark>l'effondrement du routage (<em>routing collapse</em>) : une poignée d'experts capte tout le trafic, les autres restent sous-entraînés et inutiles</mark>. Le modèle a nominalement N experts mais n'en exploite réellement qu'une fraction.</p>
+
+      <figure class="figure" id="fig-03">
+        <svg data-schema-id="schema-03" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Le problème du routage : effondrement et parades d'équilibrage">
+  <style>
+    .display { font-family: 'Fraunces','Playfair Display',Georgia,serif; }
+    .body    { font-family: 'Inter','Helvetica Neue',system-ui,sans-serif; }
+    .mono    { font-family: 'JetBrains Mono','IBM Plex Mono',monospace; }
+  </style>
+  <defs>
+    <marker id="s3-arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#5A5A5A"/>
+    </marker>
+    <marker id="s3-arrow-t" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#1F5560"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- Header -->
+  <text x="60" y="56" class="mono" font-size="13" fill="#B7332C" letter-spacing="0.18em">SCHÉMA 03</text>
+  <text x="60" y="98" class="display" font-size="30" font-weight="600" fill="#1A1A1A" letter-spacing="-0.01em">Le problème du routage</text>
+  <text x="60" y="128" class="display" font-size="18" font-style="italic" fill="#5A5A5A">Le déséquilibre s'auto-renforce — trois familles de parades le corrigent.</text>
+  <line x1="60" y1="150" x2="1140" y2="150" stroke="#E5E1D8" stroke-width="1"/>
+
+  <!-- ===== Panel 1 : collapse ===== -->
+  <g class="interactive" data-card="collapse" tabindex="0" role="button" aria-label="Effondrement du routage — cliquez pour les détails">
+    <rect x="70" y="180" width="500" height="250" rx="4" fill="#FBEEE7" stroke="#B7332C" stroke-width="1.25"/>
+    <text x="92" y="212" class="mono" font-size="12.5" font-weight="600" fill="#B7332C">1 · EFFONDREMENT (rich-get-richer)</text>
+    <line x1="100" y1="392" x2="540" y2="392" stroke="#5A5A5A" stroke-width="1"/>
+    <!-- bars: one huge, rest tiny -->
+    <rect x="112" y="238" width="46" height="154" fill="#B7332C"/>
+    <rect x="180" y="360" width="46" height="32" fill="#B8B5AE"/>
+    <rect x="248" y="372" width="46" height="20" fill="#B8B5AE"/>
+    <rect x="316" y="366" width="46" height="26" fill="#B8B5AE"/>
+    <rect x="384" y="376" width="46" height="16" fill="#B8B5AE"/>
+    <rect x="452" y="380" width="46" height="12" fill="#B8B5AE"/>
+    <text x="135" y="228" class="mono" font-size="11" fill="#B7332C" text-anchor="middle">E2</text>
+    <text x="320" y="418" class="body" font-size="12" fill="#5A5A5A" text-anchor="middle">charge par expert — un seul capte tout</text>
+  </g>
+
+  <!-- ===== Panel 2 : aux-loss ===== -->
+  <g class="interactive" data-card="aux-loss" tabindex="0" role="button" aria-label="Perte auxiliaire d'équilibrage — cliquez pour les détails">
+    <rect x="630" y="180" width="500" height="250" rx="4" fill="#E8F0F1" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="652" y="212" class="mono" font-size="12.5" font-weight="600" fill="#1F5560">2 · PERTE AUXILIAIRE</text>
+    <line x1="660" y1="392" x2="1100" y2="392" stroke="#5A5A5A" stroke-width="1"/>
+    <rect x="672" y="300" width="46" height="92" fill="#1F5560"/>
+    <rect x="740" y="292" width="46" height="100" fill="#1F5560"/>
+    <rect x="808" y="304" width="46" height="88" fill="#1F5560"/>
+    <rect x="876" y="296" width="46" height="96" fill="#1F5560"/>
+    <rect x="944" y="300" width="46" height="92" fill="#1F5560"/>
+    <rect x="1012" y="298" width="46" height="94" fill="#1F5560"/>
+    <text x="880" y="252" class="mono" font-size="12" fill="#1F5560" text-anchor="middle">coût += λ · L équilibrage  (+ z-loss)</text>
+    <text x="880" y="418" class="body" font-size="12" fill="#5A5A5A" text-anchor="middle">charge répartie — au prix d'une tension avec la perplexité</text>
+  </g>
+
+  <!-- ===== Panel 3 : capacity / drop ===== -->
+  <g class="interactive" data-card="capacity-drop" tabindex="0" role="button" aria-label="Capacité d'expert et token dropping — cliquez pour les détails">
+    <rect x="70" y="460" width="500" height="250" rx="4" fill="#F5EEDD" stroke="#B58A2C" stroke-width="1.25"/>
+    <text x="92" y="492" class="mono" font-size="12.5" font-weight="600" fill="#B58A2C">3 · CAPACITÉ + TOKEN DROPPING</text>
+    <rect x="200" y="520" width="160" height="120" rx="3" fill="#FAF8F3" stroke="#B58A2C" stroke-width="1.25"/>
+    <text x="280" y="512" class="mono" font-size="11" fill="#5A5A5A" text-anchor="middle">expert (capacité fixe)</text>
+    <line x1="200" y1="560" x2="360" y2="560" stroke="#B7332C" stroke-width="1" stroke-dasharray="3 3"/>
+    <text x="368" y="564" class="mono" font-size="10.5" fill="#B7332C">plafond</text>
+    <!-- tokens inside -->
+    <circle cx="230" cy="600" r="9" fill="#B58A2C"/><circle cx="258" cy="600" r="9" fill="#B58A2C"/><circle cx="286" cy="600" r="9" fill="#B58A2C"/><circle cx="314" cy="600" r="9" fill="#B58A2C"/>
+    <!-- overflow token dropped -->
+    <circle cx="120" cy="530" r="9" fill="none" stroke="#B7332C" stroke-width="1.25"/>
+    <path d="M114 524 L126 536 M126 524 L114 536" stroke="#B7332C" stroke-width="1.25"/>
+    <path d="M132 530 C160 530 170 560 196 560" fill="none" stroke="#B7332C" stroke-width="1" stroke-dasharray="3 3"/>
+    <text x="120" y="512" class="mono" font-size="10" fill="#B7332C" text-anchor="middle">droppé</text>
+    <text x="120" y="560" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">→ résiduel</text>
+    <text x="440" y="600" class="body" font-size="11.5" fill="#5A5A5A" text-anchor="middle">MegaBlocks :</text>
+    <text x="440" y="618" class="body" font-size="11.5" fill="#5A5A5A" text-anchor="middle">block-sparse,</text>
+    <text x="440" y="636" class="body" font-size="11.5" fill="#5A5A5A" text-anchor="middle">zéro drop</text>
+  </g>
+
+  <!-- ===== Panel 4 : expert choice ===== -->
+  <g class="interactive" data-card="expert-choice" tabindex="0" role="button" aria-label="Routage par les experts (expert choice) — cliquez pour les détails">
+    <rect x="630" y="460" width="500" height="250" rx="4" fill="#F2EFE7" stroke="#5A5A5A" stroke-width="1.25"/>
+    <text x="652" y="492" class="mono" font-size="12.5" font-weight="600" fill="#1A1A1A">4 · EXPERT CHOICE</text>
+    <!-- experts left -->
+    <rect x="662" y="524" width="90" height="34" rx="3" fill="#E8F0F1" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="707" y="546" class="mono" font-size="11" fill="#1F5560" text-anchor="middle">expert A</text>
+    <rect x="662" y="596" width="90" height="34" rx="3" fill="#E8F0F1" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="707" y="618" class="mono" font-size="11" fill="#1F5560" text-anchor="middle">expert B</text>
+    <!-- token pool right -->
+    <circle cx="980" cy="530" r="9" fill="#B8B5AE"/><circle cx="1010" cy="530" r="9" fill="#B8B5AE"/><circle cx="1040" cy="530" r="9" fill="#B8B5AE"/>
+    <circle cx="980" cy="600" r="9" fill="#B8B5AE"/><circle cx="1010" cy="600" r="9" fill="#B8B5AE"/><circle cx="1040" cy="600" r="9" fill="#B8B5AE"/>
+    <text x="1010" y="512" class="mono" font-size="10.5" fill="#5A5A5A" text-anchor="middle">tokens</text>
+    <path d="M752 538 C850 538 900 530 969 530" fill="none" stroke="#1F5560" stroke-width="1.5" marker-end="url(#s3-arrow-t)"/>
+    <path d="M752 545 C850 560 900 600 969 600" fill="none" stroke="#1F5560" stroke-width="1.5" marker-end="url(#s3-arrow-t)"/>
+    <text x="890" y="668" class="body" font-size="12" fill="#5A5A5A" text-anchor="middle">l'expert choisit ses top-k tokens → équilibrage parfait</text>
+  </g>
+
+  <!-- Footer -->
+  <line x1="60" y1="736" x2="1140" y2="736" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="60" y="768" class="body" font-size="12" font-style="italic" fill="#5A5A5A">Source : ST-MoE (Zoph et al. 2022) ; Expert Choice (Zhou et al. 2022) ; MegaBlocks (Gale et al. 2023) ; DeepSeek-V3 (équilibrage sans perte auxiliaire).</text>
+</svg>
+
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-03" title="Lien direct vers ce schéma">¶</a> <em>Schéma 3 — Le problème du routage et ses trois familles de parades. Cliquez l'effondrement, la perte auxiliaire, la capacité, ou l'expert choice.</em></figcaption>
+      </figure>
+
+      <p>Trois familles de parades coexistent :</p>
+      <ul>
+        <li><strong>La perte auxiliaire d'équilibrage.</strong> On ajoute à la fonction de coût un terme qui pénalise le déséquilibre de charge entre experts, poussant le routeur à répartir les tokens uniformément<a class="cite" data-cite="1" href="#source-1">1</a><a class="cite" data-cite="3" href="#source-3">3</a>. C'est efficace mais c'est un compromis : ce terme entre en tension avec l'objectif de perplexité — on force parfois un token vers un expert sous-optimal juste pour l'équilibre. ST-MoE a ajouté une seconde régularisation, le <span class="term" data-tooltip="Router z-loss : régularisation qui pénalise l'amplitude des logits du routeur, évitant les débordements numériques qui rendaient l'entraînement des MoE instable.">router z-loss</span>, pour stabiliser les logits du routeur<a class="cite" data-cite="4" href="#source-4">4</a>.</li>
+        <li><strong>La capacité d'expert et le <em>token dropping</em>.</strong> Pour paralléliser efficacement, on fixe une <span class="term" data-tooltip="Capacité d'expert : nombre maximal de tokens qu'un expert traite dans un batch. Au-delà, les tokens excédentaires sont droppés (sautent la couche via le résiduel).">capacité maximale par expert</span>. Au-delà, les tokens excédentaires sont <em>droppés</em> — ils sautent la couche MoE via la connexion résiduelle, sans être traités<a class="cite" data-cite="2" href="#source-2">2</a><a class="cite" data-cite="3" href="#source-3">3</a>. C'est un mal du placement statique en mémoire, que MegaBlocks a cherché à supprimer avec un noyau <span class="term" data-tooltip="Block-sparse : formulation de la MoE comme multiplication matricielle creuse par blocs, qui traite tous les tokens sans capacité fixe ni token dropping (MegaBlocks, 2023).">block-sparse</span> traitant tous les tokens<a class="cite" data-cite="9" href="#source-9">9</a>.</li>
+        <li><strong>Le routage par les experts (<em>expert choice</em>).</strong> Renversement du problème : au lieu de laisser chaque token choisir ses k experts, on laisse chaque expert choisir ses top-k tokens<a class="cite" data-cite="5" href="#source-5">5</a>. L'équilibrage devient parfait par construction, au prix d'une bizarrerie : un token peut être choisi par zéro, un, ou plusieurs experts.</li>
+      </ul>
+
+      <p>DeepSeek a apporté la contribution la plus élégante récemment : <mark>un équilibrage <em>sans perte auxiliaire</em></mark>, qui ajuste dynamiquement un terme de biais par expert (augmenté si l'expert est sous-chargé, diminué s'il est surchargé) sans polluer le gradient de la perte principale<a class="cite" data-cite="8" href="#source-8">8</a>. On obtient l'équilibre sans sacrifier la qualité — une des clés de DeepSeek-V3.</p>
+
+      <h2 id="moe-4">4. La facture cachée : mémoire et communication</h2>
+      <p>Le « déjeuner gratuit » de la MoE — plus de paramètres au même coût de calcul — n'est pas gratuit. Il se paie sur deux postes que la comptabilité en FLOPs ignore.</p>
+      <p><strong>La mémoire.</strong> Même si un token n'active que k experts, <em>tous</em> les experts doivent résider en mémoire, prêts à être appelés. DeepSeek-V3 occupe l'empreinte VRAM d'un 671 Md, pas d'un 37 Md<a class="cite" data-cite="8" href="#source-8">8</a>. C'est ce qui rend les MoE difficiles à servir localement : faire tourner une MoE de capacité équivalente à un dense de 13 Md exigerait de charger 50 à 100 Md de poids — d'où l'intérêt de l'<em>offloading</em> CPU/SSD des experts inactifs (section 8).</p>
+      <p><strong>La communication.</strong> À l'échelle, les experts sont répartis sur plusieurs accélérateurs. Mais les tokens arrivent en batch sur chaque GPU. Il faut donc, à chaque couche MoE, <strong>acheminer chaque token vers le GPU qui héberge son expert (opération <span class="term" data-tooltip="All-to-all : échange collectif où chaque GPU envoie et reçoit des données de tous les autres. Répété deux fois par couche MoE (dispatch + combine), il domine le coût réseau.">all-to-all</span> de dispatch), puis rapatrier les sorties (all-to-all de combine)</strong><a class="cite" data-cite="2" href="#source-2">2</a>. Ces deux échanges collectifs, répétés à chaque couche, deviennent le goulot d'étranglement dominant : le réseau, pas le calcul, dicte le débit.</p>
+
+      <figure class="figure" id="fig-04">
+        <svg data-schema-id="schema-04" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="La facture communication : expert parallelism et all-to-all">
+  <style>
+    .display { font-family: 'Fraunces','Playfair Display',Georgia,serif; }
+    .body    { font-family: 'Inter','Helvetica Neue',system-ui,sans-serif; }
+    .mono    { font-family: 'JetBrains Mono','IBM Plex Mono',monospace; }
+  </style>
+  <defs>
+    <marker id="s4-arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#5A5A5A"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- Header -->
+  <text x="60" y="56" class="mono" font-size="13" fill="#B7332C" letter-spacing="0.18em">SCHÉMA 04</text>
+  <text x="60" y="98" class="display" font-size="30" font-weight="600" fill="#1A1A1A" letter-spacing="-0.01em">La facture communication</text>
+  <text x="60" y="128" class="display" font-size="18" font-style="italic" fill="#5A5A5A">Experts répartis sur les accélérateurs : chaque token doit voyager vers le bon GPU — deux fois.</text>
+  <line x1="60" y1="150" x2="1140" y2="150" stroke="#E5E1D8" stroke-width="1"/>
+
+  <!-- Left : source GPUs (dispatch) -->
+  <g class="interactive" data-card="dispatch" tabindex="0" role="button" aria-label="Dispatch des tokens — cliquez pour les détails">
+    <text x="165" y="205" class="mono" font-size="12" fill="#5A5A5A" text-anchor="middle" letter-spacing="0.1em">TOKENS PAR GPU</text>
+    <rect x="90" y="228" width="150" height="66" rx="3" fill="#F2EFE7" stroke="#5A5A5A" stroke-width="1.25"/>
+    <text x="165" y="256" class="mono" font-size="12" fill="#1A1A1A" text-anchor="middle">GPU 0</text>
+    <circle cx="128" cy="278" r="8" fill="#B7332C"/><circle cx="152" cy="278" r="8" fill="#1F5560"/><circle cx="176" cy="278" r="8" fill="#B58A2C"/>
+    <rect x="90" y="378" width="150" height="66" rx="3" fill="#F2EFE7" stroke="#5A5A5A" stroke-width="1.25"/>
+    <text x="165" y="406" class="mono" font-size="12" fill="#1A1A1A" text-anchor="middle">GPU 1</text>
+    <circle cx="128" cy="428" r="8" fill="#1F5560"/><circle cx="152" cy="428" r="8" fill="#B58A2C"/><circle cx="176" cy="428" r="8" fill="#B7332C"/>
+    <rect x="90" y="528" width="150" height="66" rx="3" fill="#F2EFE7" stroke="#5A5A5A" stroke-width="1.25"/>
+    <text x="165" y="556" class="mono" font-size="12" fill="#1A1A1A" text-anchor="middle">GPU 2</text>
+    <circle cx="128" cy="578" r="8" fill="#B58A2C"/><circle cx="152" cy="578" r="8" fill="#B7332C"/><circle cx="176" cy="578" r="8" fill="#1F5560"/>
+  </g>
+
+  <!-- Center : all-to-all mesh (the bottleneck) -->
+  <g class="interactive" data-card="alltoall" tabindex="0" role="button" aria-label="Le goulot all-to-all — cliquez pour les détails">
+    <rect x="360" y="212" width="440" height="400" rx="6" fill="#B7332C" fill-opacity="0.055" stroke="#B7332C" stroke-width="1.25" stroke-dasharray="3 3"/>
+    <text x="580" y="240" class="mono" font-size="14" font-weight="600" fill="#B7332C" text-anchor="middle" letter-spacing="0.14em">ALL-TO-ALL · DISPATCH</text>
+    <text x="580" y="596" class="body" font-size="12" fill="#5A5A5A" text-anchor="middle" font-style="italic">chaque GPU parle à tous les autres — le réseau, pas le calcul, dicte le débit</text>
+  </g>
+  <!-- mesh lines drawn on top (not interactive) -->
+  <g stroke-width="1" fill="none">
+    <path d="M240 261 L920 261" stroke="#B8B5AE"/><path d="M240 261 L920 411" stroke="#B7332C" stroke-width="1.5"/><path d="M240 261 L920 561" stroke="#B7332C" stroke-width="1.5"/>
+    <path d="M240 411 L920 261" stroke="#B7332C" stroke-width="1.5"/><path d="M240 411 L920 411" stroke="#B8B5AE"/><path d="M240 411 L920 561" stroke="#B7332C" stroke-width="1.5"/>
+    <path d="M240 561 L920 261" stroke="#B7332C" stroke-width="1.5"/><path d="M240 561 L920 411" stroke="#B7332C" stroke-width="1.5"/><path d="M240 561 L920 561" stroke="#B8B5AE"/>
+  </g>
+
+  <!-- Right : experts per GPU (compute) -->
+  <g class="interactive" data-card="expert-compute" tabindex="0" role="button" aria-label="Calcul des experts — cliquez pour les détails">
+    <text x="1000" y="205" class="mono" font-size="12" fill="#5A5A5A" text-anchor="middle" letter-spacing="0.1em">EXPERTS RÉSIDENTS</text>
+    <rect x="920" y="228" width="180" height="66" rx="3" fill="#FBEEE7" stroke="#B7332C" stroke-width="1.25"/>
+    <text x="1010" y="256" class="mono" font-size="12" fill="#B7332C" text-anchor="middle">GPU 0 · experts 0-63</text>
+    <text x="1010" y="278" class="mono" font-size="10.5" fill="#5A5A5A" text-anchor="middle">tous résidents en VRAM</text>
+    <rect x="920" y="378" width="180" height="66" rx="3" fill="#FBEEE7" stroke="#B7332C" stroke-width="1.25"/>
+    <text x="1010" y="406" class="mono" font-size="12" fill="#B7332C" text-anchor="middle">GPU 1 · experts 64-127</text>
+    <text x="1010" y="428" class="mono" font-size="10.5" fill="#5A5A5A" text-anchor="middle">≠ tokens actifs</text>
+    <rect x="920" y="528" width="180" height="66" rx="3" fill="#FBEEE7" stroke="#B7332C" stroke-width="1.25"/>
+    <text x="1010" y="556" class="mono" font-size="12" fill="#B7332C" text-anchor="middle">GPU 2 · experts 128-191</text>
+    <text x="1010" y="578" class="mono" font-size="10.5" fill="#5A5A5A" text-anchor="middle">empreinte = total, pas actif</text>
+  </g>
+
+  <!-- combine (2nd all-to-all) -->
+  <g class="interactive" data-card="combine-a2a" tabindex="0" role="button" aria-label="Combine — second all-to-all — cliquez pour les détails">
+    <rect x="360" y="638" width="740" height="42" rx="4" fill="#E8F0F1" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="730" y="665" class="body" font-size="13" fill="#1F5560" text-anchor="middle">↺  Le trajet retour (combine) est un <tspan font-weight="600">second all-to-all</tspan> — coût doublé, à chaque couche MoE</text>
+  </g>
+  <path d="M580 616 L580 634" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#s4-arrow)"/>
+
+  <!-- Footer -->
+  <line x1="60" y1="712" x2="1140" y2="712" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="60" y="746" class="body" font-size="12" font-style="italic" fill="#5A5A5A">Source : GShard (Lepikhin et al. 2020) ; DeepSeek-V3 (schéma de communication DualPipe pour masquer l'all-to-all).</text>
+</svg>
+
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-04" title="Lien direct vers ce schéma">¶</a> <em>Schéma 4 — La facture communication. Experts répartis sur les GPU : chaque token voyage vers le bon accélérateur, deux fois (dispatch + combine). Cliquez les zones.</em></figcaption>
+      </figure>
+
+      <blockquote><strong>Renvoi — <a href="../kv-cache/">kv-cache</a>.</strong> La MoE déplace la contrainte vers la mémoire et la bande passante, exactement comme la gestion du KV-cache. Les deux dossiers se lisent en miroir : ici, on paie le savoir en octets de poids ; là, on paie le contexte en octets d'attention. Dans les deux cas, <em>l'octet prime sur le FLOP</em>.</blockquote>
+
+      <p>C'est pourquoi une part majeure de l'ingénierie MoE porte sur la communication : chevauchement calcul/communication, topologies réseau optimisées, et — chez DeepSeek — un schéma de communication sur mesure (<em>DualPipe</em>) qui masque le coût all-to-all derrière le calcul<a class="cite" data-cite="8" href="#source-8">8</a>. <mark>Servir une MoE, c'est d'abord un problème de plomberie réseau, pas d'algèbre linéaire.</mark></p>
+
+      <h2 id="moe-5">5. Les innovations DeepSeek : experts fins et partagés</h2>
+      <p>L'architecture MoE canonique — quelques gros experts, top-2 — laisse deux inefficacités sur la table, que DeepSeekMoE a diagnostiquées puis corrigées<a class="cite" data-cite="7" href="#source-7">7</a>.</p>
+      <p><strong>Le savoir commun redondant.</strong> Certaines connaissances (grammaire, structure syntaxique, faits ultra-fréquents) sont utiles à <em>tous</em> les tokens. Dans une MoE classique, chaque expert doit réapprendre ce socle commun, gaspillant de la capacité. DeepSeek isole ce socle dans un ou plusieurs <span class="term" data-tooltip="Expert partagé (shared expert) : expert toujours activé, en plus des experts routés, qui absorbe le savoir commun à tous les tokens — libérant les experts routés pour se spécialiser.">experts partagés</span>, toujours actifs, qui traitent chaque token en plus des experts routés.</p>
+      <p><strong>La granularité grossière.</strong> Avec peu d'experts, le nombre de combinaisons possibles est faible, ce qui limite la spécialisation. DeepSeek <span class="term" data-tooltip="Fine-grained experts : on découpe chaque expert en plusieurs experts plus petits à budget de paramètres constant, multipliant le nombre de combinaisons routables et affinant la spécialisation.">découpe chaque expert en plusieurs experts plus petits (fine-grained)</span> à budget de calcul constant. En passant de 8 experts top-2 à 64 experts top-8, on multiplie le nombre de combinaisons de plusieurs ordres de grandeur<a class="cite" data-cite="7" href="#source-7">7</a>.</p>
+
+      <figure class="figure" id="fig-05">
+        <svg data-schema-id="schema-05" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="L'architecture DeepSeek : experts fins et expert partagé">
+  <style>
+    .display { font-family: 'Fraunces','Playfair Display',Georgia,serif; }
+    .body    { font-family: 'Inter','Helvetica Neue',system-ui,sans-serif; }
+    .mono    { font-family: 'JetBrains Mono','IBM Plex Mono',monospace; }
+  </style>
+  <defs>
+    <marker id="s5-arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#5A5A5A"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- Header -->
+  <text x="60" y="56" class="mono" font-size="13" fill="#B7332C" letter-spacing="0.18em">SCHÉMA 05</text>
+  <text x="60" y="98" class="display" font-size="30" font-weight="600" fill="#1A1A1A" letter-spacing="-0.01em">L'architecture DeepSeek : experts fins et partagés</text>
+  <text x="60" y="128" class="display" font-size="18" font-style="italic" fill="#5A5A5A">Découper les experts (fine-grained) et isoler le savoir commun (expert partagé, toujours actif).</text>
+  <line x1="60" y1="150" x2="1140" y2="150" stroke="#E5E1D8" stroke-width="1"/>
+
+  <line x1="600" y1="180" x2="600" y2="690" stroke="#B8B5AE" stroke-width="1" stroke-dasharray="2 3"/>
+
+  <!-- ===== LEFT : MoE classique ===== -->
+  <text x="90" y="205" class="mono" font-size="13" font-weight="600" fill="#5A5A5A" letter-spacing="0.1em">MoE CLASSIQUE · 8 experts · top-2</text>
+  <rect x="245" y="230" width="110" height="44" rx="3" fill="#F2EFE7" stroke="#5A5A5A" stroke-width="1.25"/>
+  <text x="300" y="257" class="body" font-size="13" fill="#1A1A1A" text-anchor="middle">token</text>
+  <line x1="300" y1="274" x2="300" y2="304" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#s5-arrow)"/>
+  <!-- 4 big experts, 2 active -->
+  <g>
+    <rect x="120" y="316" width="80" height="70" rx="3" fill="#FBEEE7" stroke="#B7332C" stroke-width="1.5"/><text x="160" y="356" class="mono" font-size="11" fill="#B7332C" text-anchor="middle">E1 ✓</text>
+    <rect x="215" y="316" width="80" height="70" rx="3" fill="#FAF8F3" stroke="#B8B5AE" stroke-width="1.25" stroke-dasharray="3 3"/><text x="255" y="356" class="mono" font-size="11" fill="#B8B5AE" text-anchor="middle">E2</text>
+    <rect x="310" y="316" width="80" height="70" rx="3" fill="#FBEEE7" stroke="#B7332C" stroke-width="1.5"/><text x="350" y="356" class="mono" font-size="11" fill="#B7332C" text-anchor="middle">E3 ✓</text>
+    <rect x="405" y="316" width="80" height="70" rx="3" fill="#FAF8F3" stroke="#B8B5AE" stroke-width="1.25" stroke-dasharray="3 3"/><text x="445" y="356" class="mono" font-size="11" fill="#B8B5AE" text-anchor="middle">E4…</text>
+  </g>
+  <text x="120" y="460" class="body" font-size="13" fill="#5A5A5A">Gros experts, peu de combinaisons</text>
+  <text x="120" y="484" class="mono" font-size="14" fill="#1A1A1A">C(8,2) = 28 combinaisons</text>
+  <text x="120" y="530" class="body" font-size="12.5" fill="#5A5A5A">Chaque expert ré-apprend le savoir</text>
+  <text x="120" y="550" class="body" font-size="12.5" fill="#5A5A5A">commun → capacité gaspillée.</text>
+
+  <!-- ===== RIGHT : DeepSeek ===== -->
+  <text x="640" y="205" class="mono" font-size="13" font-weight="600" fill="#1F5560" letter-spacing="0.1em">DEEPSEEK-V3 · 256 fins + 1 partagé · top-8</text>
+  <rect x="825" y="230" width="110" height="44" rx="3" fill="#F2EFE7" stroke="#5A5A5A" stroke-width="1.25"/>
+  <text x="880" y="257" class="body" font-size="13" fill="#1A1A1A" text-anchor="middle">token</text>
+
+  <!-- shared expert -->
+  <g class="interactive" data-card="shared-expert" tabindex="0" role="button" aria-label="Expert partagé — cliquez pour les détails">
+    <rect x="640" y="300" width="150" height="86" rx="3" fill="#E8F0F1" stroke="#1F5560" stroke-width="1.75"/>
+    <text x="715" y="332" class="body" font-size="13" font-weight="600" fill="#1F5560" text-anchor="middle">expert partagé</text>
+    <text x="715" y="354" class="mono" font-size="11" fill="#1F5560" text-anchor="middle">toujours actif</text>
+    <text x="715" y="372" class="mono" font-size="10.5" fill="#5A5A5A" text-anchor="middle">savoir commun</text>
+  </g>
+  <path d="M860 274 C820 282 800 300 792 320" fill="none" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#s5-arrow)"/>
+
+  <!-- fine-grained grid container (interactive) -->
+  <g class="interactive" data-card="fine-grained" tabindex="0" role="button" aria-label="Experts fins (fine-grained) — cliquez pour les détails">
+    <rect x="826" y="296" width="290" height="150" rx="4" fill="#B7332C" fill-opacity="0.04" stroke="#B7332C" stroke-width="1" stroke-dasharray="3 3"/>
+    <text x="971" y="290" class="mono" font-size="11" fill="#5A5A5A" text-anchor="middle">256 experts fins (routés)</text>
+    <g fill="#FAF8F3" stroke="#B8B5AE" stroke-width="1">
+      <rect x="845" y="306" width="26" height="26" rx="2"/><rect x="909" y="306" width="26" height="26" rx="2"/><rect x="941" y="306" width="26" height="26" rx="2"/><rect x="1005" y="306" width="26" height="26" rx="2"/><rect x="1069" y="306" width="26" height="26" rx="2"/>
+      <rect x="845" y="338" width="26" height="26" rx="2"/><rect x="877" y="338" width="26" height="26" rx="2"/><rect x="941" y="338" width="26" height="26" rx="2"/><rect x="1005" y="338" width="26" height="26" rx="2"/><rect x="1037" y="338" width="26" height="26" rx="2"/>
+      <rect x="877" y="370" width="26" height="26" rx="2"/><rect x="909" y="370" width="26" height="26" rx="2"/><rect x="973" y="370" width="26" height="26" rx="2"/><rect x="1037" y="370" width="26" height="26" rx="2"/><rect x="1069" y="370" width="26" height="26" rx="2"/>
+      <rect x="845" y="402" width="26" height="26" rx="2"/><rect x="909" y="402" width="26" height="26" rx="2"/><rect x="973" y="402" width="26" height="26" rx="2"/><rect x="1005" y="402" width="26" height="26" rx="2"/><rect x="1069" y="402" width="26" height="26" rx="2"/>
+    </g>
+  </g>
+  <!-- routed (active) cells on top -->
+  <g class="interactive" data-card="routed" tabindex="0" role="button" aria-label="Experts routés actifs — cliquez pour les détails" fill="#B7332C">
+    <rect x="877" y="306" width="26" height="26" rx="2"/><rect x="973" y="306" width="26" height="26" rx="2"/><rect x="1037" y="306" width="26" height="26" rx="2"/>
+    <rect x="909" y="338" width="26" height="26" rx="2"/><rect x="1069" y="338" width="26" height="26" rx="2"/>
+    <rect x="845" y="370" width="26" height="26" rx="2"/><rect x="1005" y="370" width="26" height="26" rx="2"/>
+    <rect x="941" y="402" width="26" height="26" rx="2"/>
+  </g>
+
+  <!-- combinations callout -->
+  <g class="interactive" data-card="combinations" tabindex="0" role="button" aria-label="Explosion combinatoire — cliquez pour les détails">
+    <rect x="640" y="486" width="476" height="70" rx="4" fill="#FBEEE7" stroke="#B7332C" stroke-width="1.25"/>
+    <text x="662" y="514" class="body" font-size="13" fill="#5A5A5A">Petits experts, explosion combinatoire :</text>
+    <text x="662" y="540" class="mono" font-size="15" fill="#B7332C">C(256,8) ≈ 4 × 10¹⁴ combinaisons</text>
+  </g>
+
+  <!-- Footer -->
+  <line x1="60" y1="712" x2="1140" y2="712" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="60" y="746" class="body" font-size="12" font-style="italic" fill="#5A5A5A">Source : DeepSeekMoE (Dai et al. 2024) ; DeepSeek-V3 Technical Report (2024) ; ablations OLMoE (Muennighoff et al. 2024).</text>
+</svg>
+
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-05" title="Lien direct vers ce schéma">¶</a> <em>Schéma 5 — L'architecture DeepSeek : experts fins (routés) + expert partagé toujours actif. Cliquez l'expert partagé, la grille fine, les experts routés ou l'explosion combinatoire.</em></figcaption>
+      </figure>
+
+      <p>DeepSeek-V3 est l'aboutissement de cette ligne : 256 experts routés fins + 1 expert partagé, 8 experts activés par token, équilibrage sans perte auxiliaire, 671 Md de paramètres totaux pour 37 Md actifs<a class="cite" data-cite="8" href="#source-8">8</a>. Le tout combiné à la <span class="term" data-tooltip="Multi-head Latent Attention (MLA) : cache un vecteur latent de basse dimension dont on reconstruit clés et valeurs, réduisant l'empreinte du KV-cache d'un ordre de grandeur (DeepSeek-V2).">Multi-head Latent Attention</span> et à la prédiction multi-token. C'est aujourd'hui la référence de facto pour une MoE ouverte de frontière — et OLMoE a confirmé, en configuration 100 % ouverte, que la combinaison <em>fine-grained + granularité élevée + expert partagé</em> domine les alternatives sur des ablations rigoureuses<a class="cite" data-cite="12" href="#source-12">12</a>.</p>
+
+      <h2 id="moe-6">6. La sparsité, troisième axe d'échelle</h2>
+      <p>Les lois d'échelle classiques (Kaplan, Chinchilla) relient la perte à deux leviers : le nombre de paramètres et le volume de données, à budget de calcul donné. La MoE ajoute un troisième levier : <mark>la sparsité — le rapport entre paramètres totaux et paramètres actifs — devient une dimension d'optimisation à part entière</mark>.</p>
+      <p>À budget de calcul (FLOPs) fixe, un modèle sparse bat systématiquement un modèle dense en perplexité : il « range » plus de paramètres pour le même coût par token<a class="cite" data-cite="3" href="#source-3">3</a><a class="cite" data-cite="10" href="#source-10">10</a>. La question n'est plus <em>dense ou sparse</em>, mais <em>quel degré de sparsité et quelle granularité</em> pour un budget donné.</p>
+
+      <figure class="figure" id="fig-06">
+        <svg data-schema-id="schema-06" viewBox="0 0 900 900" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="La sparsité comme troisième axe d'échelle">
+  <style>
+    .display { font-family: 'Fraunces','Playfair Display',Georgia,serif; }
+    .body    { font-family: 'Inter','Helvetica Neue',system-ui,sans-serif; }
+    .mono    { font-family: 'JetBrains Mono','IBM Plex Mono',monospace; }
+  </style>
+  <defs>
+    <marker id="s6-arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#B58A2C"/>
+    </marker>
+  </defs>
+  <rect width="900" height="900" fill="#FAF8F3"/>
+
+  <!-- Header -->
+  <text x="60" y="56" class="mono" font-size="13" fill="#B7332C" letter-spacing="0.18em">SCHÉMA 06</text>
+  <text x="60" y="98" class="display" font-size="28" font-weight="600" fill="#1A1A1A" letter-spacing="-0.01em">La sparsité, troisième axe d'échelle</text>
+  <text x="60" y="128" class="display" font-size="17" font-style="italic" fill="#5A5A5A">À FLOPs par token fixes, le sparse « range » plus de paramètres — et va plus bas.</text>
+  <line x1="60" y1="150" x2="840" y2="150" stroke="#E5E1D8" stroke-width="1"/>
+
+  <!-- axes -->
+  <line x1="150" y1="220" x2="150" y2="720" stroke="#5A5A5A" stroke-width="1.25"/>
+  <line x1="150" y1="720" x2="820" y2="720" stroke="#5A5A5A" stroke-width="1.25"/>
+  <text x="98" y="470" class="body" font-size="13" fill="#5A5A5A" transform="rotate(-90 98 470)" text-anchor="middle">perte (validation) →  bas = mieux</text>
+  <text x="485" y="762" class="body" font-size="13" fill="#5A5A5A" text-anchor="middle">paramètres totaux  (FLOPs/token ≈ constants)</text>
+
+  <!-- dense curve -->
+  <path d="M200 300 C 340 380, 460 470, 560 540" fill="none" stroke="#1A1A1A" stroke-width="2.5"/>
+  <circle cx="560" cy="540" r="6" fill="#1A1A1A"/>
+  <text x="548" y="524" class="body" font-size="13" fill="#1A1A1A" text-anchor="end">dense — bute ici</text>
+
+  <!-- sparse curve -->
+  <path d="M200 352 C 380 470, 560 570, 780 636" fill="none" stroke="#B7332C" stroke-width="2.5"/>
+  <text x="600" y="612" class="body" font-size="13" fill="#B7332C">sparse (MoE)</text>
+
+  <!-- granularity arrow -->
+  <g class="interactive" data-card="granularity" tabindex="0" role="button" aria-label="La granularité comme dimension — cliquez pour les détails">
+    <path d="M566 548 C 640 560, 690 590, 726 618" fill="none" stroke="#B58A2C" stroke-width="1.75" stroke-dasharray="4 3" marker-end="url(#s6-arrow)"/>
+    <rect x="560" y="470" width="248" height="52" rx="4" fill="#F5EEDD" stroke="#B58A2C" stroke-width="1.25"/>
+    <text x="684" y="492" class="body" font-size="12.5" font-weight="600" fill="#B58A2C" text-anchor="middle">+ granularité</text>
+    <text x="684" y="511" class="mono" font-size="10.5" fill="#5A5A5A" text-anchor="middle">experts plus fins → gain croissant</text>
+  </g>
+
+  <!-- optimal point -->
+  <g class="interactive" data-card="optimal" tabindex="0" role="button" aria-label="Optimum isoFLOP — cliquez pour les détails">
+    <circle cx="726" cy="618" r="9" fill="#FAF8F3" stroke="#B7332C" stroke-width="2.5"/>
+    <circle cx="726" cy="618" r="3.5" fill="#B7332C"/>
+    <text x="742" y="656" class="mono" font-size="11.5" fill="#B7332C">optimum isoFLOP</text>
+  </g>
+
+  <!-- Legend (dense / sparse interactive) -->
+  <g class="interactive" data-card="dense-curve" tabindex="0" role="button" aria-label="Courbe dense — cliquez pour les détails">
+    <rect x="200" y="222" width="250" height="40" rx="4" fill="#FAF8F3" stroke="#E5E1D8" stroke-width="1"/>
+    <line x1="216" y1="242" x2="252" y2="242" stroke="#1A1A1A" stroke-width="2.5"/>
+    <text x="264" y="247" class="body" font-size="13" fill="#1A1A1A">dense : params ∝ FLOPs</text>
+  </g>
+  <g class="interactive" data-card="sparse-curve" tabindex="0" role="button" aria-label="Courbe sparse — cliquez pour les détails">
+    <rect x="200" y="270" width="250" height="40" rx="4" fill="#FAF8F3" stroke="#E5E1D8" stroke-width="1"/>
+    <line x1="216" y1="290" x2="252" y2="290" stroke="#B7332C" stroke-width="2.5"/>
+    <text x="264" y="295" class="body" font-size="13" fill="#B7332C">sparse : params découplés</text>
+  </g>
+
+  <!-- Footer -->
+  <line x1="60" y1="812" x2="840" y2="812" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="60" y="846" class="body" font-size="12" font-style="italic" fill="#5A5A5A">Source : Switch Transformer (Fedus et al. 2021) ; Scaling Laws for Fine-Grained MoE (Krajewski et al. 2024). Courbes schématiques.</text>
+</svg>
+
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-06" title="Lien direct vers ce schéma">¶</a> <em>Schéma 6 — La sparsité comme troisième axe. À FLOPs par token fixes, le sparse « range » plus de paramètres et descend plus bas ; la granularité est la dimension supplémentaire. Cliquez les courbes, la granularité, l'optimum.</em></figcaption>
+      </figure>
+
+      <p>Krajewski et al. ont formalisé cette dimension supplémentaire — la <span class="term" data-tooltip="Granularité : finesse du découpage en experts. Les travaux de 2024 montrent que la granularité optimale croît avec l'échelle du modèle.">granularité</span> — et montré que les configurations MoE optimales ont une granularité croissante avec l'échelle : plus le modèle est grand, plus il gagne à être découpé en experts fins et nombreux<a class="cite" data-cite="11" href="#source-11">11</a>. C'est la justification théorique de la trajectoire DeepSeek. Les travaux antérieurs de DeepMind sur les <em>routed language models</em> avaient déjà esquissé des lois d'échelle unifiées pour la MoE<a class="cite" data-cite="2" href="#source-2">2</a>.</p>
+      <p>Le <span class="term" data-tooltip="Sparse upcycling : initialiser une MoE en dupliquant le FFN d'un modèle dense déjà pré-entraîné, puis poursuivre l'entraînement — on récupère l'investissement du dense.">sparse upcycling</span> offre un raccourci économique : plutôt que d'entraîner une MoE de zéro, on part d'un dense pré-entraîné et on « recycle » son FFN en plusieurs copies-experts, qu'on continue d'entraîner<a class="cite" data-cite="10" href="#source-10">10</a>. On récupère l'investissement du dense et on gagne la capacité de la MoE pour une fraction du coût.</p>
+
+      <h2 id="moe-7">7. Le paysage MoE 2024-2026</h2>
+      <p>La MoE est passée, en trois ans, du pari exotique au standard de fait pour les modèles de frontière.</p>
+
+      <figure class="figure" id="fig-07">
+        <svg data-schema-id="schema-07" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Le paysage MoE 2024-2026 : matrice modèles par dimensions">
+  <style>
+    .display { font-family: 'Fraunces','Playfair Display',Georgia,serif; }
+    .body    { font-family: 'Inter','Helvetica Neue',system-ui,sans-serif; }
+    .mono    { font-family: 'JetBrains Mono','IBM Plex Mono',monospace; }
+  </style>
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- Header -->
+  <text x="60" y="56" class="mono" font-size="13" fill="#B7332C" letter-spacing="0.18em">SCHÉMA 07</text>
+  <text x="60" y="98" class="display" font-size="30" font-weight="600" fill="#1A1A1A" letter-spacing="-0.01em">Le paysage MoE 2024-2026</text>
+  <text x="60" y="128" class="display" font-size="18" font-style="italic" fill="#5A5A5A">À l'échelle de frontière, la question n'est plus « si » mais « comment » on calibre la sparsité.</text>
+  <line x1="60" y1="150" x2="1140" y2="150" stroke="#E5E1D8" stroke-width="1"/>
+
+  <!-- column headers -->
+  <text x="72"   y="206" class="mono" font-size="12" font-weight="600" fill="#5A5A5A" letter-spacing="0.06em">MODÈLE</text>
+  <text x="380"  y="206" class="mono" font-size="12" font-weight="600" fill="#5A5A5A" text-anchor="middle">Total</text>
+  <text x="510"  y="206" class="mono" font-size="12" font-weight="600" fill="#5A5A5A" text-anchor="middle">Actifs</text>
+  <text x="650"  y="206" class="mono" font-size="12" font-weight="600" fill="#5A5A5A" text-anchor="middle">Experts</text>
+  <text x="780"  y="206" class="mono" font-size="12" font-weight="600" fill="#5A5A5A" text-anchor="middle">top-k</text>
+  <text x="905"  y="206" class="mono" font-size="12" font-weight="600" fill="#5A5A5A" text-anchor="middle">Partagé</text>
+  <text x="1035" y="206" class="mono" font-size="12" font-weight="600" fill="#5A5A5A" text-anchor="middle">Ouvert</text>
+  <line x1="60" y1="218" x2="1140" y2="218" stroke="#5A5A5A" stroke-width="1"/>
+
+  <!-- Row 1 Mixtral (interactive) -->
+  <g class="interactive" data-card="mixtral-row" tabindex="0" role="button" aria-label="Mixtral 8x7B — cliquez pour les détails">
+    <rect x="60" y="222" width="1080" height="54" fill="#F2EFE7"/>
+    <text x="72" y="256" class="body" font-size="14" font-weight="600" fill="#1A1A1A">Mixtral 8×7B</text>
+    <text x="380" y="256" class="mono" font-size="13" fill="#1A1A1A" text-anchor="middle">47 Md</text>
+    <text x="510" y="256" class="mono" font-size="13" fill="#1A1A1A" text-anchor="middle">13 Md</text>
+    <text x="650" y="256" class="mono" font-size="13" fill="#1A1A1A" text-anchor="middle">8</text>
+    <text x="780" y="256" class="mono" font-size="13" fill="#1A1A1A" text-anchor="middle">2</text>
+    <text x="905" y="256" class="mono" font-size="13" fill="#B8B5AE" text-anchor="middle">—</text>
+    <text x="1035" y="256" class="mono" font-size="13" fill="#1F5560" text-anchor="middle">✓</text>
+  </g>
+  <!-- Row 2 DeepSeek (interactive) -->
+  <g class="interactive" data-card="deepseek-row" tabindex="0" role="button" aria-label="DeepSeek-V3 — cliquez pour les détails">
+    <rect x="60" y="276" width="1080" height="54" fill="#FBEEE7"/>
+    <text x="72" y="310" class="body" font-size="14" font-weight="600" fill="#B7332C">DeepSeek-V3</text>
+    <text x="380" y="310" class="mono" font-size="13" fill="#B7332C" text-anchor="middle">671 Md</text>
+    <text x="510" y="310" class="mono" font-size="13" fill="#B7332C" text-anchor="middle">37 Md</text>
+    <text x="650" y="310" class="mono" font-size="13" fill="#B7332C" text-anchor="middle">256 + 1</text>
+    <text x="780" y="310" class="mono" font-size="13" fill="#B7332C" text-anchor="middle">8</text>
+    <text x="905" y="310" class="mono" font-size="13" fill="#B7332C" text-anchor="middle">✓</text>
+    <text x="1035" y="310" class="mono" font-size="13" fill="#B7332C" text-anchor="middle">✓</text>
+  </g>
+  <!-- Row 3 Qwen3 -->
+  <rect x="60" y="330" width="1080" height="54" fill="#F2EFE7"/>
+  <text x="72" y="364" class="body" font-size="14" fill="#1A1A1A">Qwen3-235B-A22B</text>
+  <text x="380" y="364" class="mono" font-size="13" fill="#1A1A1A" text-anchor="middle">235 Md</text>
+  <text x="510" y="364" class="mono" font-size="13" fill="#1A1A1A" text-anchor="middle">22 Md</text>
+  <text x="650" y="364" class="mono" font-size="13" fill="#1A1A1A" text-anchor="middle">128</text>
+  <text x="780" y="364" class="mono" font-size="13" fill="#1A1A1A" text-anchor="middle">8</text>
+  <text x="905" y="364" class="mono" font-size="13" fill="#B8B5AE" text-anchor="middle">—</text>
+  <text x="1035" y="364" class="mono" font-size="13" fill="#1F5560" text-anchor="middle">✓</text>
+  <!-- Row 4 Llama 4 (interactive) -->
+  <g class="interactive" data-card="llama4-row" tabindex="0" role="button" aria-label="Llama 4 Maverick — cliquez pour les détails">
+    <rect x="60" y="384" width="1080" height="54" fill="#FAF8F3"/>
+    <text x="72" y="418" class="body" font-size="14" font-weight="600" fill="#1A1A1A">Llama 4 Maverick</text>
+    <text x="380" y="418" class="mono" font-size="13" fill="#1A1A1A" text-anchor="middle">400 Md</text>
+    <text x="510" y="418" class="mono" font-size="13" fill="#1A1A1A" text-anchor="middle">17 Md</text>
+    <text x="650" y="418" class="mono" font-size="13" fill="#1A1A1A" text-anchor="middle">128 + 1</text>
+    <text x="780" y="418" class="mono" font-size="13" fill="#1A1A1A" text-anchor="middle">1</text>
+    <text x="905" y="418" class="mono" font-size="13" fill="#1F5560" text-anchor="middle">✓</text>
+    <text x="1035" y="418" class="mono" font-size="13" fill="#1F5560" text-anchor="middle">✓</text>
+  </g>
+  <!-- Row 5 DBRX -->
+  <rect x="60" y="438" width="1080" height="54" fill="#F2EFE7"/>
+  <text x="72" y="472" class="body" font-size="14" fill="#1A1A1A">DBRX</text>
+  <text x="380" y="472" class="mono" font-size="13" fill="#1A1A1A" text-anchor="middle">132 Md</text>
+  <text x="510" y="472" class="mono" font-size="13" fill="#1A1A1A" text-anchor="middle">36 Md</text>
+  <text x="650" y="472" class="mono" font-size="13" fill="#1A1A1A" text-anchor="middle">16</text>
+  <text x="780" y="472" class="mono" font-size="13" fill="#1A1A1A" text-anchor="middle">4</text>
+  <text x="905" y="472" class="mono" font-size="13" fill="#B8B5AE" text-anchor="middle">—</text>
+  <text x="1035" y="472" class="mono" font-size="13" fill="#1F5560" text-anchor="middle">✓</text>
+  <!-- Row 6 Grok-1 -->
+  <rect x="60" y="492" width="1080" height="54" fill="#FAF8F3"/>
+  <text x="72" y="526" class="body" font-size="14" fill="#1A1A1A">Grok-1</text>
+  <text x="380" y="526" class="mono" font-size="13" fill="#1A1A1A" text-anchor="middle">314 Md</text>
+  <text x="510" y="526" class="mono" font-size="13" fill="#1A1A1A" text-anchor="middle">~86 Md</text>
+  <text x="650" y="526" class="mono" font-size="13" fill="#1A1A1A" text-anchor="middle">8</text>
+  <text x="780" y="526" class="mono" font-size="13" fill="#1A1A1A" text-anchor="middle">2</text>
+  <text x="905" y="526" class="mono" font-size="13" fill="#B8B5AE" text-anchor="middle">—</text>
+  <text x="1035" y="526" class="mono" font-size="13" fill="#1F5560" text-anchor="middle">✓</text>
+  <!-- Row 7 OLMoE (interactive) -->
+  <g class="interactive" data-card="olmoe-row" tabindex="0" role="button" aria-label="OLMoE — cliquez pour les détails">
+    <rect x="60" y="546" width="1080" height="54" fill="#E8F0F1"/>
+    <text x="72" y="580" class="body" font-size="14" font-weight="600" fill="#1F5560">OLMoE-1B-7B</text>
+    <text x="380" y="580" class="mono" font-size="13" fill="#1F5560" text-anchor="middle">6,9 Md</text>
+    <text x="510" y="580" class="mono" font-size="13" fill="#1F5560" text-anchor="middle">1,3 Md</text>
+    <text x="650" y="580" class="mono" font-size="13" fill="#1F5560" text-anchor="middle">64</text>
+    <text x="780" y="580" class="mono" font-size="13" fill="#1F5560" text-anchor="middle">8</text>
+    <text x="905" y="580" class="mono" font-size="13" fill="#B8B5AE" text-anchor="middle">—</text>
+    <text x="1035" y="580" class="mono" font-size="12" fill="#1F5560" text-anchor="middle">✓ tout</text>
+  </g>
+  <!-- Row 8 GPT-4 rumor -->
+  <rect x="60" y="600" width="1080" height="54" fill="#F2EFE7"/>
+  <text x="72" y="634" class="body" font-size="14" font-style="italic" fill="#5A5A5A">GPT-4 (rumeur)</text>
+  <text x="380" y="634" class="mono" font-size="13" fill="#5A5A5A" text-anchor="middle">~1,8 T</text>
+  <text x="510" y="634" class="mono" font-size="13" fill="#5A5A5A" text-anchor="middle">?</text>
+  <text x="650" y="634" class="mono" font-size="13" fill="#5A5A5A" text-anchor="middle">16</text>
+  <text x="780" y="634" class="mono" font-size="13" fill="#5A5A5A" text-anchor="middle">2</text>
+  <text x="905" y="634" class="mono" font-size="13" fill="#5A5A5A" text-anchor="middle">?</text>
+  <text x="1035" y="634" class="mono" font-size="13" fill="#B7332C" text-anchor="middle">✗</text>
+
+  <line x1="60" y1="654" x2="1140" y2="654" stroke="#5A5A5A" stroke-width="1"/>
+
+  <!-- Footer -->
+  <text x="60" y="700" class="body" font-size="12" fill="#5A5A5A">Chiffres publics des rapports techniques / cartes modèles. GPT-4 : architecture MoE largement supposée, non confirmée.</text>
+  <line x1="60" y1="722" x2="1140" y2="722" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="60" y="754" class="body" font-size="12" font-style="italic" fill="#5A5A5A">Source : rapports techniques Mixtral, DeepSeek-V3, Qwen3, Llama 4, DBRX, Grok-1, OLMoE (2024-2025).</text>
+</svg>
+
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-07" title="Lien direct vers ce schéma">¶</a> <em>Schéma 7 — Matrice modèles × dimensions (total, actifs, experts, top-k, partagé, ouvert). Cliquez les lignes Mixtral, DeepSeek, Llama 4, OLMoE.</em></figcaption>
+      </figure>
+
+      <p>Quelques repères : <strong>Mixtral 8×7B</strong> (janvier 2024) a été le déclencheur grand public — la première MoE ouverte compétitive, 8 experts, top-2, ~13 Md actifs<a class="cite" data-cite="6" href="#source-6">6</a>. <strong>DeepSeek-V2 puis V3</strong> ont établi la ligne fine-grained + shared, jusqu'à 671/37 Md<a class="cite" data-cite="7" href="#source-7">7</a><a class="cite" data-cite="8" href="#source-8">8</a>. <strong>Qwen3</strong>, <strong>Llama 4</strong> (Scout et Maverick), <strong>DBRX</strong> (132 Md, 16 experts) et <strong>Grok-1</strong> (314 Md) ont suivi. <strong>OLMoE</strong> (1,3 Md actifs / 6,9 Md totaux) fait figure d'exception précieuse : entièrement ouvert — poids, données, code, logs — il sert de banc d'essai reproductible pour la recherche MoE<a class="cite" data-cite="12" href="#source-12">12</a>. Quant à <strong>GPT-4</strong>, une architecture MoE est largement supposée sans confirmation officielle — signe que même les acteurs fermés ont basculé.</p>
+      <p>Le motif est net : <mark>à l'échelle de frontière, la question n'est plus de savoir <em>si</em> on fait de la MoE, mais <em>comment</em> on la calibre</mark>.</p>
+
+      <h2 id="moe-8">8. Tensions et horizon</h2>
+      <p>La MoE n'est pas une solution sans coût, et trois tensions structurent son avenir.</p>
+      <p><strong>Servir une MoE reste dur.</strong> Memory-bound à cause de l'empreinte totale, sensible à l'efficacité du batch (si les tokens d'un batch se dispersent sur trop d'experts, chaque expert traite peu de tokens et l'utilisation GPU chute), la MoE en production impose une ingénierie de service dédiée. L'<em>offloading</em> dynamique des experts inactifs vers la DRAM ou le SSD ouvre la MoE au matériel modeste, au prix de la latence — une piste active pour l'inférence locale.</p>
+      <p><strong>Le mythe des experts interprétables.</strong> Une intuition tenace veut que les experts se spécialisent en domaines lisibles (un expert « code », un expert « français »…). Les analyses empiriques la démentent largement : <mark>les experts se spécialisent surtout sur des motifs syntaxiques de bas niveau — ponctuation, catégories grammaticales, tokens fréquents — pas sur des thèmes sémantiques</mark><a class="cite" data-cite="6" href="#source-6">6</a><a class="cite" data-cite="12" href="#source-12">12</a>. Le routage est un artefact d'optimisation, pas une taxonomie de la connaissance.</p>
+      <p><strong>Le réglage fin.</strong> Adapter une MoE par <em>fine-tuning</em> est plus délicat qu'un dense : le routage figé peut mal généraliser au domaine cible, et l'équilibrage doit être maintenu. Les recettes se stabilisent, mais l'écart d'outillage avec le dense persiste.</p>
+      <p>À l'horizon 2026-2028, la trajectoire est claire : <strong>granularité encore plus fine</strong>, dans la ligne des lois d'échelle<a class="cite" data-cite="11" href="#source-11">11</a> ; <strong>MoE × quantization</strong> pour comprimer l'empreinte mémoire dominante ; <strong>offloading et service désagrégé</strong> des experts ; et, plus spéculativement, la vision de <strong>modèles modulaires composables</strong> — des experts entraînés, ajoutés ou retirés à la carte, où la MoE cesserait d'être une simple optimisation de calcul pour devenir une architecture de connaissance modulaire. Le découplage params/FLOPs aura alors accouché d'un découplage plus radical : celui du savoir lui-même en briques recomposables.</p>
+
+      <p class="byline" style="margin-top:2.5rem"><em>Format co-écrit avec l'aide d'une IA. Publié à titre personnel — Mathieu Guglielmino, 1er juillet 2026.</em></p>
+    </main>
+
+    <aside id="sources" aria-label="Sources">
+      <button class="panel-close" type="button" aria-label="Fermer les sources">Fermer ✕</button>
+      <div class="sources-inner">
+      <h2>Sources</h2>
+      <ol id="sources-list">
+<li id="source-1">
+          <span class="cite-num">[1]</span> Noam Shazeer et al., <em>Outrageously Large Neural Networks: The Sparsely-Gated Mixture-of-Experts Layer</em>, 2017. L'acte fondateur du gating sparse conditionnel dans les réseaux profonds.<br>
+          <a href="https://arxiv.org/abs/1701.06538" target="_blank" rel="noopener">arxiv.org/1701.06538 ↗</a>
+          <span class="accessed">consulté le 1er juillet 2026</span>
+        </li>
+        <li id="source-2">
+          <span class="cite-num">[2]</span> Dmitry Lepikhin et al., <em>GShard: Scaling Giant Models with Conditional Computation and Automatic Sharding</em>, 2020. Premier passage à l'échelle industrielle (600 Md) : expert parallelism, all-to-all, capacité d'expert.<br>
+          <a href="https://arxiv.org/abs/2006.16668" target="_blank" rel="noopener">arxiv.org/2006.16668 ↗</a>
+          <span class="accessed">consulté le 1er juillet 2026</span>
+        </li>
+        <li id="source-3">
+          <span class="cite-num">[3]</span> William Fedus, Barret Zoph et Noam Shazeer, <em>Switch Transformers: Scaling to Trillion Parameter Models with Simple and Efficient Sparsity</em>, 2021 (JMLR 2022). La simplification à k=1 et le modèle à 1,6 T de paramètres.<br>
+          <a href="https://arxiv.org/abs/2101.03961" target="_blank" rel="noopener">arxiv.org/2101.03961 ↗</a>
+          <span class="accessed">consulté le 1er juillet 2026</span>
+        </li>
+        <li id="source-4">
+          <span class="cite-num">[4]</span> Barret Zoph et al., <em>ST-MoE: Designing Stable and Transferable Sparse Expert Models</em>, 2022. Router z-loss et recettes de stabilisation de l'entraînement.<br>
+          <a href="https://arxiv.org/abs/2202.08906" target="_blank" rel="noopener">arxiv.org/2202.08906 ↗</a>
+          <span class="accessed">consulté le 1er juillet 2026</span>
+        </li>
+        <li id="source-5">
+          <span class="cite-num">[5]</span> Yanqi Zhou et al., <em>Mixture-of-Experts with Expert Choice Routing</em>, 2022. Le renversement du routage : les experts choisissent les tokens, équilibrage parfait par construction.<br>
+          <a href="https://arxiv.org/abs/2202.09368" target="_blank" rel="noopener">arxiv.org/2202.09368 ↗</a>
+          <span class="accessed">consulté le 1er juillet 2026</span>
+        </li>
+        <li id="source-6">
+          <span class="cite-num">[6]</span> Albert Q. Jiang et al., <em>Mixtral of Experts</em>, 2024. La MoE ouverte qui a fait basculer le grand public ; analyse de la spécialisation (non sémantique) des experts.<br>
+          <a href="https://arxiv.org/abs/2401.04088" target="_blank" rel="noopener">arxiv.org/2401.04088 ↗</a>
+          <span class="accessed">consulté le 1er juillet 2026</span>
+        </li>
+        <li id="source-7">
+          <span class="cite-num">[7]</span> Damai Dai et al., <em>DeepSeekMoE: Towards Ultimate Expert Specialization in Mixture-of-Experts Language Models</em>, 2024. Experts fins (fine-grained) et experts partagés.<br>
+          <a href="https://arxiv.org/abs/2401.06066" target="_blank" rel="noopener">arxiv.org/2401.06066 ↗</a>
+          <span class="accessed">consulté le 1er juillet 2026</span>
+        </li>
+        <li id="source-8">
+          <span class="cite-num">[8]</span> DeepSeek-AI, <em>DeepSeek-V3 Technical Report</em>, 2024. Équilibrage sans perte auxiliaire, 671/37 Md, DualPipe ; état de l'art d'une MoE ouverte de frontière.<br>
+          <a href="https://arxiv.org/abs/2412.19437" target="_blank" rel="noopener">arxiv.org/2412.19437 ↗</a>
+          <span class="accessed">consulté le 1er juillet 2026</span>
+        </li>
+        <li id="source-9">
+          <span class="cite-num">[9]</span> Trevor Gale et al., <em>MegaBlocks: Efficient Sparse Training with Mixture-of-Experts</em>, 2023. Noyaux block-sparse supprimant le token dropping.<br>
+          <a href="https://arxiv.org/abs/2211.15841" target="_blank" rel="noopener">arxiv.org/2211.15841 ↗</a>
+          <span class="accessed">consulté le 1er juillet 2026</span>
+        </li>
+        <li id="source-10">
+          <span class="cite-num">[10]</span> Aran Komatsuzaki et al., <em>Sparse Upcycling: Training Mixture-of-Experts from Dense Checkpoints</em>, 2022. Recyclage d'un dense pré-entraîné en MoE.<br>
+          <a href="https://arxiv.org/abs/2212.05055" target="_blank" rel="noopener">arxiv.org/2212.05055 ↗</a>
+          <span class="accessed">consulté le 1er juillet 2026</span>
+        </li>
+        <li id="source-11">
+          <span class="cite-num">[11]</span> Jakub Krajewski et al., <em>Scaling Laws for Fine-Grained Mixture of Experts</em>, 2024. La granularité formalisée comme dimension d'échelle.<br>
+          <a href="https://arxiv.org/abs/2402.07871" target="_blank" rel="noopener">arxiv.org/2402.07871 ↗</a>
+          <span class="accessed">consulté le 1er juillet 2026</span>
+        </li>
+        <li id="source-12">
+          <span class="cite-num">[12]</span> Niklas Muennighoff et al., <em>OLMoE: Open Mixture-of-Experts Language Models</em>, 2024. MoE entièrement ouverte ; ablations sur granularité et experts partagés.<br>
+          <a href="https://arxiv.org/abs/2409.02060" target="_blank" rel="noopener">arxiv.org/2409.02060 ↗</a>
+          <span class="accessed">consulté le 1er juillet 2026</span>
+        </li>
+        </ol>
+      </div>
+    </aside>
+
+  </div>
+
+
+  <div id="zoom-overlay" hidden role="dialog" aria-modal="true" aria-label="Schéma agrandi">
+    <header id="zoom-header">
+      <span id="zoom-caption"></span>
+      <div class="zoom-controls">
+        <button type="button" class="zoom-out" aria-label="Dézoomer" title="Dézoomer (−)">−</button>
+        <button type="button" class="zoom-reset" aria-label="Ajuster à l'écran" title="Ajuster à l'écran">Reset</button>
+        <button type="button" class="zoom-in" aria-label="Zoomer" title="Zoomer (+)">+</button>
+        <button type="button" class="zoom-close" aria-label="Fermer (Échap)" title="Fermer (Échap)">×</button>
+      </div>
+    </header>
+    <div id="zoom-stage" tabindex="-1">
+      <div id="zoom-content"></div>
+      <div id="zoom-hint">Molette pour zoomer · glisser pour déplacer · Échap pour fermer</div>
+      <a class="schema-sigil zoom-sigil" href="https://mathieugug.github.io/" target="_blank" rel="noopener" aria-label="Mathieu Guglielmino — visiter mathieugug.github.io" title="Mathieu Guglielmino · mathieugug.github.io">
+        <svg class="sigil-mark" viewBox="0 0 44 44" aria-hidden="true" focusable="false">
+          <circle class="sigil-bg" cx="22" cy="22" r="20.5"/>
+          <circle class="sigil-ring" cx="22" cy="22" r="17.5"/>
+          <g class="sigil-letters"><text x="7.5" y="29">M</text><text x="22" y="29">G</text></g>
+        </svg>
+      </a>
+    </div>
+  </div>
+
+  <div id="modal-root" hidden role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card">
+      <button class="modal-close" data-close aria-label="Fermer">×</button>
+      <p class="modal-eyebrow" id="modal-eyebrow"></p>
+      <h3 class="modal-title" id="modal-title"></h3>
+      <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <script>
+    // ─────────────────────────────────────────────────
+    // DATA — replace these placeholders with real content
+    // ─────────────────────────────────────────────────
+
+    const SCHEMAS = {
+  "schema-01": {
+    "dense-block": {
+      title: "Le FFN dense",
+      eyebrow: "100 % actif par token",
+      body: "<p>Dans un transformer dense, le sous-bloc <em>feed-forward</em> de chaque couche est appliqué à chaque token avec la totalité de ses paramètres. Le nombre de FLOPs par token est, à l'ordre un, proportionnel au nombre de paramètres — c'est la loi d'airain que la MoE brise.</p><p>Conséquence : doubler la capacité d'un dense double sa facture de calcul, en entraînement comme en inférence. Il n'y a aucun moyen d'ajouter du savoir sans ajouter du calcul.</p>"
+    },
+    "router": {
+      title: "Le routeur",
+      eyebrow: "Une projection minuscule",
+      body: "<p>Le routeur est une simple projection linéaire suivie d'un softmax : à partir du vecteur d'un token, il attribue un score à chacun des N experts et sélectionne les k meilleurs. Il ne pèse que quelques milliers de paramètres — négligeable devant les milliards des experts.</p><p>C'est pourtant lui qui détermine toute la dynamique du modèle : mal réglé, il provoque l'effondrement du routage (Schéma 3).</p>"
+    },
+    "active-expert": {
+      title: "Les k experts actifs",
+      eyebrow: "Le calcul réellement effectué",
+      body: "<p>Seuls les k experts sélectionnés (ici k=2) traitent le token ; leurs sorties sont sommées, pondérées par les scores de gate. C'est <em>ce</em> calcul, et lui seul, qui compte dans la facture de FLOPs.</p><p>Chez DeepSeek-V3, k=8 experts routés (+1 partagé) sur 256 sont activés : 37 Md de paramètres actifs pour 671 Md au total<a class=\"cite\" data-cite=\"8\" href=\"#source-8\">8</a>.</p>"
+    },
+    "dormant-expert": {
+      title: "Les N−k experts dormants",
+      eyebrow: "Résidents mais inertes",
+      body: "<p>Pour ce token, les autres experts restent inertes — zéro FLOP. Mais ils doivent tous rester <em>résidents en mémoire</em>, prêts à être appelés par le prochain token. C'est là que se cache la vraie facture de la MoE : l'empreinte VRAM est celle du modèle total, pas des paramètres actifs (Schéma 4).</p>"
+    }
+  },
+  "schema-02": {
+    "gate": {
+      title: "Le gate (routeur)",
+      eyebrow: "Linéaire → softmax → N scores",
+      body: "<p>Le gate projette le vecteur du token sur N dimensions (une par expert) et applique un softmax pour obtenir une distribution de confiance. Les scores serviront à la fois à choisir les experts et à pondérer leurs sorties.</p><p>GShard a formalisé cette mécanique à grande échelle<a class=\"cite\" data-cite=\"2\" href=\"#source-2\">2</a> ; Switch Transformer l'a simplifiée à k=1<a class=\"cite\" data-cite=\"3\" href=\"#source-3\">3</a>.</p>"
+    },
+    "topk": {
+      title: "La sélection top-k",
+      eyebrow: "k=1 (Switch) ou k=2 (Mixtral)",
+      body: "<p>On ne garde que les k experts aux plus hauts scores. k=1 (Switch Transformer) maximise l'efficacité de calcul ; k=2 (Mixtral, la plupart des modèles) offre une meilleure qualité au prix d'un calcul doublé.</p><p>DeepSeek-V3 pousse à k=8 experts routés fins — la granularité élevée rend chaque expert peu coûteux, donc en activer beaucoup reste abordable.</p>"
+    },
+    "expert-ffn": {
+      title: "Les experts (FFN)",
+      eyebrow: "N réseaux indépendants",
+      body: "<p>Chaque expert est un FFN complet avec ses propres poids. Les experts non sélectionnés ne calculent rien pour ce token, mais occupent tous la mémoire.</p><p>Contrairement à une intuition répandue, les experts ne se spécialisent pas en domaines sémantiques lisibles : ils captent surtout des motifs syntaxiques de bas niveau<a class=\"cite\" data-cite=\"6\" href=\"#source-6\">6</a>.</p>"
+    },
+    "combine": {
+      title: "La combinaison pondérée",
+      eyebrow: "Σ gᵢ · Eᵢ(x)",
+      body: "<p>Les sorties des k experts sélectionnés sont sommées, chacune pondérée par son score de gate (renormalisé sur les k retenus). Le résultat remplace la sortie qu'aurait produite un FFN dense unique.</p><p>Le reste du bloc transformer (attention, normalisations, résiduel) est inchangé — seul le FFN devient une couche MoE.</p>"
+    }
+  },
+  "schema-03": {
+    "collapse": {
+      title: "L'effondrement du routage",
+      eyebrow: "Rich-get-richer",
+      body: "<p>Cercle vicieux d'auto-renforcement : un expert légèrement favorisé reçoit plus de tokens, s'entraîne plus vite, devient meilleur, et attire encore plus de trafic. À terme, une poignée d'experts capte tout et les autres restent morts.</p><p>Le modèle a nominalement N experts mais n'en exploite qu'une fraction — le pire des deux mondes : l'empreinte mémoire du total, la capacité effective d'une poignée.</p>"
+    },
+    "aux-loss": {
+      title: "La perte auxiliaire",
+      eyebrow: "coût += λ · L équilibrage",
+      body: "<p>On ajoute au coût un terme qui pénalise le déséquilibre de charge, forçant le routeur à répartir les tokens. Efficace, mais c'est un compromis : ce terme entre en tension avec la perplexité — on route parfois un token vers un expert sous-optimal juste pour l'équilibre.</p><p>ST-MoE y ajoute le <em>router z-loss</em> qui stabilise l'amplitude des logits<a class=\"cite\" data-cite=\"4\" href=\"#source-4\">4</a>. DeepSeek supprime carrément la perte auxiliaire au profit d'un biais dynamique par expert<a class=\"cite\" data-cite=\"8\" href=\"#source-8\">8</a>.</p>"
+    },
+    "capacity-drop": {
+      title: "Capacité et token dropping",
+      eyebrow: "Le plafond par expert",
+      body: "<p>Pour paralléliser, on fixe une capacité maximale par expert. Les tokens excédentaires sont <em>droppés</em> : ils sautent la couche MoE via le résiduel, sans être traités — une perte de qualité silencieuse.</p><p>MegaBlocks reformule la MoE comme une multiplication matricielle creuse par blocs, traitant tous les tokens sans capacité fixe ni drop<a class=\"cite\" data-cite=\"9\" href=\"#source-9\">9</a>.</p>"
+    },
+    "expert-choice": {
+      title: "Le routage par les experts",
+      eyebrow: "Expert choice",
+      body: "<p>Renversement : au lieu que chaque token choisisse ses k experts, chaque expert choisit ses top-k tokens<a class=\"cite\" data-cite=\"5\" href=\"#source-5\">5</a>. L'équilibrage devient parfait par construction (chaque expert reçoit exactement sa capacité).</p><p>Contrepartie : un token peut être choisi par zéro, un ou plusieurs experts — ce qui casse la garantie d'un traitement uniforme et complique l'inférence auto-régressive.</p>"
+    }
+  },
+  "schema-04": {
+    "dispatch": {
+      title: "Le dispatch des tokens",
+      eyebrow: "Tokens ≠ experts co-localisés",
+      body: "<p>Les tokens arrivent en batch sur chaque GPU, mais leurs experts cibles sont répartis sur d'autres GPU (expert parallelism). Il faut donc réacheminer chaque token vers l'accélérateur qui héberge son expert.</p><p>C'est une opération collective <em>all-to-all</em> : chaque GPU envoie une part de ses tokens à tous les autres.</p>"
+    },
+    "alltoall": {
+      title: "Le goulot all-to-all",
+      eyebrow: "Le réseau dicte le débit",
+      body: "<p>À grande échelle, l'échange all-to-all — chaque GPU parle à tous les autres — devient le poste dominant, devant le calcul lui-même<a class=\"cite\" data-cite=\"2\" href=\"#source-2\">2</a>. La bande passante d'interconnexion (NVLink, InfiniBand) et sa latence gouvernent le débit.</p><p>Une part majeure de l'ingénierie MoE consiste à chevaucher cet échange avec le calcul pour le masquer — c'est le rôle du schéma DualPipe de DeepSeek<a class=\"cite\" data-cite=\"8\" href=\"#source-8\">8</a>.</p>"
+    },
+    "expert-compute": {
+      title: "Les experts résidents",
+      eyebrow: "Empreinte = total, pas actif",
+      body: "<p>Chaque GPU héberge un sous-ensemble d'experts, tous résidents en VRAM. L'empreinte mémoire agrégée est celle du modèle <em>total</em> (ex. 671 Md pour DeepSeek-V3), même si seuls quelques experts s'activent par token.</p><p>C'est ce qui rend les MoE difficiles à servir sur du matériel modeste et motive l'offloading CPU/SSD des experts inactifs.</p>"
+    },
+    "combine-a2a": {
+      title: "Le combine : second all-to-all",
+      eyebrow: "Coût doublé, à chaque couche",
+      body: "<p>Une fois les experts calculés, les sorties doivent revenir vers le GPU d'origine de chaque token : c'est un <em>second</em> all-to-all, le trajet retour. Le coût de communication est donc payé deux fois par couche MoE.</p><p>Multiplié par la profondeur du modèle, ce va-et-vient explique pourquoi servir une MoE est d'abord un problème de plomberie réseau.</p>"
+    }
+  },
+  "schema-05": {
+    "shared-expert": {
+      title: "L'expert partagé",
+      eyebrow: "Toujours actif",
+      body: "<p>Certaines connaissances (grammaire, tokens fréquents) servent à <em>tous</em> les tokens. Dans une MoE classique, chaque expert doit les réapprendre — capacité gaspillée. DeepSeek isole ce socle dans un expert partagé, toujours activé en plus des experts routés<a class=\"cite\" data-cite=\"7\" href=\"#source-7\">7</a>.</p><p>Les experts routés sont alors libérés pour se spécialiser sur le savoir différenciant.</p>"
+    },
+    "fine-grained": {
+      title: "Les experts fins",
+      eyebrow: "Découper pour combiner",
+      body: "<p>À budget de paramètres et de calcul constant, on découpe chaque gros expert en plusieurs experts plus petits<a class=\"cite\" data-cite=\"7\" href=\"#source-7\">7</a>. Chaque expert devient peu coûteux, donc on peut en activer davantage (k plus grand) et composer des « spécialistes » beaucoup plus finement.</p><p>DeepSeek-V3 : 256 experts routés fins, k=8 activés.</p>"
+    },
+    "routed": {
+      title: "Les experts routés actifs",
+      eyebrow: "k=8 sur 256",
+      body: "<p>Pour chaque token, le routeur sélectionne 8 experts fins parmi 256. Avec un expert partagé toujours actif, le token voit donc 9 FFN au total — mais chacun est petit, d'où 37 Md de paramètres actifs seulement.</p><p>L'équilibrage se fait sans perte auxiliaire, via un biais dynamique par expert<a class=\"cite\" data-cite=\"8\" href=\"#source-8\">8</a>.</p>"
+    },
+    "combinations": {
+      title: "L'explosion combinatoire",
+      eyebrow: "C(256,8) ≈ 4 × 10¹⁴",
+      body: "<p>Le gain de la granularité est combinatoire : passer de 8 experts top-2 (28 combinaisons) à 256 experts top-8 fait exploser le nombre de « spécialistes » composables de plusieurs ordres de grandeur.</p><p>C'est cette richesse combinatoire — pas des experts individuellement plus savants — qui explique la supériorité empirique du fine-grained, confirmée par les ablations OLMoE<a class=\"cite\" data-cite=\"12\" href=\"#source-12\">12</a>.</p>"
+    }
+  },
+  "schema-06": {
+    "dense-curve": {
+      title: "La courbe dense",
+      eyebrow: "params ∝ FLOPs",
+      body: "<p>Pour un dense, ajouter des paramètres impose d'ajouter des FLOPs par token. À budget de calcul fixe, il bute donc à une taille maximale — il ne peut pas « ranger » plus de savoir sans payer plus cher chaque token.</p>"
+    },
+    "sparse-curve": {
+      title: "La courbe sparse",
+      eyebrow: "params découplés des FLOPs",
+      body: "<p>La MoE découple les deux : à FLOPs par token constants, on peut empiler bien plus de paramètres totaux. La courbe sparse descend donc plus bas en perte que la dense à budget de calcul égal<a class=\"cite\" data-cite=\"3\" href=\"#source-3\">3</a>.</p><p>C'est la démonstration empirique que la sparsité est un levier d'échelle, pas juste une astuce d'implémentation.</p>"
+    },
+    "granularity": {
+      title: "La granularité",
+      eyebrow: "Une dimension supplémentaire",
+      body: "<p>Krajewski et al. ajoutent aux lois d'échelle un troisième paramètre : la granularité (la finesse du découpage en experts)<a class=\"cite\" data-cite=\"11\" href=\"#source-11\">11</a>. Résultat clé : la granularité optimale <em>croît</em> avec l'échelle du modèle.</p><p>Plus un modèle est grand, plus il gagne à être découpé en experts fins et nombreux — la justification théorique de la trajectoire DeepSeek.</p>"
+    },
+    "optimal": {
+      title: "L'optimum isoFLOP",
+      eyebrow: "Le bon point de fonctionnement",
+      body: "<p>Pour un budget de calcul donné, il existe une configuration optimale (nombre total de paramètres, nombre d'experts, granularité, k) qui minimise la perte. Ce point se déplace vers plus de paramètres et plus de granularité à mesure que le budget croît.</p><p>Concevoir une MoE, c'est calibrer ce point — pas choisir binairement dense ou sparse.</p>"
+    }
+  },
+  "schema-07": {
+    "mixtral-row": {
+      title: "Mixtral 8×7B",
+      eyebrow: "Le déclencheur grand public · janvier 2024",
+      body: "<p>La première MoE ouverte vraiment compétitive : 8 experts, top-2, ~47 Md totaux pour ~13 Md actifs<a class=\"cite\" data-cite=\"6\" href=\"#source-6\">6</a>. Pas d'expert partagé, granularité grossière — mais des poids ouverts qui ont démocratisé l'architecture.</p><p>Son analyse a aussi démonté le mythe des experts sémantiques : la spécialisation observée est surtout syntaxique.</p>"
+    },
+    "deepseek-row": {
+      title: "DeepSeek-V3",
+      eyebrow: "L'état de l'art ouvert",
+      body: "<p>671 Md totaux / 37 Md actifs, 256 experts fins + 1 partagé, k=8, équilibrage sans perte auxiliaire<a class=\"cite\" data-cite=\"8\" href=\"#source-8\">8</a>. La synthèse de la ligne DeepSeekMoE<a class=\"cite\" data-cite=\"7\" href=\"#source-7\">7</a>, combinée à la MLA et à la prédiction multi-token.</p><p>La référence de facto pour une MoE de frontière en accès ouvert.</p>"
+    },
+    "llama4-row": {
+      title: "Llama 4 Maverick",
+      eyebrow: "MoE + expert partagé chez Meta",
+      body: "<p>~400 Md totaux / 17 Md actifs, 128 experts routés + 1 partagé, routage peu profond (k=1 routé)<a class=\"cite\" data-cite=\"7\" href=\"#source-7\">7</a>. Meta adopte la combinaison fine-grained + shared, confirmant sa généralisation au-delà de DeepSeek.</p><p>Signe que le motif architectural s'est standardisé chez les grands laboratoires.</p>"
+    },
+    "olmoe-row": {
+      title: "OLMoE-1B-7B",
+      eyebrow: "100 % ouvert — le banc d'essai",
+      body: "<p>6,9 Md totaux / 1,3 Md actifs, 64 experts fins, k=8<a class=\"cite\" data-cite=\"12\" href=\"#source-12\">12</a>. Unique par son ouverture totale — poids, données, code, logs d'entraînement — ce qui en fait le laboratoire reproductible de la recherche MoE.</p><p>Ses ablations valident empiriquement le fine-grained, la granularité élevée et l'effet marginal des experts partagés à petite échelle.</p>"
+    }
+  }
+};
+    /* shape:
+      {
+        'schema-01': {
+          'region-id': { title: '...', body: '<p>...</p>', eyebrow: 'Schéma 1' },
+          ...
+        },
+        ...
+      }
+    */
+
+    const TOOLTIPS = {
+  "ttft": "Time to first token : délai entre l'envoi de la requête et l'arrivée du premier token de la réponse. Métrique critique pour l'expérience utilisateur en streaming.",
+  "llm-judge": "LLM-as-judge : utilisation d'un LLM pour scorer la qualité d'une autre sortie LLM (factualité, pertinence, ton). Permet l'évaluation à l'échelle, mais introduit ses propres biais.",
+  "mcp": "Model Context Protocol : standard ouvert de communication entre LLMs et outils externes, lancé par Anthropic en novembre 2024. Adopté par OpenAI, Google, Microsoft en 2025.",
+  "otlp": "OpenTelemetry Protocol : protocole standardisé (gRPC ou HTTP) pour transporter les signaux d'observabilité (traces, metrics, logs) vers un backend.",
+  "melt": "Metrics, Events, Logs, Traces : les quatre signaux fondamentaux de l'observabilité moderne, popularisés par l'écosystème cloud-native.",
+  "rag": "Retrieval-Augmented Generation : technique qui enrichit le contexte d'un LLM avec des documents récupérés dynamiquement depuis une base vectorielle.",
+  "slo": "Service Level Objective : cible mesurable de qualité de service (ex. 99,9 % des réponses sous 2 secondes). Base contractuelle de l'observabilité opérationnelle."
+};
+    /* shape: { 'CoT': 'Chain-of-Thought : ...', ... } */
+
+    const SOURCES = [
+  {
+    "n": 1,
+    "citation": "OpenTelemetry, <em>AI Agent Observability Standards</em>, OpenTelemetry Blog, mars 2025.",
+    "url": "https://opentelemetry.io/blog/2025/ai-agent-observability/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 2,
+    "citation": "InsightFinder, <em>AI Observability vs Traditional Monitoring</em>, décembre 2025.",
+    "url": "https://insightfinder.com/blog/ai-observability-vs-traditional-monitoring/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 3,
+    "citation": "IBM Think, <em>Observability Trends 2026</em>, IBM Institute for Business Value, mars 2026.",
+    "url": "https://www.ibm.com/think/insights/observability-trends",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 4,
+    "citation": "Dynatrace, <em>Six Observability Predictions for 2026</em>, décembre 2025.",
+    "url": "https://www.dynatrace.com/news/blog/six-observability-predictions-for-2026/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 5,
+    "citation": "Kore.ai, <em>AI Observability: Monitoring &amp; Governing AI Agents</em>, mars 2026.",
+    "url": "https://www.kore.ai/blog/what-is-ai-observability",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 6,
+    "citation": "Voiceflow, <em>What Is AI Agent Observability? A 2026 Guide</em>, mars 2026.",
+    "url": "https://www.voiceflow.com/blog/what-is-ai-agent-observability",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 7,
+    "citation": "Anthropic, <em>Building Effective Agents</em>, whitepaper, décembre 2024.",
+    "url": "https://www.anthropic.com/research/building-effective-agents",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 8,
+    "citation": "Groundcover, <em>AI Agent Observability Guide: Telemetry, Traces, Metrics</em>, février 2026.",
+    "url": "https://www.groundcover.com/learn/observability/ai-agent-observability",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 9,
+    "citation": "N-iX, <em>AI Agent Observability: Practical Framework</em>, décembre 2025.",
+    "url": "https://www.n-ix.com/ai-agent-observability/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 10,
+    "citation": "Langfuse, <em>AI Agent Observability, Tracing &amp; Evaluation</em>, février 2026.",
+    "url": "https://langfuse.com/blog/2024-07-ai-agent-observability-with-langfuse",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 11,
+    "citation": "OpenTelemetry, <em>GenAI Semantic Conventions (specification)</em>, version 1.37, 2026.",
+    "url": "https://opentelemetry.io/docs/specs/semconv/gen-ai/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 12,
+    "citation": "OpenTelemetry, <em>GenAI Agent Spans, Model Spans, Tool Spans, Events</em>, 2026.",
+    "url": "https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-agent-spans/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 13,
+    "citation": "Datadog, <em>LLM Observability + OTel GenAI Semantic Convention support</em>, décembre 2025.",
+    "url": "https://www.datadoghq.com/blog/llm-otel-semantic-convention/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 14,
+    "citation": "Braintrust, <em>AI Observability Tools: Buyer's Guide 2026</em>, janvier 2026.",
+    "url": "https://www.braintrust.dev/articles/best-ai-observability-tools-2026",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 15,
+    "citation": "GetMaxim, <em>Top 5 AI Agent Observability Platforms 2026</em>, décembre 2025.",
+    "url": "https://www.getmaxim.ai/articles/top-5-ai-agent-observability-platforms-in-2026/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 16,
+    "citation": "Traceloop, <em>OpenLLMetry — auto-instrumentation OTel pour 44+ providers LLM</em>, GitHub, 2026.",
+    "url": "https://github.com/traceloop/openllmetry",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 17,
+    "citation": "OpenLIT, <em>OpenLIT SDK — auto-instrumentation 1 ligne LLMs/vector DBs/GPUs</em>, GitHub, 2026.",
+    "url": "https://github.com/openlit/openlit",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 18,
+    "citation": "Gartner, <em>Magic Quadrant for Observability Platforms 2025</em>, juillet 2025.",
+    "url": "https://www.gartner.com/en/documents/6688834",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 19,
+    "citation": "OneUptime, <em>AI Workloads Observability: Cost Crisis</em>, avril 2026.",
+    "url": "https://oneuptime.com/blog/ai-workloads-observability-cost-crisis",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 20,
+    "citation": "Dynatrace, <em>Dynatrace Intelligence — Agentic OS announcement at Perform 2026</em>, février 2026.",
+    "url": "https://www.dynatrace.com/news/blog/dynatrace-intelligence-platform/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 21,
+    "citation": "Splunk, <em>Q1 2026 Observability Update — AI Agent Monitoring</em>, février 2026.",
+    "url": "https://www.splunk.com/en_us/blog/observability/splunk-observability-ai-agent-monitoring-innovations.html",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 22,
+    "citation": "Grafana Labs, <em>Leader Gartner Magic Quadrant Observability 2025 — #1 Completeness of Vision</em>, 2025.",
+    "url": "https://grafana.com/about/press/2025/07/",
+    "accessed": "2026-04-30"
+  }
+];
+    window.SCHEMAS = SCHEMAS;
+
+  </script>
+  <script src="/assets/dossier-app.js" defer></script>
+</body>
+</html>
