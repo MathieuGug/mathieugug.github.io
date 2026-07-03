@@ -8,7 +8,7 @@ Le mélange d'experts — *Mixture of Experts*, MoE — est le levier qui brise 
 
 ==Mais le mélange d'experts ne fait pas disparaître la difficulté ; il la déplace.== Là où le modèle dense n'avait qu'un problème d'algèbre linéaire, le modèle creux hérite de trois problèmes nouveaux, tous vicieux : *qui* décide quel token va à quel expert (le routage), *comment* empêcher le routeur de s'effondrer sur ses favoris (l'équilibrage de charge), et *où* placer physiquement des experts qui ne tiennent plus sur une seule puce (le parallélisme d'experts). Le troisième est décisif : à grande échelle, un modèle MoE cesse d'être un objet d'architecture pour devenir un objet de systèmes distribués, gouverné par la topologie du réseau autant que par la fonction de perte. Ce rapport suit cette bascule, de la couche élémentaire jusqu'aux modèles de frontière de 2026.
 
-![La bascule capacité / calcul : paramètres totaux contre paramètres activés, mémoire contre FLOPs|width=1200](images/20260703-02-capacite-vs-calcul.svg)
+![La bascule capacité / calcul : paramètres totaux contre paramètres activés, mémoire contre FLOPs|width=1200](images/20260703-01-capacite-vs-calcul.svg)
 
 ## 1. La bascule capacité / calcul
 
@@ -22,7 +22,7 @@ Le point de bascule industriel est venu plus tard. En 2024, Mistral publie Mixtr
 
 Concrètement, une couche MoE remplace le bloc *feed-forward* (FFN) d'un transformer — la partie qui, dans un modèle dense, contient l'essentiel des paramètres. Là où le bloc dense applique une seule grosse transformation, la couche MoE offre le choix entre plusieurs FFN plus petites, les experts, et confie à un *routeur* la décision d'aiguillage.
 
-![Anatomie d'une couche de mélange d'experts : routeur, top-k, banc d'experts, combinaison pondérée|width=1200](images/20260703-01-anatomie-couche-moe.svg)
+![Anatomie d'une couche de mélange d'experts : routeur, top-k, banc d'experts, combinaison pondérée|width=1200](images/20260703-02-anatomie-couche-moe.svg)
 
 Le mécanisme se décompose en quatre temps. D'abord, le **routeur** (ou *gate*) : un simple produit matriciel suivi d'un softmax qui, pour le token entrant, attribue un score d'affinité à chacun des *N* experts. Ensuite, la sélection **top-k** : on ne garde que les *k* experts de plus haut score (typiquement *k* = 1, 2 ou 8), les autres sont ignorés — c'est ici que naît la sparsité. Puis le **calcul** : les *k* experts retenus traitent le token en parallèle. Enfin la **combinaison** : leurs sorties sont sommées, pondérées par les scores de gating renormalisés. Le token ressort transformé, mais n'a mobilisé qu'une fraction *k/N* des paramètres experts de la couche.
 
