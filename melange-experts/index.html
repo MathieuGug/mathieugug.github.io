@@ -4,28 +4,28 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#faf6ec">
-<title>La Mixture-of-Experts — deep dive</title>
-<meta name="description" content="La Mixture-of-Experts découple les paramètres du calcul par token : le mécanisme, le routage et son effondrement, la facture communication (all-to-all), les experts fins et partagés de DeepSeek, la sparsité comme troisième axe d'échelle. Deep dive du dossier économie de l'inférence, par Mathieu Guglielmino, 1er juillet 2026.">
+<title>Le mélange d'experts — deep dive</title>
+<meta name="description" content="Le mélange d'experts (MoE) découple la capacité d'un modèle de son coût de calcul — routage, équilibrage de charge, parallélisme d'experts : comment une idée d'architecture est devenue un problème de systèmes distribués. Deep dive du dossier économie de l'inférence, par Mathieu Guglielmino, 3 juillet 2026.">
 <!-- og:start -->
 <meta name="author" content="Mathieu Guglielmino">
-<link rel="canonical" href="https://mathieugug.github.io/mixture-of-experts/">
-<meta name="keywords" content="IA agentique, Mathieu Guglielmino, agents IA, dossier, mixture, of, experts">
+<link rel="canonical" href="https://mathieugug.github.io/melange-experts/">
+<meta name="keywords" content="mélange d'experts, MoE, mixture of experts, LLM, inférence, routage, DeepSeek, Mixtral, Mathieu Guglielmino, dossier">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Mathieu Guglielmino">
 <meta property="og:locale" content="fr_FR">
-<meta property="og:url" content="https://mathieugug.github.io/mixture-of-experts/">
-<meta property="og:title" content="La Mixture-of-Experts — deep dive">
-<meta property="og:description" content="La Mixture-of-Experts découple les paramètres du calcul par token : le mécanisme, le routage et son effondrement, la facture communication (all-to-all), les experts fins et partagés de DeepSeek, la sparsité comme troisième axe d'échelle. Deep dive du dossier économie de l'inférence, par Mathieu Guglielmino, 1er juillet 2026.">
-<meta property="og:image" content="https://mathieugug.github.io/mixture-of-experts/og.png">
+<meta property="og:url" content="https://mathieugug.github.io/melange-experts/">
+<meta property="og:title" content="Le mélange d'experts — deep dive">
+<meta property="og:description" content="Le mélange d'experts (MoE) découple la capacité d'un modèle de son coût de calcul — routage, équilibrage de charge, parallélisme d'experts : comment une idée d'architecture est devenue un problème de systèmes distribués. Deep dive du dossier économie de l'inférence, par Mathieu Guglielmino, 3 juillet 2026.">
+<meta property="og:image" content="https://mathieugug.github.io/melange-experts/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="La Mixture-of-Experts — deep dive — couverture social">
+<meta property="og:image:alt" content="Le mélange d'experts — deep dive — couverture social">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="La Mixture-of-Experts — deep dive">
-<meta name="twitter:description" content="La Mixture-of-Experts découple les paramètres du calcul par token : le mécanisme, le routage et son effondrement, la facture communication (all-to-all), les experts fins et partagés de DeepSeek, la sparsité comme troisième axe d'échelle. Deep dive du dossier économie de l'inférence, par Mathieu Guglielmino, 1er juillet 2026.">
-<meta name="twitter:image" content="https://mathieugug.github.io/mixture-of-experts/og.png">
+<meta name="twitter:title" content="Le mélange d'experts — deep dive">
+<meta name="twitter:description" content="Le mélange d'experts (MoE) découple la capacité d'un modèle de son coût de calcul — routage, équilibrage de charge, parallélisme d'experts : comment une idée d'architecture est devenue un problème de systèmes distribués. Deep dive du dossier économie de l'inférence, par Mathieu Guglielmino, 3 juillet 2026.">
+<meta name="twitter:image" content="https://mathieugug.github.io/melange-experts/og.png">
 <script type="application/ld+json">
-{"@context": "https://schema.org","@type": "WebSite","name": "Mathieu Guglielmino","url": "https://mathieugug.github.io/mixture-of-experts/","description": "La Mixture-of-Experts découple les paramètres du calcul par token : mécanisme, routage, communication all-to-all, experts fins et partagés de DeepSeek, sparsité comme troisième axe d'échelle. Deep dive du dossier économie de l'inférence, par Mathieu Guglielmino, 1er juillet 2026.","inLanguage": "fr-FR","author": {"@type": "Person","name": "Mathieu Guglielmino"}}
+{"@context": "https://schema.org","@type": "WebSite","name": "Mathieu Guglielmino","url": "https://mathieugug.github.io/melange-experts/","description": "Le mélange d'experts (MoE) découple la capacité d'un modèle de son coût de calcul — routage, équilibrage de charge, parallélisme d'experts : comment une idée d'architecture est devenue un problème de systèmes distribués. Deep dive du dossier économie de l'inférence, par Mathieu Guglielmino, 3 juillet 2026.","inLanguage": "fr-FR","author": {"@type": "Person","name": "Mathieu Guglielmino"}}
 </script>
 <!-- og:end -->
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
@@ -100,29 +100,29 @@ h1 em { font-style: italic; color: var(--accent); font-weight: 400; }
 </header>
 
 <main class="wrap">
-  <div class="eyebrow">Dossier 35 · 1er juillet 2026</div>
-  <h1>La <em>Mixture-of-Experts</em>.</h1>
-  <p class="lede">Un modèle dense paie deux fois : il allume <strong>tous</strong> ses paramètres pour chaque token. La <strong>Mixture-of-Experts</strong> brise ce lien — un routeur n'active que k experts sur N. Elle découple le savoir du calcul : la capacité croît, les FLOPs restent fixes, au prix d'une facture mémoire et communication. Deep dive du dossier <em>économie de l'inférence</em>.</p>
+  <div class="eyebrow">Dossier 35 · 3 juillet 2026</div>
+  <h1>Le mélange d'<em>experts</em>.</h1>
+  <p class="lede">Le mélange d'experts (MoE) découple la <strong>capacité</strong> d'un modèle de son <strong>coût de calcul</strong> : porter 671 milliards de paramètres n'en active que 37 par token. Mais il ne supprime pas la difficulté — il la déplace vers le routage, l'équilibrage de charge et le parallélisme d'experts. <strong>Comment une idée d'architecture est devenue un problème de systèmes distribués.</strong> Deep dive du dossier <em>économie de l'inférence</em>.</p>
   <div class="meta">
     <span><strong>1</strong> format</span>
     <span><strong>8</strong> sections</span>
     <span><strong>7</strong> schémas interactifs</span>
     <span><strong>28</strong> régions cliquables</span>
-    <span><strong>12</strong> sources</span>
+    <span><strong>14</strong> sources</span>
     <span>Deep dive</span>
   </div>
 
-  <a href="20260701-mixture-of-experts-app.html" class="format">
+  <a href="20260703-melange-experts-app.html" class="format">
     <div class="format-tag">Format unique · Application illustrée</div>
     <h2 class="format-title">Le <em>rapport interactif</em></h2>
-    <p class="format-sub">Du découplage paramètres/FLOPs à l'anatomie d'une couche MoE (routeur, top-k, experts, combinaison), du problème du routage — effondrement, perte auxiliaire, capacité, expert choice — à la facture communication (all-to-all), jusqu'aux experts fins et partagés de DeepSeek-V3 (671/37 Md), à la sparsité comme troisième axe d'échelle et à la matrice du paysage 2024-2026. Sept schémas cliquables, glossaire au survol, sommaire et sources actifs.</p>
+    <p class="format-sub">De la bascule capacité/calcul à l'anatomie d'une couche MoE (routeur, top-k, combinaison), du problème du routage (token-choice vs expert-choice, experts fins et partagés) au collapse et ses quatre parades (loss auxiliaire, z-loss, expert-choice, biais sans-loss), du mur des systèmes (parallélisme d'experts, all-to-all) à l'asymétrie mémoire/calcul du service, jusqu'au paysage 2024-2026 (Mixtral, DeepSeek-V3, Llama 4, Qwen3). Sept schémas cliquables, glossaire au survol, sommaire et sources actifs.</p>
     <div class="format-cta">
-      <span>Lecture · 25-30 min</span>
+      <span>Lecture · 20-30 min</span>
       <span class="arrow">Ouvrir →</span>
     </div>
   </a>
 
-  <a href="20260701-mixture-of-experts-rapport.md" class="format format--admin" download>
+  <a href="20260703-melange-experts-rapport.md" class="format format--admin" download>
     <div class="format-tag">Annexe · Rapport markdown</div>
     <h2 class="format-title">La <em>version texte</em></h2>
     <p class="format-sub">Le rapport complet en markdown, lisible dans Obsidian, GitHub ou VS Code. Schémas SVG inclus, citations en notes de bas de page, syntaxe d'images compatible Obsidian.</p>
@@ -133,7 +133,7 @@ h1 em { font-style: italic; color: var(--accent); font-weight: 400; }
   </a>
 
   <div class="colophon">
-    <span>Mathieu Guglielmino · 1er juillet 2026</span>
+    <span>Mathieu Guglielmino · 3 juillet 2026</span>
     <span>Publié à titre personnel</span>
     <span>Format co-écrit avec l'aide d'une IA</span>
   </div>
