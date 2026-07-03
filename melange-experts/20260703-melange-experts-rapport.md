@@ -8,7 +8,7 @@ Le mélange d'experts — *Mixture of Experts*, MoE — est le levier qui brise 
 
 ==Mais le mélange d'experts ne fait pas disparaître la difficulté ; il la déplace.== Là où le modèle dense n'avait qu'un problème d'algèbre linéaire, le modèle creux hérite de trois problèmes nouveaux, tous vicieux : *qui* décide quel token va à quel expert (le routage), *comment* empêcher le routeur de s'effondrer sur ses favoris (l'équilibrage de charge), et *où* placer physiquement des experts qui ne tiennent plus sur une seule puce (le parallélisme d'experts). Le troisième est décisif : à grande échelle, un modèle MoE cesse d'être un objet d'architecture pour devenir un objet de systèmes distribués, gouverné par la topologie du réseau autant que par la fonction de perte. Ce rapport suit cette bascule, de la couche élémentaire jusqu'aux modèles de frontière de 2026.
 
-[SCHEMA-02]
+![La bascule capacité / calcul : paramètres totaux contre paramètres activés, mémoire contre FLOPs|width=1200](images/20260703-02-capacite-vs-calcul.svg)
 
 ## 1. La bascule capacité / calcul
 
@@ -22,7 +22,7 @@ Le point de bascule industriel est venu plus tard. En 2024, Mistral publie Mixtr
 
 Concrètement, une couche MoE remplace le bloc *feed-forward* (FFN) d'un transformer — la partie qui, dans un modèle dense, contient l'essentiel des paramètres. Là où le bloc dense applique une seule grosse transformation, la couche MoE offre le choix entre plusieurs FFN plus petites, les experts, et confie à un *routeur* la décision d'aiguillage.
 
-[SCHEMA-01]
+![Anatomie d'une couche de mélange d'experts : routeur, top-k, banc d'experts, combinaison pondérée|width=1200](images/20260703-01-anatomie-couche-moe.svg)
 
 Le mécanisme se décompose en quatre temps. D'abord, le **routeur** (ou *gate*) : un simple produit matriciel suivi d'un softmax qui, pour le token entrant, attribue un score d'affinité à chacun des *N* experts. Ensuite, la sélection **top-k** : on ne garde que les *k* experts de plus haut score (typiquement *k* = 1, 2 ou 8), les autres sont ignorés — c'est ici que naît la sparsité. Puis le **calcul** : les *k* experts retenus traitent le token en parallèle. Enfin la **combinaison** : leurs sorties sont sommées, pondérées par les scores de gating renormalisés. Le token ressort transformé, mais n'a mobilisé qu'une fraction *k/N* des paramètres experts de la couche.
 
@@ -32,7 +32,7 @@ Deux quantités gouvernent tout le reste. Le nombre d'experts *N* fixe la capaci
 
 Le routeur est le cœur battant — et le talon d'Achille — d'un modèle creux. Sa conception se décline sur plusieurs axes, dont les combinaisons dessinent la diversité des architectures actuelles.
 
-[SCHEMA-03]
+![La taxonomie du routage : token-choice contre expert-choice, experts fins et expert partagé|width=1200](images/20260703-03-taxonomie-routage.svg)
 
 **Token-choice contre expert-choice.** Le schéma canonique est le *token-choice* : chaque token choisit ses *k* experts. C'est intuitif, mais rien ne garantit que la charge se répartisse — un expert populaire peut être submergé pendant qu'un autre chôme. En 2022, Zhou et al. proposent l'inversion : l'*expert-choice*[^5]. Ce sont les experts qui choisissent, chacun sélectionnant les tokens de plus haut score jusqu'à remplir sa capacité. L'équilibre devient garanti *par construction* — aucun expert n'est sur- ou sous-chargé — au prix d'une bizarrerie : certains tokens peuvent être traités par zéro expert, d'autres par plusieurs.
 
@@ -44,7 +44,7 @@ Le routeur est le cœur battant — et le talon d'Achille — d'un modèle creux
 
 Laissé libre, un routeur token-choice s'effondre. C'est le **collapse** : dès l'entraînement, un cercle vicieux s'installe — les experts que le routeur privilégie s'améliorent plus vite (ils voient plus de données), donc le routeur les privilégie davantage, jusqu'à ce qu'une poignée d'experts absorbe tout le trafic et que les autres, jamais entraînés, deviennent des paramètres morts. Le modèle porte alors le coût mémoire de centaines d'experts sans en tirer la capacité. L'histoire de l'ingénierie MoE est en grande partie l'histoire des parades à ce collapse.
 
-[SCHEMA-04]
+![Le collapse du routeur et ses quatre parades : loss auxiliaire, z-loss, expert-choice, biais sans-loss|width=1200](images/20260703-04-collapse-equilibrage.svg)
 
 **La loss auxiliaire.** La première parade, popularisée par Switch[^3], ajoute à la fonction de perte un terme qui pénalise le déséquilibre : il pousse le routeur à répartir les tokens uniformément. Efficace, mais avec un défaut structurel — cette perte auxiliaire est en tension avec la perte principale (la qualité de prédiction). On force l'équilibre au détriment, léger mais réel, de la performance. ==Toute loss auxiliaire d'équilibrage est un impôt sur la qualité du modèle.==
 
@@ -58,7 +58,7 @@ Laissé libre, un routeur token-choice s'effondre. C'est le **collapse** : dès 
 
 Voici la bascule annoncée. Tant que les experts tiennent sur une seule puce, MoE reste un objet d'architecture. Mais un modèle de 671 milliards de paramètres ne tient sur aucun GPU existant. Les experts doivent être *répartis* — placés sur des dizaines, voire des centaines d'accélérateurs. C'est le **parallélisme d'experts** (*expert parallelism*), formalisé par GShard[^2] : chaque GPU héberge un sous-ensemble d'experts.
 
-[SCHEMA-05]
+![Le mur des systèmes : parallélisme d'experts et communication all-to-all entre GPU|width=1200](images/20260703-05-mur-des-systemes.svg)
 
 Le problème, c'est que le routeur, lui, est global. Un token calculé sur le GPU 3 peut être routé vers un expert résidant sur le GPU 47. Il faut donc, à chaque couche MoE, une double chorégraphie de communication : un **all-to-all dispatch** qui envoie chaque token vers le ou les GPU hébergeant ses experts, puis, après calcul, un **all-to-all combine** qui rapatrie les résultats. Ces deux collectifs all-to-all sont, à grande échelle, le véritable goulot d'étranglement — pas le calcul des experts, qui est trivialement parallèle. ==Dans un MoE distribué, ce n'est plus le calcul qui coûte, c'est le déplacement des tokens entre GPU.== La performance dépend alors de la bande passante de l'interconnexion (NVLink, InfiniBand) autant que de la puissance de calcul brute.
 
@@ -70,7 +70,7 @@ DeepSeek-V3 pousse cette logique jusqu'à la co-conception matériel-modèle : s
 
 Le mélange d'experts crée, à l'inférence, une asymétrie déroutante entre ce qu'il faut *stocker* et ce qu'il faut *calculer*.
 
-[SCHEMA-06]
+![L'asymétrie du service : mémoire résidente contre calcul actif, déséquilibre au batch, offloading|width=1200](images/20260703-06-asymetrie-service.svg)
 
 Côté **mémoire**, tous les experts doivent être résidents : on ne sait pas à l'avance lesquels seront sollicités, donc les 671 milliards de paramètres de DeepSeek-V3 doivent tenir en VRAM (ou être prêts à y être chargés). Côté **calcul**, seuls les 37 milliards actifs travaillent par token. Le modèle creux a donc l'empreinte mémoire d'un géant et l'appétit de calcul d'un modèle moyen. ==Un MoE coûte en mémoire ce qu'un modèle dense de sa taille totale coûterait, mais ne calcule que comme un dense de sa taille active.== C'est un cadeau pour le débit (*throughput*) et une malédiction pour la mémoire.
 
@@ -82,7 +82,7 @@ Enfin, quand la VRAM manque, une famille de techniques *offloade* les experts in
 
 En deux ans, les choix d'architecture MoE ont convergé — non vers l'uniformité, mais vers un espace de conception bien cartographié où chaque laboratoire place ses curseurs.
 
-[SCHEMA-07]
+![Le paysage MoE 2024-2026 : Mixtral, DeepSeek-V3, Llama 4, Qwen3 comparés sur six dimensions|width=1200](images/20260703-07-paysage-2024-2026.svg)
 
 **Mixtral 8×7B** (Mistral, 2024)[^9] est le jalon fondateur de l'ère ouverte : 8 experts, top-2, granularité grossière, pas d'expert partagé. Sa vertu fut de *prouver* qu'un MoE ouvert pouvait égaler un dense de référence, déclenchant la vague.
 
