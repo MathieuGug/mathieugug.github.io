@@ -42,7 +42,9 @@ La quantification n'est pas gratuite. ==La perte de précision ne frappe pas uni
 
 ## 3. Les astuces d'architecture
 
-La quantification a une limite : en dessous d'un certain seuil de bits, la qualité s'effondre quelle que soit la méthode. Pour aller plus loin, il faut changer non pas la précision des poids mais **la façon dont le modèle occupe la mémoire**. Trois idées se sont imposées en 2025-2026. [SCHEMA-03]
+La quantification a une limite : en dessous d'un certain seuil de bits, la qualité s'effondre quelle que soit la méthode. Pour aller plus loin, il faut changer non pas la précision des poids mais **la façon dont le modèle occupe la mémoire**. Trois idées se sont imposées en 2025-2026 (voir Schéma 3).
+
+![Trois leviers pour tenir dans le budget|width=1200](images/20260706-03-trois-leviers.svg)
 
 **Le MatFormer (transformer matriochka).** Gemma 3n imbrique des sous-modèles plus petits à l'intérieur d'un modèle plus grand, comme des poupées russes[^5]. On peut exécuter le seul cœur — le plus petit modèle imbriqué — sans activer les paramètres englobants, ce qui réduit à la volée le calcul, la latence et l'énergie selon la difficulté de la requête. Un seul jeu de poids, plusieurs points de fonctionnement : le modèle s'adapte au budget disponible au lieu d'imposer une taille fixe.
 
