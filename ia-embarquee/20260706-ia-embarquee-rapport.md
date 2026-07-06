@@ -54,7 +54,9 @@ La quantification a une limite : en dessous d'un certain seuil de bits, la quali
 
 ## 4. Le NPU et le silicium
 
-Faire tenir le modèle en mémoire ne suffit pas : encore faut-il l'exécuter sans vider la batterie ni monopoliser le processeur. C'est le rôle du **NPU** (*Neural Processing Unit*), un accélérateur dédié aux opérations de réseaux de neurones, optimisé pour l'efficacité énergétique plutôt que pour la polyvalence. L'argument est chiffré : Phi-Silica tourne sur le NPU Hexagon des Copilot+ PC à ~650 tokens/seconde pour **environ 1,5 watt**, en libérant CPU et GPU pour le reste[^6]. Un modèle exécuté sur CPU ferait chauffer l'appareil et fondrait la batterie ; sur NPU, il devient une fonction de fond soutenable. [SCHEMA-04]
+Faire tenir le modèle en mémoire ne suffit pas : encore faut-il l'exécuter sans vider la batterie ni monopoliser le processeur. C'est le rôle du **NPU** (*Neural Processing Unit*), un accélérateur dédié aux opérations de réseaux de neurones, optimisé pour l'efficacité énergétique plutôt que pour la polyvalence. L'argument est chiffré : Phi-Silica tourne sur le NPU Hexagon des Copilot+ PC à ~650 tokens/seconde pour **environ 1,5 watt**, en libérant CPU et GPU pour le reste[^6]. Un modèle exécuté sur CPU ferait chauffer l'appareil et fondrait la batterie ; sur NPU, il devient une fonction de fond soutenable (voir Schéma 4).
+
+![Le NPU, la mémoire et le pipeline hétérogène|width=1200](images/20260706-04-npu-silicium.svg)
 
 Mais **le TOPS n'est pas la performance**. Qualcomm annonce 45 TOPS pour le Hexagon des Snapdragon X[^11] ; ce chiffre mesure une capacité de calcul crête, pas le débit réel d'un LLM. Comme établi en section 1, le décodage est limité par la bande passante mémoire : un NPU à 45 TOPS relié à une RAM lente reste bridé par la RAM. ==Le TOPS vend le silicium ; la bande passante mémoire décide du débit.== C'est pourquoi les mesures sérieuses portent sur des tokens/seconde à budget énergétique donné, pas sur des TOPS.
 
