@@ -101,7 +101,9 @@ Ce routage est le véritable produit. Le petit modèle local n'est pas une fin e
 
 ## 7. Trajectoires 2026-2028
 
-Quatre lignes de force se dessinent. [SCHEMA-07]
+Quatre lignes de force se dessinent (voir Schéma 7).
+
+![Quatre lignes de force, 2026-2028|width=1200](images/20260706-07-trajectoires.svg)
 
 **Le natif ternaire se généralise.** BitNet a montré qu'entraîner directement en 1,58 bit bat la compression post-hoc sur les trois axes qui comptent à l'edge : mémoire, énergie, indépendance au GPU[^7][^8]. Attendre des modèles ternaires natifs plus gros et multimodaux, avec des kernels CPU dédiés qui feront du NPU un luxe plutôt qu'une nécessité pour une partie des charges.
 
