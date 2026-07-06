@@ -1,0 +1,128 @@
+<h1 class="report-title">L'IA embarquée : le budget mémoire commande</h1>
+      <p class="lead">L'IA embarquée ne se gagne pas au niveau du <strong>modèle</strong> mais au niveau du <strong>budget mémoire de l'appareil</strong> — et l'architecture réellement déployée en 2026 n'est pas « tout local » mais un routage vérifiable entre l'appareil et le cloud.</p>
+      <p class="byline"><em>6 juillet 2026 — Mathieu Guglielmino</em></p>
+
+      <p>Depuis dix-huit mois, une bascule discrète s'est opérée dans la façon dont les modèles de langage atteignent les utilisateurs. La question n'est plus seulement « quel est le meilleur modèle dans le cloud », mais « qu'est-ce qui peut tourner <strong>sur l'appareil que vous tenez en main</strong>, sans réseau, sans envoyer vos données ailleurs, sans vider la batterie ». Apple a livré un modèle de ~3 milliards de paramètres directement dans iOS<a class="cite" data-cite="1" href="#source-1">1</a> ; Google a publié Gemma 3n, taillé pour tourner sur 2&nbsp;Go de RAM<a class="cite" data-cite="4" href="#source-4">4</a> ; Microsoft embarque Phi-Silica dans chaque Copilot+ PC<a class="cite" data-cite="6" href="#source-6">6</a> ; Meta a poussé Llama 3.2 1B/3B sur Qualcomm et MediaTek dès le premier jour<a class="cite" data-cite="10" href="#source-10">10</a>.</p>
+
+      <p>Le récit dominant présente cette course comme une affaire de modèles : qui a le plus petit, le plus malin, le plus rapide. C'est une erreur de cadrage. <mark>La contrainte porteuse de l'IA embarquée n'est pas le calcul, c'est la mémoire.</mark> Un téléphone haut de gamme dispose de bien assez de <span class="term" data-tooltip="TOPS — Tera-Operations Per Second : mesure de capacité de calcul crête d'un accélérateur. Un chiffre marketing qui ne prédit pas le débit réel d'un LLM, plafonné par la mémoire.">TOPS</span> pour faire tourner un modèle de 3&nbsp;milliards de paramètres. Ce qu'il n'a pas, c'est la RAM pour y loger les poids, le cache d'attention et les activations <strong>en même temps que le système d'exploitation et l'application hôte</strong>. Tout l'art de l'IA embarquée consiste à tenir dans ce budget d'octets. Et quand on n'y tient pas — ce qui reste le cas pour la majorité des requêtes utiles — la vraie architecture 2026 n'est pas de renoncer, mais d'<strong>escalader vers le cloud de façon vérifiable</strong>.</p>
+
+      <p>Ce dossier prend le problème par la contrainte, pas par le modèle. Il montre pourquoi le mur mémoire commande tout le reste, quels leviers le repoussent (quantification, astuces d'architecture, silicium dédié), et pourquoi la frontière décisive de 2026 est celle du routage device↔cloud.</p>
+
+      <section>
+      <h2 id="mem-1">1. Le mur mémoire de l'appareil</h2>
+
+      <p>Un modèle de langage qui décode du texte est, sur un appareil, une opération <strong>limitée par la bande passante mémoire</strong>, pas par le calcul. À chaque token généré, il faut relire l'intégralité des poids du modèle depuis la RAM vers les unités de calcul. Un modèle de 3&nbsp;milliards de paramètres en <span class="term" data-tooltip="FP16 — virgule flottante 16 bits, le format typique d'entraînement et d'inférence non compressée. 2 octets par poids.">FP16</span> pèse ~6&nbsp;Go ; le lire une fois par token, à la <span class="term" data-tooltip="Bande passante mémoire — débit auquel les données transitent entre la RAM et les unités de calcul (Go/s). Sur mobile, ~50-120 Go/s : c'est elle, et non les TOPS, qui plafonne la génération.">bande passante mémoire</span> d'un SoC mobile (de l'ordre de 50 à 120&nbsp;Go/s), plafonne mécaniquement le débit — bien avant que les TOPS du NPU ne soient saturés<a class="cite" data-cite="12" href="#source-12">12</a>. <mark>Sur l'appareil, l'octet est la ressource rare, pas le FLOP.</mark></p>
+
+      <p>Le budget est encore plus serré qu'il n'y paraît, parce que le modèle ne tourne pas seul. La RAM d'un appareil est <strong>unifiée</strong> : le système d'exploitation, l'application hôte, le tampon graphique, les poids du modèle, le <span class="term" data-tooltip="KV-cache — cache clé-valeur de l'attention. Il mémorise les états des tokens déjà vus pour éviter de les recalculer ; son empreinte croît linéairement avec la longueur du contexte.">cache clé-valeur</span> de l'attention (<em>KV-cache</em>, qui croît avec la longueur du contexte) et les activations intermédiaires se partagent le même pool. Un flagship de 2026 embarque 8 à 16&nbsp;Go de RAM ; iOS ou Android en réservent une large part ; l'enveloppe réellement allouable à un modèle sans faire tuer l'application par le système tourne autour de <strong>2 à 4&nbsp;Go</strong><a class="cite" data-cite="12" href="#source-12">12</a>. C'est cette enveloppe — et non la taille théorique du modèle — qui définit ce qui est faisable (voir Schéma&nbsp;1).</p>
+
+      <figure class="figure" id="fig-01">
+        <!--INLINE-SVG:01-->
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-01" title="Lien direct vers ce schéma">¶</a> <em>Schéma 1 — Le mur mémoire de l'appareil. Ce n'est pas la taille du modèle qui décide, mais l'enveloppe de RAM allouable une fois l'OS et l'application servis : seul un modèle en 4 bits y tient.</em></figcaption>
+      </figure>
+
+      <p>D'où une arithmétique simple et impitoyable. Un modèle de 3&nbsp;milliards de paramètres : en FP16 (16&nbsp;bits/poids) pèse ~6&nbsp;Go → hors budget ; en INT8 (8&nbsp;bits) pèse ~3&nbsp;Go → à la limite haute, KV-cache compris c'est déjà trop ; en INT4 (4&nbsp;bits) pèse ~1,5&nbsp;Go → ça passe, avec de la marge pour le KV-cache et l'app.</p>
+
+      <p>Autrement dit, <strong>aucun modèle utile ne tient sur l'appareil sans compression agressive</strong>. La quantification n'est pas une optimisation optionnelle : c'est le prix d'entrée. Tout le reste — les astuces d'architecture, le silicium dédié, le routage hybride — se construit par-dessus ce constat.</p>
+      </section>
+
+      <section>
+      <h2 id="mem-2">2. La quantification, levier premier</h2>
+
+      <p><span class="term" data-tooltip="Quantification — réduction du nombre de bits par poids (16 → 8 → 4 → ternaire), qui divise d'autant l'empreinte mémoire au prix d'une perte de précision.">Quantifier</span> un modèle, c'est réduire le nombre de bits utilisés pour représenter chaque poids. L'échelle est directe : FP16 → INT8 divise l'empreinte par 2, INT8 → INT4 encore par 2, soit un facteur 8 entre le format d'entraînement (FP16/BF16) et le format embarqué courant<a class="cite" data-cite="13" href="#source-13">13</a>. C'est le levier qui fait passer un 3B de 6&nbsp;Go à 1,5&nbsp;Go — de l'infaisable au faisable (voir Schéma&nbsp;2).</p>
+
+      <figure class="figure" id="fig-02">
+        <!--INLINE-SVG:02-->
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-02" title="Lien direct vers ce schéma">¶</a> <em>Schéma 2 — L'échelle de quantification et sa falaise. Compresser divise l'empreinte, mais la qualité s'effondre sous 4 bits — sauf à réentraîner (QAT) ou à entraîner nativement en basse précision.</em></figcaption>
+      </figure>
+
+      <p>Deux familles de méthodes coexistent, et la distinction est structurante.</p>
+
+      <p>La <span class="term" data-tooltip="PTQ — Post-Training Quantization : on compresse un modèle déjà entraîné, sans le réentraîner. Bon marché, mais s'effondre aux compressions extrêmes.">quantification post-entraînement (PTQ)</span> compresse un modèle déjà entraîné, sans le réentraîner. C'est la voie dominante en pratique parce qu'elle est bon marché<a class="cite" data-cite="13" href="#source-13">13</a>. Trois formats se sont imposés : <span class="term" data-tooltip="GGUF — format de fichier de llama.cpp et Ollama, avec des paliers de quantification Q2_K à Q8_0 ; standard de facto pour l'inférence locale CPU+GPU.">GGUF</span>, le format de <em>llama.cpp</em> et d'Ollama, avec ses paliers Q2_K à Q8_0 — le schéma <strong>Q4_K_M</strong> (4&nbsp;bits, à grain fin) est le standard de facto pour le mobile ; <strong>AWQ</strong> (<em>Activation-aware Weight Quantization</em>) qui protège les poids saillants et retient 97-99&nbsp;% de la qualité en INT4 ; et <strong>GPTQ</strong>, qui quantifie couche par couche en minimisant l'erreur locale.</p>
+
+      <p>La <span class="term" data-tooltip="QAT — Quantization-Aware Training : on simule la perte de précision pendant l'entraînement pour que le modèle apprenne à y résister. Plus cher, mais bien meilleur en dessous de 4 bits.">quantification pendant l'entraînement (QAT)</span> simule la perte de précision au fil de l'entraînement, si bien que le modèle apprend à y résister. Elle coûte plus cher mais récupère 2 à 5 points de qualité aux compressions extrêmes<a class="cite" data-cite="13" href="#source-13">13</a>. C'est la voie retenue par les acteurs qui contrôlent tout le pipeline : Apple entraîne son modèle on-device en <strong>QAT à 2&nbsp;bits par poids</strong>, avec la table d'<em>embeddings</em> à 4&nbsp;bits et le KV-cache à 8&nbsp;bits, puis récupère la qualité perdue via des adaptateurs <span class="term" data-tooltip="LoRA — Low-Rank Adaptation : petits adaptateurs de faible rang greffés sur un modèle gelé, ici utilisés pour récupérer la qualité perdue à la quantification.">LoRA</span><a class="cite" data-cite="1" href="#source-1">1</a>. Meta combine <strong>QAT + LoRA</strong> et <strong>SpinQuant</strong> pour ses Llama 3.2 quantifiés, avec −56&nbsp;% de taille et −41&nbsp;% de mémoire<a class="cite" data-cite="9" href="#source-9">9</a>.</p>
+
+      <p>La quantification n'est pas gratuite. <mark>La perte de précision ne frappe pas uniformément : le raisonnement mathématique, la logique formelle et la génération de code y sont bien plus sensibles que le résumé ou la conversation ouverte.</mark><a class="cite" data-cite="13" href="#source-13">13</a> Un 4-bit qui « passe » très bien en assistant de rédaction peut dégrader silencieusement sur du code. Mesurer la qualité d'un modèle quantifié sur la mauvaise tâche donne une confiance trompeuse.</p>
+      </section>
+
+      <section>
+      <h2 id="mem-3">3. Les astuces d'architecture</h2>
+
+      <p>La quantification a une limite : en dessous d'un certain seuil de bits, la qualité s'effondre quelle que soit la méthode. Pour aller plus loin, il faut changer non pas la précision des poids mais <strong>la façon dont le modèle occupe la mémoire</strong>. Trois idées se sont imposées en 2025-2026 (voir Schéma&nbsp;3).</p>
+
+      <figure class="figure" id="fig-03">
+        <!--INLINE-SVG:03-->
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-03" title="Lien direct vers ce schéma">¶</a> <em>Schéma 3 — Trois leviers pour tenir dans le budget : compresser après coup (quantification), réorganiser l'occupation mémoire (MatFormer, Per-Layer Embedding), ou entraîner directement à basse précision (ternaire natif).</em></figcaption>
+      </figure>
+
+      <p>Le <span class="term" data-tooltip="MatFormer — Matryoshka Transformer : un modèle qui imbrique des sous-modèles plus petits, exécutables seuls sans activer les couches englobantes. Un jeu de poids, plusieurs points de fonctionnement.">MatFormer</span> (transformer matriochka). Gemma 3n imbrique des sous-modèles plus petits à l'intérieur d'un modèle plus grand, comme des poupées russes<a class="cite" data-cite="5" href="#source-5">5</a>. On peut exécuter le seul cœur — le plus petit modèle imbriqué — sans activer les paramètres englobants, ce qui réduit à la volée le calcul, la latence et l'énergie selon la difficulté de la requête.</p>
+
+      <p>Le <span class="term" data-tooltip="Per-Layer Embedding (PLE) — technique de Gemma 3n : les tables d'embeddings sont déchargées vers la RAM lente et réinjectées couche par couche, sortant du budget de mémoire de travail.">Per-Layer Embedding (PLE)</span>. Les tables d'<em>embeddings</em> sont volumineuses et peu utilisées à chaque instant. Gemma 3n les <strong>décharge de la mémoire de travail rapide vers la RAM plus lente</strong>, les régénère et les réinjecte couche par couche au fil de l'inférence<a class="cite" data-cite="4" href="#source-4">4</a>. Le résultat est spectaculaire : les modèles E2B et E4B ont un décompte brut de 5 et 8&nbsp;milliards de paramètres, mais tournent avec l'empreinte de modèles 2B et 4B classiques — <strong>aussi peu que 2&nbsp;Go (E2B) et 3&nbsp;Go (E4B)</strong><a class="cite" data-cite="4" href="#source-4">4</a>. Ce qui compte n'est pas le nombre de paramètres, mais combien d'octets sont résidents en mémoire de travail à un instant donné. Apple joue la même partition avec le <strong>partage du KV-cache</strong> entre couches<a class="cite" data-cite="1" href="#source-1">1</a>.</p>
+
+      <p>Le <span class="term" data-tooltip="Ternaire natif — poids qui ne prennent que trois valeurs {−1, 0, +1}, soit log₂(3) ≈ 1,58 bit, entraînés directement ainsi (BitNet) plutôt que compressés après coup.">natif ternaire</span>. BitNet renverse la logique : au lieu d'entraîner en haute précision puis de compresser, il <strong>entraîne directement des poids ternaires</strong> {−1, 0, +1}, soit log₂(3) ≈ 1,58&nbsp;bit par poids<a class="cite" data-cite="7" href="#source-7">7</a>. Le zéro autorise une parcimonie apprise que les modèles 1-bit purs n'ont pas. BitNet b1.58 2B4T est le premier modèle natif 1,58-bit à 2&nbsp;milliards de paramètres entraîné sur 4&nbsp;000&nbsp;milliards de tokens<a class="cite" data-cite="7" href="#source-7">7</a>. Des poids ternaires remplacent les multiplications par des additions, ce qui donne une inférence CPU sans GPU : le framework <em>bitnet.cpp</em> affiche des accélérations de 1,37× à 6,17× et <strong>jusqu'à −82&nbsp;% d'énergie</strong><a class="cite" data-cite="8" href="#source-8">8</a>. <mark>Le natif ternaire est le seul des trois leviers qui attaque simultanément la mémoire, l'énergie et la dépendance au GPU.</mark></p>
+      </section>
+
+      <section>
+      <h2 id="mem-4">4. Le NPU et le silicium</h2>
+
+      <p>Faire tenir le modèle en mémoire ne suffit pas : encore faut-il l'exécuter sans vider la batterie ni monopoliser le processeur. C'est le rôle du <span class="term" data-tooltip="NPU — Neural Processing Unit : accélérateur dédié aux réseaux de neurones, optimisé pour l'efficacité énergétique plutôt que la polyvalence.">NPU</span>, un accélérateur dédié optimisé pour l'efficacité énergétique. L'argument est chiffré : Phi-Silica tourne sur le NPU Hexagon des Copilot+ PC à ~650&nbsp;tokens/seconde pour <strong>environ 1,5&nbsp;watt</strong>, en libérant CPU et GPU pour le reste<a class="cite" data-cite="6" href="#source-6">6</a>. Un modèle exécuté sur CPU ferait chauffer l'appareil et fondrait la batterie ; sur NPU, il devient une fonction de fond soutenable (voir Schéma&nbsp;4).</p>
+
+      <figure class="figure" id="fig-04">
+        <!--INLINE-SVG:04-->
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-04" title="Lien direct vers ce schéma">¶</a> <em>Schéma 4 — Le NPU, la mémoire et le pipeline hétérogène. Trois unités (CPU, GPU, NPU) se partagent une mémoire unifiée ; le TOPS vend le silicium, mais c'est la bande passante mémoire qui décide du débit.</em></figcaption>
+      </figure>
+
+      <p>Mais <strong>le TOPS n'est pas la performance</strong>. Qualcomm annonce 45&nbsp;TOPS pour le Hexagon des Snapdragon X<a class="cite" data-cite="11" href="#source-11">11</a> ; ce chiffre mesure une capacité de calcul crête, pas le débit réel d'un LLM. Comme établi en section&nbsp;1, le décodage est limité par la bande passante mémoire : un NPU à 45&nbsp;TOPS relié à une RAM lente reste bridé par la RAM. <mark>Le TOPS vend le silicium ; la bande passante mémoire décide du débit.</mark></p>
+
+      <p>Le paysage 2026 s'est fragmenté : <strong>Apple</strong> a cessé de publier un chiffre de TOPS pour le Neural Engine avec le M5 (octobre 2025) et route désormais une large part de l'IA on-device via des <strong>accélérateurs neuronaux intégrés à chaque cœur GPU</strong><a class="cite" data-cite="11" href="#source-11">11</a> ; <strong>Qualcomm</strong> pousse le Hexagon à 45&nbsp;TOPS et collabore avec Microsoft sur Windows AI Foundry<a class="cite" data-cite="6" href="#source-6">6</a> ; <strong>MediaTek</strong> et les partenaires Arm sont ciblés dès le premier jour par Meta pour Llama 3.2<a class="cite" data-cite="10" href="#source-10">10</a>. En pratique, l'inférence est <strong>hétérogène</strong> : un même modèle répartit ses opérations entre CPU, GPU et NPU, la mémoire unifiée servant de substrat commun<a class="cite" data-cite="12" href="#source-12">12</a>. Le NPU n'est pas un remplaçant mais un membre d'un pipeline.</p>
+      </section>
+
+      <section>
+      <h2 id="mem-5">5. Le paysage des modèles embarqués 2026</h2>
+
+      <p>En croisant contrainte mémoire, technique de compression et cible matérielle, une petite famille de modèles a émergé comme état de l'art embarqué. Elle tourne autour d'un point de convergence remarquable : <strong>~2 à 4&nbsp;milliards de paramètres, compressés à 2-4 bits, pour une empreinte de 1 à 3&nbsp;Go</strong> (voir Schéma&nbsp;5).</p>
+
+      <figure class="figure" id="fig-05">
+        <!--INLINE-SVG:05-->
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-05" title="Lien direct vers ce schéma">¶</a> <em>Schéma 5 — Le paysage des modèles embarqués 2026. La contrainte mémoire dessine une convergence vers ~3 Md de paramètres ; la stratégie de compression (QAT vs PTQ vs natif) trahit qui contrôle le pipeline.</em></figcaption>
+      </figure>
+
+      <p>Deux enseignements. D'abord, <strong>la convergence vers ~3B n'est pas un hasard</strong> : c'est le plus gros modèle qui tient dans l'enveloppe mémoire allouable après quantification 2-4 bits. La contrainte de la section&nbsp;1 dessine directement la taille des modèles. Ensuite, <strong>la stratégie de compression trahit le contrôle du pipeline</strong> : Apple et Meta, qui maîtrisent l'entraînement, misent sur le QAT ; l'écosystème ouvert (Qwen, Llama en GGUF) sur la PTQ ; Microsoft sur la distillation ciblée matériel. Apple revendique d'ailleurs que son modèle ~3B dépasse Phi-3-mini, Mistral-7B, Gemma-7B et Llama-3-8B — des modèles pourtant plus gros<a class="cite" data-cite="1" href="#source-1">1</a>.</p>
+      </section>
+
+      <section>
+      <h2 id="mem-6">6. L'architecture hybride device↔cloud</h2>
+
+      <p>Le point le plus mal compris de l'IA embarquée est celui-ci : <mark>la réponse de 2026 n'est pas « tout sur l'appareil », c'est le routage.</mark> Un modèle de 3B, même excellent, ne remplace pas un modèle frontière pour les requêtes complexes. L'architecture réellement déployée garde le petit modèle local pour ce qu'il fait bien — latence nulle, hors-ligne, confidentialité — et <strong>escalade vers le cloud le reste</strong>, mais sous une contrainte inédite : que cette escalade soit <strong>vérifiablement privée</strong> (voir Schéma&nbsp;6).</p>
+
+      <figure class="figure" id="fig-06">
+        <!--INLINE-SVG:06-->
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-06" title="Lien direct vers ce schéma">¶</a> <em>Schéma 6 — La frontière de routage device↔cloud. Le petit modèle local traite ce qu'il peut ; au-delà, l'escalade vers Private Cloud Compute est chiffrée vers des nœuds attestés et sans état.</em></figcaption>
+      </figure>
+
+      <p>Apple a posé le patron de référence avec <strong>Private Cloud Compute (PCC)</strong>. Quand une requête dépasse les capacités du modèle on-device, elle part vers des serveurs en silicium Apple conçus autour de deux principes : ils sont <strong>sans état</strong> (les données ne sont jamais stockées, utilisées seulement pour la requête en cours) et leur comportement est <strong>cryptographiquement vérifiable</strong><a class="cite" data-cite="3" href="#source-3">3</a>. Le mécanisme est précis : l'appareil chiffre la charge utile uniquement vers les clés publiques des nœuds PCC dont les mesures <span class="term" data-tooltip="Attestation — preuve cryptographique qu'un serveur exécute bien une image logicielle donnée, publiée dans un journal de transparence public que l'appareil peut vérifier.">attestées</span> correspondent à une image logicielle publiée dans un <strong>journal de transparence</strong> public<a class="cite" data-cite="3" href="#source-3">3</a>. L'utilisateur n'a plus à <em>faire confiance</em> au fournisseur cloud : il peut <em>vérifier</em> qu'aucun logiciel non attesté ne verra ses données.</p>
+
+      <p>La frontière de décision — <strong>quand rester local, quand escalader</strong> — arbitre quatre critères : la <strong>complexité</strong> de la requête (un résumé court reste local ; un raisonnement multi-étapes escalade) ; la <strong>confidentialité</strong> (les données les plus sensibles restent sur l'appareil par défaut) ; l'<strong>état réseau</strong> (hors-ligne force le local) ; le <strong>budget énergétique</strong> (une longue génération sur NPU peut coûter plus de batterie qu'un aller-retour réseau). Ce routage est le véritable produit. Le petit modèle local n'est pas une fin en soi : c'est le premier étage d'une pile où la confidentialité devient une propriété <strong>architecturale et vérifiable</strong>, pas une promesse contractuelle<a class="cite" data-cite="11" href="#source-11">11</a>.</p>
+      </section>
+
+      <section>
+      <h2 id="mem-7">7. Trajectoires 2026-2028</h2>
+
+      <p>Quatre lignes de force se dessinent (voir Schéma&nbsp;7).</p>
+
+      <figure class="figure" id="fig-07">
+        <!--INLINE-SVG:07-->
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-07" title="Lien direct vers ce schéma">¶</a> <em>Schéma 7 — Quatre lignes de force, 2026-2028 : natif ternaire généralisé, NPU comme unité première, agents on-device, et confidentialité comme argument produit et levier réglementaire.</em></figcaption>
+      </figure>
+
+      <p><strong>Le natif ternaire se généralise.</strong> BitNet a montré qu'entraîner directement en 1,58&nbsp;bit bat la compression post-hoc sur les trois axes qui comptent à l'edge : mémoire, énergie, indépendance au GPU<a class="cite" data-cite="7" href="#source-7">7</a><a class="cite" data-cite="8" href="#source-8">8</a>. Attendre des modèles ternaires natifs plus gros et multimodaux, avec des kernels CPU dédiés.</p>
+
+      <p><strong>Le NPU devient l'unité première.</strong> Le brouillage Apple entre Neural Engine et accélérateurs GPU<a class="cite" data-cite="11" href="#source-11">11</a>, la course aux TOPS de Qualcomm, l'intégration Windows AI Foundry<a class="cite" data-cite="6" href="#source-6">6</a> convergent vers un SoC où l'inférence neuronale est un citoyen de première classe — avec la bande passante mémoire, et non le TOPS, comme prochain champ de bataille.</p>
+
+      <p><strong>Les agents on-device arrivent.</strong> Le passage d'un chatbot local à un agent local — qui appelle des outils, lit l'écran, enchaîne des étapes — change la donne mémoire : le KV-cache d'un contexte agentique long devient le poste dominant, ce qui rejoint les problématiques de compaction et de gestion du cache déjà critiques côté datacenter.</p>
+
+      <p><strong>La confidentialité devient argument produit et levier réglementaire.</strong> Le traitement local est, du point de vue du RGPD, une forme de <strong>minimisation</strong> : ce qui ne quitte jamais l'appareil n'est pas un transfert de données. Combiné à l'attestation vérifiable de PCC, cela transforme la privacy d'une clause de confiance en une propriété démontrable. <mark>L'IA embarquée n'est pas seulement une optimisation technique : c'est une architecture de la confiance.</mark></p>
+
+      <p>Le fil rouge de ce dossier tient en une phrase : <strong>l'IA embarquée est un problème de budget mémoire, pas de modèle.</strong> La contrainte d'octets sur l'appareil dessine la taille des modèles (~3B), impose la quantification (2-4 bits), justifie les astuces d'architecture et le silicium dédié, et — quand le budget ne suffit pas — commande une architecture hybride où le vrai produit est le <strong>routage vérifiable</strong> device↔cloud. Qui raisonne en « quel modèle » se trompe de question ; la bonne est « combien d'octets, où, et selon quelle frontière de confiance ».</p>
+      </section>
+
+      <p class="report-outro"><em>Format co-écrit avec l'aide d'une IA · 6 juillet 2026 — Mathieu Guglielmino</em></p>
