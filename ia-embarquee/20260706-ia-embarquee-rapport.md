@@ -25,7 +25,9 @@ Autrement dit, **aucun modèle utile ne tient sur l'appareil sans compression ag
 
 ## 2. La quantification, levier premier
 
-Quantifier un modèle, c'est réduire le nombre de bits utilisés pour représenter chaque poids. L'échelle est directe : FP16 → INT8 divise l'empreinte par 2, INT8 → INT4 encore par 2, soit un facteur 8 entre le format d'entraînement (FP16/BF16) et le format embarqué courant[^13]. C'est le levier qui fait passer un 3B de 6 Go à 1,5 Go — de l'infaisable au faisable. [SCHEMA-02]
+Quantifier un modèle, c'est réduire le nombre de bits utilisés pour représenter chaque poids. L'échelle est directe : FP16 → INT8 divise l'empreinte par 2, INT8 → INT4 encore par 2, soit un facteur 8 entre le format d'entraînement (FP16/BF16) et le format embarqué courant[^13]. C'est le levier qui fait passer un 3B de 6 Go à 1,5 Go — de l'infaisable au faisable (voir Schéma 2).
+
+![L'échelle de quantification et sa falaise|width=1200](images/20260706-02-echelle-quantification.svg)
 
 Deux familles de méthodes coexistent, et la distinction est structurante.
 
