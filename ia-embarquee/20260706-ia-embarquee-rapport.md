@@ -70,7 +70,9 @@ En pratique, l'inférence est **hétérogène** : un même modèle répartit ses
 
 ## 5. Le paysage des modèles embarqués 2026
 
-En croisant contrainte mémoire, technique de compression et cible matérielle, une petite famille de modèles a émergé comme état de l'art embarqué. Elle tourne autour d'un point de convergence remarquable : **~2 à 4 milliards de paramètres, compressés à 2-4 bits, pour une empreinte de 1 à 3 Go**. [SCHEMA-05]
+En croisant contrainte mémoire, technique de compression et cible matérielle, une petite famille de modèles a émergé comme état de l'art embarqué. Elle tourne autour d'un point de convergence remarquable : **~2 à 4 milliards de paramètres, compressés à 2-4 bits, pour une empreinte de 1 à 3 Go** (voir Schéma 5).
+
+![Le paysage des modèles embarqués 2026|width=1200](images/20260706-05-matrice-modeles.svg)
 
 - **Apple Foundation (~3B, 2-bit QAT)** — livré dans iOS via le *Foundation Models framework*, ~1 Go d'empreinte sur Apple Silicon grâce au 2-bit QAT, avec adaptateurs LoRA et KV-cache partagé[^1][^2]. Apple revendique qu'il dépasse Phi-3-mini, Mistral-7B, Gemma-7B et Llama-3-8B — des modèles pourtant plus gros[^1].
 - **Gemma 3n E2B / E4B** — MatFormer + PLE, 2 Go / 3 Go d'empreinte pour des décomptes bruts de 5B/8B ; multimodal, taillé mobile[^4].
