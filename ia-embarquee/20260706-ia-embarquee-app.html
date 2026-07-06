@@ -648,15 +648,22 @@
     </nav>
 
     <main id="report">
-<h1 class="report-title">Le mélange d'experts</h1>
-      <p class="lead">Le mélange d'experts découple la <strong>capacité</strong> d'un modèle de son <strong>coût de calcul</strong> — mais il ne supprime pas la difficulté : il la déplace de l'architecture vers les systèmes distribués.</p>
-      <p class="byline"><em>3 juillet 2026 — Mathieu Guglielmino</em></p>
+<h1 class="report-title">L'IA embarquée : le budget mémoire commande</h1>
+      <p class="lead">L'IA embarquée ne se gagne pas au niveau du <strong>modèle</strong> mais au niveau du <strong>budget mémoire de l'appareil</strong> — et l'architecture réellement déployée en 2026 n'est pas « tout local » mais un routage vérifiable entre l'appareil et le cloud.</p>
+      <p class="byline"><em>6 juillet 2026 — Mathieu Guglielmino</em></p>
 
-      <p>Pendant presque une décennie, l'architecture des grands modèles de langage a obéi à un dogme simple : <em>chaque paramètre traite chaque token</em>. Un transformer <span class="term" data-tooltip="Modèle dense : architecture où la totalité des paramètres est mobilisée pour chaque token, par opposition à un modèle creux (sparse) qui n'en active qu'une fraction.">dense</span> de 70 milliards de paramètres mobilise ses 70 milliards de poids pour produire chaque mot, qu'il s'agisse de conjuguer un verbe ou de résoudre une intégrale. Cette uniformité a une conséquence économique brutale : la capacité (ce que le modèle <em>sait</em>) et le coût (ce qu'il <em>dépense</em> par token) sont soudés. Vouloir plus de connaissance, c'est payer plus de calcul, linéairement, sans échappatoire.</p>
+      <p>Depuis dix-huit mois, une bascule discrète s'est opérée dans la façon dont les modèles de langage atteignent les utilisateurs. La question n'est plus seulement « quel est le meilleur modèle dans le cloud », mais « qu'est-ce qui peut tourner <strong>sur l'appareil que vous tenez en main</strong>, sans réseau, sans envoyer vos données ailleurs, sans vider la batterie ». Apple a livré un modèle de ~3 milliards de paramètres directement dans iOS<a class="cite" data-cite="1" href="#source-1">1</a> ; Google a publié Gemma 3n, taillé pour tourner sur 2&nbsp;Go de RAM<a class="cite" data-cite="4" href="#source-4">4</a> ; Microsoft embarque Phi-Silica dans chaque Copilot+ PC<a class="cite" data-cite="6" href="#source-6">6</a> ; Meta a poussé Llama 3.2 1B/3B sur Qualcomm et MediaTek dès le premier jour<a class="cite" data-cite="10" href="#source-10">10</a>.</p>
 
-      <p>Le mélange d'experts — <em>Mixture of Experts</em>, MoE — est le levier qui brise cette soudure. L'idée, formalisée à l'échelle moderne par Noam Shazeer et ses collègues en 2017<a class="cite" data-cite="1" href="#source-1">1</a>, tient en une phrase : remplacer une grosse couche dense par un <em>banc</em> de sous-réseaux spécialisés, les <span class="term" data-tooltip="Expert : un sous-réseau (typiquement une couche feed-forward) parmi plusieurs dans une couche MoE ; seuls quelques experts sont activés par token.">experts</span>, et n'en activer qu'une poignée pour chaque token. Un modèle peut alors porter 671 milliards de paramètres tout en n'en calculant que 37 milliards à la fois — c'est exactement le profil de DeepSeek-V3<a class="cite" data-cite="11" href="#source-11">11</a>. La capacité gonfle ; le calcul reste sobre.</p>
+      <p>Le récit dominant présente cette course comme une affaire de modèles : qui a le plus petit, le plus malin, le plus rapide. C'est une erreur de cadrage. <mark>La contrainte porteuse de l'IA embarquée n'est pas le calcul, c'est la mémoire.</mark> Un téléphone haut de gamme dispose de bien assez de <span class="term" data-tooltip="TOPS — Tera-Operations Per Second : mesure de capacité de calcul crête d'un accélérateur. Un chiffre marketing qui ne prédit pas le débit réel d'un LLM, plafonné par la mémoire.">TOPS</span> pour faire tourner un modèle de 3&nbsp;milliards de paramètres. Ce qu'il n'a pas, c'est la RAM pour y loger les poids, le cache d'attention et les activations <strong>en même temps que le système d'exploitation et l'application hôte</strong>. Tout l'art de l'IA embarquée consiste à tenir dans ce budget d'octets. Et quand on n'y tient pas — ce qui reste le cas pour la majorité des requêtes utiles — la vraie architecture 2026 n'est pas de renoncer, mais d'<strong>escalader vers le cloud de façon vérifiable</strong>.</p>
 
-      <p><mark>Mais le mélange d'experts ne fait pas disparaître la difficulté ; il la déplace.</mark> Là où le modèle dense n'avait qu'un problème d'algèbre linéaire, le modèle creux hérite de trois problèmes nouveaux, tous vicieux : <em>qui</em> décide quel token va à quel expert (le routage), <em>comment</em> empêcher le routeur de s'effondrer sur ses favoris (l'équilibrage de charge), et <em>où</em> placer physiquement des experts qui ne tiennent plus sur une seule puce (le parallélisme d'experts). Le troisième est décisif : à grande échelle, un modèle MoE cesse d'être un objet d'architecture pour devenir un objet de systèmes distribués, gouverné par la topologie du réseau autant que par la fonction de perte. Ce rapport suit cette bascule, de la couche élémentaire jusqu'aux modèles de frontière de 2026.</p>
+      <p>Ce dossier prend le problème par la contrainte, pas par le modèle. Il montre pourquoi le mur mémoire commande tout le reste, quels leviers le repoussent (quantification, astuces d'architecture, silicium dédié), et pourquoi la frontière décisive de 2026 est celle du routage device↔cloud.</p>
+
+      <section>
+      <h2 id="mem-1">1. Le mur mémoire de l'appareil</h2>
+
+      <p>Un modèle de langage qui décode du texte est, sur un appareil, une opération <strong>limitée par la bande passante mémoire</strong>, pas par le calcul. À chaque token généré, il faut relire l'intégralité des poids du modèle depuis la RAM vers les unités de calcul. Un modèle de 3&nbsp;milliards de paramètres en <span class="term" data-tooltip="FP16 — virgule flottante 16 bits, le format typique d'entraînement et d'inférence non compressée. 2 octets par poids.">FP16</span> pèse ~6&nbsp;Go ; le lire une fois par token, à la <span class="term" data-tooltip="Bande passante mémoire — débit auquel les données transitent entre la RAM et les unités de calcul (Go/s). Sur mobile, ~50-120 Go/s : c'est elle, et non les TOPS, qui plafonne la génération.">bande passante mémoire</span> d'un SoC mobile (de l'ordre de 50 à 120&nbsp;Go/s), plafonne mécaniquement le débit — bien avant que les TOPS du NPU ne soient saturés<a class="cite" data-cite="12" href="#source-12">12</a>. <mark>Sur l'appareil, l'octet est la ressource rare, pas le FLOP.</mark></p>
+
+      <p>Le budget est encore plus serré qu'il n'y paraît, parce que le modèle ne tourne pas seul. La RAM d'un appareil est <strong>unifiée</strong> : le système d'exploitation, l'application hôte, le tampon graphique, les poids du modèle, le <span class="term" data-tooltip="KV-cache — cache clé-valeur de l'attention. Il mémorise les états des tokens déjà vus pour éviter de les recalculer ; son empreinte croît linéairement avec la longueur du contexte.">cache clé-valeur</span> de l'attention (<em>KV-cache</em>, qui croît avec la longueur du contexte) et les activations intermédiaires se partagent le même pool. Un flagship de 2026 embarque 8 à 16&nbsp;Go de RAM ; iOS ou Android en réservent une large part ; l'enveloppe réellement allouable à un modèle sans faire tuer l'application par le système tourne autour de <strong>2 à 4&nbsp;Go</strong><a class="cite" data-cite="12" href="#source-12">12</a>. C'est cette enveloppe — et non la taille théorique du modèle — qui définit ce qui est faisable (voir Schéma&nbsp;1).</p>
 
       <figure class="figure" id="fig-01">
         <svg data-schema-id="schema-01" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
@@ -672,77 +679,85 @@
 
   <!-- HEADER -->
   <text x="60" y="55" class="mono" font-size="13" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 01</text>
-  <text x="60" y="95" class="display" font-size="28" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">La bascule capacité / calcul</text>
-  <text x="60" y="123" class="display" font-size="18" font-style="italic" fill="#5A5A5A">Le mélange d'experts sépare ce que le modèle sait (paramètres totaux) de ce qu'il dépense par token (paramètres activés)</text>
+  <text x="60" y="95" class="display" font-size="28" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Le mur mémoire de l'appareil</text>
+  <text x="60" y="123" class="display" font-size="18" font-style="italic" fill="#5A5A5A">Ce n'est pas la taille du modèle qui décide, mais l'enveloppe de RAM allouable une fois l'OS et l'app servis</text>
   <line x1="60" y1="145" x2="1140" y2="145" stroke="#E5E1D8" stroke-width="0.5"/>
 
-  <!-- Column headers -->
-  <text x="300" y="185" class="display" font-size="18" font-style="italic" fill="#5A5A5A" text-anchor="middle">Modèle dense</text>
-  <text x="880" y="185" class="display" font-size="18" font-style="italic" fill="#5A5A5A" text-anchor="middle">Modèle creux (MoE)</text>
-  <line x1="600" y1="170" x2="600" y2="690" stroke="#E5E1D8" stroke-width="1" stroke-dasharray="2 4"/>
-
-  <!-- DENSE column -->
-  <g class="interactive" data-card="dense" tabindex="0" role="button" aria-label="Le modèle dense — cliquez pour les détails">
-    <rect x="120" y="210" width="360" height="230" rx="3" fill="#B7332C" fill-opacity="0.14" stroke="#B7332C" stroke-width="1.5"/>
-    <text x="300" y="250" class="body" font-size="13" font-weight="500" fill="#1A1A1A" text-anchor="middle">Tous les paramètres traitent chaque token</text>
-    <text x="300" y="322" class="display" font-size="40" font-weight="600" fill="#B7332C" text-anchor="middle">70 Md</text>
-    <text x="300" y="352" class="body" font-size="13" fill="#5A5A5A" text-anchor="middle">totaux = activés</text>
-    <text x="300" y="410" class="mono" font-size="14" font-weight="500" fill="#B7332C" text-anchor="middle">100 % actif</text>
+  <!-- RAM UNIFIÉE bar -->
+  <text x="60" y="195" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#5A5A5A">RAM UNIFIÉE D'UN FLAGSHIP — 12 Go partagés</text>
+  <g class="interactive" data-card="marge-os" tabindex="0" role="button" aria-label="OS et système — cliquez pour les détails">
+    <rect x="60" y="212" width="430" height="70" rx="3" fill="#1A1A1A" fill-opacity="0.82"/>
+    <text x="275" y="245" class="body" font-size="13" font-weight="500" fill="#FAF8F3" text-anchor="middle">Système d'exploitation</text>
+    <text x="275" y="266" class="mono" font-size="12" fill="#FAF8F3" text-anchor="middle" opacity="0.85">~5 Go réservés</text>
   </g>
-
-  <!-- CREUX column -->
-  <g class="interactive" data-card="creux" tabindex="0" role="button" aria-label="Le modèle creux — cliquez pour les détails">
-    <rect x="700" y="210" width="360" height="230" rx="3" fill="#1F5560" fill-opacity="0.07" stroke="#1F5560" stroke-width="1.5"/>
-    <text x="880" y="250" class="body" font-size="13" font-weight="500" fill="#1A1A1A" text-anchor="middle">Une fraction des paramètres par token</text>
-    <text x="880" y="322" class="display" font-size="40" font-weight="600" fill="#1F5560" text-anchor="middle">671 Md</text>
-    <text x="880" y="352" class="body" font-size="13" fill="#5A5A5A" text-anchor="middle">totaux (capacité)</text>
+  <g class="interactive" data-card="app-buffer" tabindex="0" role="button" aria-label="App et graphismes — cliquez pour les détails">
+    <rect x="494" y="212" width="230" height="70" rx="3" fill="#5A5A5A" fill-opacity="0.55"/>
+    <text x="609" y="245" class="body" font-size="13" font-weight="500" fill="#1A1A1A" text-anchor="middle">App + tampon</text>
+    <text x="609" y="266" class="mono" font-size="12" fill="#5A5A5A" text-anchor="middle">~3 Go</text>
   </g>
-  <!-- fraction active overlay -->
-  <g class="interactive" data-card="fraction-active" tabindex="0" role="button" aria-label="La fraction activée — cliquez pour les détails">
-    <rect x="724" y="382" width="126" height="42" rx="3" fill="#B7332C"/>
-    <text x="787" y="409" class="mono" font-size="14" font-weight="500" fill="#FAF8F3" text-anchor="middle">37 Md actifs</text>
-    <text x="990" y="402" class="body" font-size="13" fill="#5A5A5A" text-anchor="middle">≈ 5,5 %</text>
-    <text x="990" y="420" class="body" font-size="13" fill="#5A5A5A" text-anchor="middle">activé</text>
+  <g class="interactive" data-card="ram-totale" tabindex="0" role="button" aria-label="Enveloppe allouable au modèle — cliquez pour les détails">
+    <rect x="728" y="212" width="412" height="70" rx="3" fill="#1F5560" fill-opacity="0.12" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="934" y="243" class="body" font-size="13" font-weight="600" fill="#1F5560" text-anchor="middle">Enveloppe allouable au modèle</text>
+    <text x="934" y="266" class="mono" font-size="13" font-weight="600" fill="#1F5560" text-anchor="middle">≈ 2 – 4 Go</text>
   </g>
+  <!-- bracket under enveloppe -->
+  <path d="M728 292 L728 302 L1140 302 L1140 292" fill="none" stroke="#1F5560" stroke-width="1"/>
+  <text x="934" y="322" class="body" font-size="11" font-style="italic" fill="#5A5A5A" text-anchor="middle">Au-delà, le système tue l'application</text>
 
-  <!-- COMPARISON BARS -->
-  <g class="interactive" data-card="memoire-vs-flops" tabindex="0" role="button" aria-label="Mémoire contre FLOPs — cliquez pour les détails">
-    <rect x="120" y="480" width="940" height="180" rx="3" fill="#5A5A5A" fill-opacity="0.03" stroke="#B8B5AE" stroke-width="1.25" stroke-dasharray="2 3"/>
-    <text x="144" y="510" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#5A5A5A">EMPREINTE MÉMOIRE (poids résidents)</text>
-    <!-- memory dense -->
-    <text x="144" y="540" class="body" font-size="12" fill="#5A5A5A">dense</text>
-    <rect x="220" y="528" width="120" height="16" rx="2" fill="#B7332C" fill-opacity="0.5"/>
-    <!-- memory moe -->
-    <text x="144" y="566" class="body" font-size="12" fill="#5A5A5A">MoE</text>
-    <rect x="220" y="554" width="820" height="16" rx="2" fill="#1F5560" fill-opacity="0.5"/>
-    <text x="1030" y="566" class="mono" font-size="11" fill="#1F5560" text-anchor="end">×9,6</text>
+  <!-- Model scenarios -->
+  <text x="60" y="380" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#5A5A5A">EMPREINTE D'UN MODÈLE 3 Md SELON LA PRÉCISION — rapportée à l'enveloppe</text>
 
-    <text x="144" y="608" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#5A5A5A">CALCUL PAR TOKEN (FLOPs)</text>
-    <text x="144" y="636" class="body" font-size="12" fill="#5A5A5A">dense</text>
-    <rect x="220" y="624" width="120" height="16" rx="2" fill="#B7332C"/>
-    <text x="144" y="662" class="body" font-size="12" fill="#5A5A5A">MoE</text>
-    <rect x="220" y="650" width="64" height="16" rx="2" fill="#1F5560"/>
-    <text x="300" y="662" class="mono" font-size="11" fill="#1F5560">×0,5 — moins de calcul, plus de savoir</text>
+  <!-- scale reference: enveloppe max 4 Go maps to x 728..1140? Use own scale. 0 Go at x=200, 4 Go at x=760 -> but weights go to 6 Go. Use 1 Go = 140px from x=200 -->
+  <!-- allocatable zone shading 2-4 Go -->
+  <rect x="480" y="405" width="280" height="300" fill="#1F5560" fill-opacity="0.06"/>
+  <line x1="480" y1="405" x2="480" y2="705" stroke="#1F5560" stroke-width="0.75" stroke-dasharray="2 3"/>
+  <line x1="760" y1="405" x2="760" y2="705" stroke="#B7332C" stroke-width="1.25" stroke-dasharray="4 3"/>
+  <text x="620" y="425" class="body" font-size="11" font-style="italic" fill="#1F5560" text-anchor="middle">zone allouable</text>
+  <text x="766" y="425" class="mono" font-size="11" fill="#B7332C">plafond 4 Go</text>
+
+  <!-- FP16 -->
+  <text x="60" y="470" class="body" font-size="13" fill="#5A5A5A">FP16 · 16 bits</text>
+  <rect x="200" y="452" width="840" height="30" rx="2" fill="#B7332C" fill-opacity="0.5"/>
+  <text x="1050" y="472" class="mono" font-size="13" font-weight="600" fill="#B7332C">6 Go ✗</text>
+
+  <!-- INT8 -->
+  <text x="60" y="530" class="body" font-size="13" fill="#5A5A5A">INT8 · 8 bits</text>
+  <rect x="200" y="512" width="420" height="30" rx="2" fill="#B58A2C" fill-opacity="0.6"/>
+  <text x="632" y="532" class="mono" font-size="13" font-weight="600" fill="#B58A2C">3 Go ⚠</text>
+
+  <!-- INT4 weights + kv -->
+  <g class="interactive" data-card="poids-modele" tabindex="0" role="button" aria-label="Poids en INT4 — cliquez pour les détails">
+    <text x="60" y="590" class="body" font-size="13" fill="#5A5A5A">INT4 · 4 bits</text>
+    <rect x="200" y="572" width="210" height="30" rx="2" fill="#1F5560" fill-opacity="0.65"/>
+    <text x="305" y="592" class="mono" font-size="12" fill="#FAF8F3" text-anchor="middle">poids 1,5 Go</text>
   </g>
+  <g class="interactive" data-card="kv-cache" tabindex="0" role="button" aria-label="KV-cache — cliquez pour les détails">
+    <rect x="412" y="572" width="150" height="30" rx="2" fill="#2F5D3F" fill-opacity="0.55"/>
+    <text x="487" y="592" class="mono" font-size="12" fill="#FAF8F3" text-anchor="middle">KV-cache</text>
+  </g>
+  <text x="580" y="592" class="mono" font-size="13" font-weight="600" fill="#1F5560">≈ 2,6 Go ✓</text>
+
+  <!-- caption verdict -->
+  <text x="60" y="660" class="display" font-size="18" font-style="italic" fill="#1A1A1A">Verdict : aucun modèle utile ne tient sur l'appareil sans compression 4 bits.</text>
+  <text x="60" y="688" class="body" font-size="13" fill="#5A5A5A">Le décodage relit tous les poids à chaque token — le débit est plafonné par la bande passante mémoire, pas par les TOPS.</text>
 
   <!-- FOOTER -->
-  <line x1="60" y1="700" x2="1140" y2="700" stroke="#E5E1D8" stroke-width="0.5"/>
-  <text x="60" y="732" class="body" font-size="12" font-style="italic" fill="#5A5A5A">Chiffres illustratifs (DeepSeek-V3 : 671 Md totaux, 37 Md activés). Le creux a l'empreinte mémoire d'un géant et l'appétit de calcul d'un modèle moyen.</text>
-  <text x="60" y="752" class="body" font-size="12" font-style="italic" fill="#5A5A5A">Source : DeepSeek-AI 2024 ; Clark et al. 2022 (Unified Scaling Laws).</text>
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="768" class="body" font-size="10" font-style="italic" letter-spacing="0.02em" fill="#5A5A5A">Source : arXiv:2501.14794 (Mobile SoC heterogeneous inference) ; ordres de grandeur pour un modèle 3 Md. Enveloppe allouable variable selon l'appareil.</text>
 </svg>
 
-        <figcaption class="figure-caption"><a class="anchor" href="#fig-01" title="Lien direct vers ce schéma">¶</a> <em>Schéma 1 — La bascule capacité / calcul. Le modèle creux a l'empreinte mémoire d'un géant (tous les experts résidents) et l'appétit de calcul d'un modèle moyen (une fraction activée par token). C'est ce découplage qui fonde tout l'intérêt de MoE.</em></figcaption>
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-01" title="Lien direct vers ce schéma">¶</a> <em>Schéma 1 — Le mur mémoire de l'appareil. Ce n'est pas la taille du modèle qui décide, mais l'enveloppe de RAM allouable une fois l'OS et l'application servis : seul un modèle en 4 bits y tient.</em></figcaption>
       </figure>
 
-      <h2 id="moe-1">1. La bascule capacité / calcul</h2>
-      <p>L'intuition creuse est ancienne — les mélanges d'experts remontent à Jacobs et Hinton en 1991 — mais elle est restée marginale jusqu'à ce que Shazeer et al. la rendent opérationnelle pour les réseaux de très grande taille<a class="cite" data-cite="1" href="#source-1">1</a>. Leur couche « creusement activée » (<em>sparsely-gated</em>) insère, entre deux couches d'un réseau, jusqu'à des milliers d'experts, et un <em>réseau de gating</em> qui, pour chaque exemple, en sélectionne seulement deux ou quatre. Le résultat : des modèles de plusieurs dizaines de milliards de paramètres — colossaux pour 2017 — entraînés pour un coût de calcul comparable à celui de modèles bien plus petits.</p>
+      <p>D'où une arithmétique simple et impitoyable. Un modèle de 3&nbsp;milliards de paramètres : en FP16 (16&nbsp;bits/poids) pèse ~6&nbsp;Go → hors budget ; en INT8 (8&nbsp;bits) pèse ~3&nbsp;Go → à la limite haute, KV-cache compris c'est déjà trop ; en INT4 (4&nbsp;bits) pèse ~1,5&nbsp;Go → ça passe, avec de la marge pour le KV-cache et l'app.</p>
 
-      <p>L'argument théorique qui a scellé la légitimité de MoE est venu de DeepMind en 2022. Dans <em>Unified Scaling Laws for Routed Language Models</em><a class="cite" data-cite="6" href="#source-6">6</a>, Aidan Clark et ses collègues montrent que le routage confère un gain de performance qui persiste sur trois ordres de grandeur de taille de modèle : <mark>à budget de calcul fixé, un modèle routé bat systématiquement le modèle dense de même coût</mark>, et l'écart ne se referme qu'à des tailles extrêmes. Autrement dit, la sparsité n'est pas une astuce d'ingénierie marginale : c'est une dimension de <em>scaling</em> à part entière, orthogonale à l'augmentation classique de la taille et des données.</p>
+      <p>Autrement dit, <strong>aucun modèle utile ne tient sur l'appareil sans compression agressive</strong>. La quantification n'est pas une optimisation optionnelle : c'est le prix d'entrée. Tout le reste — les astuces d'architecture, le silicium dédié, le routage hybride — se construit par-dessus ce constat.</p>
+      </section>
 
-      <p>Le point de bascule industriel est venu plus tard. En 2024, Mistral publie Mixtral 8×7B<a class="cite" data-cite="9" href="#source-9">9</a>, un MoE ouvert de 47 milliards de paramètres au total mais ne mobilisant que ~13 milliards par token, qui égale ou dépasse un modèle dense de 70 milliards (Llama 2 70B) tout en étant six fois moins cher à l'inférence. Le signal est reçu : en dix-huit mois, la quasi-totalité des architectures de frontière bascule. DeepSeek-V3 (671B/37B)<a class="cite" data-cite="11" href="#source-11">11</a>, Llama 4<a class="cite" data-cite="13" href="#source-13">13</a>, Qwen3<a class="cite" data-cite="14" href="#source-14">14</a>, Grok, et les modèles fermés de la plupart des grands laboratoires adoptent le mélange d'experts. Le dense n'a pas disparu — il reste préférable pour les petits modèles <em>edge</em> où la mémoire prime — mais au sommet de l'échelle, <mark>le mélange d'experts est devenu l'architecture par défaut de la frontière</mark>.</p>
+      <section>
+      <h2 id="mem-2">2. La quantification, levier premier</h2>
 
-      <h2 id="moe-2">2. Anatomie d'une couche MoE</h2>
-      <p>Concrètement, une couche MoE remplace le bloc <em>feed-forward</em> (FFN) d'un transformer — la partie qui, dans un modèle dense, contient l'essentiel des paramètres. Là où le bloc dense applique une seule grosse transformation, la couche MoE offre le choix entre plusieurs FFN plus petites, les experts, et confie à un <span class="term" data-tooltip="Routeur (ou gate) : petit réseau qui, pour chaque token, calcule un score d'affinité par expert et décide de l'aiguillage.">routeur</span> la décision d'aiguillage.</p>
+      <p><span class="term" data-tooltip="Quantification — réduction du nombre de bits par poids (16 → 8 → 4 → ternaire), qui divise d'autant l'empreinte mémoire au prix d'une perte de précision.">Quantifier</span> un modèle, c'est réduire le nombre de bits utilisés pour représenter chaque poids. L'échelle est directe : FP16 → INT8 divise l'empreinte par 2, INT8 → INT4 encore par 2, soit un facteur 8 entre le format d'entraînement (FP16/BF16) et le format embarqué courant<a class="cite" data-cite="13" href="#source-13">13</a>. C'est le levier qui fait passer un 3B de 6&nbsp;Go à 1,5&nbsp;Go — de l'infaisable au faisable (voir Schéma&nbsp;2).</p>
 
       <figure class="figure" id="fig-02">
         <svg data-schema-id="schema-02" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
@@ -752,121 +767,100 @@
       .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
       .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
     </style>
-    <marker id="arrow01" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-      <path d="M0 0 L10 5 L0 10 z" fill="#5A5A5A"/>
-    </marker>
-    <marker id="arrow01c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-      <path d="M0 0 L10 5 L0 10 z" fill="#B7332C"/>
-    </marker>
   </defs>
 
   <rect width="1200" height="800" fill="#FAF8F3"/>
 
   <!-- HEADER -->
   <text x="60" y="55" class="mono" font-size="13" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 02</text>
-  <text x="60" y="95" class="display" font-size="28" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Anatomie d'une couche de mélange d'experts</text>
-  <text x="60" y="123" class="display" font-size="18" font-style="italic" fill="#5A5A5A">Un routeur note les experts, le top-k n'en active qu'une poignée, une somme pondérée recompose la sortie</text>
+  <text x="60" y="95" class="display" font-size="28" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">L'échelle de quantification et sa falaise</text>
+  <text x="60" y="123" class="display" font-size="18" font-style="italic" fill="#5A5A5A">Compresser divise l'empreinte — mais la qualité chute d'un coup en dessous de 4 bits, sauf à réentraîner ou entraîner natif</text>
   <line x1="60" y1="145" x2="1140" y2="145" stroke="#E5E1D8" stroke-width="0.5"/>
 
-  <!-- Input token -->
-  <rect x="60" y="380" width="96" height="64" rx="3" fill="#1A1A1A"/>
-  <text x="108" y="410" class="body" font-size="13" font-weight="500" fill="#FAF8F3" text-anchor="middle">token</text>
-  <text x="108" y="428" class="mono" font-size="11" fill="#B8B5AE" text-anchor="middle">entrant</text>
-  <line x1="156" y1="412" x2="222" y2="412" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#arrow01)"/>
+  <!-- Axes -->
+  <line x1="180" y1="230" x2="180" y2="620" stroke="#1A1A1A" stroke-width="1.25"/>
+  <line x1="180" y1="620" x2="1080" y2="620" stroke="#1A1A1A" stroke-width="1.25"/>
+  <text x="70" y="235" class="body" font-size="11" fill="#5A5A5A">100 %</text>
+  <text x="88" y="430" class="body" font-size="11" fill="#5A5A5A">85 %</text>
+  <text x="88" y="615" class="body" font-size="11" fill="#5A5A5A">70 %</text>
+  <text x="120" y="400" class="body" font-size="12" fill="#5A5A5A" transform="rotate(-90 120 400)" text-anchor="middle">Qualité retenue vs FP16</text>
+  <text x="630" y="662" class="body" font-size="12" fill="#5A5A5A" text-anchor="middle">Facteur de compression (empreinte / FP16) →</text>
+  <!-- x ticks -->
+  <text x="200" y="642" class="mono" font-size="11" fill="#5A5A5A" text-anchor="middle">×1</text>
+  <text x="392" y="642" class="mono" font-size="11" fill="#5A5A5A" text-anchor="middle">×2</text>
+  <text x="584" y="642" class="mono" font-size="11" fill="#5A5A5A" text-anchor="middle">×4</text>
+  <text x="870" y="642" class="mono" font-size="11" fill="#5A5A5A" text-anchor="middle">×8</text>
+  <text x="1060" y="642" class="mono" font-size="11" fill="#5A5A5A" text-anchor="middle">×10</text>
 
-  <!-- 1 · ROUTER -->
-  <g class="interactive" data-card="routeur" tabindex="0" role="button" aria-label="Le routeur (gate) — cliquez pour les détails">
-    <rect x="236" y="300" width="176" height="224" rx="3" fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1.5"/>
-    <text x="260" y="330" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#1F5560">A · ROUTEUR</text>
-    <text x="260" y="354" class="body" font-size="13" font-weight="500" fill="#1A1A1A">softmax(x · W)</text>
-    <!-- gating score bars -->
-    <rect x="260" y="372" width="60" height="14" rx="2" fill="#1F5560" fill-opacity="0.30"/>
-    <rect x="260" y="392" width="128" height="14" rx="2" fill="#B7332C"/>
-    <rect x="260" y="412" width="44" height="14" rx="2" fill="#1F5560" fill-opacity="0.30"/>
-    <rect x="260" y="432" width="112" height="14" rx="2" fill="#B7332C"/>
-    <rect x="260" y="452" width="52" height="14" rx="2" fill="#1F5560" fill-opacity="0.30"/>
-    <rect x="260" y="472" width="38" height="14" rx="2" fill="#1F5560" fill-opacity="0.30"/>
-    <text x="260" y="506" class="body" font-size="11" font-style="italic" fill="#5A5A5A">Un score d'affinité par expert</text>
+  <!-- PTQ cliff curve (drops after INT4) -->
+  <path d="M200 230 L392 240 L584 268 L870 470 L1000 590" fill="none" stroke="#B7332C" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- QAT curve (stays high) -->
+  <path d="M584 250 L870 300 L1000 360" fill="none" stroke="#1F5560" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="7 4"/>
+
+  <!-- cliff annotation -->
+  <rect x="720" y="490" width="230" height="70" rx="3" fill="#B7332C" fill-opacity="0.08" stroke="#B7332C" stroke-width="1" stroke-dasharray="2 3"/>
+  <text x="835" y="515" class="body" font-size="12" font-weight="600" fill="#B7332C" text-anchor="middle">La falaise PTQ</text>
+  <text x="835" y="536" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">sous 4 bits, la simple</text>
+  <text x="835" y="551" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">compression casse le modèle</text>
+
+  <!-- POINT: FP16 -->
+  <g class="interactive" data-card="fp16" tabindex="0" role="button" aria-label="FP16 référence — cliquez pour les détails">
+    <circle cx="200" cy="230" r="8" fill="#1A1A1A"/>
+    <text x="200" y="210" class="body" font-size="12" font-weight="600" fill="#1A1A1A" text-anchor="middle">FP16</text>
+    <text x="200" y="195" class="mono" font-size="10" fill="#5A5A5A" text-anchor="middle">6 Go · référence</text>
+  </g>
+  <!-- POINT: INT8 -->
+  <circle cx="392" cy="240" r="7" fill="#5A5A5A"/>
+  <text x="392" y="222" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">INT8</text>
+  <!-- POINT: INT4 PTQ -->
+  <g class="interactive" data-card="int4-ptq" tabindex="0" role="button" aria-label="INT4 post-training — cliquez pour les détails">
+    <circle cx="584" cy="268" r="8" fill="#B7332C"/>
+    <text x="584" y="248" class="body" font-size="12" font-weight="600" fill="#B7332C" text-anchor="middle">INT4 · PTQ</text>
+    <text x="584" y="300" class="mono" font-size="10" fill="#B7332C" text-anchor="middle">AWQ 97-99 %</text>
+  </g>
+  <!-- POINT: QAT -->
+  <g class="interactive" data-card="qat" tabindex="0" role="button" aria-label="QAT quantization-aware training — cliquez pour les détails">
+    <circle cx="870" cy="300" r="8" fill="#1F5560"/>
+    <text x="895" y="296" class="body" font-size="12" font-weight="600" fill="#1F5560">QAT + LoRA</text>
+    <text x="895" y="314" class="mono" font-size="10" fill="#5A5A5A">Apple 2-bit · Meta</text>
+  </g>
+  <!-- POINT: ternaire natif -->
+  <g class="interactive" data-card="ternaire" tabindex="0" role="button" aria-label="Natif ternaire BitNet — cliquez pour les détails">
+    <circle cx="1000" cy="360" r="9" fill="#B58A2C"/>
+    <text x="1000" y="340" class="body" font-size="12" font-weight="600" fill="#B58A2C" text-anchor="middle">Ternaire natif</text>
+    <text x="1000" y="392" class="mono" font-size="10" fill="#B58A2C" text-anchor="middle">1,58 bit · BitNet</text>
   </g>
 
-  <!-- 2 · TOP-K gate label -->
-  <g class="interactive" data-card="top-k" tabindex="0" role="button" aria-label="La sélection top-k — cliquez pour les détails">
-    <rect x="440" y="386" width="96" height="52" rx="3" fill="#B7332C" fill-opacity="0.08" stroke="#B7332C" stroke-width="1.5"/>
-    <text x="488" y="410" class="mono" font-size="15" font-weight="600" fill="#B7332C" text-anchor="middle">top-k</text>
-    <text x="488" y="428" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">k = 2 ici</text>
-  </g>
-  <line x1="412" y1="412" x2="436" y2="412" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#arrow01)"/>
-
-  <!-- 3 · EXPERT BANK -->
-  <g class="interactive" data-card="banc-experts" tabindex="0" role="button" aria-label="Le banc d'experts — cliquez pour les détails">
-    <rect x="592" y="212" width="392" height="400" rx="3" fill="#5A5A5A" fill-opacity="0.04" stroke="#B8B5AE" stroke-width="1.25" stroke-dasharray="2 3"/>
-    <text x="616" y="240" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#5A5A5A">B · BANC D'EXPERTS (N FFN)</text>
-    <!-- Experts grid 2 cols x 4 rows -->
-    <!-- inactive experts -->
-    <rect x="616" y="256" width="160" height="66" rx="3" fill="#FAF8F3" stroke="#B8B5AE" stroke-width="1.25"/>
-    <text x="696" y="294" class="body" font-size="13" fill="#B8B5AE" text-anchor="middle">Expert 1</text>
-    <rect x="800" y="256" width="160" height="66" rx="3" fill="#B7332C" fill-opacity="0.10" stroke="#B7332C" stroke-width="2.5"/>
-    <text x="880" y="290" class="body" font-size="13" font-weight="600" fill="#1A1A1A" text-anchor="middle">Expert 2</text>
-    <text x="880" y="308" class="mono" font-size="10" fill="#B7332C" text-anchor="middle">SÉLECTIONNÉ</text>
-    <rect x="616" y="340" width="160" height="66" rx="3" fill="#FAF8F3" stroke="#B8B5AE" stroke-width="1.25"/>
-    <text x="696" y="378" class="body" font-size="13" fill="#B8B5AE" text-anchor="middle">Expert 3</text>
-    <rect x="800" y="340" width="160" height="66" rx="3" fill="#FAF8F3" stroke="#B8B5AE" stroke-width="1.25"/>
-    <text x="880" y="378" class="body" font-size="13" fill="#B8B5AE" text-anchor="middle">Expert 4</text>
-    <rect x="616" y="424" width="160" height="66" rx="3" fill="#B7332C" fill-opacity="0.10" stroke="#B7332C" stroke-width="2.5"/>
-    <text x="696" y="458" class="body" font-size="13" font-weight="600" fill="#1A1A1A" text-anchor="middle">Expert 5</text>
-    <text x="696" y="476" class="mono" font-size="10" fill="#B7332C" text-anchor="middle">SÉLECTIONNÉ</text>
-    <rect x="800" y="424" width="160" height="66" rx="3" fill="#FAF8F3" stroke="#B8B5AE" stroke-width="1.25"/>
-    <text x="880" y="462" class="body" font-size="13" fill="#B8B5AE" text-anchor="middle">Expert 6</text>
-    <rect x="616" y="508" width="160" height="66" rx="3" fill="#FAF8F3" stroke="#B8B5AE" stroke-width="1.25"/>
-    <text x="696" y="546" class="body" font-size="13" fill="#B8B5AE" text-anchor="middle">Expert 7</text>
-    <rect x="800" y="508" width="160" height="66" rx="3" fill="#FAF8F3" stroke="#B8B5AE" stroke-width="1.25"/>
-    <text x="880" y="546" class="body" font-size="13" fill="#B8B5AE" text-anchor="middle">Expert N</text>
-  </g>
-
-  <!-- routing connectors: 2 emphasized to selected experts -->
-  <path d="M536 405 C 566 360, 576 300, 796 289" fill="none" stroke="#B7332C" stroke-width="2.5" marker-end="url(#arrow01c)"/>
-  <path d="M536 419 C 566 460, 576 457, 612 457" fill="none" stroke="#B7332C" stroke-width="2.5" marker-end="url(#arrow01c)"/>
-
-  <!-- 4 · COMBINE -->
-  <g class="interactive" data-card="combine" tabindex="0" role="button" aria-label="La combinaison pondérée — cliquez pour les détails">
-    <circle cx="1050" cy="412" r="42" fill="#B58A2C" fill-opacity="0.10" stroke="#B58A2C" stroke-width="2.5"/>
-    <text x="1050" y="408" class="display" font-size="26" font-weight="600" fill="#1A1A1A" text-anchor="middle">Σ</text>
-    <text x="1050" y="428" class="body" font-size="10" fill="#5A5A5A" text-anchor="middle">pondérée</text>
-  </g>
-  <!-- selected experts to combine -->
-  <path d="M960 289 C 1010 300, 1030 350, 1044 372" fill="none" stroke="#B58A2C" stroke-width="2" marker-end="url(#arrow01)"/>
-  <path d="M776 457 C 900 470, 990 450, 1016 428" fill="none" stroke="#B58A2C" stroke-width="2" marker-end="url(#arrow01)"/>
-
-  <!-- output -->
-  <line x1="1050" y1="454" x2="1050" y2="520" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#arrow01)"/>
-  <text x="1050" y="546" class="body" font-size="13" font-weight="500" fill="#1A1A1A" text-anchor="middle">token transformé</text>
-  <text x="1050" y="564" class="mono" font-size="10" fill="#B7332C" text-anchor="middle">k/N des poids mobilisés</text>
-
-  <!-- Annotation strip -->
-  <line x1="60" y1="640" x2="1140" y2="640" stroke="#E5E1D8" stroke-width="0.5"/>
-  <text x="60" y="672" class="mono" font-size="12" font-weight="600" fill="#1F5560">A</text>
-  <text x="80" y="672" class="body" font-size="13" fill="#1A1A1A">Le gate note tous les experts…</text>
-  <text x="360" y="672" class="mono" font-size="12" font-weight="600" fill="#B7332C">B</text>
-  <text x="380" y="672" class="body" font-size="13" fill="#1A1A1A">…top-k n'en garde que k (la sparsité naît ici)…</text>
-  <text x="760" y="672" class="mono" font-size="12" font-weight="600" fill="#B58A2C">C</text>
-  <text x="780" y="672" class="body" font-size="13" fill="#1A1A1A">…Σ recompose la sortie, pondérée par les scores.</text>
+  <!-- Legend -->
+  <line x1="200" y1="705" x2="240" y2="705" stroke="#B7332C" stroke-width="2.5"/>
+  <text x="250" y="709" class="body" font-size="12" fill="#5A5A5A">PTQ — compression post-entraînement (bon marché, s'effondre bas)</text>
+  <line x1="640" y1="705" x2="680" y2="705" stroke="#1F5560" stroke-width="2.5" stroke-dasharray="7 4"/>
+  <text x="690" y="709" class="body" font-size="12" fill="#5A5A5A">QAT / natif — le modèle apprend à résister à la perte</text>
 
   <!-- FOOTER -->
-  <text x="60" y="720" class="body" font-size="12" font-style="italic" fill="#5A5A5A">Source : Shazeer et al. 2017 ; Fedus, Zoph &amp; Shazeer 2021 (Switch Transformer). Capacité ∝ N, coût ∝ k.</text>
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="768" class="body" font-size="10" font-style="italic" letter-spacing="0.02em" fill="#5A5A5A">Source : synthèse LLM quantization 2026 (AWQ/GPTQ/GGUF) ; Apple Foundation Models 2024-2025 ; BitNet b1.58 2B4T (arXiv:2504.12285). Courbes schématiques.</text>
 </svg>
 
-        <figcaption class="figure-caption"><a class="anchor" href="#fig-02" title="Lien direct vers ce schéma">¶</a> <em>Schéma 2 — Anatomie d'une couche de mélange d'experts. Le routeur note tous les experts ; le top-k n'en garde qu'une poignée (la sparsité naît ici) ; une somme pondérée recompose la sortie. Seule une fraction k/N des poids est mobilisée.</em></figcaption>
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-02" title="Lien direct vers ce schéma">¶</a> <em>Schéma 2 — L'échelle de quantification et sa falaise. Compresser divise l'empreinte, mais la qualité s'effondre sous 4 bits — sauf à réentraîner (QAT) ou à entraîner nativement en basse précision.</em></figcaption>
       </figure>
 
-      <p>Le mécanisme se décompose en quatre temps. D'abord, le <strong>routeur</strong> (ou <em>gate</em>) : un simple produit matriciel suivi d'un softmax qui, pour le token entrant, attribue un score d'affinité à chacun des <em>N</em> experts. Ensuite, la sélection <span class="term" data-tooltip="Top-k : on ne retient que les k experts de plus haut score de routage (souvent k = 1, 2 ou 8) ; les autres sont ignorés pour ce token. C'est la source de la sparsité.">top-k</span> : on ne garde que les <em>k</em> experts de plus haut score (typiquement <em>k</em> = 1, 2 ou 8), les autres sont ignorés — c'est ici que naît la sparsité. Puis le <strong>calcul</strong> : les <em>k</em> experts retenus traitent le token en parallèle. Enfin la <strong>combinaison</strong> : leurs sorties sont sommées, pondérées par les scores de gating renormalisés. Le token ressort transformé, mais n'a mobilisé qu'une fraction <em>k/N</em> des paramètres experts de la couche.</p>
+      <p>Deux familles de méthodes coexistent, et la distinction est structurante.</p>
 
-      <p>Deux quantités gouvernent tout le reste. Le nombre d'experts <em>N</em> fixe la capacité (plus d'experts = plus de paramètres stockés) ; le nombre d'activés <em>k</em> fixe le coût (plus d'activés = plus de calcul). Un troisième paramètre, le <span class="term" data-tooltip="Facteur de capacité : borne le nombre de tokens qu'un expert accepte par lot. Au-delà, les tokens excédentaires sont « droppés » et sautent la couche.">facteur de capacité</span>, borne le nombre de tokens qu'un expert accepte par lot : au-delà, les tokens excédentaires sont <span class="term" data-tooltip="Token dropping : quand un expert dépasse sa capacité, les tokens en trop ne sont pas traités par la couche MoE et passent par la seule connexion résiduelle — une dégradation silencieuse.">droppés</span> — ils sautent la couche via la connexion résiduelle, ce qui dégrade silencieusement la qualité. Toute l'ingénierie MoE consiste à naviguer ce triangle : maximiser <em>N</em>, minimiser <em>k</em>, et éviter que le facteur de capacité ne devienne une guillotine.</p>
+      <p>La <span class="term" data-tooltip="PTQ — Post-Training Quantization : on compresse un modèle déjà entraîné, sans le réentraîner. Bon marché, mais s'effondre aux compressions extrêmes.">quantification post-entraînement (PTQ)</span> compresse un modèle déjà entraîné, sans le réentraîner. C'est la voie dominante en pratique parce qu'elle est bon marché<a class="cite" data-cite="13" href="#source-13">13</a>. Trois formats se sont imposés : <span class="term" data-tooltip="GGUF — format de fichier de llama.cpp et Ollama, avec des paliers de quantification Q2_K à Q8_0 ; standard de facto pour l'inférence locale CPU+GPU.">GGUF</span>, le format de <em>llama.cpp</em> et d'Ollama, avec ses paliers Q2_K à Q8_0 — le schéma <strong>Q4_K_M</strong> (4&nbsp;bits, à grain fin) est le standard de facto pour le mobile ; <strong>AWQ</strong> (<em>Activation-aware Weight Quantization</em>) qui protège les poids saillants et retient 97-99&nbsp;% de la qualité en INT4 ; et <strong>GPTQ</strong>, qui quantifie couche par couche en minimisant l'erreur locale.</p>
 
-      <h2 id="moe-3">3. Le problème du routage</h2>
-      <p>Le routeur est le cœur battant — et le talon d'Achille — d'un modèle creux. Sa conception se décline sur plusieurs axes, dont les combinaisons dessinent la diversité des architectures actuelles.</p>
+      <p>La <span class="term" data-tooltip="QAT — Quantization-Aware Training : on simule la perte de précision pendant l'entraînement pour que le modèle apprenne à y résister. Plus cher, mais bien meilleur en dessous de 4 bits.">quantification pendant l'entraînement (QAT)</span> simule la perte de précision au fil de l'entraînement, si bien que le modèle apprend à y résister. Elle coûte plus cher mais récupère 2 à 5 points de qualité aux compressions extrêmes<a class="cite" data-cite="13" href="#source-13">13</a>. C'est la voie retenue par les acteurs qui contrôlent tout le pipeline : Apple entraîne son modèle on-device en <strong>QAT à 2&nbsp;bits par poids</strong>, avec la table d'<em>embeddings</em> à 4&nbsp;bits et le KV-cache à 8&nbsp;bits, puis récupère la qualité perdue via des adaptateurs <span class="term" data-tooltip="LoRA — Low-Rank Adaptation : petits adaptateurs de faible rang greffés sur un modèle gelé, ici utilisés pour récupérer la qualité perdue à la quantification.">LoRA</span><a class="cite" data-cite="1" href="#source-1">1</a>. Meta combine <strong>QAT + LoRA</strong> et <strong>SpinQuant</strong> pour ses Llama 3.2 quantifiés, avec −56&nbsp;% de taille et −41&nbsp;% de mémoire<a class="cite" data-cite="9" href="#source-9">9</a>.</p>
+
+      <p>La quantification n'est pas gratuite. <mark>La perte de précision ne frappe pas uniformément : le raisonnement mathématique, la logique formelle et la génération de code y sont bien plus sensibles que le résumé ou la conversation ouverte.</mark><a class="cite" data-cite="13" href="#source-13">13</a> Un 4-bit qui « passe » très bien en assistant de rédaction peut dégrader silencieusement sur du code. Mesurer la qualité d'un modèle quantifié sur la mauvaise tâche donne une confiance trompeuse.</p>
+      </section>
+
+      <section>
+      <h2 id="mem-3">3. Les astuces d'architecture</h2>
+
+      <p>La quantification a une limite : en dessous d'un certain seuil de bits, la qualité s'effondre quelle que soit la méthode. Pour aller plus loin, il faut changer non pas la précision des poids mais <strong>la façon dont le modèle occupe la mémoire</strong>. Trois idées se sont imposées en 2025-2026 (voir Schéma&nbsp;3).</p>
 
       <figure class="figure" id="fig-03">
-        <svg data-schema-id="schema-03" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 900">
+        <svg data-schema-id="schema-03" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
   <defs>
     <style>
       .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
@@ -875,95 +869,119 @@
     </style>
   </defs>
 
-  <rect width="900" height="900" fill="#FAF8F3"/>
+  <rect width="1200" height="800" fill="#FAF8F3"/>
 
   <!-- HEADER -->
-  <text x="56" y="52" class="mono" font-size="13" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 03</text>
-  <text x="56" y="92" class="display" font-size="28" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">La taxonomie du routage</text>
-  <text x="56" y="120" class="display" font-size="18" font-style="italic" fill="#5A5A5A">Deux décisions orthogonales : qui choisit, et comment structurer les experts</text>
-  <line x1="56" y1="142" x2="844" y2="142" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="55" class="mono" font-size="13" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 03</text>
+  <text x="60" y="95" class="display" font-size="28" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Trois leviers pour tenir dans le budget</text>
+  <text x="60" y="123" class="display" font-size="18" font-style="italic" fill="#5A5A5A">Compresser après coup, réorganiser l'occupation mémoire, ou entraîner directement à basse précision</text>
+  <line x1="60" y1="145" x2="1140" y2="145" stroke="#E5E1D8" stroke-width="0.5"/>
 
-  <!-- AXIS A -->
-  <text x="56" y="182" class="mono" font-size="12" font-weight="600" letter-spacing="0.12em" fill="#1F5560">A · QUI CHOISIT LES AFFECTATIONS ?</text>
+  <!-- Column labels -->
+  <text x="235" y="185" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#5A5A5A" text-anchor="middle">LEVIER 1 · PRÉCISION</text>
+  <text x="600" y="185" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#5A5A5A" text-anchor="middle">LEVIER 2 · ARCHITECTURE</text>
+  <text x="965" y="185" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#5A5A5A" text-anchor="middle">LEVIER 3 · NATIF</text>
 
-  <g class="interactive" data-card="token-choice" tabindex="0" role="button" aria-label="Routage token-choice — cliquez pour les détails">
-    <rect x="56" y="200" width="380" height="184" rx="3" fill="#B7332C" fill-opacity="0.06" stroke="#B7332C" stroke-width="1.5"/>
-    <text x="80" y="234" class="display" font-size="20" font-weight="600" fill="#1A1A1A">Token-choice</text>
-    <text x="80" y="262" class="body" font-size="14" fill="#5A5A5A">Chaque token choisit ses k experts</text>
-    <line x1="80" y1="278" x2="412" y2="278" stroke="#B7332C" stroke-width="0.5" stroke-dasharray="2 3"/>
-    <text x="80" y="304" class="body" font-size="13" fill="#1A1A1A">• <tspan font-weight="600">top-1</tspan> — Switch, Llama 4</text>
-    <text x="80" y="328" class="body" font-size="13" fill="#1A1A1A">• <tspan font-weight="600">top-2</tspan> — Mixtral</text>
-    <text x="80" y="352" class="body" font-size="13" fill="#1A1A1A">• <tspan font-weight="600">top-8</tspan> — Qwen3, DeepSeek</text>
-    <text x="80" y="374" class="body" font-size="12" font-style="italic" fill="#B7332C">Risque : déséquilibre de charge</text>
+  <!-- COL 1 : Quantif -->
+  <g class="interactive" data-card="quantif" tabindex="0" role="button" aria-label="Quantification post-hoc — cliquez pour les détails">
+    <rect x="60" y="205" width="350" height="470" rx="3" fill="#B7332C" fill-opacity="0.06" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="235" y="248" class="display" font-size="20" font-weight="600" fill="#B7332C" text-anchor="middle">Quantification</text>
+    <text x="235" y="272" class="body" font-size="12" font-style="italic" fill="#5A5A5A" text-anchor="middle">compresser un modèle déjà entraîné</text>
+    <line x1="90" y1="292" x2="380" y2="292" stroke="#B7332C" stroke-width="0.5" stroke-opacity="0.4"/>
+    <text x="90" y="325" class="body" font-size="13" font-weight="600" fill="#1A1A1A">Ce qu'on réduit</text>
+    <text x="90" y="348" class="body" font-size="12" fill="#5A5A5A">Les bits par poids : 16 → 8 → 4</text>
+    <text x="90" y="392" class="body" font-size="13" font-weight="600" fill="#1A1A1A">Comment</text>
+    <text x="90" y="415" class="mono" font-size="12" fill="#5A5A5A">GGUF Q4_K_M · AWQ · GPTQ</text>
+    <text x="90" y="435" class="body" font-size="12" fill="#5A5A5A">→ facteur ×2 à ×8 sur l'empreinte</text>
+    <text x="90" y="479" class="body" font-size="13" font-weight="600" fill="#1A1A1A">Le coût</text>
+    <text x="90" y="502" class="body" font-size="12" fill="#5A5A5A">Falaise de qualité sous 4 bits ;</text>
+    <text x="90" y="521" class="body" font-size="12" fill="#5A5A5A">code &amp; maths plus sensibles.</text>
+    <rect x="90" y="560" width="290" height="80" rx="3" fill="#FAF8F3" stroke="#E5E1D8" stroke-width="1"/>
+    <text x="235" y="588" class="body" font-size="12" font-style="italic" fill="#5A5A5A" text-anchor="middle">« Prix d'entrée » —</text>
+    <text x="235" y="610" class="body" font-size="12" font-style="italic" fill="#5A5A5A" text-anchor="middle">aucun modèle utile ne tient</text>
+    <text x="235" y="628" class="body" font-size="12" font-style="italic" fill="#5A5A5A" text-anchor="middle">sans passer par là.</text>
   </g>
 
-  <g class="interactive" data-card="expert-choice" tabindex="0" role="button" aria-label="Routage expert-choice — cliquez pour les détails">
-    <rect x="464" y="200" width="380" height="184" rx="3" fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1.5"/>
-    <text x="488" y="234" class="display" font-size="20" font-weight="600" fill="#1A1A1A">Expert-choice</text>
-    <text x="488" y="262" class="body" font-size="14" fill="#5A5A5A">Chaque expert choisit ses tokens</text>
-    <line x1="488" y1="278" x2="820" y2="278" stroke="#1F5560" stroke-width="0.5" stroke-dasharray="2 3"/>
-    <text x="488" y="304" class="body" font-size="13" fill="#1A1A1A">• Équilibre <tspan font-weight="600">garanti par construction</tspan></text>
-    <text x="488" y="328" class="body" font-size="13" fill="#1A1A1A">• Pas de loss auxiliaire</text>
-    <text x="488" y="352" class="body" font-size="13" fill="#1A1A1A">• Zhou et al. 2022</text>
-    <text x="488" y="374" class="body" font-size="12" font-style="italic" fill="#1F5560">Limite : mal adapté à l'auto-régressif</text>
+  <!-- COL 2 : Architecture (two cards) -->
+  <g class="interactive" data-card="matformer" tabindex="0" role="button" aria-label="MatFormer matriochka — cliquez pour les détails">
+    <rect x="425" y="205" width="350" height="222" rx="3" fill="#1F5560" fill-opacity="0.07" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="600" y="240" class="display" font-size="18" font-weight="600" fill="#1F5560" text-anchor="middle">MatFormer</text>
+    <text x="600" y="261" class="body" font-size="12" font-style="italic" fill="#5A5A5A" text-anchor="middle">un modèle matriochka</text>
+    <!-- nested boxes -->
+    <rect x="470" y="278" width="260" height="120" rx="3" fill="none" stroke="#1F5560" stroke-width="1.25"/>
+    <rect x="500" y="298" width="200" height="80" rx="3" fill="none" stroke="#1F5560" stroke-width="1.25" stroke-opacity="0.7"/>
+    <rect x="530" y="318" width="140" height="40" rx="3" fill="#1F5560" fill-opacity="0.25" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="600" y="343" class="mono" font-size="11" fill="#1F5560" text-anchor="middle">cœur actif</text>
+    <text x="600" y="415" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">exécuter le sous-modèle sans activer l'englobant</text>
+  </g>
+  <g class="interactive" data-card="ple" tabindex="0" role="button" aria-label="Per-Layer Embeddings — cliquez pour les détails">
+    <rect x="425" y="440" width="350" height="235" rx="3" fill="#2F5D3F" fill-opacity="0.07" stroke="#2F5D3F" stroke-width="1.5"/>
+    <text x="600" y="475" class="display" font-size="18" font-weight="600" fill="#2F5D3F" text-anchor="middle">Per-Layer Embedding</text>
+    <text x="600" y="496" class="body" font-size="12" font-style="italic" fill="#5A5A5A" text-anchor="middle">décharger vers la RAM lente</text>
+    <!-- fast vs slow memory -->
+    <rect x="455" y="516" width="130" height="55" rx="3" fill="#B7332C" fill-opacity="0.12" stroke="#B7332C" stroke-width="1"/>
+    <text x="520" y="540" class="body" font-size="11" font-weight="600" fill="#B7332C" text-anchor="middle">mémoire rapide</text>
+    <text x="520" y="557" class="body" font-size="10" fill="#5A5A5A" text-anchor="middle">couches actives</text>
+    <rect x="615" y="516" width="130" height="55" rx="3" fill="#5A5A5A" fill-opacity="0.12" stroke="#5A5A5A" stroke-width="1"/>
+    <text x="680" y="540" class="body" font-size="11" font-weight="600" fill="#5A5A5A" text-anchor="middle">RAM lente</text>
+    <text x="680" y="557" class="body" font-size="10" fill="#5A5A5A" text-anchor="middle">embeddings cachés</text>
+    <path d="M615 543 L590 543" stroke="#2F5D3F" stroke-width="1.5" marker-end="url(#arr3)"/>
+    <text x="600" y="612" class="mono" font-size="12" font-weight="600" fill="#2F5D3F" text-anchor="middle">Gemma 3n : 8B brut → 3 Go résidents</text>
+    <text x="600" y="640" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">l'empreinte compte, pas le décompte</text>
   </g>
 
-  <!-- AXIS B -->
-  <text x="56" y="452" class="mono" font-size="12" font-weight="600" letter-spacing="0.12em" fill="#B58A2C">B · COMMENT STRUCTURER LES EXPERTS ?</text>
-
-  <g class="interactive" data-card="experts-fins" tabindex="0" role="button" aria-label="Experts fins — cliquez pour les détails">
-    <rect x="56" y="470" width="380" height="200" rx="3" fill="#B58A2C" fill-opacity="0.07" stroke="#B58A2C" stroke-width="1.5"/>
-    <text x="80" y="504" class="display" font-size="20" font-weight="600" fill="#1A1A1A">Experts fins</text>
-    <text x="80" y="532" class="body" font-size="14" fill="#5A5A5A">Beaucoup de petits experts</text>
-    <!-- fine grid -->
-    <g fill="#B58A2C" fill-opacity="0.55">
-      <rect x="80" y="548" width="26" height="26" rx="2"/><rect x="112" y="548" width="26" height="26" rx="2"/>
-      <rect x="144" y="548" width="26" height="26" rx="2"/><rect x="176" y="548" width="26" height="26" rx="2"/>
-      <rect x="208" y="548" width="26" height="26" rx="2"/><rect x="240" y="548" width="26" height="26" rx="2"/>
-      <rect x="80" y="580" width="26" height="26" rx="2"/><rect x="112" y="580" width="26" height="26" rx="2"/>
-      <rect x="144" y="580" width="26" height="26" rx="2"/><rect x="176" y="580" width="26" height="26" rx="2"/>
-      <rect x="208" y="580" width="26" height="26" rx="2"/><rect x="240" y="580" width="26" height="26" rx="2"/>
+  <!-- COL 3 : Natif ternaire -->
+  <g class="interactive" data-card="bitnet-natif" tabindex="0" role="button" aria-label="BitNet natif ternaire — cliquez pour les détails">
+    <rect x="790" y="205" width="350" height="470" rx="3" fill="#B58A2C" fill-opacity="0.08" stroke="#B58A2C" stroke-width="1.5"/>
+    <text x="965" y="248" class="display" font-size="20" font-weight="600" fill="#B58A2C" text-anchor="middle">Natif ternaire</text>
+    <text x="965" y="272" class="body" font-size="12" font-style="italic" fill="#5A5A5A" text-anchor="middle">entraîner directement en 1,58 bit</text>
+    <line x1="820" y1="292" x2="1110" y2="292" stroke="#B58A2C" stroke-width="0.5" stroke-opacity="0.5"/>
+    <!-- ternary values -->
+    <g>
+      <rect x="850" y="315" width="60" height="50" rx="3" fill="#B58A2C" fill-opacity="0.2" stroke="#B58A2C" stroke-width="1.25"/>
+      <text x="880" y="347" class="mono" font-size="20" font-weight="600" fill="#B58A2C" text-anchor="middle">−1</text>
+      <rect x="935" y="315" width="60" height="50" rx="3" fill="#B58A2C" fill-opacity="0.2" stroke="#B58A2C" stroke-width="1.25"/>
+      <text x="965" y="347" class="mono" font-size="20" font-weight="600" fill="#B58A2C" text-anchor="middle">0</text>
+      <rect x="1020" y="315" width="60" height="50" rx="3" fill="#B58A2C" fill-opacity="0.2" stroke="#B58A2C" stroke-width="1.25"/>
+      <text x="1050" y="347" class="mono" font-size="20" font-weight="600" fill="#B58A2C" text-anchor="middle">+1</text>
     </g>
-    <text x="80" y="638" class="body" font-size="13" fill="#1A1A1A">Plus de combinaisons → spécialisation</text>
-    <text x="80" y="658" class="body" font-size="12" font-style="italic" fill="#B58A2C">DeepSeekMoE 2024</text>
+    <text x="965" y="392" class="mono" font-size="12" fill="#5A5A5A" text-anchor="middle">log₂(3) ≈ 1,58 bit/poids</text>
+    <text x="820" y="432" class="body" font-size="13" font-weight="600" fill="#1A1A1A">Trois gains d'un coup</text>
+    <text x="820" y="458" class="body" font-size="12" fill="#5A5A5A">• Mémoire minimale</text>
+    <text x="820" y="480" class="body" font-size="12" fill="#5A5A5A">• −82 % d'énergie</text>
+    <text x="820" y="502" class="body" font-size="12" fill="#5A5A5A">• Additions au lieu de ×  → CPU sans GPU</text>
+    <rect x="820" y="535" width="290" height="105" rx="3" fill="#FAF8F3" stroke="#E5E1D8" stroke-width="1"/>
+    <text x="965" y="565" class="body" font-size="12" font-weight="600" fill="#B58A2C" text-anchor="middle">BitNet b1.58 2B4T</text>
+    <text x="965" y="588" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">2 Md, entraîné natif sur 4 000 Md tokens</text>
+    <text x="965" y="612" class="body" font-size="11" font-style="italic" fill="#5A5A5A" text-anchor="middle">jusqu'à 100 Md sur un seul CPU,</text>
+    <text x="965" y="629" class="body" font-size="11" font-style="italic" fill="#5A5A5A" text-anchor="middle">à vitesse de lecture humaine</text>
   </g>
 
-  <g class="interactive" data-card="expert-partage" tabindex="0" role="button" aria-label="Expert partagé — cliquez pour les détails">
-    <rect x="464" y="470" width="380" height="200" rx="3" fill="#2F5D3F" fill-opacity="0.07" stroke="#2F5D3F" stroke-width="1.5"/>
-    <text x="488" y="504" class="display" font-size="20" font-weight="600" fill="#1A1A1A">Expert partagé</text>
-    <text x="488" y="532" class="body" font-size="14" fill="#5A5A5A">Un expert toujours actif pour le commun</text>
-    <rect x="488" y="548" width="120" height="58" rx="3" fill="#2F5D3F" fill-opacity="0.55"/>
-    <text x="548" y="583" class="body" font-size="12" font-weight="600" fill="#FAF8F3" text-anchor="middle">partagé</text>
-    <g fill="#B8B5AE">
-      <rect x="628" y="548" width="26" height="26" rx="2"/><rect x="660" y="548" width="26" height="26" rx="2"/>
-      <rect x="692" y="548" width="26" height="26" rx="2"/><rect x="724" y="548" width="26" height="26" rx="2"/>
-      <rect x="628" y="580" width="26" height="26" rx="2"/><rect x="660" y="580" width="26" height="26" rx="2"/>
-      <rect x="692" y="580" width="26" height="26" rx="2"/><rect x="724" y="580" width="26" height="26" rx="2"/>
-    </g>
-    <text x="488" y="638" class="body" font-size="13" fill="#1A1A1A">Connaissance commune hors du routage</text>
-    <text x="488" y="658" class="body" font-size="12" font-style="italic" fill="#2F5D3F">DeepSeek oui · Qwen3 non</text>
-  </g>
-
-  <!-- convergence note -->
-  <rect x="56" y="700" width="788" height="60" rx="3" fill="#1A1A1A"/>
-  <text x="450" y="726" class="body" font-size="13" font-weight="500" fill="#FAF8F3" text-anchor="middle">Recette dominante 2026 : token-choice top-k + experts fins (+ expert partagé, point de désaccord vif)</text>
-  <text x="450" y="746" class="body" font-size="12" font-style="italic" fill="#B8B5AE" text-anchor="middle">Les deux axes se combinent librement — chaque laboratoire place ses curseurs</text>
+  <defs>
+    <marker id="arr3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6" fill="none" stroke="#2F5D3F" stroke-width="1.25"/>
+    </marker>
+  </defs>
 
   <!-- FOOTER -->
-  <text x="56" y="800" class="body" font-size="12" font-style="italic" fill="#5A5A5A">Source : Fedus et al. 2021 ; Zhou et al. 2022 ; Dai et al. 2024 (DeepSeekMoE) ; Qwen Team 2025.</text>
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="768" class="body" font-size="10" font-style="italic" letter-spacing="0.02em" fill="#5A5A5A">Sources : Gemma 3n (ai.google.dev) ; BitNet b1.58 2B4T (arXiv:2504.12285) &amp; bitnet.cpp (github.com/microsoft/BitNet) ; Apple Foundation Models 2024.</text>
 </svg>
 
-        <figcaption class="figure-caption"><a class="anchor" href="#fig-03" title="Lien direct vers ce schéma">¶</a> <em>Schéma 3 — La taxonomie du routage. Deux décisions orthogonales : qui choisit les affectations (token-choice contre expert-choice) et comment structurer les experts (granularité fine, expert partagé). Chaque laboratoire combine ces curseurs à sa façon.</em></figcaption>
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-03" title="Lien direct vers ce schéma">¶</a> <em>Schéma 3 — Trois leviers pour tenir dans le budget : compresser après coup (quantification), réorganiser l'occupation mémoire (MatFormer, Per-Layer Embedding), ou entraîner directement à basse précision (ternaire natif).</em></figcaption>
       </figure>
 
-      <p><strong>Token-choice contre expert-choice.</strong> Le schéma canonique est le <em>token-choice</em> : chaque token choisit ses <em>k</em> experts. C'est intuitif, mais rien ne garantit que la charge se répartisse — un expert populaire peut être submergé pendant qu'un autre chôme. En 2022, Zhou et al. proposent l'inversion : l'<span class="term" data-tooltip="Expert-choice : routage inversé où chaque expert sélectionne les tokens de plus haut score jusqu'à remplir sa capacité — l'équilibre de charge devient garanti par construction.">expert-choice</span><a class="cite" data-cite="5" href="#source-5">5</a>. Ce sont les experts qui choisissent, chacun sélectionnant les tokens de plus haut score jusqu'à remplir sa capacité. L'équilibre devient garanti <em>par construction</em> — aucun expert n'est sur- ou sous-chargé — au prix d'une bizarrerie : certains tokens peuvent être traités par zéro expert, d'autres par plusieurs.</p>
+      <p>Le <span class="term" data-tooltip="MatFormer — Matryoshka Transformer : un modèle qui imbrique des sous-modèles plus petits, exécutables seuls sans activer les couches englobantes. Un jeu de poids, plusieurs points de fonctionnement.">MatFormer</span> (transformer matriochka). Gemma 3n imbrique des sous-modèles plus petits à l'intérieur d'un modèle plus grand, comme des poupées russes<a class="cite" data-cite="5" href="#source-5">5</a>. On peut exécuter le seul cœur — le plus petit modèle imbriqué — sans activer les paramètres englobants, ce qui réduit à la volée le calcul, la latence et l'énergie selon la difficulté de la requête.</p>
 
-      <p><strong>Top-1 contre top-k.</strong> Le Switch Transformer de Google<a class="cite" data-cite="3" href="#source-3">3</a> a fait le pari radical du top-1 : un seul expert par token. La logique est de maximiser le nombre d'experts à budget de calcul égal, ce qui simplifie le routage et le rend moins coûteux en communication. Llama 4 reprend ce choix en 2025<a class="cite" data-cite="13" href="#source-13">13</a>. À l'opposé, Mixtral utilise top-2<a class="cite" data-cite="9" href="#source-9">9</a> et Qwen3 monte jusqu'à top-8 parmi 128 experts<a class="cite" data-cite="14" href="#source-14">14</a>, pariant qu'un mélange plus riche de spécialistes vaut le surcoût.</p>
+      <p>Le <span class="term" data-tooltip="Per-Layer Embedding (PLE) — technique de Gemma 3n : les tables d'embeddings sont déchargées vers la RAM lente et réinjectées couche par couche, sortant du budget de mémoire de travail.">Per-Layer Embedding (PLE)</span>. Les tables d'<em>embeddings</em> sont volumineuses et peu utilisées à chaque instant. Gemma 3n les <strong>décharge de la mémoire de travail rapide vers la RAM plus lente</strong>, les régénère et les réinjecte couche par couche au fil de l'inférence<a class="cite" data-cite="4" href="#source-4">4</a>. Le résultat est spectaculaire : les modèles E2B et E4B ont un décompte brut de 5 et 8&nbsp;milliards de paramètres, mais tournent avec l'empreinte de modèles 2B et 4B classiques — <strong>aussi peu que 2&nbsp;Go (E2B) et 3&nbsp;Go (E4B)</strong><a class="cite" data-cite="4" href="#source-4">4</a>. Ce qui compte n'est pas le nombre de paramètres, mais combien d'octets sont résidents en mémoire de travail à un instant donné. Apple joue la même partition avec le <strong>partage du KV-cache</strong> entre couches<a class="cite" data-cite="1" href="#source-1">1</a>.</p>
 
-      <p><strong>Experts fins et experts partagés.</strong> L'innovation de DeepSeekMoE<a class="cite" data-cite="10" href="#source-10">10</a> a été double. D'abord, la <span class="term" data-tooltip="Granularité fine : découper la couche en un grand nombre de petits experts plutôt qu'en quelques gros, ce qui multiplie les combinaisons possibles et affine la spécialisation.">granularité fine</span> : au lieu de quelques gros experts, en découper beaucoup de petits, ce qui multiplie les combinaisons possibles (choisir 8 experts parmi 256 offre bien plus de spécialisations que 2 parmi 8) et permet une spécialisation plus nette. Ensuite, l'<span class="term" data-tooltip="Expert partagé : un ou deux experts toujours actifs, chargés de capturer les connaissances communes, pendant que les experts routés se spécialisent sur le résiduel.">expert partagé</span> : réserver un ou deux experts toujours actifs, chargés de capturer les connaissances communes, pendant que les experts routés se spécialisent sur le résiduel. <mark>La spécialisation des experts n'est pas décrétée : elle émerge de la structure du routage.</mark> Ce couple — experts fins + experts partagés — est devenu la recette dominante, adoptée par DeepSeek-V3, même si Qwen3 a fait le choix inverse d'abandonner l'expert partagé<a class="cite" data-cite="14" href="#source-14">14</a>, pariant sur une spécialisation maximale.</p>
+      <p>Le <span class="term" data-tooltip="Ternaire natif — poids qui ne prennent que trois valeurs {−1, 0, +1}, soit log₂(3) ≈ 1,58 bit, entraînés directement ainsi (BitNet) plutôt que compressés après coup.">natif ternaire</span>. BitNet renverse la logique : au lieu d'entraîner en haute précision puis de compresser, il <strong>entraîne directement des poids ternaires</strong> {−1, 0, +1}, soit log₂(3) ≈ 1,58&nbsp;bit par poids<a class="cite" data-cite="7" href="#source-7">7</a>. Le zéro autorise une parcimonie apprise que les modèles 1-bit purs n'ont pas. BitNet b1.58 2B4T est le premier modèle natif 1,58-bit à 2&nbsp;milliards de paramètres entraîné sur 4&nbsp;000&nbsp;milliards de tokens<a class="cite" data-cite="7" href="#source-7">7</a>. Des poids ternaires remplacent les multiplications par des additions, ce qui donne une inférence CPU sans GPU : le framework <em>bitnet.cpp</em> affiche des accélérations de 1,37× à 6,17× et <strong>jusqu'à −82&nbsp;% d'énergie</strong><a class="cite" data-cite="8" href="#source-8">8</a>. <mark>Le natif ternaire est le seul des trois leviers qui attaque simultanément la mémoire, l'énergie et la dépendance au GPU.</mark></p>
+      </section>
 
-      <h2 id="moe-4">4. L'équilibrage de charge — le collapse et ses parades</h2>
-      <p>Laissé libre, un routeur token-choice s'effondre. C'est le <strong>collapse</strong> : dès l'entraînement, un cercle vicieux s'installe — les experts que le routeur privilégie s'améliorent plus vite (ils voient plus de données), donc le routeur les privilégie davantage, jusqu'à ce qu'une poignée d'experts absorbe tout le trafic et que les autres, jamais entraînés, deviennent des paramètres morts. Le modèle porte alors le coût mémoire de centaines d'experts sans en tirer la capacité. L'histoire de l'ingénierie MoE est en grande partie l'histoire des parades à ce collapse.</p>
+      <section>
+      <h2 id="mem-4">4. Le NPU et le silicium</h2>
+
+      <p>Faire tenir le modèle en mémoire ne suffit pas : encore faut-il l'exécuter sans vider la batterie ni monopoliser le processeur. C'est le rôle du <span class="term" data-tooltip="NPU — Neural Processing Unit : accélérateur dédié aux réseaux de neurones, optimisé pour l'efficacité énergétique plutôt que la polyvalence.">NPU</span>, un accélérateur dédié optimisé pour l'efficacité énergétique. L'argument est chiffré : Phi-Silica tourne sur le NPU Hexagon des Copilot+ PC à ~650&nbsp;tokens/seconde pour <strong>environ 1,5&nbsp;watt</strong>, en libérant CPU et GPU pour le reste<a class="cite" data-cite="6" href="#source-6">6</a>. Un modèle exécuté sur CPU ferait chauffer l'appareil et fondrait la batterie ; sur NPU, il devient une fonction de fond soutenable (voir Schéma&nbsp;4).</p>
 
       <figure class="figure" id="fig-04">
         <svg data-schema-id="schema-04" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
@@ -973,85 +991,108 @@
       .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
       .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
     </style>
+    <marker id="arr4" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6" fill="none" stroke="#5A5A5A" stroke-width="1.25"/>
+    </marker>
   </defs>
 
   <rect width="1200" height="800" fill="#FAF8F3"/>
 
   <!-- HEADER -->
   <text x="60" y="55" class="mono" font-size="13" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 04</text>
-  <text x="60" y="95" class="display" font-size="28" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Le collapse — et ses quatre parades</text>
-  <text x="60" y="123" class="display" font-size="18" font-style="italic" fill="#5A5A5A">Sans contrainte, le routeur s'effondre sur ses favoris ; toute l'ingénierie MoE consiste à rééquilibrer</text>
+  <text x="60" y="95" class="display" font-size="28" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Le NPU, la mémoire et le pipeline hétérogène</text>
+  <text x="60" y="123" class="display" font-size="18" font-style="italic" fill="#5A5A5A">Trois unités se partagent une mémoire unifiée — le TOPS vend le silicium, la bande passante décide du débit</text>
   <line x1="60" y1="145" x2="1140" y2="145" stroke="#E5E1D8" stroke-width="0.5"/>
 
-  <!-- COLLAPSE panel -->
-  <g class="interactive" data-card="collapse" tabindex="0" role="button" aria-label="Le collapse — cliquez pour les détails">
-    <rect x="60" y="180" width="440" height="440" rx="3" fill="#B7332C" fill-opacity="0.05" stroke="#B7332C" stroke-width="1.5"/>
-    <text x="84" y="212" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#B7332C">LE PROBLÈME · COLLAPSE</text>
-    <text x="84" y="240" class="body" font-size="14" fill="#1A1A1A">Charge des experts sans équilibrage</text>
-    <!-- axis -->
-    <line x1="100" y1="540" x2="476" y2="540" stroke="#5A5A5A" stroke-width="1"/>
-    <line x1="100" y1="270" x2="100" y2="540" stroke="#5A5A5A" stroke-width="1"/>
-    <!-- bars: imbalanced -->
-    <rect x="116" y="286" width="38" height="254" fill="#B7332C"/>
-    <rect x="162" y="330" width="38" height="210" fill="#B7332C"/>
-    <rect x="208" y="500" width="38" height="40" fill="#B7332C" fill-opacity="0.35"/>
-    <rect x="254" y="524" width="38" height="16" fill="#B8B5AE"/>
-    <rect x="300" y="530" width="38" height="10" fill="#B8B5AE"/>
-    <rect x="346" y="524" width="38" height="16" fill="#B8B5AE"/>
-    <rect x="392" y="532" width="38" height="8" fill="#B8B5AE"/>
-    <rect x="438" y="530" width="38" height="10" fill="#B8B5AE"/>
-    <text x="135" y="558" class="mono" font-size="10" fill="#5A5A5A" text-anchor="middle">E1</text>
-    <text x="181" y="558" class="mono" font-size="10" fill="#5A5A5A" text-anchor="middle">E2</text>
-    <text x="290" y="576" class="body" font-size="12" font-style="italic" fill="#5A5A5A" text-anchor="middle">…experts morts, jamais entraînés</text>
-    <text x="84" y="602" class="body" font-size="12" fill="#1A1A1A">Cercle vicieux : les favoris voient plus de données, s'améliorent, sont plus choisis.</text>
+  <!-- LEFT : SoC diagram -->
+  <text x="70" y="185" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#5A5A5A">LE SoC — CALCUL PARTAGÉ, MÉMOIRE COMMUNE</text>
+
+  <!-- CPU -->
+  <rect x="90" y="205" width="150" height="80" rx="3" fill="#5A5A5A" fill-opacity="0.12" stroke="#5A5A5A" stroke-width="1.25"/>
+  <text x="165" y="240" class="body" font-size="14" font-weight="600" fill="#1A1A1A" text-anchor="middle">CPU</text>
+  <text x="165" y="262" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">polyvalent</text>
+  <!-- GPU -->
+  <rect x="255" y="205" width="150" height="80" rx="3" fill="#5A5A5A" fill-opacity="0.12" stroke="#5A5A5A" stroke-width="1.25"/>
+  <text x="330" y="240" class="body" font-size="14" font-weight="600" fill="#1A1A1A" text-anchor="middle">GPU</text>
+  <text x="330" y="262" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">parallèle</text>
+  <!-- NPU highlighted -->
+  <g class="interactive" data-card="npu" tabindex="0" role="button" aria-label="Le NPU — cliquez pour les détails">
+    <rect x="420" y="205" width="170" height="80" rx="3" fill="#B7332C" fill-opacity="0.14" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="505" y="238" class="body" font-size="14" font-weight="600" fill="#B7332C" text-anchor="middle">NPU</text>
+    <text x="505" y="260" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">neuronal · efficace</text>
+    <text x="505" y="277" class="mono" font-size="10" fill="#B7332C" text-anchor="middle">~1,5 W</text>
   </g>
 
-  <!-- Parade 1 -->
-  <g class="interactive" data-card="loss-auxiliaire" tabindex="0" role="button" aria-label="La loss auxiliaire — cliquez pour les détails">
-    <rect x="540" y="180" width="600" height="130" rx="3" fill="#1F5560" fill-opacity="0.05" stroke="#1F5560" stroke-width="1.25"/>
-    <text x="564" y="210" class="mono" font-size="11" font-weight="600" letter-spacing="0.1em" fill="#1F5560">PARADE 1 · LOSS AUXILIAIRE</text>
-    <text x="564" y="238" class="body" font-size="14" font-weight="500" fill="#1A1A1A">Un terme de perte pénalise le déséquilibre</text>
-    <text x="564" y="262" class="body" font-size="12.5" fill="#5A5A5A">Switch Transformer 2021 · + router z-loss (ST-MoE) pour la stabilité</text>
-    <text x="564" y="290" class="body" font-size="12.5" font-style="italic" fill="#B7332C">Défaut : un impôt sur la qualité — en tension avec la perte principale</text>
+  <!-- arrows to bus -->
+  <path d="M165 285 L165 340" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#arr4)"/>
+  <path d="M330 285 L330 340" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#arr4)"/>
+  <path d="M505 285 L505 340" stroke="#B7332C" stroke-width="1.5" marker-end="url(#arr4)"/>
+
+  <!-- bandwidth throat -->
+  <g class="interactive" data-card="bande-passante" tabindex="0" role="button" aria-label="La bande passante mémoire — cliquez pour les détails">
+    <path d="M90 348 L590 348 L470 400 L210 400 Z" fill="#B58A2C" fill-opacity="0.16" stroke="#B58A2C" stroke-width="1.5"/>
+    <text x="340" y="372" class="body" font-size="13" font-weight="600" fill="#B58A2C" text-anchor="middle">Bande passante mémoire</text>
+    <text x="340" y="390" class="mono" font-size="11" fill="#5A5A5A" text-anchor="middle">~50–120 Go/s — le goulot du décodage</text>
   </g>
 
-  <!-- Parade 2 -->
-  <g class="interactive" data-card="expert-choice" tabindex="0" role="button" aria-label="L'expert-choice — cliquez pour les détails">
-    <rect x="540" y="322" width="600" height="130" rx="3" fill="#B58A2C" fill-opacity="0.06" stroke="#B58A2C" stroke-width="1.25"/>
-    <text x="564" y="352" class="mono" font-size="11" font-weight="600" letter-spacing="0.1em" fill="#B58A2C">PARADE 2 · EXPERT-CHOICE</text>
-    <text x="564" y="380" class="body" font-size="14" font-weight="500" fill="#1A1A1A">Les experts choisissent — équilibre mécanique</text>
-    <text x="564" y="404" class="body" font-size="12.5" fill="#5A5A5A">Zhou et al. 2022 · aucune loss auxiliaire nécessaire</text>
-    <text x="564" y="432" class="body" font-size="12.5" font-style="italic" fill="#B7332C">Limite : mal adapté à la génération auto-régressive</text>
+  <!-- unified memory -->
+  <rect x="90" y="420" width="500" height="110" rx="3" fill="#1F5560" fill-opacity="0.08" stroke="#1F5560" stroke-width="1.5"/>
+  <text x="340" y="450" class="body" font-size="14" font-weight="600" fill="#1F5560" text-anchor="middle">Mémoire unifiée (RAM)</text>
+  <rect x="115" y="465" width="230" height="45" rx="3" fill="#1F5560" fill-opacity="0.3"/>
+  <text x="230" y="492" class="mono" font-size="12" fill="#1A1A1A" text-anchor="middle">poids résidents</text>
+  <rect x="360" y="465" width="205" height="45" rx="3" fill="#2F5D3F" fill-opacity="0.3"/>
+  <text x="462" y="492" class="mono" font-size="12" fill="#1A1A1A" text-anchor="middle">KV-cache + activations</text>
+
+  <text x="90" y="575" class="body" font-size="12" font-style="italic" fill="#5A5A5A">À chaque token, tous les poids sont relus depuis la RAM :</text>
+  <text x="90" y="595" class="body" font-size="12" font-style="italic" fill="#5A5A5A">un NPU à 45 TOPS relié à une RAM lente reste bridé par la RAM.</text>
+
+  <!-- RIGHT : landscape -->
+  <text x="700" y="185" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#5A5A5A">LE PAYSAGE SILICIUM 2026</text>
+
+  <g class="interactive" data-card="apple-ane" tabindex="0" role="button" aria-label="Apple — cliquez pour les détails">
+    <rect x="700" y="205" width="440" height="105" rx="3" fill="#FAF8F3" stroke="#E5E1D8" stroke-width="1.25"/>
+    <text x="720" y="235" class="body" font-size="14" font-weight="600" fill="#1A1A1A">Apple</text>
+    <text x="720" y="260" class="body" font-size="12" fill="#5A5A5A">Neural Engine jusqu'au M5 (oct. 2025), puis bascule</text>
+    <text x="720" y="279" class="body" font-size="12" fill="#5A5A5A">vers des accélérateurs neuronaux par cœur GPU.</text>
+    <text x="720" y="299" class="mono" font-size="11" fill="#B7332C">TOPS ANE non publié — la frontière NPU/GPU se brouille</text>
+  </g>
+  <g class="interactive" data-card="hexagon" tabindex="0" role="button" aria-label="Qualcomm Hexagon — cliquez pour les détails">
+    <rect x="700" y="325" width="440" height="105" rx="3" fill="#FAF8F3" stroke="#E5E1D8" stroke-width="1.25"/>
+    <text x="720" y="355" class="body" font-size="14" font-weight="600" fill="#1A1A1A">Qualcomm — Hexagon</text>
+    <text x="1120" y="355" class="mono" font-size="15" font-weight="600" fill="#B7332C" text-anchor="end">45 TOPS</text>
+    <text x="720" y="380" class="body" font-size="12" fill="#5A5A5A">Snapdragon X ; socle des Copilot+ PC.</text>
+    <text x="720" y="400" class="body" font-size="12" fill="#5A5A5A">Phi-Silica : 650 tok/s à ~1,5 W.</text>
+    <text x="720" y="420" class="mono" font-size="11" fill="#5A5A5A">collaboration Windows AI Foundry</text>
+  </g>
+  <g>
+    <rect x="700" y="445" width="440" height="90" rx="3" fill="#FAF8F3" stroke="#E5E1D8" stroke-width="1.25"/>
+    <text x="720" y="475" class="body" font-size="14" font-weight="600" fill="#1A1A1A">MediaTek · Arm · Intel · AMD</text>
+    <text x="720" y="500" class="body" font-size="12" fill="#5A5A5A">Ciblés day one par Meta pour Llama 3.2 ;</text>
+    <text x="720" y="520" class="body" font-size="12" fill="#5A5A5A">l'inférence répartit CPU + GPU + NPU.</text>
   </g>
 
-  <!-- Parade 3 -->
-  <g class="interactive" data-card="biais-sans-loss" tabindex="0" role="button" aria-label="Le biais sans-loss — cliquez pour les détails">
-    <rect x="540" y="464" width="600" height="156" rx="3" fill="#2F5D3F" fill-opacity="0.07" stroke="#2F5D3F" stroke-width="1.5"/>
-    <text x="564" y="494" class="mono" font-size="11" font-weight="600" letter-spacing="0.1em" fill="#2F5D3F">PARADE 3 · BIAIS SANS-LOSS  ★</text>
-    <text x="564" y="522" class="body" font-size="14" font-weight="500" fill="#1A1A1A">Un biais externe ajusté après chaque pas</text>
-    <text x="564" y="546" class="body" font-size="12.5" fill="#5A5A5A">DeepSeek-V3 2024 · +biais aux sous-chargés, −biais aux surchargés</text>
-    <text x="564" y="574" class="body" font-size="12.5" fill="#1A1A1A">Découplé de la descente de gradient →</text>
-    <text x="564" y="596" class="body" font-size="12.5" font-weight="600" fill="#2F5D3F">équilibre sans impôt sur la qualité — nouveau standard</text>
-  </g>
+  <!-- bottom insight strip -->
+  <rect x="90" y="620" width="1050" height="90" rx="3" fill="#B7332C" fill-opacity="0.05" stroke="#B7332C" stroke-width="1" stroke-dasharray="2 3"/>
+  <text x="115" y="655" class="display" font-size="18" font-style="italic" fill="#1A1A1A">Le NPU n'est pas un remplaçant, c'est un membre d'un pipeline hétérogène.</text>
+  <text x="115" y="685" class="body" font-size="12" fill="#5A5A5A">Prochain champ de bataille : non pas plus de TOPS, mais plus de bande passante mémoire.</text>
 
   <!-- FOOTER -->
-  <line x1="60" y1="650" x2="1140" y2="650" stroke="#E5E1D8" stroke-width="0.5"/>
-  <text x="60" y="682" class="body" font-size="12" font-style="italic" fill="#5A5A5A">Source : Fedus et al. 2021 ; Zoph et al. 2022 (ST-MoE) ; Zhou et al. 2022 ; DeepSeek-AI 2024.</text>
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="768" class="body" font-size="10" font-style="italic" letter-spacing="0.02em" fill="#5A5A5A">Sources : Notebookcheck (Snapdragon X, 45 TOPS) ; VentureBeat (Phi-Silica) ; arXiv:2501.14794 (heterogeneous mobile inference).</text>
 </svg>
 
-        <figcaption class="figure-caption"><a class="anchor" href="#fig-04" title="Lien direct vers ce schéma">¶</a> <em>Schéma 4 — Le collapse et ses quatre parades. Sans contrainte, la charge s'effondre sur quelques experts ; loss auxiliaire, router z-loss, expert-choice et biais sans-loss sont les réponses successives, jusqu'à découpler l'équilibrage de la descente de gradient.</em></figcaption>
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-04" title="Lien direct vers ce schéma">¶</a> <em>Schéma 4 — Le NPU, la mémoire et le pipeline hétérogène. Trois unités (CPU, GPU, NPU) se partagent une mémoire unifiée ; le TOPS vend le silicium, mais c'est la bande passante mémoire qui décide du débit.</em></figcaption>
       </figure>
 
-      <p><strong>La loss auxiliaire.</strong> La première parade, popularisée par Switch<a class="cite" data-cite="3" href="#source-3">3</a>, ajoute à la fonction de perte un terme qui pénalise le déséquilibre : il pousse le routeur à répartir les tokens uniformément. Efficace, mais avec un défaut structurel — cette <span class="term" data-tooltip="Loss auxiliaire d'équilibrage : terme ajouté à la perte principale pour forcer une répartition uniforme des tokens entre experts. Efficace mais en tension avec la qualité de prédiction.">perte auxiliaire</span> est en tension avec la perte principale (la qualité de prédiction). On force l'équilibre au détriment, léger mais réel, de la performance. <mark>Toute loss auxiliaire d'équilibrage est un impôt sur la qualité du modèle.</mark></p>
+      <p>Mais <strong>le TOPS n'est pas la performance</strong>. Qualcomm annonce 45&nbsp;TOPS pour le Hexagon des Snapdragon X<a class="cite" data-cite="11" href="#source-11">11</a> ; ce chiffre mesure une capacité de calcul crête, pas le débit réel d'un LLM. Comme établi en section&nbsp;1, le décodage est limité par la bande passante mémoire : un NPU à 45&nbsp;TOPS relié à une RAM lente reste bridé par la RAM. <mark>Le TOPS vend le silicium ; la bande passante mémoire décide du débit.</mark></p>
 
-      <p><strong>Le router z-loss.</strong> ST-MoE<a class="cite" data-cite="4" href="#source-4">4</a> ajoute un second terme, le <span class="term" data-tooltip="Router z-loss : pénalise les logits de routage de trop grande amplitude pour stabiliser numériquement l'entraînement — le principal fléau des MoE à grande échelle.">z-loss</span>, qui pénalise les logits de routage trop grands. Ce n'est pas directement de l'équilibrage mais de la stabilisation : les grands logits provoquent des instabilités numériques (le principal fléau de l'entraînement MoE à grande échelle). ST-MoE a rendu les MoE <em>entraînables de façon fiable et transférables</em> — une contribution moins spectaculaire mais décisive pour l'adoption industrielle.</p>
+      <p>Le paysage 2026 s'est fragmenté : <strong>Apple</strong> a cessé de publier un chiffre de TOPS pour le Neural Engine avec le M5 (octobre 2025) et route désormais une large part de l'IA on-device via des <strong>accélérateurs neuronaux intégrés à chaque cœur GPU</strong><a class="cite" data-cite="11" href="#source-11">11</a> ; <strong>Qualcomm</strong> pousse le Hexagon à 45&nbsp;TOPS et collabore avec Microsoft sur Windows AI Foundry<a class="cite" data-cite="6" href="#source-6">6</a> ; <strong>MediaTek</strong> et les partenaires Arm sont ciblés dès le premier jour par Meta pour Llama 3.2<a class="cite" data-cite="10" href="#source-10">10</a>. En pratique, l'inférence est <strong>hétérogène</strong> : un même modèle répartit ses opérations entre CPU, GPU et NPU, la mémoire unifiée servant de substrat commun<a class="cite" data-cite="12" href="#source-12">12</a>. Le NPU n'est pas un remplaçant mais un membre d'un pipeline.</p>
+      </section>
 
-      <p><strong>L'expert-choice.</strong> Comme vu, l'expert-choice<a class="cite" data-cite="5" href="#source-5">5</a> rend la loss auxiliaire inutile : l'équilibre est mécanique. C'est élégant, mais mal adapté à la génération auto-régressive (un expert ne peut pas choisir un token futur qu'il n'a pas encore vu), ce qui a limité son adoption dans les LLM décodeurs.</p>
+      <section>
+      <h2 id="mem-5">5. Le paysage des modèles embarqués 2026</h2>
 
-      <p><strong>Le biais sans-loss.</strong> L'innovation la plus récente et la plus commentée vient de DeepSeek-V3<a class="cite" data-cite="11" href="#source-11">11</a>. Plutôt qu'une loss auxiliaire qui pollue le gradient, il ajoute un <em>biais</em> aux scores d'affinité, ajusté après chaque pas d'entraînement : on incrémente le biais des experts sous-chargés, on décrémente celui des surchargés. L'équilibrage devient un contrôleur externe, découplé de la descente de gradient — donc sans impôt sur la qualité. Cette stratégie <em>auxiliary-loss-free</em><a class="cite" data-cite="11" href="#source-11">11</a> est en train de devenir un nouveau standard, précisément parce qu'elle résout la tension fondatrice entre équilibre et performance.</p>
-
-      <h2 id="moe-5">5. Le mur des systèmes</h2>
-      <p>Voici la bascule annoncée. Tant que les experts tiennent sur une seule puce, MoE reste un objet d'architecture. Mais un modèle de 671 milliards de paramètres ne tient sur aucun GPU existant. Les experts doivent être <em>répartis</em> — placés sur des dizaines, voire des centaines d'accélérateurs. C'est le <span class="term" data-tooltip="Parallélisme d'experts (expert parallelism) : mode de distribution où chaque GPU héberge un sous-ensemble des experts d'une couche MoE.">parallélisme d'experts</span> (<em>expert parallelism</em>), formalisé par GShard<a class="cite" data-cite="2" href="#source-2">2</a> : chaque GPU héberge un sous-ensemble d'experts.</p>
+      <p>En croisant contrainte mémoire, technique de compression et cible matérielle, une petite famille de modèles a émergé comme état de l'art embarqué. Elle tourne autour d'un point de convergence remarquable : <strong>~2 à 4&nbsp;milliards de paramètres, compressés à 2-4 bits, pour une empreinte de 1 à 3&nbsp;Go</strong> (voir Schéma&nbsp;5).</p>
 
       <figure class="figure" id="fig-05">
         <svg data-schema-id="schema-05" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
@@ -1061,125 +1102,103 @@
       .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
       .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
     </style>
-    <marker id="arrow05" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-      <path d="M0 0 L10 5 L0 10 z" fill="#1F5560"/>
-    </marker>
-    <marker id="arrow05b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-      <path d="M0 0 L10 5 L0 10 z" fill="#B58A2C"/>
-    </marker>
   </defs>
 
   <rect width="1200" height="800" fill="#FAF8F3"/>
 
   <!-- HEADER -->
   <text x="60" y="55" class="mono" font-size="13" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 05</text>
-  <text x="60" y="95" class="display" font-size="28" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Le mur des systèmes</text>
-  <text x="60" y="123" class="display" font-size="18" font-style="italic" fill="#5A5A5A">Les experts sont répartis sur des dizaines de GPU ; à chaque couche, les tokens voyagent en all-to-all</text>
+  <text x="60" y="95" class="display" font-size="28" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Le paysage des modèles embarqués 2026</text>
+  <text x="60" y="123" class="display" font-size="18" font-style="italic" fill="#5A5A5A">La contrainte mémoire dessine une convergence : ~2-4 Md de paramètres, 2-4 bits, 1-3 Go d'empreinte</text>
   <line x1="60" y1="145" x2="1140" y2="145" stroke="#E5E1D8" stroke-width="0.5"/>
 
-  <!-- Tokens (left) -->
-  <text x="60" y="185" class="mono" font-size="11" font-weight="600" letter-spacing="0.1em" fill="#5A5A5A">TOKENS DU LOT</text>
-  <rect x="60" y="250" width="120" height="300" rx="3" fill="#1A1A1A"/>
-  <text x="120" y="290" class="body" font-size="12" fill="#FAF8F3" text-anchor="middle">lot de tokens</text>
-  <g fill="#B7332C">
-    <rect x="80" y="310" width="80" height="20" rx="2" fill-opacity="0.9"/>
-    <rect x="80" y="340" width="80" height="20" rx="2" fill-opacity="0.7"/>
-    <rect x="80" y="370" width="80" height="20" rx="2" fill-opacity="0.5"/>
-    <rect x="80" y="400" width="80" height="20" rx="2" fill-opacity="0.85"/>
-    <rect x="80" y="430" width="80" height="20" rx="2" fill-opacity="0.6"/>
-  </g>
-  <text x="120" y="480" class="body" font-size="11" font-style="italic" fill="#B8B5AE" text-anchor="middle">chacun routé vers</text>
-  <text x="120" y="496" class="body" font-size="11" font-style="italic" fill="#B8B5AE" text-anchor="middle">un expert distant</text>
+  <!-- Column headers -->
+  <text x="80" y="200" class="mono" font-size="11" font-weight="600" letter-spacing="0.1em" fill="#5A5A5A">MODÈLE</text>
+  <text x="360" y="200" class="mono" font-size="11" font-weight="600" letter-spacing="0.1em" fill="#5A5A5A" text-anchor="middle">PARAMS</text>
+  <text x="500" y="200" class="mono" font-size="11" font-weight="600" letter-spacing="0.1em" fill="#5A5A5A" text-anchor="middle">EMPREINTE</text>
+  <text x="650" y="200" class="mono" font-size="11" font-weight="600" letter-spacing="0.1em" fill="#5A5A5A">TECHNIQUE DE COMPRESSION</text>
+  <text x="1000" y="200" class="mono" font-size="11" font-weight="600" letter-spacing="0.1em" fill="#5A5A5A">CIBLE MATÉRIELLE</text>
+  <line x1="80" y1="212" x2="1120" y2="212" stroke="#1A1A1A" stroke-width="1.25"/>
 
-  <!-- Dispatch band -->
-  <g class="interactive" data-card="all-to-all-dispatch" tabindex="0" role="button" aria-label="All-to-all dispatch — cliquez pour les détails">
-    <rect x="210" y="220" width="150" height="360" rx="3" fill="#1F5560" fill-opacity="0.05" stroke="#1F5560" stroke-width="1.25" stroke-dasharray="2 3"/>
-    <text x="285" y="245" class="mono" font-size="11" font-weight="600" fill="#1F5560" text-anchor="middle">DISPATCH</text>
-    <text x="285" y="262" class="body" font-size="11" font-style="italic" fill="#5A5A5A" text-anchor="middle">all-to-all</text>
-    <path d="M188 320 C 240 320, 300 300, 372 300" fill="none" stroke="#1F5560" stroke-width="1.5" marker-end="url(#arrow05)"/>
-    <path d="M188 350 C 240 350, 300 470, 372 470" fill="none" stroke="#1F5560" stroke-width="1.5" marker-end="url(#arrow05)"/>
-    <path d="M188 410 C 240 410, 300 380, 372 380" fill="none" stroke="#1F5560" stroke-width="1.5" marker-end="url(#arrow05)"/>
-    <path d="M188 440 C 240 440, 300 550, 372 550" fill="none" stroke="#1F5560" stroke-width="1.5" marker-end="url(#arrow05)"/>
+  <!-- Row 1 : Apple -->
+  <g class="interactive" data-card="apple-fm" tabindex="0" role="button" aria-label="Apple Foundation — cliquez pour les détails">
+    <rect x="80" y="220" width="1040" height="76" fill="#B7332C" fill-opacity="0.05"/>
+    <text x="92" y="252" class="body" font-size="15" font-weight="600" fill="#1A1A1A">Apple Foundation</text>
+    <text x="92" y="274" class="body" font-size="11" font-style="italic" fill="#5A5A5A">livré dans iOS · Foundation Models framework</text>
+    <text x="360" y="262" class="mono" font-size="13" fill="#1A1A1A" text-anchor="middle">~3 Md</text>
+    <text x="500" y="262" class="mono" font-size="13" font-weight="600" fill="#1F5560" text-anchor="middle">~1 Go</text>
+    <text x="650" y="262" class="body" font-size="12" fill="#5A5A5A">QAT 2-bit + LoRA + KV-cache partagé</text>
+    <text x="1000" y="262" class="body" font-size="12" fill="#5A5A5A">Apple Silicon</text>
   </g>
-
-  <!-- Experts on GPUs -->
-  <g class="interactive" data-card="expert-parallelism" tabindex="0" role="button" aria-label="Le parallélisme d'experts — cliquez pour les détails">
-    <rect x="384" y="200" width="440" height="400" rx="3" fill="#5A5A5A" fill-opacity="0.03" stroke="#B8B5AE" stroke-width="1.25"/>
-    <text x="408" y="228" class="mono" font-size="11" font-weight="600" letter-spacing="0.1em" fill="#5A5A5A">PARALLÉLISME D'EXPERTS — 4 GPU, experts répartis</text>
-    <!-- GPU 0 -->
-    <rect x="408" y="248" width="188" height="150" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
-    <text x="422" y="270" class="mono" font-size="11" font-weight="600" fill="#1F5560">GPU 0</text>
-    <rect x="422" y="284" width="72" height="44" rx="3" fill="#1F5560" fill-opacity="0.12" stroke="#1F5560" stroke-width="1"/>
-    <text x="458" y="311" class="body" font-size="12" fill="#1A1A1A" text-anchor="middle">E0</text>
-    <rect x="506" y="284" width="72" height="44" rx="3" fill="#1F5560" fill-opacity="0.12" stroke="#1F5560" stroke-width="1"/>
-    <text x="542" y="311" class="body" font-size="12" fill="#1A1A1A" text-anchor="middle">E1</text>
-    <rect x="422" y="340" width="156" height="42" rx="3" fill="#B7332C" fill-opacity="0.10" stroke="#B7332C" stroke-width="1"/>
-    <text x="500" y="366" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">tokens locaux + distants</text>
-    <!-- GPU 1 -->
-    <rect x="612" y="248" width="188" height="150" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
-    <text x="626" y="270" class="mono" font-size="11" font-weight="600" fill="#1F5560">GPU 1</text>
-    <rect x="626" y="284" width="72" height="44" rx="3" fill="#1F5560" fill-opacity="0.12" stroke="#1F5560" stroke-width="1"/>
-    <text x="662" y="311" class="body" font-size="12" fill="#1A1A1A" text-anchor="middle">E2</text>
-    <rect x="710" y="284" width="72" height="44" rx="3" fill="#1F5560" fill-opacity="0.12" stroke="#1F5560" stroke-width="1"/>
-    <text x="746" y="311" class="body" font-size="12" fill="#1A1A1A" text-anchor="middle">E3</text>
-    <rect x="626" y="340" width="156" height="42" rx="3" fill="#B7332C" fill-opacity="0.10" stroke="#B7332C" stroke-width="1"/>
-    <text x="704" y="366" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">tokens locaux + distants</text>
-    <!-- GPU 2 -->
-    <rect x="408" y="416" width="188" height="150" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
-    <text x="422" y="438" class="mono" font-size="11" font-weight="600" fill="#1F5560">GPU 2</text>
-    <rect x="422" y="452" width="72" height="44" rx="3" fill="#1F5560" fill-opacity="0.12" stroke="#1F5560" stroke-width="1"/>
-    <text x="458" y="479" class="body" font-size="12" fill="#1A1A1A" text-anchor="middle">E4</text>
-    <rect x="506" y="452" width="72" height="44" rx="3" fill="#1F5560" fill-opacity="0.12" stroke="#1F5560" stroke-width="1"/>
-    <text x="542" y="479" class="body" font-size="12" fill="#1A1A1A" text-anchor="middle">E5</text>
-    <rect x="422" y="508" width="156" height="42" rx="3" fill="#B7332C" fill-opacity="0.10" stroke="#B7332C" stroke-width="1"/>
-    <text x="500" y="534" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">tokens locaux + distants</text>
-    <!-- GPU 3 -->
-    <rect x="612" y="416" width="188" height="150" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
-    <text x="626" y="438" class="mono" font-size="11" font-weight="600" fill="#1F5560">GPU 3</text>
-    <rect x="626" y="452" width="72" height="44" rx="3" fill="#1F5560" fill-opacity="0.12" stroke="#1F5560" stroke-width="1"/>
-    <text x="662" y="479" class="body" font-size="12" fill="#1A1A1A" text-anchor="middle">E6</text>
-    <rect x="710" y="452" width="72" height="44" rx="3" fill="#1F5560" fill-opacity="0.12" stroke="#1F5560" stroke-width="1"/>
-    <text x="746" y="479" class="body" font-size="12" fill="#1A1A1A" text-anchor="middle">E7</text>
-    <rect x="626" y="508" width="156" height="42" rx="3" fill="#B7332C" fill-opacity="0.10" stroke="#B7332C" stroke-width="1"/>
-    <text x="704" y="534" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">tokens locaux + distants</text>
+  <!-- Row 2 : Gemma 3n -->
+  <g class="interactive" data-card="gemma3n" tabindex="0" role="button" aria-label="Gemma 3n — cliquez pour les détails">
+    <rect x="80" y="296" width="1040" height="76" fill="#1F5560" fill-opacity="0.04"/>
+    <text x="92" y="328" class="body" font-size="15" font-weight="600" fill="#1A1A1A">Gemma 3n E4B</text>
+    <text x="92" y="350" class="body" font-size="11" font-style="italic" fill="#5A5A5A">multimodal · mobile-first (Google)</text>
+    <text x="360" y="338" class="mono" font-size="13" fill="#1A1A1A" text-anchor="middle">8 Md brut</text>
+    <text x="500" y="338" class="mono" font-size="13" font-weight="600" fill="#1F5560" text-anchor="middle">3 Go</text>
+    <text x="650" y="338" class="body" font-size="12" fill="#5A5A5A">MatFormer + Per-Layer Embedding</text>
+    <text x="1000" y="338" class="body" font-size="12" fill="#5A5A5A">téléphone / tablette</text>
   </g>
-
-  <!-- Combine band -->
-  <g class="interactive" data-card="all-to-all-combine" tabindex="0" role="button" aria-label="All-to-all combine — cliquez pour les détails">
-    <rect x="848" y="220" width="140" height="360" rx="3" fill="#B58A2C" fill-opacity="0.05" stroke="#B58A2C" stroke-width="1.25" stroke-dasharray="2 3"/>
-    <text x="918" y="245" class="mono" font-size="11" font-weight="600" fill="#B58A2C" text-anchor="middle">COMBINE</text>
-    <text x="918" y="262" class="body" font-size="11" font-style="italic" fill="#5A5A5A" text-anchor="middle">all-to-all retour</text>
-    <path d="M826 310 C 870 310, 940 340, 986 340" fill="none" stroke="#B58A2C" stroke-width="1.5" marker-end="url(#arrow05b)"/>
-    <path d="M826 480 C 870 480, 940 400, 986 400" fill="none" stroke="#B58A2C" stroke-width="1.5" marker-end="url(#arrow05b)"/>
+  <!-- Row 3 : Phi-Silica -->
+  <g class="interactive" data-card="phi-silica" tabindex="0" role="button" aria-label="Phi-Silica — cliquez pour les détails">
+    <rect x="80" y="372" width="1040" height="76" fill="#B7332C" fill-opacity="0.05"/>
+    <text x="92" y="404" class="body" font-size="15" font-weight="600" fill="#1A1A1A">Phi-Silica</text>
+    <text x="92" y="426" class="body" font-size="11" font-style="italic" fill="#5A5A5A">650 tok/s à ~1,5 W (Microsoft)</text>
+    <text x="360" y="414" class="mono" font-size="13" fill="#1A1A1A" text-anchor="middle">3,3 Md</text>
+    <text x="500" y="414" class="mono" font-size="13" fill="#5A5A5A" text-anchor="middle">NPU-résident</text>
+    <text x="650" y="414" class="body" font-size="12" fill="#5A5A5A">distillation, optimisé Hexagon</text>
+    <text x="1000" y="414" class="body" font-size="12" fill="#5A5A5A">Copilot+ PC</text>
+  </g>
+  <!-- Row 4 : Llama 3.2 -->
+  <g>
+    <rect x="80" y="448" width="1040" height="76" fill="#1F5560" fill-opacity="0.04"/>
+    <text x="92" y="480" class="body" font-size="15" font-weight="600" fill="#1A1A1A">Llama 3.2 3B</text>
+    <text x="92" y="502" class="body" font-size="11" font-style="italic" fill="#5A5A5A">contexte 128K · day one (Meta)</text>
+    <text x="360" y="490" class="mono" font-size="13" fill="#1A1A1A" text-anchor="middle">3 Md</text>
+    <text x="500" y="490" class="mono" font-size="13" fill="#5A5A5A" text-anchor="middle">~1,8 Go</text>
+    <text x="650" y="490" class="body" font-size="12" fill="#5A5A5A">QAT+LoRA / SpinQuant (−56 % taille)</text>
+    <text x="1000" y="490" class="body" font-size="12" fill="#5A5A5A">Qualcomm/MediaTek/Arm</text>
+  </g>
+  <!-- Row 5 : Qwen -->
+  <g>
+    <rect x="80" y="524" width="1040" height="76" fill="#B7332C" fill-opacity="0.05"/>
+    <text x="92" y="556" class="body" font-size="15" font-weight="600" fill="#1A1A1A">Qwen2.5-3B</text>
+    <text x="92" y="578" class="body" font-size="11" font-style="italic" fill="#5A5A5A">populaire en GGUF (Alibaba)</text>
+    <text x="360" y="566" class="mono" font-size="13" fill="#1A1A1A" text-anchor="middle">3 Md</text>
+    <text x="500" y="566" class="mono" font-size="13" fill="#5A5A5A" text-anchor="middle">~1,9 Go</text>
+    <text x="650" y="566" class="body" font-size="12" fill="#5A5A5A">GPTQ 4-bit (PTQ, écosystème ouvert)</text>
+    <text x="1000" y="566" class="body" font-size="12" fill="#5A5A5A">flagship ~15-40 tok/s</text>
+  </g>
+  <!-- Row 6 : BitNet -->
+  <g class="interactive" data-card="bitnet" tabindex="0" role="button" aria-label="BitNet 2B4T — cliquez pour les détails">
+    <rect x="80" y="600" width="1040" height="76" fill="#B58A2C" fill-opacity="0.08" stroke="#B58A2C" stroke-width="1.25"/>
+    <text x="92" y="632" class="body" font-size="15" font-weight="600" fill="#B58A2C">BitNet b1.58 2B4T</text>
+    <text x="92" y="654" class="body" font-size="11" font-style="italic" fill="#5A5A5A">le seul natif ternaire (Microsoft)</text>
+    <text x="360" y="642" class="mono" font-size="13" fill="#1A1A1A" text-anchor="middle">2 Md</text>
+    <text x="500" y="642" class="mono" font-size="13" font-weight="600" fill="#B58A2C" text-anchor="middle">minimal</text>
+    <text x="650" y="642" class="body" font-size="12" fill="#5A5A5A">entraîné natif 1,58-bit (pas compressé)</text>
+    <text x="1000" y="642" class="body" font-size="12" fill="#5A5A5A">CPU sans GPU</text>
   </g>
 
-  <!-- Output -->
-  <rect x="1006" y="300" width="120" height="140" rx="3" fill="#1A1A1A"/>
-  <text x="1066" y="360" class="body" font-size="12" fill="#FAF8F3" text-anchor="middle">tokens</text>
-  <text x="1066" y="380" class="body" font-size="12" fill="#FAF8F3" text-anchor="middle">recomposés</text>
-
-  <!-- Bottleneck callout -->
-  <g class="interactive" data-card="goulot-reseau" tabindex="0" role="button" aria-label="Le goulot réseau — cliquez pour les détails">
-    <rect x="60" y="620" width="1080" height="70" rx="3" fill="#B7332C" fill-opacity="0.08" stroke="#B7332C" stroke-width="1.5"/>
-    <text x="84" y="650" class="mono" font-size="11" font-weight="600" letter-spacing="0.1em" fill="#B7332C">LE GOULOT ⚠</text>
-    <text x="84" y="676" class="body" font-size="14" fill="#1A1A1A">Le calcul des experts est trivialement parallèle. Le vrai coût, ce sont les deux collectifs <tspan font-weight="600">all-to-all</tspan> — la performance dépend de la bande passante (NVLink, InfiniBand) autant que des FLOPs.</text>
-  </g>
+  <!-- insight -->
+  <text x="80" y="710" class="display" font-size="16" font-style="italic" fill="#5A5A5A">La stratégie de compression trahit le contrôle du pipeline : QAT quand on maîtrise l'entraînement, PTQ dans l'écosystème ouvert.</text>
 
   <!-- FOOTER -->
-  <text x="60" y="730" class="body" font-size="12" font-style="italic" fill="#5A5A5A">Source : Lepikhin et al. 2020 (GShard) ; Rajbhandari et al. 2022 (DeepSpeed-MoE) ; Gale et al. 2023 (MegaBlocks) ; DeepSeek-AI 2024.</text>
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="768" class="body" font-size="10" font-style="italic" letter-spacing="0.02em" fill="#5A5A5A">Sources : Apple, Google, Microsoft, Meta (blogs officiels 2024-2025) ; BitNet arXiv:2504.12285. Empreintes = ordres de grandeur en 4-bit sauf mention.</text>
 </svg>
 
-        <figcaption class="figure-caption"><a class="anchor" href="#fig-05" title="Lien direct vers ce schéma">¶</a> <em>Schéma 5 — Le mur des systèmes. Les experts sont répartis sur plusieurs GPU ; à chaque couche, un all-to-all dispatch envoie chaque token vers son expert distant, un all-to-all combine rapatrie le résultat. Le calcul est trivial ; la communication est le goulot.</em></figcaption>
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-05" title="Lien direct vers ce schéma">¶</a> <em>Schéma 5 — Le paysage des modèles embarqués 2026. La contrainte mémoire dessine une convergence vers ~3 Md de paramètres ; la stratégie de compression (QAT vs PTQ vs natif) trahit qui contrôle le pipeline.</em></figcaption>
       </figure>
 
-      <p>Le problème, c'est que le routeur, lui, est global. Un token calculé sur le GPU 3 peut être routé vers un expert résidant sur le GPU 47. Il faut donc, à chaque couche MoE, une double chorégraphie de communication : un <span class="term" data-tooltip="All-to-all : collectif de communication où chaque GPU échange des données avec tous les autres. En MoE, il achemine les tokens vers les GPU hébergeant leurs experts (dispatch) puis rapatrie les résultats (combine).">all-to-all dispatch</span> qui envoie chaque token vers le ou les GPU hébergeant ses experts, puis, après calcul, un <strong>all-to-all combine</strong> qui rapatrie les résultats. Ces deux collectifs all-to-all sont, à grande échelle, le véritable goulot d'étranglement — pas le calcul des experts, qui est trivialement parallèle. <mark>Dans un MoE distribué, ce n'est plus le calcul qui coûte, c'est le déplacement des tokens entre GPU.</mark> La performance dépend alors de la bande passante de l'interconnexion (NVLink, InfiniBand) autant que de la puissance de calcul brute.</p>
+      <p>Deux enseignements. D'abord, <strong>la convergence vers ~3B n'est pas un hasard</strong> : c'est le plus gros modèle qui tient dans l'enveloppe mémoire allouable après quantification 2-4 bits. La contrainte de la section&nbsp;1 dessine directement la taille des modèles. Ensuite, <strong>la stratégie de compression trahit le contrôle du pipeline</strong> : Apple et Meta, qui maîtrisent l'entraînement, misent sur le QAT ; l'écosystème ouvert (Qwen, Llama en GGUF) sur la PTQ ; Microsoft sur la distillation ciblée matériel. Apple revendique d'ailleurs que son modèle ~3B dépasse Phi-3-mini, Mistral-7B, Gemma-7B et Llama-3-8B — des modèles pourtant plus gros<a class="cite" data-cite="1" href="#source-1">1</a>.</p>
+      </section>
 
-      <p>Deux lignées de travaux ont attaqué ce mur. Côté systèmes de service, DeepSpeed-MoE<a class="cite" data-cite="7" href="#source-7">7</a> a industrialisé la combinaison des parallélismes — expert, tenseur, données — et introduit des optimisations d'inférence dédiées, réduisant la latence et le coût des MoE en production. Côté noyaux de calcul, MegaBlocks<a class="cite" data-cite="8" href="#source-8">8</a> a reformulé la couche MoE comme une multiplication <span class="term" data-tooltip="Block-sparse : format de multiplication matricielle où seuls des blocs non vides sont calculés, ce qui permet de traiter tous les tokens sans en dropper ni gaspiller de calcul.">block-sparse</span>, éliminant le compromis honteux du token dropping : jusque-là, pour garder des tenseurs de forme régulière, on jetait les tokens excédentaires ; MegaBlocks permet de tout traiter sans gaspillage ni perte, en exploitant des noyaux GPU spécialisés. C'est l'illustration parfaite de la thèse : <mark>le progrès des MoE de frontière s'est joué autant dans les noyaux CUDA et la topologie réseau que dans la conception du routeur.</mark></p>
+      <section>
+      <h2 id="mem-6">6. L'architecture hybride device↔cloud</h2>
 
-      <p>DeepSeek-V3 pousse cette logique jusqu'à la co-conception matériel-modèle : son entraînement mobilise une communication all-to-all optimisée à la main sur l'interconnexion disponible, et une contrainte de routage limitant le nombre de nœuds qu'un token peut traverser — un choix d'architecture dicté directement par la topologie du cluster<a class="cite" data-cite="11" href="#source-11">11</a>. L'architecture du modèle et l'architecture de la machine ne sont plus séparables.</p>
-
-      <h2 id="moe-6">6. Servir un modèle creux — l'asymétrie mémoire / calcul</h2>
-      <p>Le mélange d'experts crée, à l'inférence, une asymétrie déroutante entre ce qu'il faut <em>stocker</em> et ce qu'il faut <em>calculer</em>.</p>
+      <p>Le point le plus mal compris de l'IA embarquée est celui-ci : <mark>la réponse de 2026 n'est pas « tout sur l'appareil », c'est le routage.</mark> Un modèle de 3B, même excellent, ne remplace pas un modèle frontière pour les requêtes complexes. L'architecture réellement déployée garde le petit modèle local pour ce qu'il fait bien — latence nulle, hors-ligne, confidentialité — et <strong>escalade vers le cloud le reste</strong>, mais sous une contrainte inédite : que cette escalade soit <strong>vérifiablement privée</strong> (voir Schéma&nbsp;6).</p>
 
       <figure class="figure" id="fig-06">
         <svg data-schema-id="schema-06" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
@@ -1189,8 +1208,11 @@
       .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
       .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
     </style>
-    <marker id="arrow06" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-      <path d="M0 0 L10 5 L0 10 z" fill="#5A5A5A"/>
+    <marker id="arr6" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6" fill="none" stroke="#5A5A5A" stroke-width="1.5"/>
+    </marker>
+    <marker id="arr6t" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6" fill="none" stroke="#1F5560" stroke-width="1.5"/>
     </marker>
   </defs>
 
@@ -1198,108 +1220,90 @@
 
   <!-- HEADER -->
   <text x="60" y="55" class="mono" font-size="13" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 06</text>
-  <text x="60" y="95" class="display" font-size="28" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Servir un modèle creux — l'asymétrie mémoire / calcul</text>
-  <text x="60" y="123" class="display" font-size="18" font-style="italic" fill="#5A5A5A">Tous les experts résidents, une poignée seulement active : cadeau pour le débit, casse-tête pour la VRAM</text>
+  <text x="60" y="95" class="display" font-size="28" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">La frontière de routage device ↔ cloud</text>
+  <text x="60" y="123" class="display" font-size="18" font-style="italic" fill="#5A5A5A">La réponse de 2026 n'est pas « tout local » mais une escalade vérifiablement privée quand le budget ne suffit pas</text>
   <line x1="60" y1="145" x2="1140" y2="145" stroke="#E5E1D8" stroke-width="0.5"/>
 
-  <!-- MEMORY -->
-  <g class="interactive" data-card="memoire-residente" tabindex="0" role="button" aria-label="La mémoire résidente — cliquez pour les détails">
-    <rect x="60" y="180" width="520" height="196" rx="3" fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1.5"/>
-    <text x="84" y="210" class="mono" font-size="11" font-weight="600" letter-spacing="0.1em" fill="#1F5560">CE QU'IL FAUT STOCKER</text>
-    <text x="84" y="238" class="body" font-size="15" font-weight="500" fill="#1A1A1A">Tous les experts en mémoire</text>
-    <text x="84" y="260" class="body" font-size="12.5" fill="#5A5A5A">On ignore à l'avance lesquels serviront → tout doit être résident</text>
-    <!-- 16 expert cells all filled -->
-    <g fill="#1F5560" fill-opacity="0.5">
-      <rect x="84" y="288" width="28" height="56" rx="2"/><rect x="116" y="288" width="28" height="56" rx="2"/>
-      <rect x="148" y="288" width="28" height="56" rx="2"/><rect x="180" y="288" width="28" height="56" rx="2"/>
-      <rect x="212" y="288" width="28" height="56" rx="2"/><rect x="244" y="288" width="28" height="56" rx="2"/>
-      <rect x="276" y="288" width="28" height="56" rx="2"/><rect x="308" y="288" width="28" height="56" rx="2"/>
-      <rect x="340" y="288" width="28" height="56" rx="2"/><rect x="372" y="288" width="28" height="56" rx="2"/>
-      <rect x="404" y="288" width="28" height="56" rx="2"/><rect x="436" y="288" width="28" height="56" rx="2"/>
-      <rect x="468" y="288" width="28" height="56" rx="2"/><rect x="500" y="288" width="28" height="56" rx="2"/>
-      <rect x="532" y="288" width="28" height="56" rx="2"/>
-    </g>
-    <text x="84" y="366" class="mono" font-size="13" font-weight="500" fill="#1F5560">671 Md résidents</text>
+  <!-- Device -->
+  <g class="interactive" data-card="on-device" tabindex="0" role="button" aria-label="Le modèle on-device — cliquez pour les détails">
+    <rect x="70" y="250" width="250" height="190" rx="6" fill="#1F5560" fill-opacity="0.08" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="195" y="285" class="mono" font-size="11" font-weight="600" letter-spacing="0.1em" fill="#5A5A5A" text-anchor="middle">L'APPAREIL</text>
+    <rect x="100" y="305" width="190" height="110" rx="3" fill="#1F5560" fill-opacity="0.15" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="195" y="345" class="body" font-size="14" font-weight="600" fill="#1F5560" text-anchor="middle">Modèle on-device</text>
+    <text x="195" y="368" class="body" font-size="12" fill="#5A5A5A" text-anchor="middle">~3 Md, 2-4 bits</text>
+    <text x="195" y="392" class="body" font-size="11" font-style="italic" fill="#5A5A5A" text-anchor="middle">latence nulle · hors-ligne · privé</text>
   </g>
 
-  <!-- COMPUTE -->
-  <g class="interactive" data-card="calcul-actif" tabindex="0" role="button" aria-label="Le calcul actif — cliquez pour les détails">
-    <rect x="620" y="180" width="520" height="196" rx="3" fill="#B7332C" fill-opacity="0.06" stroke="#B7332C" stroke-width="1.5"/>
-    <text x="644" y="210" class="mono" font-size="11" font-weight="600" letter-spacing="0.1em" fill="#B7332C">CE QU'IL FAUT CALCULER</text>
-    <text x="644" y="238" class="body" font-size="15" font-weight="500" fill="#1A1A1A">Une poignée d'experts actifs</text>
-    <text x="644" y="260" class="body" font-size="12.5" fill="#5A5A5A">Par token, seuls k experts sur N travaillent réellement</text>
-    <!-- same 15 cells, only 2 active -->
-    <g fill="#B8B5AE" fill-opacity="0.35">
-      <rect x="644" y="288" width="28" height="56" rx="2"/><rect x="676" y="288" width="28" height="56" rx="2"/>
-      <rect x="708" y="288" width="28" height="56" rx="2"/><rect x="740" y="288" width="28" height="56" rx="2"/>
-      <rect x="772" y="288" width="28" height="56" rx="2"/><rect x="804" y="288" width="28" height="56" rx="2"/>
-      <rect x="836" y="288" width="28" height="56" rx="2"/><rect x="868" y="288" width="28" height="56" rx="2"/>
-      <rect x="900" y="288" width="28" height="56" rx="2"/><rect x="932" y="288" width="28" height="56" rx="2"/>
-      <rect x="964" y="288" width="28" height="56" rx="2"/><rect x="996" y="288" width="28" height="56" rx="2"/>
-      <rect x="1028" y="288" width="28" height="56" rx="2"/>
-    </g>
-    <rect x="708" y="288" width="28" height="56" rx="2" fill="#B7332C"/>
-    <rect x="900" y="288" width="28" height="56" rx="2" fill="#B7332C"/>
-    <text x="644" y="366" class="mono" font-size="13" font-weight="500" fill="#B7332C">37 Md actifs</text>
-  </g>
+  <!-- arrow to diamond -->
+  <path d="M320 345 L410 345" stroke="#5A5A5A" stroke-width="1.5" marker-end="url(#arr6)"/>
 
-  <!-- BATCH IMBALANCE -->
-  <g class="interactive" data-card="desequilibre-batch" tabindex="0" role="button" aria-label="Le déséquilibre au batch — cliquez pour les détails">
-    <rect x="60" y="396" width="520" height="240" rx="3" fill="#B58A2C" fill-opacity="0.06" stroke="#B58A2C" stroke-width="1.5"/>
-    <text x="84" y="426" class="mono" font-size="11" font-weight="600" letter-spacing="0.1em" fill="#B58A2C">LE PIÈGE DU BATCHING</text>
-    <text x="84" y="452" class="body" font-size="14" fill="#1A1A1A">En regroupant des centaines de requêtes, les tokens</text>
-    <text x="84" y="472" class="body" font-size="14" fill="#1A1A1A">se dispersent sur tous les experts — déséquilibre à l'inférence</text>
-    <!-- inference load bars uneven -->
-    <line x1="100" y1="600" x2="556" y2="600" stroke="#5A5A5A" stroke-width="1"/>
-    <rect x="112" y="520" width="36" height="80" fill="#B58A2C" fill-opacity="0.7"/>
-    <rect x="158" y="500" width="36" height="100" fill="#B58A2C" fill-opacity="0.7"/>
-    <rect x="204" y="560" width="36" height="40" fill="#B58A2C" fill-opacity="0.5"/>
-    <rect x="250" y="490" width="36" height="110" fill="#B7332C"/>
-    <rect x="296" y="548" width="36" height="52" fill="#B58A2C" fill-opacity="0.5"/>
-    <rect x="342" y="570" width="36" height="30" fill="#B58A2C" fill-opacity="0.4"/>
-    <rect x="388" y="512" width="36" height="88" fill="#B58A2C" fill-opacity="0.7"/>
-    <rect x="434" y="556" width="36" height="44" fill="#B58A2C" fill-opacity="0.5"/>
-    <line x1="250" y1="490" x2="520" y2="490" stroke="#B7332C" stroke-width="0.75" stroke-dasharray="3 3"/>
-    <text x="524" y="493" class="body" font-size="11" font-style="italic" fill="#B7332C">latence dictée par l'expert le plus chargé</text>
+  <!-- decision diamond -->
+  <g class="interactive" data-card="critere-escalade" tabindex="0" role="button" aria-label="Les critères d'escalade — cliquez pour les détails">
+    <path d="M540 345 L620 275 L700 345 L620 415 Z" fill="#B58A2C" fill-opacity="0.14" stroke="#B58A2C" stroke-width="1.5"/>
+    <text x="620" y="340" class="body" font-size="13" font-weight="600" fill="#B58A2C" text-anchor="middle">Escalader ?</text>
+    <text x="620" y="360" class="body" font-size="10" fill="#5A5A5A" text-anchor="middle">4 critères</text>
   </g>
+  <!-- criteria card -->
+  <rect x="430" y="470" width="380" height="150" rx="3" fill="#FAF8F3" stroke="#E5E1D8" stroke-width="1.25"/>
+  <text x="450" y="500" class="mono" font-size="11" font-weight="600" letter-spacing="0.1em" fill="#5A5A5A">LA FRONTIÈRE DE DÉCISION</text>
+  <text x="450" y="528" class="body" font-size="12" fill="#5A5A5A">① Complexité de la requête</text>
+  <text x="450" y="551" class="body" font-size="12" fill="#5A5A5A">② Confidentialité des données</text>
+  <text x="450" y="574" class="body" font-size="12" fill="#5A5A5A">③ État réseau (hors-ligne → local forcé)</text>
+  <text x="450" y="597" class="body" font-size="12" fill="#5A5A5A">④ Budget énergétique (batterie)</text>
+  <path d="M620 415 L620 470" stroke="#5A5A5A" stroke-width="0.75" stroke-dasharray="2 3"/>
 
-  <!-- OFFLOADING -->
-  <g class="interactive" data-card="offloading" tabindex="0" role="button" aria-label="L'offloading — cliquez pour les détails">
-    <rect x="620" y="396" width="520" height="240" rx="3" fill="#2F5D3F" fill-opacity="0.06" stroke="#2F5D3F" stroke-width="1.5"/>
-    <text x="644" y="426" class="mono" font-size="11" font-weight="600" letter-spacing="0.1em" fill="#2F5D3F">LA PARADE MÉMOIRE · OFFLOADING</text>
-    <text x="644" y="452" class="body" font-size="14" fill="#1A1A1A">Décharger les experts inactifs vers CPU / disque,</text>
-    <text x="644" y="472" class="body" font-size="14" fill="#1A1A1A">les rappeler à la demande (+ quantization 4 bits)</text>
-    <!-- VRAM box -->
-    <rect x="644" y="500" width="150" height="90" rx="3" fill="#2F5D3F" fill-opacity="0.14" stroke="#2F5D3F" stroke-width="1.25"/>
-    <text x="719" y="530" class="body" font-size="12" font-weight="600" fill="#1A1A1A" text-anchor="middle">VRAM (HBM)</text>
-    <text x="719" y="552" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">experts actifs</text>
-    <!-- CPU/disk box -->
-    <rect x="966" y="500" width="150" height="90" rx="3" fill="#B8B5AE" fill-opacity="0.2" stroke="#B8B5AE" stroke-width="1.25"/>
-    <text x="1041" y="530" class="body" font-size="12" font-weight="600" fill="#1A1A1A" text-anchor="middle">CPU / disque</text>
-    <text x="1041" y="552" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">experts dormants</text>
-    <path d="M800 528 C 860 528, 900 528, 960 528" fill="none" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#arrow06)"/>
-    <path d="M960 562 C 900 562, 860 562, 800 562" fill="none" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#arrow06)"/>
-    <text x="880" y="518" class="body" font-size="10" fill="#5A5A5A" text-anchor="middle">décharge</text>
-    <text x="880" y="580" class="body" font-size="10" fill="#5A5A5A" text-anchor="middle">rappel à la demande</text>
+  <!-- branch NON : local answer -->
+  <path d="M578 383 L410 383 L410 620 L470 620" stroke="#1F5560" stroke-width="1.5" fill="none" marker-end="url(#arr6t)"/>
+  <text x="360" y="500" class="mono" font-size="12" font-weight="600" fill="#1F5560">NON</text>
+  <rect x="90" y="580" width="290" height="80" rx="3" fill="#1F5560" fill-opacity="0.1" stroke="#1F5560" stroke-width="1.25"/>
+  <text x="235" y="614" class="body" font-size="14" font-weight="600" fill="#1F5560" text-anchor="middle">Réponse locale</text>
+  <text x="235" y="637" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">rien ne quitte l'appareil</text>
+
+  <!-- branch OUI : to PCC -->
+  <path d="M700 320 L740 320" stroke="#B7332C" stroke-width="1.5" marker-end="url(#arr6)"/>
+  <text x="712" y="305" class="mono" font-size="12" font-weight="600" fill="#B7332C">OUI</text>
+
+  <!-- PCC cluster -->
+  <rect x="748" y="250" width="392" height="370" rx="6" fill="#B7332C" fill-opacity="0.04" stroke="#B7332C" stroke-width="1.5"/>
+  <text x="944" y="282" class="mono" font-size="11" font-weight="600" letter-spacing="0.1em" fill="#B7332C" text-anchor="middle">PRIVATE CLOUD COMPUTE</text>
+
+  <g class="interactive" data-card="pcc-attestation" tabindex="0" role="button" aria-label="Attestation cryptographique — cliquez pour les détails">
+    <rect x="772" y="298" width="344" height="110" rx="3" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.25"/>
+    <text x="792" y="328" class="body" font-size="14" font-weight="600" fill="#1A1A1A">Nœud attesté</text>
+    <text x="792" y="352" class="body" font-size="12" fill="#5A5A5A">La charge est chiffrée uniquement vers</text>
+    <text x="792" y="371" class="body" font-size="12" fill="#5A5A5A">les nœuds dont la mesure figure au</text>
+    <text x="792" y="390" class="mono" font-size="12" fill="#B7332C">journal de transparence public</text>
   </g>
+  <g class="interactive" data-card="stateless" tabindex="0" role="button" aria-label="Sans état — cliquez pour les détails">
+    <rect x="772" y="420" width="344" height="90" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="792" y="450" class="body" font-size="14" font-weight="600" fill="#1A1A1A">Sans état</text>
+    <text x="792" y="474" class="body" font-size="12" fill="#5A5A5A">Données jamais stockées, utilisées pour</text>
+    <text x="792" y="493" class="body" font-size="12" fill="#5A5A5A">la seule requête. « No privileged access ».</text>
+  </g>
+  <text x="944" y="545" class="display" font-size="16" font-style="italic" fill="#1A1A1A" text-anchor="middle">Vérifier, plutôt que faire confiance.</text>
+  <text x="944" y="575" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">La confidentialité devient une propriété architecturale,</text>
+  <text x="944" y="592" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">pas une clause contractuelle.</text>
+
+  <!-- bottom insight -->
+  <text x="70" y="700" class="display" font-size="18" font-style="italic" fill="#5A5A5A">Le petit modèle local n'est pas une fin en soi : c'est le premier étage d'une pile où le vrai produit est le routage.</text>
 
   <!-- FOOTER -->
-  <line x1="60" y1="660" x2="1140" y2="660" stroke="#E5E1D8" stroke-width="0.5"/>
-  <text x="60" y="692" class="body" font-size="12" font-style="italic" fill="#5A5A5A">Un MoE coûte en mémoire comme un dense de sa taille totale, mais ne calcule que comme un dense de sa taille active.</text>
-  <text x="60" y="712" class="body" font-size="12" font-style="italic" fill="#5A5A5A">Source : Rajbhandari et al. 2022 (DeepSpeed-MoE) ; Muennighoff et al. 2024 (OLMoE) ; DeepSeek-AI 2024.</text>
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="768" class="body" font-size="10" font-style="italic" letter-spacing="0.02em" fill="#5A5A5A">Source : Apple Security Research, « Private Cloud Compute » (2024) ; Apple Foundation Models 2024-2025.</text>
 </svg>
 
-        <figcaption class="figure-caption"><a class="anchor" href="#fig-06" title="Lien direct vers ce schéma">¶</a> <em>Schéma 6 — L'asymétrie du service. Tous les experts doivent être résidents en mémoire, mais seule une poignée calcule par token ; le batching réintroduit le déséquilibre, l'offloading et la quantization desserrent la contrainte VRAM.</em></figcaption>
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-06" title="Lien direct vers ce schéma">¶</a> <em>Schéma 6 — La frontière de routage device↔cloud. Le petit modèle local traite ce qu'il peut ; au-delà, l'escalade vers Private Cloud Compute est chiffrée vers des nœuds attestés et sans état.</em></figcaption>
       </figure>
 
-      <p>Côté <strong>mémoire</strong>, tous les experts doivent être résidents : on ne sait pas à l'avance lesquels seront sollicités, donc les 671 milliards de paramètres de DeepSeek-V3 doivent tenir en VRAM (ou être prêts à y être chargés). Côté <strong>calcul</strong>, seuls les 37 milliards actifs travaillent par token. Le modèle creux a donc l'empreinte mémoire d'un géant et l'appétit de calcul d'un modèle moyen. <mark>Un MoE coûte en mémoire ce qu'un modèle dense de sa taille totale coûterait, mais ne calcule que comme un dense de sa taille active.</mark> C'est un cadeau pour le débit (<em>throughput</em>) et une malédiction pour la mémoire.</p>
+      <p>Apple a posé le patron de référence avec <strong>Private Cloud Compute (PCC)</strong>. Quand une requête dépasse les capacités du modèle on-device, elle part vers des serveurs en silicium Apple conçus autour de deux principes : ils sont <strong>sans état</strong> (les données ne sont jamais stockées, utilisées seulement pour la requête en cours) et leur comportement est <strong>cryptographiquement vérifiable</strong><a class="cite" data-cite="3" href="#source-3">3</a>. Le mécanisme est précis : l'appareil chiffre la charge utile uniquement vers les clés publiques des nœuds PCC dont les mesures <span class="term" data-tooltip="Attestation — preuve cryptographique qu'un serveur exécute bien une image logicielle donnée, publiée dans un journal de transparence public que l'appareil peut vérifier.">attestées</span> correspondent à une image logicielle publiée dans un <strong>journal de transparence</strong> public<a class="cite" data-cite="3" href="#source-3">3</a>. L'utilisateur n'a plus à <em>faire confiance</em> au fournisseur cloud : il peut <em>vérifier</em> qu'aucun logiciel non attesté ne verra ses données.</p>
 
-      <p>Le batching complique encore le tableau. Sur une requête isolée, top-1 ou top-2 mobilise peu d'experts — efficace. Mais dès qu'on regroupe des centaines de requêtes pour saturer le GPU, les tokens du lot se dispersent sur <em>tous</em> les experts, et le déséquilibre de charge ressurgit à l'inférence : certains experts reçoivent des rafales, d'autres restent oisifs, et la latence est dictée par l'expert le plus chargé. Les serveurs modernes (vLLM, SGLang, TensorRT-LLM) déploient un arsenal — regroupement des tokens par expert, noyaux <span class="term" data-tooltip="Grouped GEMM : multiplication matricielle groupée qui traite en un seul lancement de noyau les tokens affectés à des experts différents, pour lisser le déséquilibre à l'inférence.">grouped GEMM</span>, placement adaptatif — pour lisser ce déséquilibre.</p>
+      <p>La frontière de décision — <strong>quand rester local, quand escalader</strong> — arbitre quatre critères : la <strong>complexité</strong> de la requête (un résumé court reste local ; un raisonnement multi-étapes escalade) ; la <strong>confidentialité</strong> (les données les plus sensibles restent sur l'appareil par défaut) ; l'<strong>état réseau</strong> (hors-ligne force le local) ; le <strong>budget énergétique</strong> (une longue génération sur NPU peut coûter plus de batterie qu'un aller-retour réseau). Ce routage est le véritable produit. Le petit modèle local n'est pas une fin en soi : c'est le premier étage d'une pile où la confidentialité devient une propriété <strong>architecturale et vérifiable</strong>, pas une promesse contractuelle<a class="cite" data-cite="11" href="#source-11">11</a>.</p>
+      </section>
 
-      <p>Enfin, quand la VRAM manque, une famille de techniques <span class="term" data-tooltip="Offloading : décharger les experts inactifs vers la mémoire CPU ou le disque et les rappeler à la demande, au prix d'une latence supplémentaire ; combiné à la quantization, il permet de servir de gros MoE sur du matériel modeste.">offloade</span> les experts inactifs vers la mémoire CPU ou le disque, les rappelant à la demande — au prix d'une latence supplémentaire. Combinée à la quantization (stocker les experts en 4 bits plutôt que 16), cette approche permet de faire tourner des MoE massifs sur du matériel modeste, transformant l'asymétrie mémoire/calcul en levier de déploiement plutôt qu'en obstacle. OLMoE<a class="cite" data-cite="12" href="#source-12">12</a>, en publiant l'intégralité de sa recette (données, code, checkpoints), a rendu ces arbitrages inspectables et reproductibles pour la communauté.</p>
+      <section>
+      <h2 id="mem-7">7. Trajectoires 2026-2028</h2>
 
-      <h2 id="moe-7">7. Le paysage 2024-2026</h2>
-      <p>En deux ans, les choix d'architecture MoE ont convergé — non vers l'uniformité, mais vers un espace de conception bien cartographié où chaque laboratoire place ses curseurs.</p>
+      <p>Quatre lignes de force se dessinent (voir Schéma&nbsp;7).</p>
 
       <figure class="figure" id="fig-07">
         <svg data-schema-id="schema-07" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
@@ -1315,116 +1319,77 @@
 
   <!-- HEADER -->
   <text x="60" y="55" class="mono" font-size="13" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 07</text>
-  <text x="60" y="95" class="display" font-size="28" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Le paysage MoE, 2024-2026</text>
-  <text x="60" y="123" class="display" font-size="18" font-style="italic" fill="#5A5A5A">Un espace de conception bien cartographié où chaque laboratoire place ses curseurs</text>
+  <text x="60" y="95" class="display" font-size="28" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Quatre lignes de force, 2026-2028</text>
+  <text x="60" y="123" class="display" font-size="18" font-style="italic" fill="#5A5A5A">Où l'IA embarquée se dirige : matériel, méthode, usage et régulation convergent</text>
   <line x1="60" y1="145" x2="1140" y2="145" stroke="#E5E1D8" stroke-width="0.5"/>
 
-  <!-- Table header -->
-  <text x="76" y="192" class="mono" font-size="11" font-weight="600" letter-spacing="0.08em" fill="#5A5A5A">MODÈLE</text>
-  <text x="330" y="192" class="mono" font-size="11" font-weight="600" letter-spacing="0.06em" fill="#5A5A5A" text-anchor="middle">TOTAL</text>
-  <text x="450" y="192" class="mono" font-size="11" font-weight="600" letter-spacing="0.06em" fill="#5A5A5A" text-anchor="middle">ACTIFS</text>
-  <text x="570" y="192" class="mono" font-size="11" font-weight="600" letter-spacing="0.06em" fill="#5A5A5A" text-anchor="middle">EXPERTS</text>
-  <text x="690" y="192" class="mono" font-size="11" font-weight="600" letter-spacing="0.06em" fill="#5A5A5A" text-anchor="middle">TOP-K</text>
-  <text x="800" y="192" class="mono" font-size="11" font-weight="600" letter-spacing="0.06em" fill="#5A5A5A" text-anchor="middle">PARTAGÉ</text>
-  <text x="960" y="192" class="mono" font-size="11" font-weight="600" letter-spacing="0.06em" fill="#5A5A5A" text-anchor="middle">ÉQUILIBRAGE</text>
-  <line x1="60" y1="204" x2="1140" y2="204" stroke="#1A1A1A" stroke-width="1"/>
+  <!-- time axis -->
+  <line x1="330" y1="185" x2="330" y2="660" stroke="#E5E1D8" stroke-width="1" stroke-dasharray="2 4"/>
+  <line x1="660" y1="185" x2="660" y2="660" stroke="#E5E1D8" stroke-width="1" stroke-dasharray="2 4"/>
+  <line x1="990" y1="185" x2="990" y2="660" stroke="#E5E1D8" stroke-width="1" stroke-dasharray="2 4"/>
+  <text x="330" y="180" class="mono" font-size="12" font-weight="600" fill="#5A5A5A" text-anchor="middle">2026</text>
+  <text x="660" y="180" class="mono" font-size="12" font-weight="600" fill="#5A5A5A" text-anchor="middle">2027</text>
+  <text x="990" y="180" class="mono" font-size="12" font-weight="600" fill="#5A5A5A" text-anchor="middle">2028</text>
 
-  <!-- Row Mixtral -->
-  <g class="interactive" data-card="mixtral" tabindex="0" role="button" aria-label="Mixtral 8×7B — cliquez pour les détails">
-    <rect x="60" y="212" width="1080" height="88" rx="3" fill="#FAF8F3" stroke="#E5E1D8" stroke-width="1"/>
-    <text x="76" y="248" class="display" font-size="18" font-weight="600" fill="#1A1A1A">Mixtral 8×7B</text>
-    <text x="76" y="272" class="body" font-size="12" font-style="italic" fill="#5A5A5A">Mistral · 2024 — l'open qui a rattrapé le dense</text>
-    <text x="330" y="264" class="mono" font-size="14" fill="#1A1A1A" text-anchor="middle">47 Md</text>
-    <text x="450" y="264" class="mono" font-size="14" fill="#B7332C" text-anchor="middle">13 Md</text>
-    <text x="570" y="264" class="mono" font-size="14" fill="#1A1A1A" text-anchor="middle">8</text>
-    <text x="690" y="264" class="mono" font-size="14" fill="#1A1A1A" text-anchor="middle">2</text>
-    <text x="800" y="264" class="body" font-size="13" fill="#5A5A5A" text-anchor="middle">non</text>
-    <text x="960" y="264" class="body" font-size="13" fill="#1A1A1A" text-anchor="middle">loss auxiliaire</text>
+  <!-- Track 1 : ternaire -->
+  <g class="interactive" data-card="ternaire-2027" tabindex="0" role="button" aria-label="Natif ternaire généralisé — cliquez pour les détails">
+    <rect x="70" y="205" width="1070" height="100" rx="3" fill="#B58A2C" fill-opacity="0.07" stroke="#B58A2C" stroke-width="1.25"/>
+    <text x="90" y="235" class="body" font-size="15" font-weight="600" fill="#B58A2C">① Le natif ternaire se généralise</text>
+    <rect x="330" y="252" width="700" height="30" rx="15" fill="#B58A2C" fill-opacity="0.25"/>
+    <circle cx="660" cy="267" r="7" fill="#B58A2C"/>
+    <text x="350" y="272" class="body" font-size="12" fill="#1A1A1A">modèles ternaires natifs plus gros &amp; multimodaux · kernels CPU dédiés · le NPU devient un luxe</text>
   </g>
 
-  <!-- Row DeepSeek-V3 -->
-  <g class="interactive" data-card="deepseek-v3" tabindex="0" role="button" aria-label="DeepSeek-V3 — cliquez pour les détails">
-    <rect x="60" y="306" width="1080" height="88" rx="3" fill="#B7332C" fill-opacity="0.04" stroke="#B7332C" stroke-width="1.25"/>
-    <text x="76" y="342" class="display" font-size="18" font-weight="600" fill="#1A1A1A">DeepSeek-V3</text>
-    <text x="76" y="366" class="body" font-size="12" font-style="italic" fill="#5A5A5A">DeepSeek · 2024 — la synthèse la plus aboutie</text>
-    <text x="330" y="358" class="mono" font-size="14" fill="#1A1A1A" text-anchor="middle">671 Md</text>
-    <text x="450" y="358" class="mono" font-size="14" fill="#B7332C" text-anchor="middle">37 Md</text>
-    <text x="570" y="358" class="mono" font-size="14" fill="#1A1A1A" text-anchor="middle">256 fins</text>
-    <text x="690" y="358" class="mono" font-size="14" fill="#1A1A1A" text-anchor="middle">8</text>
-    <text x="800" y="358" class="body" font-size="13" font-weight="600" fill="#2F5D3F" text-anchor="middle">oui (1)</text>
-    <text x="960" y="358" class="body" font-size="13" font-weight="600" fill="#2F5D3F" text-anchor="middle">biais sans-loss ★</text>
+  <!-- Track 2 : NPU-first -->
+  <g class="interactive" data-card="npu-first" tabindex="0" role="button" aria-label="NPU comme unité première — cliquez pour les détails">
+    <rect x="70" y="320" width="1070" height="100" rx="3" fill="#B7332C" fill-opacity="0.06" stroke="#B7332C" stroke-width="1.25"/>
+    <text x="90" y="350" class="body" font-size="15" font-weight="600" fill="#B7332C">② Le NPU devient l'unité première</text>
+    <rect x="330" y="367" width="700" height="30" rx="15" fill="#B7332C" fill-opacity="0.22"/>
+    <circle cx="990" cy="382" r="7" fill="#B7332C"/>
+    <text x="350" y="387" class="body" font-size="12" fill="#1A1A1A">l'inférence neuronale, citoyen de première classe du SoC · la bande passante mémoire, prochain champ de bataille</text>
   </g>
 
-  <!-- Row Llama 4 -->
-  <g class="interactive" data-card="llama4" tabindex="0" role="button" aria-label="Llama 4 Maverick — cliquez pour les détails">
-    <rect x="60" y="400" width="1080" height="88" rx="3" fill="#FAF8F3" stroke="#E5E1D8" stroke-width="1"/>
-    <text x="76" y="436" class="display" font-size="18" font-weight="600" fill="#1A1A1A">Llama 4 Maverick</text>
-    <text x="76" y="460" class="body" font-size="12" font-style="italic" fill="#5A5A5A">Meta · 2025 — le pari de la sobriété du routage</text>
-    <text x="330" y="452" class="mono" font-size="14" fill="#1A1A1A" text-anchor="middle">400 Md</text>
-    <text x="450" y="452" class="mono" font-size="14" fill="#B7332C" text-anchor="middle">17 Md</text>
-    <text x="570" y="452" class="mono" font-size="14" fill="#1A1A1A" text-anchor="middle">128</text>
-    <text x="690" y="452" class="mono" font-size="14" font-weight="600" fill="#B7332C" text-anchor="middle">1</text>
-    <text x="800" y="452" class="body" font-size="13" font-weight="600" fill="#2F5D3F" text-anchor="middle">oui (1)</text>
-    <text x="960" y="452" class="body" font-size="13" fill="#1A1A1A" text-anchor="middle">loss auxiliaire</text>
+  <!-- Track 3 : agents on-device -->
+  <g class="interactive" data-card="agents-local" tabindex="0" role="button" aria-label="Agents on-device — cliquez pour les détails">
+    <rect x="70" y="435" width="1070" height="100" rx="3" fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="90" y="465" class="body" font-size="15" font-weight="600" fill="#1F5560">③ Les agents on-device arrivent</text>
+    <rect x="500" y="482" width="530" height="30" rx="15" fill="#1F5560" fill-opacity="0.22"/>
+    <circle cx="820" cy="497" r="7" fill="#1F5560"/>
+    <text x="520" y="502" class="body" font-size="12" fill="#1A1A1A">du chatbot local à l'agent local · le KV-cache du contexte long devient le poste mémoire dominant</text>
   </g>
 
-  <!-- Row Qwen3 -->
-  <g class="interactive" data-card="qwen3" tabindex="0" role="button" aria-label="Qwen3 — cliquez pour les détails">
-    <rect x="60" y="494" width="1080" height="88" rx="3" fill="#FAF8F3" stroke="#E5E1D8" stroke-width="1"/>
-    <text x="76" y="530" class="display" font-size="18" font-weight="600" fill="#1A1A1A">Qwen3 235B</text>
-    <text x="76" y="554" class="body" font-size="12" font-style="italic" fill="#5A5A5A">Alibaba · 2025 — le contre-pied : spécialisation maximale</text>
-    <text x="330" y="546" class="mono" font-size="14" fill="#1A1A1A" text-anchor="middle">235 Md</text>
-    <text x="450" y="546" class="mono" font-size="14" fill="#B7332C" text-anchor="middle">22 Md</text>
-    <text x="570" y="546" class="mono" font-size="14" fill="#1A1A1A" text-anchor="middle">128 fins</text>
-    <text x="690" y="546" class="mono" font-size="14" fill="#1A1A1A" text-anchor="middle">8</text>
-    <text x="800" y="546" class="body" font-size="13" font-weight="600" fill="#B7332C" text-anchor="middle">non</text>
-    <text x="960" y="546" class="body" font-size="13" fill="#1A1A1A" text-anchor="middle">loss (global-batch)</text>
+  <!-- Track 4 : regulation -->
+  <g class="interactive" data-card="regulation" tabindex="0" role="button" aria-label="Confidentialité et régulation — cliquez pour les détails">
+    <rect x="70" y="550" width="1070" height="100" rx="3" fill="#2F5D3F" fill-opacity="0.06" stroke="#2F5D3F" stroke-width="1.25"/>
+    <text x="90" y="580" class="body" font-size="15" font-weight="600" fill="#2F5D3F">④ La confidentialité, argument produit &amp; levier réglementaire</text>
+    <rect x="330" y="597" width="700" height="30" rx="15" fill="#2F5D3F" fill-opacity="0.22"/>
+    <circle cx="660" cy="612" r="7" fill="#2F5D3F"/>
+    <text x="350" y="617" class="body" font-size="12" fill="#1A1A1A">traitement local = minimisation (RGPD) · attestation vérifiable · un angle que l'AI Act est outillé pour récompenser</text>
   </g>
 
-  <!-- vertical rules -->
-  <g stroke="#E5E1D8" stroke-width="0.5">
-    <line x1="270" y1="212" x2="270" y2="582"/>
-    <line x1="390" y1="212" x2="390" y2="582"/>
-    <line x1="510" y1="212" x2="510" y2="582"/>
-    <line x1="630" y1="212" x2="630" y2="582"/>
-    <line x1="750" y1="212" x2="750" y2="582"/>
-    <line x1="850" y1="212" x2="850" y2="582"/>
-  </g>
-
-  <!-- Convergence note -->
-  <rect x="60" y="602" width="1080" height="80" rx="3" fill="#1A1A1A"/>
-  <text x="84" y="632" class="mono" font-size="11" font-weight="600" letter-spacing="0.1em" fill="#B58A2C">TENDANCES DE CONVERGENCE</text>
-  <text x="84" y="660" class="body" font-size="13.5" fill="#FAF8F3">La granularité fine s'impose · le nombre d'experts monte (8 → 128+) · l'équilibrage sans-loss gagne · l'expert partagé reste le seul désaccord vif.</text>
+  <!-- closing line -->
+  <text x="600" y="705" class="display" font-size="18" font-style="italic" fill="#1A1A1A" text-anchor="middle">L'IA embarquée n'est pas qu'une optimisation technique : c'est une architecture de la confiance.</text>
 
   <!-- FOOTER -->
-  <text x="60" y="726" class="body" font-size="12" font-style="italic" fill="#5A5A5A">Chiffres d'actifs approximatifs. Source : Jiang et al. 2024 (Mixtral) ; DeepSeek-AI 2024 ; Meta AI 2025 (Llama 4) ; Qwen Team 2025.</text>
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="768" class="body" font-size="10" font-style="italic" letter-spacing="0.02em" fill="#5A5A5A">Synthèse de l'auteur, à partir des sources du dossier. Positions temporelles indicatives.</text>
 </svg>
 
-        <figcaption class="figure-caption"><a class="anchor" href="#fig-07" title="Lien direct vers ce schéma">¶</a> <em>Schéma 7 — Le paysage MoE 2024-2026. Mixtral, DeepSeek-V3, Llama 4 et Qwen3 comparés sur six dimensions. La granularité fine s'impose, le nombre d'experts monte, l'équilibrage sans-loss gagne ; l'expert partagé reste le seul désaccord vif.</em></figcaption>
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-07" title="Lien direct vers ce schéma">¶</a> <em>Schéma 7 — Quatre lignes de force, 2026-2028 : natif ternaire généralisé, NPU comme unité première, agents on-device, et confidentialité comme argument produit et levier réglementaire.</em></figcaption>
       </figure>
 
-      <p><strong>Mixtral 8×7B</strong> (Mistral, 2024)<a class="cite" data-cite="9" href="#source-9">9</a> est le jalon fondateur de l'ère ouverte : 8 experts, top-2, granularité grossière, pas d'expert partagé. Sa vertu fut de <em>prouver</em> qu'un MoE ouvert pouvait égaler un dense de référence, déclenchant la vague.</p>
+      <p><strong>Le natif ternaire se généralise.</strong> BitNet a montré qu'entraîner directement en 1,58&nbsp;bit bat la compression post-hoc sur les trois axes qui comptent à l'edge : mémoire, énergie, indépendance au GPU<a class="cite" data-cite="7" href="#source-7">7</a><a class="cite" data-cite="8" href="#source-8">8</a>. Attendre des modèles ternaires natifs plus gros et multimodaux, avec des kernels CPU dédiés.</p>
 
-      <p><strong>DeepSeek-V3</strong> (2024)<a class="cite" data-cite="11" href="#source-11">11</a> incarne la synthèse la plus aboutie : 671B au total, 37B actifs, 256 experts routés fins + 1 expert partagé, équilibrage sans-loss par biais, co-conçu avec l'interconnexion. C'est le modèle qui a rendu explicite la thèse systèmes-distribués.</p>
+      <p><strong>Le NPU devient l'unité première.</strong> Le brouillage Apple entre Neural Engine et accélérateurs GPU<a class="cite" data-cite="11" href="#source-11">11</a>, la course aux TOPS de Qualcomm, l'intégration Windows AI Foundry<a class="cite" data-cite="6" href="#source-6">6</a> convergent vers un SoC où l'inférence neuronale est un citoyen de première classe — avec la bande passante mémoire, et non le TOPS, comme prochain champ de bataille.</p>
 
-      <p><strong>Llama 4</strong> (Meta, 2025)<a class="cite" data-cite="13" href="#source-13">13</a> revient au top-1 (un seul routé + un partagé), en deux tailles : Scout (16 experts, 109B total) et Maverick (128 experts, 400B total, ~17B actifs). Meta parie sur la sobriété du routage et revendique un entraînement moins coûteux en calcul que Llama 3 malgré une échelle bien supérieure.</p>
+      <p><strong>Les agents on-device arrivent.</strong> Le passage d'un chatbot local à un agent local — qui appelle des outils, lit l'écran, enchaîne des étapes — change la donne mémoire : le KV-cache d'un contexte agentique long devient le poste dominant, ce qui rejoint les problématiques de compaction et de gestion du cache déjà critiques côté datacenter.</p>
 
-      <p><strong>Qwen3</strong> (Alibaba, 2025)<a class="cite" data-cite="14" href="#source-14">14</a> prend le contre-pied de DeepSeek : 235B et 30B, top-8 parmi 128 experts fins, <em>sans</em> expert partagé, misant sur une spécialisation maximale sans filet commun.</p>
+      <p><strong>La confidentialité devient argument produit et levier réglementaire.</strong> Le traitement local est, du point de vue du RGPD, une forme de <strong>minimisation</strong> : ce qui ne quitte jamais l'appareil n'est pas un transfert de données. Combiné à l'attestation vérifiable de PCC, cela transforme la privacy d'une clause de confiance en une propriété démontrable. <mark>L'IA embarquée n'est pas seulement une optimisation technique : c'est une architecture de la confiance.</mark></p>
 
-      <p>Les tendances de fond se lisent en négatif de ces divergences : la granularité <em>fine</em> s'impose partout, le nombre d'experts monte (de 8 à plus de 128), l'équilibrage sans-loss gagne du terrain, et l'expert partagé reste le seul point de désaccord vif. <mark>En 2026, la question n'est plus « dense ou creux ? » mais « quels curseurs de sparsité, et pour quelle machine ? »</mark></p>
+      <p>Le fil rouge de ce dossier tient en une phrase : <strong>l'IA embarquée est un problème de budget mémoire, pas de modèle.</strong> La contrainte d'octets sur l'appareil dessine la taille des modèles (~3B), impose la quantification (2-4 bits), justifie les astuces d'architecture et le silicium dédié, et — quand le budget ne suffit pas — commande une architecture hybride où le vrai produit est le <strong>routage vérifiable</strong> device↔cloud. Qui raisonne en « quel modèle » se trompe de question ; la bonne est « combien d'octets, où, et selon quelle frontière de confiance ».</p>
+      </section>
 
-      <h2 id="moe-8">8. Trajectoires 2026-2028</h2>
-      <p>Quatre directions structurent la suite.</p>
-
-      <p><strong>L'upcycling dense → creux.</strong> Plutôt qu'entraîner un MoE de zéro, on <span class="term" data-tooltip="Upcycling : convertir un modèle dense déjà entraîné en MoE en dupliquant sa couche FFN en plusieurs experts, puis en poursuivant l'entraînement — une voie d'accès rapide au creux.">recycle</span> un modèle dense déjà entraîné en dupliquant sa FFN en plusieurs experts, puis en poursuivant l'entraînement. Cette technique amortit l'investissement dense colossal des années passées et devient une voie d'accès rapide au MoE — un pont entre les deux mondes.</p>
-
-      <p><strong>La co-conception avec l'attention.</strong> DeepSeek a couplé son MoE à l'attention latente multi-tête (<span class="term" data-tooltip="MLA (Multi-head Latent Attention) : mécanisme d'attention de DeepSeek qui compresse le KV-cache dans un espace latent de faible dimension, réduisant fortement la mémoire d'inférence.">MLA</span>), qui compresse le KV-cache. Ce n'est pas un hasard : les deux innovations attaquent la même contrainte — la mémoire — à deux étages différents du transformer. La prochaine génération d'architectures pensera vraisemblablement sparsité des experts et compression du cache comme un système couplé, non comme deux optimisations séparées.</p>
-
-      <p><strong>L'interprétabilité des experts.</strong> Que capturent réellement les experts ? La spécialisation observée est souvent moins nette et moins interprétable qu'espéré — rarement « l'expert en syntaxe » ou « l'expert en code ». Comprendre la structure réelle de la spécialisation, et pouvoir la piloter, est un chantier ouvert qui pourrait transformer les experts en briques modulaires : ajouter, retirer, fusionner des experts pour composer des capacités à la carte.</p>
-
-      <p><strong>La co-conception matérielle.</strong> Si le goulot est le all-to-all, alors la prochaine frontière est dans le silicium et l'interconnexion : accélérateurs pensés pour le routage creux, réseaux optimisés pour les collectifs all-to-all, placement hiérarchique des experts sur la mémoire. <mark>L'histoire du mélange d'experts n'est pas celle d'une astuce d'architecture, mais celle d'une renégociation permanente de la frontière entre le modèle et la machine.</mark> Le routeur a fait entrer le réseau de neurones dans l'âge des systèmes distribués — et il n'en ressortira pas.</p>
-
-      <p class="report-outro"><em>Format co-écrit avec l'aide d'une IA · 3 juillet 2026 — Mathieu Guglielmino</em></p>
+      <p class="report-outro"><em>Format co-écrit avec l'aide d'une IA · 6 juillet 2026 — Mathieu Guglielmino</em></p>
     </main>
 
     <aside id="sources" aria-label="Sources">
@@ -1433,74 +1398,69 @@
       <h2>Sources</h2>
       <ol id="sources-list">
 <li id="source-1">
-          <span class="cite-num">[1]</span> Noam Shazeer, Azalia Mirhoseini, Krzysztof Maziarz et al., <em>Outrageously Large Neural Networks: The Sparsely-Gated Mixture-of-Experts Layer</em>, ICLR 2017. L'acte fondateur du MoE moderne : le gating creux opérationnel à l'échelle de milliers d'experts.<br>
-          <a href="https://arxiv.org/abs/1701.06538" target="_blank" rel="noopener">arxiv.org/1701.06538 ↗</a>
-          <span class="accessed">consulté le 3 juillet 2026</span>
+          <span class="cite-num">[1]</span> Apple Machine Learning Research, <em>Introducing Apple's On-Device and Server Foundation Models</em>, 2024. Architecture du modèle ~3B, QAT 2-bit, embeddings 4-bit, KV-cache 8-bit partagé, adaptateurs LoRA.<br>
+          <a href="https://machinelearning.apple.com/research/introducing-apple-foundation-models" target="_blank" rel="noopener">machinelearning.apple.com ↗</a>
+          <span class="accessed">consulté le 6 juillet 2026</span>
         </li>
         <li id="source-2">
-          <span class="cite-num">[2]</span> Dmitry Lepikhin, HyoukJoong Lee, Yuanzhong Xu et al., <em>GShard: Scaling Giant Models with Conditional Computation and Automatic Sharding</em>, 2020. Introduit le parallélisme d'experts et le sharding automatique jusqu'à 600 milliards de paramètres.<br>
-          <a href="https://arxiv.org/abs/2006.16668" target="_blank" rel="noopener">arxiv.org/2006.16668 ↗</a>
-          <span class="accessed">consulté le 3 juillet 2026</span>
+          <span class="cite-num">[2]</span> Apple Machine Learning Research, <em>Introducing the Third Generation of Apple's Foundation Models</em>, 2025. Foundation Models framework, ~3B on-device, empreinte ~1&nbsp;Go sur Apple Silicon.<br>
+          <a href="https://machinelearning.apple.com/research/introducing-third-generation-of-apple-foundation-models" target="_blank" rel="noopener">machinelearning.apple.com ↗</a>
+          <span class="accessed">consulté le 6 juillet 2026</span>
         </li>
         <li id="source-3">
-          <span class="cite-num">[3]</span> William Fedus, Barret Zoph, Noam Shazeer, <em>Switch Transformers: Scaling to Trillion Parameter Models with Simple and Efficient Sparsity</em>, JMLR 2022. Le pari du top-1, la loss auxiliaire et le facteur de capacité ; premier MoE à 1,6 T paramètres.<br>
-          <a href="https://arxiv.org/abs/2101.03961" target="_blank" rel="noopener">arxiv.org/2101.03961 ↗</a>
-          <span class="accessed">consulté le 3 juillet 2026</span>
+          <span class="cite-num">[3]</span> Apple Security Research, <em>Private Cloud Compute: A new frontier for AI privacy in the cloud</em>, 2024. Attestation, serveurs sans état, journal de transparence, « no privileged access », double racine de confiance.<br>
+          <a href="https://security.apple.com/blog/private-cloud-compute/" target="_blank" rel="noopener">security.apple.com ↗</a>
+          <span class="accessed">consulté le 6 juillet 2026</span>
         </li>
         <li id="source-4">
-          <span class="cite-num">[4]</span> Barret Zoph, Irwan Bello, Sameer Kumar et al., <em>ST-MoE: Designing Stable and Transferable Sparse Expert Models</em>, 2022. Le router z-loss et les recettes de stabilité qui ont rendu les MoE fiablement entraînables.<br>
-          <a href="https://arxiv.org/abs/2202.08906" target="_blank" rel="noopener">arxiv.org/2202.08906 ↗</a>
-          <span class="accessed">consulté le 3 juillet 2026</span>
+          <span class="cite-num">[4]</span> Google AI for Developers, <em>Gemma 3n model overview</em>. MatFormer, Per-Layer Embedding, empreintes E2B 2&nbsp;Go / E4B 3&nbsp;Go pour des décomptes bruts 5B/8B.<br>
+          <a href="https://ai.google.dev/gemma/docs/gemma-3n" target="_blank" rel="noopener">ai.google.dev/gemma ↗</a>
+          <span class="accessed">consulté le 6 juillet 2026</span>
         </li>
         <li id="source-5">
-          <span class="cite-num">[5]</span> Yanqi Zhou, Tao Lei, Hanxiao Liu et al., <em>Mixture-of-Experts with Expert Choice Routing</em>, NeurIPS 2022. L'inversion du routage : les experts choisissent les tokens, équilibre garanti par construction.<br>
-          <a href="https://arxiv.org/abs/2202.09368" target="_blank" rel="noopener">arxiv.org/2202.09368 ↗</a>
-          <span class="accessed">consulté le 3 juillet 2026</span>
+          <span class="cite-num">[5]</span> R. Raj (Hugging Face), <em>Understanding Gemma 3n: How MatFormer Gives You Many Models in One</em>. Le principe matriochka des sous-modèles imbriqués.<br>
+          <a href="https://huggingface.co/blog/rishiraj/matformer-in-gemma-3n" target="_blank" rel="noopener">huggingface.co/blog ↗</a>
+          <span class="accessed">consulté le 6 juillet 2026</span>
         </li>
         <li id="source-6">
-          <span class="cite-num">[6]</span> Aidan Clark, Diego de las Casas, Aurelia Guy et al., <em>Unified Scaling Laws for Routed Language Models</em>, ICML 2022. La démonstration que le routage bat le dense à budget de calcul fixé, sur trois ordres de grandeur.<br>
-          <a href="https://arxiv.org/abs/2202.01169" target="_blank" rel="noopener">arxiv.org/2202.01169 ↗</a>
-          <span class="accessed">consulté le 3 juillet 2026</span>
+          <span class="cite-num">[6]</span> VentureBeat, <em>Microsoft introduces Phi-Silica, a 3.3B parameter model made for Copilot+ PC NPUs</em>, 2024. 650 tok/s, ~1,5&nbsp;W, NPU Hexagon 45 TOPS, Windows AI Foundry.<br>
+          <a href="https://venturebeat.com/ai/microsoft-introduces-phi-silica-a-3-3b-parameter-model-made-for-copilot-pc-npus" target="_blank" rel="noopener">venturebeat.com ↗</a>
+          <span class="accessed">consulté le 6 juillet 2026</span>
         </li>
         <li id="source-7">
-          <span class="cite-num">[7]</span> Samyam Rajbhandari, Conglong Li, Zhewei Yao et al., <em>DeepSpeed-MoE: Advancing Mixture-of-Experts Inference and Training to Power Next-Generation AI Scale</em>, 2022. Les systèmes d'inférence MoE : combinaison des parallélismes expert / tenseur / données.<br>
-          <a href="https://arxiv.org/abs/2201.05596" target="_blank" rel="noopener">arxiv.org/2201.05596 ↗</a>
-          <span class="accessed">consulté le 3 juillet 2026</span>
+          <span class="cite-num">[7]</span> S. Ma, H. Wang et al. (Microsoft Research), <em>BitNet b1.58 2B4T Technical Report</em>, arXiv:2504.12285, avril 2025. Premier modèle natif 1,58-bit à 2&nbsp;Md, entraîné sur 4&nbsp;000&nbsp;Md tokens, poids ternaires {−1,0,+1}.<br>
+          <a href="https://arxiv.org/abs/2504.12285" target="_blank" rel="noopener">arxiv.org/2504.12285 ↗</a>
+          <span class="accessed">consulté le 6 juillet 2026</span>
         </li>
         <li id="source-8">
-          <span class="cite-num">[8]</span> Trevor Gale, Deepak Narayanan, Cliff Young, Matei Zaharia, <em>MegaBlocks: Efficient Sparse Training with Mixture-of-Experts</em>, MLSys 2023. La reformulation block-sparse qui supprime le token dropping.<br>
-          <a href="https://arxiv.org/abs/2211.15841" target="_blank" rel="noopener">arxiv.org/2211.15841 ↗</a>
-          <span class="accessed">consulté le 3 juillet 2026</span>
+          <span class="cite-num">[8]</span> Microsoft, <em>BitNet — Official inference framework for 1-bit LLMs</em> (bitnet.cpp). Accélérations CPU 1,37×-6,17×, −82&nbsp;% d'énergie, jusqu'à 100&nbsp;Md sur un seul CPU.<br>
+          <a href="https://github.com/microsoft/BitNet" target="_blank" rel="noopener">github.com/microsoft/BitNet ↗</a>
+          <span class="accessed">consulté le 6 juillet 2026</span>
         </li>
         <li id="source-9">
-          <span class="cite-num">[9]</span> Albert Q. Jiang, Alexandre Sablayrolles, Antoine Roux et al., <em>Mixtral of Experts</em>, 2024. Le MoE ouvert (8×7B, top-2) qui a égalé un dense 70B pour un sixième du coût d'inférence.<br>
-          <a href="https://arxiv.org/abs/2401.04088" target="_blank" rel="noopener">arxiv.org/2401.04088 ↗</a>
-          <span class="accessed">consulté le 3 juillet 2026</span>
+          <span class="cite-num">[9]</span> Meta AI, <em>Introducing quantized Llama models with increased speed and a reduced memory footprint</em>, 2024. QAT+LoRA et SpinQuant : −56&nbsp;% de taille, −41&nbsp;% de mémoire vs BF16.<br>
+          <a href="https://ai.meta.com/blog/meta-llama-quantized-lightweight-models/" target="_blank" rel="noopener">ai.meta.com/blog ↗</a>
+          <span class="accessed">consulté le 6 juillet 2026</span>
         </li>
         <li id="source-10">
-          <span class="cite-num">[10]</span> Damai Dai, Chengqi Deng, Chenggang Zhao et al., <em>DeepSeekMoE: Towards Ultimate Expert Specialization in Mixture-of-Experts Language Models</em>, 2024. Experts fins + experts partagés : la recette de spécialisation devenue dominante.<br>
-          <a href="https://arxiv.org/abs/2401.06066" target="_blank" rel="noopener">arxiv.org/2401.06066 ↗</a>
-          <span class="accessed">consulté le 3 juillet 2026</span>
+          <span class="cite-num">[10]</span> Meta AI, <em>Llama 3.2: Revolutionizing edge AI and vision with open, customizable models</em>, 2024. 1B/3B, contexte 128K, Qualcomm/MediaTek/Arm day one ; le 3B bat Gemma 2 2.6B et Phi-3.5-mini.<br>
+          <a href="https://ai.meta.com/blog/llama-3-2-connect-2024-vision-edge-mobile-devices/" target="_blank" rel="noopener">ai.meta.com/blog ↗</a>
+          <span class="accessed">consulté le 6 juillet 2026</span>
         </li>
         <li id="source-11">
-          <span class="cite-num">[11]</span> DeepSeek-AI, <em>DeepSeek-V3 Technical Report</em>, 2024. 671B / 37B, équilibrage sans-loss par biais, co-conception avec l'interconnexion, 14,8 T tokens.<br>
-          <a href="https://arxiv.org/abs/2412.19437" target="_blank" rel="noopener">arxiv.org/2412.19437 ↗</a>
-          <span class="accessed">consulté le 3 juillet 2026</span>
+          <span class="cite-num">[11]</span> Notebookcheck, <em>Qualcomm releases official Snapdragon X Plus/Elite benchmarks for 45 TOPS Hexagon NPU</em>, 2025. 45 TOPS ; bascule Apple M5 vers des accélérateurs neuronaux par cœur GPU.<br>
+          <a href="https://www.notebookcheck.net/Qualcomm-releases-official-Snapdragon-X-Plus-and-Snapdragon-X-Elite-benchmarks-for-45-TOPS-Hexagon-NPU.841811.0.html" target="_blank" rel="noopener">notebookcheck.net ↗</a>
+          <span class="accessed">consulté le 6 juillet 2026</span>
         </li>
         <li id="source-12">
-          <span class="cite-num">[12]</span> Niklas Muennighoff, Luca Soldaini, Dirk Groeneveld et al., <em>OLMoE: Open Mixture-of-Experts Language Models</em>, 2024. Le MoE entièrement ouvert : données, code, checkpoints, arbitrages reproductibles.<br>
-          <a href="https://arxiv.org/abs/2409.02060" target="_blank" rel="noopener">arxiv.org/2409.02060 ↗</a>
-          <span class="accessed">consulté le 3 juillet 2026</span>
+          <span class="cite-num">[12]</span> <em>Characterizing Mobile SoC for Accelerating Heterogeneous LLM Inference</em>, arXiv:2501.14794, 2025. Inférence hétérogène CPU/GPU/NPU, plafond de bande passante mémoire, RAM unifiée.<br>
+          <a href="https://arxiv.org/abs/2501.14794" target="_blank" rel="noopener">arxiv.org/2501.14794 ↗</a>
+          <span class="accessed">consulté le 6 juillet 2026</span>
         </li>
         <li id="source-13">
-          <span class="cite-num">[13]</span> Meta AI, <em>The Llama 4 herd: The beginning of a new era of natively multimodal AI innovation</em>, 2025. Scout (16 experts / 109B) et Maverick (128 experts / 400B / ~17B actifs), routage top-1.<br>
-          <a href="https://ai.meta.com/blog/llama-4-multimodal-intelligence/" target="_blank" rel="noopener">ai.meta.com/blog ↗</a>
-          <span class="accessed">consulté le 3 juillet 2026</span>
-        </li>
-        <li id="source-14">
-          <span class="cite-num">[14]</span> Qwen Team, <em>Qwen3 Technical Report</em>, 2025. 235B et 30B en MoE, top-8 parmi 128 experts fins, abandon de l'expert partagé.<br>
-          <a href="https://arxiv.org/abs/2505.09388" target="_blank" rel="noopener">arxiv.org/2505.09388 ↗</a>
-          <span class="accessed">consulté le 3 juillet 2026</span>
+          <span class="cite-num">[13]</span> Synthèse <em>LLM Quantization Explained: INT4, INT8, FP8, AWQ, GPTQ</em> (VRLA Tech / SitePoint, 2026). Facteurs de compression, AWQ 97-99&nbsp;%, PTQ vs QAT, sensibilité par tâche.<br>
+          <a href="https://vrlatech.com/llm-quantization-explained-int4-int8-fp8-awq-and-gptq-in-2026/" target="_blank" rel="noopener">vrlatech.com ↗</a>
+          <span class="accessed">consulté le 6 juillet 2026</span>
         </li>
         </ol>
       </div>
@@ -1549,157 +1509,162 @@
 
     const SCHEMAS = {
   "schema-01": {
-    "dense": {
-      title: "Le modèle dense",
-      eyebrow: "Capacité = calcul",
-      body: "<p>Dans un transformer dense, <strong>tous</strong> les paramètres traitent chaque token. Un modèle de 70 milliards de poids en mobilise 70 milliards pour produire chaque mot, sans distinction entre une tâche triviale et une tâche difficile.</p><p>La conséquence est économique : la capacité (ce que le modèle sait) et le coût par token sont soudés. Vouloir plus de connaissance impose plus de calcul, linéairement. C'est ce couplage que le mélange d'experts vient briser.</p>"
+    "marge-os": {
+      title: "Le système d'exploitation",
+      eyebrow: "La part réservée d'office",
+      body: "<p>iOS ou Android réservent une large part de la RAM unifiée pour le noyau, les services de fond, le compositeur graphique et les applications actives. Sur un flagship de 12&nbsp;Go, l'ordre de grandeur réservé au système tourne autour de 5&nbsp;Go.</p><p>Ce n'est pas négociable : un modèle qui déborde de son enveloppe fait <em>tuer l'application hôte</em> par le gestionnaire mémoire. La contrainte est donc plus dure que le simple « combien de RAM ai-je » — c'est « combien puis-je réserver sans être expulsé ».</p>"
     },
-    "creux": {
-      title: "Le modèle creux (MoE)",
-      eyebrow: "Capacité découplée du calcul",
-      body: "<p>Un modèle creux porte un très grand nombre de paramètres — 671 milliards pour DeepSeek-V3<a class='cite' data-cite='11' href='#source-11'>11</a> — mais n'en active qu'une fraction par token. La capacité est stockée dans l'ensemble des experts ; le coût ne dépend que des experts effectivement sollicités.</p><p>C'est le levier fondateur du MoE : gonfler la capacité sans gonfler le calcul. Encore faut-il décider quels experts activer, les répartir, et les équilibrer — les trois problèmes que ce dossier explore.</p>"
+    "app-buffer": {
+      title: "L'application et son tampon",
+      eyebrow: "Le voisin qui prend sa place",
+      body: "<p>Le modèle ne tourne jamais seul : l'application hôte (clavier, navigateur, assistant) et son tampon graphique occupent eux aussi la mémoire unifiée pendant l'inférence.</p><p>C'est pourquoi l'enveloppe réellement disponible pour le modèle est bien inférieure à la RAM totale — quelques giga-octets au mieux, et souvent moins quand l'utilisateur a d'autres apps ouvertes.</p>"
     },
-    "fraction-active": {
-      title: "La fraction activée",
-      eyebrow: "≈ 5,5 % du modèle par token",
-      body: "<p>DeepSeek-V3 n'active que <strong>37 des 671 milliards</strong> de paramètres par token, soit environ 5,5 %<a class='cite' data-cite='11' href='#source-11'>11</a>. Le reste des experts existe, occupe de la mémoire, mais ne calcule pas pour ce token précis.</p><p>Cette fraction est réglée par deux boutons : le nombre total d'experts <em>N</em> (capacité) et le nombre d'activés <em>k</em> (coût). Tout l'art consiste à maximiser N tout en gardant k petit.</p>"
+    "ram-totale": {
+      title: "L'enveloppe allouable",
+      eyebrow: "≈ 2 – 4 Go, pas 12",
+      body: "<p>C'est le chiffre qui compte vraiment : l'espace qu'un modèle peut occuper <em>durablement</em> sans se faire expulser. Sur un appareil de 8 à 16&nbsp;Go, il tourne autour de 2 à 4&nbsp;Go<a class='cite' data-cite='12' href='#source-12'>12</a>.</p><p>Cette enveloppe, et non la taille théorique du modèle, définit ce qui est faisable. Elle explique directement pourquoi les modèles embarqués convergent vers ~3&nbsp;Md de paramètres : c'est le plus gros qui tient une fois quantifié à 4&nbsp;bits.</p>"
     },
-    "memoire-vs-flops": {
-      title: "Mémoire contre FLOPs",
-      eyebrow: "Deux budgets qui divergent",
-      body: "<p>Le MoE dissocie deux budgets que le dense confondait. En <strong>mémoire</strong>, il faut loger tous les experts (comme un dense de sa taille totale). En <strong>calcul</strong> par token, il ne dépense que comme un dense de sa taille active.</p><p>Résultat : un modèle qui a l'empreinte mémoire d'un géant et l'appétit de calcul d'un modèle moyen. C'est un cadeau pour le débit et une contrainte pour la VRAM — l'asymétrie détaillée au Schéma 6.</p>"
+    "poids-modele": {
+      title: "Les poids en INT4",
+      eyebrow: "1,5 Go pour un 3B",
+      body: "<p>Un modèle de 3&nbsp;milliards de paramètres quantifié à 4&nbsp;bits pèse ~1,5&nbsp;Go — contre ~6&nbsp;Go en FP16. C'est la différence entre l'infaisable et le faisable.</p><p>Mais les poids ne sont pas seuls dans l'enveloppe : il faut aussi loger le KV-cache et les activations. C'est l'addition des trois qui doit tenir sous le plafond, pas les poids seuls.</p>"
+    },
+    "kv-cache": {
+      title: "Le KV-cache",
+      eyebrow: "Le poste qui grandit avec le contexte",
+      body: "<p>Le cache clé-valeur mémorise les états des tokens déjà traités pour éviter de les recalculer. Son empreinte croît <em>linéairement</em> avec la longueur du contexte : plus la conversation est longue, plus il mange de RAM.</p><p>Sur un appareil, c'est un poste critique — et ce sera le poste dominant pour les agents on-device, dont les contextes sont longs. D'où l'intérêt du partage de KV-cache entre couches, comme le fait Apple<a class='cite' data-cite='1' href='#source-1'>1</a>.</p>"
     }
   },
   "schema-02": {
-    "routeur": {
-      title: "Le routeur (gate)",
-      eyebrow: "Qui décide de l'aiguillage",
-      body: "<p>Le routeur est un petit réseau — souvent un simple produit matriciel suivi d'un <em>softmax</em> — qui attribue à chaque token un score d'affinité pour chacun des <em>N</em> experts.</p><p>C'est le cœur battant et le talon d'Achille du modèle creux : sa qualité détermine la spécialisation des experts, et son instabilité provoque le <em>collapse</em> (Schéma 4). Toute la recherche sur le routage — token-choice, expert-choice, biais d'équilibrage — porte sur ce composant minuscule mais décisif.</p>"
+    "fp16": {
+      title: "FP16 — la référence",
+      eyebrow: "16 bits, 100 % de qualité",
+      body: "<p>Le format de virgule flottante 16&nbsp;bits est celui de l'entraînement et de l'inférence non compressée : 2 octets par poids, aucune perte. C'est l'étalon de qualité contre lequel on mesure toutes les quantifications.</p><p>Son défaut : un modèle 3B y pèse ~6&nbsp;Go, hors de portée de l'enveloppe allouable d'un téléphone. Il faut descendre.</p>"
     },
-    "banc-experts": {
-      title: "Le banc d'experts",
-      eyebrow: "N sous-réseaux FFN",
-      body: "<p>La couche MoE remplace le bloc <em>feed-forward</em> dense par plusieurs FFN plus petites, les experts. Leur nombre <em>N</em> fixe la capacité du modèle : plus d'experts, plus de paramètres stockés, plus de spécialisations possibles.</p><p>La tendance 2024-2026 va vers la <strong>granularité fine</strong> : beaucoup de petits experts plutôt que quelques gros, ce qui multiplie les combinaisons (choisir 8 parmi 256 vaut bien plus que 2 parmi 8) — l'innovation de DeepSeekMoE<a class='cite' data-cite='10' href='#source-10'>10</a>.</p>"
+    "int4-ptq": {
+      title: "INT4 en post-training",
+      eyebrow: "Le bon compromis, jusqu'à la falaise",
+      body: "<p>La quantification post-entraînement (PTQ) en 4&nbsp;bits est bon marché et bien outillée : GGUF Q4_K_M pour le mobile, AWQ qui retient 97-99&nbsp;% de la qualité, GPTQ<a class='cite' data-cite='13' href='#source-13'>13</a>.</p><p>À 4&nbsp;bits, la qualité tient encore. Mais en dessous, la simple compression post-hoc s'effondre — c'est la « falaise ». Passer sous ce seuil demande une autre méthode : réentraîner (QAT) ou entraîner natif.</p>"
     },
-    "top-k": {
-      title: "La sélection top-k",
-      eyebrow: "La sparsité naît ici",
-      body: "<p>Seuls les <em>k</em> experts de plus haut score sont retenus ; les autres sont ignorés pour ce token. C'est précisément cette coupe qui crée la <strong>sparsité</strong>.</p><p>Les choix divergent : Switch et Llama 4 misent sur top-1<a class='cite' data-cite='3' href='#source-3'>3</a><a class='cite' data-cite='13' href='#source-13'>13</a>, Mixtral sur top-2<a class='cite' data-cite='9' href='#source-9'>9</a>, Qwen3 et DeepSeek jusqu'à top-8<a class='cite' data-cite='14' href='#source-14'>14</a>. Plus <em>k</em> est petit, plus on peut multiplier les experts à budget de calcul égal — mais moins le mélange de spécialistes est riche.</p>"
+    "qat": {
+      title: "QAT — apprendre à résister",
+      eyebrow: "2 à 5 points regagnés en bas",
+      body: "<p>La quantification pendant l'entraînement (QAT) simule la perte de précision au fil de l'apprentissage : le modèle apprend à y résister. Plus coûteuse, elle récupère 2 à 5 points de qualité aux compressions extrêmes<a class='cite' data-cite='13' href='#source-13'>13</a>.</p><p>C'est la voie des acteurs qui maîtrisent le pipeline : Apple entraîne en QAT 2-bit puis recolle la qualité via des adaptateurs LoRA<a class='cite' data-cite='1' href='#source-1'>1</a> ; Meta combine QAT+LoRA et SpinQuant<a class='cite' data-cite='9' href='#source-9'>9</a>.</p>"
     },
-    "combine": {
-      title: "La combinaison pondérée",
-      eyebrow: "Σ des sorties d'experts",
-      body: "<p>Les <em>k</em> experts sélectionnés traitent le token en parallèle ; leurs sorties sont ensuite <strong>sommées, pondérées</strong> par les scores de gating renormalisés. Le token ressort transformé.</p><p>Au total, il n'aura mobilisé qu'une fraction <em>k/N</em> des paramètres experts de la couche. C'est l'étape qui referme le mécanisme : la sortie a la richesse de plusieurs spécialistes pour le coût de quelques-uns.</p>"
+    "ternaire": {
+      title: "Le natif ternaire",
+      eyebrow: "1,58 bit, haut malgré tout",
+      body: "<p>BitNet ne compresse pas après coup : il <em>entraîne</em> directement des poids ternaires {−1, 0, +1}, soit ~1,58&nbsp;bit<a class='cite' data-cite='7' href='#source-7'>7</a>. Le modèle naît à basse précision, il n'a rien à « perdre ».</p><p>C'est ce qui lui permet de rester compétitif à une compression où la PTQ serait au fond de la falaise — tout en gagnant l'énergie et l'inférence CPU sans GPU.</p>"
     }
   },
   "schema-03": {
-    "token-choice": {
-      title: "Routage token-choice",
-      eyebrow: "Chaque token choisit ses experts",
-      body: "<p>Le schéma canonique : chaque token sélectionne ses <em>k</em> experts de plus haut score. Intuitif, mais sans garantie d'équilibre — un expert populaire peut être submergé pendant qu'un autre chôme.</p><p>C'est le choix de la quasi-totalité des LLM décodeurs (Switch, Mixtral, DeepSeek, Qwen3, Llama 4), au prix d'un mécanisme d'équilibrage ajouté (Schéma 4) pour éviter le <em>collapse</em>.</p>"
+    "quantif": {
+      title: "Levier 1 — la quantification",
+      eyebrow: "Le prix d'entrée",
+      body: "<p>Réduire les bits par poids (16 → 8 → 4) divise d'autant l'empreinte : facteur ×2 à ×8. C'est ce qui fait passer un 3B de 6&nbsp;Go à 1,5&nbsp;Go et le rend embarquable<a class='cite' data-cite='13' href='#source-13'>13</a>.</p><p>Son coût : la falaise de qualité sous 4&nbsp;bits, et une sensibilité inégale selon la tâche — code et maths souffrent plus que le résumé. C'est le levier obligatoire, mais pas suffisant pour aller très bas.</p>"
     },
-    "expert-choice": {
-      title: "Routage expert-choice",
-      eyebrow: "Les experts choisissent les tokens",
-      body: "<p>Zhou et al. 2022 inversent la logique : chaque expert sélectionne les tokens de plus haut score jusqu'à remplir sa capacité<a class='cite' data-cite='5' href='#source-5'>5</a>. L'équilibre de charge devient <strong>garanti par construction</strong>, sans loss auxiliaire.</p><p>Le revers : certains tokens peuvent être traités par zéro expert, d'autres par plusieurs — et un expert ne peut pas choisir un token futur non encore vu, ce qui rend le procédé mal adapté à la génération auto-régressive. D'où son adoption limitée dans les LLM décodeurs.</p>"
+    "matformer": {
+      title: "MatFormer — le modèle matriochka",
+      eyebrow: "Un jeu de poids, plusieurs tailles",
+      body: "<p>Gemma 3n imbrique des sous-modèles plus petits dans un modèle plus grand, comme des poupées russes<a class='cite' data-cite='5' href='#source-5'>5</a>. On peut exécuter le seul cœur sans activer les couches englobantes.</p><p>Résultat : un même modèle offre plusieurs points de fonctionnement (calcul, latence, énergie) selon la difficulté de la requête — au lieu d'imposer une taille fixe. Le modèle s'adapte au budget disponible.</p>"
     },
-    "experts-fins": {
-      title: "Experts fins",
-      eyebrow: "Beaucoup de petits spécialistes",
-      body: "<p>Plutôt que quelques gros experts, en découper un grand nombre de petits. À budget de paramètres égal, cela multiplie les <strong>combinaisons</strong> possibles et affine la spécialisation.</p><p>Choisir 8 experts parmi 256 offre un espace de mélanges bien plus vaste que 2 parmi 8. Introduit par DeepSeekMoE<a class='cite' data-cite='10' href='#source-10'>10</a>, ce choix s'est imposé partout : Qwen3 et DeepSeek-V3 comptent 128 à 256 experts fins par couche.</p>"
+    "ple": {
+      title: "Per-Layer Embedding",
+      eyebrow: "Décharger vers la RAM lente",
+      body: "<p>Les tables d'embeddings sont volumineuses mais peu sollicitées à chaque instant. Gemma 3n les décharge vers la RAM lente et les réinjecte couche par couche<a class='cite' data-cite='4' href='#source-4'>4</a>.</p><p>Effet spectaculaire : E4B a 8&nbsp;Md de paramètres bruts mais ne tient que 3&nbsp;Go en mémoire de travail. Le principe est celui de tout le dossier : ce qui compte, c'est l'empreinte résidente, pas le décompte total.</p>"
     },
-    "expert-partage": {
-      title: "Expert partagé",
-      eyebrow: "Le point de désaccord vif",
-      body: "<p>Réserver un ou deux experts <strong>toujours actifs</strong>, chargés de capturer les connaissances communes, pendant que les experts routés se spécialisent sur le résiduel<a class='cite' data-cite='10' href='#source-10'>10</a>.</p><p>C'est le seul choix où les laboratoires divergent nettement : DeepSeek-V3 l'adopte (1 partagé), Qwen3 l'abandonne pour maximiser la spécialisation<a class='cite' data-cite='14' href='#source-14'>14</a>. Un pari sur la question : vaut-il mieux un filet commun ou des spécialistes sans redondance ?</p>"
+    "bitnet-natif": {
+      title: "Levier 3 — le natif ternaire",
+      eyebrow: "Trois gains d'un coup",
+      body: "<p>BitNet b1.58 2B4T est entraîné directement en 1,58&nbsp;bit sur 4&nbsp;000&nbsp;Md tokens<a class='cite' data-cite='7' href='#source-7'>7</a>. Les poids ternaires remplacent les multiplications par des additions.</p><p>D'où trois gains simultanés : mémoire minimale, jusqu'à −82&nbsp;% d'énergie, et inférence CPU sans GPU — au point de faire tourner un modèle de 100&nbsp;Md sur un seul processeur à vitesse de lecture humaine<a class='cite' data-cite='8' href='#source-8'>8</a>. Le seul levier qui attaque les trois axes à la fois.</p>"
     }
   },
   "schema-04": {
-    "collapse": {
-      title: "Le collapse",
-      eyebrow: "Le cercle vicieux",
-      body: "<p>Laissé libre, un routeur token-choice s'effondre. Les experts qu'il privilégie voient plus de données, s'améliorent plus vite, donc sont encore plus choisis — jusqu'à ce qu'une poignée absorbe tout le trafic et que les autres, jamais entraînés, deviennent des <strong>paramètres morts</strong>.</p><p>Le modèle porte alors le coût mémoire de centaines d'experts sans en tirer la capacité. Neutraliser ce cercle vicieux est le premier travail de tout entraînement MoE.</p>"
+    "npu": {
+      title: "Le NPU",
+      eyebrow: "L'efficacité énergétique",
+      body: "<p>Le Neural Processing Unit est un accélérateur dédié aux réseaux de neurones, optimisé pour l'efficacité plutôt que la polyvalence. Phi-Silica y tourne à ~650&nbsp;tok/s pour ~1,5&nbsp;W, en libérant CPU et GPU<a class='cite' data-cite='6' href='#source-6'>6</a>.</p><p>Sur CPU, le même modèle ferait chauffer l'appareil et fondrait la batterie. Sur NPU, l'inférence devient une fonction de fond soutenable — condition sine qua non d'un usage permanent.</p>"
     },
-    "loss-auxiliaire": {
-      title: "Parade 1 · Loss auxiliaire",
-      eyebrow: "Un impôt sur la qualité",
-      body: "<p>Popularisée par Switch<a class='cite' data-cite='3' href='#source-3'>3</a>, elle ajoute à la perte un terme qui pénalise le déséquilibre et pousse le routeur à répartir les tokens uniformément.</p><p>Défaut structurel : cette perte auxiliaire est en <strong>tension</strong> avec la perte principale (la qualité de prédiction). On force l'équilibre au détriment, léger mais réel, de la performance. ST-MoE y ajoute le <em>router z-loss</em> pour stabiliser les logits<a class='cite' data-cite='4' href='#source-4'>4</a>.</p>"
+    "bande-passante": {
+      title: "La bande passante mémoire",
+      eyebrow: "Le vrai goulot du décodage",
+      body: "<p>À chaque token, tous les poids sont relus depuis la RAM. Le débit de génération est donc plafonné par la vitesse de ce transfert (~50-120&nbsp;Go/s sur mobile), pas par la puissance de calcul<a class='cite' data-cite='12' href='#source-12'>12</a>.</p><p>Conséquence : un NPU à 45&nbsp;TOPS relié à une RAM lente reste bridé par la RAM. C'est le prochain champ de bataille du silicium embarqué — plus de bande passante, pas plus de TOPS.</p>"
     },
-    "expert-choice": {
-      title: "Parade 2 · Expert-choice",
-      eyebrow: "Équilibre mécanique",
-      body: "<p>En laissant chaque expert choisir ses tokens jusqu'à sa capacité, l'équilibre devient garanti sans aucune loss auxiliaire<a class='cite' data-cite='5' href='#source-5'>5</a>. Élégant et sans impôt sur la qualité.</p><p>Mais l'incompatibilité avec la génération auto-régressive (un expert ne peut pas anticiper un token futur) en a limité l'usage dans les LLM décodeurs, où le token-choice reste dominant.</p>"
+    "apple-ane": {
+      title: "Apple — la frontière qui se brouille",
+      eyebrow: "Du Neural Engine aux cœurs GPU",
+      body: "<p>Apple a cessé de publier un chiffre de TOPS pour le Neural Engine avec le M5 (octobre 2025) et route désormais une large part de l'IA on-device via des accélérateurs neuronaux intégrés à chaque cœur GPU<a class='cite' data-cite='11' href='#source-11'>11</a>.</p><p>Signe que la distinction nette NPU/GPU s'estompe : ce qui compte n'est plus l'unité nommée mais l'efficacité par watt de l'ensemble du SoC.</p>"
     },
-    "biais-sans-loss": {
-      title: "Parade 3 · Biais sans-loss ★",
-      eyebrow: "Le nouveau standard",
-      body: "<p>DeepSeek-V3 ajoute un simple <strong>biais</strong> aux scores d'affinité, ajusté après chaque pas d'entraînement : +biais aux experts sous-chargés, −biais aux surchargés<a class='cite' data-cite='11' href='#source-11'>11</a>.</p><p>L'équilibrage devient un contrôleur externe, <strong>découplé de la descente de gradient</strong> — donc sans polluer le gradient ni taxer la qualité. Cette stratégie <em>auxiliary-loss-free</em> résout la tension fondatrice entre équilibre et performance, et s'impose comme nouveau standard.</p>"
+    "hexagon": {
+      title: "Qualcomm Hexagon — 45 TOPS",
+      eyebrow: "Le socle des Copilot+ PC",
+      body: "<p>Le NPU Hexagon des Snapdragon X annonce 45&nbsp;TOPS<a class='cite' data-cite='11' href='#source-11'>11</a> et sert de socle aux Copilot+ PC, avec Phi-Silica embarqué et une collaboration Windows AI Foundry<a class='cite' data-cite='6' href='#source-6'>6</a>.</p><p>Mais le TOPS vend le silicium ; il ne prédit pas le débit réel d'un LLM, plafonné par la mémoire. Les mesures sérieuses portent sur des tokens/seconde à budget énergétique donné.</p>"
     }
   },
   "schema-05": {
-    "all-to-all-dispatch": {
-      title: "All-to-all dispatch",
-      eyebrow: "Envoyer les tokens à leurs experts",
-      body: "<p>Le routeur est global : un token calculé sur le GPU 3 peut être routé vers un expert du GPU 47. À chaque couche MoE, un collectif <strong>all-to-all</strong> achemine chaque token vers le ou les GPU hébergeant ses experts.</p><p>C'est la première moitié de la chorégraphie de communication. Sa latence dépend de la bande passante de l'interconnexion (NVLink, InfiniBand) bien plus que de la puissance de calcul.</p>"
+    "apple-fm": {
+      title: "Apple Foundation ~3B",
+      eyebrow: "QAT 2-bit, ~1 Go",
+      body: "<p>Livré dans iOS via le Foundation Models framework, ~1&nbsp;Go d'empreinte grâce au QAT 2-bit, avec adaptateurs LoRA et KV-cache partagé<a class='cite' data-cite='1' href='#source-1'>1</a><a class='cite' data-cite='2' href='#source-2'>2</a>.</p><p>Apple revendique qu'il dépasse Phi-3-mini, Mistral-7B, Gemma-7B et Llama-3-8B — des modèles pourtant plus gros. Exemple type de l'acteur qui maîtrise tout le pipeline et mise sur le QAT.</p>"
     },
-    "expert-parallelism": {
-      title: "Le parallélisme d'experts",
-      eyebrow: "Placer les experts sur N GPU",
-      body: "<p>Un modèle de 671 milliards de paramètres ne tient sur aucun GPU. Les experts sont donc <strong>répartis</strong> : chaque accélérateur héberge un sous-ensemble d'experts — le parallélisme d'experts formalisé par GShard<a class='cite' data-cite='2' href='#source-2'>2</a>.</p><p>C'est le basculement du MoE d'un objet d'architecture vers un objet de systèmes distribués : le placement des experts et la topologie du cluster deviennent des choix de conception à part entière, comme l'illustre DeepSeek-V3<a class='cite' data-cite='11' href='#source-11'>11</a>.</p>"
+    "gemma3n": {
+      title: "Gemma 3n E4B",
+      eyebrow: "MatFormer + PLE",
+      body: "<p>Décompte brut de 8&nbsp;Md, mais empreinte de 3&nbsp;Go grâce au MatFormer et au Per-Layer Embedding<a class='cite' data-cite='4' href='#source-4'>4</a>. Multimodal, taillé mobile-first par Google.</p><p>Illustration directe du principe du dossier : la stratégie n'est pas de réduire le modèle mais de réorganiser son occupation mémoire pour que l'empreinte résidente tienne dans l'enveloppe.</p>"
     },
-    "all-to-all-combine": {
-      title: "All-to-all combine",
-      eyebrow: "Rapatrier les résultats",
-      body: "<p>Après le calcul des experts, un second collectif all-to-all renvoie chaque sortie vers le GPU d'origine du token, pour la combinaison pondérée.</p><p>Ces deux all-to-all (dispatch + combine), répétés à chaque couche MoE, sont le véritable coût du modèle creux distribué — pas le calcul des experts, qui est trivialement parallèle. DeepSpeed-MoE<a class='cite' data-cite='7' href='#source-7'>7</a> et MegaBlocks<a class='cite' data-cite='8' href='#source-8'>8</a> ont attaqué ce coût côté systèmes et côté noyaux.</p>"
+    "phi-silica": {
+      title: "Phi-Silica 3.3B",
+      eyebrow: "Distillé, NPU-résident",
+      body: "<p>Distillé de la famille Phi et optimisé pour le NPU Hexagon 45 TOPS, il est embarqué dans tous les Copilot+ PC : ~650&nbsp;tok/s à ~1,5&nbsp;W<a class='cite' data-cite='6' href='#source-6'>6</a>.</p><p>La stratégie Microsoft : ni QAT maison ni PTQ ouverte, mais une distillation ciblée sur un silicium précis. Le modèle et la puce sont co-conçus.</p>"
     },
-    "goulot-reseau": {
-      title: "Le goulot réseau",
-      eyebrow: "La thèse du dossier",
-      body: "<p><strong>Dans un MoE distribué, ce n'est plus le calcul qui coûte, c'est le déplacement des tokens entre GPU.</strong> La performance dépend de la bande passante de l'interconnexion autant que des FLOPs.</p><p>D'où la co-conception matériel-modèle : DeepSeek-V3 optimise son all-to-all à la main et contraint le routage à limiter le nombre de nœuds traversés par token<a class='cite' data-cite='11' href='#source-11'>11</a>. L'architecture du modèle et celle de la machine ne sont plus séparables.</p>"
+    "bitnet": {
+      title: "BitNet b1.58 2B4T",
+      eyebrow: "Le seul natif ternaire",
+      body: "<p>2&nbsp;Md de paramètres entraînés nativement en 1,58&nbsp;bit sur 4&nbsp;000&nbsp;Md tokens<a class='cite' data-cite='7' href='#source-7'>7</a>. Empreinte et énergie minimales, inférence CPU sans GPU<a class='cite' data-cite='8' href='#source-8'>8</a>.</p><p>L'outsider du paysage : il ne compresse pas un modèle existant, il en propose un nouveau né à basse précision. La trajectoire la plus prometteuse pour l'edge à moyen terme.</p>"
     }
   },
   "schema-06": {
-    "memoire-residente": {
-      title: "La mémoire résidente",
-      eyebrow: "Tous les experts chargés",
-      body: "<p>À l'inférence, on ignore à l'avance quels experts serviront le prochain token. Il faut donc que <strong>tous</strong> soient résidents en mémoire — les 671 milliards de paramètres de DeepSeek-V3 doivent tenir en VRAM (ou être prêts à y être chargés).</p><p>Le modèle creux a donc l'empreinte mémoire d'un dense de sa taille totale. C'est la face coûteuse de l'asymétrie, celle qui rend la VRAM critique.</p>"
+    "on-device": {
+      title: "Le modèle on-device",
+      eyebrow: "Premier étage de la pile",
+      body: "<p>Un modèle ~3B quantifié tourne localement : latence nulle, fonctionnement hors-ligne, données qui ne quittent pas l'appareil. Il traite ce qu'il fait bien — résumé, réécriture, réponses courtes.</p><p>Mais il ne remplace pas un modèle frontière pour les requêtes complexes. D'où la nécessité d'une frontière de décision : que garder ici, que faire escalader.</p>"
     },
-    "calcul-actif": {
-      title: "Le calcul actif",
-      eyebrow: "Une poignée d'experts par token",
-      body: "<p>Face à la mémoire pleine, le calcul reste sobre : seuls les <em>k</em> experts sélectionnés (37 milliards de paramètres actifs pour DeepSeek-V3) travaillent réellement par token.</p><p>C'est la face généreuse de l'asymétrie : le débit d'un modèle moyen pour la connaissance d'un géant. Un MoE coûte en mémoire comme un dense de sa taille totale, mais ne calcule que comme un dense de sa taille active.</p>"
+    "critere-escalade": {
+      title: "La frontière de décision",
+      eyebrow: "Quatre critères d'escalade",
+      body: "<p>Le routage arbitre quatre facteurs : la <strong>complexité</strong> (un raisonnement multi-étapes dépasse le modèle local), la <strong>confidentialité</strong> (les données sensibles restent par défaut sur l'appareil), l'<strong>état réseau</strong> (hors-ligne force le local), et le <strong>budget énergétique</strong> (une longue génération sur NPU peut coûter plus qu'un aller-retour réseau).</p><p>Ce routage est le véritable produit de l'IA embarquée — pas le petit modèle pris isolément.</p>"
     },
-    "desequilibre-batch": {
-      title: "Le piège du batching",
-      eyebrow: "Le déséquilibre ressurgit",
-      body: "<p>Sur une requête isolée, top-1 ou top-2 mobilise peu d'experts. Mais dès qu'on regroupe des centaines de requêtes pour saturer le GPU, les tokens du lot se dispersent sur <strong>tous</strong> les experts.</p><p>Le déséquilibre de charge ressurgit alors à l'inférence : certains experts reçoivent des rafales, d'autres restent oisifs, et la latence est dictée par l'expert le plus chargé. Les serveurs (vLLM, SGLang, TensorRT-LLM) le lissent par regroupement des tokens et noyaux <em>grouped GEMM</em>.</p>"
+    "pcc-attestation": {
+      title: "Le nœud attesté",
+      eyebrow: "Vérifier plutôt que faire confiance",
+      body: "<p>Avec Private Cloud Compute, l'appareil chiffre la charge utile uniquement vers les clés publiques des nœuds dont la mesure attestée figure dans un journal de transparence public<a class='cite' data-cite='3' href='#source-3'>3</a>.</p><p>L'utilisateur n'a plus à croire le fournisseur sur parole : il peut vérifier qu'aucun logiciel non attesté ne verra ses données. La confidentialité devient une propriété démontrable, pas une clause contractuelle.</p>"
     },
-    "offloading": {
-      title: "L'offloading",
-      eyebrow: "La parade mémoire",
-      body: "<p>Quand la VRAM manque, on décharge les experts inactifs vers la mémoire CPU ou le disque, et on les rappelle à la demande — au prix d'une latence supplémentaire.</p><p>Combiné à la <strong>quantization</strong> (experts en 4 bits plutôt que 16), l'offloading permet de faire tourner des MoE massifs sur du matériel modeste. OLMoE<a class='cite' data-cite='12' href='#source-12'>12</a>, entièrement ouvert, a rendu ces arbitrages inspectables et reproductibles.</p>"
+    "stateless": {
+      title: "Sans état",
+      eyebrow: "« No privileged access »",
+      body: "<p>Les serveurs PCC sont sans état : les données ne sont jamais stockées, elles ne servent qu'à la requête en cours<a class='cite' data-cite='3' href='#source-3'>3</a>. La conception exclut explicitement l'accès administrateur (« no privileged access »).</p><p>S'y ajoute un registre matériel append-only à double racine de confiance contre les attaques de chaîne d'approvisionnement. L'ensemble fait de la cloud-AI un prolongement vérifiable du traitement local, pas une boîte noire.</p>"
     }
   },
   "schema-07": {
-    "mixtral": {
-      title: "Mixtral 8×7B",
-      eyebrow: "Mistral · 2024 — le jalon fondateur",
-      body: "<p>47 Md au total, ~13 Md actifs, 8 experts grossiers, top-2, sans expert partagé, équilibrage par loss auxiliaire<a class='cite' data-cite='9' href='#source-9'>9</a>.</p><p>Sa vertu historique fut de <strong>prouver</strong> qu'un MoE ouvert pouvait égaler un dense de référence (Llama 2 70B) pour un sixième du coût d'inférence. Le signal qui a déclenché la bascule généralisée vers le creux.</p>"
+    "ternaire-2027": {
+      title: "Le natif ternaire se généralise",
+      eyebrow: "Trajectoire 1",
+      body: "<p>BitNet a montré qu'entraîner directement en 1,58&nbsp;bit bat la compression post-hoc sur les trois axes de l'edge : mémoire, énergie, indépendance au GPU<a class='cite' data-cite='7' href='#source-7'>7</a><a class='cite' data-cite='8' href='#source-8'>8</a>.</p><p>À attendre : des modèles ternaires natifs plus gros et multimodaux, avec des kernels CPU dédiés qui feront du NPU un luxe plutôt qu'une nécessité pour une partie des charges.</p>"
     },
-    "deepseek-v3": {
-      title: "DeepSeek-V3",
-      eyebrow: "DeepSeek · 2024 — la synthèse aboutie",
-      body: "<p>671 Md au total, 37 Md actifs, 256 experts fins + 1 partagé, top-8, équilibrage <strong>sans-loss par biais</strong>, co-conçu avec l'interconnexion<a class='cite' data-cite='11' href='#source-11'>11</a>.</p><p>C'est le modèle qui a rendu explicite la thèse systèmes-distribués : routage contraint par la topologie, all-to-all optimisé à la main, couplage avec l'attention latente MLA. La référence de conception 2026.</p>"
+    "npu-first": {
+      title: "Le NPU, unité première",
+      eyebrow: "Trajectoire 2",
+      body: "<p>Le brouillage Apple entre Neural Engine et cœurs GPU<a class='cite' data-cite='11' href='#source-11'>11</a>, la course aux TOPS de Qualcomm et l'intégration Windows AI Foundry<a class='cite' data-cite='6' href='#source-6'>6</a> convergent vers un SoC où l'inférence neuronale est un citoyen de première classe.</p><p>Le prochain champ de bataille n'est pas le TOPS mais la bande passante mémoire — la ressource qui plafonne réellement le débit.</p>"
     },
-    "llama4": {
-      title: "Llama 4",
-      eyebrow: "Meta · 2025 — la sobriété du routage",
-      body: "<p>Retour au <strong>top-1</strong> (un seul routé + un partagé), en deux tailles : Scout (16 experts, 109B) et Maverick (128 experts, 400B, ~17B actifs)<a class='cite' data-cite='13' href='#source-13'>13</a>.</p><p>Meta parie sur la sobriété du routage et revendique un entraînement moins coûteux en calcul que Llama 3, malgré une échelle bien supérieure — l'argument d'efficacité du MoE poussé à sa limite.</p>"
+    "agents-local": {
+      title: "Les agents on-device",
+      eyebrow: "Trajectoire 3",
+      body: "<p>Passer d'un chatbot local à un agent local — qui appelle des outils, lit l'écran, enchaîne des étapes — change la donne mémoire : le KV-cache d'un contexte agentique long devient le poste dominant.</p><p>Cela rejoint directement les problématiques de compaction et de gestion du cache déjà critiques côté datacenter, mais sous une contrainte d'octets bien plus dure.</p>"
     },
-    "qwen3": {
-      title: "Qwen3",
-      eyebrow: "Alibaba · 2025 — le contre-pied",
-      body: "<p>235B et 30B, top-8 parmi 128 experts fins, <strong>sans expert partagé</strong><a class='cite' data-cite='14' href='#source-14'>14</a>.</p><p>Le contre-pied de DeepSeek : miser sur une spécialisation maximale, sans filet commun. Sur les autres axes, la convergence est nette — granularité fine, grand nombre d'experts, top-k élevé. En 2026, la question n'est plus « dense ou creux ? » mais « quels curseurs, et pour quelle machine ? »</p>"
+    "regulation": {
+      title: "La confidentialité, levier réglementaire",
+      eyebrow: "Trajectoire 4",
+      body: "<p>Le traitement local est, du point de vue du RGPD, une forme de <em>minimisation</em> : ce qui ne quitte jamais l'appareil n'est pas un transfert de données.</p><p>Combiné à l'attestation vérifiable de PCC<a class='cite' data-cite='3' href='#source-3'>3</a>, cela transforme la privacy d'une clause de confiance en une propriété démontrable — un angle que la régulation européenne (RGPD, AI Act) est outillée pour récompenser. L'IA embarquée devient une architecture de la confiance.</p>"
     }
   }
 };
