@@ -2,7 +2,7 @@
 _Mis à jour par la routine `Illustrated deep research · mer + ven`._
 
 ## En cours / prio haute
-- [ ] (vide)
+- [ ] ia-embarquee (evergreen « Edge AI / on-device ») — le budget mémoire de l'appareil comme contrainte porteuse ; quantif + astuces archi + NPU + routage hybride device↔cloud (PCC).
 
 ## Deep dives candidats sur dossiers existants
 - donnees-synthetiques (déjà couvert 2026-05-29) : suites naturelles = (a) deep dive sur les corpus de référence humain-vérifié (FineWeb-Edu, DCLM, RedPajama-V3 — état de l'art curation collective) ; (b) instrumentation pratique de la biodiversité statistique en production (quels prompts adversaires, quelles métriques d'entropie, quel cadencier d'audit) ; (c) ~~machine unlearning au niveau des poids~~ ✓ couvert 2026-06-03.
