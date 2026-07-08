@@ -68,7 +68,7 @@ QuaRot (NeurIPS 2024) applique aux états cachés une **rotation orthogonale** �
 
 SpinQuant (ICLR 2025) pousse l'idée d'un cran : plutôt qu'une rotation de Hadamard *fixe et aléatoire*, ==pourquoi ne pas *apprendre* la meilleure rotation ?== Par une optimisation de Cayley sur la variété des matrices orthogonales, SpinQuant trouve des rotations qui battent Hadamard de plusieurs points, et réduit l'écart à la pleine précision à **2,9 points** sur LLaMA-2 7B en configuration W4A4KV4 — divisant par près d'un tiers l'écart résiduel de QuaRot sur les modèles réputés difficiles.[^9] L'insight est profond et généralisable : *l'outlier est une question de repère ; changez de repère, il disparaît*.
 
-[SCHEMA-05]
+![La rotation qui dissout l'outlier : Hadamard fixe et rotation apprise|width=1200](images/20260708-05-rotations.svg)
 
 ## 6. La quantification consciente de l'entraînement (QAT)
 
