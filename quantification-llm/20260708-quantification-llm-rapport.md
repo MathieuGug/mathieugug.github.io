@@ -90,7 +90,7 @@ Trois pièges reviennent :
 
 Le choix du schéma dépend enfin du goulot visé : **W8A8** (SmoothQuant) accélère le calcul *compute-bound* du *prefill* ; **W4A16** (AWQ, GPTQ) attaque le *decode* memory-bound et la mémoire des poids ; **la quantification du KV-cache** (2-4 bits) libère la mémoire à long contexte. Trois goulots, trois réponses — souvent combinées.
 
-[SCHEMA-07]
+![Le paysage des méthodes de quantification : neuf approches, cinq dimensions|width=1200](images/20260708-07-matrice-methodes.svg)
 
 ## 8. Trajectoires 2026-2028
 
