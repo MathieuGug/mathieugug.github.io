@@ -18,7 +18,7 @@ Mais « quantifier un LLM » recouvre trois cibles distinctes, avec trois budget
 - **Les activations** (*activations*), dynamiques, dépendantes de l'entrée : quantifier les deux (W8A8) permet d'utiliser des unités de calcul entières, plus rapides — mais les activations abritent les valeurs aberrantes les plus vicieuses.
 - **Le KV-cache**, qui grossit avec le contexte et finit par dominer la mémoire à long contexte : une cible de plus en plus prioritaire.
 
-[SCHEMA-01]
+![L'échelle des bits : mémoire et qualité de FP16 au ternaire|width=1200](images/20260708-01-echelle-bits.svg)
 
 Le schéma 1 pose l'échelle. Chaque palier vers le bas double le débit potentiel, mais chaque palier rapproche aussi d'une falaise de qualité. Toute la discipline consiste à descendre le plus bas possible **avant** de tomber.
 
@@ -32,7 +32,7 @@ Deux choix structurent tout le reste.
 
 **La granularité.** On peut partager une seule échelle pour tout un tenseur (*per-tensor*, le plus grossier), une échelle par canal de sortie (*per-channel*), ou une échelle par petit groupe de valeurs (*per-group*, typiquement 64 ou 128 poids). ==Plus la granularité est fine, mieux on absorbe les disparités de magnitude locales — au prix de quelques bits de métadonnées d'échelle par groupe.== Le compromis granularité/surcoût est le premier réglage de tout quantificateur sérieux.
 
-[SCHEMA-02]
+![Anatomie d'une quantification affine : échelle, point-zéro, granularité|width=1200](images/20260708-02-anatomie-quantification.svg)
 
 Au-delà de l'entier uniforme, plusieurs formats coexistent : **FP8** (E4M3 ou E5M2), un flottant à 8 bits que le matériel récent (Hopper, Blackwell) exécute nativement ; **NF4** (*NormalFloat 4*), une grille non uniforme dont les niveaux sont placés aux quantiles d'une gaussienne — optimale pour des poids qui suivent justement une loi normale ;[^7] et le **ternaire** {−1, 0, +1}, cas limite à ~1,58 bit. Point crucial : dans la plupart des schémas *weight-only*, le calcul se fait toujours en FP16 après déquantification à la volée. On ne gagne alors que la mémoire et la bande passante — pas les FLOPs. Il faut quantifier *aussi* les activations (W8A8, W4A4) pour activer les unités de calcul basse précision.
 
