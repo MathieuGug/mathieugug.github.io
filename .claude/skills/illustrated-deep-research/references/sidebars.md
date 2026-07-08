@@ -49,7 +49,7 @@ Le format canonique de chaque entrée du panneau Sources combine **numéro entre
 </li>
 ```
 
-Trois règles load-bearing :
+Trois règles pivot :
 
 1. **`[N]` avec crochets littéraux dans le HTML**, pas de pseudo-element `::before`/`::after`. Le lecteur scanne le panneau en cherchant le `[N]` cité depuis le corps du rapport — il doit lire à l'identique dans le source et le rendu.
 2. **URL complète = texte du lien**, pas un label de host raccourci type `arxiv.org ↗`. Le label court masque la destination réelle (abstract vs PDF vs section ancrée vs mirror) ; l'URL complète, c'est la vérité. Les navigateurs modernes cassent les URLs proprement aux `/`.

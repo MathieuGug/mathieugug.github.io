@@ -9,15 +9,15 @@ Journal de production du livre (28 dossiers → 25 chapitres). Voir [`livre-outl
 | | Statut | Note |
 | --- | --- | --- |
 | Outline | ✅ v0 mergé (PR #127) | 4 actes, 25 chapitres, 3 catégories de schémas (S/R/E) |
-| Audit schémas | 🟡 partiel | Ch.7-13 + Ch.14-16 (Acte III complet) + Ch.17-20 + **Ch.21-22-23 audités + manuscrits v1 livrés 2026-05-28** + **Ch.4 audité + manuscrit v1 livré 2026-05-29** + **Ch.1-3 + Ch.5-6 audités + manuscrits v1 livrés 2026-05-29** — Acte I complet (sauf prologue), Acte II/III complets, Acte IV à 4/5. Restent : Prologue + Ch.24-25 + Épilogue. |
-| Manuscrit | 🟢 **23/25** | **Acte I complet** : Ch.1 (cœur stochastique) + Ch.2 (raisonnement) + Ch.3 (PRM) + Ch.4 (décode spéculative) + Ch.5 (économie inférence) + Ch.6 (encart world models) — tous v1 livrés 2026-05-29. **Acte II complet** : Ch.7 (charnière) + Ch.8 + Ch.9 + Ch.10 + Ch.11 v1. **Acte III complet** : Ch.12 + Ch.13 + Ch.14 + Ch.15 + Ch.16 v1. **Acte IV** : Ch.17 (charnière) + Ch.18 + Ch.19 (charnière) + Ch.20 v1 + **Ch.21 (charnière ROI) + Ch.22 (frugalité) + Ch.23 (gouvernance) v1 livrés 2026-05-28**. Restent à écrire : Prologue + Ch.24 (IA et travail) + Ch.25 (procès Musk) + Épilogue. |
-| Schémas R/E à produire | 🟡 | **S1.1 (softmax→T→top-p→tirage) + S1.2 (faisceau 1 000 trajectoires) v1 livrés 2026-05-29** (Ch.1). **E3 (capability×cost A4 portrait) v1 livré 2026-05-29** (Ch.2, fusion `modeles-raisonnement/03` + `economie-inference/07` + bandeau 3 régimes vendor). **E5 (PRM vs LLM-judge vs human eval A4 portrait) v1 livré 2026-05-29** (Ch.3, matrice 3×5 + bandeau 4 trajectoires). E4 (threat model unifié 2026) **textualisé en Ch.19 §19.10**. R1-R15 traités par réutilisation. **R16 (J-curve × LLMflation × paradoxe agentique)** à créer par fusion lourde — brief détaillé Ch.21 §Schémas. **R17 (3 trajectoires énergétiques 2030)** traité par réutilisation tel quel de `ia-frugale-08-trajectoires-2030.svg`. **R18 (calendrier réglementaire 2026-2028 unifié)** à créer ex nihilo — brief détaillé Ch.23 §Schémas. |
+| Audit schémas | 🟡 partiel | Ch.7-13 + Ch.13-16 (Acte III complet) + Ch.19-20 + **Ch.23-22-23 audités + manuscrits v1 livrés 2026-05-28** + **Ch.4 audité + manuscrit v1 livré 2026-05-29** + **Ch.1-3 + Ch.5-6 audités + manuscrits v1 livrés 2026-05-29** — Acte I complet (sauf prologue), Acte II/III complets, Acte IV à 4/5. Restent : Prologue + Ch.26-25 + Épilogue. |
+| Manuscrit | 🟢 **23/25** | **Acte I complet** : Ch.1 (cœur stochastique) + Ch.2 (raisonnement) + Ch.3 (PRM) + Ch.4 (décode spéculative) + Ch.5 (économie inférence) + Ch.6 (encart world models) — tous v1 livrés 2026-05-29. **Acte II complet** : Ch.7 (charnière) + Ch.8 + Ch.9 + Ch.10 + Ch.11 v1. **Acte III complet** : Ch.15 + Ch.16 + Ch.13 + Ch.17 + Ch.18 v1. **Acte IV** : Ch.19 (charnière) + Ch.20 + Ch.21 (charnière) + Ch.22 v1 + **Ch.23 (charnière ROI) + Ch.24 (frugalité) + Ch.25 (gouvernance) v1 livrés 2026-05-28**. Restent à écrire : Prologue + Ch.26 (IA et travail) + Ch.27 (procès Musk) + Épilogue. |
+| Schémas R/E à produire | 🟡 | **S1.1 (softmax→T→top-p→tirage) + S1.2 (faisceau 1 000 trajectoires) v1 livrés 2026-05-29** (Ch.1). **E3 (capability×cost A4 portrait) v1 livré 2026-05-29** (Ch.2, fusion `modeles-raisonnement/03` + `economie-inference/07` + bandeau 3 régimes vendor). **E5 (PRM vs LLM-judge vs human eval A4 portrait) v1 livré 2026-05-29** (Ch.3, matrice 3×5 + bandeau 4 trajectoires). E4 (threat model unifié 2026) **textualisé en Ch.21 §21.10**. R1-R15 traités par réutilisation. **R16 (J-curve × LLMflation × paradoxe agentique)** à créer par fusion lourde — brief détaillé Ch.23 §Schémas. **R17 (3 trajectoires énergétiques 2030)** traité par réutilisation tel quel de `ia-frugale-08-trajectoires-2030.svg`. **R18 (calendrier réglementaire 2026-2028 unifié)** à créer ex nihilo — brief détaillé Ch.25 §Schémas. |
 | Bugs SVG corrigés | ✅ 1 | `cinq-familles.svg` (balise XML malformée) |
 | Rendu print/web | ⏳ | non décidé |
 
 ---
 
-## Chapitre 21 — Mesurer le ROI (et le paradoxe agentique)
+## Chapitre 23 — Mesurer le ROI (et le paradoxe agentique)
 
 > **Acte IV — Mesures et garde-fous · Gabarit charnière 28-40 p · ~10-12 000 mots**
 > **Lecteur cible** : sponsor IA / CDO / CFO / CRO, project lead, agent engineer, banque + assurance + retail + industrie.
@@ -29,16 +29,16 @@ Journal de production du livre (28 dossiers → 25 chapitres). Voir [`livre-outl
 | --- | --- |
 | Audit schémas source (1 dossier principal + annexes JSON) | ✅ fait — `measure-roi/` (9 schémas SVG tous absorbés) + 4 fichiers complémentaires (`7-axes-roi.md`, `roi-calculation-methods.md`, `note-cigref-vs-roi-cards.md`, `roi-cards.json`, `roi-metrics.json`) |
 | Plan détaillé | ✅ fait (audit du 2026-05-28) |
-| Manuscrit | ✅ **v1 livrée** — `docs/livre/ch21-roi-paradoxe-agentique.md` (~8 500 mots, 440 lignes, 15 footnotes, 9 schémas réutilisés, 17 encadrés Obsidian) |
-| Schémas à créer | **R16** (Productivity J-curve × LLMflation × paradoxe agentique) — reporté à session ultérieure. Le manuscrit v1 fonctionne par juxtaposition des SVG existants `measure-roi-06-j-curve.svg` (§21.2.3) et `measure-roi-08-stack-roi-agentique.svg` (§21.7). Brief détaillé ci-dessous reste valide pour la fusion lourde (~2-3 j SVG) si édition print A3 le réclame. |
-| Frontière Ch.21 ↔ Ch.5 | À tenir — Ch.5 = physique du coût/token (7 couches d'optim) ; Ch.21 = valeur métier (J-curve, outcome, paradoxe agentique). Renvoi `[!INFO]` croisé. Le schéma 7 couches de Ch.5 ré-apparaît en regard de R16 dans une double-page éco. |
-| Frontière Ch.21 ↔ Ch.17 | À tenir — Ch.17 cite déjà le token cost trap (Klaus Hofenbitzer 0,14 $→130 k$/mois) en illustration intra-chapitre ; Ch.21 ne refait pas cette illustration mais déroule la stack à 4 niveaux. |
-| Frontière Ch.21 ↔ Ch.22 | À tenir — Ch.22 = externalité énergétique (TWh, gCO₂eq, eau). Ch.21 mesure la valeur métier directe. Triptyque tarifaire explicite : Ch.5 coût token / Ch.21 valeur outcome / Ch.22 externalité environnementale. |
-| Frontière Ch.21 ↔ Ch.23 | À tenir — Ch.23 = gouvernance (gates, rôles, calendrier réglementaire). Ch.21 = mesure de la valeur. La checklist 7 questions §21.9 nourrit les gates Ch.23 mais ne les redécrit pas. |
+| Manuscrit | ✅ **v1 livrée** — `docs/livre/ch23-roi-paradoxe-agentique.md` (~8 500 mots, 440 lignes, 15 footnotes, 9 schémas réutilisés, 17 encadrés Obsidian) |
+| Schémas à créer | **R16** (Productivity J-curve × LLMflation × paradoxe agentique) — reporté à session ultérieure. Le manuscrit v1 fonctionne par juxtaposition des SVG existants `measure-roi-06-j-curve.svg` (§23.2.3) et `measure-roi-08-stack-roi-agentique.svg` (§23.7). Brief détaillé ci-dessous reste valide pour la fusion lourde (~2-3 j SVG) si édition print A3 le réclame. |
+| Frontière Ch.23 ↔ Ch.5 | À tenir — Ch.5 = physique du coût/token (7 couches d'optim) ; Ch.23 = valeur métier (J-curve, outcome, paradoxe agentique). Renvoi `[!INFO]` croisé. Le schéma 7 couches de Ch.5 ré-apparaît en regard de R16 dans une double-page éco. |
+| Frontière Ch.23 ↔ Ch.19 | À tenir — Ch.19 cite déjà le token cost trap (Klaus Hofenbitzer 0,14 $→130 k$/mois) en illustration intra-chapitre ; Ch.23 ne refait pas cette illustration mais déroule la stack à 4 niveaux. |
+| Frontière Ch.23 ↔ Ch.24 | À tenir — Ch.24 = externalité énergétique (TWh, gCO₂eq, eau). Ch.23 mesure la valeur métier directe. Triptyque tarifaire explicite : Ch.5 coût token / Ch.23 valeur outcome / Ch.24 externalité environnementale. |
+| Frontière Ch.23 ↔ Ch.25 | À tenir — Ch.25 = gouvernance (gates, rôles, calendrier réglementaire). Ch.23 = mesure de la valeur. La checklist 7 questions §23.9 nourrit les gates Ch.25 mais ne les redécrit pas. |
 
 ### Sources matérielles
 
-Le Ch.21 est un **chapitre charnière à un seul dossier source dense**, complété par 4 fichiers d'expansion non utilisés intégralement dans le rapport original (matière supplémentaire pour cas sectoriels et système ludique).
+Le Ch.23 est un **chapitre charnière à un seul dossier source dense**, complété par 4 fichiers d'expansion non utilisés intégralement dans le rapport original (matière supplémentaire pour cas sectoriels et système ludique).
 
 - **Dossier principal — [`measure-roi/`](../measure-roi/)** (07 mai 2026, étude #15) — diagnostic chiffré du paradoxe 2026, 3+1 ruptures structurelles, 5 frameworks comparés, grille 5 axes propriétaire, hard vs soft, 8 méthodes + arbre décision, stack 4 niveaux (token / tâche / processus / outcome), cas Klarna en illustration de remontée échouée, 5 études empiriques (Brynjolfsson, Copilot, Jagged Frontier, METR, Klarna).
   - [Rapport (.md, ~12 000 mots)](../measure-roi/20260507-roi-ia-generative-agentique-rapport.md) · [App interactive](../measure-roi/20260507-roi-ia-generative-agentique-app.html) · [Slideshow](../measure-roi/20260507-roi-ia-generative-agentique-slideshow.html)
@@ -49,43 +49,43 @@ Le Ch.21 est un **chapitre charnière à un seul dossier source dense**, complé
   - `note-cigref-vs-roi-cards.md` (~16 kb) — validation croisée Cigref ↔ grille 5 axes, identifie les 3 **angles morts** (données propriétaires, business models, coût décision). Utile pour la critique honnête.
   - `roi-cards.json` (~10 kb) + `roi-metrics.json` (~20 kb) — données structurées (80+ métriques par axe et secteur). Hors corps du livre, peut nourrir un futur outil interactif.
 
-### Audit des schémas — Ch.21
+### Audit des schémas — Ch.23
 
 Au total, **9 schémas SVG** dans le dossier source, tous absorbés tels quels (taux d'absorption maximal).
 
-| Fig | Slug | Catégorie Ch.21 | Insertion | Statut |
+| Fig | Slug | Catégorie Ch.23 | Insertion | Statut |
 | --- | --- | --- | --- | --- |
-| 01 | [`paradoxe-roi`](../measure-roi/images/20260507-01-paradoxe-roi.svg) | **S §21.1** | 3 colonnes Potentiel / Réalité EBIT / Échec industriel (2,6-4,4T$ vs 39 % vs 95 %) | tel quel — pose la tension narrative d'ouverture |
-| 02 | [`panorama-frameworks`](../measure-roi/images/20260507-02-panorama-frameworks.svg) | **S §21.3** | 5 cartes côte à côte (Cigref / McKinsey / BCG / MIT NANDA / Forrester) — apport spécifique, chiffre clé, force/faiblesse | tel quel |
-| 03 | [`grille-5-axes`](../measure-roi/images/20260507-03-grille-5-axes.svg) | **S §21.4 + Récap** | Pentagone régulier + 5 paires (axe/icône/question/métriques) | tel quel — **schéma signature**, réutilisé en récap |
-| 04 | [`mapping-cigref`](../measure-roi/images/20260507-04-mapping-cigref.svg) | **S §21.4.3** | Double cartographie : 5 axes ↔ 4 catégories Cigref + panneau angles morts | tel quel |
-| 05 | [`hard-vs-soft`](../measure-roi/images/20260507-05-hard-vs-soft.svg) | **S §21.5** | 5 barres horizontales (Coût 80/20, Volume 50/50, Vitesse 35/65, Qualité 40/60, Bien-être 15/85) | tel quel |
-| 06 | [`j-curve`](../measure-roi/images/20260507-06-j-curve.svg) | **S §21.2.3 + R16 fusion** | Graphe productivité en J, 3 phases annotées sur 0-7 ans, courbes vraie (teal) vs mesurée (carmin) | tel quel **+ ingrédient principal de R16** |
-| 07 | [`decision-tree-methode`](../measure-roi/images/20260507-07-decision-tree-methode.svg) | **S §21.6.2** | Arbre ternaire : Q1 coût ? / Q2 revenu ? / Q3 > 24 m plateforme ? → 8 méthodes | tel quel |
-| 08 | [`stack-roi-agentique`](../measure-roi/images/20260507-08-stack-roi-agentique.svg) | **S §21.7 + R16 fusion** | 4 bandes emboîtées (token / tâche / processus / outcome) + flèche « la valeur se construit en remontant » + annotation Klarna | tel quel **+ ingrédient principal de R16** |
-| 09 | [`productivity-findings`](../measure-roi/images/20260507-09-productivity-findings.svg) | **S §21.8.5** | Scatter 2D (novice→expert × in→out-frontier) : Brynjolfsson +34, Copilot +26, Jagged ±25/-19pp, METR -19, Klarna recul | tel quel |
+| 01 | [`paradoxe-roi`](../measure-roi/images/20260507-01-paradoxe-roi.svg) | **S §23.1** | 3 colonnes Potentiel / Réalité EBIT / Échec industriel (2,6-4,4T$ vs 39 % vs 95 %) | tel quel — pose la tension narrative d'ouverture |
+| 02 | [`panorama-frameworks`](../measure-roi/images/20260507-02-panorama-frameworks.svg) | **S §23.3** | 5 cartes côte à côte (Cigref / McKinsey / BCG / MIT NANDA / Forrester) — apport spécifique, chiffre clé, force/faiblesse | tel quel |
+| 03 | [`grille-5-axes`](../measure-roi/images/20260507-03-grille-5-axes.svg) | **S §23.4 + Récap** | Pentagone régulier + 5 paires (axe/icône/question/métriques) | tel quel — **schéma signature**, réutilisé en récap |
+| 04 | [`mapping-cigref`](../measure-roi/images/20260507-04-mapping-cigref.svg) | **S §23.4.3** | Double cartographie : 5 axes ↔ 4 catégories Cigref + panneau angles morts | tel quel |
+| 05 | [`hard-vs-soft`](../measure-roi/images/20260507-05-hard-vs-soft.svg) | **S §23.5** | 5 barres horizontales (Coût 80/20, Volume 50/50, Vitesse 35/65, Qualité 40/60, Bien-être 15/85) | tel quel |
+| 06 | [`j-curve`](../measure-roi/images/20260507-06-j-curve.svg) | **S §23.2.3 + R16 fusion** | Graphe productivité en J, 3 phases annotées sur 0-7 ans, courbes vraie (teal) vs mesurée (carmin) | tel quel **+ ingrédient principal de R16** |
+| 07 | [`decision-tree-methode`](../measure-roi/images/20260507-07-decision-tree-methode.svg) | **S §23.6.2** | Arbre ternaire : Q1 coût ? / Q2 revenu ? / Q3 > 24 m plateforme ? → 8 méthodes | tel quel |
+| 08 | [`stack-roi-agentique`](../measure-roi/images/20260507-08-stack-roi-agentique.svg) | **S §23.7 + R16 fusion** | 4 bandes emboîtées (token / tâche / processus / outcome) + flèche « la valeur se construit en remontant » + annotation Klarna | tel quel **+ ingrédient principal de R16** |
+| 09 | [`productivity-findings`](../measure-roi/images/20260507-09-productivity-findings.svg) | **S §23.8.5** | Scatter 2D (novice→expert × in→out-frontier) : Brynjolfsson +34, Copilot +26, Jagged ±25/-19pp, METR -19, Klarna recul | tel quel |
 
-**Bilan audit Ch.21** : 9/9 schémas absorbés. 0 schéma écarté. Le rapport source est exceptionnellement dense visuellement — le manuscrit aura ~1 schéma par 1 100-1 300 mots, rythme soutenu adapté à un chapitre charnière.
+**Bilan audit Ch.23** : 9/9 schémas absorbés. 0 schéma écarté. Le rapport source est exceptionnellement dense visuellement — le manuscrit aura ~1 schéma par 1 100-1 300 mots, rythme soutenu adapté à un chapitre charnière.
 
 ### Schémas à créer — R16
 
-**R16 — Double-page éco : prix qui baisse (Ch.5) vs valeur qui monte lentement (Ch.21)**
+**R16 — Double-page éco : prix qui baisse (Ch.5) vs valeur qui monte lentement (Ch.23)**
 
 | Critère | Spec |
 | --- | --- |
 | Format | A3 paysage (420×297 mm) double-page facing |
-| Position dans le livre | Page de droite de §21.2.3 (rupture J-curve) + référencé Ch.5 |
+| Position dans le livre | Page de droite de §23.2.3 (rupture J-curve) + référencé Ch.5 |
 | Statut | **À créer** par fusion lourde (~2-3 jours SVG) |
 | Sources | `measure-roi-06-j-curve.svg` (gauche) + `measure-roi-08-stack-roi-agentique.svg` (centre) + `economie-inference` LLMflation curve (droite) |
 | Contenu | **Panel A (gauche)** : LLMflation 2021-2026 (prix/1M tokens descend ×1000) — courbe descendante depuis `economie-inference`. **Panel B (centre)** : stack 4 niveaux paradoxe agentique — token (Wh/req baisse) → tâche (×10-74 cost AIME) → processus (réallocation) → outcome (J-curve creux 12-36 mois). **Panel C (droite)** : J-curve Brynjolfsson — courbe vraie (teal) vs mesurée (carmin) en creux entre 0-3 ans, plateau 3-7 ans. **Bandeau bas** : 3 régimes temporels alignés sur les 3 panels (court terme prix, moyen terme structure, long terme productivité). |
 | Légende | « *Le décideur paie un prix par token qui baisse pendant que sa facture par tâche monte et que sa courbe d'outcome traverse le creux. Trois lectures d'une même facture.* » |
-| Réutilisation | §21.2.3 + récap Ch.21 + renvoi Ch.5 + renvoi Ch.22 (sankey énergie en parallèle) |
+| Réutilisation | §23.2.3 + récap Ch.23 + renvoi Ch.5 + renvoi Ch.24 (sankey énergie en parallèle) |
 
 ### Redondances et complémentarités
 
-**Le Ch.21 est un chapitre à un seul dossier source — pas de redondance interne**. Les 4 frontières inter-chapitres sont posées dans la table de Statut ci-dessus.
+**Le Ch.23 est un chapitre à un seul dossier source — pas de redondance interne**. Les 4 frontières inter-chapitres sont posées dans la table de Statut ci-dessus.
 
-**Cas Klarna — angle Ch.11 vs Ch.21** : Klarna apparaît **deux fois** dans le livre (validé en outline §3 Ch.11). Ch.11 (orchestration) le traite comme illustration multi-agent + post-mortem cascade ; Ch.21 le traite comme illustration de la **remontée échouée** dans la stack à 4 niveaux (excellents KPI tâche/processus, outcome qualité ne suit pas → hybridation). Pas de redite — deux profondeurs complémentaires.
+**Cas Klarna — angle Ch.11 vs Ch.23** : Klarna apparaît **deux fois** dans le livre (validé en outline §3 Ch.11). Ch.11 (orchestration) le traite comme illustration multi-agent + post-mortem cascade ; Ch.23 le traite comme illustration de la **remontée échouée** dans la stack à 4 niveaux (excellents KPI tâche/processus, outcome qualité ne suit pas → hybridation). Pas de redite — deux profondeurs complémentaires.
 
 **Encadrés prévus dans le chapitre**
 
@@ -93,7 +93,7 @@ Au total, **9 schémas SVG** dans le dossier source, tous absorbés tels quels (
 | --- | --- | --- |
 | `[!QUESTION]` | Ouverture | 1 |
 | `[!TLDR]` | Synthèse décideur 7-8 bullets | 1 |
-| `[!INFO]` | Renvois inter-chapitres (Ch.5, 17, 22, 23, 11) | 4-5 |
+| `[!INFO]` | Renvois inter-chapitres (Ch.5, 19, 24, 25, 11) | 4-5 |
 | `[!QUOTE]` | Cigref p.26 + p.34 + p.107 + p.153 + Brynjolfsson p.98 | 3-4 |
 | `[!IMPORTANT]` | Discipline hard/soft + 7 questions de signature + paradoxe Klarna | 3 |
 | `[!ATTENTION]` | Le choix de méthode est un choix produit | 1 |
@@ -101,21 +101,21 @@ Au total, **9 schémas SVG** dans le dossier source, tous absorbés tels quels (
 | `[!WARNING]` | Trois pièges classiques en clôture | 1 |
 | **Total** | | **~16-18** |
 
-### Tâches restantes Ch.21
+### Tâches restantes Ch.23
 
-- [ ] Rédiger le manuscrit `docs/livre/ch21-roi-paradoxe-agentique.md` (~10-12 000 mots)
+- [ ] Rédiger le manuscrit `docs/livre/ch23-roi-paradoxe-agentique.md` (~10-12 000 mots)
 - [ ] Créer le schéma R16 (fusion lourde double-page éco) — ~2-3 j SVG
 - [ ] Choisir 1-2 mini-cas sectoriels à partir de `roi-calculation-methods.md` (Banque + Retail recommandé)
-- [ ] Valider que le cas Klarna en Ch.21 §21.7 ne redit pas Ch.11 (deux profondeurs distinctes)
+- [ ] Valider que le cas Klarna en Ch.23 §23.7 ne redit pas Ch.11 (deux profondeurs distinctes)
 - [ ] Relecture Mathieu — passes critiques suggérées (à compléter à la livraison v1) :
-  - **(a) Le paradoxe agentique §21.7** : stack 4 niveaux est-il l'angle le plus différentiant du chapitre ? Le décideur peut-il diagnostiquer à quel niveau ça casse ?
-  - **(b) La grille 5 axes §21.4** : tient-elle comme outil de cadrage en RDV sponsor (avec mapping Cigref bidirectionnel) ?
-  - **(c) Hard vs Soft §21.5** : la règle de preuve réallocation est-elle assez ferme pour résister à un CFO ?
-  - **(d) Checklist 7 questions §21.9** : usable telle quelle en gouvernance projet ?
+  - **(a) Le paradoxe agentique §23.7** : stack 4 niveaux est-il l'angle le plus différentiant du chapitre ? Le décideur peut-il diagnostiquer à quel niveau ça casse ?
+  - **(b) La grille 5 axes §23.4** : tient-elle comme outil de cadrage en RDV sponsor (avec mapping Cigref bidirectionnel) ?
+  - **(c) Hard vs Soft §23.5** : la règle de preuve réallocation est-elle assez ferme pour résister à un CFO ?
+  - **(d) Checklist 7 questions §23.9** : usable telle quelle en gouvernance projet ?
 
 ---
 
-## Chapitre 22 — Externalité énergétique : IA frugale
+## Chapitre 24 — Externalité énergétique : IA frugale
 
 > **Acte IV — Mesures et garde-fous · Gabarit standard 22 p · ~7 500-8 000 mots**
 > **Lecteur cible** : décideur RSE / CSR, FinOps, sponsor IA, agent engineer, citoyen averti.
@@ -127,38 +127,38 @@ Au total, **9 schémas SVG** dans le dossier source, tous absorbés tels quels (
 | --- | --- |
 | Audit schémas source (1 dossier) | ✅ fait — `ia-frugale/` (12 schémas SVG : 1 exec-sum annexe + 11 narratifs absorbés) |
 | Plan détaillé | ✅ fait (audit du 2026-05-28) |
-| Manuscrit | ✅ **v1 livrée** — `docs/livre/ch22-ia-frugale.md` (~8 100 mots, 437 lignes, 24 footnotes équilibrées, 11 schémas réutilisés tels quels, 14 encadrés Obsidian) |
+| Manuscrit | ✅ **v1 livrée** — `docs/livre/ch24-ia-frugale.md` (~8 100 mots, 437 lignes, 24 footnotes équilibrées, 11 schémas réutilisés tels quels, 14 encadrés Obsidian) |
 | Schémas à créer | **0 ex nihilo**. R17 (3 trajectoires énergétiques 2030) traité par réutilisation tel quel de `20260513-08-trajectoires-2030.svg`. Tous les schémas du dossier source sont absorbables sans retouche. |
-| Frontière Ch.22 ↔ Ch.5 | À tenir — Ch.5 = 7 couches d'optim inference côté direct cost ; Ch.22 = leviers structurels énergétiques (MoE / distillation / cooling / geo-aware / nucléaire dédié / pré-KV cache routing) côté externalité. **Mêmes leviers**, deux angles. Renvoi explicite Ch.5 §7 couches en parallèle. |
-| Frontière Ch.22 ↔ Ch.21 | À tenir — triptyque tarifaire complet : Ch.5 coût token, Ch.21 valeur outcome, Ch.22 externalité. Cohérence intro §22.1 à poser explicitement. |
-| Frontière Ch.22 ↔ Ch.23 | À tenir — Jevons §22.8 est le **pont vers Ch.23** : la conclusion politique (prix carbone, caps régionaux, allocation usages) est l'amorce du chapitre gouvernance. Fermeture orientée bascule politique. |
+| Frontière Ch.24 ↔ Ch.5 | À tenir — Ch.5 = 7 couches d'optim inference côté direct cost ; Ch.24 = leviers structurels énergétiques (MoE / distillation / cooling / geo-aware / nucléaire dédié / pré-KV cache routing) côté externalité. **Mêmes leviers**, deux angles. Renvoi explicite Ch.5 §7 couches en parallèle. |
+| Frontière Ch.24 ↔ Ch.23 | À tenir — triptyque tarifaire complet : Ch.5 coût token, Ch.23 valeur outcome, Ch.24 externalité. Cohérence intro §24.1 à poser explicitement. |
+| Frontière Ch.24 ↔ Ch.25 | À tenir — Jevons §24.8 est le **pont vers Ch.25** : la conclusion politique (prix carbone, caps régionaux, allocation usages) est l'amorce du chapitre gouvernance. Fermeture orientée bascule politique. |
 
 ### Sources matérielles
 
-Le Ch.22 est un **chapitre standard à un seul dossier source**, particulièrement bien structuré : 9 sections du rapport, 11 schémas narratifs, 23 footnotes (toutes Tier-A : ACL, Joule, IEA, LBNL, Microsoft Cloud Blog, NVIDIA, EU CoC, ISO/IEC).
+Le Ch.24 est un **chapitre standard à un seul dossier source**, particulièrement bien structuré : 9 sections du rapport, 11 schémas narratifs, 23 footnotes (toutes Tier-A : ACL, Joule, IEA, LBNL, Microsoft Cloud Blog, NVIDIA, EU CoC, ISO/IEC).
 
 - **Dossier principal — [`ia-frugale/`](../ia-frugale/)** (13 mai 2026, étude #20) — fabrique des chiffres viraux et timeline correctifs, matrice 3 scopes × 3 phases + outils/normes, arithmétique requête 2026, eau scope 1/2/3 + Microsoft zero-water cooling 12/2024, électricité annualisé vs pic local + rush nucléaire, embodied carbon H100 + inversion silencieuse, leviers structurels Patterson 100-1 000×, Jevons + 3 trajectoires 2030, équipe agentique 10 pers cas concret.
   - [Rapport (.md, ~1 700 mots compactés sur 318 lignes denses)](../ia-frugale/20260513-ia-frugale-rapport.md) · [App interactive](../ia-frugale/20260513-ia-frugale-app.html) · [Quiz sidecar](../ia-frugale/quizzes.json) (4 quiz, 35 questions)
   - 12 schémas SVG dans [`images/`](../ia-frugale/images/) — 11 narratifs absorbés, 1 exec-sum standalone annexe
 
-### Audit des schémas — Ch.22
+### Audit des schémas — Ch.24
 
-| Fig | Slug | Catégorie Ch.22 | Insertion | Statut |
+| Fig | Slug | Catégorie Ch.24 | Insertion | Statut |
 | --- | --- | --- | --- | --- |
 | 00 | [`exec-sum-a4`](../ia-frugale/images/20260513-00-exec-sum-a4.svg) | annexe | 5 messages standalone — couverture/encart détaché optionnel | annexe rapport |
-| 01 | [`fabrique-chiffres-viraux`](../ia-frugale/images/20260513-01-fabrique-chiffres-viraux.svg) | **S §22.1** | Timeline 5 jalons Strubell→Epoch + correction Altman/Google 12/2024 | tel quel |
-| 02 | [`frameworks-mesure`](../ia-frugale/images/20260513-02-frameworks-mesure.svg) | **S §22.2** | Matrice 3 scopes × 3 phases (GHG Protocol) + outils PUE/WUE/CUE + normes ISO/IEC 21031, EU CoC | tel quel |
-| 03 | [`arithmetique-requete`](../ia-frugale/images/20260513-03-arithmetique-requete.svg) | **S §22.3** | Log 4 ordres grandeur (0,3 Wh → 1 000 Wh) — texte/image/raisonnement/vidéo vs références familières | tel quel |
-| 04 | [`eau-scope-sites`](../ia-frugale/images/20260513-04-eau-scope-sites.svg) | **S §22.4** | 3 scopes eau + concentration Phoenix/Dublin/Taïwan | tel quel |
-| 05 | [`electricite-trajectoire-mix`](../ia-frugale/images/20260513-05-electricite-trajectoire-mix.svg) | **S §22.5** | 3 panels : stacked area 2014-2035, mix PIE (46/31/22/1 %), 4 deals nucléaires | tel quel |
-| 06 | [`embodied-amortissement`](../ia-frugale/images/20260513-06-embodied-amortissement.svg) | **S §22.6** | H100 décomposition (mém 42 % / logique 25 % / thermique 18 % / autres 15 %) + courbe amortissement par mix → inversion silencieuse | tel quel |
-| 07 | [`leviers-structurels`](../ia-frugale/images/20260513-07-leviers-structurels.svg) | **S §22.7** | Bubble chart log scale 7 décades — 5 familles × gain × maturité, combinaison Patterson 100-1 000× | tel quel |
-| 08 | [`trajectoires-2030`](../ia-frugale/images/20260513-08-trajectoires-2030.svg) | **R17 §22.8 + Récap** | 3 trajectoires consommation 2024-2030 + 3 leviers politiques en bas | tel quel — **tient lieu de R17 v1** |
-| 09 | [`facture-mondiale`](../ia-frugale/images/20260513-09-facture-mondiale.svg) | **S §22.5 contexte** | Log scale 100-100k TWh — IA ~155 vs crypto 150 vs streaming 200 vs aviation 1 400 vs prod mondiale 30k | tel quel |
-| 10 | [`equipe-agentique`](../ia-frugale/images/20260513-10-equipe-agentique.svg) | **S §22.3 cas concret** | Stack-up quotidien (chat 60 + reasoning 400 + MCP 160 + image 15 + vidéo 10 Wh) → 645 Wh/jour/pers → 1,4 MWh/an équipe 10 | tel quel |
-| 11 | [`sankey-eau`](../ia-frugale/images/20260513-11-sankey-eau.svg) | **S §22.4 levier** | Sankey évaporatif (~1 200 m³) vs closed-loop Microsoft (10 m³) | tel quel |
+| 01 | [`fabrique-chiffres-viraux`](../ia-frugale/images/20260513-01-fabrique-chiffres-viraux.svg) | **S §24.1** | Timeline 5 jalons Strubell→Epoch + correction Altman/Google 12/2024 | tel quel |
+| 02 | [`frameworks-mesure`](../ia-frugale/images/20260513-02-frameworks-mesure.svg) | **S §24.2** | Matrice 3 scopes × 3 phases (GHG Protocol) + outils PUE/WUE/CUE + normes ISO/IEC 21031, EU CoC | tel quel |
+| 03 | [`arithmetique-requete`](../ia-frugale/images/20260513-03-arithmetique-requete.svg) | **S §24.3** | Log 4 ordres grandeur (0,3 Wh → 1 000 Wh) — texte/image/raisonnement/vidéo vs références familières | tel quel |
+| 04 | [`eau-scope-sites`](../ia-frugale/images/20260513-04-eau-scope-sites.svg) | **S §24.4** | 3 scopes eau + concentration Phoenix/Dublin/Taïwan | tel quel |
+| 05 | [`electricite-trajectoire-mix`](../ia-frugale/images/20260513-05-electricite-trajectoire-mix.svg) | **S §24.5** | 3 panels : stacked area 2014-2035, mix PIE (46/31/22/1 %), 4 deals nucléaires | tel quel |
+| 06 | [`embodied-amortissement`](../ia-frugale/images/20260513-06-embodied-amortissement.svg) | **S §24.6** | H100 décomposition (mém 42 % / logique 25 % / thermique 18 % / autres 15 %) + courbe amortissement par mix → inversion silencieuse | tel quel |
+| 07 | [`leviers-structurels`](../ia-frugale/images/20260513-07-leviers-structurels.svg) | **S §24.7** | Bubble chart log scale 7 décades — 5 familles × gain × maturité, combinaison Patterson 100-1 000× | tel quel |
+| 08 | [`trajectoires-2030`](../ia-frugale/images/20260513-08-trajectoires-2030.svg) | **R17 §24.8 + Récap** | 3 trajectoires consommation 2024-2030 + 3 leviers politiques en bas | tel quel — **tient lieu de R17 v1** |
+| 09 | [`facture-mondiale`](../ia-frugale/images/20260513-09-facture-mondiale.svg) | **S §24.5 contexte** | Log scale 100-100k TWh — IA ~155 vs crypto 150 vs streaming 200 vs aviation 1 400 vs prod mondiale 30k | tel quel |
+| 10 | [`equipe-agentique`](../ia-frugale/images/20260513-10-equipe-agentique.svg) | **S §24.3 cas concret** | Stack-up quotidien (chat 60 + reasoning 400 + MCP 160 + image 15 + vidéo 10 Wh) → 645 Wh/jour/pers → 1,4 MWh/an équipe 10 | tel quel |
+| 11 | [`sankey-eau`](../ia-frugale/images/20260513-11-sankey-eau.svg) | **S §24.4 levier** | Sankey évaporatif (~1 200 m³) vs closed-loop Microsoft (10 m³) | tel quel |
 
-**Bilan audit Ch.22** : 11/11 schémas narratifs absorbés. 1 exec-sum standalone en annexe. Densité finale : ~1 schéma par 700 mots — rythme typique d'un chapitre standard à matière visuelle dense.
+**Bilan audit Ch.24** : 11/11 schémas narratifs absorbés. 1 exec-sum standalone en annexe. Densité finale : ~1 schéma par 700 mots — rythme typique d'un chapitre standard à matière visuelle dense.
 
 ### Plan détaillé
 
@@ -170,83 +170,83 @@ Le Ch.22 est un **chapitre standard à un seul dossier source**, particulièreme
 
 > [!TLDR] TL;DR décideur (6 bullets)
 
-§22.1  La fabrique des chiffres viraux — Strubell, de Vries, Li, Epoch
+§24.1  La fabrique des chiffres viraux — Strubell, de Vries, Li, Epoch
         ├─ [SVG S] fabrique-chiffres-viraux
-        ├─ §22.1.1 Strubell 2019 (NAS extrême) vs slogan générique
-        ├─ §22.1.2 de Vries 2023 (scénario) → "3 Wh réalité"
-        ├─ §22.1.3 Li 2023 (site précis Washington) → "500 ml universalisé"
-        ├─ §22.1.4 Epoch 2025 — correction ×10 sur Altman + Google
+        ├─ §24.1.1 Strubell 2019 (NAS extrême) vs slogan générique
+        ├─ §24.1.2 de Vries 2023 (scénario) → "3 Wh réalité"
+        ├─ §24.1.3 Li 2023 (site précis Washington) → "500 ml universalisé"
+        ├─ §24.1.4 Epoch 2025 — correction ×10 sur Altman + Google
         └─ encadré [!IMPORTANT] La leçon — scope + date + phase obligatoires
 
-§22.2  La grille de mesure — 3 scopes × 3 phases (GHG Protocol)
+§24.2  La grille de mesure — 3 scopes × 3 phases (GHG Protocol)
         ├─ [SVG S] frameworks-mesure
-        ├─ §22.2.1 Scopes 1 / 2 / 3
-        ├─ §22.2.2 Phases entraînement / inférence / embodied
-        ├─ §22.2.3 Outils PUE/WUE/CUE et normes ISO/IEC 21031 Q2 2026
+        ├─ §24.2.1 Scopes 1 / 2 / 3
+        ├─ §24.2.2 Phases entraînement / inférence / embodied
+        ├─ §24.2.3 Outils PUE/WUE/CUE et normes ISO/IEC 21031 Q2 2026
         └─ encadré [!ATTENTION] 90 % des chiffres publics omettent scope ou phase
 
-§22.3  L'arithmétique honnête 2026
+§24.3  L'arithmétique honnête 2026
         ├─ [SVG S] arithmetique-requete (log 4 ordres)
         ├─ [SVG S] equipe-agentique (645 Wh/jour → 1,4 MWh/an équipe 10)
-        ├─ §22.3.1 Texte direct — 0,3 Wh (Epoch + OpenAI + Google)
-        ├─ §22.3.2 Raisonnement — 5-20 Wh (l'explosion silencieuse thinking)
-        ├─ §22.3.3 Image — 2-4 Wh
-        ├─ §22.3.4 Vidéo — 50-1 000 Wh (poste qui explose)
-        └─ §22.3.5 Agrégat débat — 2 % ChatGPT vs 98 % entraînement/image/vidéo
+        ├─ §24.3.1 Texte direct — 0,3 Wh (Epoch + OpenAI + Google)
+        ├─ §24.3.2 Raisonnement — 5-20 Wh (l'explosion silencieuse thinking)
+        ├─ §24.3.3 Image — 2-4 Wh
+        ├─ §24.3.4 Vidéo — 50-1 000 Wh (poste qui explose)
+        └─ §24.3.5 Agrégat débat — 2 % ChatGPT vs 98 % entraînement/image/vidéo
 
-§22.4  Eau : trois scopes, un seul vrai sujet (concentration locale)
+§24.4  Eau : trois scopes, un seul vrai sujet (concentration locale)
         ├─ [SVG S] eau-scope-sites
         ├─ [SVG S] sankey-eau (évaporatif 1 200 m³ vs closed-loop 10 m³)
-        ├─ §22.4.1 Scope 1 cooling — Microsoft 0,30 L/kWh (vs 0,49 en 2021, -39 %)
-        ├─ §22.4.2 Scope 2 thermique — 1,8-7,5 L/kWh, souvent > S1 (invisible)
-        ├─ §22.4.3 Scope 3 fabrication — TSMC 700-1 500 L/H100 ultrapure
-        ├─ §22.4.4 Vrai problème = concentration locale (Dublin 79 %, Phoenix)
-        └─ §22.4.5 Microsoft 12/2024 — cooling zéro-eau (×120 facteur)
+        ├─ §24.4.1 Scope 1 cooling — Microsoft 0,30 L/kWh (vs 0,49 en 2021, -39 %)
+        ├─ §24.4.2 Scope 2 thermique — 1,8-7,5 L/kWh, souvent > S1 (invisible)
+        ├─ §24.4.3 Scope 3 fabrication — TSMC 700-1 500 L/H100 ultrapure
+        ├─ §24.4.4 Vrai problème = concentration locale (Dublin 79 %, Phoenix)
+        └─ §24.4.5 Microsoft 12/2024 — cooling zéro-eau (×120 facteur)
 
-§22.5  Électricité : annualisé vs pic local
+§24.5  Électricité : annualisé vs pic local
         ├─ [SVG S] electricite-trajectoire-mix (3 panels)
         ├─ [SVG S] facture-mondiale (contexte)
-        ├─ §22.5.1 AIE 460→945→1 300 TWh — IA = moitié croissance 2024-2030
-        ├─ §22.5.2 Mix nouvelle demande 46 % RE / 31 % gaz / 22 % nuc / 1 % charbon
-        ├─ §22.5.3 Le vrai bottleneck — interconnexion grid local, pas puissance
+        ├─ §24.5.1 AIE 460→945→1 300 TWh — IA = moitié croissance 2024-2030
+        ├─ §24.5.2 Mix nouvelle demande 46 % RE / 31 % gaz / 22 % nuc / 1 % charbon
+        ├─ §24.5.3 Le vrai bottleneck — interconnexion grid local, pas puissance
         │   └─ encadré [!INFO] Dublin moratoire, Virginie 26 % d'État
-        ├─ §22.5.4 Rush nucléaire — Microsoft TMI, Amazon Susquehanna, Google Kairos, Meta Vistra
-        └─ §22.5.5 IA en contexte — 155 TWh vs crypto 150 vs streaming 200 vs aviation 1 400
+        ├─ §24.5.4 Rush nucléaire — Microsoft TMI, Amazon Susquehanna, Google Kairos, Meta Vistra
+        └─ §24.5.5 IA en contexte — 155 TWh vs crypto 150 vs streaming 200 vs aviation 1 400
 
-§22.6  Le carbone fantôme — embodied carbon
+§24.6  Le carbone fantôme — embodied carbon
         ├─ [SVG S] embodied-amortissement (panel A + B)
-        ├─ §22.6.1 H100 — 1 312 kg CO₂eq baseboard / 164 kg/carte
-        ├─ §22.6.2 Mémoire 42 %, logique 25 %, thermique 18 %, autres 15 %
-        ├─ §22.6.3 Courbe d'amortissement par mix (carboné 3 mois / EU 7 mois / nucléaire 5 ans dominant)
-        ├─ §22.6.4 L'inversion silencieuse — scope 3 silicium devient le front
-        └─ §22.6.5 TSMC — géographie unique, 83 % fossile, monoculture
+        ├─ §24.6.1 H100 — 1 312 kg CO₂eq baseboard / 164 kg/carte
+        ├─ §24.6.2 Mémoire 42 %, logique 25 %, thermique 18 %, autres 15 %
+        ├─ §24.6.3 Courbe d'amortissement par mix (carboné 3 mois / EU 7 mois / nucléaire 5 ans dominant)
+        ├─ §24.6.4 L'inversion silencieuse — scope 3 silicium devient le front
+        └─ §24.6.5 TSMC — géographie unique, 83 % fossile, monoculture
 
-§22.7  Les leviers structurels — ce qui marche vraiment
+§24.7  Les leviers structurels — ce qui marche vraiment
         ├─ [SVG S] leviers-structurels (bubble chart Patterson)
-        ├─ §22.7.1 Architecture — MoE ×3-10, distillation+SLM ×5-30, quantization ×2-4
-        ├─ §22.7.2 Hardware — accélérateurs ML-purpose ×2-5, cooling liquide ×1,3
-        ├─ §22.7.3 Site — geo-aware carbon ×1,5-3, nucléaire dédié ×10-20
-        ├─ §22.7.4 Régulation — EU DC EE Q2 2026, prix carbone interne Microsoft/Google
-        ├─ §22.7.5 Usage — smart routing ×5-10, prompt+KV cache ×5-10, SLM on-device ×10-30
-        ├─ §22.7.6 Patterson combiné — 100-1 000× sur une même tâche d'entraînement
+        ├─ §24.7.1 Architecture — MoE ×3-10, distillation+SLM ×5-30, quantization ×2-4
+        ├─ §24.7.2 Hardware — accélérateurs ML-purpose ×2-5, cooling liquide ×1,3
+        ├─ §24.7.3 Site — geo-aware carbon ×1,5-3, nucléaire dédié ×10-20
+        ├─ §24.7.4 Régulation — EU DC EE Q2 2026, prix carbone interne Microsoft/Google
+        ├─ §24.7.5 Usage — smart routing ×5-10, prompt+KV cache ×5-10, SLM on-device ×10-30
+        ├─ §24.7.6 Patterson combiné — 100-1 000× sur une même tâche d'entraînement
         └─ encadré [!INFO] Voir Ch.5 — mêmes leviers, angle direct cost (7 couches)
 
-§22.8  Jevons — pourquoi tout ça peut ne servir à rien
+§24.8  Jevons — pourquoi tout ça peut ne servir à rien
         ├─ [SVG R17] trajectoires-2030 (3 courbes + 3 leviers politiques)
-        ├─ §22.8.1 Google +48 % émissions 2019-2024 — volume écrase efficacité
-        ├─ §22.8.2 DeepSeek-V3 janvier 2025 — Jevons en action (FAccT 2025)
-        ├─ §22.8.3 Les 3 leviers politiques (Hilton et al. FAccT 2025)
+        ├─ §24.8.1 Google +48 % émissions 2019-2024 — volume écrase efficacité
+        ├─ §24.8.2 DeepSeek-V3 janvier 2025 — Jevons en action (FAccT 2025)
+        ├─ §24.8.3 Les 3 leviers politiques (Hilton et al. FAccT 2025)
         │   ├─ Prix carbone interne sur compute
         │   ├─ Caps régionaux absolus (Dublin moratoire, EU Cloud+AI Act Q1 2026)
         │   └─ Allocation usages à fort retour social
-        └─ §22.8.4 Les 3 trajectoires 2030 — laissez-faire 1500 / efficience 1100 / plafond 650 TWh
+        └─ §24.8.4 Les 3 trajectoires 2030 — laissez-faire 1500 / efficience 1100 / plafond 650 TWh
 
-§22.9  Conclusion — 4 points pour ranger le débat (~300 mots)
+§24.9  Conclusion — 4 points pour ranger le débat (~300 mots)
         ├─ Debunk chiffres viraux (scope + date + phase)
         ├─ Réorienter vers agrégat/local
         ├─ Compter embodied (scope 3 silicium = prochain front)
         ├─ Nommer Jevons (efficience sans politique = rien)
-        └─ Pont vers Ch.23 — c'est ici qu'arrête le mesurable, commence le politique
+        └─ Pont vers Ch.25 — c'est ici qu'arrête le mesurable, commence le politique
 
 > [!WARNING] Trois pièges classiques
   Citer un chiffre énergie sans scope/date/phase ·
@@ -267,61 +267,61 @@ Sources (~23 footnotes : ACL Strubell 2019, Joule de Vries 2023,
 | `[!TLDR]` | 6 bullets décideur | 1 |
 | `[!IMPORTANT]` | Scope + date + phase + l'inversion silencieuse | 2 |
 | `[!ATTENTION]` | 90 % chiffres publics omettent + chiffres viraux | 1 |
-| `[!INFO]` | Renvois Ch.5 (mêmes leviers), Ch.21 (triptyque), Ch.23 (Jevons politique), Dublin moratoire | 4 |
+| `[!INFO]` | Renvois Ch.5 (mêmes leviers), Ch.23 (triptyque), Ch.25 (Jevons politique), Dublin moratoire | 4 |
 | `[!QUOTE]` | Hilton FAccT 2025 + AIE Energy and AI 2025 | 2 |
 | `[!EXAMPLE]` | Cas équipe agentique 10 pers — 1,4 MWh/an = 7 frigos | 1 |
 | `[!WARNING]` | Trois pièges classiques en clôture | 1 |
 | **Total** | | **~13-14** |
 
-### Tâches restantes Ch.22
+### Tâches restantes Ch.24
 
-- [ ] Rédiger le manuscrit `docs/livre/ch22-ia-frugale.md` (~7 500-8 000 mots)
+- [ ] Rédiger le manuscrit `docs/livre/ch24-ia-frugale.md` (~7 500-8 000 mots)
 - [ ] Vérifier que chaque chiffre porte son scope + date + phase (discipline non-négociable)
-- [ ] Tester la cohérence du triptyque Ch.5 / Ch.21 / Ch.22 dans l'intro §22.1
-- [ ] Préparer la transition §22.9 → Ch.23 (Jevons politique = amorce gouvernance)
+- [ ] Tester la cohérence du triptyque Ch.5 / Ch.23 / Ch.24 dans l'intro §24.1
+- [ ] Préparer la transition §24.9 → Ch.25 (Jevons politique = amorce gouvernance)
 
 ---
 
-## Chapitre 23 — Gouvernance : AI Act, banque, machine unlearning
+## Chapitre 25 — Gouvernance : AI Act, banque, machine unlearning
 
 > **Acte IV — Mesures et garde-fous · Gabarit standard 22 p · ~6 500-7 500 mots**
 > **Lecteur cible** : sponsor IA / CDO, DPO, RSSI, CRO / COO banque, juriste IT, intégrateur sectoriel régulé.
-> **Sortie lecteur** : date la fenêtre critique (75 jours en mai 2026 avant **2 août 2026** — AI Act art. 9-15 effectif haut-risque) ; nomme les six référentiels convergents (DORA, AI Act, EBA Outsourcing, BCBS 239, RGPD, ACPR / souveraineté FR) ; identifie les quatre rôles pivot (DPO / RSSI / Sponsor IA / CRO ou COO) et leur articulation ; tient le modèle trois lignes de défense (1ʳᵉ ligne opérationnel, 2ᵉ ligne risk/compliance, 3ᵉ ligne audit interne) adapté aux agents ; distingue la mémoire opérationnelle (DELETE faisable RGPD art. 17) de la mémoire paramétrique (machine unlearning émergent, transparence honnête art. 25 AI Act suffit en 2026) ; lit le calendrier réglementaire unifié 2026-2028 (R18) ; sait que la matrice Ch.16 6 référentiels × stack GCP est l'instanciation banque française du Ch.23 ; reconnaît trois pièges 100 % traçables (art. 9-15 = crédits seulement / attendre le régulateur / DPO solitaire).
+> **Sortie lecteur** : date la fenêtre critique (75 jours en mai 2026 avant **2 août 2026** — AI Act art. 9-15 effectif haut-risque) ; nomme les six référentiels convergents (DORA, AI Act, EBA Outsourcing, BCBS 239, RGPD, ACPR / souveraineté FR) ; identifie les quatre rôles pivot (DPO / RSSI / Sponsor IA / CRO ou COO) et leur articulation ; tient le modèle trois lignes de défense (1ʳᵉ ligne opérationnel, 2ᵉ ligne risk/compliance, 3ᵉ ligne audit interne) adapté aux agents ; distingue la mémoire opérationnelle (DELETE faisable RGPD art. 17) de la mémoire paramétrique (machine unlearning émergent, transparence honnête art. 25 AI Act suffit en 2026) ; lit le calendrier réglementaire unifié 2026-2028 (R18) ; sait que la matrice Ch.18 6 référentiels × stack GCP est l'instanciation banque française du Ch.25 ; reconnaît trois pièges 100 % traçables (art. 9-15 = crédits seulement / attendre le régulateur / DPO solitaire).
 
 ### Statut
 
 | Étape | Statut |
 | --- | --- |
-| Audit dossiers source (1 principal + 4 rappels) | ✅ fait — `gouvernance/` (principal) + rappels `analytics-agentique-gcp` (Ch.16), `compaction-agentique` (Ch.10), `mcp-securite` (Ch.13), `memoire-agentique` (Ch.9) |
+| Audit dossiers source (1 principal + 4 rappels) | ✅ fait — `gouvernance/` (principal) + rappels `analytics-agentique-gcp` (Ch.18), `compaction-agentique` (Ch.10), `mcp-securite` (Ch.16), `memoire-agentique` (Ch.9) |
 | Plan détaillé | ✅ fait (audit du 2026-05-28) |
-| Manuscrit | ✅ **v1 livrée** — `docs/livre/ch23-gouvernance-ai-act.md` (~7 500 mots dans le corps + sources, 404 lignes, 51 footnotes équilibrées, 14 encadrés Obsidian) |
-| Schémas | ✅ **R18 intégré** (§23.2 + §23.10) — `gouvernance/images/20260421-r18-calendrier-reglementaire.svg`. **S23.1** (3 lignes de défense) et **S23.2** (matrice 6 réf × 9 couches stack générique) restent en placeholders avec descriptions narratives — à créer en session ultérieure si édition print l'exige (~2-3 j SVG chacun). Narration tient sans eux. |
-| Frontière Ch.23 ↔ Ch.16 | À tenir — Ch.16 = instanciation **sectorielle banque française GCP** (Looker semantic, BigQuery, Dataplex, Assured Workloads, S3NS) ; Ch.23 = grille réglementaire **générique** applicable à tout déployeur. Encadré §23.7 explicite : « *lire Ch.16 pour la profondeur banque* ». |
-| Frontière Ch.23 ↔ Ch.10 | À tenir — Ch.10 = mécanique compaction (5 familles, triangle, surface attaque) ; Ch.23 = angle réglementaire RGPD art. 17 + AI Act art. 25 transparence sur limites. Pas de redite mécanique. |
-| Frontière Ch.23 ↔ Ch.9 | À tenir — Ch.9 = architecture mémoire (4 piliers) ; Ch.23 = distinction opérationnel/paramétrique sous angle régulation. 2-3 paragraphes seulement. |
-| Frontière Ch.23 ↔ Ch.13 | À tenir — Ch.13 = matrice MCP 10×10 + 4 patterns load-bearing techniques ; Ch.23 = calendrier (AI Act art. 15 août 2026, Sigstore automne 2026, MCP v2 spec, AAIF printemps 2027) + rôle RSSI. |
-| Frontière Ch.23 ↔ Ch.19 | À tenir — Ch.19 = threat model unifié 2026 (six surfaces) + OWASP ASI Top 10 ; Ch.23 ne refait pas, renvoie en passant. |
+| Manuscrit | ✅ **v1 livrée** — `docs/livre/ch25-gouvernance-ai-act.md` (~7 500 mots dans le corps + sources, 404 lignes, 51 footnotes équilibrées, 14 encadrés Obsidian) |
+| Schémas | ✅ **R18 intégré** (§25.2 + §25.10) — `gouvernance/images/20260421-r18-calendrier-reglementaire.svg`. **S23.1** (3 lignes de défense) et **S23.2** (matrice 6 réf × 9 couches stack générique) restent en placeholders avec descriptions narratives — à créer en session ultérieure si édition print l'exige (~2-3 j SVG chacun). Narration tient sans eux. |
+| Frontière Ch.25 ↔ Ch.18 | À tenir — Ch.18 = instanciation **sectorielle banque française GCP** (Looker semantic, BigQuery, Dataplex, Assured Workloads, S3NS) ; Ch.25 = grille réglementaire **générique** applicable à tout déployeur. Encadré §25.7 explicite : « *lire Ch.18 pour la profondeur banque* ». |
+| Frontière Ch.25 ↔ Ch.10 | À tenir — Ch.10 = mécanique compaction (5 familles, triangle, surface attaque) ; Ch.25 = angle réglementaire RGPD art. 17 + AI Act art. 25 transparence sur limites. Pas de redite mécanique. |
+| Frontière Ch.25 ↔ Ch.9 | À tenir — Ch.9 = architecture mémoire (4 piliers) ; Ch.25 = distinction opérationnel/paramétrique sous angle régulation. 2-3 paragraphes seulement. |
+| Frontière Ch.25 ↔ Ch.16 | À tenir — Ch.16 = matrice MCP 10×10 + 4 patterns pivots techniques ; Ch.25 = calendrier (AI Act art. 15 août 2026, Sigstore automne 2026, MCP v2 spec, AAIF printemps 2027) + rôle RSSI. |
+| Frontière Ch.25 ↔ Ch.21 | À tenir — Ch.21 = threat model unifié 2026 (six surfaces) + OWASP ASI Top 10 ; Ch.25 ne refait pas, renvoie en passant. |
 
 ### Sources matérielles
 
-Le Ch.23 est un **chapitre standard à dossier principal + 4 dossiers de rappel**. C'est le seul chapitre du livre qui s'appuie principalement sur des **rappels** d'autres chapitres pour produire une synthèse réglementaire de niveau supérieur. La discipline éditoriale numéro 1 est de **ne pas redire ce qui a déjà été dit ailleurs**.
+Le Ch.25 est un **chapitre standard à dossier principal + 4 dossiers de rappel**. C'est le seul chapitre du livre qui s'appuie principalement sur des **rappels** d'autres chapitres pour produire une synthèse réglementaire de niveau supérieur. La discipline éditoriale numéro 1 est de **ne pas redire ce qui a déjà été dit ailleurs**.
 
 - **Dossier principal — [`gouvernance/`](../gouvernance/)** (21 avril 2026) — architecture réglementaire à trois lignes de défense, 14 piliers de gouvernance, 4 objectifs (Éthique & Conformité, Transparence, Qualité Données, Définition des Intentions), responsabilités par phase (pré-déploiement / production / post-incident), modèle KPI 4 dimensions (conformité / perf / sécu / data), focus particulier agents multi-agents autonomes, applicabilité Lincoln en exemple sectoriel.
   - [`HUB-FRANCE-IA-Gouvernance-Agents.md`](../gouvernance/HUB-FRANCE-IA-Gouvernance-Agents.md) — rapport texte principal
   - `gouvernance-agents-ia.html`, `20260421-pitch-gouvernance-agentic.html` — supports scrolly/pitch (non absorbés en livre, structure narrative non transposable)
   - `gouvernance-et-risques.png` — PNG taxonomie risques individuels + multi-agents (non absorbé, format PNG plutôt que SVG)
-- **Rappel 1 — [`analytics-agentique-gcp/`](../analytics-agentique-gcp/)** (Ch.16) — DORA / AI Act art. 9-15 / EBA / BCBS 239 / RGPD / ACPR / souveraineté banque française. Matrice 6 référentiels × stack GCP **réutilisable** en Ch.23 §23.7 sous forme générique (sans les briques GCP spécifiques).
+- **Rappel 1 — [`analytics-agentique-gcp/`](../analytics-agentique-gcp/)** (Ch.18) — DORA / AI Act art. 9-15 / EBA / BCBS 239 / RGPD / ACPR / souveraineté banque française. Matrice 6 référentiels × stack GCP **réutilisable** en Ch.25 §25.7 sous forme générique (sans les briques GCP spécifiques).
 - **Rappel 2 — [`compaction-agentique/`](../compaction-agentique/)** (Ch.10) — RGPD art. 17, AI Act art. 10 (data governance) + art. 25 (transparence sur limites), CNIL/EDPS guidelines machine unlearning 2025-2026, ledger transparent OTel `gen_ai.compaction.*`. Section §7 du rapport source.
-- **Rappel 3 — [`mcp-securite/`](../mcp-securite/)** (Ch.13) — AI Act art. 15 cybersécurité haute-risque août 2026, roadmap 12 mois (spec MCP v2 Sigstore automne 2026, registries signés janvier 2027, AAIF Linux Foundation printemps 2027). Section §7 roadmap.
+- **Rappel 3 — [`mcp-securite/`](../mcp-securite/)** (Ch.16) — AI Act art. 15 cybersécurité haute-risque août 2026, roadmap 12 mois (spec MCP v2 Sigstore automne 2026, registries signés janvier 2027, AAIF Linux Foundation printemps 2027). Section §7 roadmap.
 - **Rappel 4 — [`memoire-agentique/`](../memoire-agentique/)** (Ch.9) — distinction mémoire opérationnelle (DELETE techniquement faisable) vs paramétrique (machine unlearning émergent) + 3 actions tactiques + MITRE ATLAS AML.T0080. Section §6.3 du rapport source.
 
-### Audit des schémas — Ch.23
+### Audit des schémas — Ch.25
 
-| Fig | Source | Catégorie Ch.23 | Statut | Notes |
+| Fig | Source | Catégorie Ch.25 | Statut | Notes |
 | --- | --- | --- | --- | --- |
-| S23.1 | `gouvernance/` (extraction du HTML) | **S §23.4** | À recadrer en SVG depuis HTML | Modèle 3 lignes de défense — adapté aux agents (1ʳᵉ ligne opérationnel, 2ᵉ ligne risk/compliance, 3ᵉ ligne audit interne). ~½ page. |
-| S23.2 | `analytics-agentique-gcp` matrice 6 réf × stack | **S §23.7** | Adaptation — remplacer briques GCP par couches stack génériques | Matrice 6 référentiels × 9 couches stack (model / orchestration / mémoire / outils / runtime / data / réseau / identités / observabilité). Pleine page. Légende « *Instanciation banque française : voir Ch. 16* ». |
-| **R18** | À créer ex nihilo | **R18 §23.2 + Récap** | **À créer** (~4-5 j SVG) | Calendrier réglementaire unifié 2026-2028 — voir brief détaillé ci-dessous. |
+| S23.1 | `gouvernance/` (extraction du HTML) | **S §25.4** | À recadrer en SVG depuis HTML | Modèle 3 lignes de défense — adapté aux agents (1ʳᵉ ligne opérationnel, 2ᵉ ligne risk/compliance, 3ᵉ ligne audit interne). ~½ page. |
+| S23.2 | `analytics-agentique-gcp` matrice 6 réf × stack | **S §25.7** | Adaptation — remplacer briques GCP par couches stack génériques | Matrice 6 référentiels × 9 couches stack (model / orchestration / mémoire / outils / runtime / data / réseau / identités / observabilité). Pleine page. Légende « *Instanciation banque française : voir Ch. 18* ». |
+| **R18** | À créer ex nihilo | **R18 §25.2 + Récap** | **À créer** (~4-5 j SVG) | Calendrier réglementaire unifié 2026-2028 — voir brief détaillé ci-dessous. |
 
 ### Schémas à créer — R18
 
@@ -330,7 +330,7 @@ Le Ch.23 est un **chapitre standard à dossier principal + 4 dossiers de rappel*
 | Critère | Spec |
 | --- | --- |
 | Format | A3 paysage (420×297 mm) double-page facing. Lisible en A4 par moitié sans perte critique (impératif print). |
-| Position dans le livre | Ouverture §23.2 + récap §23.10. Cité depuis Ch.16 §16.11 et Ch.13 §13.7 (renvois inverses). |
+| Position dans le livre | Ouverture §25.2 + récap §25.10. Cité depuis Ch.18 §18.11 et Ch.16 §16.7 (renvois inverses). |
 | Statut | **À créer ex nihilo** (~4-5 jours SVG). N'existe nulle part dans le corpus. |
 | Structure | **Matrice 7 lignes (référentiels) × 7 colonnes (fenêtres temporelles)** + colonne 0 « rôle responsable » + bandeau bas « points critiques et dépendances ». |
 | Lignes (axes verticaux) | 1. **DORA** (régulateur EBA/ACPR · responsable CDO+RSSI) · 2. **AI Act art. 9-15** (ACPR / autorités compétentes · Sponsor IA + Compliance) · 3. **EBA Outsourcing** (EBA/ACPR · CDO) · 4. **BCBS 239** (BCE/prudenciel · CRO+CDO) · 5. **RGPD art. 17** (CNIL/DPA · DPO) · 6. **ACPR Supervision IA FR** (ACPR · CDO+Compliance) · 7. **MCP Security / Spec v2** (Linux Foundation/AAIF · RSSI+architects) |
@@ -339,7 +339,7 @@ Le Ch.23 est un **chapitre standard à dossier principal + 4 dossiers de rappel*
 | Annotations clés | (a) Bandeau ROUGE traversant la colonne 2 « **AI Act art. 9-15 EFFECTIVE 2 AOÛT 2026** » · (b) Flèches grises entre cellules signalant les dépendances inter-référentiels (ex. exit plan DORA → contingency plan EBA · art. 10 AI Act data governance ↔ BCBS 239 lineage : même périmètre) · (c) Code couleur des responsables dans col. 0 (DPO bleu, RSSI rouge, CDO/Sponsor vert, CRO violet) |
 | Cellule détaillée 2 août 2026 | Bloc agrandi listant les 5 articles : Art. 9 risk mgmt plan / Art. 10 data governance register / Art. 11-12 technical doc + logs / Art. 14 human oversight active / Art. 15 cybersecurity + threat model audit-ready · Note : « agents non-compliant haut-risque → redéploiement obligatoire » |
 | Légende | « *Six référentiels convergents, dix-huit mois, deux dates pivot. Le calendrier est plus court que la dernière migration ERP — et il ne se négocie pas.* » |
-| Réutilisation | §23.2 (vue d'ensemble), §23.10 (récap), Ch.16 (renvoi vers banque), Ch.13 (renvoi vers MCP timeline), annexe consultative imprimable |
+| Réutilisation | §25.2 (vue d'ensemble), §25.10 (récap), Ch.18 (renvoi vers banque), Ch.16 (renvoi vers MCP timeline), annexe consultative imprimable |
 
 ### Plan détaillé
 
@@ -351,67 +351,67 @@ Le Ch.23 est un **chapitre standard à dossier principal + 4 dossiers de rappel*
 
 > [!TLDR] TL;DR décideur (6-7 bullets)
 
-§23.1  Place du chapitre dans l'Acte IV
+§25.1  Place du chapitre dans l'Acte IV
         ├─ Lien Acte II (la boucle crée le risque)
         ├─ Lien Acte III (les interfaces créent la surface)
-        └─ Lien Ch.17-22 (éval, observabilité, ROI, frugalité = mesures ;
-            Ch.23 = garde-fous formalisés en obligation)
+        └─ Lien Ch.19-22 (éval, observabilité, ROI, frugalité = mesures ;
+            Ch.25 = garde-fous formalisés en obligation)
 
-§23.2  Calendrier réglementaire unifié 2026-2028 (R18 — schéma signature)
+§25.2  Calendrier réglementaire unifié 2026-2028 (R18 — schéma signature)
         ├─ [SVG R18] calendrier unifié — pleine double-page
-        ├─ §23.2.1 La fenêtre critique des 75 jours
-        ├─ §23.2.2 Six référentiels, deux dates pivot
+        ├─ §25.2.1 La fenêtre critique des 75 jours
+        ├─ §25.2.2 Six référentiels, deux dates pivot
         └─ encadré [!IMPORTANT] 2 août 2026 — non-négociable
 
-§23.3  Les six référentiels en détail
-        ├─ §23.3.1 DORA (échéance, articles 28-30, CT PP, exit plans)
-        ├─ §23.3.2 AI Act art. 9-15 (haut-risque, art. 10 data gov, art. 25 transparence)
-        ├─ §23.3.3 EBA Outsourcing (audit, localisation, contingency)
-        ├─ §23.3.4 BCBS 239 (lineage, 2 G-SIBs compliant — chiffre choquant)
-        ├─ §23.3.5 RGPD art. 17 + machine unlearning émergent
-        └─ §23.3.6 ACPR / Souveraineté (FR + générique EU)
+§25.3  Les six référentiels en détail
+        ├─ §25.3.1 DORA (échéance, articles 28-30, CT PP, exit plans)
+        ├─ §25.3.2 AI Act art. 9-15 (haut-risque, art. 10 data gov, art. 25 transparence)
+        ├─ §25.3.3 EBA Outsourcing (audit, localisation, contingency)
+        ├─ §25.3.4 BCBS 239 (lineage, 2 G-SIBs compliant — chiffre choquant)
+        ├─ §25.3.5 RGPD art. 17 + machine unlearning émergent
+        └─ §25.3.6 ACPR / Souveraineté (FR + générique EU)
 
-§23.4  Modèle 3 lignes de défense adapté aux agents
+§25.4  Modèle 3 lignes de défense adapté aux agents
         ├─ [SVG S23.1] schéma 3 lignes
-        ├─ §23.4.1 1ʳᵉ ligne — équipes opérationnelles (dev/ops/PO)
-        ├─ §23.4.2 2ᵉ ligne — risk / compliance / legal
-        ├─ §23.4.3 3ᵉ ligne — audit interne + autorité externe
+        ├─ §25.4.1 1ʳᵉ ligne — équipes opérationnelles (dev/ops/PO)
+        ├─ §25.4.2 2ᵉ ligne — risk / compliance / legal
+        ├─ §25.4.3 3ᵉ ligne — audit interne + autorité externe
         └─ encadré [!NOTE] Pourquoi le modèle SR 11-7 ne suffit plus (agents ≠ modèles)
 
-§23.5  Les quatre rôles pivot et leur articulation
+§25.5  Les quatre rôles pivot et leur articulation
         ├─ DPO (data protection officer) — RGPD art. 17, consentement, rétention
-        ├─ RSSI — AI Act art. 15, MCP Sigstore, threat model (renvoi Ch.19)
+        ├─ RSSI — AI Act art. 15, MCP Sigstore, threat model (renvoi Ch.21)
         ├─ Sponsor IA (CDO ou équivalent) — stratégie, arbitrage risque/valeur
         ├─ CRO/COO (banque haut-risque) — accountability, appétence risque
         └─ encadré [!IMPORTANT] DPO solitaire = piège (les 4 rôles doivent s'aligner sur chaque décision)
 
-§23.6  Machine unlearning et les limites de l'oubli
-        ├─ §23.6.1 Mémoire opérationnelle — DELETE faisable (RGPD art. 17 satisfait)
-        ├─ §23.6.2 Mémoire paramétrique — machine unlearning émergent (CNIL/EDPS 2025-2026)
-        ├─ §23.6.3 Transparence honnête (art. 25 AI Act) = réponse acceptable en 2026
-        ├─ §23.6.4 Trois actions : consentement + rétention bornée + gestion documentée + déclaration limites
+§25.6  Machine unlearning et les limites de l'oubli
+        ├─ §25.6.1 Mémoire opérationnelle — DELETE faisable (RGPD art. 17 satisfait)
+        ├─ §25.6.2 Mémoire paramétrique — machine unlearning émergent (CNIL/EDPS 2025-2026)
+        ├─ §25.6.3 Transparence honnête (art. 25 AI Act) = réponse acceptable en 2026
+        ├─ §25.6.4 Trois actions : consentement + rétention bornée + gestion documentée + déclaration limites
         └─ encadré [!INFO] Voir Ch. 9 (architecture mémoire) + Ch. 10 (compaction mécanique)
 
-§23.7  Matrice réglementaire × stack (instanciation générique)
+§25.7  Matrice réglementaire × stack (instanciation générique)
         ├─ [SVG S23.2] matrice 6 réf × 9 couches stack
-        ├─ §23.7.1 Où chaque obligation s'applique
-        ├─ §23.7.2 Qui vérifie quoi
-        └─ encadré [!INFO] Instanciation banque : voir Ch. 16
+        ├─ §25.7.1 Où chaque obligation s'applique
+        ├─ §25.7.2 Qui vérifie quoi
+        └─ encadré [!INFO] Instanciation banque : voir Ch. 18
 
-§23.8  Les deux dates pivot 2026-2027 et leur enchaînement
+§25.8  Les deux dates pivot 2026-2027 et leur enchaînement
         ├─ 2 août 2026 — AI Act art. 9-15 effectif haut-risque
         ├─ Automne 2026 — Spec MCP v2 (Sigstore obligatoire, tool tagging, allowlist namespace)
         ├─ Hiver-printemps 2027 — Convergence MCP / A2A + AAIF Linux Foundation
-        └─ encadré [!INFO] Roadmap détaillée : voir Ch. 13 (sécurité MCP)
+        └─ encadré [!INFO] Roadmap détaillée : voir Ch. 16 (sécurité MCP)
 
-§23.9  Checklist opérationnelle 18 mois — où commencer
+§25.9  Checklist opérationnelle 18 mois — où commencer
         ├─ 0-3 mois — audit risques + gouvernance charte
         ├─ 3-6 mois — classification agents (haut-risque y/n, données sensibles)
         ├─ 6-12 mois — controls implementation (lineage, DLP, MCP Sigstore, HITL writes)
         ├─ 12-18 mois — certification interne + audit ACPR simulation
         └─ 18+ mois — review continu + machine unlearning governance
 
-§23.10 Récap — six référentiels, deux dates pivot, quatre rôles
+§25.10 Récap — six référentiels, deux dates pivot, quatre rôles
         └─ [SVG R18 réutilisé] calendrier unifié
 
 > [!WARNING] Trois pièges classiques (100 % traçables)
@@ -419,7 +419,7 @@ Le Ch.23 est un **chapitre standard à dossier principal + 4 dossiers de rappel*
   Attendre la CNIL/ACPR pour commencer ·
   Déléguer la gouvernance mémoire au DPO seul
 
-Sources (~50-70 footnotes — Ch.23 est densément footnoté :
+Sources (~50-70 footnotes — Ch.25 est densément footnoté :
         Règlement 2024/1689 AI Act + Directive 2023/2255 DORA +
         EBA GL outsourcing 2019 + BCBS 239 + RGPD + ACPR LD IA 2026 +
         NIST AI RMF + ISO 42001 + ANSSI 35 recommandations +
@@ -437,7 +437,7 @@ Sources (~50-70 footnotes — Ch.23 est densément footnoté :
 | `[!QUESTION]` | Ouverture | 1 |
 | `[!TLDR]` | 6-7 bullets décideur | 1 |
 | `[!IMPORTANT]` | 2 août 2026 non-négociable + DPO solitaire piège | 2 |
-| `[!INFO]` | Renvois Ch.9, Ch.10, Ch.13, Ch.16, Ch.19 | 5 |
+| `[!INFO]` | Renvois Ch.9, Ch.10, Ch.16, Ch.18, Ch.21 | 5 |
 | `[!NOTE]` | Pourquoi SR 11-7 ne suffit plus | 1 |
 | `[!QUOTE]` | Citation Hub France IA + ACPR LD IA 2026 | 2 |
 | `[!EXAMPLE]` | Mini-cas — agent scoring crédit, mapping art. 9-15 ligne par ligne | 1 |
@@ -446,28 +446,28 @@ Sources (~50-70 footnotes — Ch.23 est densément footnoté :
 
 ### Frontières strictes à tenir (récap consolidé)
 
-| Risque de redite | Couvert ailleurs en | Traitement Ch.23 |
+| Risque de redite | Couvert ailleurs en | Traitement Ch.25 |
 | --- | --- | --- |
-| AI Act art. 9-15 détail cas scoring crédit | Ch.16 §16.11.2 | Ch.23 cite les articles, les délais, l'obligation générique. Renvoi explicite Ch.16 pour la profondeur métier. |
-| Compaction 5 familles + ledger OTel `gen_ai.compaction.*` | Ch.10 + Ch.18 | Ch.23 mentionne « ledger transparent requis par art. 25 » sans redécrire les 5 familles ni les semconv. |
-| RGPD art. 17 ↔ art. 25 AI Act | Ch.10 implicite + Ch.9 §9.7.3 (opérationnel vs paramétrique) | Ch.23 clarifie le lien : art. 17 = instruction (« supprime »), art. 25 = obligation reporting (« dis ce que tu peux/ne peux pas oublier »). |
+| AI Act art. 9-15 détail cas scoring crédit | Ch.18 §18.11.2 | Ch.25 cite les articles, les délais, l'obligation générique. Renvoi explicite Ch.18 pour la profondeur métier. |
+| Compaction 5 familles + ledger OTel `gen_ai.compaction.*` | Ch.10 + Ch.20 | Ch.25 mentionne « ledger transparent requis par art. 25 » sans redécrire les 5 familles ni les semconv. |
+| RGPD art. 17 ↔ art. 25 AI Act | Ch.10 implicite + Ch.9 §9.7.3 (opérationnel vs paramétrique) | Ch.25 clarifie le lien : art. 17 = instruction (« supprime »), art. 25 = obligation reporting (« dis ce que tu peux/ne peux pas oublier »). |
 | Architecture mémoire 4 piliers | Ch.9 §9.2 | Pas du tout. Renvoi `[!INFO]` seulement. |
-| Modèle 3 lignes de défense | Implicite Ch.9 et Ch.19 | Ch.23 l'énonce explicitement comme modèle général, adapté aux agents. |
-| Sigstore MCP signature + 10 vecteurs MCP | Ch.13 §13.2-6 (matrice complète) + §13.7 (roadmap) | Ch.23 cite seulement la date pivot (automne 2026) et renvoie Ch.13. |
-| Threat model unifié 2026 (six surfaces) | Ch.19 §19.10 | Ch.23 ne refait pas, renvoie en passant comme arrière-plan sécurité. |
+| Modèle 3 lignes de défense | Implicite Ch.9 et Ch.21 | Ch.25 l'énonce explicitement comme modèle général, adapté aux agents. |
+| Sigstore MCP signature + 10 vecteurs MCP | Ch.16 §16.2-6 (matrice complète) + §16.7 (roadmap) | Ch.25 cite seulement la date pivot (automne 2026) et renvoie Ch.16. |
+| Threat model unifié 2026 (six surfaces) | Ch.21 §21.10 | Ch.25 ne refait pas, renvoie en passant comme arrière-plan sécurité. |
 
-### Tâches restantes Ch.23
+### Tâches restantes Ch.25
 
-- [ ] Rédiger le manuscrit `docs/livre/ch23-gouvernance-ai-act.md` (~6 500-7 500 mots)
+- [ ] Rédiger le manuscrit `docs/livre/ch25-gouvernance-ai-act.md` (~6 500-7 500 mots)
 - [ ] **Créer le schéma R18 (calendrier réglementaire unifié 2026-2028)** — ~4-5 j SVG. Plus original et plus utile du chapitre.
 - [ ] Extraire le schéma 3 lignes de défense de `gouvernance-agents-ia.html` et le porter en SVG indépendant (recadrage)
-- [ ] Adapter la matrice Ch.16 6 référentiels × stack GCP en version générique (9 couches sans briques GCP)
+- [ ] Adapter la matrice Ch.18 6 référentiels × stack GCP en version générique (9 couches sans briques GCP)
 - [ ] Vérifier que chaque rappel reste **léger** (2-3 paragraphes max) avec renvoi explicite vers le chapitre originel
-- [ ] Synchroniser les dates avec Ch.13 (Sigstore automne 2026, MCP v2 spec, AAIF printemps 2027) — éviter dérive
+- [ ] Synchroniser les dates avec Ch.16 (Sigstore automne 2026, MCP v2 spec, AAIF printemps 2027) — éviter dérive
 
 ---
 
-## Chapitre 16 — Analytics agentique : la stack data + IA en sectoriel régulé
+## Chapitre 18 — Analytics agentique : la stack data + IA en sectoriel régulé
 
 > **Acte III — Les interfaces · Gabarit standard 24 p (dont encart 4 p) · ~10 800 mots**
 > **Lecteur cible** : décideur banque (CDO, CFO, CRO), data engineer, agent engineer, DPO, RSSI, sponsor IA.
@@ -479,26 +479,26 @@ Sources (~50-70 footnotes — Ch.23 est densément footnoté :
 | --- | --- |
 | Audit schémas source (2 dossiers) | ✅ fait — `analytics-agentique-gcp/` (11 schémas) + `narrative-experiences/` (7 schémas, dont 1 utilisé pour l'encart) |
 | Plan détaillé | ✅ fait (audit du 2026-05-28) |
-| Manuscrit | ✅ **v1 livrée** — `docs/livre/ch16-analytics-agentique-banque.md` (~10 800 mots, 17 encadrés, 11 schémas + 1 schéma encart narratif) |
-| Schémas à créer | 0 v1. R10 (3 surfaces × pile) traité par réutilisation tel quel de `pyramide-chaine.svg`. Tous les schémas analytics-agentique-gcp absorbés (00 exec-sum en annexe). 1 schéma narrative-experiences en encart §16.14. |
-| Frontière Ch.16 ↔ Ch.23 | ✅ respectée — Ch.16 nomme les articles AI Act 9-15 sur cas concrets banque, Ch.23 déroulera la grille générale + machine unlearning + rôles DPO/RSSI. |
-| Frontière Ch.16 ↔ Ch.13 | ✅ respectée — les 4 patterns load-bearing MCP du Ch.13 sont supposés acquis, le Ch.16 ajoute seulement la 5e exigence sectorielle (audit log centralisé 5 ans DORA art. 28). |
-| Frontière Ch.16 ↔ Ch.14 / Ch.17 / Ch.18 / Ch.21 | ✅ respectée — renvois explicites, pas de redite (Knight grille en Ch.14 ; eval playbook gruyère en Ch.17 ; OTel GenAI en Ch.18 ; frameworks ROI en Ch.21). |
-| Encart narrative-experiences | ✅ intégré §16.14 (~4 pages, 1 schéma) — généalogie Segel-Heer / Bertin / Cairo / Lupi-Posavec-Fragapane, 4 régimes collab humain-IA Gen4DS 2024, justification de la troisième voie d'interaction. |
+| Manuscrit | ✅ **v1 livrée** — `docs/livre/ch18-analytics-agentique-banque.md` (~10 800 mots, 17 encadrés, 11 schémas + 1 schéma encart narratif) |
+| Schémas à créer | 0 v1. R10 (3 surfaces × pile) traité par réutilisation tel quel de `pyramide-chaine.svg`. Tous les schémas analytics-agentique-gcp absorbés (00 exec-sum en annexe). 1 schéma narrative-experiences en encart §18.14. |
+| Frontière Ch.18 ↔ Ch.25 | ✅ respectée — Ch.18 nomme les articles AI Act 9-15 sur cas concrets banque, Ch.25 déroulera la grille générale + machine unlearning + rôles DPO/RSSI. |
+| Frontière Ch.18 ↔ Ch.16 | ✅ respectée — les 4 patterns pivots MCP du Ch.16 sont supposés acquis, le Ch.18 ajoute seulement la 5e exigence sectorielle (audit log centralisé 5 ans DORA art. 28). |
+| Frontière Ch.18 ↔ Ch.13 / Ch.19 / Ch.20 / Ch.23 | ✅ respectée — renvois explicites, pas de redite (Knight grille en Ch.13 ; eval playbook gruyère en Ch.19 ; OTel GenAI en Ch.20 ; frameworks ROI en Ch.23). |
+| Encart narrative-experiences | ✅ intégré §18.14 (~4 pages, 1 schéma) — généalogie Segel-Heer / Bertin / Cairo / Lupi-Posavec-Fragapane, 4 régimes collab humain-IA Gen4DS 2024, justification de la troisième voie d'interaction. |
 
-### Tâches restantes Ch.16
+### Tâches restantes Ch.18
 
 - [ ] Relecture Mathieu — passes critiques suggérées :
-  - **(a) Le pivot sémantique §16.5** : section load-bearing — vérifier que la falaise est lisible (10-20 % → +17-23 → ~100 %) et que la projection Gartner 60 % est citée avec la précaution rédactionnelle. Le `[!IMPORTANT]` à la fin de §16.5.4 doit tenir comme argument de RDV sponsor.
-  - **(b) Frontière Ch.16 ↔ Ch.23** : vérifier que §16.11.2 nomme les articles AI Act 9-15 sans les dérouler ; le Ch.23 viendra les expliquer génériquement. Pas de redite.
-  - **(c) L'encart §16.14** : 4 pages tenir le plafond — vérifier que la troisième voie est bien posée comme régime à part entière (pas un sous-cas de canvas), et que l'arc Lupi/Fragapane/Posavec n'écrase pas le déroulé pratique des 4 régimes collab humain-IA.
-  - **(d) Le ratio 70/20/10** : argument contre-intuitif à protéger en relecture. Le `[!IMPORTANT]` à §16.5.4 et la feuille de route §16.13 doivent le matérialiser deux fois sans le contredire.
-  - **(e) Les 4 MCP banque internes §16.8.4** : sémantique / lineage / référentiel / conformité — vérifier que c'est bien le quatuor que Mathieu défend (pas 3, pas 5) et que les exemples métier (PNB, COREP, FINREP, SURFI) sont fidèles à l'usage banque.
+  - **(a) Le pivot sémantique §18.5** : section pivot — vérifier que la falaise est lisible (10-20 % → +17-23 → ~100 %) et que la projection Gartner 60 % est citée avec la précaution rédactionnelle. Le `[!IMPORTANT]` à la fin de §18.5.4 doit tenir comme argument de RDV sponsor.
+  - **(b) Frontière Ch.18 ↔ Ch.25** : vérifier que §18.11.2 nomme les articles AI Act 9-15 sans les dérouler ; le Ch.25 viendra les expliquer génériquement. Pas de redite.
+  - **(c) L'encart §18.14** : 4 pages tenir le plafond — vérifier que la troisième voie est bien posée comme régime à part entière (pas un sous-cas de canvas), et que l'arc Lupi/Fragapane/Posavec n'écrase pas le déroulé pratique des 4 régimes collab humain-IA.
+  - **(d) Le ratio 70/20/10** : argument contre-intuitif à protéger en relecture. Le `[!IMPORTANT]` à §18.5.4 et la feuille de route §18.13 doivent le matérialiser deux fois sans le contredire.
+  - **(e) Les 4 MCP banque internes §18.8.4** : sémantique / lineage / référentiel / conformité — vérifier que c'est bien le quatuor que Mathieu défend (pas 3, pas 5) et que les exemples métier (PNB, COREP, FINREP, SURFI) sont fidèles à l'usage banque.
 - [ ] Si validation : copier vers le futur format de sortie (print HTML / PDF) quand décidé
 
 ---
 
-## Chapitre 15 — Computer use : le régime extrême
+## Chapitre 17 — Computer use : le régime extrême
 
 > **Acte III — Les interfaces · Gabarit standard 18 p · ~7 500 mots**
 > **Lecteur cible** : agent engineer, RSSI, sponsor IA, acheteur enterprise.
@@ -510,29 +510,29 @@ Sources (~50-70 footnotes — Ch.23 est densément footnoté :
 | --- | --- |
 | Audit schémas source (1 dossier) | ✅ fait — `agents-computer-use/` (8 schémas tous absorbés tels quels) |
 | Plan détaillé | ✅ fait (audit du 2026-05-28) |
-| Manuscrit | ✅ **v1 livrée** — `docs/livre/ch15-computer-use.md` (~7 500 mots, 12 encadrés, 8 schémas) |
+| Manuscrit | ✅ **v1 livrée** — `docs/livre/ch17-computer-use.md` (~7 500 mots, 12 encadrés, 8 schémas) |
 | Schémas à créer | 0 v1. R9 (boucle observe·plan·ground·act·verify + 3 archis) traité par réutilisation tel quel de `agents-computer-use-03-architecture.svg`. |
-| Frontière Ch.15 ↔ Ch.14 | ✅ respectée — Ch.14 cadre on-behalf-of comme régime UX, Ch.15 zoome sur le sous-régime extrême. Chiffres business (Cursor, Devin, Sierra) **non répétés** en Ch.15. |
-| Frontière Ch.15 ↔ Ch.13 / Ch.19 | ✅ respectée — la matrice MCP du Ch.13 ne couvre pas VPI ni CVE control plane ; le Ch.15 ajoute ces 2 verticales à la mosaïque qui converge vers E4 (Ch.19). |
-| Frontière Ch.15 ↔ Ch.17 | ✅ respectée — Ch.17 a posé la grille générique des 4 vecteurs de contamination ; Ch.15 instancie sur OSWorld-Verified + code execution + SELF/3RD, sans rejouer la démolition. |
-| Frontière Ch.15 ↔ Ch.10 / Ch.18 | ✅ renvois posés — tool result clearing = instanciation eviction LIFO Ch.10 ; standard OTel agent UI = inflexion 18-24 mois Ch.18. |
+| Frontière Ch.17 ↔ Ch.13 | ✅ respectée — Ch.13 cadre on-behalf-of comme régime UX, Ch.17 zoome sur le sous-régime extrême. Chiffres business (Cursor, Devin, Sierra) **non répétés** en Ch.17. |
+| Frontière Ch.17 ↔ Ch.16 / Ch.21 | ✅ respectée — la matrice MCP du Ch.16 ne couvre pas VPI ni CVE control plane ; le Ch.17 ajoute ces 2 verticales à la mosaïque qui converge vers E4 (Ch.21). |
+| Frontière Ch.17 ↔ Ch.19 | ✅ respectée — Ch.19 a posé la grille générique des 4 vecteurs de contamination ; Ch.17 instancie sur OSWorld-Verified + code execution + SELF/3RD, sans rejouer la démolition. |
+| Frontière Ch.17 ↔ Ch.10 / Ch.20 | ✅ renvois posés — tool result clearing = instanciation eviction LIFO Ch.10 ; standard OTel agent UI = inflexion 18-24 mois Ch.20. |
 
-### Tâches restantes Ch.15
+### Tâches restantes Ch.17
 
 - [ ] Relecture Mathieu — passes critiques suggérées :
-  - **(a) La 5e phase verify** : c'est le pivot du chapitre — vérifier que §15.3.5 argumente bien le passage *one-shot → resumable* via les checkpoints.
-  - **(b) UI-CUBE comme cliff architectural** : §15.6.2 cite *« limitation architecturale fondamentale »* (UiPath) — vérifier que la nuance avec un déficit de prompting est lisible pour un sponsor IA, c'est l'argument anti-hype le plus fort.
-  - **(c) VPI + CVE-2025-55322** : §15.8 / §15.11 — ces 2 verticales nouvelles doivent peupler explicitement l'axe « surface » de E4 (Ch.19). Vérifier que le `[!IMPORTANT]` §15.8.1 le signale clairement.
-  - **(d) Latence > précision** : thèse contre-intuitive (66 % minutes tolérées en prod, 17 % no limit, ratio 24× humain) — vérifier que §15.9 inverse bien le cadrage *« assistant temps-réel »* vers *« worker arrière-plan »*.
+  - **(a) La 5e phase verify** : c'est le pivot du chapitre — vérifier que §17.3.5 argumente bien le passage *one-shot → resumable* via les checkpoints.
+  - **(b) UI-CUBE comme cliff architectural** : §17.6.2 cite *« limitation architecturale fondamentale »* (UiPath) — vérifier que la nuance avec un déficit de prompting est lisible pour un sponsor IA, c'est l'argument anti-hype le plus fort.
+  - **(c) VPI + CVE-2025-55322** : §17.8 / §17.11 — ces 2 verticales nouvelles doivent peupler explicitement l'axe « surface » de E4 (Ch.21). Vérifier que le `[!IMPORTANT]` §17.8.1 le signale clairement.
+  - **(d) Latence > précision** : thèse contre-intuitive (66 % minutes tolérées en prod, 17 % no limit, ratio 24× humain) — vérifier que §17.9 inverse bien le cadrage *« assistant temps-réel »* vers *« worker arrière-plan »*.
 - [ ] Si validation : copier vers le futur format de sortie (print HTML / PDF) quand décidé
 
 ---
 
-## Chapitre 14 — Surfaces agentiques : quatre régimes d'accès
+## Chapitre 13 — Surfaces agentiques : quatre régimes d'accès
 
 > **Acte III — Les interfaces · Gabarit standard 22 p · ~10 400 mots**
 > **Lecteur cible** : PM, designer, intégrateur, architecte plateforme, tech lead, sponsor.
-> **Sortie lecteur** : choisit un régime d'accès (chat / inline / canvas / on-behalf-of) **avant** de coder l'agent ; lit fluemment le procès du chatbot (Wattenberger/Appleton/Lee/Litt/Saarinen/Pike + NN/G articulation barrier) sans le rejouer ; distingue les 4 régimes de generative UI (controlled / declarative / open-ended / dynamic data-driven) ; comprend AG-UI comme transport bi-directionnel SSE (17 événements, StateDelta JSON Patch RFC 6902, shared state vs generative UI distinction load-bearing) ; sait situer un produit dans la grille **Knight First Amendment 5 rôles** (operator/collaborator/consultant/approver/observer) et l'articule avec graduated trust Anthropic + Salesforce Trust Layer ; maîtrise les 4 questions UX critiques de l'on-behalf-of + patterns dominants ; reconnaît les 5 couches d'architecture canonique ; peut dérouler la matrice 12 cas d'usage × régime.
+> **Sortie lecteur** : choisit un régime d'accès (chat / inline / canvas / on-behalf-of) **avant** de coder l'agent ; lit fluemment le procès du chatbot (Wattenberger/Appleton/Lee/Litt/Saarinen/Pike + NN/G articulation barrier) sans le rejouer ; distingue les 4 régimes de generative UI (controlled / declarative / open-ended / dynamic data-driven) ; comprend AG-UI comme transport bi-directionnel SSE (17 événements, StateDelta JSON Patch RFC 6902, shared state vs generative UI distinction structurante) ; sait situer un produit dans la grille **Knight First Amendment 5 rôles** (operator/collaborator/consultant/approver/observer) et l'articule avec graduated trust Anthropic + Salesforce Trust Layer ; maîtrise les 4 questions UX critiques de l'on-behalf-of + patterns dominants ; reconnaît les 5 couches d'architecture canonique ; peut dérouler la matrice 12 cas d'usage × régime.
 
 ### Statut
 
@@ -540,37 +540,37 @@ Sources (~50-70 footnotes — Ch.23 est densément footnoté :
 | --- | --- |
 | Audit schémas source (1 dossier) | ✅ fait — `surfaces-agentiques/` (11 schémas dont 1 exec-sum annexe — 10 narratifs absorbés tels quels) |
 | Plan détaillé | ✅ fait (audit du 2026-05-28) |
-| Manuscrit | ✅ **v1 livrée** — `docs/livre/ch14-surfaces-agentiques.md` (~10 400 mots, 16 encadrés, 10 schémas dont R8 en récap) |
-| Schémas à créer | 0 v1. R8 (Knight 5 niveaux d'autonomie) traité par réutilisation tel quel de `niveaux-autonomie.svg`, utilisé 2× (§14.8.1 + récap §Récap). |
-| Knight comme grille load-bearing | ✅ fixé § 14.8.1 — wording canonique des 5 rôles (operator / collaborator / consultant / approver / observer) + autonomy certificates. Référencé en Ch.11 (déjà écrit), à référencer en Ch.15 (déjà écrit), à référencer en Ch.23. |
-| AG-UI déroulé (promesse Ch.12) | ✅ §14.7 déroule les 17 events, JSON Patch RFC 6902, shared state vs generative UI, adoption 3 cercles, hooks CopilotKit, matrice AG-UI vs streamUI vs WebSocket maison. |
-| Frontière Ch.14 ↔ Ch.11 / Ch.12 / Ch.13 / Ch.15 / Ch.16 | ✅ respectée — Ch.11 pilote interne, Ch.12 plomberie MCP, Ch.13 coût sécurité, Ch.15 sous-régime extrême, Ch.16 instanciation sectorielle banque. Renvois explicites des 5 côtés. |
+| Manuscrit | ✅ **v1 livrée** — `docs/livre/ch13-surfaces-agentiques.md` (~10 400 mots, 16 encadrés, 10 schémas dont R8 en récap) |
+| Schémas à créer | 0 v1. R8 (Knight 5 niveaux d'autonomie) traité par réutilisation tel quel de `niveaux-autonomie.svg`, utilisé 2× (§13.8.1 + récap §Récap). |
+| Knight comme grille pivot | ✅ fixé § 13.8.1 — wording canonique des 5 rôles (operator / collaborator / consultant / approver / observer) + autonomy certificates. Référencé en Ch.11 (déjà écrit), à référencer en Ch.17 (déjà écrit), à référencer en Ch.25. |
+| AG-UI déroulé (promesse Ch.15) | ✅ §13.7 déroule les 17 events, JSON Patch RFC 6902, shared state vs generative UI, adoption 3 cercles, hooks CopilotKit, matrice AG-UI vs streamUI vs WebSocket maison. |
+| Frontière Ch.13 ↔ Ch.11 / Ch.15 / Ch.16 / Ch.17 / Ch.18 | ✅ respectée — Ch.11 pilote interne, Ch.15 plomberie MCP, Ch.16 coût sécurité, Ch.17 sous-régime extrême, Ch.18 instanciation sectorielle banque. Renvois explicites des 5 côtés. |
 
-### Tâches restantes Ch.14
+### Tâches restantes Ch.13
 
 - [ ] Relecture Mathieu — passes critiques suggérées :
-  - **(a) Le wording Knight** : §14.8.1 fixe la taxonomie canonique réutilisée 3 autres fois. Vérifier que les 5 rôles + autonomy certificates sont posés sans ambiguïté.
-  - **(b) AG-UI vs MCP confusion** : le marketing tend à confondre (« AG-UI = MCP for UI »). Vérifier que §14.7.3 sépare clairement shared state vs generative UI (les deux choses orthogonales que la presse confond).
-  - **(c) Les 6 primitives non négociables** : §14.8.5 — vérifier que la convergence Anthropic/Salesforce/Microsoft/Karpathy/Knight est honnêtement représentée (pas de récit unilatéral).
-  - **(d) Le procès du chatbot §14.2** : 6 contributions + articulation barrier — vérifier que c'est dense et fidèle (Wattenberger, Appleton, Lee, Litt, Saarinen, Pike, Moran-Gibbons NN/G). Le verdict synthétique *« prise minimale, pas la bonne forme »* doit tenir comme citation autonome.
-  - **(e) Couche 5 (guardrails) non-optionnelle** : §14.9 — vérifier que c'est l'argument de production le plus fort, et que la matrice par régime §14.9 est utilisable telle quelle par un PM.
+  - **(a) Le wording Knight** : §13.8.1 fixe la taxonomie canonique réutilisée 3 autres fois. Vérifier que les 5 rôles + autonomy certificates sont posés sans ambiguïté.
+  - **(b) AG-UI vs MCP confusion** : le marketing tend à confondre (« AG-UI = MCP for UI »). Vérifier que §13.7.3 sépare clairement shared state vs generative UI (les deux choses orthogonales que la presse confond).
+  - **(c) Les 6 primitives non négociables** : §13.8.5 — vérifier que la convergence Anthropic/Salesforce/Microsoft/Karpathy/Knight est honnêtement représentée (pas de récit unilatéral).
+  - **(d) Le procès du chatbot §13.2** : 6 contributions + articulation barrier — vérifier que c'est dense et fidèle (Wattenberger, Appleton, Lee, Litt, Saarinen, Pike, Moran-Gibbons NN/G). Le verdict synthétique *« prise minimale, pas la bonne forme »* doit tenir comme citation autonome.
+  - **(e) Couche 5 (guardrails) non-optionnelle** : §13.9 — vérifier que c'est l'argument de production le plus fort, et que la matrice par régime §13.9 est utilisable telle quelle par un PM.
 - [ ] Si validation : copier vers le futur format de sortie (print HTML / PDF) quand décidé
 
 ---
 
-## Chapitre 13 — Sécurité MCP : dix vecteurs, dix patterns
+## Chapitre 16 — Sécurité MCP : dix vecteurs, dix patterns
 
 > **Acte III — Les interfaces · Gabarit standard ~22 p**
-> **Statut** : ✅ v1 livrée — `docs/livre/ch13-mcp-securite.md`.
-> **Frontières tenues** : Ch.13 = matrice MCP spécifique (10 vecteurs × 10 patterns, 6 trust boundaries, 4 familles, 4 load-bearing) ; Ch.19 = synthèse transverse E4 (modèle / prompt / mémoire / outil / protocole / surface).
+> **Statut** : ✅ v1 livrée — `docs/livre/ch16-mcp-securite.md`.
+> **Frontières tenues** : Ch.16 = matrice MCP spécifique (10 vecteurs × 10 patterns, 6 trust boundaries, 4 familles, 4 pivots) ; Ch.21 = synthèse transverse E4 (modèle / prompt / mémoire / outil / protocole / surface).
 
 ---
 
-## Chapitre 12 — MCP, le HTTP des agents
+## Chapitre 15 — MCP, le HTTP des agents
 
 > **Acte III — Les interfaces · Gabarit standard ~22 p**
-> **Statut** : ✅ v1 livrée — `docs/livre/ch12-mcp-plateforme.md`.
-> **Promesses honorées par Ch.14** : déroulé AG-UI (Ch.12 §12.5 renvoyait à §14.4 → délivré en §14.7) ; déroulé sécurité MCP (renvoyé Ch.13 → délivré).
+> **Statut** : ✅ v1 livrée — `docs/livre/ch15-mcp-plateforme.md`.
+> **Promesses honorées par Ch.13** : déroulé AG-UI (Ch.15 §15.5 renvoyait à §13.4 → délivré en §13.7) ; déroulé sécurité MCP (renvoyé Ch.16 → délivré).
 
 ---
 
@@ -578,11 +578,11 @@ Sources (~50-70 footnotes — Ch.23 est densément footnoté :
 
 > **Acte II — La boucle · Gabarit standard ~16 p**
 > **Statut** : ✅ v1 livrée — `docs/livre/ch08-outils-de-lagent.md`.
-> **Frontière Ch.8 ↔ Ch.13 ↔ Ch.19** : Ch.8 = primitive tool intra-app, Ch.13 = matrice MCP, Ch.19 = synthèse transverse.
+> **Frontière Ch.8 ↔ Ch.16 ↔ Ch.21** : Ch.8 = primitive tool intra-app, Ch.16 = matrice MCP, Ch.21 = synthèse transverse.
 
 ---
 
-## Chapitre 17 — Évaluer un agent (et débunker les leaderboards)
+## Chapitre 19 — Évaluer un agent (et débunker les leaderboards)
 
 > **Acte IV — Mesures et garde-fous · Gabarit charnière 28-40 p · ~10 700 mots**
 > **Lecteur cible** : acheteur enterprise, tech lead, sponsor IA, RSSI, DPO, agent engineer.
@@ -594,84 +594,84 @@ Sources (~50-70 footnotes — Ch.23 est densément footnoté :
 | --- | --- |
 | Audit schémas source (2 dossiers) | ✅ fait (cf. §Audit ci-dessous) |
 | Plan détaillé | ✅ fait |
-| Manuscrit | ✅ **v1 livrée** — `docs/livre/ch17-evaluation-benchmarks.md` (≈ 10 700 mots, 17 encadrés, 16 schémas intégrés) |
-| Schémas à créer | 0 v1 (R11 « playbook gruyère 8 étapes » traité par **réutilisation tel quel** de `evaluation-10-playbook-gruyere.svg` en page de section §17.14 + récap ; R12 « 4 vecteurs contamination » traité par **réutilisation tel quel** de `benchmarks-02-vecteurs-contamination.svg` en §17.9. Le 2×2 contrôlé × ponctuel d'annexe (cf. outline annexe A) est couvert par `benchmarks-06-framework-decision.svg`.) |
-| Frontière Ch.17 ↔ Ch.18 | ✅ respectée — Ch.17 garde les graders, juges, simulation, playbook ; Ch.18 dédié à OTel GenAI semconv, cognitive audit trail, vendor landscape obs. Le schéma `evaluation-07-observabilite-rca.svg` est **réassigné Ch.18** depuis le dossier `evaluation-agentique`. |
-| Frontière Ch.17 ↔ Ch.19 | ✅ respectée — Ch.17 traite l'éval (qualité, biais, contamination) ; Ch.19 traite la sécurité (OWASP ASI, jailbreaking, threat model E4 unifié). Pas de redite. |
-| Frontière Ch.17 ↔ Ch.21 | ✅ respectée — Ch.17 mentionne le token cost trap et CNA/CPS pour la cohérence intra-chapitre, mais le déroulé ROI complet (frameworks Cigref/McKinsey/BCG/MIT NANDA/Forrester TEI, J-curve, Klarna) reste Ch.21. |
-| Renvois inter-chapitres | ✅ Ch. 7 (boucle / harness produit la trajectoire évaluée), Ch. 9 (mémoire — benchmarks MemoryCD/Mem2ActBench/Letta), Ch. 10 (compaction — token cost trap renvoyé), Ch. 18 (OTel GenAI semconv comme matériau d'éval continue), Ch. 19 (threat model), Ch. 21 (ROI / paradoxe agentique). |
+| Manuscrit | ✅ **v1 livrée** — `docs/livre/ch19-evaluation-benchmarks.md` (≈ 10 700 mots, 17 encadrés, 16 schémas intégrés) |
+| Schémas à créer | 0 v1 (R11 « playbook gruyère 8 étapes » traité par **réutilisation tel quel** de `evaluation-10-playbook-gruyere.svg` en page de section §19.14 + récap ; R12 « 4 vecteurs contamination » traité par **réutilisation tel quel** de `benchmarks-02-vecteurs-contamination.svg` en §19.9. Le 2×2 contrôlé × ponctuel d'annexe (cf. outline annexe A) est couvert par `benchmarks-06-framework-decision.svg`.) |
+| Frontière Ch.19 ↔ Ch.20 | ✅ respectée — Ch.19 garde les graders, juges, simulation, playbook ; Ch.20 dédié à OTel GenAI semconv, cognitive audit trail, vendor landscape obs. Le schéma `evaluation-07-observabilite-rca.svg` est **réassigné Ch.20** depuis le dossier `evaluation-agentique`. |
+| Frontière Ch.19 ↔ Ch.21 | ✅ respectée — Ch.19 traite l'éval (qualité, biais, contamination) ; Ch.21 traite la sécurité (OWASP ASI, jailbreaking, threat model E4 unifié). Pas de redite. |
+| Frontière Ch.19 ↔ Ch.23 | ✅ respectée — Ch.19 mentionne le token cost trap et CNA/CPS pour la cohérence intra-chapitre, mais le déroulé ROI complet (frameworks Cigref/McKinsey/BCG/MIT NANDA/Forrester TEI, J-curve, Klarna) reste Ch.23. |
+| Renvois inter-chapitres | ✅ Ch. 7 (boucle / harness produit la trajectoire évaluée), Ch. 9 (mémoire — benchmarks MemoryCD/Mem2ActBench/Letta), Ch. 10 (compaction — token cost trap renvoyé), Ch. 20 (OTel GenAI semconv comme matériau d'éval continue), Ch. 21 (threat model), Ch. 23 (ROI / paradoxe agentique). |
 
 ### Sources matérielles
 
-Le Ch.17 est une **charnière à 2 dossiers** — la dyade structurante évaluation × benchmarks contestés. La discipline éditoriale est forte : le dossier `evaluation-agentique/` construit le playbook (gruyère 8 étapes, taxonomie graders, LLM-as-judge calibré, τ-bench), le dossier `benchmarks-contestes/` démolit la lecture des leaderboards publics (4 vecteurs de fuite, benchmark teams, contre-mouvement vivant). Lus ensemble = grille d'achat complète.
+Le Ch.19 est une **charnière à 2 dossiers** — la dyade structurante évaluation × benchmarks contestés. La discipline éditoriale est forte : le dossier `evaluation-agentique/` construit le playbook (gruyère 8 étapes, taxonomie graders, LLM-as-judge calibré, τ-bench), le dossier `benchmarks-contestes/` démolit la lecture des leaderboards publics (4 vecteurs de fuite, benchmark teams, contre-mouvement vivant). Lus ensemble = grille d'achat complète.
 
-- **Dossier principal #1 — [`evaluation-agentique/`](../evaluation-agentique/)** (1ᵉʳ mai 2026, étude #08) — le playbook complet : trois ruptures (F1 → BLEU → trajectoire), vocabulaire task/trial/grader/transcript/outcome, taxonomie 3 familles de graders, pass@k vs pass^k, grille CLEAR à 5 dimensions, LLM-as-judge (4 modes × 5 biais × 5 correctifs), TestCase = (Persona × Quest × Environment) → Outcome, τ-bench et τ²-bench dual-control, observabilité OTel (renvoyé Ch.18), frameworks 4 quadrants, coûts à 6 postes, playbook gruyère 8 étapes (R11 — schéma signature de l'Acte IV).
+- **Dossier principal #1 — [`evaluation-agentique/`](../evaluation-agentique/)** (1ᵉʳ mai 2026, étude #08) — le playbook complet : trois ruptures (F1 → BLEU → trajectoire), vocabulaire task/trial/grader/transcript/outcome, taxonomie 3 familles de graders, pass@k vs pass^k, grille CLEAR à 5 dimensions, LLM-as-judge (4 modes × 5 biais × 5 correctifs), TestCase = (Persona × Quest × Environment) → Outcome, τ-bench et τ²-bench dual-control, observabilité OTel (renvoyé Ch.20), frameworks 4 quadrants, coûts à 6 postes, playbook gruyère 8 étapes (R11 — schéma signature de l'Acte IV).
   - [Rapport (.md, ~14 000 mots)](../evaluation-agentique/20260501-evaluation-agentique-rapport.md) · [App interactive](../evaluation-agentique/20260501-evaluation-agentique-app.html) · [Canvas](../evaluation-agentique/20260501-evaluation-agentique-rapport.md)
   - 11 schémas SVG dans [`images/`](../evaluation-agentique/images/) (10 narratifs + 1 `exec-sum-a4` annexe)
 - **Dossier principal #2 — [`benchmarks-contestes/`](../benchmarks-contestes/)** (15 mai 2026, étude #19) — l'anti-playbook : écart 78 % → 26 %, anatomie SWE-bench 4 étapes, 4 vecteurs de fuite croisés en 2×2 (R12), trajectoire 2024-2026 GAIA/OSWorld/τ-bench/SWE-bench Verified, anatomie d'une benchmark team (5 leviers cumulés multiplicatif +15-25 pts), contre-mouvement vivant (SWE-bench Live / SWE-Lancer / CORE-Bench / MLE-bench / ARC-AGI 2), framework décision 2×2 contrôlé × ponctuel pour acheteurs.
   - [Rapport (.md, ~6 000 mots)](../benchmarks-contestes/20260515-benchmarks-contestes-rapport.md) · [App interactive](../benchmarks-contestes/20260515-benchmarks-contestes-app.html)
   - 6 schémas SVG dans [`images/`](../benchmarks-contestes/images/)
 
-### Audit des schémas — Ch.17
+### Audit des schémas — Ch.19
 
-Au total, **17 schémas SVG** dans les 2 dossiers source. Classement S (au fil du texte Ch.17) / R (récap chapitre) / Ch.X (réassigné) / écarté.
+Au total, **17 schémas SVG** dans les 2 dossiers source. Classement S (au fil du texte Ch.19) / R (récap chapitre) / Ch.X (réassigné) / écarté.
 
 #### Schémas du dossier `evaluation-agentique/` (11)
 
-| Fig | Slug | Catégorie Ch.17 | Statut |
+| Fig | Slug | Catégorie Ch.19 | Statut |
 | --- | --- | --- | --- |
 | 00 | `exec-sum-a4` | écarté (livre) | annexe rapport |
-| 01 | `evolution-paradigmes` | **S §17.2** | tel quel — pose les trois ruptures F1 → BLEU → trajectoire |
-| 02 | `anatomie-evaluation` | **S §17.3.1** | tel quel — task / trial / grader / transcript / outcome |
-| 03 | `taxonomie-graders` | **S §17.3.2** | tel quel — trois familles code / model / human |
-| 04 | `pyramide-metriques` | **S §17.5** | tel quel — RAG → agent → CLEAR enterprise |
-| 05 | `llm-as-judge` | **S §17.6** | tel quel — 4 modes × 5 biais × 5 correctifs |
-| 06 | `user-simulation` | **S §17.7.2** | tel quel — τ-bench single-control → τ²-bench dual-control → multi-agent persona |
-| 06bis | `testcase-formula` | **S §17.7.1** | tel quel — grammaire opérationnelle (Persona × Quest × Environment) |
-| 07 | `observabilite-rca` | **Ch.18** (observabilité) | réassigné Ch.18 — OTel GenAI + cognitive audit trail + RCA (AgentRx, AgentTrace, AgentDebug). Frontière Ch.17/Ch.18 respectée. |
-| 08 | `frameworks-matrice` | **S §17.17** | tel quel — cartographie 4 quadrants (offline/online × OSS/SaaS) |
-| 09 | `couts-goulots` | **S §17.16** | tel quel — 6 postes de coût + 7 goulots organisationnels |
-| 10 | `playbook-gruyere` | **R11 §17.14 + récap §Récap** | tel quel — **schéma signature de l'Acte IV**, utilisé **2×** (§17.14 + récap). Tient lieu de R11 v1. |
+| 01 | `evolution-paradigmes` | **S §19.2** | tel quel — pose les trois ruptures F1 → BLEU → trajectoire |
+| 02 | `anatomie-evaluation` | **S §19.3.1** | tel quel — task / trial / grader / transcript / outcome |
+| 03 | `taxonomie-graders` | **S §19.3.2** | tel quel — trois familles code / model / human |
+| 04 | `pyramide-metriques` | **S §19.5** | tel quel — RAG → agent → CLEAR enterprise |
+| 05 | `llm-as-judge` | **S §19.6** | tel quel — 4 modes × 5 biais × 5 correctifs |
+| 06 | `user-simulation` | **S §19.7.2** | tel quel — τ-bench single-control → τ²-bench dual-control → multi-agent persona |
+| 06bis | `testcase-formula` | **S §19.7.1** | tel quel — grammaire opérationnelle (Persona × Quest × Environment) |
+| 07 | `observabilite-rca` | **Ch.20** (observabilité) | réassigné Ch.20 — OTel GenAI + cognitive audit trail + RCA (AgentRx, AgentTrace, AgentDebug). Frontière Ch.19/Ch.20 respectée. |
+| 08 | `frameworks-matrice` | **S §19.17** | tel quel — cartographie 4 quadrants (offline/online × OSS/SaaS) |
+| 09 | `couts-goulots` | **S §19.16** | tel quel — 6 postes de coût + 7 goulots organisationnels |
+| 10 | `playbook-gruyere` | **R11 §19.14 + récap §Récap** | tel quel — **schéma signature de l'Acte IV**, utilisé **2×** (§19.14 + récap). Tient lieu de R11 v1. |
 
-**Bilan dossier 1** : 10/10 schémas narratifs absorbés (07 réassigné Ch.18 par discipline éditoriale, pas écarté). Taux d'absorption maximal.
+**Bilan dossier 1** : 10/10 schémas narratifs absorbés (07 réassigné Ch.20 par discipline éditoriale, pas écarté). Taux d'absorption maximal.
 
 #### Schémas du dossier `benchmarks-contestes/` (6)
 
-| Fig | Slug | Catégorie Ch.17 | Statut |
+| Fig | Slug | Catégorie Ch.19 | Statut |
 | --- | --- | --- | --- |
-| 01 | `anatomie-swe-bench` | **S §17.8.2** | tel quel — pipeline 4 étages SWE-bench |
-| 02 | `vecteurs-contamination` | **R12 §17.9** | tel quel — **schéma signature démolition**, 4 vecteurs croisés en 2×2 (explicite/implicite × données/protocole). Tient lieu de R12 v1. |
-| 03 | `trajectoire-scores` | **S §17.10** | tel quel — trajectoires SWE-bench Verified / GAIA / OSWorld / τ-bench 2024-2026 |
-| 04 | `chaine-optimisation` | **S §17.11** | tel quel — 5 leviers cumulés d'une benchmark team |
-| 05 | `benchmarks-vivants` | **S §17.12** | tel quel — comparatif SWE-bench Live / SWE-Lancer / CORE-Bench / MLE-bench / ARC-AGI 2 |
-| 06 | `framework-decision` | **S §17.13** | tel quel — 2×2 contrôlé × ponctuel × écologique × longitudinal |
+| 01 | `anatomie-swe-bench` | **S §19.8.2** | tel quel — pipeline 4 étages SWE-bench |
+| 02 | `vecteurs-contamination` | **R12 §19.9** | tel quel — **schéma signature démolition**, 4 vecteurs croisés en 2×2 (explicite/implicite × données/protocole). Tient lieu de R12 v1. |
+| 03 | `trajectoire-scores` | **S §19.10** | tel quel — trajectoires SWE-bench Verified / GAIA / OSWorld / τ-bench 2024-2026 |
+| 04 | `chaine-optimisation` | **S §19.11** | tel quel — 5 leviers cumulés d'une benchmark team |
+| 05 | `benchmarks-vivants` | **S §19.12** | tel quel — comparatif SWE-bench Live / SWE-Lancer / CORE-Bench / MLE-bench / ARC-AGI 2 |
+| 06 | `framework-decision` | **S §19.13** | tel quel — 2×2 contrôlé × ponctuel × écologique × longitudinal |
 
 **Bilan dossier 2** : 6/6 schémas absorbés. Taux d'absorption maximal.
 
-**Bilan global audit Ch.17** : **16/17 schémas narratifs absorbés** (1 réassigné Ch.18 par discipline éditoriale). 0 schéma écarté pour redondance, 0 schéma à fixer. Audit aussi propre que Ch.9 (8/8) et Ch.11 (8/8 + 6 réassignés) — signe que les deux dossiers source étaient structurés dès l'origine comme une dyade complémentaire sans redondance.
+**Bilan global audit Ch.19** : **16/17 schémas narratifs absorbés** (1 réassigné Ch.20 par discipline éditoriale). 0 schéma écarté pour redondance, 0 schéma à fixer. Audit aussi propre que Ch.9 (8/8) et Ch.11 (8/8 + 6 réassignés) — signe que les deux dossiers source étaient structurés dès l'origine comme une dyade complémentaire sans redondance.
 
 ### Redondances et complémentarités entre les 2 dossiers
 
 **0 redondance vraie entre `evaluation-agentique` et `benchmarks-contestes`**. Les deux dossiers sont **strictement complémentaires** — c'est exactement la thèse du chapitre. Le premier construit, le second démolit, et lus ensemble forment la grille d'achat complète.
 
-| Sujet | `evaluation-agentique` | `benchmarks-contestes` | Décision Ch.17 |
+| Sujet | `evaluation-agentique` | `benchmarks-contestes` | Décision Ch.19 |
 | --- | --- | --- | --- |
-| Méthodologie d'éval | Playbook gruyère 8 étapes (§17.14), taxonomie graders, LLM-as-judge calibré, simulation utilisateur | non couvert | Reste §17.2-§17.7, §17.14-§17.17 |
-| Critique des benchmarks publics | Mentionne « 50× variation de coût », CORE-Bench bug 42 %→95 % | Démolition systémique : 4 vecteurs, benchmark teams, contre-mouvement | Reste §17.8-§17.13. Le passage entre les deux mouvements (§17.8) cite l'écart 78 %/26 % comme pivot narratif. |
-| τ-bench et τ²-bench | Cas méthodologique (§17.7.2) | Cas de contamination (§17.10) | **Deux angles distincts** sur le même benchmark. §17.7.2 traite le simulateur comme outil ; §17.10 traite la baisse v1→v2 comme signal de contamination. Pas de doublon. |
-| SWE-bench | Mention rapide CORE-Bench bug | Analyse complète anatomie + 4 vecteurs | Reste §17.8-§17.11. La dyade est l'objet du chapitre. |
+| Méthodologie d'éval | Playbook gruyère 8 étapes (§19.14), taxonomie graders, LLM-as-judge calibré, simulation utilisateur | non couvert | Reste §19.2-§19.7, §19.14-§19.17 |
+| Critique des benchmarks publics | Mentionne « 50× variation de coût », CORE-Bench bug 42 %→95 % | Démolition systémique : 4 vecteurs, benchmark teams, contre-mouvement | Reste §19.8-§19.13. Le passage entre les deux mouvements (§19.8) cite l'écart 78 %/26 % comme pivot narratif. |
+| τ-bench et τ²-bench | Cas méthodologique (§19.7.2) | Cas de contamination (§19.10) | **Deux angles distincts** sur le même benchmark. §19.7.2 traite le simulateur comme outil ; §19.10 traite la baisse v1→v2 comme signal de contamination. Pas de doublon. |
+| SWE-bench | Mention rapide CORE-Bench bug | Analyse complète anatomie + 4 vecteurs | Reste §19.8-§19.11. La dyade est l'objet du chapitre. |
 
 **3 frontières inter-chapitres à tenir strictement** :
 
-| Sujet | Couvert où ? | Décision Ch.17 |
+| Sujet | Couvert où ? | Décision Ch.19 |
 | --- | --- | --- |
-| **OTel GenAI Semantic Conventions** | Mentionné en §17.7.2 simulation et §17.17 frameworks comme fondation ; déroulé complet (6 piliers + cognitive audit trail + WG `gen_ai.memory.*` / `gen_ai.compaction.*`) en Ch.18 | Ch.17 traite la convergence comme contexte ; le schéma `evaluation-07-observabilite-rca.svg` est réassigné Ch.18. Renvoi `[!INFO] Voir Ch. 18` en §17.17. |
-| **OWASP ASI Top 10 + jailbreaking** | Mentionné en §17.3.2 grader safety-critique ; déroulé Ch.19 (threat model E4 unifié) | Ch.17 ne reprend ni la matrice OWASP ASI ni l'asymétrie attaque/défense. Pas de renvoi explicite (Ch.19 viendra ré-encrer la sécurité comme verticale). |
-| **Token cost trap + ROI** | Mentionné en §17.16.2 comme illustration de la rupture POC→prod ; déroulé Ch.21 (5 frameworks Cigref/McKinsey/BCG/MIT NANDA/Forrester TEI, J-curve Brynjolfsson, paradoxe agentique, Klarna) | Ch.17 cite l'exemple Klaus Hofenbitzer (0,14 $ → 130 000 $/mois) comme illustration intra-chapitre. Pas de doublon, deux profondeurs. |
+| **OTel GenAI Semantic Conventions** | Mentionné en §19.7.2 simulation et §19.17 frameworks comme fondation ; déroulé complet (6 piliers + cognitive audit trail + WG `gen_ai.memory.*` / `gen_ai.compaction.*`) en Ch.20 | Ch.19 traite la convergence comme contexte ; le schéma `evaluation-07-observabilite-rca.svg` est réassigné Ch.20. Renvoi `[!INFO] Voir Ch. 20` en §19.17. |
+| **OWASP ASI Top 10 + jailbreaking** | Mentionné en §19.3.2 grader safety-critique ; déroulé Ch.21 (threat model E4 unifié) | Ch.19 ne reprend ni la matrice OWASP ASI ni l'asymétrie attaque/défense. Pas de renvoi explicite (Ch.21 viendra ré-encrer la sécurité comme verticale). |
+| **Token cost trap + ROI** | Mentionné en §19.16.2 comme illustration de la rupture POC→prod ; déroulé Ch.23 (5 frameworks Cigref/McKinsey/BCG/MIT NANDA/Forrester TEI, J-curve Brynjolfsson, paradoxe agentique, Klarna) | Ch.19 cite l'exemple Klaus Hofenbitzer (0,14 $ → 130 000 $/mois) comme illustration intra-chapitre. Pas de doublon, deux profondeurs. |
 
-**Cohérence avec la frontière posée par Ch.9 §9.7 (surface d'attaque mémoire) et Ch.10 §10.7 (cycle d'attaque compaction)** : le Ch.17 ne traite ni la verticale mémoire ni la compaction sous l'angle threat model — il traite la **mesure** de la qualité d'un agent, dont la sécurité est une des dimensions (CLEAR pillar "Assurance", grader safety-critique). Pas de réinjection. Le threat model unifié reste E4 / Ch.19.
+**Cohérence avec la frontière posée par Ch.9 §9.7 (surface d'attaque mémoire) et Ch.10 §10.7 (cycle d'attaque compaction)** : le Ch.19 ne traite ni la verticale mémoire ni la compaction sous l'angle threat model — il traite la **mesure** de la qualité d'un agent, dont la sécurité est une des dimensions (CLEAR pillar "Assurance", grader safety-critique). Pas de réinjection. Le threat model unifié reste E4 / Ch.21.
 
-**1 absence notable, non bloquante** : pas de **schéma A4 récap dédié au framework 2×2 contrôlé × ponctuel**. L'outline (annexe A.2) listait ce 2×2 comme « grille d'achat » à recadrer en annexe consultative. **Décision v1** : couvert par `benchmarks-06-framework-decision.svg` (réutilisé tel quel en §17.13). Si l'édition print réclame un récap dédié pleine page, l'élément existe déjà et son coût d'intégration est nul.
+**1 absence notable, non bloquante** : pas de **schéma A4 récap dédié au framework 2×2 contrôlé × ponctuel**. L'outline (annexe A.2) listait ce 2×2 comme « grille d'achat » à recadrer en annexe consultative. **Décision v1** : couvert par `benchmarks-06-framework-decision.svg` (réutilisé tel quel en §19.13). Si l'édition print réclame un récap dédié pleine page, l'élément existe déjà et son coût d'intégration est nul.
 
 ### Plan détaillé du chapitre
 
@@ -682,80 +682,80 @@ Au total, **17 schémas SVG** dans les 2 dossiers source. Classement S (au fil d
 
 > [!TLDR] TL;DR décideur (8 bullets)
 
-§17.1   Pourquoi un seul chapitre éval ET benchmarks
-        ├─ §17.1.1 La place du chapitre dans l'Acte IV
-        ├─ §17.1.2 Le double mouvement — construire et démolir
-        └─ encadré [!INFO] Voir Ch. 7, 18, 21
+§19.1   Pourquoi un seul chapitre éval ET benchmarks
+        ├─ §19.1.1 La place du chapitre dans l'Acte IV
+        ├─ §19.1.2 Le double mouvement — construire et démolir
+        └─ encadré [!INFO] Voir Ch. 7, 20, 23
 
-§17.2   Trois ruptures qui ont rendu obsolètes les métriques classiques
+§19.2   Trois ruptures qui ont rendu obsolètes les métriques classiques
         ├─ [SVG S] evaluation-01-evolution-paradigmes.svg
-        ├─ §17.2.1 IA classique — F1, précision, rappel
-        ├─ §17.2.2 IA générative — la déroute des n-grammes
-        └─ §17.2.3 IA agentique — la trajectoire comme objet
+        ├─ §19.2.1 IA classique — F1, précision, rappel
+        ├─ §19.2.2 IA générative — la déroute des n-grammes
+        └─ §19.2.3 IA agentique — la trajectoire comme objet
             └─ encadré [!QUOTE] Anthropic — outcome ≠ transcript
 
-§17.3   Anatomie d'une éval agentique
-        ├─ §17.3.1 Vocabulaire (7 termes)
+§19.3   Anatomie d'une éval agentique
+        ├─ §19.3.1 Vocabulaire (7 termes)
         │   └─ [SVG S] evaluation-02-anatomie-evaluation.svg
-        ├─ §17.3.2 Trois familles de graders (code / model / human)
+        ├─ §19.3.2 Trois familles de graders (code / model / human)
         │   └─ [SVG S] evaluation-03-taxonomie-graders.svg
-        └─ §17.3.3 Capability evals vs régression evals
+        └─ §19.3.3 Capability evals vs régression evals
             └─ encadré [!IMPORTANT] La graduation des evals
 
-§17.4   Pass@k vs pass^k — le non-déterminisme comme attribut produit
+§19.4   Pass@k vs pass^k — le non-déterminisme comme attribut produit
         └─ encadré [!ATTENTION] Le choix de métrique est un choix produit
 
-§17.5   La grille CLEAR — cinq dimensions pour l'enterprise
+§19.5   La grille CLEAR — cinq dimensions pour l'enterprise
         ├─ [SVG S] evaluation-04-pyramide-metriques.svg
         └─ CNA (Cost-Normalized Accuracy) + CPS (Cost Per Success)
 
-§17.6   LLM-as-a-judge — modes, biais, calibration
+§19.6   LLM-as-a-judge — modes, biais, calibration
         ├─ [SVG S] evaluation-05-llm-as-judge.svg
-        ├─ §17.6.1 Quatre modes opératoires (pointwise/reference-based/pairwise/listwise)
-        ├─ §17.6.2 Cinq biais systématiques (position/verbosity/self-enhancement/authority/format)
-        ├─ §17.6.3 Pipeline correctif en 5 couches
+        ├─ §19.6.1 Quatre modes opératoires (pointwise/reference-based/pairwise/listwise)
+        ├─ §19.6.2 Cinq biais systématiques (position/verbosity/self-enhancement/authority/format)
+        ├─ §19.6.3 Pipeline correctif en 5 couches
         │   └─ encadré [!EXAMPLE] Rubrique discrète + reasoning-first + porte de sortie
-        ├─ §17.6.4 Quand NE PAS utiliser un juge LLM (4 cas)
-        └─ §17.6.5 SLM-judges spécialisés (Galileo Luna-2, Pearson > 0,85)
+        ├─ §19.6.4 Quand NE PAS utiliser un juge LLM (4 cas)
+        └─ §19.6.5 SLM-judges spécialisés (Galileo Luna-2, Pearson > 0,85)
 
-§17.7   Simulation utilisateur — TestCase = (Persona × Quest × Environment) → Outcome
-        ├─ §17.7.1 La grammaire opérationnelle
+§19.7   Simulation utilisateur — TestCase = (Persona × Quest × Environment) → Outcome
+        ├─ §19.7.1 La grammaire opérationnelle
         │   └─ [SVG S] evaluation-06bis-testcase-formula.svg
-        ├─ §17.7.2 τ-bench et τ²-bench (dual-control)
+        ├─ §19.7.2 τ-bench et τ²-bench (dual-control)
         │   └─ [SVG S] evaluation-06-user-simulation.svg
-        └─ §17.7.3 Le Sim2Real gap — qualité du simulateur
+        └─ §19.7.3 Le Sim2Real gap — qualité du simulateur
 
 ──────────────────────────────────────────────────────────────────
                        BASCULEMENT NARRATIF
 ──────────────────────────────────────────────────────────────────
 
-§17.8   LE BASCULEMENT — pourquoi les benchmarks publics ne tiennent plus
-        ├─ §17.8.1 L'écart qui s'élargit (78 % vs 26 %)
+§19.8   LE BASCULEMENT — pourquoi les benchmarks publics ne tiennent plus
+        ├─ §19.8.1 L'écart qui s'élargit (78 % vs 26 %)
         │   └─ encadré [!QUOTE] L'écart entre les deux courbes
-        └─ §17.8.2 Anatomie de SWE-bench (4 étages)
+        └─ §19.8.2 Anatomie de SWE-bench (4 étages)
             └─ [SVG S] benchmarks-01-anatomie-swe-bench.svg
 
-§17.9   Les quatre vecteurs de fuite (R12 — schéma signature démolition)
+§19.9   Les quatre vecteurs de fuite (R12 — schéma signature démolition)
         ├─ [SVG R12] benchmarks-02-vecteurs-contamination.svg
-        ├─ §17.9.1 Chevauchement temporel (vecteur i, 8-15 pts)
-        ├─ §17.9.2 Fuite par version-tag (vecteur ii, ~18 %)
-        ├─ §17.9.3 Gaming du harnais (vecteur iii, +5 à +10 pts)
-        ├─ §17.9.4 Leakage de prompt (vecteur iv)
+        ├─ §19.9.1 Chevauchement temporel (vecteur i, 8-15 pts)
+        ├─ §19.9.2 Fuite par version-tag (vecteur ii, ~18 %)
+        ├─ §19.9.3 Gaming du harnais (vecteur iii, +5 à +10 pts)
+        ├─ §19.9.4 Leakage de prompt (vecteur iv)
         └─ encadré [!WARNING] Aucun n'est résolu par "Verified"
 
-§17.10  GAIA, OSWorld, τ-bench — même pathologie, déclinée
+§19.10  GAIA, OSWorld, τ-bench — même pathologie, déclinée
         └─ [SVG S] benchmarks-03-trajectoire-scores.svg
 
-§17.11  Le score est un produit — anatomie d'une "benchmark team"
+§19.11  Le score est un produit — anatomie d'une "benchmark team"
         ├─ [SVG S] benchmarks-04-chaine-optimisation.svg
         ├─ 5 leviers cumulés (checkpoint / harness / prompt / RL / retries)
         └─ encadré [!IMPORTANT] Le contre-exemple ARC-AGI (private eval, compute capé)
 
-§17.12  Le contre-mouvement — benchmarks vivants
+§19.12  Le contre-mouvement — benchmarks vivants
         ├─ [SVG S] benchmarks-05-benchmarks-vivants.svg
         └─ SWE-bench Live / SWE-Lancer / CORE-Bench / MLE-bench / ARC-AGI 2
 
-§17.13  Mesurer pour quoi faire — framework 2×2 contrôlé × ponctuel
+§19.13  Mesurer pour quoi faire — framework 2×2 contrôlé × ponctuel
         ├─ [SVG S] benchmarks-06-framework-decision.svg
         ├─ Chercheur / acheteur / régulateur / journaliste
         └─ encadré [!IMPORTANT] L'éval interne datée bat tous les scores publics
@@ -764,29 +764,29 @@ Au total, **17 schémas SVG** dans les 2 dossiers source. Classement S (au fil d
                        RETOUR CONSTRUCTION
 ──────────────────────────────────────────────────────────────────
 
-§17.14  Le playbook gruyère en 8 étapes (R11 — schéma signature Acte IV)
+§19.14  Le playbook gruyère en 8 étapes (R11 — schéma signature Acte IV)
         ├─ [SVG R11] evaluation-10-playbook-gruyere.svg
-        ├─ §17.14.1 Démarrer tôt (20-50 tasks, règle 80/20)
-        ├─ §17.14.2 Partir du manuel (bug → test case)
-        ├─ §17.14.3 Tasks unambiguës avec ref solutions (test-or test, 0 % pass@100 = task cassée)
-        ├─ §17.14.4 Problem sets équilibrés (class balance)
-        ├─ §17.14.5 Eval harness robuste (isolation par trial)
-        ├─ §17.14.6 Graders thoughtfully designés (déterministe d'abord, partial credit, porte de sortie "Unknown")
-        ├─ §17.14.7 Lire les transcripts (cas Opus 4.5 CORE-Bench 42 % → 95 %)
-        ├─ §17.14.8 Monitorer la saturation (graduation capability → régression)
-        └─ §17.14.9 Ownership et contribution (evals = unit tests)
+        ├─ §19.14.1 Démarrer tôt (20-50 tasks, règle 80/20)
+        ├─ §19.14.2 Partir du manuel (bug → test case)
+        ├─ §19.14.3 Tasks unambiguës avec ref solutions (test-or test, 0 % pass@100 = task cassée)
+        ├─ §19.14.4 Problem sets équilibrés (class balance)
+        ├─ §19.14.5 Eval harness robuste (isolation par trial)
+        ├─ §19.14.6 Graders thoughtfully designés (déterministe d'abord, partial credit, porte de sortie "Unknown")
+        ├─ §19.14.7 Lire les transcripts (cas Opus 4.5 CORE-Bench 42 % → 95 %)
+        ├─ §19.14.8 Monitorer la saturation (graduation capability → régression)
+        └─ §19.14.9 Ownership et contribution (evals = unit tests)
 
-§17.15  Le modèle gruyère — combiner les couches
+§19.15  Le modèle gruyère — combiner les couches
         ├─ tableau 6 méthodes (auto / monitoring / A/B / feedback / review / studies)
         └─ encadré [!QUOTE] Anthropic — frameworks valent ce que valent les eval tasks
 
-§17.16  Coûts et goulots de l'éval mature
+§19.16  Coûts et goulots de l'éval mature
         ├─ [SVG S] evaluation-09-couts-goulots.svg
-        ├─ §17.16.1 6 postes de coût (modèle / juges / synthétique / humain / infra / maintenance)
-        ├─ §17.16.2 Token cost trap (0,14 $ → 130 000 $/mois)
-        └─ §17.16.3 Les vrais goulots ne sont pas techniques (qualité tasks, calibration, lecture transcripts, ownership)
+        ├─ §19.16.1 6 postes de coût (modèle / juges / synthétique / humain / infra / maintenance)
+        ├─ §19.16.2 Token cost trap (0,14 $ → 130 000 $/mois)
+        └─ §19.16.3 Les vrais goulots ne sont pas techniques (qualité tasks, calibration, lecture transcripts, ownership)
 
-§17.17  Frameworks et outils — cartographie 4 quadrants
+§19.17  Frameworks et outils — cartographie 4 quadrants
         ├─ [SVG S] evaluation-08-frameworks-matrice.svg
         ├─ Quadrant offline × OSS (Promptfoo, DeepEval, Ragas, OpenAI Evals, MLflow)
         ├─ Quadrant offline × SaaS (Braintrust, LangSmith, Galileo, Maxim, Vals.ai)
@@ -794,7 +794,7 @@ Au total, **17 schémas SVG** dans les 2 dossiers source. Classement S (au fil d
         ├─ Quadrant online × SaaS (Microsoft Foundry, AWS Strands, Datadog, AgentEvals)
         ├─ Le rôle des graders SDK fondeurs (OpenAI, Anthropic, Google ADK, AWS Strands, Microsoft Foundry)
         ├─ Étude Arena CAIS 2026 (modèle/prompt > framework)
-        └─ encadré [!INFO] Voir Ch. 18 — OTel GenAI
+        └─ encadré [!INFO] Voir Ch. 20 — OTel GenAI
 
 Récap chapitre — Construire et démolir simultanément
         ├─ [SVG R11] evaluation-10-playbook-gruyere.svg (réutilisé en récap)
@@ -817,7 +817,7 @@ Variété des `> [!TYPE]` Obsidian retenus :
 | --- | --- | --- |
 | `[!QUESTION]` | Ouverture chapitre | 1 |
 | `[!TLDR]` | Synthèse décideur 8 bullets | 1 |
-| `[!INFO]` | Renvois inter-chapitres (Ch.7, 18, 21) | 2 |
+| `[!INFO]` | Renvois inter-chapitres (Ch.7, 20, 23) | 2 |
 | `[!QUOTE]` | Anthropic outcome≠transcript + L'écart entre les deux courbes + Anthropic frameworks ne valent que ce que valent les eval tasks | 3 |
 | `[!IMPORTANT]` | Graduation evals + Contre-exemple ARC-AGI + L'éval interne datée bat tout | 3 |
 | `[!ATTENTION]` | Pass@k vs pass^k = choix produit | 1 |
@@ -825,22 +825,22 @@ Variété des `> [!TYPE]` Obsidian retenus :
 | `[!WARNING]` | Aucun vecteur n'est résolu par "Verified" + Trois pièges classiques clôture | 2 |
 | **Total** | | **14** |
 
-### Tâches restantes Ch.17
+### Tâches restantes Ch.19
 
-- [x] Rédiger le manuscrit `docs/livre/ch17-evaluation-benchmarks.md` (~10 700 mots)
-- [x] Audit des 17 schémas SVG des 2 dossiers source (16 absorbés + 1 réassigné Ch.18)
+- [x] Rédiger le manuscrit `docs/livre/ch19-evaluation-benchmarks.md` (~10 700 mots)
+- [x] Audit des 17 schémas SVG des 2 dossiers source (16 absorbés + 1 réassigné Ch.20)
 - [ ] Relecture Mathieu — passes critiques suggérées :
-  - **(a) Le basculement narratif §17.8** : le chapitre charnière repose sur la bascule construction → démolition autour de l'écart 78 %/26 %. Vérifier que la transition est lisible et que le double mouvement TLDR (8 bullets) reste fidèle au mouvement effectif du manuscrit.
-  - **(b) La frontière Ch.17 ↔ Ch.18** : §17.7.2, §17.17 mentionnent OTel GenAI comme fondation ; le déroulé 6 piliers + cognitive audit trail reste Ch.18. Vérifier qu'aucun bout d'observabilité ne fuite (notamment §17.16 coûts qui pourrait empiéter sur le monitoring production).
-  - **(c) La frontière Ch.17 ↔ Ch.21** : §17.16.2 cite le token cost trap (Klaus Hofenbitzer, 0,14 $ → 130 000 $/mois) en illustration. Vérifier que le chapitre ROI (Ch.21) ne refera pas cette illustration sous le même angle.
+  - **(a) Le basculement narratif §19.8** : le chapitre charnière repose sur la bascule construction → démolition autour de l'écart 78 %/26 %. Vérifier que la transition est lisible et que le double mouvement TLDR (8 bullets) reste fidèle au mouvement effectif du manuscrit.
+  - **(b) La frontière Ch.19 ↔ Ch.20** : §19.7.2, §19.17 mentionnent OTel GenAI comme fondation ; le déroulé 6 piliers + cognitive audit trail reste Ch.20. Vérifier qu'aucun bout d'observabilité ne fuite (notamment §19.16 coûts qui pourrait empiéter sur le monitoring production).
+  - **(c) La frontière Ch.19 ↔ Ch.23** : §19.16.2 cite le token cost trap (Klaus Hofenbitzer, 0,14 $ → 130 000 $/mois) en illustration. Vérifier que le chapitre ROI (Ch.23) ne refera pas cette illustration sous le même angle.
   - **(d) Le récap §Récap** : décision de réutiliser `playbook-gruyere.svg` (R11) comme schéma de récap, plutôt que de placer côte-à-côte le playbook + les 4 vecteurs (R12) en double page A3 facing. L'outline (annexe A.2) le listait comme `playbook gruyère 8 étapes / matrice 4 vecteurs en page facing`. Si l'édition print réclame le facing A3, le coût est nul (les deux schémas existent déjà tels quels).
-  - **(e) Le single-responsibility principle des juges §17.7.1** : c'est un angle original repris du dossier `evaluation-agentique` §6.0 (formule TestCase). Vérifier que la grammaire opérationnelle est restituée fidèlement et que le décideur peut s'en servir comme grille.
-  - **(f) Le contre-exemple ARC-AGI §17.11** : encadré [!IMPORTANT] qui sert de boussole méthodologique. Vérifier qu'il ne survend pas ARC (la barre humaine reste à 85 %, les modèles autour de 55 % début 2026).
+  - **(e) Le single-responsibility principle des juges §19.7.1** : c'est un angle original repris du dossier `evaluation-agentique` §6.0 (formule TestCase). Vérifier que la grammaire opérationnelle est restituée fidèlement et que le décideur peut s'en servir comme grille.
+  - **(f) Le contre-exemple ARC-AGI §19.11** : encadré [!IMPORTANT] qui sert de boussole méthodologique. Vérifier qu'il ne survend pas ARC (la barre humaine reste à 85 %, les modèles autour de 55 % début 2026).
 - [ ] Si validation : copier-coller la matière vers le futur format de sortie (print HTML / PDF) quand décidé
 
 ---
 
-## Chapitre 18 — Observabilité agentique et cognitive audit trail
+## Chapitre 20 — Observabilité agentique et cognitive audit trail
 
 > **Acte IV — Mesures et garde-fous · Gabarit standard 24 p · ~6 000 mots**
 > **Lecteur cible** : observability engineer, SRE, evaluation engineer, RSSI, DPO, sponsor IA.
@@ -852,12 +852,12 @@ Variété des `> [!TYPE]` Obsidian retenus :
 | --- | --- |
 | Audit schémas source (1 dossier) | ✅ fait — `observabilite-agents-ia/` (9 schémas, 8 absorbés tels quels — `00-exec-sum-a4.svg` en annexe) |
 | Plan détaillé | ✅ fait |
-| Manuscrit | ✅ **v1 livrée** — `docs/livre/ch18-observabilite-cognitive-audit-trail.md` (~6 000 mots, 13 encadrés, 7 schémas intégrés dont le bus d'observabilité réutilisé en récap chapitre) |
-| Schémas à créer | 0. R13 (six piliers télémétrie) couvert par `02-six-piliers-telemetrie.svg`. Le bus d'observabilité (`03-architecture-bus-observabilite.svg`) sert d'illustration §18.3 **et** de récap chapitre §18.9. |
-| Frontière Ch.18 ↔ Ch.17 | ✅ respectée — Ch.17 a posé la trajectoire comme objet d'évaluation **avant** déploiement ; Ch.18 traite la trajectoire comme objet de monitoring **en production**. Renvois explicites §18.1.2 et §18.7.1. |
-| Frontière Ch.18 ↔ Ch.10 | ✅ respectée — encadré §18.6.3 sur la couche `gen_ai.compaction.*` candidate au WG OTel GenAI (front actif fin 2026) ; renvoi explicite vers Ch. 10 sur le triangle fidélité × coût × oubliabilité. |
-| Frontière Ch.18 ↔ Ch.20 | ✅ respectée — encadré §18.8.3 sur les runtimes managés (AgentCore Observability, Vertex AE telemetry, Foundry tracing) OTel-compliant ; renvoi vers Ch.20 sur la portabilité. |
-| Frontière Ch.18 ↔ Ch.23 | ✅ respectée — §18.6 cognitive audit trail nomme AI Act art. 12-13-15 + RGPD art. 22 + DORA sans dérouler la grille générale (renvoi Ch.23). |
+| Manuscrit | ✅ **v1 livrée** — `docs/livre/ch20-observabilite-cognitive-audit-trail.md` (~6 000 mots, 13 encadrés, 7 schémas intégrés dont le bus d'observabilité réutilisé en récap chapitre) |
+| Schémas à créer | 0. R13 (six piliers télémétrie) couvert par `02-six-piliers-telemetrie.svg`. Le bus d'observabilité (`03-architecture-bus-observabilite.svg`) sert d'illustration §20.3 **et** de récap chapitre §20.9. |
+| Frontière Ch.20 ↔ Ch.19 | ✅ respectée — Ch.19 a posé la trajectoire comme objet d'évaluation **avant** déploiement ; Ch.20 traite la trajectoire comme objet de monitoring **en production**. Renvois explicites §20.1.2 et §20.7.1. |
+| Frontière Ch.20 ↔ Ch.10 | ✅ respectée — encadré §20.6.3 sur la couche `gen_ai.compaction.*` candidate au WG OTel GenAI (front actif fin 2026) ; renvoi explicite vers Ch. 10 sur le triangle fidélité × coût × oubliabilité. |
+| Frontière Ch.20 ↔ Ch.22 | ✅ respectée — encadré §20.8.3 sur les runtimes managés (AgentCore Observability, Vertex AE telemetry, Foundry tracing) OTel-compliant ; renvoi vers Ch.22 sur la portabilité. |
+| Frontière Ch.20 ↔ Ch.25 | ✅ respectée — §20.6 cognitive audit trail nomme AI Act art. 12-13-15 + RGPD art. 22 + DORA sans dérouler la grille générale (renvoi Ch.25). |
 
 ### Sources matérielles
 
@@ -866,19 +866,19 @@ Variété des `> [!TYPE]` Obsidian retenus :
   - [App interactive (.html)](../observabilite-agents-ia/20260430-observabilite-agents-ia-app.html)
   - 9 schémas SVG dans [`images/`](../observabilite-agents-ia/images/) (8 absorbés + 1 annexe exec-sum)
 
-### Audit des schémas — Ch.18
+### Audit des schémas — Ch.20
 
 | Fig | Slug | Catégorie | Statut |
 | --- | --- | --- | --- |
 | 00 | `00-exec-sum-a4.svg` | annexe rapport | non absorbé (annexe) |
-| 01 | `01-rupture-paradigmatique.svg` | **S §18.1** | tel quel — quatre paradigmes 2000-2026 |
-| 02 | `02-six-piliers-telemetrie.svg` | **S §18.2** (= R13 candidat) | tel quel — six piliers |
-| 03 | `03-architecture-bus-observabilite.svg` | **S §18.3** + récap §18.9 | tel quel — bus d'observabilité comme colonne vertébrale |
-| 04 | `04-anatomie-trace-otel-genai.svg` | **S §18.4.1** | tel quel — anatomie trace OTel |
-| 05 | `05-un-instrument-n-backends.svg` | **S §18.4.3** | tel quel — un instrument N backends |
-| 06 | `06-hierarchie-alertes-boucles.svg` | **S §18.5** | tel quel — 5 niveaux L0-L4 |
-| 07 | `07-quadrant-vendor-landscape.svg` | **S §18.8** | tel quel — quadrant incumbents × AI-native |
-| 08 | `08-echelle-maturite-observabilite.svg` | **S §18.7** | tel quel — 5 niveaux N1-N5 |
+| 01 | `01-rupture-paradigmatique.svg` | **S §20.1** | tel quel — quatre paradigmes 2000-2026 |
+| 02 | `02-six-piliers-telemetrie.svg` | **S §20.2** (= R13 candidat) | tel quel — six piliers |
+| 03 | `03-architecture-bus-observabilite.svg` | **S §20.3** + récap §20.9 | tel quel — bus d'observabilité comme colonne vertébrale |
+| 04 | `04-anatomie-trace-otel-genai.svg` | **S §20.4.1** | tel quel — anatomie trace OTel |
+| 05 | `05-un-instrument-n-backends.svg` | **S §20.4.3** | tel quel — un instrument N backends |
+| 06 | `06-hierarchie-alertes-boucles.svg` | **S §20.5** | tel quel — 5 niveaux L0-L4 |
+| 07 | `07-quadrant-vendor-landscape.svg` | **S §20.8** | tel quel — quadrant incumbents × AI-native |
+| 08 | `08-echelle-maturite-observabilite.svg` | **S §20.7** | tel quel — 5 niveaux N1-N5 |
 
 ### Encadrés prévus dans le chapitre
 
@@ -886,45 +886,45 @@ Variété des `> [!TYPE]` Obsidian retenus :
 | --- | --- | --- |
 | `[!QUESTION]` | Ouverture chapitre (caisse régionale + agent CRM dérivé) | 1 |
 | `[!TLDR]` | Synthèse décideur (7 bullets) | 1 |
-| `[!INFO]` | Renvois inter-chapitres (Ch.17, Ch.10/23, Ch.20) | 3 |
+| `[!INFO]` | Renvois inter-chapitres (Ch.19, Ch.10/23, Ch.22) | 3 |
 | `[!IMPORTANT]` | La valeur à la croisée + Cognitive audit ≠ logging classique | 2 |
 | `[!QUOTE]` | Anti-lock-in par OTel | 1 |
 | `[!ATTENTION]` | L'asymétrie L0/L4 | 1 |
 | `[!WARNING]` | Trois pièges classiques clôture | 1 |
 | **Total** | | **10** |
 
-### Tâches restantes Ch.18
+### Tâches restantes Ch.20
 
-- [x] Rédiger le manuscrit `docs/livre/ch18-observabilite-cognitive-audit-trail.md`
+- [x] Rédiger le manuscrit `docs/livre/ch20-observabilite-cognitive-audit-trail.md`
 - [x] Audit des 9 schémas du dossier source
 - [ ] Relecture Mathieu — passes critiques suggérées :
-  - **(a) Le palier N2 → N3 §18.7.1** : argument load-bearing — vérifier que la transition « définir qu'est-ce qu'une bonne réponse de façon mesurable » est lisible et qu'elle articule bien le travail de calibration LLM-as-judge déjà posé en Ch.17 §17.6.
-  - **(b) Le cognitive audit trail §18.6** : section opposable régulateur — vérifier que les 4 régulations citées (AI Act art. 12-13-15, RGPD art. 22, DORA) sont fidèles, et que la distinction logging classique vs cognitive audit ne survend pas (rétention pluri-annuelle, signature, droit d'accès).
-  - **(c) La frontière Ch.18 ↔ Ch.17** : §18.1.2 et §18.7.1 renvoient en arrière sur le travail de calibration. Vérifier qu'on ne refait pas la grille des juges du Ch.17, et qu'on ne sous-vend pas le fait que sans Ch.17 fait, le Ch.18 ne tient pas.
-  - **(d) L'architecture hybride §18.8.3** : argument de RDV sponsor — incumbents APM (Dynatrace/Datadog/Grafana) + AI-native (Langfuse/Braintrust) fédérés par OTel. Vérifier que la matrice de critères tient encore en avril 2026 (Datadog facturation per-LLM-span en particulier).
-  - **(e) La couche `gen_ai.compaction.*` §18.6.3** : front actif WG OTel — vérifier que la mention est mesurée (candidate, pas encore standard) et que le renvoi Ch.10 sur le triangle fidélité × coût × oubliabilité est cohérent.
+  - **(a) Le palier N2 → N3 §20.7.1** : argument structurel — vérifier que la transition « définir qu'est-ce qu'une bonne réponse de façon mesurable » est lisible et qu'elle articule bien le travail de calibration LLM-as-judge déjà posé en Ch.19 §19.6.
+  - **(b) Le cognitive audit trail §20.6** : section opposable régulateur — vérifier que les 4 régulations citées (AI Act art. 12-13-15, RGPD art. 22, DORA) sont fidèles, et que la distinction logging classique vs cognitive audit ne survend pas (rétention pluri-annuelle, signature, droit d'accès).
+  - **(c) La frontière Ch.20 ↔ Ch.19** : §20.1.2 et §20.7.1 renvoient en arrière sur le travail de calibration. Vérifier qu'on ne refait pas la grille des juges du Ch.19, et qu'on ne sous-vend pas le fait que sans Ch.19 fait, le Ch.20 ne tient pas.
+  - **(d) L'architecture hybride §20.8.3** : argument de RDV sponsor — incumbents APM (Dynatrace/Datadog/Grafana) + AI-native (Langfuse/Braintrust) fédérés par OTel. Vérifier que la matrice de critères tient encore en avril 2026 (Datadog facturation per-LLM-span en particulier).
+  - **(e) La couche `gen_ai.compaction.*` §20.6.3** : front actif WG OTel — vérifier que la mention est mesurée (candidate, pas encore standard) et que le renvoi Ch.10 sur le triangle fidélité × coût × oubliabilité est cohérent.
 - [ ] Si validation : copier-coller la matière vers le futur format de sortie (print HTML / PDF) quand décidé
 
 ---
 
-## Chapitre 19 — Garde-fous, jailbreaking et sécurité globale
+## Chapitre 21 — Garde-fous, jailbreaking et sécurité globale
 
 > **Acte IV — Mesures et garde-fous · Chapitre charnière 30 p · ~6 700 mots**
 > **Lecteur cible** : RSSI, AI Safety Lead, security engineer, red team, agent engineer, sponsor.
-> **Sortie lecteur** : situe l'asymétrie attaque/défense (90-99 % ASR open-weight, 50-90 % closed frontier, ~95 % défense max) ; lit la taxonomie 4 axes (access × optim/craft × single/multi-turn × modalité) ; identifie les huit familles d'attaques canoniques et les défenses qui marchent ; déploie l'architecture defense-in-depth à cinq couches (alignement / classifiers / spotlighting+system prompt / **isolation architecturale CaMeL+StruQ+Dual-LLM** / monitoring HITL) ; consomme la matrice d'efficacité layer × attaque ; instrumente le **threat model unifié à six surfaces** (modèle / prompt / mémoire / outil / protocole / surface utilisateur) avec owner et défense load-bearing ; tient les six règles security engineer 2026.
+> **Sortie lecteur** : situe l'asymétrie attaque/défense (90-99 % ASR open-weight, 50-90 % closed frontier, ~95 % défense max) ; lit la taxonomie 4 axes (access × optim/craft × single/multi-turn × modalité) ; identifie les huit familles d'attaques canoniques et les défenses qui marchent ; déploie l'architecture defense-in-depth à cinq couches (alignement / classifiers / spotlighting+system prompt / **isolation architecturale CaMeL+StruQ+Dual-LLM** / monitoring HITL) ; consomme la matrice d'efficacité layer × attaque ; instrumente le **threat model unifié à six surfaces** (modèle / prompt / mémoire / outil / protocole / surface utilisateur) avec owner et défense pivot ; tient les six règles security engineer 2026.
 
 ### Statut
 
 | Étape | Statut |
 | --- | --- |
-| Audit schémas source (1 dossier + couche 06 anatomie) | ✅ fait — `llm-jailbreaking/` (9 schémas tous absorbés) + anatomie LAYER 06 (textualisé dans §19.1 et §19.7) |
+| Audit schémas source (1 dossier + couche 06 anatomie) | ✅ fait — `llm-jailbreaking/` (9 schémas tous absorbés) + anatomie LAYER 06 (textualisé dans §21.1 et §21.7) |
 | Plan détaillé | ✅ fait |
-| Manuscrit | ✅ **v1 livrée** — `docs/livre/ch19-gardefous-securite-globale.md` (~6 700 mots, 12 encadrés, 8 schémas intégrés + tableau threat model 6 surfaces) |
-| Schémas à créer | 0 v1. **E4 (threat model unifié 2026)** textualisé via tableau §19.10 (6 surfaces × cible × vecteurs × défense load-bearing × owner) — schéma A3 facing optionnel pour édition print (coût ~3-5 j). Tous les autres absorbés tels quels du dossier source. |
-| Frontière Ch.19 ↔ Ch.10 | ✅ respectée — §19.5.3 renvoie explicitement Ch.10 sur memory poisoning à travers la compaction ; pas de redite. |
-| Frontière Ch.19 ↔ Ch.13 | ✅ respectée — §19.5.2 résume le tool poisoning MCP en renvoyant Ch.13 pour la matrice 10×10 ; pas de redite. |
-| Frontière Ch.19 ↔ Ch.15 | ✅ respectée — §19.5.5 résume VPI (CVE-2025-55322) en renvoyant Ch.15 pour computer-use ; pas de redite. |
-| Frontière Ch.19 ↔ Ch.16 / Ch.23 | ✅ respectée — §19.9.4 nomme les régulations (EU AI Act art. 15, NIST AI RMF, ISO/IEC 42001, OWASP Top 10 + Agentic Top 10) sans dérouler ; renvoi Ch.16 (banque tier 1) et Ch.23 (gouvernance générale). |
+| Manuscrit | ✅ **v1 livrée** — `docs/livre/ch21-gardefous-securite-globale.md` (~6 700 mots, 12 encadrés, 8 schémas intégrés + tableau threat model 6 surfaces) |
+| Schémas à créer | 0 v1. **E4 (threat model unifié 2026)** textualisé via tableau §21.10 (6 surfaces × cible × vecteurs × défense pivot × owner) — schéma A3 facing optionnel pour édition print (coût ~3-5 j). Tous les autres absorbés tels quels du dossier source. |
+| Frontière Ch.21 ↔ Ch.10 | ✅ respectée — §21.5.3 renvoie explicitement Ch.10 sur memory poisoning à travers la compaction ; pas de redite. |
+| Frontière Ch.21 ↔ Ch.16 | ✅ respectée — §21.5.2 résume le tool poisoning MCP en renvoyant Ch.16 pour la matrice 10×10 ; pas de redite. |
+| Frontière Ch.21 ↔ Ch.17 | ✅ respectée — §21.5.5 résume VPI (CVE-2025-55322) en renvoyant Ch.17 pour computer-use ; pas de redite. |
+| Frontière Ch.21 ↔ Ch.18 / Ch.25 | ✅ respectée — §21.9.4 nomme les régulations (EU AI Act art. 15, NIST AI RMF, ISO/IEC 42001, OWASP Top 10 + Agentic Top 10) sans dérouler ; renvoi Ch.18 (banque tier 1) et Ch.25 (gouvernance générale). |
 
 ### Sources matérielles
 
@@ -932,21 +932,21 @@ Variété des `> [!TYPE]` Obsidian retenus :
   - [Rapport complet (.md, ~13 000 mots — Field Manual)](../llm-jailbreaking/20260428-llm-jailbreaking-report-rapport.md)
   - [App interactive (.html)](../llm-jailbreaking/20260428-llm-jailbreaking-report-app.html)
   - 9 schémas SVG dans [`images/`](../llm-jailbreaking/images/)
-- **Dossier complémentaire textualisé** : `anatomie/livre-data.js` LAYER 06 (Guardrails, HITL & sécurité) — concepts mobilisés dans §19.1.1 (OWASP ASI), §19.7.4 (sandboxing), §19.7.5 (HITL `interrupt()`).
+- **Dossier complémentaire textualisé** : `anatomie/livre-data.js` LAYER 06 (Guardrails, HITL & sécurité) — concepts mobilisés dans §21.1.1 (OWASP ASI), §21.7.4 (sandboxing), §21.7.5 (HITL `interrupt()`).
 
-### Audit des schémas — Ch.19
+### Audit des schémas — Ch.21
 
 | Fig | Slug | Catégorie | Statut |
 | --- | --- | --- | --- |
-| 01 | `01-jailbreak-taxonomy.svg` | **S §19.2** | tel quel — taxonomie 4 axes |
-| 02 | `02-attack-defense-timeline.svg` | **S §19.3** | tel quel — timeline 2022-2026 |
-| 03 | `03-attack-mechanisms.svg` | **S §19.4** | tel quel — 4 attaques computationnelles |
-| 03b | `03b-attack-mechanisms-continued.svg` | **S §19.4** | tel quel — 4 attaques compositionnelles |
-| 04 | `04-agent-attack-surface.svg` | **S §19.5** | tel quel — 7 surfaces d'attaque agent |
-| 05 | `05-model-vulnerability-matrix.svg` | **S §19.6** | tel quel — matrice ASR × modèle × attaque |
-| 06 | `06-defense-layers.svg` | **S §19.7** (= R14 candidat) | tel quel — 5 couches defense-in-depth |
-| 07 | `07-defense-effectiveness.svg` | **S §19.8** | tel quel — matrice d'efficacité |
-| 08 | `08-production-architecture.svg` | **S §19.9** | tel quel — architecture production intégrée |
+| 01 | `01-jailbreak-taxonomy.svg` | **S §21.2** | tel quel — taxonomie 4 axes |
+| 02 | `02-attack-defense-timeline.svg` | **S §21.3** | tel quel — timeline 2022-2026 |
+| 03 | `03-attack-mechanisms.svg` | **S §21.4** | tel quel — 4 attaques computationnelles |
+| 03b | `03b-attack-mechanisms-continued.svg` | **S §21.4** | tel quel — 4 attaques compositionnelles |
+| 04 | `04-agent-attack-surface.svg` | **S §21.5** | tel quel — 7 surfaces d'attaque agent |
+| 05 | `05-model-vulnerability-matrix.svg` | **S §21.6** | tel quel — matrice ASR × modèle × attaque |
+| 06 | `06-defense-layers.svg` | **S §21.7** (= R14 candidat) | tel quel — 5 couches defense-in-depth |
+| 07 | `07-defense-effectiveness.svg` | **S §21.8** | tel quel — matrice d'efficacité |
+| 08 | `08-production-architecture.svg` | **S §21.9** | tel quel — architecture production intégrée |
 
 ### Encadrés prévus dans le chapitre
 
@@ -954,33 +954,33 @@ Variété des `> [!TYPE]` Obsidian retenus :
 | --- | --- | --- |
 | `[!QUESTION]` | Ouverture chapitre (48 % cyber vs 34 % contrôles) | 1 |
 | `[!TLDR]` | Synthèse décideur (7 bullets) | 1 |
-| `[!INFO]` | Renvois inter-chapitres (Ch.8/10/13, Ch.23/16) | 2 |
+| `[!INFO]` | Renvois inter-chapitres (Ch.8/10/13, Ch.25/16) | 2 |
 | `[!ATTENTION]` | La défense ne généralise pas entre familles + L'erreur récurrente confondre alignement et sécurité | 2 |
-| `[!IMPORTANT]` | Cinq patterns load-bearing | 1 |
+| `[!IMPORTANT]` | Cinq patterns pivots | 1 |
 | `[!WARNING]` | Trois pièges classiques clôture | 1 |
 | **Total** | | **8** |
 
-### Tâches restantes Ch.19
+### Tâches restantes Ch.21
 
-- [x] Rédiger le manuscrit `docs/livre/ch19-gardefous-securite-globale.md`
+- [x] Rédiger le manuscrit `docs/livre/ch21-gardefous-securite-globale.md`
 - [x] Audit des 9 schémas du dossier source + intégration couche 06 anatomie
-- [x] Construire la synthèse menaces 2026 §19.10 (tableau six surfaces × owner × défense load-bearing) **en lieu et place du schéma E4**
+- [x] Construire la synthèse menaces 2026 §21.10 (tableau six surfaces × owner × défense pivot) **en lieu et place du schéma E4**
 - [ ] Relecture Mathieu — passes critiques suggérées :
-  - **(a) Le tableau §19.10 six surfaces** : c'est l'angle propre du chapitre et l'objet transverse de l'Acte IV. Vérifier que les six surfaces (modèle, prompt, mémoire, outil, protocole, surface utilisateur) sont bien celles défendues, que les owners (provider modèle / agent engineer / platform engineer / DPO / RSSI / PM) sont fidèles, et que les défenses load-bearing nommées (Constitutional Classifiers v2, spotlighting+StruQ, provenance tagging+signed compactions, Sigstore+hash pinning+tool tagging, allowlist namespace, OCR+HITL) tiennent. **Décision éditoriale clé** : tableau plutôt que schéma A3 — schéma E4 optionnel pour édition print.
-  - **(b) La frontière Ch.19 ↔ Ch.10/13/15** : vérifier qu'aucune redite n'est passée. §19.5.2 (MCP), §19.5.3 (memory), §19.5.5 (computer use) sont des résumés courts qui renvoient. Si jamais c'est trop court pour un lecteur non-séquentiel, on pourra étoffer.
-  - **(c) Les cinq patterns load-bearing §19.10 encadré [!IMPORTANT]** : c'est le takeaway opératoire. Vérifier que (1) Constitutional Classifiers v2 + circuit breakers, (2) spotlighting+StruQ/SecAlign, (3) provenance tagging + signed compactions, (4) Sigstore + hash pinning + tool tagging + HITL writes, (5) HITL transparence sur destructrices — sont bien les cinq que Mathieu défend.
+  - **(a) Le tableau §21.10 six surfaces** : c'est l'angle propre du chapitre et l'objet transverse de l'Acte IV. Vérifier que les six surfaces (modèle, prompt, mémoire, outil, protocole, surface utilisateur) sont bien celles défendues, que les owners (provider modèle / agent engineer / platform engineer / DPO / RSSI / PM) sont fidèles, et que les défenses pivots nommées (Constitutional Classifiers v2, spotlighting+StruQ, provenance tagging+signed compactions, Sigstore+hash pinning+tool tagging, allowlist namespace, OCR+HITL) tiennent. **Décision éditoriale clé** : tableau plutôt que schéma A3 — schéma E4 optionnel pour édition print.
+  - **(b) La frontière Ch.21 ↔ Ch.10/13/15** : vérifier qu'aucune redite n'est passée. §21.5.2 (MCP), §21.5.3 (memory), §21.5.5 (computer use) sont des résumés courts qui renvoient. Si jamais c'est trop court pour un lecteur non-séquentiel, on pourra étoffer.
+  - **(c) Les cinq patterns pivots §21.10 encadré [!IMPORTANT]** : c'est le takeaway opératoire. Vérifier que (1) Constitutional Classifiers v2 + circuit breakers, (2) spotlighting+StruQ/SecAlign, (3) provenance tagging + signed compactions, (4) Sigstore + hash pinning + tool tagging + HITL writes, (5) HITL transparence sur destructrices — sont bien les cinq que Mathieu défend.
   - **(d) Le ton du chapitre** : chapitre charnière + 30 pages + sujet où le ton expert vs alarmiste compte. Vérifier en lecture continue qu'on reste sur le registre *« asymétrie managée »* et pas *« panique »* (cf. la phrase de clôture *« L'arms race n'est pas gagné ; il est managé »*).
-  - **(e) La règle 5 §19.12** : *« Modèle ↔ blast radius. DeepSeek-R1 OK pour code completion en sandbox isolé ; pas OK pour agent customer-facing. »* — vérifier que la nomination DeepSeek-R1 reste défendable au moment de la publication (Cisco/Penn/Qualys 2026 toujours fiables ?).
+  - **(e) La règle 5 §21.12** : *« Modèle ↔ blast radius. DeepSeek-R1 OK pour code completion en sandbox isolé ; pas OK pour agent customer-facing. »* — vérifier que la nomination DeepSeek-R1 reste défendable au moment de la publication (Cisco/Penn/Qualys 2026 toujours fiables ?).
 - [ ] Optionnel : produire **schéma E4 A3 facing** comme schéma signature de l'Acte IV (~3-5 j) si édition print l'exige
 - [ ] Si validation : copier-coller la matière vers le futur format de sortie (print HTML / PDF) quand décidé
 
 ---
 
-## Chapitre 20 — Runtime managé et déploiement
+## Chapitre 22 — Runtime managé et déploiement
 
 > **Acte IV — Mesures et garde-fous · Gabarit standard 22 p · ~6 200 mots**
 > **Lecteur cible** : platform engineer, cloud architect, SRE, FinOps, tech lead, sponsor.
-> **Sortie lecteur** : distingue les trois couches du stack agentique (ADK / Runtime / Services de plateforme) et nomme les trois sur chaque cas d'usage en ADR ; situe les six briques AgentCore (Memory / Identity / Gateway / Observability / Code Interpreter / Browser Tool) et leurs équivalents Vertex / Foundry / Claude Managed / OpenAI Agent Builder ; comprend pourquoi le pricing consumption-based (attente I/O gratuite) change l'économie des sessions longues d'un facteur 4-6 ; déploie code-first + protocoles ouverts (MCP, A2A, AG-UI) comme stratégie anti-lock-in ; tranche l'arbre de décision (managé vs self-hosted vs Lambda) selon les 5 questions de §20.9 ; négocie les 3 clauses de pricing avant signature (révision tarifaire, observabilité incluse, egress).
+> **Sortie lecteur** : distingue les trois couches du stack agentique (ADK / Runtime / Services de plateforme) et nomme les trois sur chaque cas d'usage en ADR ; situe les six briques AgentCore (Memory / Identity / Gateway / Observability / Code Interpreter / Browser Tool) et leurs équivalents Vertex / Foundry / Claude Managed / OpenAI Agent Builder ; comprend pourquoi le pricing consumption-based (attente I/O gratuite) change l'économie des sessions longues d'un facteur 4-6 ; déploie code-first + protocoles ouverts (MCP, A2A, AG-UI) comme stratégie anti-lock-in ; tranche l'arbre de décision (managé vs self-hosted vs Lambda) selon les 5 questions de §22.9 ; négocie les 3 clauses de pricing avant signature (révision tarifaire, observabilité incluse, egress).
 
 ### Statut
 
@@ -988,13 +988,13 @@ Variété des `> [!TYPE]` Obsidian retenus :
 | --- | --- |
 | Audit schémas source (3 dossiers) | ✅ fait — `orchestration-agentique/` (8 schémas, 2 absorbés directement) + `agent-sdk/` (9 schémas, 3 absorbés) + anatomie LAYER 08 (textualisé) |
 | Plan détaillé | ✅ fait |
-| Manuscrit | ✅ **v1 livrée** — `docs/livre/ch20-runtime-manage.md` (~6 200 mots, 9 encadrés, 5 schémas intégrés + 2 tableaux comparatifs hyperscalers) |
+| Manuscrit | ✅ **v1 livrée** — `docs/livre/ch22-runtime-manage.md` (~6 200 mots, 9 encadrés, 5 schémas intégrés + 2 tableaux comparatifs hyperscalers) |
 | Schémas à créer | 0. R15 (stack 3 couches ADK/runtime/plateforme) couvert par `orchestration-05-stack-trois-couches.svg`. Anatomie Claude Code couverte par `agent-sdk-02`. Gruyère sécurité 3 couches couvert par `agent-sdk-09`. |
-| Frontière Ch.20 ↔ Ch.11 | ✅ respectée — Ch.11 a posé les 4 régimes de contrôle + 8 patterns canoniques + arbre buy/build. Ch.20 fait le deep-dive runtime sans rejouer la grille buy/build globale. |
-| Frontière Ch.20 ↔ Ch.18 | ✅ respectée — §20.3.4 (Observability brique) renvoie Ch.18 pour la grille 6 piliers + cognitive audit trail ; pas de redite. |
-| Frontière Ch.20 ↔ Ch.19 | ✅ respectée — §20.6 (gruyère 3 couches runtime) renvoie Ch.19 §19.7 pour les 5 couches global defense-in-depth ; pas de redite. §20.6.4 RBAC côté infra renvoie Ch.19. |
-| Frontière Ch.20 ↔ Ch.10 / Ch.13 | ✅ respectée — §20.3.1 Memory renvoie Ch.9-10 ; §20.3.3 Gateway renvoie Ch.13 ; §20.3.5 Code Interpreter renvoie Ch.19 sandboxing. |
-| Frontière Ch.20 ↔ Ch.16 / Ch.23 | ✅ respectée — §20.9 Q5 compliance régulée renvoie Ch.16 (banque tier 1) et Ch.23 (gouvernance). |
+| Frontière Ch.22 ↔ Ch.11 | ✅ respectée — Ch.11 a posé les 4 régimes de contrôle + 8 patterns canoniques + arbre buy/build. Ch.22 fait le deep-dive runtime sans rejouer la grille buy/build globale. |
+| Frontière Ch.22 ↔ Ch.20 | ✅ respectée — §22.3.4 (Observability brique) renvoie Ch.20 pour la grille 6 piliers + cognitive audit trail ; pas de redite. |
+| Frontière Ch.22 ↔ Ch.21 | ✅ respectée — §22.6 (gruyère 3 couches runtime) renvoie Ch.21 §21.7 pour les 5 couches global defense-in-depth ; pas de redite. §22.6.4 RBAC côté infra renvoie Ch.21. |
+| Frontière Ch.22 ↔ Ch.10 / Ch.16 | ✅ respectée — §22.3.1 Memory renvoie Ch.9-10 ; §22.3.3 Gateway renvoie Ch.16 ; §22.3.5 Code Interpreter renvoie Ch.21 sandboxing. |
+| Frontière Ch.22 ↔ Ch.18 / Ch.25 | ✅ respectée — §22.9 Q5 compliance régulée renvoie Ch.18 (banque tier 1) et Ch.25 (gouvernance). |
 
 ### Sources matérielles
 
@@ -1004,9 +1004,9 @@ Variété des `> [!TYPE]` Obsidian retenus :
 - **Dossier principal 2** : [`agent-sdk/`](../agent-sdk/) — publié 18 mai 2026, §9 (production — local vs sandbox, sécurité multicouches) absorbé textuellement.
   - [Rapport complet (.md)](../agent-sdk/20260518-agent-sdk-rapport.md)
   - 9 schémas SVG dans [`images/`](../agent-sdk/images/)
-- **Dossier complémentaire textualisé** : `anatomie/livre-data.js` LAYER 08 (Runtime managé & déploiement) — concepts mobilisés dans §20.1, §20.4, §20.9.
+- **Dossier complémentaire textualisé** : `anatomie/livre-data.js` LAYER 08 (Runtime managé & déploiement) — concepts mobilisés dans §22.1, §22.4, §22.9.
 
-### Audit des schémas — Ch.20
+### Audit des schémas — Ch.22
 
 #### Du dossier `orchestration-agentique` (2 sur 8 absorbés)
 
@@ -1016,8 +1016,8 @@ Variété des `> [!TYPE]` Obsidian retenus :
 | 02 | `02-anatomie-boucle.svg` | non absorbé (déjà Ch.11) | — |
 | 03 | `03-spectre-controle.svg` | non absorbé (déjà Ch.11) | — |
 | 04 | `04-patterns-canoniques.svg` | non absorbé (déjà Ch.11) | — |
-| 05 | `05-stack-trois-couches.svg` | **S §20.2** (= R15 candidat) | tel quel — stack ADK/runtime/plateforme |
-| 06 | `06-cartographie-2026.svg` | **S §20.4** | tel quel — cartographie 2026 |
+| 05 | `05-stack-trois-couches.svg` | **S §22.2** (= R15 candidat) | tel quel — stack ADK/runtime/plateforme |
+| 06 | `06-cartographie-2026.svg` | **S §22.4** | tel quel — cartographie 2026 |
 | 07 | `07-problemes-prod.svg` | non absorbé (déjà Ch.11 §11.7) | — |
 | 08 | `08-arbre-decision.svg` | non absorbé (déjà Ch.11 §11.8) | — |
 
@@ -1027,14 +1027,14 @@ Variété des `> [!TYPE]` Obsidian retenus :
 | --- | --- | --- | --- |
 | 00 | `00-exec-sum-a4.svg` | annexe rapport | non absorbé |
 | 01 | `01-evolution-agents.svg` | non absorbé (déjà Ch.7) | — |
-| 02 | `02-anatomie-claude-code.svg` | **S §20.3** | tel quel — 9 satellites autour du modèle |
+| 02 | `02-anatomie-claude-code.svg` | **S §22.3** | tel quel — 9 satellites autour du modèle |
 | 03 | `03-cc-vs-sdk.svg` | non absorbé (déjà Ch.7/11) | — |
-| 04 | `04-trois-voies.svg` | **S §20.5** | tel quel — trois voies effort × contrôle |
+| 04 | `04-trois-voies.svg` | **S §22.5** | tel quel — trois voies effort × contrôle |
 | 05 | `05-pokeapi-variantes.svg` | non absorbé | — |
 | 06 | `06-bash-funnel.svg` | non absorbé | — |
 | 07 | `07-matrice-tools-bash-codegen.svg` | non absorbé (déjà Ch.7/8) | — |
 | 08 | `08-agent-loop.svg` | non absorbé (déjà Ch.7) | — |
-| 09 | `09-securite-couches.svg` | **S §20.6** | tel quel — gruyère 3 couches |
+| 09 | `09-securite-couches.svg` | **S §22.6** | tel quel — gruyère 3 couches |
 
 ### Encadrés prévus dans le chapitre
 
@@ -1042,25 +1042,25 @@ Variété des `> [!TYPE]` Obsidian retenus :
 | --- | --- | --- |
 | `[!QUESTION]` | Ouverture chapitre (microVM 8 h, multi-agents A2A, facturation) | 1 |
 | `[!TLDR]` | Synthèse décideur (6 bullets) | 1 |
-| `[!INFO]` | Renvois inter-chapitres (Ch.5/11, Ch.18/19/9-10, Ch.12/11) | 3 |
+| `[!INFO]` | Renvois inter-chapitres (Ch.5/11, Ch.20/19/9-10, Ch.15/11) | 3 |
 | `[!IMPORTANT]` | La confusion qui coûte cher (3 couches dans ADR) | 1 |
 | `[!ATTENTION]` | L'erreur récurrente confondre alignement et sécurité runtime | 1 |
 | `[!WARNING]` | Le coût caché — attente I/O qui devient compute + Trois pièges clôture | 2 |
 | `[!EXAMPLE]` | La voie courte 80 % projets internes (5 semaines) | 1 |
 | **Total** | | **10** |
 
-### Tâches restantes Ch.20
+### Tâches restantes Ch.22
 
-- [x] Rédiger le manuscrit `docs/livre/ch20-runtime-manage.md`
+- [x] Rédiger le manuscrit `docs/livre/ch22-runtime-manage.md`
 - [x] Audit des 17 schémas des 2 dossiers source + intégration couche 08 anatomie
-- [x] Construire les 2 tableaux comparatifs hyperscalers (§20.4.6 critères × 5 vendors, §20.8.3 sweet spot anti-lock-in × 4 choix)
+- [x] Construire les 2 tableaux comparatifs hyperscalers (§22.4.6 critères × 5 vendors, §22.8.3 sweet spot anti-lock-in × 4 choix)
 - [ ] Relecture Mathieu — passes critiques suggérées :
-  - **(a) Le tableau §20.4.6 critères × 5 vendors** : c'est le tableau de décision sponsor. Vérifier que les 11 critères (date GA, modèle principal, modularité, pricing, session max, ADK, A2A, MCP, OTel, lock-in factor) tiennent en avril 2026, et que les jugements (*« haut »*/*« moyen »*/*« bas »* sur lock-in) sont défendables. AgentCore = bas-moyen, Vertex = moyen, Foundry = moyen-haut, Claude Managed = moyen, OpenAI = haut.
-  - **(b) Les six briques §20.3** : argument structurant — Memory, Identity, Gateway, Observability, Code Interpreter, Browser Tool. Vérifier que ce découpage est lisible et que les renvois (Ch.9-10 Memory, Ch.19 Identity + Gateway + sandbox, Ch.18 Observability, Ch.15 Browser) sont exhaustifs.
-  - **(c) Le pricing consumption-based §20.7** : section où la nuance compte (attente I/O gratuite vs *« thinking »* coûteux, code interpreter facturé peak vs moyenne, egress data). Vérifier que les 3 clauses de signature (révision, observabilité incluse, egress) sont actionnables sur un RFP réel.
-  - **(d) Le sweet spot anti-lock-in §20.8.3** : argument fort — ADK ouvert (LangGraph) + runtime managé hyperscaler + MCP/A2A/AG-UI. Vérifier que ce sweet spot tient bien comme recommandation par défaut, et que la ligne 3 (full self-hosted + open-source Memory + OAuth maison) n'est pas dépréciée injustement.
-  - **(e) Frontière Ch.20 ↔ Ch.11** : Ch.11 a déjà introduit ADK/runtime/plateforme et l'arbre buy/build. Vérifier qu'on ne redéploie pas la même grille mais bien le deep-dive runtime. Si jugé trop redondant, on peut faire des coupes ciblées sur §20.1-20.2 et renvoyer plus court.
-  - **(f) Le chemin de productionisation §20.5** : *« 5 semaines au lieu de 5 mois »* — argument fort, à protéger. Vérifier que le `[!EXAMPLE]` n'oversimplifie pas pour un sponsor qui réclamerait une garantie.
+  - **(a) Le tableau §22.4.6 critères × 5 vendors** : c'est le tableau de décision sponsor. Vérifier que les 11 critères (date GA, modèle principal, modularité, pricing, session max, ADK, A2A, MCP, OTel, lock-in factor) tiennent en avril 2026, et que les jugements (*« haut »*/*« moyen »*/*« bas »* sur lock-in) sont défendables. AgentCore = bas-moyen, Vertex = moyen, Foundry = moyen-haut, Claude Managed = moyen, OpenAI = haut.
+  - **(b) Les six briques §22.3** : argument structurant — Memory, Identity, Gateway, Observability, Code Interpreter, Browser Tool. Vérifier que ce découpage est lisible et que les renvois (Ch.9-10 Memory, Ch.21 Identity + Gateway + sandbox, Ch.20 Observability, Ch.17 Browser) sont exhaustifs.
+  - **(c) Le pricing consumption-based §22.7** : section où la nuance compte (attente I/O gratuite vs *« thinking »* coûteux, code interpreter facturé peak vs moyenne, egress data). Vérifier que les 3 clauses de signature (révision, observabilité incluse, egress) sont actionnables sur un RFP réel.
+  - **(d) Le sweet spot anti-lock-in §22.8.3** : argument fort — ADK ouvert (LangGraph) + runtime managé hyperscaler + MCP/A2A/AG-UI. Vérifier que ce sweet spot tient bien comme recommandation par défaut, et que la ligne 3 (full self-hosted + open-source Memory + OAuth maison) n'est pas dépréciée injustement.
+  - **(e) Frontière Ch.22 ↔ Ch.11** : Ch.11 a déjà introduit ADK/runtime/plateforme et l'arbre buy/build. Vérifier qu'on ne redéploie pas la même grille mais bien le deep-dive runtime. Si jugé trop redondant, on peut faire des coupes ciblées sur §22.1-20.2 et renvoyer plus court.
+  - **(f) Le chemin de productionisation §22.5** : *« 5 semaines au lieu de 5 mois »* — argument fort, à protéger. Vérifier que le `[!EXAMPLE]` n'oversimplifie pas pour un sponsor qui réclamerait une garantie.
 - [ ] Si validation : copier-coller la matière vers le futur format de sortie (print HTML / PDF) quand décidé
 
 ---
@@ -1079,7 +1079,7 @@ Variété des `> [!TYPE]` Obsidian retenus :
 | Plan détaillé | ✅ fait |
 | Manuscrit | ✅ **v1 livrée** — `docs/livre/ch09-memoire-agentique.md` (≈ 6 200 mots, 13 encadrés, 8 schémas intégrés) |
 | Schémas à créer | 0 v1 (R2 « 4 piliers × 6 opérations × 5 architectures » traité par **réutilisation tel quel** de `taxonomie-piliers.svg` en récap ; matrice prod 5 architectures déjà rendue par tableau markdown § 9.4. La fusion R2 « grille 4 piliers × 5 archi × 6 op » de l'outline annexe A.2 n'est pas livrée v1 — si édition print l'exige, fusion `taxonomie-piliers` + `frameworks-matrice` + `cycle-de-vie` en un seul triptyque, coût ~3-4 j SVG) |
-| Renvois inter-chapitres | ✅ Ch. 7 (boucle / 7 couches harness, couche mémoire = n°5), Ch. 10 (compaction = sous-pilier travail / scratchpad), Ch. 18 (observabilité, futurs attributs `gen_ai.memory.*` WG GenAI), Ch. 19 (threat model E4 — verticale mémoire), Ch. 23 (gouvernance RGPD/AI Act, machine unlearning) |
+| Renvois inter-chapitres | ✅ Ch. 7 (boucle / 7 couches harness, couche mémoire = n°5), Ch. 10 (compaction = sous-pilier travail / scratchpad), Ch. 20 (observabilité, futurs attributs `gen_ai.memory.*` WG GenAI), Ch. 21 (threat model E4 — verticale mémoire), Ch. 25 (gouvernance RGPD/AI Act, machine unlearning) |
 
 ### Sources matérielles
 
@@ -1102,7 +1102,7 @@ Au total, **9 schémas SVG** dans le dossier source (1 `exec-sum-a4` + 8 schéma
 | 04 | [`frameworks-matrice`](../memoire-agentique/images/20260430-04-frameworks-matrice.svg) | ![](../memoire-agentique/images/20260430-04-frameworks-matrice.svg) | **S §9.4** | tel quel — matrice 5 frameworks ; complété par tableau markdown récap (force/limite) en bas de §9.4 |
 | 05 | [`context-engineering`](../memoire-agentique/images/20260430-05-context-engineering.svg) | ![](../memoire-agentique/images/20260430-05-context-engineering.svg) | **S §9.5** | tel quel — grille Lance Martin Write/Select/Compress/Isolate |
 | 06 | [`vendors-comparison`](../memoire-agentique/images/20260430-06-vendors-comparison.svg) | ![](../memoire-agentique/images/20260430-06-vendors-comparison.svg) | **S §9.6** | tel quel — OpenAI/Anthropic/Google ; complété par tableau markdown des 5 dimensions |
-| 07 | [`surface-attaque`](../memoire-agentique/images/20260430-07-surface-attaque.svg) | ![](../memoire-agentique/images/20260430-07-surface-attaque.svg) | **S §9.7.1** | tel quel — cycle 5 étapes + cas SpAIware/Delayed Tool/ShadowLeak + 4 couches mitigation. Source clé pour le futur E4 du Ch.19. |
+| 07 | [`surface-attaque`](../memoire-agentique/images/20260430-07-surface-attaque.svg) | ![](../memoire-agentique/images/20260430-07-surface-attaque.svg) | **S §9.7.1** | tel quel — cycle 5 étapes + cas SpAIware/Delayed Tool/ShadowLeak + 4 couches mitigation. Source clé pour le futur E4 du Ch.21. |
 | 08 | [`roadmap`](../memoire-agentique/images/20260430-08-roadmap.svg) | ![](../memoire-agentique/images/20260430-08-roadmap.svg) | **S §9.8** | tel quel — 3 horizons × 3 pistes (architecture / gouvernance / adoption) |
 
 **Bilan audit Ch.9** : 8/8 schémas narratifs absorbés (taux d'absorption maximal avec Ch.11). 0 schéma écarté pour redondance, 0 schéma à fixer, 0 schéma réassigné à un autre chapitre. C'est l'audit le plus propre du livre — signe que le dossier source était structuré dès l'origine comme un seul chapitre, sans dispersion.
@@ -1114,8 +1114,8 @@ Au total, **9 schémas SVG** dans le dossier source (1 `exec-sum-a4` + 8 schéma
 | Sujet | Couvert où ? | Décision Ch.9 |
 | --- | --- | --- |
 | **Mémoire de travail / scratchpad → compaction** | Posée en Ch.9 §9.2.1 comme pilier ; approfondie en Ch.10 (compaction = première politique d'éviction active de ce pilier) | Définition canonique du pilier = §9.2.1 (4 lignes) ; la mécanique compaction (5 familles, triangle non-dégénéré) reste au Ch.10. Renvoi `[!INFO] Voir Ch. 10`. |
-| **Surface d'attaque mémoire** | Posée en Ch.9 §9.7 comme verticale ; agrégée en Ch.19 dans le threat model E4 unifié 2026 (modèle / prompt / mémoire / outil / protocole / surface) | Ch.9 décrit le cycle d'attaque mémoire + 4 couches de mitigation. Le Ch.19 ré-agrège avec les 5 autres verticales. Pas de doublon, deux profondeurs. |
-| **RGPD art. 17 + machine unlearning** | Effleuré en Ch.9 §9.7.3 (deux régimes opérationnel/paramétrique) ; déroulé en Ch.23 (calendrier 2026-2027, sous-puits unlearning, rôle DPO/RSSI/Sponsor) | Ch.9 pose la distinction des deux régimes (3-4 phrases). Le détail réglementaire reste Ch.23. Renvoi `[!INFO] Voir Ch. 23`. |
+| **Surface d'attaque mémoire** | Posée en Ch.9 §9.7 comme verticale ; agrégée en Ch.21 dans le threat model E4 unifié 2026 (modèle / prompt / mémoire / outil / protocole / surface) | Ch.9 décrit le cycle d'attaque mémoire + 4 couches de mitigation. Le Ch.21 ré-agrège avec les 5 autres verticales. Pas de doublon, deux profondeurs. |
+| **RGPD art. 17 + machine unlearning** | Effleuré en Ch.9 §9.7.3 (deux régimes opérationnel/paramétrique) ; déroulé en Ch.25 (calendrier 2026-2027, sous-puits unlearning, rôle DPO/RSSI/Sponsor) | Ch.9 pose la distinction des deux régimes (3-4 phrases). Le détail réglementaire reste Ch.25. Renvoi `[!INFO] Voir Ch. 25`. |
 
 **Cohérence avec la frontière posée par Ch.10** (`docs/livre/ch10-compaction.md` §10.1) : le Ch.10 ouvre par *« Le chapitre précédent a posé la grille des quatre piliers de la mémoire agentique… »*. Le Ch.9 §9.2 pose effectivement cette grille (4 piliers CoALA). Le Ch.10 §10.1 renvoie vers *« Ch. 9 §3-§5 »* pour les piliers long-terme et architectures de production — dans le numérotage Ch.9 livré (§9.3 = 6 opérations, §9.4 = 5 architectures, §9.5 = context engineering), la correspondance fonctionne. Aucune édition rétro-active du Ch.10 nécessaire.
 
@@ -1185,17 +1185,17 @@ Au total, **9 schémas SVG** dans le dossier source (1 `exec-sum-a4` + 8 schéma
        ├─ §9.7.1 SpAIware, Delayed Tool, ShadowLeak (Rehberger)
        │   └─ encadré [!WARNING] Cycle d'attaque en 5 étapes
        ├─ §9.7.2 Mitigations à 4 niveaux
-       │   └─ encadré [!INFO] Voir Ch. 19 (threat model E4)
+       │   └─ encadré [!INFO] Voir Ch. 21 (threat model E4)
        └─ §9.7.3 RGPD, AI Act et le machine unlearning
            ├─ encadré [!IMPORTANT] Gouvernance tactique en 3 actions
-           └─ encadré [!INFO] Voir Ch. 23 (gouvernance)
+           └─ encadré [!INFO] Voir Ch. 25 (gouvernance)
 
 §9.8   Feuille de route 6/12/18 mois
        ├─ [SVG S] roadmap.svg
        ├─ §9.8.1 0–6 mois : auditer, prototyper, gouverner
        ├─ §9.8.2 6–12 mois : industrialiser, mesurer
        ├─ §9.8.3 12–18 mois : autonomiser, partenariser
-       └─ encadré [!INFO] Voir Ch. 18 (observabilité, `gen_ai.memory.*`)
+       └─ encadré [!INFO] Voir Ch. 20 (observabilité, `gen_ai.memory.*`)
 
 Récap chapitre — La grille des quatre piliers
        └─ [SVG R2] taxonomie-piliers.svg (réutilisé en récap)
@@ -1215,7 +1215,7 @@ Variété des `> [!TYPE]` Obsidian retenus :
 | --- | --- | --- |
 | `[!QUESTION]` | Ouverture chapitre | 1 |
 | `[!TLDR]` | Synthèse décideur 6 bullets | 1 |
-| `[!INFO]` | Renvois inter-chapitres (Ch.7, 10, 18, 19, 23) | 5 |
+| `[!INFO]` | Renvois inter-chapitres (Ch.7, 10, 20, 21, 25) | 5 |
 | `[!NOTE]` | La grille n'est pas un découpage physique | 1 |
 | `[!IMPORTANT]` | Triage cognitif IMA + Gouvernance tactique en 3 actions | 2 |
 | `[!ATTENTION]` | Aucune dominante en 2026 | 1 |
@@ -1229,8 +1229,8 @@ Variété des `> [!TYPE]` Obsidian retenus :
 - [x] Audit des 9 schémas SVG du dossier source (8/8 narratifs absorbés)
 - [ ] Relecture Mathieu — passes critiques suggérées :
   - **(a) La frontière Ch.9 ↔ Ch.10** : vérifier que §9.2.1 (mémoire de travail) reste bref et renvoie correctement vers Ch.10 pour la mécanique compaction ; que §9.3.5 (compression) ne refait pas la taxonomie des 5 familles. Statut v1 : 4 lignes pour §9.2.1, 3 lignes pour §9.3.5, renvois explicites.
-  - **(b) La frontière Ch.9 ↔ Ch.19** : vérifier que §9.7 décrit la verticale mémoire sans empiéter sur la matrice E4 transverse (Ch.19). Statut v1 : §9.7 traite cycle d'attaque + 4 niveaux mitigation + RGPD ; renvoi unique `[!INFO]` vers Ch.19 pour le threat model agrégé.
-  - **(c) La frontière Ch.9 ↔ Ch.23** : vérifier que §9.7.3 (RGPD/AI Act/unlearning) reste à 3-4 phrases + 1 encadré + renvoi vers Ch.23 pour le calendrier complet. Statut v1 : OK, §9.7.3 fait ~12 lignes total.
+  - **(b) La frontière Ch.9 ↔ Ch.21** : vérifier que §9.7 décrit la verticale mémoire sans empiéter sur la matrice E4 transverse (Ch.21). Statut v1 : §9.7 traite cycle d'attaque + 4 niveaux mitigation + RGPD ; renvoi unique `[!INFO]` vers Ch.21 pour le threat model agrégé.
+  - **(c) La frontière Ch.9 ↔ Ch.25** : vérifier que §9.7.3 (RGPD/AI Act/unlearning) reste à 3-4 phrases + 1 encadré + renvoi vers Ch.25 pour le calendrier complet. Statut v1 : OK, §9.7.3 fait ~12 lignes total.
   - **(d) Le récap §Récap** : décider si la réutilisation de `taxonomie-piliers.svg` suffit, ou si on commande la fusion R2 (4 piliers × 6 op × 5 archi en un seul triptyque). Statut v1 : réutilisation tel quel, la grille des 4 piliers est ce qu'on veut graver dans la tête du lecteur.
   - **(e) Le triage cognitif (IMA) §9.3** : c'est un angle original IMA qui mérite vérification éditoriale (citation correcte du livre blanc, ne pas surcharger l'encadré).
 - [ ] Si validation : copier-coller la matière vers le futur format de sortie (print HTML / PDF) quand décidé
@@ -1251,7 +1251,7 @@ Variété des `> [!TYPE]` Obsidian retenus :
 | Plan détaillé | ✅ fait |
 | Manuscrit | ✅ **v1 livrée** — `docs/livre/ch07-boucle-agentique.md` (≈ 9 800 mots, 12 encadrés, 8 schémas intégrés) |
 | Schémas à créer | 0 v1 (R1 « boucle ReAct + 3 variantes » traité par **superposition** des 4 schémas source ; à refaire en fusion lourde si édition print) |
-| Renvois inter-chapitres | ✅ Ch. 1 (cœur stochastique), Ch. 9 (mémoire), Ch. 10 (compaction), Ch. 11 (orchestration multi-agent), Ch. 13 (MCP sécurité), Ch. 18 (observabilité), Ch. 19 (threat model E4), Ch. 20 (runtime managé), Ch. 21 (ROI) |
+| Renvois inter-chapitres | ✅ Ch. 1 (cœur stochastique), Ch. 9 (mémoire), Ch. 10 (compaction), Ch. 11 (orchestration multi-agent), Ch. 16 (MCP sécurité), Ch. 20 (observabilité), Ch. 21 (threat model E4), Ch. 22 (runtime managé), Ch. 23 (ROI) |
 
 ### Sources matérielles
 
@@ -1280,11 +1280,11 @@ Au total, **29 schémas SVG** dans les 4 dossiers source. Classement S (au fil d
 | 01 | [`anatomie-harness`](../harness-agentique/images/20260429-01-anatomie-harness.svg) | ![](../harness-agentique/images/20260429-01-anatomie-harness.svg) | **S §7.2 + Récap §7** | tel quel — schéma signature du chapitre, utilisé **2×** (S §7.2 + récap) |
 | 01b | [`architecture-systeme`](../harness-agentique/images/20260429-01b-architecture-systeme.svg) | ![](../harness-agentique/images/20260429-01b-architecture-systeme.svg) | **S §7.2.3** | tel quel — 4 zones + bus observabilité, complète anatomie-harness |
 | 02 | [`boucle-gan`](../harness-agentique/images/20260429-02-boucle-gan.svg) | ![](../harness-agentique/images/20260429-02-boucle-gan.svg) | **S §7.4** | tel quel — planner/generator/evaluator |
-| 03 | [`trois-couches`](../harness-agentique/images/20260429-03-trois-couches.svg) | ![](../harness-agentique/images/20260429-03-trois-couches.svg) | **Ch.20** (runtime managé) | renvoi Ch.20 — la cartographie API/SDK/Managed appartient au chapitre runtime |
-| 04 | [`secteurs-maturite`](../harness-agentique/images/20260429-04-secteurs-maturite.svg) | ![](../harness-agentique/images/20260429-04-secteurs-maturite.svg) | **Ch.21** (ROI) | renvoi Ch.21 — matrice secteurs × maturité |
+| 03 | [`trois-couches`](../harness-agentique/images/20260429-03-trois-couches.svg) | ![](../harness-agentique/images/20260429-03-trois-couches.svg) | **Ch.22** (runtime managé) | renvoi Ch.22 — la cartographie API/SDK/Managed appartient au chapitre runtime |
+| 04 | [`secteurs-maturite`](../harness-agentique/images/20260429-04-secteurs-maturite.svg) | ![](../harness-agentique/images/20260429-04-secteurs-maturite.svg) | **Ch.23** (ROI) | renvoi Ch.23 — matrice secteurs × maturité |
 | 05 | [`effort-developpement`](../harness-agentique/images/20260429-05-effort-developpement.svg) | ![](../harness-agentique/images/20260429-05-effort-developpement.svg) | **S §7.11** | tel quel — trois trajectoires POC / mid / multi-agent |
-| 06 | [`observabilite-piliers`](../harness-agentique/images/20260429-06-observabilite-piliers.svg) | ![](../harness-agentique/images/20260429-06-observabilite-piliers.svg) | **S §7.7** | tel quel — 6 piliers (renvoi Ch.18 pour détail) |
-| 07 | [`trajectoire`](../harness-agentique/images/20260429-07-trajectoire.svg) | ![](../harness-agentique/images/20260429-07-trajectoire.svg) | **Ch.20** (horizon runtime) | renvoi Ch.20 |
+| 06 | [`observabilite-piliers`](../harness-agentique/images/20260429-06-observabilite-piliers.svg) | ![](../harness-agentique/images/20260429-06-observabilite-piliers.svg) | **S §7.7** | tel quel — 6 piliers (renvoi Ch.20 pour détail) |
+| 07 | [`trajectoire`](../harness-agentique/images/20260429-07-trajectoire.svg) | ![](../harness-agentique/images/20260429-07-trajectoire.svg) | **Ch.22** (horizon runtime) | renvoi Ch.22 |
 
 #### Schémas du dossier `agent-sdk/` (11, dont 3 ref)
 
@@ -1301,7 +1301,7 @@ Au total, **29 schémas SVG** dans les 4 dossiers source. Classement S (au fil d
 | 08 | [`agent-loop`](../agent-sdk/images/20260518-08-agent-loop.svg) | ![](../agent-sdk/images/20260518-08-agent-loop.svg) | candidat **S §7.3** | non retenu v1 — la formulation TAOR + variante GAN suffit textuellement ; à réintégrer si édition print veut un schéma boucle dédié |
 | 09 | [`securite-couches`](../agent-sdk/images/20260518-09-securite-couches.svg) | ![](../agent-sdk/images/20260518-09-securite-couches.svg) | **S §7.8** | tel quel — gruyère 3 couches |
 | ref-1 | [`ref-coding-agents-anatomie`](../agent-sdk/images/ref-coding-agents-anatomie.svg) | (copie de coding-agents-02) | — | source originale en coding-agents/ |
-| ref-2 | [`ref-gruyere-suisse`](../agent-sdk/images/ref-gruyere-suisse.svg) | (parallèle évaluation) | **Ch.17** (gruyère évaluation) | renvoi Ch.17 — c'est la fig signature playbook eval 8 étapes |
+| ref-2 | [`ref-gruyere-suisse`](../agent-sdk/images/ref-gruyere-suisse.svg) | (parallèle évaluation) | **Ch.19** (gruyère évaluation) | renvoi Ch.19 — c'est la fig signature playbook eval 8 étapes |
 | ref-3 | [`ref-harness-7-couches`](../agent-sdk/images/ref-harness-7-couches.svg) | (copie de harness-01) | — | source originale en harness-agentique/ |
 
 #### Schémas du dossier `coding-agents/` (9)
@@ -1314,8 +1314,8 @@ Au total, **29 schémas SVG** dans les 4 dossiers source. Classement S (au fil d
 | 03 | [`cycle-skill`](../coding-agents/images/20260512-03-cycle-skill.svg) | ![](../coding-agents/images/20260512-03-cycle-skill.svg) | candidat §7.6.1 | non retenu v1 — descriptions textuelles des skills suffisent ; à réintroduire en print si nécessaire |
 | 04 | [`comparatif`](../coding-agents/images/20260512-04-comparatif.svg) | ![](../coding-agents/images/20260512-04-comparatif.svg) | écarté Ch.7 (comparatif produits trop coding-spé) | gardé en ligne |
 | 05 | [`pyramide`](../coding-agents/images/20260512-05-pyramide.svg) | ![](../coding-agents/images/20260512-05-pyramide.svg) | **S §7.9** | tel quel — schéma signature de §7.9 |
-| 06 | [`gains`](../coding-agents/images/20260512-06-gains.svg) | ![](../coding-agents/images/20260512-06-gains.svg) | **Ch.21** (ROI/gains) | renvoi Ch.21 |
-| 07 | [`couts`](../coding-agents/images/20260512-07-couts.svg) | ![](../coding-agents/images/20260512-07-couts.svg) | **Ch.21** (ROI/coûts) | renvoi Ch.21 |
+| 06 | [`gains`](../coding-agents/images/20260512-06-gains.svg) | ![](../coding-agents/images/20260512-06-gains.svg) | **Ch.23** (ROI/gains) | renvoi Ch.23 |
+| 07 | [`couts`](../coding-agents/images/20260512-07-couts.svg) | ![](../coding-agents/images/20260512-07-couts.svg) | **Ch.23** (ROI/coûts) | renvoi Ch.23 |
 | 08 | [`carte-decision`](../coding-agents/images/20260512-08-carte-decision.svg) | ![](../coding-agents/images/20260512-08-carte-decision.svg) | écarté Ch.7 (matrice tabulaire §7.10.5 suffit) | gardé en ligne |
 
 #### Schémas du dossier `anatomie/` (méta)
@@ -1393,12 +1393,12 @@ Les anneaux concentriques de `livre.html` (rendus par `livre-render.js` à parti
 
 §7.7  Observabilité — six piliers, et pourquoi l'APM est aveugle
       ├─ [SVG S] harness-06-observabilite-piliers.svg
-      └─ encadré [!INFO] Voir Ch.18 (observabilité agentique)
+      └─ encadré [!INFO] Voir Ch.20 (observabilité agentique)
 
 §7.8  Gouvernance — gruyère suisse, sandbox, RBAC
       ├─ [SVG S] sdk-09-securite-couches.svg
       ├─ encadré [!WARNING] Piège classique de la couche outils (execute_sql + injection)
-      └─ encadré [!INFO] Voir Ch.13 et Ch.19 (sécurité MCP + threat model E4)
+      └─ encadré [!INFO] Voir Ch.16 et Ch.21 (sécurité MCP + threat model E4)
 
 §7.9  La pyramide d'adoption — qui s'en sert pour quoi
       ├─ [SVG S] coding-05-pyramide.svg
@@ -1411,13 +1411,13 @@ Les anneaux concentriques de `livre.html` (rendus par `livre-render.js` à parti
       ├─ §7.10.3 Claude Code comme plateforme d'extension
       ├─ §7.10.4 Managed Agents
       ├─ §7.10.5 Matrice transverse (8 cas d'usage × voie × mix × surveillance)
-      └─ encadré [!INFO] Voir Ch.20 (runtime managé)
+      └─ encadré [!INFO] Voir Ch.22 (runtime managé)
 
 §7.11 Effort de développement — combien, combien de temps, avec qui
       ├─ [SVG S] harness-05-effort-developpement.svg
       ├─ 3 trajectoires (POC 50-100k€ / mid 150-300k€ / multi-agent 500k-2M€+)
       ├─ Distribution effort (data prep 60-75%, intégration 40-60%, safety +20-30%)
-      └─ encadré [!INFO] Voir Ch.21 (ROI + paradoxe agentique)
+      └─ encadré [!INFO] Voir Ch.23 (ROI + paradoxe agentique)
 
 Récap chapitre — Sept couches, une boucle, trois voies
        └─ [SVG R] harness-01-anatomie-harness.svg (réutilisé en récap)
@@ -1439,7 +1439,7 @@ Variété des `> [!TYPE]` Obsidian retenus :
 | --- | --- | --- |
 | `[!QUESTION]` | Ouverture chapitre | 1 |
 | `[!TLDR]` | Synthèse décideur 6 bullets | 1 |
-| `[!INFO]` | Renvois inter-chapitres (Ch.1, 9, 11, 13/19, 18, 20, 21) | 7 |
+| `[!INFO]` | Renvois inter-chapitres (Ch.1, 9, 11, 16/19, 18, 20, 21) | 7 |
 | `[!EXAMPLE]` | Code pseudo-Python (Client SDK loop + Agent SDK hooks) | 2 |
 | `[!QUOTE]` | Citation Rajasekaran (Anthropic Labs) | 1 |
 | `[!ATTENTION]` | Le pattern n'est pas la seule architecture (renvoi Ch.11) | 1 |
@@ -1477,7 +1477,7 @@ Variété des `> [!TYPE]` Obsidian retenus :
 | Manuscrit | ✅ **v1 livrée** — `docs/livre/ch11-patterns-orchestration.md` (≈ 6 500 mots, 14 encadrés, 8 schémas intégrés) |
 | Schémas à créer | 0 v1 (R4 « 8 patterns canoniques » traité par réutilisation tel quel de `orchestration-04-patterns-canoniques.svg` ; R5 « fabrique 4 stades » traité par tableau markdown — le schéma `fabrique-12-recap-10x4.svg` reste optionnel pour le récap dédié si édition print l'exige) |
 | Frontière Ch.7 ↔ Ch.11 | ✅ respectée — Ch.7 garde le pattern GAN 3-agents (§7.4) ; Ch.11 déroule la taxonomie complète des 8 patterns et cite §7.4 comme cas particulier d'evaluator-optimizer enrichi d'un planner |
-| Renvois inter-chapitres | ✅ Ch. 5 (économie token), Ch. 7 (boucle, pattern GAN, RBAC), Ch. 9 (mémoire), Ch. 10 (compaction), Ch. 12 (MCP plateforme), Ch. 13 (MCP sécurité), Ch. 14 (surfaces + Knight levels), Ch. 15 (computer use / browser tool), Ch. 17 (eval pass^k), Ch. 18 (observabilité), Ch. 19 (threat model E4), Ch. 20 (runtime managé), Ch. 21 (ROI Klarna second usage), Ch. 24 (IA et travail réallocation) |
+| Renvois inter-chapitres | ✅ Ch. 5 (économie token), Ch. 7 (boucle, pattern GAN, RBAC), Ch. 9 (mémoire), Ch. 10 (compaction), Ch. 15 (MCP plateforme), Ch. 16 (MCP sécurité), Ch. 13 (surfaces + Knight levels), Ch. 17 (computer use / browser tool), Ch. 19 (eval pass^k), Ch. 20 (observabilité), Ch. 21 (threat model E4), Ch. 22 (runtime managé), Ch. 23 (ROI Klarna second usage), Ch. 26 (IA et travail réallocation) |
 
 ### Sources matérielles
 
@@ -1518,13 +1518,13 @@ Détail de classification pour mémoire (et pour le Ch.11 qui ne les absorbe pas
 | --- | --- | --- | --- |
 | 01 | `oignon-fabrique` | écarté Ch.11 | superposition oignon / fabrique — appartient à l'ouverture du livre ou au prologue |
 | 02-04, 07, 10 | `atelier-prototype` / `atelier-pilote` / `atelier-production` / `atelier-mature` | écarté Ch.11 | scènes d'atelier par stade — appartiennent à un éventuel sous-chapitre dédié `fabrique-agent` |
-| 05 | `testcase-anatomie` | **Ch.17** | format TestCase = (Persona × Quest × Environment) → Expected Outcome — appartient au chapitre éval |
-| 06 | `vallee-de-la-mort` | **Ch.21** | 95 %/70 % POC qui meurent — ROI/économie |
-| 08 | `gruyere-suisse` | **Ch.17** | Anthropic 5 couches d'évaluation — appartient au chapitre éval (renvoyé déjà via `agent-sdk ref-2` au Ch.7) |
-| 09 | `obo-vs-autonome` | **Ch.13/Ch.19/Ch.23** | régimes d'identité — sécurité MCP / threat model / gouvernance |
+| 05 | `testcase-anatomie` | **Ch.19** | format TestCase = (Persona × Quest × Environment) → Expected Outcome — appartient au chapitre éval |
+| 06 | `vallee-de-la-mort` | **Ch.23** | 95 %/70 % POC qui meurent — ROI/économie |
+| 08 | `gruyere-suisse` | **Ch.19** | Anthropic 5 couches d'évaluation — appartient au chapitre éval (renvoyé déjà via `agent-sdk ref-2` au Ch.7) |
+| 09 | `obo-vs-autonome` | **Ch.16/Ch.21/Ch.25** | régimes d'identité — sécurité MCP / threat model / gouvernance |
 | 11 | `coala-cycle` | **Ch.9** | 4 piliers CoALA + 6 opérations — appartient au chapitre mémoire |
 | 12 | `recap-10x4` | candidat **R5 Ch.11** (édition print) | matrice 10 artefacts × 4 stades — réservée pour récap fabrique si gabarit print le réclame. v1 du Ch.11 fait sans, par tableau markdown. |
-| 13 | `roi-cards` | **Ch.21** | 5 axes × 3 temporalités = 15 ROI cards — appartient au chapitre ROI |
+| 13 | `roi-cards` | **Ch.23** | 5 axes × 3 temporalités = 15 ROI cards — appartient au chapitre ROI |
 
 #### Schémas du dossier `anatomie/` (couche 04 patterns)
 
@@ -1587,23 +1587,23 @@ Les anneaux concentriques de `livre.html` (rendus par `livre-render.js` à parti
        │  └─ encadré [!INFO] Voir Ch.7 §7.4 — pattern à 3 agents
        ├─ §11.4.2 Trois topologies multi-agents
        ├─ encadré [!IMPORTANT] La maxime non-écrite — on compose
-       └─ encadré [!INFO] Voir Ch.14 (surfaces + Knight levels)
+       └─ encadré [!INFO] Voir Ch.13 (surfaces + Knight levels)
 
 §11.5  Le stack en trois couches — ADK ≠ runtime ≠ plateforme
        ├─ [SVG S] orchestration-05-stack-trois-couches.svg
        ├─ §11.5.1 Couche 1 — ADK (tableau 7 ADK)
        ├─ §11.5.2 Couche 2 — Runtime
-       │  └─ encadré [!INFO] Voir Ch.20 (runtime managé)
+       │  └─ encadré [!INFO] Voir Ch.22 (runtime managé)
        ├─ §11.5.3 Couche 3 — Services de plateforme (6 briques AgentCore)
        └─ §11.5.4 Cartographie 2026 — 4 bandes + 2 protocoles
           ├─ [SVG S] orchestration-06-cartographie-2026.svg
-          └─ encadré [!INFO] Voir Ch.12 et Ch.13 (MCP plateforme + sécurité)
+          └─ encadré [!INFO] Voir Ch.15 et Ch.16 (MCP plateforme + sécurité)
 
 §11.6  Les cinq problèmes durs en prod
        ├─ [SVG S] orchestration-07-problemes-prod.svg
        ├─ §11.6.1 Mémoire et contexte (renvoi Ch.9, Ch.10)
-       ├─ §11.6.2 Observabilité (renvoi Ch.18)
-       ├─ §11.6.3 Sécurité (renvoi Ch.7 §7.5.4, Ch.13, Ch.19)
+       ├─ §11.6.2 Observabilité (renvoi Ch.20)
+       ├─ §11.6.3 Sécurité (renvoi Ch.7 §7.5.4, Ch.16, Ch.21)
        ├─ §11.6.4 Idempotence et retry
        ├─ §11.6.5 Coût et amplification de tokens (renvoi Ch.10)
        └─ encadré [!WARNING] La cascade d'erreurs en multi-agents
@@ -1649,12 +1649,12 @@ Variété des `> [!TYPE]` Obsidian retenus :
 | --- | --- | --- |
 | `[!QUESTION]` | Ouverture chapitre | 1 |
 | `[!TLDR]` | Synthèse décideur 6 bullets | 1 |
-| `[!INFO]` | Renvois inter-chapitres (Ch.7, 12+13, 14, 20) | 4 |
+| `[!INFO]` | Renvois inter-chapitres (Ch.7, 15+13, 14, 20) | 4 |
 | `[!NOTE]` | Distinction workflow vs agent (maxime Anthropic) | 1 |
 | `[!EXAMPLE]` | Code pseudo-Python (signature handoff Agents SDK) | 1 |
 | `[!ATTENTION]` | Recommandation Anthropic — réserver l'autonomie | 1 |
 | `[!IMPORTANT]` | La maxime "on compose" + La maturité des artefacts | 2 |
-| `[!QUOTE]` | L'angle Klarna — deux lectures, deux chapitres (anticipe Ch.21) | 1 |
+| `[!QUOTE]` | L'angle Klarna — deux lectures, deux chapitres (anticipe Ch.23) | 1 |
 | `[!WARNING]` | Cascade d'erreurs multi-agents + Trois pièges classiques clôture | 2 |
 | **Total** | | **14** |
 
@@ -1666,8 +1666,8 @@ Variété des `> [!TYPE]` Obsidian retenus :
   - **(a) La frontière Ch.7 ↔ Ch.11** : vérifier que §11.4.1 (mention pattern à 3 agents comme cas particulier d'evaluator-optimizer) renvoie correctement au Ch.7 §7.4 sans rejouer l'économie 9 $/200 $ ni redécrire la mécanique. Statut v1 : renvoi unique sans répétition.
   - **(b) La fabrique d'équipe §11.8** : choix éditorial fort — table markdown plutôt que `fabrique-12-recap-10x4.svg`. Risque : sous-représentation visuelle du sous-chapitre. Alternative : insérer le schéma en récap dédié si édition print l'exige, ou créer un sous-chapitre `fabrique-agent` autonome (cf. friction 1 outline §4.2).
   - **(c) Le récap §11.9** : décision de réutiliser `orchestration-03-spectre-controle.svg` plutôt que `orchestration-04-patterns-canoniques.svg`. Justification : le spectre articule tout le reste (régimes → patterns → stack → problèmes → arbre) alors que le schéma 04 est une bibliothèque. Si Mathieu préfère le 04, swap trivial.
-  - **(d) L'angle Klarna §11.7.1** : double usage explicite avec Ch.21 (ROI). Vérifier que les deux lectures restent complémentaires, pas redondantes.
-  - **(e) La frontière Ch.11 ↔ Ch.20** : §11.5.2 (runtime) introduit AgentCore Runtime, Vertex Agent Engine, Foundry Service. Le Ch.20 dédié va creuser la matrice vendor. À ne pas refaire en Ch.20 — règle d'écriture posée.
+  - **(d) L'angle Klarna §11.7.1** : double usage explicite avec Ch.23 (ROI). Vérifier que les deux lectures restent complémentaires, pas redondantes.
+  - **(e) La frontière Ch.11 ↔ Ch.22** : §11.5.2 (runtime) introduit AgentCore Runtime, Vertex Agent Engine, Foundry Service. Le Ch.22 dédié va creuser la matrice vendor. À ne pas refaire en Ch.22 — règle d'écriture posée.
 - [ ] Si validation : copier-coller la matière vers le futur format de sortie (print HTML / PDF) quand décidé
 
 ---
@@ -1687,7 +1687,7 @@ Variété des `> [!TYPE]` Obsidian retenus :
 | Manuscrit | ✅ **v1 livrée** — `docs/livre/ch10-compaction.md` (≈ 5 800 mots, 14 encadrés, 7 schémas intégrés) |
 | Schémas à créer | 0 (la matière source couvre) |
 | Schémas à fixer | ✅ fait — `cinq-familles.svg` ligne 26 (XML désormais valide via xmllint) |
-| Renvois inter-chapitres | ✅ Ch. 9 (mémoire), Ch. 18 (observabilité), Ch. 19 (sécurité E4), Ch. 23 (gouvernance) |
+| Renvois inter-chapitres | ✅ Ch. 9 (mémoire), Ch. 20 (observabilité), Ch. 21 (sécurité E4), Ch. 25 (gouvernance) |
 
 ### Sources matérielles
 
@@ -1711,7 +1711,7 @@ Sept schémas dans `compaction-agentique`, neuf dans `memoire-agentique` mobilis
 | 03 | [`cinq-familles`](../compaction-agentique/images/20260527-03-cinq-familles.svg) | [![cinq-familles](../compaction-agentique/images/20260527-03-cinq-familles.svg)](../compaction-agentique/images/20260527-03-cinq-familles.svg) | 14 Ko | **S** §10.4 | ⚠ **fix XML** + tel quel | Schéma le plus dense (5 colonnes summarization / eviction / hiérarchique / retrieval / learned). **Bug ligne 26** : `</title<` au lieu de `</text>` — duplication du titre. À corriger avant intégration. |
 | 04 | [`triangle-tradeoff`](../compaction-agentique/images/20260527-04-triangle-tradeoff.svg) | [![triangle-tradeoff](../compaction-agentique/images/20260527-04-triangle-tradeoff.svg)](../compaction-agentique/images/20260527-04-triangle-tradeoff.svg) | 8.9 Ko | **R3** §10.5 + récap fin de chapitre | tel quel | **Schéma signature du chapitre.** Triangle non-dégénéré fidélité × coût × oubliabilité, positionnement des 5 familles, encadré "Conséquence opérationnelle" déjà présent côté droit. Format actuel A4 paysage 1200×760, à imprimer A3 paysage double-page si le récap pleine page est validé. |
 | 05 | [`matrice-production`](../compaction-agentique/images/20260527-05-matrice-production.svg) | [![matrice-production](../compaction-agentique/images/20260527-05-matrice-production.svg)](../compaction-agentique/images/20260527-05-matrice-production.svg) | 9.6 Ko | **S** §10.6 | tel quel | Matrice 5 produits × 4 dimensions (Claude Code / Cursor / ChatGPT / Mem0 / Letta). |
-| 06 | [`cycle-attaque`](../compaction-agentique/images/20260527-06-cycle-attaque.svg) | [![cycle-attaque](../compaction-agentique/images/20260527-06-cycle-attaque.svg)](../compaction-agentique/images/20260527-06-cycle-attaque.svg) | 9.5 Ko | **S** §10.7 | tel quel | Cycle d'attaque memory poisoning persistant à travers la compaction (SpAIware). À renvoyer ensuite vers le futur schéma **E4 (threat model unifié)** en Ch.19. |
+| 06 | [`cycle-attaque`](../compaction-agentique/images/20260527-06-cycle-attaque.svg) | [![cycle-attaque](../compaction-agentique/images/20260527-06-cycle-attaque.svg)](../compaction-agentique/images/20260527-06-cycle-attaque.svg) | 9.5 Ko | **S** §10.7 | tel quel | Cycle d'attaque memory poisoning persistant à travers la compaction (SpAIware). À renvoyer ensuite vers le futur schéma **E4 (threat model unifié)** en Ch.21. |
 | 07 | [`horizon`](../compaction-agentique/images/20260527-07-horizon.svg) | [![horizon](../compaction-agentique/images/20260527-07-horizon.svg)](../compaction-agentique/images/20260527-07-horizon.svg) | 7.4 Ko | **S** §10.9 | tel quel | Horizon 2026-2028 : compactors appris, multi-résolution, ledger transparent OTel. |
 
 #### Schémas du dossier memoire-agentique (cross-ref, 9)
@@ -1737,7 +1737,7 @@ Tous appartiennent au **Ch.9 — Mémoire agentique** (Acte II). Listés ici pou
 | Sujet | `memoire-agentique` (Ch.9) | `compaction-agentique` (Ch.10) | Décision |
 | --- | --- | --- | --- |
 | Taxonomie générale | 4 piliers travail/sémantique/épisodique/procédurale | Approfondit le pilier *travail / scratchpad* | Ch.9 cartographie, Ch.10 approfondit un pilier |
-| Surface d'attaque mémoire | `memoire-07-surface-attaque.svg` = MITRE ATLAS AML.T0080 (vue générale) | `compaction-06-cycle-attaque.svg` = cycle SpAIware spécifique au compactor | Les deux schémas restent — le Ch.10 cite le Ch.9 et ouvre vers le futur E4 (threat model unifié) en Ch.19 |
+| Surface d'attaque mémoire | `memoire-07-surface-attaque.svg` = MITRE ATLAS AML.T0080 (vue générale) | `compaction-06-cycle-attaque.svg` = cycle SpAIware spécifique au compactor | Les deux schémas restent — le Ch.10 cite le Ch.9 et ouvre vers le futur E4 (threat model unifié) en Ch.21 |
 | Frameworks / vendors | `memoire-04` + `memoire-06` (mémoire long-terme : Letta, Mem0, Zep, A-MEM, Generative Agents) | `compaction-05` (compactors prod : Claude Code, Cursor, ChatGPT, Mem0, Letta) | Pas de doublon — l'angle est différent (mémoire vs compaction). Renvoi croisé possible mais pas indispensable. |
 | Architectures cognitives | CoALA Sumers et al. TMLR 2024 | non couvert | Reste Ch.9 |
 | Lost in the Middle | non couvert | Liu et al. TACL 2024 | Reste Ch.10 |
@@ -1791,21 +1791,21 @@ Tous appartiennent au **Ch.9 — Mémoire agentique** (Acte II). Listés ici pou
        ├─ Le cycle d'attaque memory poisoning persistant
        │  └─ encadré [!WARNING] SpAIware
        ├─ Pourquoi les filtres I/O ne suffisent pas
-       └─ encadré [!INFO] Voir Ch.19 (E4 threat model unifié)
+       └─ encadré [!INFO] Voir Ch.21 (E4 threat model unifié)
 
 §10.8  RGPD, AI Act et l'oubli prouvable
        ├─ Trois cas de figure
        ├─ encadré [!NOTE] Rappel RGPD art.17
        ├─ encadré [!IMPORTANT] AI Act art.10 + 25
        ├─ Machine unlearning (CNIL/EDPS 2025-2026)
-       └─ encadré [!INFO] Voir Ch.23 (gouvernance)
+       └─ encadré [!INFO] Voir Ch.25 (gouvernance)
 
 §10.9  Horizon 2026-2028
        ├─ [SVG S] horizon.svg
        ├─ Compactors appris (2026-2027)
        ├─ Multi-résolution (2026-2028)
        ├─ Ledger transparent et observabilité (2027-2028)
-       │  └─ encadré [!INFO] Voir Ch.18 (WG GenAI OTel)
+       │  └─ encadré [!INFO] Voir Ch.20 (WG GenAI OTel)
        └─ AI Act art.25 transforme observabilité en obligation
 
 Récap chapitre — Le triangle non-dégénéré
@@ -1826,7 +1826,7 @@ Variété des `> [!TYPE]` Obsidian retenus :
 | --- | --- | --- |
 | `[!QUESTION]` | Ouverture chapitre | 1 |
 | `[!TLDR]` | Synthèse décideur | 1 |
-| `[!INFO]` | Renvois inter-chapitres (Ch.9, 18, 19, 23) | 4 |
+| `[!INFO]` | Renvois inter-chapitres (Ch.9, 20, 21, 25) | 4 |
 | `[!QUOTE]` | Citation Liu et al. | 1 |
 | `[!EXAMPLE]` | Pseudo-code contrat I/O | 1 |
 | `[!ATTENTION]` | Pas de famille dominante | 1 |
@@ -1860,8 +1860,8 @@ Variété des `> [!TYPE]` Obsidian retenus :
 | Schémas à créer | **0 ex nihilo**. Tous les schémas du dossier source sont absorbables tels quels avec hint Obsidian `\|1300` (full-bleed). |
 | Frontière Ch.4 ↔ Ch.2 | À tenir — Ch.2 explique **pourquoi** on a besoin de compute à l'inférence (second axe de scaling, reasoning models) ; Ch.4 explique **comment** on regagne le débit perdu. Renvoi `[!INFO]` croisé en §4.1. |
 | Frontière Ch.4 ↔ Ch.5 | À tenir — Ch.5 = pile 7 couches d'optim inference (PagedAttention, FlashAttention-3, batching continu, FP8/FP4, désagrégation, MoE) côté économie globale ; Ch.4 = zoom monographique sur **une** couche (la décode spéculative). Renvoi vers la matrice frameworks de Ch.5 + complément Ch.4 (matrice variantes × frameworks, **côte à côte**, **pas fusionnée** — décision outline). |
-| Frontière Ch.4 ↔ Ch.21 | Légère — la spec n'a pas d'impact ROI direct, mais elle conditionne la mesure du *tokens/sec* utilisée comme proxy de coût. Renvoi non explicite. |
-| Frontière Ch.4 ↔ Ch.18 | À tenir — l'instrumentation de α (acceptance rate par requête) entre dans le **cognitive audit trail** au sens Ch.18 (OTel GenAI semconv `gen_ai.speculative.acceptance_rate`, WG en cours fin 2026). Renvoi `[!INFO]` en §4.4. |
+| Frontière Ch.4 ↔ Ch.23 | Légère — la spec n'a pas d'impact ROI direct, mais elle conditionne la mesure du *tokens/sec* utilisée comme proxy de coût. Renvoi non explicite. |
+| Frontière Ch.4 ↔ Ch.20 | À tenir — l'instrumentation de α (acceptance rate par requête) entre dans le **cognitive audit trail** au sens Ch.20 (OTel GenAI semconv `gen_ai.speculative.acceptance_rate`, WG en cours fin 2026). Renvoi `[!INFO]` en §4.4. |
 
 ### Sources matérielles
 
@@ -1888,7 +1888,7 @@ Le Ch.4 est un **chapitre standard à un seul dossier source dense et techniquem
 
 **Pas de redondance interne** — un seul dossier, pas de chevauchement de matière. La discipline éditoriale numéro 1 est de **tenir la frontière avec Ch.5** : la spec est **une** couche de la pile 7-couches d'optim de Ch.5, mais elle mérite son propre chapitre parce qu'elle (a) repose sur un théorème mathématique qui mérite d'être explicité, (b) condense les deux pièges les plus traîtres de l'inference moderne (acceptance rate + batching), et (c) est devenue l'option par défaut des serveurs en 2026 — ce qui change la grille de mesure du tokens/sec.
 
-**Décision outline réaffirmée** : matrice frameworks de Ch.4 (variantes spéculatives × 4 vendeurs) **ne pas fusionner** avec matrice frameworks d'`orchestration-agentique` (ADK ouverts vs vendeurs Ch.11/Ch.20). Couches différentes. À mettre **côte à côte** dans la version print, **séparées** en web.
+**Décision outline réaffirmée** : matrice frameworks de Ch.4 (variantes spéculatives × 4 vendeurs) **ne pas fusionner** avec matrice frameworks d'`orchestration-agentique` (ADK ouverts vs vendeurs Ch.11/Ch.22). Couches différentes. À mettre **côte à côte** dans la version print, **séparées** en web.
 
 ### Encadrés prévus dans le chapitre
 
@@ -1896,7 +1896,7 @@ Le Ch.4 est un **chapitre standard à un seul dossier source dense et techniquem
 | --- | --- | --- |
 | `[!QUESTION]` | Ouverture | 1 |
 | `[!TLDR]` | Synthèse décideur 5 bullets | 1 |
-| `[!INFO]` | Renvois inter-chapitres (Ch.2, Ch.5, Ch.18) | 3 |
+| `[!INFO]` | Renvois inter-chapitres (Ch.2, Ch.5, Ch.20) | 3 |
 | `[!QUOTE]` | Citation Leviathan et al. ICML 2023 + 1 doc framework | 2 |
 | `[!IMPORTANT]` | Le théorème d'équivalence + l'instrumentation α | 2 |
 | `[!ATTENTION]` | Sampling cohérent draft/target + drift silencieux | 2 |
@@ -1920,43 +1920,43 @@ Le Ch.4 est un **chapitre standard à un seul dossier source dense et techniquem
 
 ### Tâches restantes globales livre
 
-- [ ] Auditer les 10 dossiers restants : Acte I (`economie-inference` Ch.5, `modeles-raisonnement` Ch.2, `process-reward-models` Ch.3, `world-models` Ch.6) ; Acte III déjà fait ; Acte IV reste (`measure-roi` Ch.21, `ia-frugale` Ch.22, `gouvernance` Ch.23, `ia-et-travail` Ch.24, `proces-musk-altman` Ch.25) ; Prologue + Épilogue.
-- [x] **Tronc commun threat model** : la verticale mémoire du Ch.9 §9.7 + le tableau six surfaces du **Ch.19 §19.10** (modèle / prompt / mémoire / outil / protocole / surface utilisateur) constituent désormais l'objet transverse de l'Acte IV. ==Schéma E4 A3 facing reste optionnel pour édition print uniquement== (~3-5 j), pas nécessaire pour la v1 web/manuscript.
+- [ ] Auditer les 10 dossiers restants : Acte I (`economie-inference` Ch.5, `modeles-raisonnement` Ch.2, `process-reward-models` Ch.3, `world-models` Ch.6) ; Acte III déjà fait ; Acte IV reste (`measure-roi` Ch.23, `ia-frugale` Ch.24, `gouvernance` Ch.25, `ia-et-travail` Ch.26, `proces-musk-altman` Ch.27) ; Prologue + Épilogue.
+- [x] **Tronc commun threat model** : la verticale mémoire du Ch.9 §9.7 + le tableau six surfaces du **Ch.21 §21.10** (modèle / prompt / mémoire / outil / protocole / surface utilisateur) constituent désormais l'objet transverse de l'Acte IV. ==Schéma E4 A3 facing reste optionnel pour édition print uniquement== (~3-5 j), pas nécessaire pour la v1 web/manuscript.
 - [ ] Créer E3 (capability × cost) et R16 (J-curve × LLMflation) — ~2-3 j chacun
 - [ ] Créer R1 (boucle ReAct canonique + 3 variantes) si édition print le demande — ~3-5 j (v1 du Ch.7 fait sans, par superposition textuelle)
 - [ ] Créer R2 (4 piliers × 6 op × 5 archi triptyque fusionné) si édition print le demande — ~3-4 j (v1 du Ch.9 fait sans, par 3 schémas distincts + tableau récap markdown)
 - [ ] Décider du format de sortie (print PDF / web interactif / les deux)
 - [ ] Décider du calendrier de gel des contenus évolutifs
 
-### Cohérence inter-chapitres Acte IV (Ch.17-Ch.20 livrés 2026-05-28)
+### Cohérence inter-chapitres Acte IV (Ch.19-Ch.22 livrés 2026-05-28)
 
-L'Acte IV a maintenant son **squelette en place** : Ch.17 (éval+benchmarks, charnière) → Ch.18 (observabilité+cognitive audit trail) → Ch.19 (garde-fous+sécurité, charnière) → Ch.20 (runtime managé). Restent à écrire : Ch.21 (ROI), Ch.22 (IA frugale), Ch.23 (gouvernance), Ch.24 (IA et travail), Ch.25 (procès Musk-Altman).
+L'Acte IV a maintenant son **squelette en place** : Ch.19 (éval+benchmarks, charnière) → Ch.20 (observabilité+cognitive audit trail) → Ch.21 (garde-fous+sécurité, charnière) → Ch.22 (runtime managé). Restent à écrire : Ch.23 (ROI), Ch.24 (IA frugale), Ch.25 (gouvernance), Ch.26 (IA et travail), Ch.27 (procès Musk-Altman).
 
-**Frontières contrôlées entre Ch.17-20 :**
+**Frontières contrôlées entre Ch.19-20 :**
 
-- **Ch.17 (éval) → Ch.18 (obs)** : la trajectoire passe d'objet d'éval offline à objet de monitoring en prod. Renvois §17.7.2 + §17.17 + §18.1.2 + §18.7.1 (palier N3 utilise la calibration LLM-as-judge du Ch.17).
-- **Ch.17 (éval) → Ch.19 (sécu)** : le red-teaming continu (AgentDojo, AgentHarm, PyRIT) cité §17.17 et §19.9.2 sans redite. La gruyère 5 couches du Ch.19 § 19.7 réutilise le motif gruyère introduit Ch.17 §17.15.
-- **Ch.18 (obs) ↔ Ch.19 (sécu)** : cognitive audit trail (Ch.18 §18.6) consomme les guardrails déclenchés (Ch.19 §19.7). Le pilier *Gouvernance* du Ch.18 §18.2.5 est nourri par §19.10.
-- **Ch.18 (obs) → Ch.20 (runtime)** : §18.8.3 mentionne les runtimes managés OTel-compliant ; §20.3.4 renvoie Ch.18. Pas de redite.
-- **Ch.19 (sécu) → Ch.20 (runtime)** : §19.7.4 (isolation architecturale) instancie en §20.6 (gruyère 3 couches runtime). §20.6.4 RBAC côté infra renvoie Ch.19 § 19.5.1 EchoLeak.
-- **Ch.19 (sécu) ↔ Ch.10 / Ch.13 / Ch.15** : §19.5.2 (MCP) → Ch.13, §19.5.3 (memory) → Ch.10, §19.5.5 (VPI) → Ch.15. Trois renvois courts, pas de redite.
+- **Ch.19 (éval) → Ch.20 (obs)** : la trajectoire passe d'objet d'éval offline à objet de monitoring en prod. Renvois §19.7.2 + §19.17 + §20.1.2 + §20.7.1 (palier N3 utilise la calibration LLM-as-judge du Ch.19).
+- **Ch.19 (éval) → Ch.21 (sécu)** : le red-teaming continu (AgentDojo, AgentHarm, PyRIT) cité §19.17 et §21.9.2 sans redite. La gruyère 5 couches du Ch.21 § 21.7 réutilise le motif gruyère introduit Ch.19 §19.15.
+- **Ch.20 (obs) ↔ Ch.21 (sécu)** : cognitive audit trail (Ch.20 §20.6) consomme les guardrails déclenchés (Ch.21 §21.7). Le pilier *Gouvernance* du Ch.20 §20.2.5 est nourri par §21.10.
+- **Ch.20 (obs) → Ch.22 (runtime)** : §20.8.3 mentionne les runtimes managés OTel-compliant ; §22.3.4 renvoie Ch.20. Pas de redite.
+- **Ch.21 (sécu) → Ch.22 (runtime)** : §21.7.4 (isolation architecturale) instancie en §22.6 (gruyère 3 couches runtime). §22.6.4 RBAC côté infra renvoie Ch.21 § 21.5.1 EchoLeak.
+- **Ch.21 (sécu) ↔ Ch.10 / Ch.16 / Ch.17** : §21.5.2 (MCP) → Ch.16, §21.5.3 (memory) → Ch.10, §21.5.5 (VPI) → Ch.17. Trois renvois courts, pas de redite.
 
 **Sources matérielles consommées par l'Acte IV :**
 
 | Chapitre | Dossiers absorbés | Couches anatomie absorbées |
 |---|---|---|
-| Ch.17 | `evaluation-agentique/` + `benchmarks-contestes/` | — |
-| Ch.18 | `observabilite-agents-ia/` | LAYER 07 (Observabilité) |
-| Ch.19 | `llm-jailbreaking/` | LAYER 06 (Guardrails, HITL, sécurité) |
-| Ch.20 | `orchestration-agentique/` §5 + `agent-sdk/` §9 | LAYER 08 (Runtime managé & déploiement) |
+| Ch.19 | `evaluation-agentique/` + `benchmarks-contestes/` | — |
+| Ch.20 | `observabilite-agents-ia/` | LAYER 07 (Observabilité) |
+| Ch.21 | `llm-jailbreaking/` | LAYER 06 (Guardrails, HITL, sécurité) |
+| Ch.22 | `orchestration-agentique/` §5 + `agent-sdk/` §9 | LAYER 08 (Runtime managé & déploiement) |
 
 **Prochains chapitres Acte IV à rédiger :**
 
-- **Ch.21 (ROI)** — dossier `measure-roi/` (07 mai). Charnière. ~32 pages. Productivity J-curve, paradoxe agentique, Klarna 67 % → recul partiel. Article hors-rang du livre car forte exposition décideur.
-- **Ch.22 (IA frugale)** — dossier `ia-frugale/` (13 mai). Standard. ~22 pages. 3 trajectoires 2030 (laissez-faire 1500 TWh / efficience 1100 / plafond 650). Renvoi forts Ch.5 (économie inférence) et Ch.21 (ROI).
-- **Ch.23 (gouvernance)** — dossier `gouvernance/` (21 avr) + rappels Ch.16/10/13/19. Standard. ~22 pages. Calendrier AI Act art. 12/15 août 2026, DORA, machine unlearning, rôles DPO/RSSI/Sponsor.
-- **Ch.24 (IA et travail)** — dossier `ia-et-travail/` (06 mai). Standard. ~22 pages. Acemoglu/Frey-Osborne/Eloundou, 4 scénarios 2035, pause d'Engels.
-- **Ch.25 (procès Musk vs Altman)** — dossier `proces-musk-altman/` (27 avr). Court encart 12 pages. Fige une lecture au 27 mai 2026 ; le journal en ligne reste source de profondeur.
+- **Ch.23 (ROI)** — dossier `measure-roi/` (07 mai). Charnière. ~32 pages. Productivity J-curve, paradoxe agentique, Klarna 67 % → recul partiel. Article hors-rang du livre car forte exposition décideur.
+- **Ch.24 (IA frugale)** — dossier `ia-frugale/` (13 mai). Standard. ~22 pages. 3 trajectoires 2030 (laissez-faire 1500 TWh / efficience 1100 / plafond 650). Renvoi forts Ch.5 (économie inférence) et Ch.23 (ROI).
+- **Ch.25 (gouvernance)** — dossier `gouvernance/` (21 avr) + rappels Ch.18/10/13/19. Standard. ~22 pages. Calendrier AI Act art. 12/15 août 2026, DORA, machine unlearning, rôles DPO/RSSI/Sponsor.
+- **Ch.26 (IA et travail)** — dossier `ia-et-travail/` (06 mai). Standard. ~22 pages. Acemoglu/Frey-Osborne/Eloundou, 4 scénarios 2035, pause d'Engels.
+- **Ch.27 (procès Musk vs Altman)** — dossier `proces-musk-altman/` (27 avr). Court encart 12 pages. Fige une lecture au 27 mai 2026 ; le journal en ligne reste source de profondeur.
 
 ---
 
@@ -1964,7 +1964,7 @@ L'Acte IV a maintenant son **squelette en place** : Ch.17 (éval+benchmarks, cha
 
 > **Acte I — Les moteurs · Gabarit court/encart 8-12 p · ~3 000-4 000 mots**
 > **Lecteur cible** : agent engineer, sponsor IA technique, plateforme ML, FinOps qui démarrent l'Acte I — premier chapitre de fond après le prologue, **porte d'entrée** de la pile.
-> **Sortie lecteur** : sait pourquoi un LLM moderne est, à `T > 0`, un **tirage probabiliste** et non une fonction pure ; lit la mécanique softmax → température → top-p → top-k → tirage comme une chaîne de quatre opérateurs **où chaque maillon est un curseur** (et pas un détail d'implémentation) ; comprend pourquoi `seed` est un leurre opérationnel à l'échelle GPU (non-associativité FP, batching dynamique, mixed precision, versions de modèle) et pourquoi la **reproductibilité statistique** remplace la reproductibilité bit-à-bit ; sait passer d'un raisonnement « cas isolé » à un raisonnement « distribution d'évaluation » (`n` rejouages, intervalles de confiance, pass@k vs pass^k introduit ici puis détaillé Ch.17) ; identifie les trois familles de truncation sampling et leur date — Holtzman top-p (2019), Hewitt η-sampling (2022), min-p (2024) — sans entrer dans le débat académique ; nomme le **piège classique** (traiter le LLM comme une fonction pure : `T=0.7` rejoué 1 000 fois = 1 000 trajectoires) et l'ancre dans deux conséquences traçables — l'amplification multiplicative de la variance le long d'une chaîne d'outils (renvoi Ch.4 spec + Ch.7 boucle) et le **trajectory drift** silencieux en prod (renvoi Ch.18 observabilité) ; reconnaît que les paramètres « température » et « top-p » exposés par les APIs sont une convention historique — pas une vérité physique — et que le débat 2024-2026 (min-p, η-sampling, mirostat) reste ouvert ; sort équipé pour ne pas demander en RFP « la même réponse à chaque appel ».
+> **Sortie lecteur** : sait pourquoi un LLM moderne est, à `T > 0`, un **tirage probabiliste** et non une fonction pure ; lit la mécanique softmax → température → top-p → top-k → tirage comme une chaîne de quatre opérateurs **où chaque maillon est un curseur** (et pas un détail d'implémentation) ; comprend pourquoi `seed` est un leurre opérationnel à l'échelle GPU (non-associativité FP, batching dynamique, mixed precision, versions de modèle) et pourquoi la **reproductibilité statistique** remplace la reproductibilité bit-à-bit ; sait passer d'un raisonnement « cas isolé » à un raisonnement « distribution d'évaluation » (`n` rejouages, intervalles de confiance, pass@k vs pass^k introduit ici puis détaillé Ch.19) ; identifie les trois familles de truncation sampling et leur date — Holtzman top-p (2019), Hewitt η-sampling (2022), min-p (2024) — sans entrer dans le débat académique ; nomme le **piège classique** (traiter le LLM comme une fonction pure : `T=0.7` rejoué 1 000 fois = 1 000 trajectoires) et l'ancre dans deux conséquences traçables — l'amplification multiplicative de la variance le long d'une chaîne d'outils (renvoi Ch.4 spec + Ch.7 boucle) et le **trajectory drift** silencieux en prod (renvoi Ch.20 observabilité) ; reconnaît que les paramètres « température » et « top-p » exposés par les APIs sont une convention historique — pas une vérité physique — et que le débat 2024-2026 (min-p, η-sampling, mirostat) reste ouvert ; sort équipé pour ne pas demander en RFP « la même réponse à chaque appel ».
 
 ### Statut
 
@@ -1977,8 +1977,8 @@ L'Acte IV a maintenant son **squelette en place** : Ch.17 (éval+benchmarks, cha
 | Frontière Ch.1 ↔ Ch.2 | À tenir — Ch.2 dit *quoi se passe quand on dépense du compute à l'inférence pour raisonner* (CoT, RLVR, GRPO, second axe de scaling Snell). Ch.1 reste **strictement en amont** : ce qui se passe à **chaque token** indépendamment de la longueur du raisonnement. Règle d'écriture : Ch.1 ne parle pas de chain-of-thought, ne nomme pas o1/R1, ne mentionne pas RLVR. Renvoi `[!INFO]` en clôture §1.5. |
 | Frontière Ch.1 ↔ Ch.4 | À tenir — Ch.4 (décode spéculative) est l'**optimisation** qui calque le sampling : le théorème d'équivalence Leviathan/Kalman/Matias 2023 prouve que `accept(min(1, p_target/p_draft))` + resample sur `max(0, p_target − p_draft)` produit une distribution **strictement identique** à la décode standard. Ch.1 introduit la mécanique du softmax/sampling **sans** mentionner la spec ; Ch.4 démontre que c'est précisément cette mécanique qui rend la spec contractuellement neutre. Renvoi `[!INFO]` en §1.4. |
 | Frontière Ch.1 ↔ Ch.7 | À tenir — Ch.7 montre comment la variance **s'accumule à chaque tour** (boucle ReAct, `stop_reason`, harness défensif). Ch.1 pose la variance **à un seul token** ; le multiplicateur agentique (la variance qui explose avec le nombre de tool calls) est nommé une phrase et renvoyé. Pas de boucle ReAct ici. |
-| Frontière Ch.1 ↔ Ch.18 | À tenir — Ch.18 documente le **trajectory drift** comme problème d'observabilité OTel GenAI (`gen_ai.*` semconv, cognitive audit trail). Ch.1 pose le *pourquoi* (la stochasticité fondamentale) ; Ch.18 pose le *comment instrumenter*. Renvoi `[!INFO]` en §1.5 — c'est **le seul endroit** du Ch.1 où OTel est mentionné (la définition canonique OTel GenAI reste Ch.18 §18.2). |
-| Frontière Ch.1 ↔ Ch.17 | Légère — `pass@k` vs `pass^k` est **introduit** ici comme conséquence directe de la stochasticité (« si chaque tirage est variable, un seul rejouage ne suffit pas à signer un score »), **développé** Ch.17 comme outil de bench. Renvoi en footnote, pas en encadré. |
+| Frontière Ch.1 ↔ Ch.20 | À tenir — Ch.20 documente le **trajectory drift** comme problème d'observabilité OTel GenAI (`gen_ai.*` semconv, cognitive audit trail). Ch.1 pose le *pourquoi* (la stochasticité fondamentale) ; Ch.20 pose le *comment instrumenter*. Renvoi `[!INFO]` en §1.5 — c'est **le seul endroit** du Ch.1 où OTel est mentionné (la définition canonique OTel GenAI reste Ch.20 §20.2). |
+| Frontière Ch.1 ↔ Ch.19 | Légère — `pass@k` vs `pass^k` est **introduit** ici comme conséquence directe de la stochasticité (« si chaque tirage est variable, un seul rejouage ne suffit pas à signer un score »), **développé** Ch.19 comme outil de bench. Renvoi en footnote, pas en encadré. |
 
 ### Sources matérielles
 
@@ -1989,7 +1989,7 @@ Le Ch.1 est un **chapitre encart à dossier source unique mais maigre** : la mat
   - [`anatomie/scrolly.html`](../anatomie/scrolly.html) L.2034-2039 (scène 00) + L.2670-2685 (définitions étendues)
   - [`anatomie/index.html`](../anatomie/index.html) L.524 (lede stochasticité)
 - **Renvois croisés Acte I** : `decode-speculative/` Ch.4 (théorème Leviathan en renvoi), `modeles-raisonnement/` Ch.2 (variance qui s'accumule en clôture).
-- **Renvoi Acte IV** : `observabilite-agents-ia/` Ch.18 — trajectory drift et OTel GenAI semconv (renvoi clôture, **pas** mention du contenu).
+- **Renvoi Acte IV** : `observabilite-agents-ia/` Ch.20 — trajectory drift et OTel GenAI semconv (renvoi clôture, **pas** mention du contenu).
 
 ### Audit des schémas — Ch.1
 
@@ -2044,7 +2044,7 @@ Le Ch.1 est un **chapitre encart à dossier source unique mais maigre** : la mat
         ├─ §1.3.2 Pourquoi cette variance est précisément ce qui rend
         │         le modèle capable de raisonner
         ├─ §1.3.3 Conséquence évaluation : distributions, pas cas isolés
-        │         (n rejouages, intervalles de confiance, pass@k — Ch.17)
+        │         (n rejouages, intervalles de confiance, pass@k — Ch.19)
         └─ encadré [!ATTENTION] Test unitaire exact sur sortie stochastique
             = programmer la frustration.
 
@@ -2067,12 +2067,12 @@ Le Ch.1 est un **chapitre encart à dossier source unique mais maigre** : la mat
 
 §1.5  L'effet multiplicateur agentique — pourquoi Ch.1 conditionne l'Acte II
         ├─ §1.5.1 Variance à un token (Ch.1) → variance à un tour (Ch.7)
-        │         → variance sur N tours d'agent (Ch.7 nouveau, Ch.18 obs)
+        │         → variance sur N tours d'agent (Ch.7 nouveau, Ch.20 obs)
         ├─ §1.5.2 Le trajectory drift — silent regression sur version modèle
         ├─ encadré [!INFO] Voir Ch.2 — seconde courbe de scaling : *plus la
         │   chaîne de tokens est longue, plus la variance multiplicative
         │   s'accumule*.
-        ├─ encadré [!INFO] Voir Ch.18 — trajectory drift instrumenté via
+        ├─ encadré [!INFO] Voir Ch.20 — trajectory drift instrumenté via
         │   OpenTelemetry GenAI Semantic Conventions (`gen_ai.*` namespaces).
         └─ §1.5.3 La règle de signature : tout contrat agent 2026 spécifie
             n, T, p, k, version modèle gelée, et protocole de mesure
@@ -2119,7 +2119,7 @@ Le Ch.1 est un **chapitre encart à dossier source unique mais maigre** : la mat
 | `[!IMPORTANT]` | (a) sortie = distribution · (b) reproductibilité bit-à-bit n'existe pas | 2 |
 | `[!ATTENTION]` | Test unitaire exact = frustration | 1 |
 | `[!NOTE]` | T et top-p = conventions historiques | 1 |
-| `[!INFO]` | Renvois (Ch.2 · Ch.4 · Ch.18 — pas Ch.7 sauf allusion) | 3 |
+| `[!INFO]` | Renvois (Ch.2 · Ch.4 · Ch.20 — pas Ch.7 sauf allusion) | 3 |
 | `[!WARNING]` | Trois pièges classiques | 1 |
 | **Total** | | **~10** |
 
@@ -2129,7 +2129,7 @@ Le Ch.1 est un **chapitre encart à dossier source unique mais maigre** : la mat
 - [x] Créer **S1.1** (softmax→T→top-p→tirage chain) — `livre/images/20260601-01-softmax-temperature-sampling-chain.svg` ✅ 2026-05-29
 - [x] Créer **S1.2** (faisceau 1 000 trajectoires) — `livre/images/20260601-02-variance-trajectoire-1000-rejouages.svg` ✅ 2026-05-29 (générateur `tools/gen_ch01_s12.py`)
 - [ ] Tenir la frontière Ch.1 ↔ Ch.2 strictement : zéro mention de o1, R1, RLVR, GRPO, *aha moment*, interleaved/parallel thinking
-- [ ] Tenir la frontière Ch.1 ↔ Ch.18 strictement : OTel GenAI nommé **une seule fois**, en renvoi, jamais défini
+- [ ] Tenir la frontière Ch.1 ↔ Ch.20 strictement : OTel GenAI nommé **une seule fois**, en renvoi, jamais défini
 - [ ] Sourcer les 5 paramètres API mentionnés (`temperature`, `top_p`, `top_k`, `seed`, `system_fingerprint`) sur **trois docs vendeurs frontière** (OpenAI / Anthropic / Google)
 - [ ] Vérifier que « bug » n'apparaît jamais pour qualifier la stochasticité (formulation systématique : « nature », « propriété fondamentale »)
 
@@ -2153,7 +2153,7 @@ Le Ch.1 est un **chapitre encart à dossier source unique mais maigre** : la mat
 | Frontière Ch.2 ↔ Ch.3 | À tenir — Ch.2 dit **quoi** (RLVR comme mécanique d'entraînement avec vérifieur booléen). Ch.3 dit **qui note les étapes** (PRM800K, GenRM/ThinkPRM, generative verifiers). §2.3 mentionne PRM uniquement comme l'une des 4 stratégies test-time de Snell, renvoi `[!INFO]` Ch.3. |
 | Frontière Ch.2 ↔ Ch.4 | À tenir — Ch.4 = décode spéculative. Ch.2 explique **pourquoi** on dépense plus de tokens à l'inférence ; Ch.4 explique **comment** on regagne la latence. Frontière déjà posée en miroir dans Ch.4 §4.1.1 — Ch.2 §2.8 pose la réciproque. |
 | Frontière Ch.2 ↔ Ch.5 | À tenir — Ch.5 = économie unitaire (LLMflation ×1000, addition pile complète, ×10-74 AIME). Ch.2 mentionne le **coût marginal explicite** (4-100× tokens, thinking/output 100:1) mais **ne déroule pas la pile éco** — c'est Ch.5. Le chiffre ×10-74 sur AIME apparaît en clôture Ch.2 comme amorce du piège « router automatiquement », **justification chiffrée** en Ch.5. |
-| Frontière Ch.2 ↔ Ch.18 | À tenir — Ch.18 = observabilité (OTel GenAI, cognitive audit trail). Ch.2 pose le **constat** de la non-fidélité de la CoT ; Ch.18 en déroule les **conséquences opérationnelles** (monitoring outputs ≠ monitoring thinking). Anchor `[!INFO] Voir Ch.18` en clôture §2.6. |
+| Frontière Ch.2 ↔ Ch.20 | À tenir — Ch.20 = observabilité (OTel GenAI, cognitive audit trail). Ch.2 pose le **constat** de la non-fidélité de la CoT ; Ch.20 en déroule les **conséquences opérationnelles** (monitoring outputs ≠ monitoring thinking). Anchor `[!INFO] Voir Ch.20` en clôture §2.6. |
 
 ### Sources matérielles
 
@@ -2194,12 +2194,12 @@ Le Ch.2 est un **chapitre standard à un seul dossier source dense** (10 sources
 | Critère | Spec |
 | --- | --- |
 | Format | **A4 portrait** (210×297 mm) |
-| Position dans le livre | **§2.4 principal** + Ch.5 §5.8 + Ch.17 (axe coût accompagne axe performance) |
+| Position dans le livre | **§2.4 principal** + Ch.5 §5.8 + Ch.19 (axe coût accompagne axe performance) |
 | Statut | **À créer par fusion** (~2-3 j SVG). Manuscrit v1 peut fonctionner par juxtaposition. |
 | Sources à fusionner | (a) `modeles-raisonnement/images/20260506-03-diptyque-scaling.svg` — panel capability. (b) `economie-inference/images/20260506-07-reasoning-cost.svg` — panel coût. |
 | Contenu | **Panel A (haut)** : axe X temps 2020-2026, axe Y capability (MMLU + AIME). Courbes pretraining vs test-time-compute, bande pivot o1 sept 2024. Annotation Snell 14×. **Panel B (bas)** : axe X log USD/résolution AIME, axe Y perf AIME. Deux nuages distincts (non-reasoning bas-gauche, reasoning haut-droit, ×10-74). **Bandeau bas** : 3 régimes vendor (pricing/token uniforme, thinking facturés, effort levels). |
 | Légende | « *La capability monte avec le test-time compute. La facture monte avec elle. Le décideur qui choisit un raisonneur ne choisit pas un modèle — il choisit un régime tarifaire et un design d'allocation compute par requête.* » |
-| Réutilisation | §2.4 + Ch.5 §5.8 + Ch.17 + annexe cahier central. |
+| Réutilisation | §2.4 + Ch.5 §5.8 + Ch.19 + annexe cahier central. |
 
 ### Plan détaillé
 
@@ -2258,7 +2258,7 @@ Le Ch.2 est un **chapitre standard à un seul dossier source dense** (10 sources
         ├─ [SVG S] 05-faithfulness-scoreboard
         ├─ §2.6.1-2.6.6 Protocole hint Anthropic, 25/39 %, GPQA -44 %,
         │   nuance METR, implications AISI/NIST
-        └─ encadré [!INFO] Voir Ch.18 — cognitive audit trail
+        └─ encadré [!INFO] Voir Ch.20 — cognitive audit trail
 
 §2.7  Diffusion ladder et alternatives
         ├─ [SVG S] 06-diffusion-ladder
@@ -2282,7 +2282,7 @@ Le Ch.2 est un **chapitre standard à un seul dossier source dense** (10 sources
 | --- | --- | --- |
 | `[!QUESTION]` | Ouverture | 1 |
 | `[!TLDR]` | 6-7 bullets | 1 |
-| `[!INFO]` | Renvois (Ch.1 §2.1, Ch.3 §2.3, Ch.4 + Ch.5 §2.1, Ch.5 §2.4, Ch.18 §2.6) | 5-6 |
+| `[!INFO]` | Renvois (Ch.1 §2.1, Ch.3 §2.3, Ch.4 + Ch.5 §2.1, Ch.5 §2.4, Ch.20 §2.6) | 5-6 |
 | `[!IMPORTANT]` | Pivot mécanique §2.2 · Raisonneur ≠ chatbot §2.5 · Agentique 2026 §2.7 | 3 |
 | `[!QUOTE]` | Snell + Anthropic faithfulness | 2 |
 | `[!ATTENTION]` | Ratio thinking/output 100:1 change UX/éco §2.5 | 1 |
@@ -2313,12 +2313,12 @@ Le Ch.2 est un **chapitre standard à un seul dossier source dense** (10 sources
 | Audit schémas source (1 dossier) | ✅ fait — `process-reward-models/` (7 SVG narratifs tous absorbés + ingrédient E5) |
 | Plan détaillé | ✅ fait (audit du 2026-05-29) |
 | Manuscrit | ✅ **v1 livrée** — `docs/livre/ch03-process-reward-models.md` (~7 550 mots, 14 footnotes Tier-A, 13 encadrés Obsidian, 7 schémas réutilisés + tableau E5 textualisé en attendant SVG) |
-| Schémas à créer | ✅ **E5 v1 livré** 2026-05-29 — `livre/images/20260601-04-prm-vs-judge-vs-human-e5.svg` (A4 portrait 900×1280 ; matrice 3×5 colorée par mécanique avec faits-clés + détails par cellule, bandeau bas 4 trajectoires d'évolution 2027-2028 alignées sur les 3 mécaniques, encadré « pattern dominant prod » en bas). Générateur Python `tools/gen_ch03_e5.py`. Renvoi `[!INFO]` depuis Ch.17 §graders. |
+| Schémas à créer | ✅ **E5 v1 livré** 2026-05-29 — `livre/images/20260601-04-prm-vs-judge-vs-human-e5.svg` (A4 portrait 900×1280 ; matrice 3×5 colorée par mécanique avec faits-clés + détails par cellule, bandeau bas 4 trajectoires d'évolution 2027-2028 alignées sur les 3 mécaniques, encadré « pattern dominant prod » en bas). Générateur Python `tools/gen_ch03_e5.py`. Renvoi `[!INFO]` depuis Ch.19 §graders. |
 | Frontière Ch.3 ↔ Ch.2 | À tenir — Ch.2 dit *quoi* (raisonneur, RLVR/GRPO, faithfulness 25/39 %) ; Ch.3 dit *qui note* (économie 2-4 Md$, reward hacking 99/2). Définition canonique RLVR **en Ch.2** ; Ch.3 la mobilise sous l'angle « élimination du PRM ». |
-| Frontière Ch.3 ↔ Ch.5 | À tenir — Triptyque économique : Ch.3 (notateur) → Ch.5 (token) → Ch.21 (outcome). Renvoi `[!INFO]` croisé. |
-| Frontière Ch.3 ↔ Ch.17 | À tenir — Ch.17 = playbook gruyère + LLM-as-judge en eval/CI. E5 créé ici **renvoyé** depuis Ch.17 §graders. La taxonomie code/model/human reste en Ch.17. |
-| Frontière Ch.3 ↔ Ch.18 | À tenir — Schéma 07 mobilisé en Ch.3 §3.8.6 comme cas d'usage in-prod (3 sondes) ; Ch.18 déroule l'instrumentation OTel complète. Renvoi croisé. |
-| Frontière Ch.3 ↔ Ch.19 | À tenir — Reward hacking comme *signal silencieux pré-attaque* (vecteur jailbreak par optimisation du moniteur). Renvoi croisé §3.6 → Ch.19. |
+| Frontière Ch.3 ↔ Ch.5 | À tenir — Triptyque économique : Ch.3 (notateur) → Ch.5 (token) → Ch.23 (outcome). Renvoi `[!INFO]` croisé. |
+| Frontière Ch.3 ↔ Ch.19 | À tenir — Ch.19 = playbook gruyère + LLM-as-judge en eval/CI. E5 créé ici **renvoyé** depuis Ch.19 §graders. La taxonomie code/model/human reste en Ch.19. |
+| Frontière Ch.3 ↔ Ch.20 | À tenir — Schéma 07 mobilisé en Ch.3 §3.8.6 comme cas d'usage in-prod (3 sondes) ; Ch.20 déroule l'instrumentation OTel complète. Renvoi croisé. |
+| Frontière Ch.3 ↔ Ch.21 | À tenir — Reward hacking comme *signal silencieux pré-attaque* (vecteur jailbreak par optimisation du moniteur). Renvoi croisé §3.6 → Ch.21. |
 | Frontière Ch.3 ↔ Ch.4 | Rappel mineur — « inference-time compute » canonique en Ch.2. Ch.3/Ch.4 renvoient. |
 
 ### Sources matérielles
@@ -2342,7 +2342,7 @@ Le Ch.3 est un **chapitre standard à un seul dossier source**, dense visuelleme
 | 04 | [`04-discriminative-vs-generative`](../process-reward-models/images/20260513-04-discriminative-vs-generative.svg) | 1200×720 | **S §3.5** | Verifier discriminatif vs génératif | tel quel |
 | 05 | [`05-reward-hacking-invisible`](../process-reward-models/images/20260513-05-reward-hacking-invisible.svg) | 1200×720 | **S §3.6** | **Chiffre signature 99/2** — exploitation vs verbalisation | tel quel |
 | 06 | [`06-quatre-trajectoires`](../process-reward-models/images/20260513-06-quatre-trajectoires.svg) | 1200×760 | **S §3.8** | 4 quadrants RLVR généralisé / generative intégré / PRM spécialisé / PRM-as-a-service | tel quel |
-| 07 | [`07-observabilite-chatbot-agent`](../process-reward-models/images/20260513-07-observabilite-chatbot-agent.svg) | 1200×780 | **S §3.8.2** | Pipeline audit step-level (3 sondes), pont Ch.18 | tel quel (renvoyé depuis Ch.18) |
+| 07 | [`07-observabilite-chatbot-agent`](../process-reward-models/images/20260513-07-observabilite-chatbot-agent.svg) | 1200×780 | **S §3.8.2** | Pipeline audit step-level (3 sondes), pont Ch.20 | tel quel (renvoyé depuis Ch.20) |
 
 **Bilan audit Ch.3** : 7/7 schémas absorbés. Aucun à fusionner en interne. Seule production neuve = **E5**.
 
@@ -2351,12 +2351,12 @@ Le Ch.3 est un **chapitre standard à un seul dossier source**, dense visuelleme
 | Critère | Spec |
 | --- | --- |
 | Format | A4 portrait (210 × 297 mm) |
-| Position | **Principal Ch.3 §3.7** + renvoi Ch.17 §graders |
+| Position | **Principal Ch.3 §3.7** + renvoi Ch.19 §graders |
 | Statut | **À créer par fusion légère** (~2 j SVG) |
-| Sources | Ch.3 §3.7 (économie cachée + chiffres bench) + Ch.17 §2.2 (taxonomie graders) + §5 calibration judge-humain |
+| Sources | Ch.3 §3.7 (économie cachée + chiffres bench) + Ch.19 §2.2 (taxonomie graders) + §5 calibration judge-humain |
 | Contenu | **Matrice 3 lignes × 5 colonnes** : *PRM* / *LLM-as-judge* / *Human eval* × **Coût** (0,001 $ / 0,01-0,05 $ / 5-150 $) · **Scalabilité** · **Biais** (reward hacking 99/2 / sycophantie + position bias / IAA variable) · **Fidélité** · **Cas d'usage**. **Bandeau bas** : 4 trajectoires d'évolution alignées sur les 3 lignes. |
 | Légende | « *Trois mécaniques pour noter la qualité d'un raisonnement. Aucune ne suffit seule : en 2026, le pattern dominant en production combine les trois — règle déterministe pour la précision, judge LLM async pour la couverture, sampling humain pour la calibration.* » |
-| Réutilisation | §3.7 principal + renvoi Ch.17 §graders (page-facing du gruyère R11) + fiche rôle Acheteur eval |
+| Réutilisation | §3.7 principal + renvoi Ch.19 §graders (page-facing du gruyère R11) + fiche rôle Acheteur eval |
 
 ### Plan détaillé
 
@@ -2398,19 +2398,19 @@ Le Ch.3 est un **chapitre standard à un seul dossier source**, dense visuelleme
         ├─ [SVG S] 05-reward-hacking-invisible
         ├─ §3.6.1-3.6.6 Anthropic 6 environnements, OpenAI CoT monitoring,
         │   faithfulness pré-requis, PRIME, CRA, ne résout pas dans le cas général
-        └─ encadré [!ATTENTION] Renvoi Ch.18 + Ch.19
+        └─ encadré [!ATTENTION] Renvoi Ch.20 + Ch.21
 §3.7  Comparatif PRM vs LLM-as-judge vs human eval
         ├─ [SVG E5] (à créer)
         ├─ §3.7.1-3.7.3 Trois mécaniques, pattern dominant prod = combinaison,
         │   piège achat sans audit
-        └─ encadré [!INFO] Renvoi Ch.17 §graders
+        └─ encadré [!INFO] Renvoi Ch.19 §graders
 §3.8  Où va la couche notateur — quatre trajectoires + observabilité
         ├─ [SVG S] 06-quatre-trajectoires
         ├─ §3.8.1-3.8.4 RLVR généralisé / Generative intégré / PRM spécialisé / PaaS
         ├─ §3.8.5 Seconde vie en production — couche d'audit + 3 questions builder
         ├─ [SVG S] 07-observabilite-chatbot-agent
         ├─ §3.8.6 Cas chatbot e-commerce — 3 sondes (règle / judge async / humain)
-        └─ encadré [!INFO] Renvoi Ch.18
+        └─ encadré [!INFO] Renvoi Ch.20
 §3.9  Conclusion — l'économie cachée et son risque
 
 > [!WARNING] Trois pièges classiques
@@ -2425,7 +2425,7 @@ Le Ch.3 est un **chapitre standard à un seul dossier source**, dense visuelleme
 | --- | --- | --- |
 | `[!QUESTION]` | Ouverture | 1 |
 | `[!TLDR]` | 6-7 bullets | 1 |
-| `[!INFO]` | Renvois Ch.2 / Ch.5 / Ch.17 (E5) / Ch.18 / Ch.19 | 5 |
+| `[!INFO]` | Renvois Ch.2 / Ch.5 / Ch.19 (E5) / Ch.20 / Ch.21 | 5 |
 | `[!QUOTE]` | Lightman 2023 + aha moment R1 + Anthropic 2025 | 2-3 |
 | `[!IMPORTANT]` | « PRM = contrat de travail » §3.3 · « raisonneur = notateur » §3.5 | 2 |
 | `[!ATTENTION]` | Faithfulness pré-requis §3.6 · ne pas réinjecter judge §3.8 | 2 |
@@ -2438,8 +2438,8 @@ Le Ch.3 est un **chapitre standard à un seul dossier source**, dense visuelleme
 - [x] Rédiger `docs/livre/ch03-process-reward-models.md` (~7 550 mots) ✅ 2026-05-29
 - [x] Créer **E5** (PRM vs LLM-judge vs human eval, A4 portrait) — `livre/images/20260601-04-prm-vs-judge-vs-human-e5.svg` ✅ 2026-05-29 (générateur `tools/gen_ch03_e5.py`)
 - [ ] Compléter sources 12 → 14-20 par ajouts E5
-- [ ] Vérifier triptyque économique Ch.3 → Ch.5 → Ch.21 explicite §3.1 + §3.9
-- [ ] Tester pont §3.6 → Ch.19 (reward hacking comme vecteur jailbreak silencieux)
+- [ ] Vérifier triptyque économique Ch.3 → Ch.5 → Ch.23 explicite §3.1 + §3.9
+- [ ] Tester pont §3.6 → Ch.21 (reward hacking comme vecteur jailbreak silencieux)
 
 ---
 
@@ -2447,7 +2447,7 @@ Le Ch.3 est un **chapitre standard à un seul dossier source**, dense visuelleme
 
 > **Acte I — Les moteurs · Gabarit standard 22 p · ~7 000-7 500 mots**
 > **Lecteur cible** : FinOps, acheteur infra, sponsor IA, architecte plateforme, CDO, agent engineer côté serving.
-> **Sortie lecteur** : intègre la trajectoire LLMflation ×1 000 en quatre ans (60 $→0,06 $→0,02 $/Mtok, trois régimes successifs : dense+batching statique 2021-2023, PagedAttention/FA-3 2023-2024, MoE+désagrégation+Blackwell 2024-2026) ; lit l'anatomie d'un appel (prefill compute-bound vs decode memory-bound, KV cache linéaire en contexte) ; déroule la **pile 7 couches** (kernel fusion ×1,5 → FA-3 ×2 → PagedAttention+continuous batching ×2-4 → FP8/FP4 ×2 chacune → speculative decoding ×3-6,5 → prefix caching ×10 situationnel → désagrégation prefill/decode), comprend pourquoi ×14 sur le même B300 ; situe la désagrégation Splitwise/Mooncake/DistServe (TTFT 1,4-2,3×, Mooncake >100 Mds tokens/jour Kimi) ; arbitre MoE vs dense (DeepSeek V3 671 B totaux / 37 B actifs, MLA KV cache ×20, pré-entraînement 5,6 M$ compute pur) ; lit le mix matériel 2026 (H100 0,15 $/Mtok, H200 0,10 $, B200 0,02 $ sur GPT-OSS-120B, MI300X 0,12 $, Trainium 2 -30/-40 % vs H100 Bedrock, Groq LPU 800 tok/s premium latence) ; identifie les marges fragiles (Together ~45 % / Fireworks ~50 % cible 60 % / OpenAI-Anthropic ~60-70 % / hyperscalers 70-80 %) ; reconnaît l'angle mort reasoning ×10-74 AIME (o1/o3, mais o3-mini -63 % vs o1-mini à perf comparable) ; nomme la **règle structurelle** du chapitre — *prix par token qui baisse, facture par tâche qui monte* ; tient le triptyque tarifaire Ch.5 coût/token (physique) ↔ Ch.21 valeur/outcome (J-curve) ↔ Ch.22 externalité/Wh-L-CO₂eq (Jevons) ; reconnaît trois pièges 100 % traçables (contrat 3 ans prix/token sans clause révision ; RFP sur tokens/sec batch 1 ; confondre LLMflation marketing et coût par cas d'usage).
+> **Sortie lecteur** : intègre la trajectoire LLMflation ×1 000 en quatre ans (60 $→0,06 $→0,02 $/Mtok, trois régimes successifs : dense+batching statique 2021-2023, PagedAttention/FA-3 2023-2024, MoE+désagrégation+Blackwell 2024-2026) ; lit l'anatomie d'un appel (prefill compute-bound vs decode memory-bound, KV cache linéaire en contexte) ; déroule la **pile 7 couches** (kernel fusion ×1,5 → FA-3 ×2 → PagedAttention+continuous batching ×2-4 → FP8/FP4 ×2 chacune → speculative decoding ×3-6,5 → prefix caching ×10 situationnel → désagrégation prefill/decode), comprend pourquoi ×14 sur le même B300 ; situe la désagrégation Splitwise/Mooncake/DistServe (TTFT 1,4-2,3×, Mooncake >100 Mds tokens/jour Kimi) ; arbitre MoE vs dense (DeepSeek V3 671 B totaux / 37 B actifs, MLA KV cache ×20, pré-entraînement 5,6 M$ compute pur) ; lit le mix matériel 2026 (H100 0,15 $/Mtok, H200 0,10 $, B200 0,02 $ sur GPT-OSS-120B, MI300X 0,12 $, Trainium 2 -30/-40 % vs H100 Bedrock, Groq LPU 800 tok/s premium latence) ; identifie les marges fragiles (Together ~45 % / Fireworks ~50 % cible 60 % / OpenAI-Anthropic ~60-70 % / hyperscalers 70-80 %) ; reconnaît l'angle mort reasoning ×10-74 AIME (o1/o3, mais o3-mini -63 % vs o1-mini à perf comparable) ; nomme la **règle structurelle** du chapitre — *prix par token qui baisse, facture par tâche qui monte* ; tient le triptyque tarifaire Ch.5 coût/token (physique) ↔ Ch.23 valeur/outcome (J-curve) ↔ Ch.24 externalité/Wh-L-CO₂eq (Jevons) ; reconnaît trois pièges 100 % traçables (contrat 3 ans prix/token sans clause révision ; RFP sur tokens/sec batch 1 ; confondre LLMflation marketing et coût par cas d'usage).
 
 ### Statut
 
@@ -2456,12 +2456,12 @@ Le Ch.3 est un **chapitre standard à un seul dossier source**, dense visuelleme
 | Audit schémas source (1 dossier) | ✅ fait — `economie-inference/` (7 SVG tous absorbés tels quels, dont E2 schéma le + densément cité du livre) |
 | Plan détaillé | ✅ fait (audit du 2026-05-29) |
 | Manuscrit | ✅ **v1 livrée** — `docs/livre/ch05-economie-inference.md` (~7 590 mots, 14 footnotes Tier-A, 19 encadrés Obsidian, 7 schémas réutilisés dont E2 pleine page) |
-| Schémas à créer | **0 ex nihilo** pour Ch.5. `03-pile-optimisation` devient **E2** (référence livre). `07-reasoning-cost` = **ingrédient E3** (Ch.2). `01-llmflation-curve` = **ingrédient secondaire R16** (panel A Ch.21). |
+| Schémas à créer | **0 ex nihilo** pour Ch.5. `03-pile-optimisation` devient **E2** (référence livre). `07-reasoning-cost` = **ingrédient E3** (Ch.2). `01-llmflation-curve` = **ingrédient secondaire R16** (panel A Ch.23). |
 | Frontière Ch.5 ↔ Ch.4 | À tenir — Ch.4 = zoom monographique. Matrices Ch.4 (variantes × frameworks) et Ch.5 (mix matériel) **côte à côte, pas fusionnées**. Renvoi `[!INFO]` §5.3.5 + §5.4. |
 | Frontière Ch.5 ↔ Ch.2 | À tenir — `07-reasoning-cost` ingrédient cost E3, Ch.2 fournit ingrédient capability. Renvoi `[!INFO]` §5.8. |
-| Frontière Ch.5 ↔ Ch.21 | À tenir — **triptyque tarifaire**. R16 (J-curve × LLMflation) référencé §5.10 en clôture, principal en Ch.21. |
-| Frontière Ch.5 ↔ Ch.22 | À tenir — E2 = **pont explicite** Ch.5 ↔ Ch.22 (mêmes leviers, angle externalité). Renvoi §5.3 + §5.9. |
-| Frontière Ch.5 ↔ Ch.20 | À tenir — marges 45-50 % éclairent décision buy/build. Renvoi `[!INFO]` §5.9. |
+| Frontière Ch.5 ↔ Ch.23 | À tenir — **triptyque tarifaire**. R16 (J-curve × LLMflation) référencé §5.10 en clôture, principal en Ch.23. |
+| Frontière Ch.5 ↔ Ch.24 | À tenir — E2 = **pont explicite** Ch.5 ↔ Ch.24 (mêmes leviers, angle externalité). Renvoi §5.3 + §5.9. |
+| Frontière Ch.5 ↔ Ch.22 | À tenir — marges 45-50 % éclairent décision buy/build. Renvoi `[!INFO]` §5.9. |
 | Frontière Ch.5 ↔ Ch.6 | Légère — pas de renvoi. |
 
 ### Sources matérielles
@@ -2472,30 +2472,30 @@ Chapitre standard à un seul dossier source dense, structure ~ Ch.4.
   - [Rapport (.md, ~3 200 mots / 191 lignes / 13 footnotes)](../economie-inference/20260506-economie-inference-rapport.md) · [App](../economie-inference/20260506-economie-inference-app.html)
   - 7 schémas SVG dans [`images/`](../economie-inference/images/)
 
-**13 sources Tier-A** : a16z LLMflation · PagedAttention SOSP 2023 (arXiv:2309.06180) · FlashAttention-3 NeurIPS 2024 (arXiv:2407.08608) · DeepSeek V3 Tech Report (arXiv:2412.19437) · Splitwise ISCA 2024 (arXiv:2311.18677) · Mooncake ACM TOS 2025 · EAGLE-3 NeurIPS 2025 (arXiv:2503.01840) · NVIDIA Blackwell InferenceMAX 10/2025 · SemiAnalysis InferenceMAX 2025 · Sacra Together/Fireworks 2025 · Epoch AI MoE vs dense 2025 · OpenAI Learning to reason 09/2024 · Hao AI Lab UCSD *Disaggregated Inference: 18 Months Later* 2025. Ajout possible : MLPerf Inference v6, Patterson 2021 pour amorcer pont Ch.22.
+**13 sources Tier-A** : a16z LLMflation · PagedAttention SOSP 2023 (arXiv:2309.06180) · FlashAttention-3 NeurIPS 2024 (arXiv:2407.08608) · DeepSeek V3 Tech Report (arXiv:2412.19437) · Splitwise ISCA 2024 (arXiv:2311.18677) · Mooncake ACM TOS 2025 · EAGLE-3 NeurIPS 2025 (arXiv:2503.01840) · NVIDIA Blackwell InferenceMAX 10/2025 · SemiAnalysis InferenceMAX 2025 · Sacra Together/Fireworks 2025 · Epoch AI MoE vs dense 2025 · OpenAI Learning to reason 09/2024 · Hao AI Lab UCSD *Disaggregated Inference: 18 Months Later* 2025. Ajout possible : MLPerf Inference v6, Patterson 2021 pour amorcer pont Ch.24.
 
 ### Audit des schémas — Ch.5
 
 | Fig | Slug | viewBox | Catégorie Ch.5 | Insertion | Statut |
 | --- | --- | --- | --- | --- | --- |
-| 01 | [`llmflation-curve`](../economie-inference/images/20260506-01-llmflation-curve.svg) | 1200×800 | **S §5.1** (+ ingrédient panel A R16 Ch.21) | Courbe 2021-2026, 3 régimes, 60 $ → 0,02 $/Mtok | tel quel — ouverture narrative + ingrédient R16 |
+| 01 | [`llmflation-curve`](../economie-inference/images/20260506-01-llmflation-curve.svg) | 1200×800 | **S §5.1** (+ ingrédient panel A R16 Ch.23) | Courbe 2021-2026, 3 régimes, 60 $ → 0,02 $/Mtok | tel quel — ouverture narrative + ingrédient R16 |
 | 02 | [`anatomie-appel`](../economie-inference/images/20260506-02-anatomie-appel.svg) | 1200×800 | **S §5.2** | Asymétrie prefill/decode + KV cache | tel quel — base mécanique |
-| 03 | [`pile-optimisation`](../economie-inference/images/20260506-03-pile-optimisation.svg) | 1200×800 | **E2 §5.3 principal + référence Ch.21 + Ch.22 §22.7** | 7 couches empilées, ×14 cumulé sur B300 | tel quel — **schéma signature du livre, le + densément cité (3 chapitres)** ; pleine page A3 paysage print |
+| 03 | [`pile-optimisation`](../economie-inference/images/20260506-03-pile-optimisation.svg) | 1200×800 | **E2 §5.3 principal + référence Ch.23 + Ch.24 §24.7** | 7 couches empilées, ×14 cumulé sur B300 | tel quel — **schéma signature du livre, le + densément cité (3 chapitres)** ; pleine page A3 paysage print |
 | 04 | [`desagregation`](../economie-inference/images/20260506-04-desagregation.svg) | 1200×800 | **S §5.5** | Cluster prefill ↔ bus RDMA ↔ cluster decode, TTFT 1,4-2,3× | tel quel |
 | 05 | [`moe-vs-dense`](../economie-inference/images/20260506-05-moe-vs-dense.svg) | **900×900** (portrait) | **S §5.6** | VRAM (totaux) × FLOPs (actifs), DeepSeek V3 / Mixtral / dense | tel quel — seul format portrait |
 | 06 | [`mix-materiel`](../economie-inference/images/20260506-06-mix-materiel.svg) | 1200×800 | **S §5.7** | H100/H200/B200/MI300X/Trainium 2/Groq LPU sur 4 dimensions | tel quel — carte de décision matérielle, **côte à côte** avec matrice Ch.4 print |
 | 07 | [`reasoning-cost`](../economie-inference/images/20260506-07-reasoning-cost.svg) | 1200×800 | **S §5.8 + ingrédient E3 Ch.2** | Scatter accuracy AIME × $/résolution, 2 nuages, ×10-74 | tel quel + ingrédient fusion E3 |
 
-**Bilan audit Ch.5** : 7/7 schémas absorbés tels quels. 0 à créer pour Ch.5 lui-même. **E2 = `pile-optimisation` = schéma le + densément cité du livre** (Ch.5 §5.3 principal + Ch.21 §21.7 référence + Ch.22 §22.7 leviers frugaux).
+**Bilan audit Ch.5** : 7/7 schémas absorbés tels quels. 0 à créer pour Ch.5 lui-même. **E2 = `pile-optimisation` = schéma le + densément cité du livre** (Ch.5 §5.3 principal + Ch.23 §23.7 référence + Ch.24 §24.7 leviers frugaux).
 
 ### Schémas — E2 (référence) et E3 (ingrédient)
 
 **E2 = `economie-inference/images/20260506-03-pile-optimisation.svg`, tel quel.**
 - Format : A3 paysage 1200×800
-- Position : pleine page §5.3 + miniatures §21.7 + §22.7
+- Position : pleine page §5.3 + miniatures §23.7 + §24.7
 - Statut : ✅ existe — **schéma le + cité du livre**
 - Légende Ch.5 : *« Sept couches logicielles empilées multiplient le throughput d'un facteur 14 sur un B300 — sans changer une ligne de hardware. Le silicium fait son travail ; l'écart compétitif se joue dans le harness de service. »*
-- Légendes alternatives Ch.21 et Ch.22 à tenir cohérentes avec celles posées dans les audits Ch.21 / Ch.22.
+- Légendes alternatives Ch.23 et Ch.24 à tenir cohérentes avec celles posées dans les audits Ch.23 / Ch.24.
 
 **E3 = à créer en Ch.2** (cf. audit Ch.2). Ingrédient cost : `economie-inference/images/20260506-07-reasoning-cost.svg`.
 
@@ -2522,7 +2522,7 @@ Chapitre standard à un seul dossier source dense, structure ~ Ch.4.
         ├─ [SVG S] 01-llmflation-curve
         ├─ §5.1.1-5.1.4 a16z, 3 régimes (dense → PA+FA → MoE+désag+Blackwell),
         │   analogie kWh industrialisation
-        └─ encadré [!INFO] Voir Ch.21 R16 J-curve × LLMflation
+        └─ encadré [!INFO] Voir Ch.23 R16 J-curve × LLMflation
 
 §5.2  Anatomie d'un appel — prefill compute-bound vs decode memory-bound
         ├─ [SVG S] 02-anatomie-appel
@@ -2533,12 +2533,12 @@ Chapitre standard à un seul dossier source dense, structure ~ Ch.4.
         ├─ §5.3.1-5.3.7 Kernel fusion ×1,5 / FA-3 ×2 / PA+CB ×2-4 / FP8/FP4 ×2 /
         │   spec ×3-6,5 / prefix ×10 / désagrégation
         │   └─ encadré [!INFO] Voir Ch.4 monographique
-        └─ encadré [!INFO] Voir Ch.22 mêmes leviers angle externalité
+        └─ encadré [!INFO] Voir Ch.24 mêmes leviers angle externalité
 
 §5.4  Le harness comme avantage compétitif
         ├─ §5.4.1-5.4.3 Aucune couche breakthrough en soi, intégration cohérente
         │   = art difficile, dette d'ingénierie
-        └─ encadré [!INFO] Voir Ch.20 buy/build
+        └─ encadré [!INFO] Voir Ch.22 buy/build
 
 §5.5  Désagrégation Splitwise / Mooncake / DistServe
         ├─ [SVG S] 04-desagregation
@@ -2562,18 +2562,18 @@ Chapitre standard à un seul dossier source dense, structure ~ Ch.4.
         ├─ §5.8.1-5.8.4 o1/o3 5-50× tokens, AIME ×10-74, 3 nuances tempérantes
         │   (o3-mini -63 %, rentable selon workload, spec partiellement compat),
         │   équation inversée
-        └─ encadré [!INFO] Voir Ch.2 (mécanique) + Ch.21 R16
+        └─ encadré [!INFO] Voir Ch.2 (mécanique) + Ch.23 R16
 
 §5.9  Marges vendeurs — l'industrie low-cost de l'inférence
         ├─ §5.9.1-5.9.3 COGS dominé GPU+réseau+énergie, marges 45-50 % vs
         │   70-80 % SaaS, 3 forces baisse / 3 hausse
-        └─ encadré [!INFO] Voir Ch.20
+        └─ encadré [!INFO] Voir Ch.22
 
 §5.10 Conclusion — le triptyque tarifaire (et trois pièges)
-        ├─ §5.10.1-5.10.3 Ch.5 token / Ch.21 outcome / Ch.22 externalité,
+        ├─ §5.10.1-5.10.3 Ch.5 token / Ch.23 outcome / Ch.24 externalité,
         │   slogan « prix qui baisse, facture qui monte, outcome dans le creux »,
         │   outlook 12-24 mois ($/résolution KPI dominant)
-        └─ encadré [!INFO] Voir R16 Ch.21 double-page éco
+        └─ encadré [!INFO] Voir R16 Ch.23 double-page éco
 
 > [!WARNING] Trois pièges classiques
   Contrat 3 ans prix/token sans clause révision /
@@ -2587,7 +2587,7 @@ Chapitre standard à un seul dossier source dense, structure ~ Ch.4.
 | --- | --- | --- |
 | `[!QUESTION]` | Ouverture | 1 |
 | `[!TLDR]` | 7-8 bullets | 1 |
-| `[!INFO]` | Renvois Ch.4 / Ch.2 / Ch.21 R16 / Ch.22 / Ch.20 / R16 double-page | 6 |
+| `[!INFO]` | Renvois Ch.4 / Ch.2 / Ch.23 R16 / Ch.24 / Ch.22 / R16 double-page | 6 |
 | `[!QUOTE]` | a16z Appenzeller + DeepSeek V3 + SemiAnalysis | 2-3 |
 | `[!IMPORTANT]` | Harness avantage compétitif §5.4 + équation inversée §5.8.4 | 2 |
 | `[!ATTENTION]` | Mix prefill/decode change avec workload §5.7 + marge fragile §5.9 | 2 |
@@ -2601,8 +2601,8 @@ Chapitre standard à un seul dossier source dense, structure ~ Ch.4.
 - [ ] Rédiger `docs/livre/ch05-economie-inference.md` (~7 000-7 500 mots)
 - [ ] Vérifier en rédaction que chaque chiffre choquant (×1 000, ×14, AIME ×10-74, marges 45-50 %, MLA ×20, DeepSeek 5,6 M$, Mooncake 100 Mds/jour) est sourcé Tier-A
 - [ ] Tenir frontière Ch.4 en §5.3.5 (une ligne + renvoi, pas un mini-chapitre)
-- [ ] Préparer le calage triptyque §5.10 → R16 Ch.21 (édition print A3 facing)
-- [ ] Confirmer que E2 reçoit sa légende canonique Ch.5 ET ses deux légendes alternatives Ch.21/Ch.22 cohérentes
+- [ ] Préparer le calage triptyque §5.10 → R16 Ch.23 (édition print A3 facing)
+- [ ] Confirmer que E2 reçoit sa légende canonique Ch.5 ET ses deux légendes alternatives Ch.23/Ch.24 cohérentes
 
 ---
 
@@ -2610,7 +2610,7 @@ Chapitre standard à un seul dossier source dense, structure ~ Ch.4.
 
 > **Acte I — Les moteurs · Gabarit court / encart 6-8 p · ~2 500-3 000 mots**
 > **Lecteur cible** : agent engineer curieux, architecte (notamment computer use / robotique), sponsor IA qui suit la R&D, lecteur en transition Acte I → Acte II.
-> **Sortie lecteur** : sait définir un world model en une ligne (`f(état_t, action_t) → état_{t+1}`) et le distingue d'un LLM ; identifie les trois architectures concurrentes (V/M/C → RSSM/Dreamer pixel-prédictif ; JEPA latent ; autoregressif type Genie/Cosmos) et comprend qu'aucune n'a gagné en mai 2026 ; lit la controverse pixel vs latent comme un débat de dimensionnalité et de planification, pas comme un combat religieux ; reconnaît les quatre boucles d'usage (robotique, conduite, création 3D, agent virtuel) et leurs contraintes limitantes distinctes ; mesure les six verrous durs (mémoire courte, physique imparfaite, compute, données, évaluation immature, sécurité) ; sait qu'en 2026 c'est encore une bordure de recherche pour le décideur — sauf si son cas d'usage touche au pilotage écran (Ch.15) ou à la robotique ; ferme l'Acte I avec un signal faible à 18-36 mois et entre dans la boucle agentique (Ch.7) avec une question en plus : *mon agent a-t-il besoin d'un modèle interne du monde, ou seulement d'un langage et d'outils ?*
+> **Sortie lecteur** : sait définir un world model en une ligne (`f(état_t, action_t) → état_{t+1}`) et le distingue d'un LLM ; identifie les trois architectures concurrentes (V/M/C → RSSM/Dreamer pixel-prédictif ; JEPA latent ; autoregressif type Genie/Cosmos) et comprend qu'aucune n'a gagné en mai 2026 ; lit la controverse pixel vs latent comme un débat de dimensionnalité et de planification, pas comme un combat religieux ; reconnaît les quatre boucles d'usage (robotique, conduite, création 3D, agent virtuel) et leurs contraintes limitantes distinctes ; mesure les six verrous durs (mémoire courte, physique imparfaite, compute, données, évaluation immature, sécurité) ; sait qu'en 2026 c'est encore une bordure de recherche pour le décideur — sauf si son cas d'usage touche au pilotage écran (Ch.17) ou à la robotique ; ferme l'Acte I avec un signal faible à 18-36 mois et entre dans la boucle agentique (Ch.7) avec une question en plus : *mon agent a-t-il besoin d'un modèle interne du monde, ou seulement d'un langage et d'outils ?*
 
 ### Statut
 
@@ -2621,9 +2621,9 @@ Chapitre standard à un seul dossier source dense, structure ~ Ch.4.
 | Manuscrit | ✅ **v1 livrée** — `docs/livre/ch06-world-models.md` (~3 000 mots hors sources, 9 footnotes Tier-A + 1 renvoi-dossier, 7 encadrés Obsidian, 5 schémas réutilisés dont 07 piece-manquante optionnel inclus) |
 | Schémas à créer | **0 ex nihilo**. |
 | Frontière Ch.6 ↔ Ch.5 | À tenir — Ch.5 = pile texte. Ch.6 dit que les world models = **un autre régime de scaling** (Cosmos 9 000 Md tokens vidéo, GAIA-3 ×5 compute) que la 7-couches Ch.5 ne capture pas. Renvoi `[!INFO]` léger §6.4.3. |
-| Frontière Ch.6 ↔ Ch.15 | À tenir — **frontière la plus délicate**. Ch.15 = applicatif (modèles vision-action, grounding écran). Ch.6 reste **conceptuel**. Encadré `[!INFO]` croisé bidirectionnel §6.5. |
+| Frontière Ch.6 ↔ Ch.17 | À tenir — **frontière la plus délicate**. Ch.17 = applicatif (modèles vision-action, grounding écran). Ch.6 reste **conceptuel**. Encadré `[!INFO]` croisé bidirectionnel §6.5. |
 | Frontière Ch.6 ↔ Ch.7 | À tenir — Ch.6 pose en clôture la distinction agent purement langage (Ch.7, 95 % des cas) vs agent avec world model interne. Renvoi de transition léger §6.5. |
-| Frontière Ch.6 ↔ Ch.16 | Renvoi optionnel — narrative experiences en note de pied de page (création 3D cousine). |
+| Frontière Ch.6 ↔ Ch.18 | Renvoi optionnel — narrative experiences en note de pied de page (création 3D cousine). |
 
 ### Sources matérielles
 
@@ -2663,7 +2663,7 @@ Encart à dossier source unique. Rapport source ~5 900 mots / 31 footnotes — *
   • Trois architectures concurrentes (V/M/C+Dreamer pixel, JEPA latent,
     autoregressif Genie/Cosmos). Aucune n'a gagné.
   • Pour 95 % des cas agentiques 2026 : ce n'est PAS votre problème
-  • Pour les 5 % restants — pilotage écran avancé (Ch.15), robotique
+  • Pour les 5 % restants — pilotage écran avancé (Ch.17), robotique
     humanoïde, conduite, simulation 3D — c'est central
   • Signal faible à 18-36 mois ; surveiller benchmarks robotiques 2027
 
@@ -2693,7 +2693,7 @@ Encart à dossier source unique. Rapport source ~5 900 mots / 31 footnotes — *
 
 §6.5  Pourquoi la question revient en computer use et robotique
         ├─ §6.5.1 Grounding visuel + planification — pipeline computer use partage substrat
-        ├─ [!INFO] Voir Ch.15 — applicatif modèles vision-action
+        ├─ [!INFO] Voir Ch.17 — applicatif modèles vision-action
         ├─ §6.5.2 Robotique humanoïde — 1X NEO oct 2025 (20 k$ / 499 $/mois),
         │   language-conditioned world model
         ├─ [SVG S] 07-piece-manquante — *optionnel* (argument Hassabis)
@@ -2712,7 +2712,7 @@ Encart à dossier source unique. Rapport source ~5 900 mots / 31 footnotes — *
 | --- | --- | --- |
 | `[!QUESTION]` | Ouverture | 1 |
 | `[!TLDR]` | 5 bullets | 1 |
-| `[!INFO]` | Renvois Ch.5 / Ch.15 / Ch.7 / Ch.16 (optionnel) | 3-4 |
+| `[!INFO]` | Renvois Ch.5 / Ch.17 / Ch.7 / Ch.18 (optionnel) | 3-4 |
 | `[!QUOTE]` | LeCun « modéliser le monde en pixels = gaspilleur » + Hassabis « pièce manquante » | 2 |
 | `[!WARNING]` | Deux pièges en clôture | 1 |
 | **Total** | | **~8-9** (vs ~16-18 chapitre charnière) |
@@ -2734,7 +2734,7 @@ Footnotes écartées (TechCrunch / Engadget / Decoder / Autopilot Review) resten
 ### Tâches restantes Ch.6
 
 - [ ] Rédiger `docs/livre/ch06-world-models.md` (~2 500-3 000 mots, **encart conversationnel**, ~8-9 encadrés, ~6-9 footnotes)
-- [ ] **Valider frontière Ch.6 ↔ Ch.15** en relecture croisée (lire ch15-computer-use.md en regard du brouillon Ch.6)
+- [ ] **Valider frontière Ch.6 ↔ Ch.17** en relecture croisée (lire ch17-computer-use.md en regard du brouillon Ch.6)
 - [ ] **Confirmer inclusion ou non du SVG 07 piece-manquante** après rédaction §6.5
 - [ ] Vérifier que l'encart **ne devient pas un mini-chapitre** (objectif ferme 2 500-3 000 mots)
 - [ ] Note de pied de page §6.1 avec renvoi explicite vers le dossier `world-models/` en ligne pour les 4-5 schémas écartés

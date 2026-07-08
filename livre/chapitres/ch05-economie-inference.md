@@ -58,7 +58,7 @@ La trajectoire de 60 $ à 0,02 $ n'est pas linéaire. Trois régimes distincts s
 
 L'analogie la plus fidèle est la **baisse du prix du kWh** pendant l'industrialisation du XXᵉ siècle : combinaison de meilleurs combustibles (silicium plus dense), de meilleures turbines (FlashAttention, PagedAttention) et d'une intégration verticale du grid (désagrégation prefill/decode). ==Aucun des trois leviers pris isolément n'aurait produit le ×1 000 — c'est leur empilement coordonné qui le rend possible==. La prochaine décade de gains demandera une combinaison que personne ne sait nommer aujourd'hui.
 
-> [!INFO] Voir [Ch. 21 — Mesurer le ROI (et le paradoxe agentique)](ch21-roi-paradoxe-agentique.md)
+> [!INFO] Voir [Ch. 23 — Mesurer le ROI (et le paradoxe agentique)](ch23-roi-paradoxe-agentique.md)
 > Le **paradoxe agentique** — le décideur paie moins par token mais peut payer plus par tâche, et la valeur business ne suit qu'avec un décalage de 12-36 mois (J-curve Brynjolfsson). La double-page éco du schéma R16 place côte à côte la courbe LLMflation §5.1 et la J-curve d'outcome. C'est le **triptyque tarifaire** repris en clôture §5.10.
 
 ---
@@ -125,7 +125,7 @@ Mémoriser le KV cache des préfixes communs (system prompt, retrieved documents
 
 Séparer prefill (compute-bound) et decode (memory-bound) sur des pools de calcul distincts, communicants par un transfert de KV cache via réseau RDMA. C'est la couche la plus structurelle des sept — celle qui change l'architecture du datacenter et pas seulement le runtime du serveur. Développement complet au §5.5 ci-dessous.
 
-> [!INFO] Voir [Ch. 22 — Externalité énergétique : IA frugale](ch22-ia-frugale.md)
+> [!INFO] Voir [Ch. 24 — Externalité énergétique : IA frugale](ch24-ia-frugale.md)
 > Les sept couches d'optimisation §5.3 sont **les mêmes leviers techniques** que ceux que Patterson 2021 nomme dans son ×100 à ×1 000 sur l'empreinte d'un entraînement (choix combiné DC × DNN × processeur), repris sous l'angle externalité environnementale. ==Ici, TWh qui se traduisent en lignes de facture cloud ; là, TWh qui se traduisent en grid stress local, embodied carbon, eau.==
 
 ---
@@ -147,7 +147,7 @@ C'est pourquoi l'inférence est devenue en 2026 une industrie distincte de la R&
 > [!IMPORTANT] Le harness comme avantage compétitif
 > ==L'avantage compétitif d'un fournisseur d'inférence en 2026 ne se loge plus dans l'invention d'une optimisation nouvelle — toutes les briques sont publiques.== Il se loge dans la maturité du **harness de service** : qualité du scheduler hybride, instrumentation fine de l'acceptance rate spéculative, rapidité d'intégration des nouvelles versions de FlashAttention, solidité du routing prefill/decode sous charge mixte. C'est ce qui distingue Together, Fireworks, SGLang et TensorRT-LLM d'une implémentation amateur de vLLM stock. C'est aussi ce qui rend les RFP sur le `tokens/sec peak` trompeurs : le peak est facile, c'est le `p95 TTFT` sous charge représentative qui mesure la maturité du harness.
 
-> [!INFO] Voir [Ch. 20 — Runtime managé et déploiement](ch20-runtime-manage.md)
+> [!INFO] Voir [Ch. 22 — Runtime managé et déploiement](ch22-runtime-manage.md)
 > La décision **buy / build** côté runtime : self-hosted vLLM, managé Together / Fireworks / Anyscale, hyperscaler Bedrock / OpenAI Service. ==La marge fragile §5.9 éclaire directement cette décision.== Externaliser chez un managé coûte typiquement 20-30 % de marge intermédiaire ; ce delta achète la maintenance du harness, le suivi upstream, la calibration multi-tenant. Choisir un harness, c'est choisir un mainteneur — et sur 18-36 mois, sa stabilité pèse plus que le delta de 10 % sur le `tokens/sec` annoncé.
 
 ---
@@ -279,8 +279,8 @@ L'équation économique reste inversée. ==**La déflation tokens/seconde gagné
 > [!IMPORTANT] L'équation inversée
 > Prix/Mtok descend de 60 $ à 0,02 $ (×1 000). Tokens consommés par tâche monte de 1 (réponse directe) à 50 (CoT invisible d'un reasoning model). ==La facture par tâche peut rester stable, voire augmenter, alors que le prix unitaire s'est effondré.== Le décideur qui ne lit que le prix au token croit signer une victoire FinOps ; celui qui lit la facture par tâche découvre la dérive. C'est la mécanique économique réelle des déploiements 2026.
 
-> [!INFO] Voir [Ch. 2 — Les modèles de raisonnement](ch02-modeles-raisonnement.md) · [Ch. 21 — Mesurer le ROI](ch21-roi-paradoxe-agentique.md)
-> La **mécanique** du raisonnement à l'inférence (RLVR, GRPO, interleaved thinking, parallel thinking, Snell sur le second axe de scaling) tient en [Ch. 2](ch02-modeles-raisonnement.md). Le §5.8 ci-dessus en traduit la **conséquence économique** sur la facture par tâche. Le R16 du [Ch. 21](ch21-roi-paradoxe-agentique.md) reprend LLMflation §5.1 + reasoning cost §5.8 pour matérialiser le triptyque en édition print A3 facing.
+> [!INFO] Voir [Ch. 2 — Les modèles de raisonnement](ch02-modeles-raisonnement.md) · [Ch. 23 — Mesurer le ROI](ch23-roi-paradoxe-agentique.md)
+> La **mécanique** du raisonnement à l'inférence (RLVR, GRPO, interleaved thinking, parallel thinking, Snell sur le second axe de scaling) tient en [Ch. 2](ch02-modeles-raisonnement.md). Le §5.8 ci-dessus en traduit la **conséquence économique** sur la facture par tâche. Le R16 du [Ch. 23](ch23-roi-paradoxe-agentique.md) reprend LLMflation §5.1 + reasoning cost §5.8 pour matérialiser le triptyque en édition print A3 facing.
 
 ---
 
@@ -309,12 +309,12 @@ L'écart Together 45 % vs AWS Bedrock 75-80 % n'est pas une question de harness 
 
 **À la baisse.** **Concurrence par les prix** entre fournisseurs serveuse — chaque deal de Llama 4 70B se gagne au cent près, transparence des benchmarks ouverts. **Coût d'amortissement** des GPU achetés au pic 2023-2024 (cluster H100 à 35 k$ la carte en 2023 vs 22 k$ en 2025). **Pression contractuelle** des clients enterprise qui négocient des rabais de volume — passage *catalogue API* → *deals dédiés* érode 5-10 points sur les gros comptes.
 
-**À la hausse.** **Deployments dédiés** (cluster réservé, marge proche SaaS classique parce que le risque d'allocation est porté par le client). **Services à valeur ajoutée** (fine-tuning, monitoring, RAG managé, observabilité OpenTelemetry GenAI — cf. [Ch. 18](ch18-observabilite-cognitive-audit-trail.md)) à marges 70-85 %, qui diluent positivement la consolidée. **Effet d'échelle sur l'utilisation GPU** — charger 80 % de ses GPU au lieu de 50 % donne un avantage structurel mécanique.
+**À la hausse.** **Deployments dédiés** (cluster réservé, marge proche SaaS classique parce que le risque d'allocation est porté par le client). **Services à valeur ajoutée** (fine-tuning, monitoring, RAG managé, observabilité OpenTelemetry GenAI — cf. [Ch. 20](ch20-observabilite-cognitive-audit-trail.md)) à marges 70-85 %, qui diluent positivement la consolidée. **Effet d'échelle sur l'utilisation GPU** — charger 80 % de ses GPU au lieu de 50 % donne un avantage structurel mécanique.
 
 > [!ATTENTION] La marge fragile vs SaaS classique
 > SaaS classique (Salesforce, Workday, ServiceNow) : 70-85 % de marge brute. ==Inférence pure : 45-50 %. Delta structurel, pas conjoncturel.== Tant que les GPU sont dans le COGS et qu'aucun acteur ne possède simultanément silicium + datacenter + service, la marge ne remontera pas. Deux conséquences : un pure-play n'a pas la résilience financière d'un SaaS (il ne tient pas une récession 3 ans à -25 % de chiffre) ; la consolidation est inévitable à 36-60 mois — les pure-players (Together, Fireworks, Anyscale) seront absorbés ou disparaîtront. ==Tout contrat 3 ans avec un pure-play doit explicitement modéliser le risque de continuité.==
 
-> [!INFO] Voir [Ch. 20 — Runtime managé et déploiement](ch20-runtime-manage.md)
+> [!INFO] Voir [Ch. 22 — Runtime managé et déploiement](ch22-runtime-manage.md)
 > Si la marge fournisseur est 45 %, le delta entre managé et self-hosted est de 25-30 % sur le coût total (à amortissement GPU comparable). ==Pour un workload mature, stable, à volume prévisible, le self-hosted devient rentable plus vite que ce que le décideur croit== — typiquement 12-18 mois de payback sur cluster H100 dédié, contre 24-36 mois sur un SaaS classique. Le triptyque : marge fournisseur fragile → delta buy/build étroit → payback court → décision favorable au build pour les workloads matures.
 
 ---
@@ -323,7 +323,7 @@ L'écart Together 45 % vs AWS Bedrock 75-80 % n'est pas une question de harness 
 
 ### 5.10.1 Coût/token ↔ valeur/outcome ↔ externalité
 
-La même facture lue sous trois angles. La **physique du prix par token** (sept couches, LLMflation ×1 000) tient ici. La **valeur métier par outcome** (paradoxe agentique, stack token → tâche → processus → outcome, Klarna) tient en [Ch. 21](ch21-roi-paradoxe-agentique.md). L'**externalité énergétique** qui n'apparaît sur aucune facture (3 scopes × 3 phases, Patterson 100-1 000×, Jevons) tient en [Ch. 22](ch22-ia-frugale.md).
+La même facture lue sous trois angles. La **physique du prix par token** (sept couches, LLMflation ×1 000) tient ici. La **valeur métier par outcome** (paradoxe agentique, stack token → tâche → processus → outcome, Klarna) tient en [Ch. 23](ch23-roi-paradoxe-agentique.md). L'**externalité énergétique** qui n'apparaît sur aucune facture (3 scopes × 3 phases, Patterson 100-1 000×, Jevons) tient en [Ch. 24](ch24-ia-frugale.md).
 
 Les trois lectures se complètent strictement. Optimiser le prix par token au détriment de l'outcome, c'est préparer un cas Klarna. Maximiser l'outcome sans regarder l'externalité, c'est préparer une révision désagréable à 18-36 mois. Suivre l'externalité sans tenir le prix au token, c'est ne pas savoir ce qu'on optimise.
 
@@ -338,11 +338,11 @@ Le sponsor IA qui ne lit que le **prix par token** rate trois choses. La **factu
 
 **Déflation à pente décroissante.** Les gains software faciles ont été cueillis. Les prochains 5× viendront d'une nouvelle génération de hardware (Rubin NVIDIA, MI400 AMD) et d'optimisations marginales. a16z prévoit ==3-5× par an jusqu'en 2027, puis 1,5-2× par an==[^1]. Extrapoler un 10×/an sur dix ans donne un facteur 10 milliards — impossible.
 
-**Désagrégation cross-region.** Tous les serveurs majeurs supportent désormais prefill/decode native. Prochaine étape : prefill à Paris, decode à Dublin, KV cache sur backbone privé — Mooncake le déploie aujourd'hui pour Kimi[^6]. Conséquences réglementaires (souveraineté, latence cross-border, traçabilité) qui rejoignent le [Ch. 23](ch23-gouvernance-ai-act.md).
+**Désagrégation cross-region.** Tous les serveurs majeurs supportent désormais prefill/decode native. Prochaine étape : prefill à Paris, decode à Dublin, KV cache sur backbone privé — Mooncake le déploie aujourd'hui pour Kimi[^6]. Conséquences réglementaires (souveraineté, latence cross-border, traçabilité) qui rejoignent le [Ch. 25](ch25-gouvernance-ai-act.md).
 
 **$/tâche-réussie devient le KPI dominant.** Un modèle qui résout AIME en 20 K tokens à 0,02 $/Mtok gagne contre un modèle qui le résout en 200 K tokens à 0,01 $/Mtok. ==L'efficacité de raisonnement devient le KPI dominant==, et les benchmarks (InferenceMAX, MLPerf v6) migrent vers le coût-par-tâche-réussie. Probable mutation la plus structurelle des 24 mois à venir — elle déplace la conversation FinOps de l'infrastructure vers le cas d'usage.
 
-> [!INFO] Voir [Ch. 21 — Mesurer le ROI (et le paradoxe agentique)](ch21-roi-paradoxe-agentique.md)
+> [!INFO] Voir [Ch. 23 — Mesurer le ROI (et le paradoxe agentique)](ch23-roi-paradoxe-agentique.md)
 > Le schéma R16 fusionne en une double-page A3 paysage les trois ingrédients : panel A — la courbe LLMflation de §5.1 (prix descend ×1 000), panel B — la stack à quatre niveaux du paradoxe agentique (token → tâche → processus → outcome), panel C — la J-curve Brynjolfsson en creux entre 0-3 ans, plateau 3-7 ans. La légende canonique du schéma reprend mot pour mot le slogan signature du §5.10.1 ci-dessus.
 
 > [!WARNING] Trois pièges classiques (100 % traçables)
@@ -358,9 +358,9 @@ Le sponsor IA qui ne lit que le **prix par token** rate trois choses. La **factu
 
 - Zoom monographique sur la décode spéculative (théorème d'équivalence, deux pièges acceptance rate × batching) : **[Ch. 4 — Décode spéculative et la course au token/sec](ch04-decode-speculative.md)**.
 - Mécanique du raisonnement (RLVR, GRPO, second axe de scaling Snell) qui rend l'angle mort §5.8 économiquement crucial : **[Ch. 2 — Les modèles de raisonnement](ch02-modeles-raisonnement.md)**.
-- Décision **buy / build** que les marges fragiles éclairent : **[Ch. 20 — Runtime managé et déploiement](ch20-runtime-manage.md)**.
-- **Valeur métier par outcome** (paradoxe agentique, stack token → tâche → processus → outcome, J-curve, Klarna) : **[Ch. 21 — Mesurer le ROI](ch21-roi-paradoxe-agentique.md)**.
-- **Externalité énergétique** qui ferme le triptyque (3 scopes × 3 phases, Patterson 100-1 000×, Jevons) : **[Ch. 22 — IA frugale](ch22-ia-frugale.md)**.
+- Décision **buy / build** que les marges fragiles éclairent : **[Ch. 22 — Runtime managé et déploiement](ch22-runtime-manage.md)**.
+- **Valeur métier par outcome** (paradoxe agentique, stack token → tâche → processus → outcome, J-curve, Klarna) : **[Ch. 23 — Mesurer le ROI](ch23-roi-paradoxe-agentique.md)**.
+- **Externalité énergétique** qui ferme le triptyque (3 scopes × 3 phases, Patterson 100-1 000×, Jevons) : **[Ch. 24 — IA frugale](ch24-ia-frugale.md)**.
 - Sources externes vivantes : a16z LLMflation[^1], benchmarks InferenceMAX[^8][^9], doc vLLM[^2] / SGLang / TensorRT-LLM, DeepSeek V3 Technical Report[^4], retour d'expérience Mooncake[^6] et rétrospectif DistServe[^13].
 
 ---

@@ -106,3 +106,16 @@ L'injection est automatique via `tools/insert_qualif.py` — voir CLAUDE.md.
 ## Persistance
 
 LocalStorage clé `qualif_<slug>_v<n>`. Bump `meta.version` du JSON → ancien profil silencieusement ignoré (pas de migration).
+
+---
+
+# Bibliothèques tierces vendorées
+
+## `marked.min.js`
+
+Parser Markdown (CommonMark + GFM) **vendoré localement** plutôt que servi via CDN, cohérent avec la règle 3rd-party de CLAUDE.md.
+
+- **Version** : 12.0.2 (MIT, Christopher Jeffrey, 2024)
+- **Source** : `https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js`
+- **Utilisé par** : `livre/livre-app.js` (reader client-side qui charge les chapitres `.md` à la volée et les rend dans un overlay).
+- **Mise à jour** : re-télécharger avec `curl -sSL https://cdn.jsdelivr.net/npm/marked@<version>/marked.min.js -o assets/marked.min.js` et bumper le numéro de version ci-dessus.

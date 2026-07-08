@@ -532,11 +532,11 @@ Si vous ne savez pas répondre à cette question, vous n'êtes pas à un stade �
 
 #### Pour le builder
 
-> *« Quel est l'artefact load-bearing que je n'ai pas encore, et qui me fait perdre des heures ? »*
+> *« Quel est l'artefact pivot que je n'ai pas encore, et qui me fait perdre des heures ? »*
 
-Load-bearing : sans lui, le harness vacille. Un golden dataset qui ne couvre pas vos edge cases n'est pas load-bearing — c'est un gadget rassurant. Un registre d'agents non synchronisé avec le pipeline de déploiement n'est pas load-bearing — c'est une documentation qui ment.
+pivot : sans lui, le harness vacille. Un golden dataset qui ne couvre pas vos edge cases n'est pas pivot — c'est un gadget rassurant. Un registre d'agents non synchronisé avec le pipeline de déploiement n'est pas pivot — c'est une documentation qui ment.
 
-==Le signal opérationnel : si vous passez quatre heures par semaine à débugger le même type de problème, l'artefact qui l'aurait détecté en trente secondes n'est pas encore là.== Identifiez-le. Construisez-le la semaine suivante — pas une nouvelle feature. L'artefact load-bearing manquant.
+==Le signal opérationnel : si vous passez quatre heures par semaine à débugger le même type de problème, l'artefact qui l'aurait détecté en trente secondes n'est pas encore là.== Identifiez-le. Construisez-le la semaine suivante — pas une nouvelle feature. L'artefact pivot manquant.
 
 ---
 

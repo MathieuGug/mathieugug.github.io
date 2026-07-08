@@ -1,0 +1,1766 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#faf6ec">
+<title>CC-10 — Pair programming → organisation dev agentique | Livre · Mathieu Guglielmino</title>
+<!-- og:start -->
+<meta name="author" content="Mathieu Guglielmino">
+<link rel="canonical" href="https://mathieugug.github.io/livre/cas-pratiques/CC-10-dev-agentique.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Mathieu Guglielmino">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:url" content="https://mathieugug.github.io/livre/cas-pratiques/CC-10-dev-agentique.html">
+<meta property="og:title" content="Pair programming → organisation dev agentique">
+<meta property="og:description" content="De quatre outils IA en parallèle à une doctrine dev agentique : comment une scale-up SaaS B2B structure un portefeuille d'outils par profil de ticket, distribué via gateway LLM interne, sans perdre ni la vélocité ni le budget.">
+<meta property="og:image" content="https://mathieugug.github.io/livre/cas-pratiques/CC-10-dev-agentique-og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Pair programming → organisation dev agentique — couverture social">
+<meta property="article:published_time" content="2026-06-04">
+<meta property="article:author" content="Mathieu Guglielmino">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Pair programming → organisation dev agentique">
+<meta name="twitter:description" content="De quatre outils IA en parallèle à une doctrine dev agentique : comment une scale-up SaaS B2B structure un portefeuille d'outils par profil de ticket, distribué via gateway LLM interne, sans perdre ni la vélocité ni le budget.">
+<meta name="twitter:image" content="https://mathieugug.github.io/livre/cas-pratiques/CC-10-dev-agentique-og.png">
+<script type="application/ld+json">
+{"@context": "https://schema.org","@type": "Article","headline": "Pair programming → organisation dev agentique","description": "De quatre outils IA en parallèle à une doctrine dev agentique : comment une scale-up SaaS B2B structure un portefeuille d'outils par profil de ticket, distribué via gateway LLM interne, sans perdre ni la vélocité ni le budget.","image": "https://mathieugug.github.io/livre/cas-pratiques/CC-10-dev-agentique-og.png","url": "https://mathieugug.github.io/livre/cas-pratiques/CC-10-dev-agentique.html","datePublished": "2026-06-04","inLanguage": "fr-FR","author": {"@type": "Person","name": "Mathieu Guglielmino","url": "https://mathieugug.github.io/"},"publisher": {"@type": "Person","name": "Mathieu Guglielmino","url": "https://mathieugug.github.io/"}}
+</script>
+<!-- og:end -->
+<meta name="description" content="De quatre outils IA en parallèle à une doctrine dev agentique : comment une scale-up SaaS B2B structure un portefeuille d'outils par profil de ticket, distribué via gateway LLM interne, sans perdre ni la vélocité ni le budget.">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300;1,9..144,400;1,9..144,500&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #faf6ec;
+  --bg-2: #f3eedf;
+  --bg-3: #ece4d2;
+  --surface: #ffffff;
+  --surface-2: #fdfaf0;
+  --line: rgba(30,30,44,0.10);
+  --line-strong: rgba(30,30,44,0.22);
+  --text: #1e1e2a;
+  --text-dim: #4a5060;
+  --text-faint: #8a8e99;
+  --accent: #b8582e;
+  --accent-soft: rgba(184,88,46,0.06);
+  --carmine: #a83e55;
+  --teal: #2d8a8a;
+  --warn: #d4a000;
+  --shadow-sm: 0 1px 3px rgba(30,30,44,0.04);
+  --shadow-md: 0 8px 24px rgba(30,25,18,0.06);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body {
+  background: var(--bg); color: var(--text);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 300; line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+@supports not (overflow-x: clip) { html, body { overflow-x: hidden; } }
+body { padding-top: 56px; min-height: 100vh; }
+a { color: inherit; }
+img, svg { max-width: 100%; }
+
+/* ═════ TOPBAR ═════ */
+.topbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 60;
+  height: 56px; padding: 0 28px;
+  display: flex; align-items: center; justify-content: space-between; gap: 24px;
+  background: rgba(250,246,236,0.86);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
+}
+.topbar a { text-decoration: none; opacity: 0.78; transition: opacity 0.18s; }
+.topbar a:hover { opacity: 1; }
+.topbar .dossier-context {
+  font-family: 'Fraunces', serif; font-style: italic; font-size: 15px;
+  color: var(--text-dim); flex: 1; text-align: center;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.topbar nav { display: flex; gap: 18px; font-size: 13px; }
+@media (max-width: 720px) {
+  .topbar { padding: 0 14px; gap: 10px; font-size: 13px; }
+  .topbar .dossier-context { display: none; }
+}
+
+/* ═════ HERO ═════ */
+.hero { max-width: 760px; margin: 64px auto 48px; padding: 0 24px; }
+.hero .eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px; font-weight: 600; letter-spacing: 0.14em;
+  color: var(--accent); text-transform: uppercase;
+  margin-bottom: 20px;
+}
+.hero h1 {
+  font-family: 'Fraunces', serif;
+  font-weight: 500; font-size: clamp(36px, 5.5vw, 54px);
+  line-height: 1.06; letter-spacing: -0.015em;
+  margin-bottom: 24px;
+}
+.hero .lede {
+  font-family: 'Fraunces', serif;
+  font-weight: 400; font-style: italic;
+  font-size: clamp(19px, 2.2vw, 22px); line-height: 1.45;
+  color: var(--text-dim); margin-bottom: 32px;
+}
+.hero .meta {
+  display: flex; flex-wrap: wrap; gap: 14px 28px;
+  font-size: 13px; color: var(--text-dim);
+  padding-top: 20px; border-top: 1px solid var(--line);
+}
+.hero .meta strong { color: var(--text); font-weight: 500; }
+
+/* ═════ MAIN narrative ═════ */
+main.entry {
+  max-width: 760px; margin: 0 auto 80px; padding: 0 24px;
+  font-size: 17px; line-height: 1.7;
+  color: var(--text-dim);
+}
+main.entry section { scroll-margin-top: 80px; }
+main.entry h2 {
+  font-family: 'Fraunces', serif; color: var(--text);
+  font-weight: 500; font-size: clamp(26px, 3.8vw, 32px); line-height: 1.18;
+  letter-spacing: -0.01em; margin: 72px 0 22px;
+}
+main.entry h3 {
+  font-family: 'Fraunces', serif; color: var(--text);
+  font-weight: 500; font-size: 21px;
+  margin: 40px 0 14px;
+}
+main.entry p { margin-bottom: 18px; }
+main.entry strong { font-weight: 500; color: var(--text); }
+main.entry em { font-style: italic; }
+main.entry a {
+  color: var(--accent); text-decoration: none;
+  border-bottom: 1px solid rgba(184,88,46,0.3);
+  transition: border-color 0.18s;
+}
+main.entry a:hover { border-bottom-color: var(--accent); }
+main.entry ul, main.entry ol { margin: 0 0 22px 28px; }
+main.entry li { margin-bottom: 8px; }
+main.entry ol li { padding-left: 4px; }
+main.entry blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 12px 0 12px 24px; margin: 28px 0;
+  font-family: 'Fraunces', serif; font-style: italic;
+  font-size: 19px; line-height: 1.55;
+  color: var(--text);
+}
+main.entry code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.86em; background: var(--bg-2);
+  padding: 1px 6px; border-radius: 3px; color: var(--text);
+}
+main.entry mark {
+  background: linear-gradient(180deg, transparent 50%, rgba(212,160,0,0.35) 50%);
+  color: inherit; padding: 0 2px;
+}
+main.entry hr {
+  border: none; border-top: 1px solid var(--line);
+  margin: 50px auto; max-width: 200px;
+}
+
+/* ═════ FIGURES — full-bleed + zoom button ═════ */
+main.entry figure {
+  margin: 40px calc(50% - 50vw);
+  padding: 0 clamp(16px, 3vw, 48px);
+  position: relative;
+}
+main.entry figure img,
+main.entry figure svg {
+  display: block; width: 100%; max-width: 1480px;
+  margin: 0 auto; border-radius: 4px;
+  background: var(--bg);
+}
+main.entry figcaption {
+  max-width: 760px; margin: 14px auto 0; padding: 0 24px;
+  font-size: 13px; color: var(--text-faint);
+  font-style: italic; line-height: 1.55;
+}
+main.entry figcaption .anchor {
+  color: var(--accent); text-decoration: none; font-weight: 600;
+  margin-right: 6px; opacity: 0.55; transition: opacity 160ms;
+}
+main.entry figcaption .anchor:hover { opacity: 1; }
+.zoom-btn {
+  position: absolute; top: 8px; right: clamp(20px, 3vw, 52px);
+  width: 36px; height: 36px;
+  background: rgba(255,255,255,0.92);
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; opacity: 0;
+  transition: opacity 0.2s, background 0.18s;
+  font-size: 16px; color: var(--text-dim);
+  z-index: 5;
+}
+main.entry figure:hover .zoom-btn { opacity: 1; }
+.zoom-btn:hover { background: var(--surface); color: var(--text); }
+@media (hover: none) {
+  .zoom-btn { opacity: 0.85; }
+}
+
+/* ═════ TABLES ═════ */
+.table-wrap {
+  margin: 32px calc(50% - 50vw);
+  padding: 0 clamp(16px, 3vw, 48px);
+  overflow-x: auto;
+}
+.table-wrap table {
+  margin: 0 auto; max-width: 1100px;
+  border-collapse: collapse;
+  font-size: 14px; line-height: 1.55;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  border-radius: 6px; overflow: hidden;
+  width: 100%;
+}
+.table-wrap th {
+  background: var(--bg-2);
+  text-align: left;
+  padding: 14px 16px;
+  font-weight: 500; font-size: 13px;
+  color: var(--text);
+  border-bottom: 1px solid var(--line-strong);
+}
+.table-wrap th.center, .table-wrap td.center { text-align: center; }
+.table-wrap td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+  color: var(--text-dim);
+}
+.table-wrap td strong { color: var(--text); }
+.table-wrap tr:last-child td { border-bottom: none; }
+.table-wrap td.recommended { background: var(--accent-soft); }
+.table-wrap th.recommended { background: rgba(184,88,46,0.12); color: var(--accent); }
+.table-wrap .score {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700; font-size: 14px;
+}
+.table-wrap .score.plus2 { color: var(--teal); }
+.table-wrap .score.plus1 { color: var(--teal); opacity: 0.85; }
+.table-wrap .score.zero { color: var(--text-dim); }
+.table-wrap .score.minus1 { color: var(--carmine); opacity: 0.7; }
+.table-wrap .score.minus2 { color: var(--carmine); }
+.table-wrap .verdict-row td {
+  background: var(--bg-2);
+  font-size: 13.5px;
+  font-style: italic;
+}
+
+/* ═════ CASE WIDGETS ═════ */
+.case-debate {
+  margin: 40px 0; padding: 28px;
+  background: var(--surface);
+  border-left: 4px solid var(--carmine);
+  border-radius: 0 6px 6px 0;
+  box-shadow: var(--shadow-sm);
+}
+.case-debate .label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.2em;
+  color: var(--carmine); text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.case-debate .question {
+  font-family: 'Fraunces', serif;
+  font-style: italic; font-size: 21px; line-height: 1.35;
+  color: var(--text); margin-bottom: 24px;
+}
+.case-debate .columns {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 28px;
+  margin-bottom: 24px;
+}
+@media (max-width: 720px) { .case-debate .columns { grid-template-columns: 1fr; gap: 18px; } }
+.case-debate .col h4 {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px; font-weight: 700; letter-spacing: 0.18em;
+  text-transform: uppercase; margin-bottom: 14px;
+}
+.case-debate .col.pour h4 { color: var(--teal); }
+.case-debate .col.contre h4 { color: var(--carmine); }
+.case-debate .col ul { margin: 0; padding-left: 18px; font-size: 14.5px; }
+.case-debate .col li { margin-bottom: 8px; color: var(--text-dim); }
+.case-debate .verdict {
+  border-top: 1px solid var(--line);
+  padding-top: 20px;
+  font-size: 14.5px; line-height: 1.6;
+  color: var(--text);
+}
+.case-debate .verdict strong { color: var(--carmine); }
+
+.case-choice {
+  margin: 32px 0; padding: 24px 28px;
+  background: var(--surface);
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+}
+.case-choice .scenario {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.18em;
+  color: var(--accent); text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.case-choice .question {
+  font-family: 'Fraunces', serif;
+  font-style: italic; font-size: 18px; line-height: 1.45;
+  color: var(--text); margin-bottom: 22px;
+}
+.case-choice .options { display: flex; flex-direction: column; gap: 12px; }
+.case-choice .option {
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.case-choice .option button.option-toggle {
+  width: 100%;
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 14px 18px;
+  background: var(--bg-2);
+  border: none;
+  font: inherit; font-size: 15px; text-align: left;
+  cursor: pointer; color: var(--text);
+  transition: background 0.2s;
+}
+.case-choice .option button.option-toggle:hover { background: var(--bg-3); }
+.case-choice .option button.option-toggle .badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700; font-size: 13px;
+  background: var(--text); color: var(--bg);
+  width: 24px; height: 24px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 3px; flex-shrink: 0;
+}
+.case-choice .option button.option-toggle .arrow {
+  margin-left: auto; opacity: 0.5; transition: transform 0.25s;
+  font-size: 13px;
+}
+.case-choice .option.open button.option-toggle .arrow { transform: rotate(180deg); opacity: 1; }
+.case-choice .option .reveal {
+  display: none;
+  padding: 18px 20px 20px;
+  background: var(--surface-2);
+  border-top: 1px solid var(--line);
+  font-size: 14.5px; line-height: 1.6;
+  color: var(--text-dim);
+}
+.case-choice .option.open .reveal { display: block; }
+.case-choice .option.open { border-color: var(--accent); }
+.case-choice .option .reveal p { margin-bottom: 12px; }
+.case-choice .option .reveal p:last-child { margin-bottom: 0; }
+.case-choice .option .reveal .analyse {
+  font-size: 13px;
+  padding-top: 12px; margin-top: 12px;
+  border-top: 1px dashed var(--line);
+  font-style: italic;
+}
+.case-choice .option .reveal .analyse a { color: var(--accent); }
+
+.case-quiz {
+  margin: 28px 0; padding: 22px 26px;
+  background: var(--surface);
+  border-left: 4px solid var(--carmine);
+  border-radius: 0 6px 6px 0;
+  box-shadow: var(--shadow-sm);
+}
+.case-quiz .label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.2em;
+  color: var(--carmine); text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.case-quiz .question {
+  font-weight: 500; font-size: 16.5px; line-height: 1.4;
+  color: var(--text); margin-bottom: 16px;
+}
+.case-quiz .options { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.case-quiz .options button {
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  padding: 11px 14px;
+  text-align: left; cursor: pointer;
+  font: inherit; font-size: 14.5px; line-height: 1.45;
+  color: var(--text);
+  border-radius: 4px;
+  transition: all 0.18s;
+}
+.case-quiz .options button:hover { background: var(--bg-3); }
+.case-quiz.answered .options button { cursor: default; }
+.case-quiz .options button.correct {
+  background: rgba(45,138,138,0.12);
+  border-color: var(--teal); color: var(--teal);
+  font-weight: 500;
+}
+.case-quiz .options button.wrong {
+  background: rgba(168,62,85,0.10);
+  border-color: var(--carmine); color: var(--carmine);
+}
+.case-quiz .explication {
+  display: none;
+  padding: 14px 16px;
+  background: var(--bg-2);
+  border-radius: 4px;
+  font-size: 14px; line-height: 1.6;
+  color: var(--text-dim);
+}
+.case-quiz.answered .explication { display: block; }
+.case-quiz .explication a { color: var(--accent); text-decoration: none; border-bottom: 1px solid rgba(184,88,46,0.3); }
+
+.case-verdict {
+  margin: 60px 0 30px; padding: 40px 32px;
+  background: linear-gradient(135deg, rgba(184,88,46,0.07), rgba(45,138,138,0.04));
+  border: 2px solid var(--accent);
+  border-radius: 8px;
+  text-align: center;
+}
+.case-verdict .stamp {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px; font-weight: 700; letter-spacing: 0.22em;
+  color: var(--accent); text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.case-verdict h3 {
+  font-family: 'Fraunces', serif; font-style: italic;
+  font-weight: 500; font-size: 26px;
+  color: var(--text);
+  margin-bottom: 28px;
+}
+.case-verdict ul {
+  list-style: none; padding: 0; margin: 0 auto;
+  text-align: left;
+  max-width: 600px;
+}
+.case-verdict li {
+  padding: 14px 0 14px 28px;
+  border-bottom: 1px dashed var(--line);
+  font-size: 14.5px; line-height: 1.55;
+  position: relative;
+  color: var(--text);
+}
+.case-verdict li::before {
+  content: "✓";
+  position: absolute; left: 0; top: 14px;
+  color: var(--teal); font-weight: 700;
+}
+.case-verdict li:last-child { border-bottom: none; }
+.case-verdict li strong { font-weight: 500; }
+
+/* ═════ RENVOIS section ═════ */
+.renvois-section {
+  margin: 60px 0 40px; padding: 32px;
+  background: rgba(45,138,138,0.04);
+  border-radius: 8px;
+}
+.renvois-section .label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.2em;
+  color: var(--teal); text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.renvois-section h2 {
+  font-family: 'Fraunces', serif;
+  font-weight: 500; font-size: 24px;
+  color: var(--text);
+  margin-bottom: 20px;
+}
+.renvois-section ul {
+  list-style: none; padding: 0; margin: 0;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 8px;
+}
+.renvois-section li {
+  font-size: 13.5px; padding: 10px 14px;
+  background: var(--surface); border-radius: 4px;
+  transition: background 0.18s;
+}
+.renvois-section li:hover { background: var(--surface-2); }
+.renvois-section a {
+  text-decoration: none; border: none;
+  color: var(--text); display: block;
+}
+.renvois-section a:hover { color: var(--accent); }
+.renvois-section a strong { font-weight: 600; }
+
+/* ═════ SOURCES section ═════ */
+.sources-section {
+  margin: 60px 0 40px; padding: 32px;
+  background: var(--surface);
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+}
+.sources-section .label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.2em;
+  color: var(--accent); text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.sources-section h2 {
+  font-family: 'Fraunces', serif;
+  font-weight: 500; font-size: 24px;
+  color: var(--text);
+  margin-bottom: 20px;
+}
+.sources-section ol {
+  list-style: none; padding: 0; margin: 0;
+  counter-reset: src;
+}
+.sources-section li {
+  font-size: 13px; line-height: 1.6;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--text-dim);
+}
+.sources-section li:last-child { border-bottom: none; }
+.sources-section li .src-num {
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--accent); font-weight: 600;
+  margin-right: 8px;
+}
+.sources-section li a {
+  color: var(--accent); text-decoration: none;
+  border-bottom: 1px dashed rgba(184,88,46,0.3);
+}
+
+/* ═════ CASE-COST-DRIFT ═════ */
+.case-cost-drift {
+  margin: 40px 0;
+}
+.case-cost-drift .drift-conclusion {
+  border-left: 3px solid var(--teal);
+  padding: 12px 0 12px 24px; margin: 28px 0;
+  font-family: 'Fraunces', serif; font-style: italic;
+  font-size: 18px; line-height: 1.55;
+  color: var(--text);
+  background: rgba(45,138,138,0.04);
+  border-radius: 0 4px 4px 0;
+}
+.case-cost-drift .drift-conclusion p { margin-bottom: 0; }
+
+/* ═════ GOVERNANCE STACK ═════ */
+.case-governance-stack {
+  margin: 40px 0;
+}
+
+/* ═════ EVAL LOOP ═════ */
+.case-eval-loop {
+  margin: 40px 0;
+}
+
+/* ═════ ROI GRID ═════ */
+.case-roi-grid {
+  margin: 40px 0;
+}
+
+/* ═════ TEAM CAST ═════ */
+.case-team-cast {
+  margin: 40px 0;
+  padding: 28px 32px;
+  background: var(--surface);
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+}
+.case-team-cast .cto-quote {
+  display: block;
+  font-family: 'Fraunces', serif;
+  font-style: italic; font-size: 19px; line-height: 1.5;
+  color: var(--text); margin-bottom: 24px;
+  padding: 18px 24px 18px 24px;
+  box-sizing: border-box;
+  background: linear-gradient(135deg, rgba(184,88,46,0.05), rgba(45,138,138,0.03));
+  border-radius: 6px;
+  border-left: 4px solid var(--accent);
+  overflow: visible;
+}
+
+/* ═════ FOOTER ═════ */
+footer.site-foot {
+  max-width: 760px; margin: 40px auto;
+  padding: 28px 24px 60px;
+  border-top: 1px solid var(--line);
+  font-size: 12px; color: var(--text-faint);
+  text-align: center; line-height: 1.6;
+}
+footer.site-foot p { margin: 4px 0; }
+
+/* ═════ ZOOM OVERLAY ═════ */
+#zoom-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(20,18,15,0.92);
+  display: none; align-items: center; justify-content: center;
+  cursor: zoom-out;
+}
+#zoom-overlay.open { display: flex; }
+#zoom-overlay #zoom-content {
+  max-width: 96vw; max-height: 92vh;
+  overflow: auto;
+}
+#zoom-overlay #zoom-content img,
+#zoom-overlay #zoom-content svg {
+  max-width: 96vw; max-height: 92vh;
+  display: block; cursor: default;
+  background: var(--bg);
+  border-radius: 4px;
+}
+#zoom-overlay .zoom-close {
+  position: fixed; top: 20px; right: 24px;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: white;
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  font-size: 22px; cursor: pointer;
+  z-index: 102;
+  display: flex; align-items: center; justify-content: center;
+}
+#zoom-overlay .zoom-close:hover { background: rgba(255,255,255,0.25); }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a href="index.html">← Cas pratiques</a>
+  <span class="dossier-context">Pair programming → dev agentique</span>
+  <nav>
+    <a href="../index.html">Hub livre →</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <div class="eyebrow">Cas pratique CC-10 · Développement logiciel · Agentic · Charnière</div>
+  <h1>Pair programming → <em>organisation dev agentique</em></h1>
+  <p class="lede">Quatre outils IA en parallèle au standup du mardi, un budget AI tooling qui a doublé en six mois, et deux personas qui veulent des réponses opposées — le [CTO] veut une doctrine, le [CFO] veut un plafond. L'all-you-can-eat Copilot est mort : le bon arbitrage 2026 n'est plus un outil unique imposé à toute l'équipe, c'est un portefeuille par profil de ticket, distribué via une gateway LLM interne avec quotas.</p>
+  <div class="meta">
+    <div><strong>150</strong> devs</div>
+    <div><strong>280</strong> PR / semaine</div>
+    <div><strong>4</strong> outils IA actifs</div>
+    <div><strong>480 k€</strong> budget AI tooling annualisé</div>
+    <div><strong>3,8 j</strong> cycle médian ticket → PR</div>
+    <div><strong>Verdict :</strong> GO Buy par portefeuille</div>
+  </div>
+</section>
+
+<main class="entry">
+
+<!-- ═════ SECTION 1 — Quatre outils au standup ═════ -->
+<section id="sec-1">
+<h2>1. « Quatre outils au standup »</h2>
+
+<p>Mardi 9 h. Le [CTO] ouvre le tableau de bord finance avant le standup — <mark>la ligne « AI tooling » a doublé en six mois</mark>, de 240 k€ annualisés à 480 k€. Pas de projet nouveau, pas de recrutement : la même équipe de 150 devs consomme deux fois plus. Il n'a pas encore d'explication.</p>
+
+<p>Au standup, quatre devs prennent successivement la parole pour décrire leur journée de la veille. Le premier utilise Cursor en abonnement personnel — il l'a souscrit lui-même, remboursement partiel via note de frais. Le deuxième est sur GitHub Copilot via le SSO entreprise, plan Business, les 300 premium requests mensuelles sont épuisées depuis le 20 du mois. Le troisième a basculé sur Claude Code via Bedrock pour les gros refactors multi-fichier sur le monorepo TypeScript — latence acceptable, context window confortable sur les 80 000 lignes du périmètre. Le quatrième, du côté ops, écrit ses scripts en Codex CLI depuis son terminal macOS, hors de tout périmètre SSO. Quatre outils, quatre contrats, quatre surfaces de support. Aucune coordination.</p>
+
+<p>Le matin même, GitHub a envoyé un mail annonçant l'évolution du modèle de facturation : fin du quota fixe de 300 premium requests en juin 2026, passage aux AI Credits ($0,01 par crédit, ~1 900 crédits/mois sur Business)<sup><a href="#source-1">[1]</a></sup>. En filigrane — et c'est là que la réunion commence à peser — le retex public d'Uber qui a brûlé son budget IA coding en quatre mois circule sur les channels Slack inter-CTO depuis la semaine précédente<sup><a href="#source-2">[2]</a></sup>. Pas d'attribution précise dans la conversation, juste la conscience collective que quelque chose a changé dans l'économie des outils dev depuis le début de l'année.</p>
+
+<p>La [VP_ENG] veut une doctrine. Le [CFO] veut un plafond. Le [CTO] doit arbitrer entre les deux en moins de 90 jours — la présentation du budget AI tooling au COMEX est programmée pour septembre.</p>
+
+<p>La tension est simple à formuler, difficile à résoudre : <em>un seul outil ou un portefeuille ?</em> L'argument pour l'outil unique est la gouvernance — un contrat, un SSO, un support. L'argument contre est la réalité du terrain — les quatre devs du standup utilisent des outils différents parce qu'aucun outil unique ne répond à l'ensemble de leurs cas d'usage. Ghost autocomplete pour rester dans le flux, chat IDE multi-fichier pour les refactors, agent async cloud pour les tickets tier 1 qu'on peut déléguer sans supervision, review automatique en sentinelle sur les PRs. Quatre patterns structurellement différents : surfaces, latences, niveaux d'autonomie, modèles économiques. Un Copilot universel laisse 30 % de vélocité sur la table sur les patterns chat IDE et async cloud — selon les données DORA, c'est précisément là que se concentre l'effet ROI des outils dev sur les profils sénior.</p>
+
+<p>Mais le [CTO] ne peut pas non plus laisser quatre outils coexister sans règle. Le mois prochain, ce sera peut-être huit. Les deux devs qui utilisent Cursor et Codex CLI en dehors du SSO ne sont pas des rebelles — ils ont trouvé ce qui fonctionne pour eux. Mais leurs tokens sortent du périmètre de visibilité du [RSSI], leurs usages ne sont pas dans les logs Datadog, et leur cost center n'est pas dans le tableau de bord finance que le [CTO] vient d'ouvrir. <mark>Ce shadow soft n'est pas à chasser — c'est à intégrer dans une doctrine</mark> qui rende la voie structurée plus simple que la voie individuelle. C'est exactement la leçon de CC-00 sur l'amnistie shadow, transposée à la strate dev<sup><a href="#source-3">[3]</a></sup>.</p>
+
+<p>La question centrale n'est donc pas « quel outil » — c'est « quel portefeuille, avec quels quotas, pour quels profils, à quel prix défendable au COMEX ».</p>
+</section>
+
+<!-- ═════ SECTION 2 — La stack dev actuelle ═════ -->
+<section id="sec-2" class="case-archi">
+<h2>2. La stack dev actuelle — la carte que tout le monde croit avoir</h2>
+
+<p>Avant l'arbitrage, ce qui est <em>déjà là</em>. Une scale-up SaaS B2B de 150 devs dispose d'une infrastructure dev solide, 100 % cloud, sans héritage mainframe. C'est une force — tous les patterns agentiques sont techniquement accessibles dès le premier jour. Mais la carte réelle est plus nuancée que ce que le tableau de bord finance laisse voir.</p>
+
+<figure id="fig-00">
+  <button class="zoom-btn" aria-label="Zoom">⛶</button>
+  <img src="images/CC-10-dev-agentique/CC-10-fig-00-architecture-actuelle.svg" alt="La stack dev actuelle — monorepo TS + service Java legacy + service Go, GitHub + Actions, Linear, Datadog + Sentry, Vault HCP, Notion, et 4 outils IA en parallèle dont 2 hors SSO">
+  <figcaption><a class="anchor" href="#fig-00" title="Lien direct vers ce schéma">¶</a>Stack dev existante avant doctrine : monorepo TypeScript (Next.js + Node API) + service Java legacy 2018 (paiement) + service Go récent (event bus), GitHub Cloud + Actions + Advanced Security, Linear, Datadog APM + Sentry, Vault HCP, Notion, 4 outils IA en parallèle (Cursor, Copilot, Claude Code, Codex CLI) dont 2 hors SSO. Annotations de criticité par composant — le service Java legacy 2018 est le sclérosant principal.</figcaption>
+</figure>
+
+<p><strong>Le poste de travail</strong> est le premier angle mort. 65 % des devs sont sur VS Code, 25 % sur JetBrains, 10 % sur Neovim. Ce n'est pas une anecdote — les outils IA ne s'intègrent pas de la même façon selon l'IDE. Cursor est une fork de VS Code ; Claude Code et Codex CLI sont des CLI universels ; GitHub Copilot couvre les trois mais sans parité de fonctionnalités sur les agents. L'uniformisation par l'IDE n'est pas un chemin réaliste sans migration coûteuse.</p>
+
+<p><strong>Le cœur du système</strong> est structuré autour du monorepo TypeScript (front Next.js + Node API) et de deux services satellites. Le service Go récent (event bus) est propre, bien testé, sans dette. <mark>Le service Java legacy 2018 est le sclérosant</mark> : c'est le service de paiement, écrit il y a huit ans, couverture de tests insuffisante, sans refacto prévu avant 2028. Tout agent async cloud qui ouvre une PR sur ce service sans supervision humaine est un risque opérationnel que le [RSSI] a formellement refusé. Ce n'est pas négociable — et c'est le bon choix. La borne d'autonomie des agents doit être calquée sur la qualité réelle du code cible, pas sur la confiance théorique dans les modèles.</p>
+
+<p><strong>L'outillage opérationnel</strong> est mature : GitHub Cloud + Actions + Advanced Security, Linear, Datadog APM + Sentry, Codecov, LaunchDarkly. Datadog et Sentry constituent déjà une infra d'observation qu'on peut étendre aux agents async sans repartir de zéro — c'est un avantage structurant par rapport à une organisation qui devrait tout instrumenter.</p>
+
+<p><strong>La base de connaissances</strong> est en migration : Notion héberge les specs et les ADR, GitHub Discussions complète le technique. Confluence legacy est en migration vers Notion — le corpus ADR est partiellement structuré, suffisant pour un premier MCP Notion en lecture.</p>
+
+<p><strong>Le gestionnaire de secrets</strong> Vault HCP est scopé par squad — bonne pratique de sécurité qui devient un sclérosant projet : câbler un MCP server Vault lisible par les agents async demande un scoping fin, un masquage des secrets dans les logs et un audit trail validé par le [RSSI]. Deux semaines incompressibles, pas de raccourci.</p>
+
+<p>Les implications structurantes de cette carte sont au nombre de cinq :</p>
+<ul>
+  <li>Stack 100 % cloud, pas de mainframe → tous les patterns techniquement accessibles dès le POC.</li>
+  <li>Service Java legacy 2018 = <strong>sclérosant</strong> → agent async cloud interdit dessus jusqu'à refacto (horizon 2+ ans).</li>
+  <li>Vault HCP scopé par squad → MCP server Vault possible mais <strong>scoping fin obligatoire avec le [RSSI]</strong> (deux semaines incompressibles).</li>
+  <li>GitHub Cloud + Bedrock disponibles → bascule API privée Claude/GPT-5 sans contrainte souveraineté (un avantage différentiel vs CC-01 en environnement bancaire régulé).</li>
+  <li>Quatre outils IA dont deux hors SSO → <strong>shadow soft à intégrer dans la doctrine</strong>, pas à chasser — cf. leçon amnistie CC-00.</li>
+</ul>
+
+<p>Mais l'arbitrage n'est pas un choix d'outil — c'est un choix de portefeuille.</p>
+</section>
+
+<!-- ═════ SECTION 3 — Quatre patterns ═════ -->
+<section id="sec-3">
+<h2>3. Quatre patterns d'agents de dev — pourquoi pas un seul</h2>
+
+<p>On dit <em>AI dev tooling</em> comme si c'était un marché homogène. En réalité c'est quatre patterns structurellement différents qui partagent peu : surface d'intégration, latence cible, niveau d'autonomie, modèle économique. Le confondre, c'est s'exposer à un Copilot universel qui fait moyennement les quatre et laisse 30 % de vélocité sur la table — précisément là où se concentre l'effet ROI selon les données DORA sur les profils sénior. Avant l'arbitrage portefeuille, il faut avoir la carte. Elle tient en quatre lignes :</p>
+
+<ul>
+  <li><strong>Ghost autocomplete inline</strong> — suggestion token-par-token dans le caret IDE, latence &lt;200 ms, autonomie L1 Suggest, siège mensuel flat.</li>
+  <li><strong>Chat IDE / CLI assistant connecté</strong> — side-panel + terminal + MCP, latence 2–8 s, autonomie L2–L3 multi-fichier sous validation humaine, siège + tokens.</li>
+  <li><strong>Agent async cloud</strong> — branch git → PR auto hors écran, latence 5–30 min, autonomie L3–L4 selon tier ticket, facturation à la tâche ou à l'heure machine.</li>
+  <li><strong>Code review automatique</strong> — webhook PR GitHub, latence 30 s à 2 min, autonomie L2 review déléguée pre-merge, siège ou tarif par PR.</li>
+</ul>
+
+<figure id="fig-01">
+  <button class="zoom-btn" aria-label="Zoom">⛶</button>
+  <img src="images/CC-10-dev-agentique/CC-10-fig-01-anatomie-patterns.svg" alt="Anatomie comparée des 4 patterns d'agents de dev — surfaces, latences, niveaux d'autonomie, modèles éco">
+  <figcaption><a class="anchor" href="#fig-01" title="Lien direct vers ce schéma">¶</a>Comparatif des 4 patterns : ghost autocomplete inline / chat IDE-CLI connecté / agent async cloud / code review automatique. Pour chaque pattern : surface IDE/CI/PR, latence cible, niveau d'autonomie typique, modèle économique, ticket type. L'axe horizontal est la latence (ms → min), l'axe vertical l'autonomie (L1 → L4).</figcaption>
+</figure>
+
+<h3>3.1 Pattern ghost autocomplete inline</h3>
+
+<p>Surface d'intégration : le caret IDE. Latence cible : &lt;200 ms — en dessous de ce seuil, la suggestion s'insère dans le flux cognitif du dev ; au-dessus, il a déjà tapé la suite. Niveau d'autonomie : L1 Suggest, le dev accepte ou rejette token par token. Modèle économique : siège mensuel flat de $10 à $19, le plus prévisible du portefeuille.</p>
+
+<p>Outils représentatifs : <mark>Copilot Tab</mark>, <mark>Cursor Tab</mark>, <mark>Supermaven</mark>, <mark>Tabby</mark> (self-hosted, option souveraineté intéressante pour une scale-up sous contrainte RSSI).</p>
+
+<p>Tickets cibles : les « fastoches » — typage TypeScript manquant, boilerplate répétitif, imports oubliés, gestion d'erreur basique, complétion de tests unitaires sur patterns connus. Où ça échoue : refacto multi-fichier (le ghost ne voit pas la codebase complète), exploration architecturale, décisions de design.</p>
+
+<h3>3.2 Pattern chat IDE / CLI assistant connecté</h3>
+
+<p>Surface d'intégration : IDE side-panel (Cursor Composer), terminal (Claude Code, Codex CLI), ou les deux via MCP. Latence : 2–8 s. Niveau d'autonomie : L2–L3. Modèle économique : siège + tokens (abonnements Pro/Max/Ultra) ou API pure via Bedrock — le plus volatil à prévoir pour des équipes intensives.</p>
+
+<p>Outils représentatifs : <mark>Cursor Composer</mark>, <mark>Claude Code</mark>, <mark>Codex CLI</mark>, <mark>JetBrains AI Assistant</mark>.</p>
+
+<p>Tickets cibles : refacto multi-fichier cadré (rename d'API interne, migration de patterns, extraction de module), exploration de codebase inconnue, debug sur traces Datadog, rédaction d'ADR. C'est là que se jouent les 30 % de vélocité sénior documentés par DORA<sup><a href="#source-4">[4]</a></sup> — le chat IDE avec context window large + MCP natif est le pattern qui change le plus la nature du travail de développement.</p>
+
+<h3>3.3 Pattern agent async cloud</h3>
+
+<p>Surface d'intégration : une branche git créée automatiquement, une PR ouverte sans que le dev soit devant son écran. Latence : 5 à 30 min. Niveau d'autonomie : L3–L4 selon le tier du ticket. Modèle économique : le plus volatile du marché — <mark>Devin</mark> sur modèle horaire machine<sup><a href="#source-5">[5]</a></sup>, <mark>Cursor Background Agent</mark> en accès anticipé dès juin 2025<sup><a href="#source-6">[6]</a></sup>, <mark>Claude Code background</mark>, <mark>Copilot Workspace</mark>, <mark>Codex async</mark>.</p>
+
+<p>Tickets cibles : bumps de dépendances avec breaking change mineur, traductions i18n, boilerplate CRUD, migrations de patterns répétitifs, génération de stubs de tests. Où ça échoue : feature nouvelle (ambiguïté sur le comportement attendu), code prod sensible non testé, tickets ambigus. <mark>Sur le service de paiement Java legacy, pas d'agent async, jamais.</mark></p>
+
+<h3>3.4 Pattern code review automatique</h3>
+
+<p>Surface d'intégration : webhook sur événement PR GitHub. Latence : 30 s à 2 min. Niveau d'autonomie : L2 review déléguée pre-merge — l'outil laisse des commentaires, suggère des corrections, mais ne merge pas. Modèle économique : siège mensuel ou tarif par PR premium.</p>
+
+<p>Outils représentatifs : <mark>CodeRabbit</mark>, <mark>Greptile</mark>, <mark>Copilot for PRs</mark>.</p>
+
+<p>La combinaison agent async + review automatique ferme la boucle qualité sans allonger le cycle. Où ça échoue : décisions architecturales nuancées, contexte métier non documenté dans la codebase (le Java legacy 2018 avec couverture insuffisante produit des faux positifs). Le code review automatique est une sentinelle, pas un architecte.</p>
+
+<p>Un Copilot universel qui couvre les quatre patterns ne maximise aucun d'eux — il fait moyennement les quatre. C'est pourquoi le verdict CC-10 porte sur un <strong>portefeuille distribué par profil de ticket × profil de dev</strong>, pas sur le choix d'un outil. La section suivante fixe la mécanique.</p>
+</section>
+
+<!-- ═════ SECTION 4 — Workflow ticket ═════ -->
+<section id="sec-4" class="case-app-modes">
+<h2>4. Le workflow ticket — du tri Linear au merge GitHub</h2>
+
+<p>Avant de choisir un outil, on choisit un tier. Le ticket entre dans Linear, passe par un tag automatique (ou manuel, selon la maturité du processus), et bifurque selon son niveau de risque. Trois tiers, trois bifurcations, trois patterns préférés. Ce n'est pas une règle d'or gravée dans le marbre — c'est une doctrine opérationnelle que l'équipe peut ajuster par repo et par squad, avec une règle d'exception explicite : L4 (auto-merge CI verte sans validation humaine) est cap par opt-in explicite, par repo, pas comme comportement par défaut.</p>
+
+<figure id="fig-02">
+  <button class="zoom-btn" aria-label="Zoom">⛶</button>
+  <img src="images/CC-10-dev-agentique/CC-10-fig-02-workflow-ticket.svg" alt="Workflow ticket en mode agentique — du tri Linear au merge GitHub, bifurcation par tier, niveaux L1-L4">
+  <figcaption><a class="anchor" href="#fig-02" title="Lien direct vers ce schéma">¶</a>Trajectoire d'un ticket : ouverture Linear → tri par tag automatique → bifurcation par tier (tier 1 trivial → async cloud / tier 2 refacto cadré → chat IDE en pair / tier 3 feature nouvelle → human-led + ghost) → review (agent OU humain selon tier) → merge → release. Marqueurs L1-L4 par étape. Annotation explicite des zones interdites aux agents (service Java legacy 2018).</figcaption>
+</figure>
+
+<h3>4.1 Tier 1 trivial → agent async cloud</h3>
+
+<p>Tags Linear : <code>tier-1-robot</code>, <code>tier-1-deps</code>, <code>tier-1-i18n</code>.</p>
+
+<p>Le ticket tier 1 est trivial au sens de <em>bornabilité</em> : la structure est prévisible, les tests couvrent le périmètre, la CI est le signal de qualité. Dès le tag, le ticket est routé automatiquement vers l'agent async cloud — <mark>Claude Code background</mark>, <mark>Cursor Background Agent</mark> ou <mark>Devin</mark> selon l'outillage en place. L'agent clone le repo, crée une branche, effectue les modifications, lance la CI, ouvre une PR avec une description générée, et déclenche automatiquement le code review en sentinelle.</p>
+
+<p>Niveau d'autonomie : L3 — l'agent ouvre la PR, la CI est lancée, mais <strong>la validation humaine reste obligatoire</strong> avant merge, sauf exception explicite. Le passage à L4 (auto-merge sur CI verte) est possible uniquement sur des repos dont l'équipe a explicitement activé l'option — et uniquement pour les tags <code>tier-1-deps</code> et <code>tier-1-i18n</code> sur des services périphériques bien couverts. Sur le service Java legacy 2018, L4 est interdit sans date de révision.</p>
+
+<h3>4.2 Tier 2 refacto cadré → chat IDE en pair</h3>
+
+<p>Tags Linear : <code>tier-2-refacto</code>, <code>tier-2-rename-api</code>.</p>
+
+<p>Le ticket tier 2 a une structure plus ouverte : la finalité est claire (renommer une API interne, extraire un module, migrer un pattern), mais les implications multi-fichier demandent un jugement continu. C'est le territoire du chat IDE en pair avec un dev sénior. Le dev sénior ouvre <mark>Cursor Composer</mark> ou <mark>Claude Code</mark> en mode interactif, charge le contexte pertinent de la codebase (fichiers liés, ADR Notion via MCP, historique Linear du ticket), et avance step by step avec l'agent. Niveau d'autonomie : L2 — l'agent est en boucle courte sous validation humaine continue.</p>
+
+<p>Ce pattern est le plus transformateur sur les profils sénior et staff : la refacto multi-fichier qui prenait une journée tient souvent en deux à trois heures avec un context window large et les MCP servers Notion + GitHub actifs. C'est là que se joue l'effet DORA documenté sur les time-to-merge.</p>
+
+<h3>4.3 Tier 3 feature ou code sensible → human-led</h3>
+
+<p>Tags Linear : <code>tier-3-feature</code>, <code>tier-3-payment</code> (= service Java legacy de paiement), <code>tier-3-scoring</code>.</p>
+
+<p>Le ticket tier 3 est human-led, sans exception. Deux raisons : la première est fonctionnelle — une feature nouvelle est, par définition, non spécifiée dans la codebase, l'agent hallucine les specs à partir du contexte. La seconde est opérationnelle : le service Java legacy 2018 et le code de scoring portent un risque opérationnel que le [RSSI] a évalué comme non délégable à un agent sans supervision continue. En tier 3, le dev humain pilote. Le ghost autocomplete L1 reste actif pour le confort d'édition. <strong>JAMAIS d'agent async sur le service Java legacy 2018 ni sur le code de paiement / scoring</strong> — c'est la borne d'autonomie que §2 a posée.</p>
+
+<blockquote>
+<strong>Anatomie d'un ticket tier 1 ROBOT-friendly.</strong> Bump deps avec breaking change mineur sur 12 fichiers du monorepo TypeScript. <strong>Listen</strong> : ticket Linear taggé <code>tier-1-robot</code> auto-routé vers l'agent async cloud. <strong>Retrieve</strong> : MCP calls parallèles GitHub (liste des fichiers impactés) + Linear (description du ticket + contexte sprint) + Datadog (derniers déploiements du périmètre) + Notion (ADR de la dépendance). <strong>Reason + Plan</strong> : chain-of-thought de l'agent, plan de migration publié en commentaire Linear + draft description de PR. <strong>Execute</strong> : branche créée, commits atomiques, CI lancée, review automatique <mark>CodeRabbit</mark> déclenchée en sentinelle. <strong>Audit</strong> : log structuré (CoT de l'agent + diff complet + traces MCP + coût tokens) → audit trail Datadog avec sémantique <code>gen_ai.*</code><sup><a href="#source-7">[7]</a></sup>. ~4 min wall time, ~0,80 € de tokens, PR ouverte pour review humaine obligatoire.
+</blockquote>
+</section>
+
+<!-- ═════ SECTION 5 — MCP servers ═════ -->
+<section id="sec-5" class="case-mcp">
+<h2>5. Les huit MCP servers qui font la différence</h2>
+
+<p>Sans MCP servers internes, l'agent est aveugle au contexte de l'organisation. Il peut générer du code syntaxiquement correct, mais il ne sait pas que la dépendance qu'il bumpe touche le service de paiement Java legacy, que le ticket Linear a été redéfini il y a deux heures, ni que le dernier déploiement en production a provoqué une régression Sentry toujours ouverte. La vraie question n'est pas <em>quel agent acheter</em> — c'est <em>quels outils internes brancher en premier</em>.</p>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+  <th>Système</th>
+  <th>Mode</th>
+  <th>Type MCP</th>
+  <th>Effort</th>
+  <th>Risque</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><mark>GitHub</mark></td>
+  <td><code>read_write</code></td>
+  <td>officiel</td>
+  <td>2 j</td>
+  <td>bas</td>
+</tr>
+<tr>
+  <td><mark>Linear</mark></td>
+  <td><code>read_write</code></td>
+  <td>officiel</td>
+  <td>1 j</td>
+  <td>bas</td>
+</tr>
+<tr>
+  <td><mark>Datadog</mark></td>
+  <td><code>read</code></td>
+  <td>officiel</td>
+  <td>3 j</td>
+  <td>bas</td>
+</tr>
+<tr>
+  <td><mark>Sentry</mark></td>
+  <td><code>read</code></td>
+  <td>officiel</td>
+  <td>2 j</td>
+  <td>bas</td>
+</tr>
+<tr>
+  <td><strong><mark>Vault HCP</mark></strong></td>
+  <td><code>read_only_scope</code></td>
+  <td><strong>custom obligatoire</strong></td>
+  <td><strong>2 sem. ⚠</strong></td>
+  <td><strong>haut</strong></td>
+</tr>
+<tr>
+  <td><mark>Notion</mark></td>
+  <td><code>read</code></td>
+  <td>officiel</td>
+  <td>3 j</td>
+  <td>bas</td>
+</tr>
+<tr>
+  <td><mark>Codecov</mark></td>
+  <td><code>read</code></td>
+  <td>custom (API REST)</td>
+  <td>1 sem.</td>
+  <td>bas</td>
+</tr>
+<tr>
+  <td><mark>LaunchDarkly</mark></td>
+  <td><code>read</code></td>
+  <td>officiel</td>
+  <td>3 j</td>
+  <td>moyen</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<p>Cinq des huit systèmes ont un MCP officiel prêt à l'emploi. Deux demandent un développement custom — <mark>Vault HCP</mark> et <mark>Codecov</mark>. Un MCP officiel, c'est un connecteur maintenu par l'éditeur, documenté, avec une politique de scoping claire. Un MCP custom, c'est du code interne, maintenu par l'équipe, qui expose une API REST ou SDK comme serveur MCP. Le risque n'est pas le même.</p>
+
+<h3>5.1 Le sclérosant Vault HCP</h3>
+
+<p><mark>Vault HCP</mark> est le <strong>sclérosant du projet</strong> : c'est lui qui détermine si les agents async peuvent accéder aux credentials de l'organisation de façon sécurisée, ou s'ils travaillent aveuglément avec des variables d'environnement en clair dans les logs.</p>
+
+<p>Pourquoi « custom obligatoire » : le MCP officiel Vault n'existe pas à date — la surface d'API Vault HCP est riche, et les usages légitimes pour un agent dev sont très restreints. Le MCP custom doit implémenter un <strong>scoping par squad</strong> (un agent ne peut lire que les secrets déclarés dans le périmètre de son squad), un <strong>masquage systématique des valeurs dans les logs</strong> (les traces MCP ne doivent jamais contenir de valeur de secret en clair — seulement le chemin et le statut de lecture), et un <strong>audit trail structuré</strong> validé par le [RSSI].</p>
+
+<p>L'effort est de deux semaines incompressibles — une pour le développement du MCP server, une pour le scoping et la validation avec le [RSSI]. Il faut impérativement un profil backend ou SRE sénior : ce n'est pas un problème de code (le code est simple), c'est un problème de modèle de sécurité. Sans ce scoping fin, le risque de leakage est réel<sup><a href="#source-8">[8]</a></sup>.</p>
+
+<h3>5.2 Le risque LaunchDarkly</h3>
+
+<p><mark>LaunchDarkly</mark> est le seul MCP officiel classé « risque moyen ». Pas parce que le MCP est mal conçu — il est bien documenté, bien scopé en lecture. Mais parce que le périmètre de <strong>ce que l'agent peut faire logiquement</strong> à partir d'une lecture des flags est dangereux sans garde-fou.</p>
+
+<p>La mitigation est opérationnelle : <mark>LaunchDarkly</mark> est câblé en lecture stricte, et la doctrine pose qu'<strong>aucun ticket ne peut inclure un toggle de flag prod sans un ticket Linear dédié avec validation humaine explicite</strong>. Le code review automatique (<mark>CodeRabbit</mark>) est configuré pour détecter les modifications de constantes de flag et les signaler comme revue manuelle obligatoire.</p>
+
+<h3>5.3 Effort total et calendrier</h3>
+
+<p>5 à 6 semaines pour un backend / SRE sénior à plein temps — réparti en trois phases :</p>
+
+<p><strong>Semaines 1-2 — La fondation fast</strong> : <mark>GitHub</mark> (2 j), <mark>Linear</mark> (1 j), <mark>Datadog</mark> (3 j), <mark>Sentry</mark> (2 j). Ces quatre MCP sont officiels, bien documentés, à faible risque. Ils constituent la couche minimale viable : l'agent async peut dès lors lire le contexte du ticket, l'état du repo, les alertes et erreurs récentes.</p>
+
+<p><strong>Semaines 3-4 — Le sclérosant Vault</strong> : deux semaines dédiées au MCP custom Vault HCP + validation [RSSI]. Intentionnellement placé en milieu de période pour ne pas bloquer le POC — les semaines 1-2 suffisent pour valider le pattern agent avec les quatre MCP fast.</p>
+
+<p><strong>Semaines 5-6 — La couche contextuelle</strong> : <mark>Notion</mark> (3 j, ADR + specs), <mark>Codecov</mark> (1 sem., détection régression coverage), <mark>LaunchDarkly</mark> (3 j, lecture flags avec garde-fous). Ces trois MCP enrichissent le contexte de l'agent sans être bloquants au démarrage.</p>
+</section>
+
+<!-- ═════ SECTION 6 — Modèles ═════ -->
+<section id="sec-6" class="case-models">
+<h2>6. Les modèles — cascade par pattern, pas modèle unique</h2>
+
+<p>Le débat « quel modèle pour les agents de dev » rate la cible. Il présuppose qu'il faut choisir <em>un</em> modèle, le déployer pour toute l'équipe, et mesurer le résultat agrégé. C'est exactement l'erreur du Copilot universel transposée au niveau du modèle. <mark>Opus</mark> en boucle sur tous les tickets coûte cinq fois plus cher que <mark>Sonnet</mark> pour des résultats marginalement meilleurs sur les tickets tier 1. <mark>Haiku</mark> sur un gros refactor multi-fichier produit un résultat médiocre malgré sa latence enviable. Le bon arbitrage en 2026 est une <strong>cascade par pattern</strong> : le modèle est choisi en fonction de la nature de la tâche, pas du fait qu'il est « le meilleur » en absolu.</p>
+
+<h3>6.1 Cascade par pattern</h3>
+
+<p><strong>Ghost (mode A inline)</strong> : <mark>Claude Haiku</mark> ou <mark>Cursor cursor-small</mark> natif selon l'IDE. La contrainte est la latence : en dessous de 200 ms, la suggestion s'intègre dans le flux cognitif ; au-dessus, le dev a déjà tapé la suite. <mark>Haiku</mark> est le seul modèle Claude qui tient cet objectif en usage résidentiel. Sur ce pattern, le raisonnement n'est pas le facteur limitant — c'est la vitesse.</p>
+
+<p><strong>Chat IDE (mode A multi-fichier)</strong> : <mark>Claude Sonnet</mark> par défaut. C'est le sweet spot de la gamme pour le contexte étendu, le tool use natif et le MCP first-class. Escalade manuelle vers <mark>Opus</mark> pour les gros refactors (&gt; 5 000 lignes touchées, migration de framework, analyse architecturale complexe) — escalade <em>à la main</em> par le dev, pas automatique. Le dev sénior qui décide d'appeler <mark>Opus</mark> pour une refacto importante le sait et l'assume ; le coût est visible dans son quota.</p>
+
+<p><strong>Agent async (mode B tier 1)</strong> : <mark>Claude Sonnet</mark> comme modèle de travail. Fallback réflexif vers <mark>Opus</mark> si le plan échoue deux fois de suite sur le même ticket — l'agent escalade automatiquement, mais avec un <strong>cap budget par ticket</strong> : le coût total d'un ticket tier 1 est plafonné à 1,50 $ d'inférence. Si le cap est atteint sans PR ouverte, le ticket revient en queue humaine. Ce plafond n'est pas arbitraire : un ticket tier 1 qui coûte 3 $ d'inférence signale soit un ticket mal taggé (tier 2 déguisé en tier 1), soit un agent qui tourne en boucle.</p>
+
+<p><strong>Code review auto (mode C)</strong> : <mark>Claude Sonnet</mark> exclusivement via <mark>CodeRabbit</mark> ou <mark>Greptile</mark>. <mark>Opus</mark> n'est pas utilisé en code review — le coût par PR serait insoutenable à l'échelle de 280 PRs par semaine. La revue automatique est une sentinelle, pas un architecte. <mark>Sonnet</mark> est largement suffisant pour ce périmètre.</p>
+
+<h3>6.2 L'argument cascade</h3>
+
+<p>Deux « tweet tests » que le [CTO] doit pouvoir passer lors du COMEX :</p>
+
+<p><em>« Et si Anthropic est down ? »</em> — la cascade modèle prévoit un fallback <mark>Codestral</mark> self-hosted sur les agents async tier 1. Ce n'est pas une migration complète : le mode B tier 1 continue de tourner en mode dégradé sur un modèle de code open-source compétent sur les tickets structurels. Le mode A chat IDE se met en pause ou bascule sur un fallback API Bedrock (GPT-5 ou Mistral Large), selon la configuration de la gateway.</p>
+
+<p><em>« Et si Anthropic remonte ses tarifs de 50 % ? »</em> — le passage par Bedrock résidence EU est prévu dans l'architecture de la gateway dès le POC<sup><a href="#source-9">[9]</a></sup>. Ce n'est pas un plan B d'urgence — c'est une contrainte de conception. La gateway LLM interne route les appels vers l'endpoint Bedrock EU par défaut pour les agents async, ce qui donne deux bénéfices simultanés : souveraineté partielle des données (résidence EU) et protection partielle contre une hausse tarifaire unilatérale.</p>
+
+<h3>6.3 Anti-tokenmaxxing</h3>
+
+<p>Le <mark>tokenmaxxing</mark><sup><a href="#source-10">[10]</a></sup> n'est pas un comportement utilisateur déviant — c'est la conséquence prévisible d'un pricing siège all-you-can-eat. Si le contrat dit « illimité » et que la performance est évaluée (même implicitement) sur le volume de tickets traités, les devs les plus productifs <em>et</em> les plus coûteux maximiseront naturellement leur consommation. C'est ce qui s'est passé chez Uber, chez Meta, chez Shopify en 2025-2026 — et c'est ce qui a poussé Anthropic, Cursor et GitHub à renoncer l'un après l'autre au modèle illimité.</p>
+
+<p>La cascade modèle est la réponse architecturale à ce problème. <mark>Opus</mark> est borné par deux caps simultanés : un <strong>cap par ticket</strong> (1,50 $ pour un ticket tier 1, affiché dans la description de la PR générée) et un <strong>cap par session dev</strong> (30 $/dev/jour en phase prod, paramétrable par squad dans la gateway). Ces deux caps ne sont pas des pénalités — ce sont des signaux. La gateway LLM interne expose ces métriques dans un dashboard Datadog : quota utilisé / quota alloué par profil, distribution des coûts par pattern, tickets où le cap a été atteint.</p>
+</section>
+
+<!-- ═════ SECTION 7 — Enjeux ═════ -->
+<section id="sec-7">
+<h2>7. Pourquoi — vélocité, qualité, soutenabilité</h2>
+
+<p>Trois enjeux, pas un. La tentation est d'argumenter la vélocité seule — les chiffres sont séduisants, les benchmarks disponibles, le [CTO] est sensible à la promesse de throughput. Mais sans l'ancrage qualité, on optimise Goodhart. Et sans la soutenabilité économique, les deux premiers s'effondrent dès le premier budget review. Les trois enjeux se tiennent ensemble — retirer le troisième, c'est construire un récit COMEX qui ne tient pas jusqu'en Q1 2027.</p>
+
+<h3>Enjeu 1 — Vélocité</h3>
+
+<p>Sur les équipes early-adopters en Q1 2026 qui ont déployé <mark>Sonnet</mark> + <mark>Claude Code</mark> sur le pattern chat IDE + agent async, les données DORA pointent vers −40 % sur le cycle médian ticket→PR sur les tickets tier 1<sup><a href="#source-11">[11]</a></sup>. Le throughput équipe monte en parallèle de +25 % mesuré en PR mergées par semaine — pas par dev isolé, mais comme vitesse de flux de l'équipe complète. GitHub Octoverse 2026 affine la distribution : sur les équipes de 50 à 200 devs avec adoption du pattern agent async, 38 % des PRs fusionnées en mars 2026 incluent une contribution agentique significative, montant à 67 % pour les profils sénior.</p>
+
+<h3>Enjeu 2 — Qualité</h3>
+
+<p>Le vrai test du pattern agent n'est pas la vélocité — <mark>c'est la stabilité du taux de bug post-release à throughput augmenté</mark>. Si la qualité dérive quand le volume monte, on a optimisé la mauvaise chose. Les équipes qui ont vu leur <code>post-release-bug-rate</code> monter en même temps que leur throughput ont en général un tier 1 trop large (des tickets tier 2 déguisés en tier 1), une CI insuffisante, ou un tiering qui laisse l'agent travailler sur du code insuffisamment couvert. L'objectif du KPI gardien <code>post-release-bug-rate</code> (cible : stable ≤ 3 %, alerte : &gt; 5 %) est précisément de détecter cette dérive avant qu'elle devienne un argument contre le programme au COMEX.</p>
+
+<h3>Enjeu 3 — Soutenabilité économique</h3>
+
+<p>Le poste inférence doit rester borné à 30 % du budget AI tooling total. Au-delà, la dérive devient non finançable lors de la revue CFO de Q1 2027 — et c'est précisément la dynamique que le retex Uber illustre : un budget AI tooling qui double en six mois sans récit ROI consolidé ne survit pas au premier budget review sous pression. La gateway LLM interne avec quotas par profil est la seule réponse architecturale qui rend cette borne tenable à l'échelle — pas comme contrainte ajoutée après coup, mais comme condition de conception dès le POC.</p>
+
+<blockquote>
+<strong>Bench.</strong> DORA <em>State of DevOps</em> 2025 + GitHub Octoverse 2026 — % PR avec assistance agentique par taille d'équipe et par profil dev, corrélé aux métriques four-keys.
+</blockquote>
+</section>
+
+<!-- ═════ SECTION 8 — Build / Buy / Hybride ═════ -->
+<section id="sec-8" class="case-build-buy">
+<h2>8. Build, Buy, Hybride — l'arbitrage porte sur le portefeuille</h2>
+
+<p>L'arbitrage build/buy classique — « construit-on l'outil ou l'achète-t-on ? » — ne s'applique pas ici. Personne ne propose sérieusement de construire un Cursor ou un Claude Code maison. La question n'est pas « quel outil », c'est « quel mix, avec quelle doctrine de distribution, à quel prix défendable au COMEX ». Trois régimes, six critères.</p>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+  <th>Critère</th>
+  <th class="center">Build pur<br><span style="font-weight:300;font-size:12px;color:var(--text-faint)">Plateforme dev agent maison</span></th>
+  <th class="center">Buy uniforme<br><span style="font-weight:300;font-size:12px;color:var(--text-faint)">Un seul outil pour tous</span></th>
+  <th class="center recommended">Buy comparatif par profil (recommandé)<br><span style="font-weight:300;font-size:12px;color:var(--accent)">Portefeuille distribué via gateway LLM</span></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong>Sensibilité data</strong></td>
+  <td class="center"><span class="score plus2">++</span></td>
+  <td class="center"><span class="score minus1">−</span></td>
+  <td class="center recommended"><span class="score plus1">+</span></td>
+</tr>
+<tr>
+  <td><strong>Personnalisation</strong></td>
+  <td class="center"><span class="score plus2">++</span></td>
+  <td class="center"><span class="score minus1">−</span></td>
+  <td class="center recommended"><span class="score plus1">+</span></td>
+</tr>
+<tr>
+  <td><strong>Volumétrie</strong></td>
+  <td class="center"><span class="score plus1">+</span></td>
+  <td class="center"><span class="score plus2">++</span></td>
+  <td class="center recommended"><span class="score plus1">+</span></td>
+</tr>
+<tr>
+  <td><strong>Lock-in</strong></td>
+  <td class="center"><span class="score plus1">+</span></td>
+  <td class="center"><span class="score minus2">−−</span></td>
+  <td class="center recommended"><span class="score zero">0</span></td>
+</tr>
+<tr>
+  <td><strong>Time-to-value</strong></td>
+  <td class="center"><span class="score minus2">−−</span></td>
+  <td class="center"><span class="score plus2">++</span></td>
+  <td class="center recommended"><span class="score plus1">+</span></td>
+</tr>
+<tr>
+  <td><strong>Souveraineté</strong></td>
+  <td class="center"><span class="score plus2">++</span></td>
+  <td class="center"><span class="score minus2">−−</span></td>
+  <td class="center recommended"><span class="score zero">0</span></td>
+</tr>
+<tr class="verdict-row">
+  <td><strong>Verdict</strong></td>
+  <td><em>Non — pas le métier d'une scale-up SaaS B2B. 18 mois minimum, retard structurel de l'état de l'art acquis dès le premier jour.</em></td>
+  <td><em>Antipattern — perd 30 % de vélocité sur les patterns chat IDE et async cloud. Et le pricing siège unique explose sur les power users qui <mark>tokenmaxxent</mark>.</em></td>
+  <td class="recommended"><strong>RECOMMANDÉ.</strong> <em>Équilibre vélocité, budget maîtrisé via quotas distribués, fallback dégradé Bedrock + cascade modèle, doctrine itérée trimestriel.</em></td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<h3>8.1 Pourquoi le build pur est non</h3>
+
+<p>Construire une plateforme d'agents de dev maison — orchestrateur, LLM hébergé, UI, intégrations IDE — n'est pas le métier d'une scale-up SaaS B2B. L'effort réaliste est de 18 mois minimum, avec une équipe plateforme dédiée qui ne produit aucun effet visible sur le throughput dev pendant toute la durée. En sortie, on livre une version 1 d'un outil que les éditeurs du marché (Anthropic, Cursor, GitHub) font évoluer toutes les six semaines avec des équipes de centaines d'ingénieurs. Le retard structurel sur l'état de l'art est acquis dès le premier jour.</p>
+
+<h3>8.2 Pourquoi le buy uniforme est antipattern</h3>
+
+<p>Trois arguments, sans ordre de priorité :</p>
+
+<p>D'abord, chaque pattern a sa surface, sa latence et son ROI propres (cf. §3). Un outil ghost autocomplete et un agent async cloud sont structurellement différents — les confondre dans un contrat unique, c'est payer le prix de l'un pour des résultats médiocres de l'autre. Un Copilot universel laisse 30 % de vélocité sur la table précisément là où se concentre l'effet DORA sur les profils sénior.</p>
+
+<p>Ensuite, le pricing siège unique explose sur les power users qui <mark>tokenmaxxent</mark>. C'est le mécanisme documenté chez Uber, Meta et Shopify en 2025-2026 : un abonnement « illimité » avec un leaderboard interne de productivité produit mécaniquement des consommations à 500–2 000 $/dev/mois sur les profils les plus productifs.</p>
+
+<p>Enfin, le service Java legacy 2018 interdit techniquement le pattern « one-size-fits-all » : le sclérosant ne tolère pas les agents async sans supervision humaine, ce qui veut dire que même si on achetait un outil uniforme avec toutes les fonctionnalités, on serait obligé de tierer manuellement les permissions par service et par profil. Autant construire la doctrine dès le départ.</p>
+
+<h3>8.3 Buy comparatif par profil — le portefeuille distribué</h3>
+
+<p>Le régime recommandé est un mix opérationnel : ghost universel (<mark>Copilot Tab</mark> ou <mark>Cursor Tab</mark>, siège flat) + chat IDE par profil sénior (<mark>Claude Code</mark> ou <mark>Cursor Composer</mark>, usage via Bedrock) + agent async cloud pour les tickets tier 1 ROBOT-friendly + code review automatique en sentinelle (<mark>CodeRabbit</mark> ou <mark>Greptile</mark>, webhook sur toutes les PRs).</p>
+
+<p>La distribution de ce portefeuille passe par une <mark>gateway LLM interne</mark> avec quotas par profil de dev. Le crossover économique qui justifie la gateway interne vs les sièges Copilot uniformes se situe à ≈ 1 500 PR/an avec usage agentique : en dessous, le coût de la gateway n'est pas encore amorti ; au-delà, la distribution fine des quotas par profil bat le tarif uniforme. Sur 150 devs avec 280 PR/semaine, ce crossover est franchi dès le pilote à 40 devs.</p>
+
+<p>Reste à chiffrer ce mix sur 4 phases et 8 postes.</p>
+</section>
+
+<!-- ═════ SECTION 9 — Trajectoire 8 postes ═════ -->
+<section id="sec-9" class="case-cost-trajectory">
+<h2>9. Les huit postes — quand l'inférence dérive</h2>
+
+<p>La trajectoire de coûts sur 4 phases n'est pas une courbe lisse. C'est une succession de décrochages : un poste qui dépasse les autres, un plafond qu'on pensait tenir et qui cède. Pour comprendre pourquoi le [CTO] doit défendre un budget AI tooling au COMEX en septembre, il faut regarder la grille en entier — et identifier précisément où ça dérive, et pourquoi<sup><a href="#source-12">[12]</a></sup>.</p>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+  <th>Poste (k€)</th>
+  <th class="center">POC 2 m</th>
+  <th class="center">Pilote 6 m</th>
+  <th class="center">Prod 12 m</th>
+  <th class="center">Scale 36 m</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong>Inférence</strong></td>
+  <td class="center">18</td>
+  <td class="center">95</td>
+  <td class="center">320</td>
+  <td class="center"><strong>620</strong></td>
+</tr>
+<tr>
+  <td>Infra</td>
+  <td class="center">6</td>
+  <td class="center">22</td>
+  <td class="center">60</td>
+  <td class="center">110</td>
+</tr>
+<tr style="background:rgba(184,88,46,0.04)">
+  <td><strong>Équipe</strong></td>
+  <td class="center"><strong>60</strong></td>
+  <td class="center"><strong>180</strong></td>
+  <td class="center"><strong>360</strong></td>
+  <td class="center"><strong>720</strong></td>
+</tr>
+<tr>
+  <td>Data</td>
+  <td class="center">4</td>
+  <td class="center">18</td>
+  <td class="center">35</td>
+  <td class="center">55</td>
+</tr>
+<tr>
+  <td>Évaluation</td>
+  <td class="center">3</td>
+  <td class="center">25</td>
+  <td class="center">80</td>
+  <td class="center">160</td>
+</tr>
+<tr>
+  <td>Gouvernance</td>
+  <td class="center">4</td>
+  <td class="center">18</td>
+  <td class="center">50</td>
+  <td class="center">110</td>
+</tr>
+<tr>
+  <td>Sécurité</td>
+  <td class="center">6</td>
+  <td class="center">22</td>
+  <td class="center">55</td>
+  <td class="center">105</td>
+</tr>
+<tr style="background:rgba(184,88,46,0.04)">
+  <td><strong>Change</strong></td>
+  <td class="center"><strong>5</strong></td>
+  <td class="center"><strong>35</strong></td>
+  <td class="center"><strong>110</strong></td>
+  <td class="center"><strong>220</strong></td>
+</tr>
+<tr style="background:var(--bg-2);font-weight:500">
+  <td><strong>Total k€</strong></td>
+  <td class="center"><strong>106</strong></td>
+  <td class="center"><strong>415</strong></td>
+  <td class="center"><strong>1 070</strong></td>
+  <td class="center"><strong>2 100</strong></td>
+</tr>
+<tr style="background:rgba(45,138,138,0.06)">
+  <td><em>Coût par PR (≈)</em></td>
+  <td class="center"><em>7,60 €</em></td>
+  <td class="center"><em>4,80 €</em></td>
+  <td class="center"><em>3,10 €</em></td>
+  <td class="center"><em><strong>2,30 €</strong></em></td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<p>Trois lectures transverses, dans l'ordre d'importance pour le pilotage :</p>
+
+<ul>
+  <li><strong>L'inférence est multipliée par 35 entre POC et Scale</strong> (18 k€ → 620 k€), contre ×12 pour l'équipe et ×44 pour le change en multiplicateur brut. Ce n'est pas un hasard : chaque étape ajoute des patterns d'usage plus consommateurs — on passe du ghost inline (quelques tokens par complétion) au chat IDE multi-fichier (context window large, plusieurs allers-retours), puis à l'agent async cloud (boucles Opus avec tool calls, long context, re-prompts en cas d'échec). Le paradoxe agentique appliqué au dev est ici précis : à l'échelle du ticket individuel, le gain de vélocité est réel ; à l'échelle de l'organisation, le coût d'inférence devient le poste le plus difficile à piloter sans instrumentation.</li>
+  <li><strong>Le coût par PR divise par ~3</strong> (7,60 € → 2,30 €), ce qui semble aller dans le bon sens. Mais c'est l'<mark>inférence qui absorberait tout sans gateway interne</mark> : le crossover à ≈ 1 500 PR/an avec usage agentique est le pivot financier du programme. Sans gateway, les power users qui <mark>tokenmaxxent</mark> sur les patterns async Opus font déraper le coût moyen — et c'est exactement ce qui s'est produit chez Uber, Meta et Shopify en 2025-2026.</li>
+  <li><strong>Le poste change est le plus dérivant en multiplicateur</strong> (×44, soit 5 k€ → 220 k€) parce que la doctrine n'est jamais stable. Le pricing des outils du marché a bougé chaque trimestre depuis mi-2025 : Anthropic weekly rate limits en août 2025, Cursor auto/background en juin 2025, GitHub Copilot premium requests en juin 2025 puis AI Credits en juin 2026. Chaque changement de pricing entraîne une mise à jour de la doctrine (quotas, tiering, communication interne, formation). Il faut un cycle trimestriel, et le poste change doit le financer.</li>
+</ul>
+
+<p>Mais l'inférence ne dérive pas par hasard. Et le tableau qu'on vient de poser suppose que les sièges Copilot tiennent leur promesse. En 2026, ils ne la tiennent plus. La section §10 documente la fin du all-you-can-eat et les trois événements qui ont enterré le modèle économique du siège illimité pour les outils de coding IA.</p>
+</section>
+
+<!-- ═════ SECTION 10 — Dérive des coûts ═════ -->
+<section id="sec-10" class="case-cost-drift">
+<h2>10. Dérive des coûts : tokenmaxxing, Uber, fin de l'all-you-can-eat</h2>
+
+<p class="lede">Le pricing siège est mort.</p>
+
+<p>Ce n'est pas une dérive lente. En moins de douze mois, trois événements distincts ont enterré le modèle économique du siège illimité pour les outils de coding IA. Les organisations qui ont posé leur doctrine sur ce modèle en 2024 doivent la reposer en 2026 — et celles qui tardent finissent comme Uber.</p>
+
+<h3>10.1 Le tokenmaxxing — Anthropic et Cursor 2025</h3>
+
+<p>Le <mark>tokenmaxxing</mark> désigne la saturation délibérée du quota disponible par sessions intensives : Opus en boucle, context window maximale, tool calls en cascade, agents background tournant 24 h sur 24<sup><a href="#source-10">[10]</a></sup>. La construction morphologique est empruntée au slang Gen Z (comme <em>looksmaxxing</em> ou <em>sleepmaxxing</em> — optimisation extrême d'un paramètre), mais le phénomène est industriel : Shopify a construit le premier leaderboard interne de consommation de tokens documenté publiquement fin 2025.</p>
+
+<p>Le signal est clair : quand on mesure la productivité en tokens, les power users optimisent les tokens. Le coût devient disproportionné par rapport au résultat — et les éditeurs réagissent.</p>
+
+<p><strong>Anthropic</strong> annonce le 28 juillet 2025 l'introduction de <mark>weekly rate limits</mark> sur les plans Pro et Max, effectives le 28 août 2025. Périmètre : les plans Pro ($20/mois) et Max ($100 et $200/mois), avec des quotas hebdomadaires exprimés en heures d'équivalent Sonnet 4 (40–80 h pour Pro, 140–480 h pour Max selon le niveau). Anthropic estime que « less than 5% of subscribers » sont impactés — mais ce sont précisément les 5 % les plus productifs, ceux dont les équipes développent un avantage concurrentiel mesurable<sup><a href="#source-13">[13]</a></sup>. L'échappatoire officiel : acheter du crédit supplémentaire aux tarifs API standard — c'est-à-dire sortir du modèle forfaitaire.</p>
+
+<p><strong>Cursor</strong> ajuste son pricing Auto/Background en juin 2025, abandonnant les request caps fixes pour un modèle usage-based (crédit = coût API) : le plan Pro ($20/mois) passe de ~500 fast requests à $20 de crédits API, soit environ 225 requêtes premium avant overage. Le backlash communautaire est immédiat — les forums Cursor débordent de calculs montrant que l'usage réel d'agents background dépasse largement l'allocation. Cursor publie une excuse publique le 4 juillet 2025 et rembourse les surcoûts entre le 16 juin et le 4 juillet<sup><a href="#source-14">[14]</a></sup>.</p>
+
+<p>Le schéma est identique dans les deux cas : <strong>les power users coûtent disproportionnément sur un modèle siège, le modèle ne peut pas tenir</strong>.</p>
+
+<h3>10.2 Le retex Uber — 4 mois pour brûler le budget annuel</h3>
+
+<p>Le cas le plus médiatisé de 2026 n'est pas une fuite de données ni un incident de sécurité. C'est une histoire de tokens.</p>
+
+<p>Entre décembre 2025 et mars 2026 — quatre mois — Uber épuise l'intégralité de son budget 2026 pour les outils de coding IA. L'outil au cœur du dépassement est <mark>Claude Code</mark> (et non GitHub Copilot Enterprise, contrairement à ce que la rumeur inter-CTO du début de §1 laissait entendre)<sup><a href="#source-2">[2]</a></sup>. L'adoption passe de 32 % à 84 % des ~5 000 ingénieurs d'Uber pendant cette période. Le coût mensuel par ingénieur : entre <strong>500 $ et 2 000 $</strong>, une fourchette dont l'écart dit tout sur la dispersion des usages.</p>
+
+<p>Le déclencheur documenté est un leaderboard interne classant les équipes par consommation totale d'outils IA. Uber a copié Shopify et Meta : mesurer la productivité en tokens. Le résultat est prévisible, et il s'est produit.</p>
+
+<p>Le COO Andrew Macdonald, lors de la conférence du 25 mai 2026, résume le problème dans une formule qui circule depuis sur tous les channels FinOps IA : « That link is not there yet » — il n'existe pas de lien traçable entre la dépense tokens et les livrables effectivement livrés. On a la consommation, on n'a pas l'attribution.</p>
+
+<figure id="fig-03">
+  <button class="zoom-btn" aria-label="Zoom">⛶</button>
+  <img src="images/CC-10-dev-agentique/CC-10-fig-03-derive-couts.svg" alt="Dérive des coûts inférence 2024-2026 par pattern — ghost stable, chat IDE +200 %, async cloud +600 %, review auto +500 % ; repères Anthropic weekly limits, retex Uber, GitHub premium reqs">
+  <figcaption><a class="anchor" href="#fig-03" title="Lien direct vers ce schéma">¶</a>Courbes de coût par pattern ($/dev/mois) 2024–2026 : ghost stable ~10 $, chat IDE 20 $ → 60 $, async cloud 0 $ → 140 $, review auto 5 $ → 25 $. Repères temporels : Anthropic weekly rate limits (mi-2025), retex Uber Claude Code (déc. 2025–mars 2026), GitHub Copilot premium requests (juin 2025) puis AI Credits (juin 2026). Crossover gateway LLM interne vs sièges Copilot uniformes.</figcaption>
+</figure>
+
+<p><strong>Le retex Uber n'est pas une exception.</strong> C'est le cas le plus médiatisé d'un mouvement de fond : plusieurs grandes organisations ayant déployé des outils de coding IA à grande échelle ont documenté des dépassements budgétaires significatifs en 2025-2026, avec des profils similaires — adoption rapide, leaderboard interne, absence de gateway scopée, déconnexion tokens/livrables.</p>
+
+<h3>10.3 GitHub Copilot premium requests — fin de l'illimité</h3>
+
+<p>Avant juin 2025, un abonnement Copilot Business ou Enterprise était structurellement illimité sur les modèles standard. Ce n'est plus le cas.</p>
+
+<p>Depuis le <strong>18 juin 2025</strong> (GitHub.com ; 1er août 2025 pour GHE.com), les abonnés Copilot Business disposent de <strong>300 premium requests incluses par utilisateur/mois</strong> ; Enterprise de <strong>1 000</strong>. Au-delà : <strong>0,04 $ par requête</strong>. La variable critique est le multiplicateur par modèle : une requête Claude Sonnet = <strong>5 premium requests consommées</strong> ; une requête GPT-4.5 = 20×. Une équipe qui travaille avec des agents sur Claude Sonnet épuise ses 300 requêtes Business en quelques jours ouvrés<sup><a href="#source-15">[15]</a></sup>.</p>
+
+<p>La transition n'est pas terminée. GitHub annonce le <strong>27 avril 2026</strong> le passage aux <mark>AI Credits</mark> (token-based, $0,01/crédit), effectif au <strong>1er juin 2026</strong> : Business inclut ~1 900 crédits/utilisateur/mois, Enterprise ~3 900. C'est la confirmation formelle que <strong>le pricing siège est mort</strong>. Le siège Copilot, qui était un forfait « illimité » il y a dix-huit mois, est désormais un abonnement + tokens à la consommation, avec les mêmes mécaniques d'overage que l'API directe.</p>
+
+<blockquote class="drift-conclusion">
+<p>Le modèle <mark>all-you-can-eat</mark> est mort. La <strong>gateway LLM interne</strong> (introduite en §8.3 comme mécanisme de distribution du portefeuille) refait surface ici comme garde-fou financier dev : tokens scopés par profil + quotas distribués + journalisation dans Datadog + plafond par ticket. C'est la seule architecture qui permet de tenir la courbe d'inférence de la table §9 — 620 k€ à scale, mais maîtrisé et attributable. Sans elle, le [CTO] se retrouve dans la position d'Andrew Macdonald : des dépenses sans attribution. Renvoi <strong>[CC-14 §7]</strong> pour le pattern équivalent côté power users non-dev.</p>
+</blockquote>
+</section>
+
+<!-- ═════ SECTION 11 — Gouvernance ═════ -->
+<section id="sec-11" class="case-governance-stack">
+<h2>11. Gouvernance — RACI plat, doctrine trimestrielle</h2>
+
+<p>Le RACI du programme dev agentique doit rester plat. Un comité de pilotage stratifié ralentit sans protéger — et dans un domaine où le pricing des outils change tous les trimestres, la doctrine doit pouvoir être mise à jour plus vite que les sprints.</p>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+  <th>Rôle RACI</th>
+  <th>Acteur</th>
+  <th>Périmètre</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong>Responsable (R)</strong></td>
+  <td><mark>[STAFF_ENG_DX]</mark> + <mark>[VP_ENG]</mark></td>
+  <td>Exécution doctrine, suivi KPI, animation équipe (1,5 ETP cible en Prod)</td>
+</tr>
+<tr>
+  <td><strong>Approbateur (A)</strong></td>
+  <td><mark>[CTO]</mark></td>
+  <td>Sponsor final, valide le budget AI tooling au COMEX, arbitre entre throughput et coût</td>
+</tr>
+<tr>
+  <td><strong>Consultés (C)</strong></td>
+  <td><mark>[CFO]</mark> · <mark>[RSSI]</mark> · <mark>[DPO]</mark></td>
+  <td>[CFO] : budget AI tooling · [RSSI] : scoping MCP + agents async sur code prod · [DPO] : PII dans les logs Datadog</td>
+</tr>
+<tr>
+  <td><strong>Informés (I)</strong></td>
+  <td>Tech leads par squad · COMEX</td>
+  <td>Tech leads : implémentation locale · COMEX : tableau de bord trimestriel</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<p>Ce n'est pas un RACI permanent — c'est un RACI révisé à chaque cycle trimestriel. La raison est arithmétique : Anthropic a changé ses weekly limits en juillet 2025, Cursor ses crédits Background en juin 2025, GitHub ses premium requests en juin 2025 puis ses AI Credits en juin 2026. Une doctrine figée à 12 mois n'a pas survécu à une seule de ces transitions.</p>
+
+<h3>Cadence de revue</h3>
+
+<ul>
+  <li><strong>Mensuelle</strong> (comité Dev Practice) : KPI usage + coût + qualité, avec le dashboard Datadog ouvert. [STAFF_ENG_DX] + [VP_ENG] co-animent.</li>
+  <li><strong>Continue</strong> (alertes automatiques) : dépassements de quota ticket, dépassements de quota dev, taux de re-prompt anormal. PagerDuty → équipe Dev Productivity.</li>
+  <li><strong>Trimestrielle</strong> (révision doctrine) : ajustements quotas, tiering, outils. Renvois pricing marché + DORA actualisé.</li>
+  <li><strong>Annuelle</strong> (audit externe) : revue par pair CTO inter-entreprise (type DX community), calibrage doctrine contre terrain d'autres organisations.</li>
+</ul>
+
+<h3>AI Act</h3>
+
+<p><mark>Hors haut-risque par défaut</mark> pour le code interne non-décisionnel — les agents async qui bumpent des dépendances ou génèrent des stubs de tests ne sont pas des systèmes IA listés à l'Annexe III. <strong>À documenter formellement</strong> dès qu'un agent async accède à du code de scoring, à des données RH ou à des PII utilisateur final. Dans ce cas, un registre interne des agents + une charte explicite agents async sur code de prod s'imposent. Renvois <strong>[ch. 25]</strong> (gouvernance AI Act, registre agents) et <strong>[ch. 26]</strong> (IA et travail, équité sénior/junior).</p>
+</section>
+
+<!-- ═════ SECTION 12 — Évaluation ═════ -->
+<section id="sec-12" class="case-eval-loop">
+<h2>12. Évaluation — régression + online + dérive</h2>
+
+<p>Trois axes d'évaluation qui se complètent sans se substituer : une suite de régression hors-ligne pour la stabilité, des métriques online en prod pour la vélocité et la qualité, une détection de dérive continue pour attraper ce que les deux premiers ratent.</p>
+
+<h3>Axe 1 — Régression suite</h3>
+
+<p><mark>SWE-bench Live</mark> en run mensuel, <mark>golden set interne de 80 PRs annotées</mark> en replay trimestriel. Les critères de réussite : completion correcte (la PR compile, les tests passent), respect des conventions monorepo, absence de régression de typage, absence de leak secret, coverage stable ou en hausse.</p>
+
+<p><strong>Méfiance SWE-bench gaming.</strong> Les benchmarks de coding IA sont manipulables — contamination des données d'entraînement, overfitting sur les formats de test, métriques de completion qui ne capturent pas les régressions qualité<sup><a href="#source-16">[16]</a></sup>. L'usage de SWE-bench Live est justifié parce qu'il est mis à jour en continu sur des issues non vues lors de l'entraînement — mais il ne remplace pas le golden set interne sur les spécificités du monorepo TypeScript.</p>
+
+<h3>Axe 2 — Métriques online</h3>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+  <th>Métrique</th>
+  <th>Cible</th>
+  <th>Alerte</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>pr-throughput</code></td>
+  <td><strong>+25 %</strong></td>
+  <td>&lt; +10 %</td>
+</tr>
+<tr>
+  <td><code>post-release-bug-rate</code> — <strong>KPI gardien</strong></td>
+  <td><strong>stable ≤ 3 %</strong></td>
+  <td>&gt; 5 % → <mark>rollback feature flag immédiat</mark></td>
+</tr>
+<tr>
+  <td><code>processing-time</code></td>
+  <td><strong>−40 % tier 1</strong></td>
+  <td>&lt; −20 %</td>
+</tr>
+<tr>
+  <td><code>employee-engagement</code></td>
+  <td><strong>+8 pts eNPS dev / 12 mois</strong></td>
+  <td>&lt; +3 pts</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<p>Le <code>post-release-bug-rate</code> est le KPI gardien parce qu'un throughput qui monte avec un bug rate qui monte aussi est un désastre en différé — cf. §7. C'est lui qui valide ou invalide l'élargissement du tiering tier 1 lors de chaque révision trimestrielle.</p>
+
+<h3>Axe 3 — Détection de dérive</h3>
+
+<p><mark>Datadog</mark> + <mark>LLM-as-judge</mark> sur <strong>5 % des PR async</strong> tirées au hasard, complété par le suivi du ratio de re-prompts par session. Une hausse du ratio de re-prompts est le signal précoce d'un agent qui dérape sur des tickets mal taggés ou sur du code insuffisamment couvert — avant que le bug rate post-release ne l'indique.</p>
+
+<p>Alerte PagerDuty → équipe Dev Productivity. Escalade [VP_ENG] si le pourcentage de bug post-release dépasse 5 %. Fenêtre rolling 7 jours comparée à la baseline 30 jours.</p>
+
+<h3>Boucle de correction</h3>
+
+<p>Ticket Linear ou alerte automatique → délai de re-prompt de la doctrine 48 h, rollback feature flag (<code>agent-async-tier-1: off</code>) en moins d'une heure. Renvoi <strong>[ch. 20]</strong> (audit trail cognitif, sémantique <code>gen_ai.*</code>).</p>
+</section>
+
+<!-- ═════ SECTION 13 — ROI ═════ -->
+<section id="sec-13" class="case-roi-grid">
+<h2>13. ROI — Vitesse principal, gardien Qualité</h2>
+
+<p>Axe principal : <strong>vitesse</strong> (réduction du cycle ticket → PR + throughput équipe). Axes secondaires : qualité (stabilité du bug rate) et bien-être (eNPS dev). Méthode mobilisée : TEI Forrester pour la valorisation Hard/Soft, DORA four-keys pour le calibrage benchmark.</p>
+
+<h3>Métriques retenues</h3>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+  <th>Métrique</th>
+  <th class="center">Borne basse</th>
+  <th class="center">Cible</th>
+  <th class="center">Borne haute</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><code>processing-time</code></td>
+  <td class="center">−25 %</td>
+  <td class="center"><strong>−40 % tier 1</strong></td>
+  <td class="center">−60 %</td>
+</tr>
+<tr>
+  <td><code>pr-throughput</code></td>
+  <td class="center">+12 %</td>
+  <td class="center"><strong>+25 %</strong></td>
+  <td class="center">+40 %</td>
+</tr>
+<tr>
+  <td><code>post-release-bug-rate</code></td>
+  <td class="center">stable</td>
+  <td class="center"><strong>stable</strong></td>
+  <td class="center">stable</td>
+</tr>
+<tr>
+  <td><code>employee-engagement</code></td>
+  <td class="center">+3</td>
+  <td class="center"><strong>+8 pts eNPS dev</strong></td>
+  <td class="center">+12</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<h3>Le KPI gardien</h3>
+
+<p>Le <code>post-release-bug-rate</code> <strong>stable</strong> est le KPI gardien de tout le programme. Sans cette borne, le throughput peut cacher une dégradation qualité — des tickets tier 1 mal taggés qui laissent passer des régressions, une CI qui ne couvre pas suffisamment les périmètres touchés. La détection se fait dans la fenêtre rolling 7 jours post-merge (cf. §12) ; le rollback par feature flag est possible en moins d'une heure.</p>
+
+<h3>Non retenus</h3>
+
+<ul>
+  <li><code>cost-per-line</code> : <mark>anti-pattern Goodhart</mark> explicite — les LLM gonflent mécaniquement les lignes sans valeur ajoutée, mesurer la ligne, c'est inciter à en produire davantage. Optimiser ce KPI détruirait la doctrine de tiering.</li>
+  <li><code>revenue</code> : indirect et non attribuable au programme dev tooling ; la causalité est trop longue entre une PR mergée et un CA incrémental.</li>
+  <li><code>nps</code> : périmètre client, hors cas — renvoyé à <strong>CC-01</strong> (copilot conseiller bancaire) qui porte la relation client.</li>
+</ul>
+</section>
+
+<!-- ═════ SECTION 14 — Équipe ═════ -->
+<section id="sec-14" class="case-team-cast">
+<h2>14. L'équipe, la vélocité, les sclérosants</h2>
+
+<div class="cto-quote">
+  « Si le budget AI tooling double encore en 2027, je dois pouvoir expliquer pourquoi en une slide. » — [CTO]
+</div>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+  <th>Rôle</th>
+  <th>Acteur</th>
+  <th>Posture</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong>Porteur</strong></td>
+  <td>[VP_ENG]</td>
+  <td>Convaincu, veut une doctrine partagée, sous pression du [CTO] sur le budget</td>
+</tr>
+<tr>
+  <td><strong>Sponsor</strong></td>
+  <td>[CTO]</td>
+  <td>Arbitre final, sponsorise mais veut un plafond budget défendable au COMEX</td>
+</tr>
+<tr>
+  <td><strong>Allié</strong></td>
+  <td>[STAFF_ENG_DX]</td>
+  <td>Porte le programme opérationnel, animait déjà la communauté Cursor/Claude Code en interne</td>
+</tr>
+<tr>
+  <td><strong>Opposant</strong></td>
+  <td>[RSSI]</td>
+  <td>Refus agents async sur code prod sensible, exige scoping MCP fin et masquage PII</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<h3>ETP par phase</h3>
+
+<ul>
+  <li><strong>POC (10 devs early, 2 mois) — 1,0 ETP</strong> : 0,5 Staff DX + 0,3 RSSI (scoping MCP Vault, charte agents async) + 0,2 DPO (PII dans les logs Datadog, registre interne).</li>
+  <li><strong>Prod (150 devs, 12 mois) — 2,5 ETP</strong> : 1,5 Staff DX + 0,5 backend MCP (Vault custom + Codecov) + 0,3 RSSI + 0,2 DPO + 0,1 change manager (formation bi-annuelle, doctrine trimestrielle).</li>
+</ul>
+
+<h3>Cinq sclérosants</h3>
+
+<ul>
+  <li><strong>Pricing fluctuant des outils du marché</strong> (weekly limits Anthropic, Background changes Cursor, premium reqs GitHub) → la doctrine doit être révisée trimestriellement, jamais figée à 12 mois.</li>
+  <li><strong>Service Java legacy 2018</strong> → agent async cloud interdit dessus jusqu'à refacto complète (horizon 2+ ans) ; aucun raccourci possible sans décision formelle du [RSSI].</li>
+  <li><strong>Scoping MCP Vault</strong> → 2 semaines incompressibles (développement custom + scoping par squad + masquage secret + audit trail validé par le [RSSI]) avant tout passage en pilote.</li>
+  <li><strong>Formation continue</strong> → bi-annuelle pour absorber les bumps modèles et patterns chat IDE ; inertie particulièrement forte sur les profils juniors qui n'ont pas encore de pratique agentique ancrée.</li>
+  <li><strong>Mesure de l'eNPS dev</strong> → outillage manquant en début de programme ; à instrumenter (formulaire trimestriel + dashboard Datadog) avant la fin du POC pour pouvoir détecter un écart sénior/junior dès le pilote.</li>
+</ul>
+
+<h3>Trois deadlines externes</h3>
+
+<ul>
+  <li><strong>AI Act transparence 2026-08</strong> : documenter le périmètre si des agents async accèdent à du code de scoring ou à des PII utilisateur final — pas bloquant pour le code interne non-décisionnel, mais la documentation doit exister.</li>
+  <li><strong>Doctrine v1 COMEX 2026-Q3</strong> : le [CTO] doit défendre le plafond budget AI tooling en septembre ; sans doctrine stable et chiffrée, le [CFO] imposera un plafond arbitraire.</li>
+  <li><strong>Revue annuelle CFO 2027-Q1</strong> : première évaluation du poste inférence sur 12 mois ; sans récit ROI consolidé et attributable (gateway + audit trail Datadog), le budget est exposé à une coupe sèche.</li>
+</ul>
+</section>
+
+<!-- ═════ SECTION 15 — Débat ═════ -->
+<section id="sec-15">
+<div class="case-debate">
+  <div class="label">Point de tension</div>
+  <div class="question">Le buy comparatif par profil installe-t-il une économie à deux vitesses dans l'équipe — séniors bien outillés vs juniors bridés ?</div>
+  <div class="columns">
+    <div class="col pour">
+      <h4>Pour</h4>
+      <ul>
+        <li><strong>Aligne l'outil sur la valeur du ticket.</strong> La latence ghost suffit au junior 80 % du temps — le chat IDE multi-fichier apporte peu de valeur sur un ticket tier 1 bien balisé. Distribuer <mark>Opus / Claude Code / Cursor Ultra</mark> à tous les profils, c'est payer pour des usages qui ne correspondent pas à la structure réelle des tickets traités.</li>
+        <li><strong>Concentration du coût.</strong> Les outils power user sur 30 % des devs représentent 60 % du budget AI tooling — distribuer uniformément, c'est gâcher sur les 70 % de profils pour qui le gain marginal est faible.</li>
+        <li><strong>Les données DORA confirment la concentration.</strong> L'effet ROI des outils dev se concentre sur les profils sénior + tickets standards — l'égalisation des outils n'égalise pas les résultats, elle lisse le budget sans lisser les gains.</li>
+      </ul>
+    </div>
+    <div class="col contre">
+      <h4>Contre</h4>
+      <ul>
+        <li><strong>Crée des classes.</strong> Sénior outillé vs junior bridé : le risque n'est pas seulement culturel (sentiment de hiérarchie par l'outil), c'est du turnover. Un junior qui ne monte pas en compétence assistée parce que son accès est limité choisira une organisation où ce n'est pas le cas<sup><a href="#source-17">[17]</a></sup>.</li>
+        <li><strong>Spirale d'apprentissage cassée.</strong> Si les tickets « ROBOT-friendly » sont systématiquement confiés aux agents et jamais aux juniors, on prive ces derniers des exercices pratiques qui forment le jugement technique.</li>
+        <li><strong>La vertu du pricing siège unique.</strong> Un abonnement uniforme pousse l'usage transverse — tout le monde explore, les patterns émergent de la base. Le portefeuille par profil contredit cette logique.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="verdict">
+    <strong>Verdict pondéré — GO_BUY_COMPARATIF_PAR_PROFIL avec quatre garde-fous non négociables.</strong>
+    KPI gardien <code>employee-engagement</code> (cible +8 pts eNPS dev, alerte si −2 pts).
+    <mark>Promotion rotative</mark> : un junior par squad obtient l'outil sénior pendant 2 mois/an (financement sur le poste change).
+    KPI « % PR juniors avec accès outil sénior pour un cas qui le méritait » mesuré trimestriellement.
+    Révision COMEX si l'écart eNPS sénior vs junior dépasse 5 pts — même si les métriques de vélocité sont au vert.
+    Renvoi <strong>[ch. 26]</strong>.
+  </div>
+</div>
+</section>
+
+<!-- ═════ SECTION 16 — Trois choix ═════ -->
+<section id="sec-16">
+<h2>16. Trois choix qu'il faut faire</h2>
+
+<section class="case-choice">
+  <div class="scenario">Choix 16.1 — Sponsor du programme</div>
+  <div class="question">Vous êtes [VP_ENG]. Pour qui plaidez-vous comme sponsor exécutif du programme dev agentique ?</div>
+  <div class="options">
+    <div class="option" data-choice="A">
+      <button class="option-toggle"><span class="badge">A</span> CFO <span class="arrow">▾</span></button>
+      <div class="reveal">
+        <p>ROI Hard chiffrable au COMEX, arbitrage uniquement sur le coût pur — on perd le KPI qualité.</p>
+        <p>Le [CFO] n'a pas les outils pour arbitrer entre throughput et bug rate ; il coupera sur l'inférence dès la première dérive. La pression au COMEX favorisera la réduction de coût au détriment de la doctrine qualité.</p>
+        <p class="analyse">Piège du Hard isolé — <a href="../chapitres/ch23-roi-paradoxe-agentique.md">ch. 23.5.3</a>. La métrique ROI isolée du contexte qualité produit des décisions de réduction de coût qui dégradent l'adoption long terme.</p>
+      </div>
+    </div>
+    <div class="option" data-choice="B">
+      <button class="option-toggle"><span class="badge">B</span> VP Eng (vous) <span class="arrow">▾</span></button>
+      <div class="reveal">
+        <p>Focus qualité du code et eNPS dev — mais le budget fluctuant n'est pas défendable seul au COMEX.</p>
+        <p>Sans contre-poids transverse, le programme est exposé à chaque revue budgétaire. Le [CFO] impose un plafond arbitraire, la doctrine trimestrielle est impossible à financer.</p>
+        <p class="analyse">Piège du Soft seul — <a href="../chapitres/ch23-roi-paradoxe-agentique.md">ch. 23.5.4</a>. Le sponor Soft unique ne peut pas tenir un budget AI tooling avec une dérive d'inférence ×35 entre POC et Scale.</p>
+      </div>
+    </div>
+    <div class="option recommended" data-choice="C">
+      <button class="option-toggle"><span class="badge">C</span> CTO (recommandé) <span class="arrow">▾</span></button>
+      <div class="reveal">
+        <p>Transverse, arbitre entre [VP_ENG] (qualité) et [CFO] (budget). Sponsorise le mix portefeuille.</p>
+        <p>Le [CTO] est le seul acteur capable de tenir simultanément la borne d'inférence à 30 % et le KPI gardien eNPS dev. Il co-porte la présentation COMEX avec le [CFO], ce qui rend le budget défendable sans sacrifier la doctrine qualité.</p>
+        <p class="analyse">Alignement Cigref Hard + Soft — <a href="../chapitres/ch23-roi-paradoxe-agentique.md">ch. 23.7.3</a>. Le sponsor transverse est la condition pour que le programme survive au premier budget review sous pression.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="case-choice">
+  <div class="scenario">Choix 16.2 — Réponse à la fin de l'all-you-can-eat</div>
+  <div class="question">GitHub Copilot annonce les premium requests, fin de l'illimité. Vous faites quoi en 90 jours ?</div>
+  <div class="options">
+    <div class="option" data-choice="A">
+      <button class="option-toggle"><span class="badge">A</span> Tenir l'illimité chez un fournisseur niche <span class="arrow">▾</span></button>
+      <div class="reveal">
+        <p>Lock-in vendor + qualité incertaine + cassure projet si le fournisseur ferme.</p>
+        <p>Parier sur un niche revient à rejouer le même scénario dans 6 à 12 mois. Le marché des outils de coding IA converge vers le pricing à la consommation — l'exception illimitée ne tient pas durablement.</p>
+        <p class="analyse">Antipattern — refus d'admettre la fin du modèle économique. Renvoi <a href="../chapitres/ch22-runtime-manage.md">ch. 22</a>.</p>
+      </div>
+    </div>
+    <div class="option recommended" data-choice="B">
+      <button class="option-toggle"><span class="badge">B</span> Accepter les quotas + gateway interne (recommandé) <span class="arrow">▾</span></button>
+      <div class="reveal">
+        <p>Doctrine itérée trimestriel, gateway LLM interne en 6 mois, plafond par ticket — défend au COMEX.</p>
+        <p>La gateway scopée par profil rend le budget défendable et l'attribution lisible. Le crossover économique (≈ 1 500 PR/an avec usage agentique) est franchi dès le pilote sur 40 devs. C'est la même réponse que CC-14 pour le pattern équivalent côté power users non-dev.</p>
+        <p class="analyse">Pattern paved road + gateway scopée — <a href="../chapitres/ch15-mcp-plateforme.md">ch. 15</a>. La gateway LLM interne est à la fois réponse au tokenmaxxing et infrastructure de distribution du portefeuille.</p>
+      </div>
+    </div>
+    <div class="option" data-choice="C">
+      <button class="option-toggle"><span class="badge">C</span> Bascule API pure via Bedrock + cascade modèle complète <span class="arrow">▾</span></button>
+      <div class="reveal">
+        <p>Autonomie maximale + time-to-doctrine 6 mois supplémentaires + effort lourd ETP.</p>
+        <p>Valide à horizon 18 mois comme évolution naturelle de l'option B, pas comme réponse d'urgence en 90 jours. L'organisation doit d'abord stabiliser sa doctrine de tiering avant de construire une infrastructure de routage custom.</p>
+        <p class="analyse">Pari long terme — valide mais coûteux en début de programme. Renvoi <a href="../chapitres/ch22-runtime-manage.md">ch. 22</a>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="case-choice">
+  <div class="scenario">Choix 16.3 — Autonomie des agents async sur le code de prod</div>
+  <div class="question">Tier 1 ROBOT-friendly autorisé. Vous descendez jusqu'où sur l'autonomie des agents async ?</div>
+  <div class="options">
+    <div class="option" data-choice="A">
+      <button class="option-toggle"><span class="badge">A</span> Interdit total <span class="arrow">▾</span></button>
+      <div class="reveal">
+        <p>Vous laissez 30 % du gain sur la table sur les tickets faciles. eNPS sénior dégradé.</p>
+        <p>Interdire totalement après avoir documenté le gain tier 1 dans la doctrine, c'est un désaveu opérationnel. Les séniors qui ont testé les agents async sur les bumps deps et les traductions i18n ne comprennent pas le retour en arrière.</p>
+        <p class="analyse">Antipattern — sur-prudence qui ne tient pas dans le temps. Renvoi <a href="../chapitres/ch21-gardefous-securite-globale.md">ch. 21</a>.</p>
+      </div>
+    </div>
+    <div class="option recommended" data-choice="B">
+      <button class="option-toggle"><span class="badge">B</span> Autorisé tier 1 + review humain obligatoire (recommandé) <span class="arrow">▾</span></button>
+      <div class="reveal">
+        <p>Gain mesurable sur tier 1, audit trail Datadog, rollback feature flag par pattern (<code>agent-async-tier-1: off</code>).</p>
+        <p>Niveau d'autonomie L3 décrit au §4 : l'agent ouvre la PR, la CI tourne, validation humaine obligatoire avant merge. Le [RSSI] a les outils pour auditer (scoping MCP Vault + <code>gen_ai.*</code>). Jamais sur le service Java legacy 2018, jamais sur le code de paiement / scoring.</p>
+        <p class="analyse">Cadre paved road + gardien — <a href="../chapitres/ch20-observabilite-cognitive-audit-trail.md">ch. 20</a>. L'audit trail Datadog est le prérequis pour que le [RSSI] autorise le passage en pilote.</p>
+      </div>
+    </div>
+    <div class="option" data-choice="C">
+      <button class="option-toggle"><span class="badge">C</span> Pleine autonomie + auto-merge si CI verte <span class="arrow">▾</span></button>
+      <div class="reveal">
+        <p>Pari sur la couverture CI. Le jour où la CI rate, l'incident arrive en prod direct.</p>
+        <p>L4 opt-in par repo est possible sur des services périphériques bien couverts (cf. §4.1), mais par défaut sur l'ensemble du backlog ROBOT-friendly — non. La couverture CI du monorepo TypeScript ne justifie pas encore ce niveau d'autonomie de masse.</p>
+        <p class="analyse">Piège du pari CI — <a href="../chapitres/ch21-gardefous-securite-globale.md">ch. 21</a>. L4 global sans qualification repo par repo expose l'organisation à un incident prod au premier faux négatif de la CI.</p>
+      </div>
+    </div>
+  </div>
+</section>
+</section>
+
+<!-- ═════ QUIZ (avant §17) ═════ -->
+<section id="sec-quiz">
+<h2>Vérification de compréhension</h2>
+
+<div class="case-quiz" data-correct="1">
+  <div class="label">Quiz</div>
+  <div class="question">Pourquoi un seul outil IA pour toute l'équipe dev = antipattern 2026 ?</div>
+  <div class="options">
+    <button>Parce que les éditeurs IDE ne sont plus compatibles entre eux</button>
+    <button>Parce que les 4 patterns (ghost / chat IDE / async / review) sont structurellement différents — surfaces, latences, niveaux d'autonomie, modèles éco — un outil unique en laisse 30 % sur la table</button>
+    <button>Parce que la loi AI Act l'interdit</button>
+    <button>Parce que le pricing siège unique est moins cher</button>
+  </div>
+  <div class="explication">Chaque pattern a son ROI sur un type de ticket × profil de dev. Un Copilot universel ne maximise aucun des 4. Le bon arbitrage est un portefeuille distribué via gateway LLM avec quotas par profil. Renvoi <a href="../chapitres/ch14-assistants-de-code.md">ch. 14</a>.</div>
+</div>
+
+<div class="case-quiz" data-correct="1">
+  <div class="label">Quiz</div>
+  <div class="question">Que mesure le « tokenmaxxing » et pourquoi change-t-il le pricing dev 2026 ?</div>
+  <div class="options">
+    <button>Le nombre maximum de tokens dans une seule requête</button>
+    <button>L'usage maximal du quota par session (long context + boucles Opus avec tool calls) — qui a poussé Anthropic à introduire des weekly rate limits, Cursor à plafonner Auto/Background, et GitHub Copilot à passer aux premium requests : le modèle all-you-can-eat n'est plus viable</button>
+    <button>La compression maximale des tokens pour réduire les coûts</button>
+    <button>Une métrique de qualité du code généré</button>
+  </div>
+  <div class="explication">Le tokenmaxxing désigne la pratique des power users de saturer leur quota en boucle (Opus + long context + tool calls). Anthropic, Cursor et GitHub ont tous ajusté leur pricing en 2025-2026 en réponse. Le all-you-can-eat est mort, place aux quotas distribués. Renvoi <a href="../chapitres/ch05-economie-inference.md">ch. 5</a>.</div>
+</div>
+
+<div class="case-quiz" data-correct="1">
+  <div class="label">Quiz</div>
+  <div class="question">Où s'arrête l'autonomie d'un agent async cloud sur le code de prod d'une scale-up SaaS B2B ?</div>
+  <div class="options">
+    <button>Pleine autonomie si CI verte sur tout le monorepo</button>
+    <button>Au périmètre ROBOT-friendly opt-in par repo (typage, deps, traduction, refacto pattern connu) — review humaine obligatoire, jamais sur le service legacy ni sur le code de paiement / scoring client</button>
+    <button>Aucune autonomie, tous les agents async sont interdits</button>
+    <button>L'autonomie dépend uniquement du modèle utilisé</button>
+  </div>
+  <div class="explication">L'autonomie agent async est opt-in par repo, jamais sur les zones sensibles (Java legacy 2018, paiement, scoring). Review humaine obligatoire avant merge, audit trail Datadog systématique, rollback feature flag immédiat possible. Renvoi <a href="../chapitres/ch20-observabilite-cognitive-audit-trail.md">ch. 20</a>.</div>
+</div>
+</section>
+
+<!-- ═════ SECTION 17 — Verdict ═════ -->
+<section id="sec-17">
+<div class="case-verdict">
+  <div class="stamp">GO_BUY_COMPARATIF_PAR_PROFIL</div>
+  <h3>Buy par portefeuille, distribué par profil de dev et par tier de ticket.</h3>
+  <ul>
+    <li><strong>Mix portefeuille</strong> : ghost universel + chat IDE par profil sénior + async cloud pour tier 1 + review auto en sentinelle. Ces quatre patterns ne se substituent pas — ils se complètent. Retirer l'un d'eux, c'est laisser un segment de tickets sans réponse optimale.</li>
+    <li><strong>Gateway LLM interne</strong> : tokens scopés par profil dev, quotas distribués par pattern (ghost / chat IDE / async / review), plafond par ticket, journalisation dans Datadog. Crossover économique franchi dès le pilote sur 40 devs (≈ 1 500 PR/an).</li>
+    <li><strong>Doctrine trimestrielle révisée</strong> : le pricing des outils du marché a bougé chaque trimestre depuis mi-2025. Une doctrine révisée annuellement ne survit pas à ces transitions.</li>
+    <li><strong>KPI gardien employee-engagement</strong> : eNPS dev cible +8 pts sur 12 mois. Alerte si +3 ou moins. Arrêt de la doctrine de différenciation si l'eNPS baisse de −2 pts.</li>
+    <li><strong>Promotion rotative</strong> : un junior par squad obtient l'outil sénior pendant deux mois par an — obligation de montée en compétence assistée, financée sur le poste change.</li>
+    <li><strong>MCP servers internes minimum</strong> (GitHub, Linear, Datadog, Sentry, Vault scopé, Notion, Codecov, LaunchDarkly) — effort 5-6 semaines. Le sclérosant Vault HCP est l'unique point de blocage pour le passage en pilote.</li>
+    <li><strong>Tiering ticket explicite dans Linear</strong> : auto-routage tier 1 <code>tier-1-robot</code> → async cloud, tier 2 <code>tier-2-refacto</code> → chat IDE, tier 3 <code>tier-3-feature</code> / <code>tier-3-payment</code> → human-led. Sans ce tiering, la doctrine est théorique.</li>
+    <li><strong>Code review auto en sentinelle</strong> sur toutes les PRs des agents async, sans exception. La combinaison agent async + review auto (<mark>CodeRabbit</mark>) ferme la boucle qualité sans allonger le cycle.</li>
+    <li><strong>Formation continue bi-annuelle</strong> : absorption des bumps modèles et changements de pricing. L'inertie est particulièrement forte sur les profils juniors — sans formation structurée, la promotion rotative ne produit pas l'effet attendu.</li>
+    <li><strong>Charte agents async sur code de prod</strong> : opt-in par repo, jamais sur le service Java legacy 2018, jamais sur le code de paiement / scoring. Audit trail Datadog obligatoire (<code>gen_ai.*</code>, rétention 90 jours). Charte co-signée [RSSI] + [DPO] + [CTO].</li>
+  </ul>
+</div>
+
+<p>La boucle agentique au plus bas niveau — résoudre une issue, clôturer une PR, déléguer la review, jusqu'à la sécurité — sur de vraies fondations (MCP, observabilité, gateway) valide l'architecture <em>avant qu'on la remonte aux métiers</em>. C'est la thèse centrale du cas.</p>
+
+<p>Les renvois croisés dessinent le paysage : ↔ <strong>CC-00</strong> (assistant transverse) — mêmes réflexes d'amnistie shadow et de paved road, CC-10 est le pôle profond/maîtrisé de la Strate 1. ↔ <strong>CC-03</strong> (socle data) — gateway, observabilité, tiering par criticité. ↔ <strong>CC-11</strong> (gouverner une flotte d'agents) — la gateway LLM dev de CC-10 est l'analogue engineering de ce que CC-11 construit pour gouverner une flotte d'agents métiers. ↔ <strong>CC-14</strong> (paved road power users) — même logique de portefeuille différencié, même réponse au shadow soft, même architecture de distribution.</p>
+
+<p><em>CC-10 fait le test grandeur nature dans le périmètre le moins risqué : le code interne d'une scale-up. Avant CC-01 (banque) où l'enjeu réglementaire ne pardonne plus rien.</em></p>
+</section>
+
+<!-- ═════ RENVOIS LIVRE ═════ -->
+<section id="renvois-livre" class="renvois-section">
+  <div class="label">Renvois livre</div>
+  <h2>Chapitres associés</h2>
+  <ul>
+    <li><a href="../chapitres/ch14-assistants-de-code.md"><strong>[Ch. 14]</strong> Assistants de code — anatomie des outils-source</a></li>
+    <li><a href="../chapitres/ch07-boucle-agentique.md"><strong>[Ch. 7]</strong> Reason · Act · Observe — la boucle agentique appliquée au ticket dev</a></li>
+    <li><a href="../chapitres/ch15-mcp-plateforme.md"><strong>[Ch. 15]</strong> MCP plateforme — MCP servers internes consommés par les agents</a></li>
+    <li><a href="../chapitres/ch16-mcp-securite.md"><strong>[Ch. 16]</strong> Sécurité MCP — scope par squad, audit log</a></li>
+    <li><a href="../chapitres/ch19-evaluation-benchmarks.md"><strong>[Ch. 19]</strong> Évaluation et benchmarks — SWE-bench, contamination, SWE-bench Live</a></li>
+    <li><a href="../chapitres/ch20-observabilite-cognitive-audit-trail.md"><strong>[Ch. 20]</strong> Observabilité agentique et cognitive audit trail</a></li>
+    <li><a href="../chapitres/ch21-gardefous-securite-globale.md"><strong>[Ch. 21]</strong> Garde-fous — DLP, secret scan, charte agents async</a></li>
+    <li><a href="../chapitres/ch22-runtime-manage.md"><strong>[Ch. 22]</strong> Runtime managé vs maison — gateway LLM interne vs SaaS</a></li>
+    <li><a href="../chapitres/ch05-economie-inference.md"><strong>[Ch. 5]</strong> Économie de l'inférence — LLMflation, dérive des coûts</a></li>
+    <li><a href="../chapitres/ch23-roi-paradoxe-agentique.md"><strong>[Ch. 23.5]</strong> Hard vs Soft Savings appliqué au dev</a></li>
+    <li><a href="../chapitres/ch23-roi-paradoxe-agentique.md"><strong>[Ch. 23.7]</strong> Paradoxe agentique appliqué aux devs</a></li>
+    <li><a href="../chapitres/ch23-roi-paradoxe-agentique.md"><strong>[Ch. 23.8]</strong> Cigref / DORA appliqués au dev</a></li>
+    <li><a href="../chapitres/ch25-gouvernance-ai-act.md"><strong>[Ch. 25]</strong> Gouvernance — AI Act par usage si bascule scoring</a></li>
+    <li><a href="../chapitres/ch26-ia-et-travail.md"><strong>[Ch. 26]</strong> IA et travail — sentiment de classe outil tech</a></li>
+  </ul>
+</section>
+
+<!-- ═════ SOURCES COMPLÈTES [1]-[17] ═════ -->
+<aside class="sources-section" id="sources">
+<div class="label">Sources et références</div>
+<h2>Sources et références</h2>
+<ol>
+  <li id="source-1"><span class="src-num">[1]</span> GitHub a annoncé la transition de son modèle de facturation des premium requests vers les AI Credits le 27 avril 2026 (GitHub Blog, « GitHub Copilot is moving to usage-based billing »). Sous le modèle legacy (en vigueur de juin 2025 à mai 2026), les abonnés Business disposaient de 300 premium requests par mois. Depuis juin 2026 : Business inclut ~1 900 crédits/utilisateur/mois ($0,01/crédit).</li>
+  <li id="source-2"><span class="src-num">[2]</span> <em>Fortune</em>, 26 mai 2026, « Uber burned through its entire 2026 AI budget in four months. Now its COO is questioning whether it's worth it. » L'outil principal documenté dans cet article est <strong>Claude Code</strong>. Adoption : 32 % → 84 % des ~5 000 ingénieurs d'Uber entre décembre 2025 et mars 2026. Coût mensuel par ingénieur : 500 $ à 2 000 $. Le COO Andrew Macdonald : « That link is not there yet » — incapable de tracer un lien direct entre la dépense IA et les livrables effectifs.</li>
+  <li id="source-3"><span class="src-num">[3]</span> Le pattern du shadow soft en développement logiciel — devs qui adoptent des outils IA hors périmètre SSO parce que le portefeuille officiel ne couvre pas leurs cas d'usage — est un analogue direct du shadow IT décrit en CC-00 (assistant transverse) et CC-14 (apps power users). La réponse est la même : amnistie + intégration dans une doctrine paved road, plutôt que la chasse.</li>
+  <li id="source-4"><span class="src-num">[4]</span> DORA <em>State of DevOps</em> 2025 (Google Cloud) documente une corrélation entre l'adoption des assistants de code avec context window large (chat IDE + MCP) et la réduction du temps de cycle chez les profils sénior. Les gains mesurés sur les équipes early-adopters : −30 % à −50 % sur le time-to-merge pour les tickets de refacto cadré. L'effet est significativement plus faible sur les profils junior et les tickets simples, ce qui plaide pour un portefeuille différencié.</li>
+  <li id="source-5"><span class="src-num">[5]</span> Cognition AI a lancé <mark>Devin</mark> en accès public début 2024 (annonce officielle : mars 2024), avec un modèle de facturation à l'heure machine + tâches réussies. Au moment de la rédaction (juin 2026) : ~$500/mois pour un accès team avec quota de tâches, dépassement facturé à la tâche réussie.</li>
+  <li id="source-6"><span class="src-num">[6]</span> <mark>Cursor Background Agent</mark> est passé en accès anticipé en juin 2025 (annonce Cursor Blog). Il fonctionne en dehors de l'IDE, sur des tâches longues, avec création automatique de branche et ouverture de PR. L'intégration avec la CI GitHub Actions est native.</li>
+  <li id="source-7"><span class="src-num">[7]</span> La sémantique <code>gen_ai.*</code> des spans OTel est couverte par la <em>Generative AI Semantic Conventions</em> du projet OpenTelemetry (version stable 1.0 : octobre 2025). Datadog supporte ces conventions depuis Q4 2025. Sur une organisation dev agentique en production, l'audit trail structuré des agents async est un prérequis de gouvernance.</li>
+  <li id="source-8"><span class="src-num">[8]</span> Le risque d'un MCP server Vault sans scoping fin est documenté par le pattern d'attaque dit « tool poisoning » ou « MCP injection » : un agent qui lit un secret depuis Vault peut, sous l'effet d'une instruction injectée dans un log ou un commentaire de code malveillant, exfiltrer ce secret dans un outil adjacent (Slack, Linear, PR description). Les recommandations de mitigation incluent le masquage systématique des valeurs dans les traces OTel, un scope de lecture minimal, et une validation de l'instruction côté MCP server avant toute lecture.</li>
+  <li id="source-9"><span class="src-num">[9]</span> Amazon Bedrock propose une résidence de données EU via les régions <code>eu-west-1</code> (Irlande), <code>eu-west-3</code> (Paris) et <code>eu-central-1</code> (Francfort), avec support des modèles Claude 4.7 Sonnet et Opus depuis leur disponibilité générale sur Bedrock. La résidence EU via Bedrock est une souveraineté <em>partielle</em> : elle couvre l'obligation de localisation des données de traitement pour les organisations sous contrainte RGPD ou NIS2, mais ne remplace pas une politique complète de souveraineté IA.</li>
+  <li id="source-10"><span class="src-num">[10]</span> Le terme « tokenmaxxing » est apparu dans les communautés tech internes vers fin 2025, popularisé par un article du <em>New York Times</em> (Kevin Roose, début avril 2026 : « More! More! More! Tech Workers Max Out Their A.I. Use »). La construction morphologique est empruntée au slang Gen Z (-maxxing : <em>looksmaxxing</em>, <em>sleepmaxxing</em>). <em>Fortune</em> titre « Tokenmaxxing is over » le 28 mai 2026, au moment où les entreprises qui avaient incité leurs équipes via des leaderboards internes constatent que la corrélation tokens-livrables n'est pas mécanique.</li>
+  <li id="source-11"><span class="src-num">[11]</span> DORA <em>State of DevOps</em> 2025 (Google Cloud) + GitHub <em>Octoverse</em> 2026 constituent la référence primaire des benchmarks de cette section. Les chiffres cités (−40 % cycle tier 1, +25 % throughput, 38 % PRs avec contribution agentique, 67 % profils sénior) correspondent aux percentiles médians des équipes de 50 à 200 devs ayant adopté le pattern agent async cloud pendant au moins 60 jours consécutifs.</li>
+  <li id="source-12"><span class="src-num">[12]</span> Le paradoxe agentique appliqué au développement logiciel : à l'échelle du ticket individuel, l'agent async cloud gagne du temps (−40 % cycle tier 1). À l'échelle de l'organisation, les coûts de coordination — inférence, change de doctrine, gouvernance, formation — croissent plus vite que la productivité mesurée. Sans instrumentation fine (gateway LLM + audit trail Datadog), ce paradoxe rend la trajectoire de coûts indéfendable au COMEX. Renvoi <a href="../chapitres/ch23-roi-paradoxe-agentique.md">ch. 23.7</a>.</li>
+  <li id="source-13"><span class="src-num">[13]</span> Anthropic, @AnthropicAI, 28 juillet 2025 (annonce X/Twitter) — weekly rate limits sur les plans Pro et Max, effectives le 28 août 2025. TechCrunch, 28 juillet 2025 : « Anthropic unveils new rate limits to curb Claude Code power users » — couvre le déclencheur (sessions Claude Code 24/7 en background) et la citation officielle « less than 5% of subscribers ». Anthropic blog, 6 mai 2026 : doublement des limites horaires Team/Enterprise + partenariat SpaceX.</li>
+  <li id="source-14"><span class="src-num">[14]</span> Cursor Changelog v0.50 (15 mai 2025) — lancement Background Agents en preview. Changement de pricing Auto/Background : juin 2025, passage des request caps fixes à un modèle usage-based (crédit = coût API). Excuse publique et remboursements : 4 juillet 2025. Source secondaire chiffrée : CloudZero, « Cursor AI Pricing » — documente le passage de ~500 fast requests à ~225 requêtes premium par $20 de crédits sur le plan Pro.</li>
+  <li id="source-15"><span class="src-num">[15]</span> GitHub Changelog, 22 août 2025 (GA overage policy) — début de facturation des premium requests depuis le 18 juin 2025 (GitHub.com). GitHub Changelog, 17 septembre 2025 (suppression des budgets $0) — effective 2 décembre 2025. GitHub Blog, 27 avril 2026 (annonce AI Credits) — transition effective juin 2026. Chiffres legacy : Business 300 premium reqs/mois inclus, Enterprise 1 000, overage $0,04/req, multiplicateur Claude Sonnet ×5. Chiffres AI Credits : Business ~1 900 crédits/mois (~$19), Enterprise ~3 900 (~$39), $0,01/crédit.</li>
+  <li id="source-16"><span class="src-num">[16]</span> Le dossier de veille <a href="../../../benchmarks-contestes/">benchmarks-contestes/</a> (publié 2026-05-15) documente les cas de gaming sur SWE-bench : contamination des données d'entraînement, overfitting sur les formats de test, métriques de completion qui ne capturent pas les régressions. <mark>SWE-bench Live</mark> (mis à jour en continu sur des issues non vues lors de l'entraînement) atténue le problème mais ne l'élimine pas. Renvoi <a href="../chapitres/ch19-evaluation-benchmarks.md">ch. 19</a>.</li>
+  <li id="source-17"><span class="src-num">[17]</span> Le sentiment de classe par l'outil — accès différencié à l'IA selon le niveau hiérarchique ou le profil — est documenté comme facteur de risque culturel et de turnover dans les organisations tech en 2025-2026 (Stack Overflow Developer Survey 2026, section « AI access equity »). Il rejoint les tensions générationnelles documentées en CC-14 (§11) et l'analyse de <a href="../chapitres/ch26-ia-et-travail.md">ch. 26</a> sur l'économie à deux vitesses.</li>
+</ol>
+</aside>
+
+</main>
+
+<footer class="site-foot">
+  <p>Cas pratiques co-écrits avec l&#x27;aide d&#x27;une IA · Données et calibrage : analyse Mathieu Guglielmino · juin 2026</p>
+  <p>Mathieu Guglielmino · Practice Manager Lincoln</p>
+</footer>
+
+<!-- ═════ ZOOM OVERLAY ═════ -->
+<div id="zoom-overlay" role="dialog" aria-modal="true" aria-label="Zoom plein écran">
+  <button class="zoom-close" aria-label="Fermer le zoom">×</button>
+  <div id="zoom-content"></div>
+</div>
+
+<script>
+// ═════ ZOOM ═════
+(function setupZoom() {
+  const overlay = document.getElementById('zoom-overlay');
+  const content = document.getElementById('zoom-content');
+  const closeBtn = overlay.querySelector('.zoom-close');
+
+  document.querySelectorAll('main figure .zoom-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.preventDefault();
+      const fig = btn.closest('figure');
+      const img = fig.querySelector('img, svg');
+      if (!img) return;
+      content.innerHTML = '';
+      const clone = img.cloneNode(true);
+      content.appendChild(clone);
+      overlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    });
+  });
+
+  closeBtn.addEventListener('click', closeOverlay);
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) closeOverlay();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && overlay.classList.contains('open')) closeOverlay();
+  });
+
+  function closeOverlay() {
+    overlay.classList.remove('open');
+    document.body.style.overflow = '';
+    content.innerHTML = '';
+  }
+})();
+
+// ═════ CASE-CHOICE — click to reveal ═════
+(function setupChoices() {
+  document.querySelectorAll('.case-choice .option-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const option = btn.closest('.option');
+      option.classList.toggle('open');
+    });
+  });
+})();
+
+// ═════ QUIZ — click answer to reveal ═════
+(function setupQuiz() {
+  document.querySelectorAll('.case-quiz').forEach(quiz => {
+    const correctIdx = parseInt(quiz.dataset.correct, 10);
+    const buttons = quiz.querySelectorAll('.options button');
+    buttons.forEach((btn, idx) => {
+      btn.addEventListener('click', () => {
+        if (quiz.classList.contains('answered')) return;
+        quiz.classList.add('answered');
+        buttons.forEach((b, i) => {
+          if (i === correctIdx) b.classList.add('correct');
+          else if (i === idx) b.classList.add('wrong');
+        });
+      });
+    });
+  });
+})();
+</script>
+
+</body>
+</html>

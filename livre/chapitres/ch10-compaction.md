@@ -260,8 +260,8 @@ La mitigation suit trois pistes :
 - **Compactor sandbox** : le compactor tourne dans un sandbox sans accès aux outils, et son output passe par un filtre dédié qui détecte les promotions d'instruction.
 - **Ledger transparent** : chaque compaction produit un hash auditable du contenu jeté et du résumé produit, permettant un *replay* offline pour la sécurité.
 
-> [!INFO] Voir [Ch. 19 — Garde-fous et sécurité globale](ch19-gardefous-securite-globale.md)
-> Le vecteur SpAIware est l'un des six axes du **schéma E4 (threat model unifié 2026)** qui agrège, en [Ch. 19](ch19-gardefous-securite-globale.md), les vecteurs modèle / prompt / mémoire / outil / protocole / surface. La verticale mémoire est traitée ici ; le [Ch. 19](ch19-gardefous-securite-globale.md) fournit la matrice transverse.
+> [!INFO] Voir [Ch. 21 — Garde-fous et sécurité globale](ch21-gardefous-securite-globale.md)
+> Le vecteur SpAIware est l'un des six axes du **schéma E4 (threat model unifié 2026)** qui agrège, en [Ch. 21](ch21-gardefous-securite-globale.md), les vecteurs modèle / prompt / mémoire / outil / protocole / surface. La verticale mémoire est traitée ici ; le [Ch. 21](ch21-gardefous-securite-globale.md) fournit la matrice transverse.
 
 ---
 
@@ -284,8 +284,8 @@ Trois cas de figure :
 >
 > Conséquence directe pour la compaction : ==le *ledger* — l'historique des compactions, le résumé produit, les pointeurs vers le contenu jeté — devient une obligation documentaire pour les déployeurs en production.== Un compactor non instrumenté = un risque réglementaire à dix-huit mois.
 
-> [!INFO] Voir [Ch. 23 — Gouvernance, machine unlearning et AI Act](ch23-gouvernance-ai-act.md)
-> [Ch. 23](ch23-gouvernance-ai-act.md) traite la grille réglementaire dans son ensemble (calendrier 2026-2027, sous-puits *machine unlearning*, rôle DPO/RSSI/Sponsor). Le cas compaction est instancié ici.
+> [!INFO] Voir [Ch. 25 — Gouvernance, machine unlearning et AI Act](ch25-gouvernance-ai-act.md)
+> [Ch. 25](ch25-gouvernance-ai-act.md) traite la grille réglementaire dans son ensemble (calendrier 2026-2027, sous-puits *machine unlearning*, rôle DPO/RSSI/Sponsor). Le cas compaction est instancié ici.
 
 ---
 
@@ -309,8 +309,8 @@ Au lieu d'un résumé unique, plusieurs résolutions cohabitent : un *abstract* 
 
 L'AI Act art. 25 transformera cette observabilité en *obligation*. Un déployeur qui ne peut pas démontrer ce qu'il a oublié, et quand, ne pourra pas démontrer sa conformité.
 
-> [!INFO] Voir [Ch. 18 — Observabilité agentique et cognitive audit trail](ch18-observabilite-cognitive-audit-trail.md)
-> Le WG OpenTelemetry GenAI semconv actif fin 2026 sur les attributs `gen_ai.compaction.*` est tracé en [Ch. 18](ch18-observabilite-cognitive-audit-trail.md) §4.3 comme *front actif* de la télémétrie production. La grille complète à six piliers est en [Ch. 18](ch18-observabilite-cognitive-audit-trail.md).
+> [!INFO] Voir [Ch. 20 — Observabilité agentique et cognitive audit trail](ch20-observabilite-cognitive-audit-trail.md)
+> Le WG OpenTelemetry GenAI semconv actif fin 2026 sur les attributs `gen_ai.compaction.*` est tracé en [Ch. 20](ch20-observabilite-cognitive-audit-trail.md) §4.3 comme *front actif* de la télémétrie production. La grille complète à six piliers est en [Ch. 20](ch20-observabilite-cognitive-audit-trail.md).
 
 ---
 

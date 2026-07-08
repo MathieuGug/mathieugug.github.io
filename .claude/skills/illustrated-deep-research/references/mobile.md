@@ -55,7 +55,7 @@ Sans cette règle, les deux zones gauche/droite se chevauchent sur les très pet
 
 La typographie mobile de `header.site` et `main#report` **doit vivre dans le même `@media (max-width: 1024px)`** que l'effondrement de `.layout` en colonne unique.
 
-Raison load-bearing : Chrome en mode "Desktop site" sur Android/iOS reporte une viewport ≥ 980 px. Un `@media (max-width: 640px)` séparé ne se déclenche jamais dans ce mode — le rapport reste à la taille desktop et devient illisible sur mobile. En regroupant tout dans `@1024px`, les règles se déclenchent même en mode "Desktop site".
+Raison pivot : Chrome en mode "Desktop site" sur Android/iOS reporte une viewport ≥ 980 px. Un `@media (max-width: 640px)` séparé ne se déclenche jamais dans ce mode — le rapport reste à la taille desktop et devient illisible sur mobile. En regroupant tout dans `@1024px`, les règles se déclenchent même en mode "Desktop site".
 
 ```css
 @media (max-width: 1024px) {

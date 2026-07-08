@@ -142,7 +142,7 @@ Le résultat le plus subtil est qu'**aucune stratégie ne domine universellement
 L'implication économique est directe. ==Un appel à un modèle de raisonnement consomme typiquement 4 à 100 fois plus de tokens qu'un appel non-raisonné équivalent==[^10]. Sur AIME single-sample, le ratio coût $/résolution entre o1 et GPT-4o est de l'ordre de ×10 ; sur des configurations high-effort avec MCTS ou Best-of-N élargi, il peut atteindre ×74 (Schéma 3b). Le coût marginal d'une réponse correcte cesse d'être linéaire et devient un *paramètre de design* — quel effort level par défaut ? Comment route-t-on les requêtes faciles vers le mode économique ? ==L'unité commercialement pertinente n'est plus le token, c'est la tâche==.
 
 > [!INFO] Voir [Ch. 5 — L'économie unitaire de l'inférence](ch05-economie-inference.md)
-> Justification chiffrée complète, addition de la pile éco unitaire (LLMflation ×1 000, 7 couches d'optim, désagrégation prefill/decode, MoE vs dense, mix matériel H100/H200/B200/MI300X/Trainium 2/Groq LPU), et marges fragiles (Together ~45 %, Fireworks ~50 %, OpenAI/Anthropic 60-70 %, hyperscalers 70-80 %). Le triptyque tarifaire — [Ch. 5](ch05-economie-inference.md) coût/token (physique) ↔ [Ch. 21](ch21-roi-paradoxe-agentique.md) valeur/outcome (J-curve) ↔ [Ch. 22](ch22-ia-frugale.md) externalité/Wh-L-CO₂eq — y est posé en clôture.
+> Justification chiffrée complète, addition de la pile éco unitaire (LLMflation ×1 000, 7 couches d'optim, désagrégation prefill/decode, MoE vs dense, mix matériel H100/H200/B200/MI300X/Trainium 2/Groq LPU), et marges fragiles (Together ~45 %, Fireworks ~50 %, OpenAI/Anthropic 60-70 %, hyperscalers 70-80 %). Le triptyque tarifaire — [Ch. 5](ch05-economie-inference.md) coût/token (physique) ↔ [Ch. 23](ch23-roi-paradoxe-agentique.md) valeur/outcome (J-curve) ↔ [Ch. 24](ch24-ia-frugale.md) externalité/Wh-L-CO₂eq — y est posé en clôture.
 
 ---
 
@@ -214,7 +214,7 @@ METR nuance le tableau en août 2025[^11]. Distinction proposée : **fidélité 
 
 L'AISI britannique et le NIST AI Safety Institute américain incluent depuis fin 2025 des recommandations explicites sur le statut de la CoT[^12]. ==Consensus émergent : la CoT n'est pas un audit log, c'est au mieux un brouillon partiellement informatif==. Les politiques d'oversight doivent intégrer cette imperfection : ne pas baser un déploiement à haut risque uniquement sur le monitoring CoT, instrumenter conjointement outputs et chaînes intermédiaires, prévoir des audits humains d'échantillonnage, considérer les attribution graphs comme complément structurel. ==Pour les acteurs régulés (banque, assurance, santé, éducation), traiter dès aujourd'hui la fidélité comme un paramètre à mesurer est une posture défensive bien dimensionnée==.
 
-> [!INFO] Voir [Ch. 18 — Observabilité agentique et cognitive audit trail](ch18-observabilite-cognitive-audit-trail.md)
+> [!INFO] Voir [Ch. 20 — Observabilité agentique et cognitive audit trail](ch20-observabilite-cognitive-audit-trail.md)
 > Conséquences opérationnelles de la non-fidélité : sémantique OpenTelemetry GenAI semconv et son sous-groupe `gen_ai.thinking.*` (`thinking_tokens`, `thinking_summary`, `faithfulness_estimate`) ; 6 piliers télémétrie du *cognitive audit trail* ; tension monitoring outputs ≠ monitoring thinking ; attribution graphs.
 
 ---
@@ -260,7 +260,7 @@ La tentation, quand on a accès à un raisonneur frontière meilleur sur les ben
 
 ### 2.8.3 La supervision n'est plus un free lunch
 
-Pendant 18 mois, le discours dominant des laboratoires frontière a été : « nos raisonneurs sont auditables, c'est un progrès safety vs les chatbots opaques ». Les chiffres Anthropic 2025 (25/39 %, 41/19 %, GPQA -44 %) ont fissuré ce discours. La nuance METR le sauve partiellement, mais ne le restaure pas comme principe simple. ==En 2026, traiter la chaîne de pensée comme un audit log fiable est une faute opérationnelle documentée==. L'instrumentation OTel GenAI complète qui rend tractable la combinaison monitoring outputs + monitoring chaînes + audits humains + interpretability tient en [Ch. 18](ch18-observabilite-cognitive-audit-trail.md).
+Pendant 18 mois, le discours dominant des laboratoires frontière a été : « nos raisonneurs sont auditables, c'est un progrès safety vs les chatbots opaques ». Les chiffres Anthropic 2025 (25/39 %, 41/19 %, GPQA -44 %) ont fissuré ce discours. La nuance METR le sauve partiellement, mais ne le restaure pas comme principe simple. ==En 2026, traiter la chaîne de pensée comme un audit log fiable est une faute opérationnelle documentée==. L'instrumentation OTel GenAI complète qui rend tractable la combinaison monitoring outputs + monitoring chaînes + audits humains + interpretability tient en [Ch. 20](ch20-observabilite-cognitive-audit-trail.md).
 
 ### 2.8.4 Trois lignes de force à l'horizon
 
@@ -286,7 +286,7 @@ L'IA n'est plus un perroquet stochastique qui complète la phrase la plus probab
 - Pour la couche notateur cachée qui rend l'entraînement RLVR scalable au-delà des domaines à ground-truth vérifiable (PRM800K, Math-Shepherd, GenRM, ThinkPRM, reward hacking 99/2, marché annotation procédurale 2-4 Md $) : **[Ch. 3 — La couche notateur cachée (Process Reward Models)](ch03-process-reward-models.md)**.
 - Pour la mécanique qui permet de regagner la latence perdue par le surcoût reasoning (décode spéculative, théorème d'équivalence Leviathan, EAGLE-3, calibrage de l'acceptance rate) : **[Ch. 4 — Décode spéculative et la course au token/sec](ch04-decode-speculative.md)**.
 - Pour l'addition économique unitaire complète (LLMflation ×1 000, sept couches d'optim, désagrégation prefill/decode, MoE, mix matériel 2026, marges fournisseurs, justification chiffrée du ×10-74) : **[Ch. 5 — L'économie unitaire de l'inférence](ch05-economie-inference.md)**.
-- Pour l'instrumentation OTel GenAI du *cognitive audit trail* qui rend la non-fidélité de la CoT opérationnellement tractable : **[Ch. 18 — Observabilité agentique et cognitive audit trail](ch18-observabilite-cognitive-audit-trail.md)**.
+- Pour l'instrumentation OTel GenAI du *cognitive audit trail* qui rend la non-fidélité de la CoT opérationnellement tractable : **[Ch. 20 — Observabilité agentique et cognitive audit trail](ch20-observabilite-cognitive-audit-trail.md)**.
 - Pour l'expression agentique terminale du raisonneur (coding agents Claude Code / Cursor / Devin, harness AGENTS.md, boucle exécution-observation-replanification) : tout l'**Acte II ([Ch. 7](ch07-boucle-agentique.md)–[Ch. 11](ch11-patterns-orchestration.md))**.
 
 ---

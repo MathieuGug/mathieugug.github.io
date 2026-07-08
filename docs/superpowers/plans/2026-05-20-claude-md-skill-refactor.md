@@ -574,7 +574,7 @@ Voir `topbar.md` pour le pattern complet.
 
 ## 3. Apps `header.site` + `main#report` : typographie mobile dans le **même** `@media (max-width: 1024px)`
 
-Load-bearing pour Chrome "Desktop site" sur Android/iOS qui reporte une viewport ≥ 980 px : un `@media (max-width: 640px)` séparé ne se déclenche jamais dans ce mode, et le rapport reste à la taille desktop (illisible).
+déterminant pour Chrome "Desktop site" sur Android/iOS qui reporte une viewport ≥ 980 px : un `@media (max-width: 640px)` séparé ne se déclenche jamais dans ce mode, et le rapport reste à la taille desktop (illisible).
 
 Y mettre :
 
@@ -865,7 +865,7 @@ Sections :
 1. Vue d'ensemble (TOC à gauche, Sources à droite, dans la grille `.layout`)
 2. Sticky height calc `top: 56px; height: calc(100vh - 56px)` — **pourquoi `height` > `max-height` avec `align-self: start`** (sinon le panneau se rétrécit à la hauteur de son contenu = trou en bas si liste plus courte qu'une viewport)
 3. Pattern `panel-close` mobile (CSS + HTML + JS avec yield zoom/modal sur Escape) — verbatim depuis le pattern existant
-4. `#sources-collapse-btn` — **load-bearing : `position: fixed`, pas `absolute`** (en absolute le bouton scrolle avec le contenu interne du panneau). Snippet CSS canonique : `position: fixed; top: 50%; right: 320px; transform: translate(50%, -50%); z-index: 70;`
+4. `#sources-collapse-btn` — **pivot : `position: fixed`, pas `absolute`** (en absolute le bouton scrolle avec le contenu interne du panneau). Snippet CSS canonique : `position: fixed; top: 50%; right: 320px; transform: translate(50%, -50%); z-index: 70;`
 5. Format canonique `<li id="source-N">` — `[N]` bracketed littéral dans le HTML (pas pseudo-element), URL complète comme texte de lien (pas label host raccourci), `<br>` avant le `<a>`, `<span class="accessed">Accessed YYYY-MM-DD</span>`. Snippet HTML complet + CSS canonique (couleurs, tailles) + `overflow-wrap: anywhere` sur `#sources li a` comme filet de sécurité
 6. Convention legacy à migrer au passage : `<span class="cite-num">N</span>` sans crochets + `<a>host ↗</a>` (pre-mai 2026) — toute édition d'app sur ses sources doit basculer au pattern bracketed + full URL
 
@@ -939,7 +939,7 @@ refacto(claude-md): PR 4/5 — sidebars TOC/Sources + format sources
 
 Nouveau fichier skill : references/sidebars.md (~170 lignes) qui regroupe
 TOC + Sources structure, sticky math (height vs max-height), panel-close
-mobile, sources-collapse-btn position fixed (load-bearing), et le format
+mobile, sources-collapse-btn position fixed (pivot), et le format
 canonique <li id="source-N"> bracketed + full URL.
 
 CLAUDE.md : section + sous-section remplacées par pointer.

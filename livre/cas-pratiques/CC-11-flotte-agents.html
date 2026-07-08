@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#faf6ec">
+<title>CC-11 — Gouverner une flotte d'agents · Cas pratiques du livre · Mathieu Guglielmino</title>
+<!-- og:start -->
+<!-- og:end -->
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300;1,9..144,400;1,9..144,500&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #faf6ec;
+  --bg-2: #f3eedf;
+  --bg-3: #ece4d2;
+  --surface: #ffffff;
+  --surface-2: #fdfaf0;
+  --line: rgba(30,30,44,0.10);
+  --line-strong: rgba(30,30,44,0.22);
+  --text: #1e1e2a;
+  --text-dim: #4a5060;
+  --text-faint: #8a8e99;
+  --accent: #b8582e;
+  --accent-soft: rgba(184,88,46,0.06);
+  --carmine: #a83e55;
+  --teal: #2d8a8a;
+  --warn: #d4a000;
+  --shadow-sm: 0 1px 3px rgba(30,30,44,0.04);
+  --shadow-md: 0 8px 24px rgba(30,25,18,0.06);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body {
+  background: var(--bg); color: var(--text);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 300; line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+}
+@supports not (overflow-x: clip) { html, body { overflow-x: hidden; } }
+body { padding-top: 56px; min-height: 100vh; }
+a { color: inherit; }
+img, svg { max-width: 100%; }
+
+/* ═════ TOPBAR ═════ */
+.topbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 60;
+  height: 56px; padding: 0 28px;
+  display: flex; align-items: center; justify-content: space-between; gap: 24px;
+  background: rgba(250,246,236,0.86);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
+}
+.topbar a { text-decoration: none; opacity: 0.78; transition: opacity 0.18s; }
+.topbar a:hover { opacity: 1; }
+.topbar .dossier-context {
+  font-family: 'Fraunces', serif; font-style: italic; font-size: 15px;
+  color: var(--text-dim); flex: 1; text-align: center;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.topbar nav { display: flex; gap: 18px; font-size: 13px; }
+@media (max-width: 720px) {
+  .topbar { padding: 0 14px; gap: 10px; font-size: 13px; }
+  .topbar .dossier-context { display: none; }
+}
+
+/* ═════ HERO ═════ */
+.hero { max-width: 760px; margin: 64px auto 48px; padding: 0 24px; }
+.hero .eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px; font-weight: 600; letter-spacing: 0.14em;
+  color: var(--accent); text-transform: uppercase;
+  margin-bottom: 20px;
+}
+.hero h1 {
+  font-family: 'Fraunces', serif;
+  font-weight: 500; font-size: clamp(36px, 5.5vw, 54px);
+  line-height: 1.06; letter-spacing: -0.015em;
+  margin-bottom: 24px;
+}
+.hero .lede {
+  font-family: 'Fraunces', serif;
+  font-weight: 400; font-style: italic;
+  font-size: clamp(19px, 2.2vw, 22px); line-height: 1.45;
+  color: var(--text-dim); margin-bottom: 32px;
+}
+.hero .meta {
+  display: flex; flex-wrap: wrap; gap: 14px 28px;
+  font-size: 13px; color: var(--text-dim);
+  padding-top: 20px; border-top: 1px solid var(--line);
+}
+.hero .meta strong { color: var(--text); font-weight: 500; }
+
+/* ═════ MAIN narrative ═════ */
+main.entry {
+  max-width: 760px; margin: 0 auto 80px; padding: 0 24px;
+  font-size: 17px; line-height: 1.7;
+  color: var(--text-dim);
+}
+main.entry section { scroll-margin-top: 80px; }
+main.entry h2 {
+  font-family: 'Fraunces', serif; color: var(--text);
+  font-weight: 500; font-size: clamp(26px, 3.8vw, 32px); line-height: 1.18;
+  letter-spacing: -0.01em; margin: 72px 0 22px;
+}
+main.entry h3 {
+  font-family: 'Fraunces', serif; color: var(--text);
+  font-weight: 500; font-size: 21px;
+  margin: 40px 0 14px;
+}
+main.entry p { margin-bottom: 18px; }
+main.entry strong { font-weight: 500; color: var(--text); }
+main.entry em { font-style: italic; }
+main.entry a {
+  color: var(--accent); text-decoration: none;
+  border-bottom: 1px solid rgba(184,88,46,0.3);
+  transition: border-color 0.18s;
+}
+main.entry a:hover { border-bottom-color: var(--accent); }
+main.entry ul, main.entry ol { margin: 0 0 22px 28px; }
+main.entry li { margin-bottom: 8px; }
+main.entry ol li { padding-left: 4px; }
+main.entry blockquote {
+  border-left: 3px solid var(--accent);
+  padding: 12px 0 12px 24px; margin: 28px 0;
+  font-family: 'Fraunces', serif; font-style: italic;
+  font-size: 19px; line-height: 1.55;
+  color: var(--text);
+}
+main.entry code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.86em; background: var(--bg-2);
+  padding: 1px 6px; border-radius: 3px; color: var(--text);
+}
+main.entry hr {
+  border: none; border-top: 1px solid var(--line);
+  margin: 50px auto; max-width: 200px;
+}
+
+/* ═════ FIGURES — full-bleed + zoom button ═════ */
+main.entry figure {
+  margin: 40px calc(50% - 50vw);
+  padding: 0 clamp(16px, 3vw, 48px);
+  position: relative;
+}
+main.entry figure img,
+main.entry figure svg {
+  display: block; width: 100%; max-width: 1480px;
+  margin: 0 auto; border-radius: 4px;
+  background: var(--bg);
+}
+main.entry figcaption {
+  max-width: 760px; margin: 14px auto 0; padding: 0 24px;
+  font-size: 13px; color: var(--text-faint);
+  font-style: italic; line-height: 1.55;
+}
+main.entry figcaption .anchor {
+  color: var(--accent); text-decoration: none; font-weight: 600;
+  margin-right: 6px; opacity: 0.55; transition: opacity 160ms;
+}
+main.entry figcaption .anchor:hover { opacity: 1; }
+.zoom-btn {
+  position: absolute; top: 8px; right: clamp(20px, 3vw, 52px);
+  width: 36px; height: 36px;
+  background: rgba(255,255,255,0.92);
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; opacity: 0;
+  transition: opacity 0.2s, background 0.18s;
+  font-size: 16px; color: var(--text-dim);
+  z-index: 5;
+}
+main.entry figure:hover .zoom-btn { opacity: 1; }
+.zoom-btn:hover { background: var(--surface); color: var(--text); }
+@media (hover: none) {
+  .zoom-btn { opacity: 0.85; }
+}
+
+/* ═════ TABLES ═════ */
+.table-wrap {
+  margin: 32px calc(50% - 50vw);
+  padding: 0 clamp(16px, 3vw, 48px);
+  overflow-x: auto;
+}
+.table-wrap table {
+  margin: 0 auto; max-width: 1100px;
+  border-collapse: collapse;
+  font-size: 14px; line-height: 1.55;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  border-radius: 6px; overflow: hidden;
+  width: 100%;
+}
+.table-wrap th {
+  background: var(--bg-2);
+  text-align: left;
+  padding: 14px 16px;
+  font-weight: 500; font-size: 13px;
+  color: var(--text);
+  border-bottom: 1px solid var(--line-strong);
+}
+.table-wrap th.center, .table-wrap td.center { text-align: center; }
+.table-wrap td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+  color: var(--text-dim);
+}
+.table-wrap td strong { color: var(--text); }
+.table-wrap tr:last-child td { border-bottom: none; }
+.table-wrap td.recommended { background: var(--accent-soft); }
+.table-wrap th.recommended { background: rgba(184,88,46,0.12); color: var(--accent); }
+.table-wrap .score {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700; font-size: 14px;
+}
+.table-wrap .score.plus2 { color: var(--teal); }
+.table-wrap .score.plus1 { color: var(--teal); opacity: 0.85; }
+.table-wrap .score.zero { color: var(--text-dim); }
+.table-wrap .score.minus1 { color: var(--carmine); opacity: 0.7; }
+.table-wrap .score.minus2 { color: var(--carmine); }
+.table-wrap .verdict-row td {
+  background: var(--bg-2);
+  font-size: 13.5px;
+  font-style: italic;
+}
+
+/* ═════ CASE WIDGETS ═════ */
+.case-debate {
+  margin: 40px 0; padding: 28px;
+  background: var(--surface);
+  border-left: 4px solid var(--carmine);
+  border-radius: 0 6px 6px 0;
+  box-shadow: var(--shadow-sm);
+}
+.case-debate .label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.2em;
+  color: var(--carmine); text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.case-debate .question {
+  font-family: 'Fraunces', serif;
+  font-style: italic; font-size: 21px; line-height: 1.35;
+  color: var(--text); margin-bottom: 24px;
+}
+.case-debate .columns {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 28px;
+  margin-bottom: 24px;
+}
+@media (max-width: 720px) { .case-debate .columns { grid-template-columns: 1fr; gap: 18px; } }
+.case-debate .col h4 {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px; font-weight: 700; letter-spacing: 0.18em;
+  text-transform: uppercase; margin-bottom: 14px;
+}
+.case-debate .col.pour h4 { color: var(--teal); }
+.case-debate .col.contre h4 { color: var(--carmine); }
+.case-debate .col ul { margin: 0; padding-left: 18px; font-size: 14.5px; }
+.case-debate .col li { margin-bottom: 8px; color: var(--text-dim); }
+.case-debate .verdict {
+  border-top: 1px solid var(--line);
+  padding-top: 20px;
+  font-size: 14.5px; line-height: 1.6;
+  color: var(--text);
+}
+.case-debate .verdict strong { color: var(--carmine); }
+
+.case-choice {
+  margin: 32px 0; padding: 24px 28px;
+  background: var(--surface);
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+}
+.case-choice .scenario {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.18em;
+  color: var(--accent); text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.case-choice .question {
+  font-family: 'Fraunces', serif;
+  font-style: italic; font-size: 18px; line-height: 1.45;
+  color: var(--text); margin-bottom: 22px;
+}
+.case-choice .options { display: flex; flex-direction: column; gap: 12px; }
+.case-choice .option {
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.case-choice .option button.option-toggle {
+  width: 100%;
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 14px 18px;
+  background: var(--bg-2);
+  border: none;
+  font: inherit; font-size: 15px; text-align: left;
+  cursor: pointer; color: var(--text);
+  transition: background 0.2s;
+}
+.case-choice .option button.option-toggle:hover { background: var(--bg-3); }
+.case-choice .option button.option-toggle .badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700; font-size: 13px;
+  background: var(--text); color: var(--bg);
+  width: 24px; height: 24px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 3px; flex-shrink: 0;
+}
+.case-choice .option button.option-toggle .arrow {
+  margin-left: auto; opacity: 0.5; transition: transform 0.25s;
+  font-size: 13px;
+}
+.case-choice .option.open button.option-toggle .arrow { transform: rotate(180deg); opacity: 1; }
+.case-choice .option .reveal {
+  display: none;
+  padding: 18px 20px 20px;
+  background: var(--surface-2);
+  border-top: 1px solid var(--line);
+  font-size: 14.5px; line-height: 1.6;
+  color: var(--text-dim);
+}
+.case-choice .option.open .reveal { display: block; }
+.case-choice .option.open { border-color: var(--accent); }
+.case-choice .option .reveal p { margin-bottom: 12px; }
+.case-choice .option .reveal p:last-child { margin-bottom: 0; }
+.case-choice .option .reveal .analyse {
+  font-size: 13px;
+  padding-top: 12px; margin-top: 12px;
+  border-top: 1px dashed var(--line);
+  font-style: italic;
+}
+.case-choice .option .reveal .analyse a { color: var(--accent); }
+
+.case-quiz {
+  margin: 28px 0; padding: 22px 26px;
+  background: var(--surface);
+  border-left: 4px solid var(--carmine);
+  border-radius: 0 6px 6px 0;
+  box-shadow: var(--shadow-sm);
+}
+.case-quiz .label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.2em;
+  color: var(--carmine); text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.case-quiz .question {
+  font-weight: 500; font-size: 16.5px; line-height: 1.4;
+  color: var(--text); margin-bottom: 16px;
+}
+.case-quiz .options { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.case-quiz .options button {
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  padding: 11px 14px;
+  text-align: left; cursor: pointer;
+  font: inherit; font-size: 14.5px; line-height: 1.45;
+  color: var(--text);
+  border-radius: 4px;
+  transition: all 0.18s;
+}
+.case-quiz .options button:hover { background: var(--bg-3); }
+.case-quiz.answered .options button { cursor: default; }
+.case-quiz .options button.correct {
+  background: rgba(45,138,138,0.12);
+  border-color: var(--teal); color: var(--teal);
+  font-weight: 500;
+}
+.case-quiz .options button.wrong {
+  background: rgba(168,62,85,0.10);
+  border-color: var(--carmine); color: var(--carmine);
+}
+.case-quiz .explication {
+  display: none;
+  padding: 14px 16px;
+  background: var(--bg-2);
+  border-radius: 4px;
+  font-size: 14px; line-height: 1.6;
+  color: var(--text-dim);
+}
+.case-quiz.answered .explication { display: block; }
+.case-quiz .explication a { color: var(--accent); text-decoration: none; border-bottom: 1px solid rgba(184,88,46,0.3); }
+
+.case-verdict {
+  margin: 60px 0 30px; padding: 40px 32px;
+  background: linear-gradient(135deg, rgba(184,88,46,0.07), rgba(45,138,138,0.04));
+  border: 2px solid var(--accent);
+  border-radius: 8px;
+  text-align: center;
+}
+.case-verdict .stamp {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px; font-weight: 700; letter-spacing: 0.22em;
+  color: var(--accent); text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.case-verdict h3 {
+  font-family: 'Fraunces', serif; font-style: italic;
+  font-weight: 500; font-size: 26px;
+  color: var(--text);
+  margin-bottom: 28px;
+}
+.case-verdict ul {
+  list-style: none; padding: 0; margin: 0 auto;
+  text-align: left;
+  max-width: 600px;
+}
+.case-verdict li {
+  padding: 14px 0 14px 28px;
+  border-bottom: 1px dashed var(--line);
+  font-size: 14.5px; line-height: 1.55;
+  position: relative;
+  color: var(--text);
+}
+.case-verdict li::before {
+  content: "✓";
+  position: absolute; left: 0; top: 14px;
+  color: var(--teal); font-weight: 700;
+}
+.case-verdict li:last-child { border-bottom: none; }
+.case-verdict li strong { font-weight: 500; }
+
+/* ═════ RENVOIS section ═════ */
+.renvois-section {
+  margin: 60px 0 40px; padding: 32px;
+  background: rgba(45,138,138,0.04);
+  border-radius: 8px;
+}
+.renvois-section .label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.2em;
+  color: var(--teal); text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.renvois-section h2 {
+  font-family: 'Fraunces', serif;
+  font-weight: 500; font-size: 24px;
+  color: var(--text);
+  margin-bottom: 20px;
+}
+.renvois-section ul {
+  list-style: none; padding: 0; margin: 0;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 8px;
+}
+.renvois-section li {
+  font-size: 13.5px; padding: 10px 14px;
+  background: var(--surface); border-radius: 4px;
+  transition: background 0.18s;
+}
+.renvois-section li:hover { background: var(--surface-2); }
+.renvois-section a {
+  text-decoration: none; border: none;
+  color: var(--text); display: block;
+}
+.renvois-section a:hover { color: var(--accent); }
+.renvois-section a strong { font-weight: 600; }
+
+/* ═════ FOOTER ═════ */
+footer.site-foot {
+  max-width: 760px; margin: 40px auto;
+  padding: 28px 24px 60px;
+  border-top: 1px solid var(--line);
+  font-size: 12px; color: var(--text-faint);
+  text-align: center; line-height: 1.6;
+}
+footer.site-foot p { margin: 4px 0; }
+
+/* ═════ ZOOM OVERLAY ═════ */
+#zoom-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(20,18,15,0.92);
+  display: none; align-items: center; justify-content: center;
+  cursor: zoom-out;
+}
+#zoom-overlay.open { display: flex; }
+#zoom-overlay #zoom-content {
+  max-width: 96vw; max-height: 92vh;
+  overflow: auto;
+}
+#zoom-overlay #zoom-content img,
+#zoom-overlay #zoom-content svg {
+  max-width: 96vw; max-height: 92vh;
+  display: block; cursor: default;
+  background: var(--bg);
+  border-radius: 4px;
+}
+#zoom-overlay .zoom-close {
+  position: fixed; top: 20px; right: 24px;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: white;
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  font-size: 22px; cursor: pointer;
+  z-index: 102;
+  display: flex; align-items: center; justify-content: center;
+}
+#zoom-overlay .zoom-close:hover { background: rgba(255,255,255,0.25); }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a href="index.html">← Cas pratiques</a>
+  <span class="dossier-context">Gouverner une flotte d'agents</span>
+  <nav>
+    <a href="../index.html">Hub livre</a>
+  </nav>
+</header>
+
+<section class="hero">
+  <div class="eyebrow">Cas pratique CC-11 · Transverse · Agentic · Charnière · Cas-chapeau</div>
+  <h1>Gouverner une flotte d'agents</h1>
+  <p class="lede">Passé une dizaine d'agents, le problème n'est plus de <em>faire</em> un agent mais de <em>gouverner une flotte</em> : sans socle fédéré, la prolifération coûte plus qu'elle ne rapporte. Le ROI n'est pas par agent, il est au niveau du portefeuille.</p>
+  <div class="meta">
+    <div><strong>Facette :</strong> Gouvernance</div>
+    <div><strong>Régime :</strong> Hybride fédéré</div>
+    <div><strong>Format :</strong> ~5 600 mots · 15 sections · 4 figures</div>
+    <div><strong>Verdict :</strong> GO socle fédéré</div>
+  </div>
+</section>
+
+<main class="entry">
+
+<!-- ═════ SECTION 1 — La scène ═════ -->
+<section id="sec-1">
+<h2>1. « On a une cinquantaine d'agents là-dedans. Qui les gère ? »</h2>
+
+<p>CODIR de fin de trimestre, grand groupe. Le DSI prend la parole avec une diapositive qu'il aurait préféré ne pas montrer : un agent RH, monté en quelques clics par une équipe métier, <strong>écrit dans le SIRH — sans aucune revue sécu.</strong> Le DAF enchaîne : il a compté <strong>sept abonnements agentiques en doublon</strong>, payés par sept directions qui s'ignorent. La DRH signale que deux agents donnent des réponses <strong>contradictoires</strong> sur la politique de notes de frais. Et un agent client-facing est passé en production <strong>sans la moindre évaluation.</strong></p>
+
+<p>La question s'impose, et personne ne sait à qui l'adresser : <em>« on a une cinquantaine d'agents là-dedans. Qui les gère, comment, sur quel socle — et est-ce que ça nous coûte plus que ça ne rapporte ? »</em></p>
+
+<p>C'est la <strong>clôture</strong> de cette annexe, et ce n'est pas un hasard. CC-00 l'ouvrait par le pôle large et peu maîtrisé — l'assistant que tout le monde ouvre, le shadow AI qui entre par tous les côtés. Les cas qui ont suivi ont construit, un par un, des agents de plus en plus profonds : le copilot bancaire (CC-01), l'agent vocal (CC-02), le guichet unique (CC-09), le dev agentique (CC-10), le socle data (CC-03). <strong>CC-11 est ce qui arrive après</strong> : quand on a laissé la flotte proliférer, il faut reprendre la main.</p>
+
+<p>La leçon centrale tient en une phrase : <strong>on ne gouverne pas une flotte d'agents comme on gouverne un agent.</strong> Le problème change de nature. Et comme toujours, tout commence par regarder ce qui est déjà là — ici, le désordre.</p>
+</section>
+
+<!-- ═════ SECTION 2 — La sprawl ═════ -->
+<section id="sec-2">
+<h2>2. La sprawl — la carte que personne n'avait</h2>
+
+<p>En 18 mois, l'IA agentique est entrée <strong>bottom-up</strong>, par tous les côtés. Il n'y a pas eu de décision d'architecture : il y a eu une accumulation.</p>
+
+<figure id="fig-00">
+  <button class="zoom-btn" aria-label="Zoom">⛶</button>
+  <img src="images/CC-11-flotte-agents/CC-11-fig-00-flotte-agents-sprawl.svg" alt="La flotte d'agents — l'état actuel (la sprawl) : 50 Copilot + verticaux build + shadow, sans socle commun">
+  <figcaption><a class="anchor" href="#fig-00">¶</a>La carte de la flotte avant gouvernance : ≈ 50 agents Copilot Studio montés par les métiers + 4 verticaux build + ≈ 12 shadow, sans socle commun. Les angles morts annotés — pas de registre, pas de gateway, pas d'éval mutualisée, pas d'observabilité, doublons, zombies, accès non revus. Le test de véracité : qui a la carte ? Personne.</figcaption>
+</figure>
+
+<p>Trois zones, et un trou au milieu :</p>
+
+<ol>
+  <li><strong>≈ 50 agents dans Microsoft Copilot Studio</strong>, montés par les métiers — RH, finance, achats, IT, juridique, commerce, support. Self-service sans cadre. Certains écrivent dans des systèmes internes (SIRH, ERP) sans revue. C'est la sprawl principale. Le natif Microsoft (Purview, Entra Agent ID, admin center) sait les gouverner — mais il ne voit qu'eux.</li>
+  <li><strong>4 verticaux « sérieux »</strong> buildés par les équipes data : le copilot conseiller (CC-01), l'agent vocal (CC-02), l'agent guichet (CC-09), un agent fraude temps réel. Les agents à fort enjeu, sur stacks hétérogènes. <strong>Chacun a rebuildé sa propre éval, ses propres MCP servers, ses propres garde-fous.</strong> Hors du périmètre du natif Microsoft.</li>
+  <li><strong>≈ 12 agents shadow</strong>, montés en douce sur des plateformes grand public. Invisibles du SI. Le risque le plus diffus : des données internes qui transitent hors de tout cadre.</li>
+</ol>
+
+<p>Et au centre, <strong>l'angle mort — ce qui n'existe pas</strong> : pas de registre, pas de gateway transverse, pas d'éval-as-a-service, pas d'observabilité de flotte, pas de catalogue de composants partagés.</p>
+
+<p>Ce que cette carte dit immédiatement :</p>
+
+<ul>
+  <li><strong>Personne n'a la carte.</strong> Sans registre, on ne sait ni combien d'agents existent, ni qui en est l'owner, ni ce qu'ils accèdent. C'est le premier symptôme et la première cause.</li>
+  <li><strong>Le problème n'est pas technique par agent</strong> — chaque agent est faisable. Il est de <strong>portefeuille</strong> : la duplication d'effort (4 harness d'éval, N MCP rebuildés) et la sprawl (doublons, zombies, accès non revus) coûtent plus que n'importe quel agent isolé.</li>
+  <li><strong>Le natif Microsoft gouverne un tiers de la flotte.</strong> S'y fier sans le compléter, c'est gouverner les 50 Copilot en croyant tenir les 66.</li>
+  <li><strong>Le shadow n'est pas un dérapage marginal</strong> : c'est le signal que la paved road officielle n'existe pas encore — exactement la leçon du shadow AI de CC-00, généralisée aux agents.</li>
+</ul>
+</section>
+
+<!-- ═════ SECTION 3 — Six services ═════ -->
+<section id="sec-3">
+<h2>3. Six services — l'anatomie du socle « AgentOps »</h2>
+
+<p>Gouverner une flotte exige un <strong>socle transverse</strong> : six services partagés qui ne <em>remplacent</em> pas les plateformes d'exécution (Copilot Studio, build maison), mais les <strong>fédèrent</strong>.</p>
+
+<figure id="fig-01">
+  <button class="zoom-btn" aria-label="Zoom">⛶</button>
+  <img src="images/CC-11-flotte-agents/CC-11-fig-01-socle-federe.svg" alt="Le socle fédéré — six services + modèle opératoire hub-and-spoke">
+  <figcaption><a class="anchor" href="#fig-01">¶</a>La plateforme « AgentOps » qui fédère sans centraliser : six services partagés (registre, gateway/identité, éval-as-a-service, observabilité, garde-fous, catalogue de composants) chapeautent les plateformes d'exécution (Copilot natif + verticaux build + shadow onboardé). En dessous, le RACI : le CoE possède le socle, les métiers possèdent leurs agents.</figcaption>
+</figure>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>#</th><th>Service</th><th>Rôle</th><th>Sans lui</th></tr>
+</thead>
+<tbody>
+<tr><td class="center">1</td><td><strong>Registre d'agents</strong></td><td>Catalogue : owner, finalité, données accédées, modèle, statut éval/risque, <strong>statut AI Act</strong>, cycle de vie</td><td>Personne n'a la carte → sprawl</td></tr>
+<tr><td class="center">2</td><td><strong>Gateway / identité agent</strong></td><td>Authn/authz <strong>par agent</strong>, scopes MCP, secrets, rate-limit, routing modèle, <strong>attribution de coût</strong> (FinOps)</td><td>Accès non revus, coûts non imputables</td></tr>
+<tr><td class="center">3</td><td><strong>Éval-as-a-service</strong></td><td>Suites de régression réutilisables <strong>par archétype</strong>, LLM-as-judge mutualisé, <strong>gate de promotion</strong></td><td>50 évals artisanales = aucune éval</td></tr>
+<tr><td class="center">4</td><td><strong>Observabilité transverse</strong></td><td>Traces, coût/agent, latence, <strong>taux d'usage réel</strong>, escalades, incidents</td><td>Pas de perf, pas de détection des zombies</td></tr>
+<tr><td class="center">5</td><td><strong>Garde-fous &amp; politiques</strong></td><td>DLP, PII, anti prompt-injection, politiques <strong>par niveau de risque</strong></td><td>Risque non maîtrisé, conformité ingérable</td></tr>
+<tr><td class="center">6</td><td><strong>Catalogue de composants</strong></td><td>MCP servers partagés (ex. les MCP banque de CC-01), prompts, templates</td><td>Chaque équipe rebuild les mêmes briques</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Le mot qui compte est <strong>fédère</strong> : le socle ne centralise pas l'exécution. Les agents continuent de tourner sur Copilot, sur les orchestrateurs maison, là où ils sont nés. Le socle chapeaute — il pose la carte (registre), il garde la porte (gateway), il juge sur un standard commun (éval), il regarde (observabilité), il borne (garde-fous), il mutualise (catalogue).</p>
+
+<p>Le <strong>gateway</strong> est le composant pivot. C'est lui qui rend les accès revus, les coûts imputables, les garde-fous appliqués sans être réinventés par agent. Et c'est le sclérosant projet : fédérer Copilot + verticaux + shadow sans casser les flux existants prend deux à trois mois incompressibles. La <a href="../chapitres/ch15-mcp-plateforme.md">plateforme MCP (ch. 15)</a> est le socle ; la <a href="../chapitres/ch16-mcp-securite.md">sécurité MCP (ch. 16)</a> est le gateway/identité agent.</p>
+</section>
+
+<!-- ═════ SECTION 4 — Qui gère ? ═════ -->
+<section id="sec-4">
+<h2>4. Qui gère ? — métier vs DSI, le vrai débat</h2>
+
+<p>C'est <strong>le</strong> débat de fond, et il décide de tout le reste. Trois modèles opératoires.</p>
+
+<ul>
+  <li><strong>Centralisé — la DSI fait tout.</strong> Contrôle maximal sur le papier. En pratique : goulot d'étranglement, file d'attente, l'innovation métier meurt. Ne passe pas à l'échelle de 50+ agents — et les métiers repartent en shadow.</li>
+  <li><strong>Décentralisé — chaque métier fait ses agents.</strong> Vélocité maximale. Mais c'est <strong>exactement la sprawl actuelle</strong> : doublons, chaos, risque non maîtrisé. L'absence de gouvernance est une gouvernance — la pire.</li>
+  <li><strong>Fédéré / hub-and-spoke (recommandé).</strong> Un <strong>Center of Excellence agents</strong> possède le socle, les standards, les garde-fous, le registre, l'éval-as-a-service. Les <strong>métiers possèdent leurs agents</strong> : finalité, contenu, owner métier <strong>obligatoire</strong>, ROI de <em>leur</em> agent — <strong>dans le cadre.</strong> Le principe directeur est la <strong>paved road</strong> : rendre la voie conforme tellement facile à emprunter que personne n'ait envie de la contourner.</li>
+</ul>
+
+<p><strong>RACI cible :</strong></p>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Acteur</th><th>Responsabilité</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Plateforme / CoE</strong> (DSI + sécu + data)</td><td>Le socle, les standards, l'admission au registre, les garde-fous transverses, l'éval-as-a-service</td></tr>
+<tr><td><strong>Métier</strong> (agent product owner)</td><td>La finalité, le contenu, l'éval métier, le ROI de <strong>son</strong> agent</td></tr>
+<tr><td><strong>Sécu / DPO</strong></td><td>Revue des accès écriture &amp; données sensibles, gate de mise en prod, statut AI Act</td></tr>
+<tr><td><strong>Comité de portefeuille</strong> (trimestriel)</td><td>Admission, <strong>dé-commissionnement</strong>, arbitrage des doublons, priorisation</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Deux rôles nouveaux apparaissent : un <strong>Head of AgentOps / Agent Platform Owner</strong> côté plateforme, et des <strong>agent product owners</strong> côté métier. Et une règle d'or qui résume tout : <strong>tout agent a un owner métier nommé + une fiche au registre — sinon il est éteint.</strong> Renvoi : <a href="../chapitres/ch26-ia-et-travail.md">métier vs DSI, conduite du changement (ch. 26)</a>.</p>
+</section>
+
+<!-- ═════ SECTION 5 — Trois modes + anatomie admission ═════ -->
+<section id="sec-5">
+<h2>5. Trois modes — admettre, faire vivre, réviser</h2>
+
+<p>Ce que le socle <em>fait</em>, concrètement, se range en trois temps.</p>
+
+<h3>5.1 Admission — la paved road</h3>
+
+<p>À la création d'un agent, sur n'importe quelle plateforme (y compris un shadow ramené par l'amnistie), le porteur déclare au registre : owner métier, finalité, données accédées, modèle, plateforme. Il classe le niveau de risque (tier 1/2/3), ce qui déclenche la revue <strong>proportionnée</strong>. Le gateway câble l'identité et les scopes MCP — les accès sont tracés, le coût attribué. Et le statut AI Act est renseigné : <strong>le registre devient la pièce de conformité.</strong></p>
+
+<h3>5.2 Run — l'agent vit dans le cadre</h3>
+
+<p>Une fois admis, l'agent vit sous trois services, quelle que soit sa plateforme d'exécution. Le <strong>gateway</strong> : chaque appel passe par l'authn/authz par agent, le rate-limit, le routing modèle, l'attribution de coût (FinOps agentique). Les <strong>garde-fous</strong> : DLP, PII, anti prompt-injection appliqués par niveau de risque — politique uniforme côté plateforme, pas réinventée par agent. L'<strong>observabilité</strong> : traces, coût/agent, latence, taux d'usage réel — la console qui détecte zombies et dérives.</p>
+
+<h3>5.3 Revue — le comité de portefeuille</h3>
+
+<p>Trimestriel, plus des alertes continues. Le comité arbitre les <strong>doublons</strong> (deux agents au périmètre qui se chevauchent), éteint les <strong>zombies</strong> (taux d'usage sous seuil), valide les <strong>promotions</strong> en prod (aucun agent sans gate d'éval), met à jour le tiering et le statut AI Act des agents qui changent de périmètre.</p>
+
+<p>Le mode A (admission) mérite d'être déroulé sur un cas réel, parce que c'est là que se joue la <strong>paved road</strong> : la voie conforme doit être plus facile que le shadow, sinon elle est contournée.</p>
+
+<figure id="fig-03">
+  <button class="zoom-btn" aria-label="Zoom">⛶</button>
+  <img src="images/CC-11-flotte-agents/CC-11-fig-03-anatomie-admission.svg" alt="Anatomie d'une admission — Declare · Detect · Tier &amp; gate · Arbitrate · Govern">
+  <figcaption><a class="anchor" href="#fig-03">¶</a>Anatomie d'une admission — le pipeline de la paved road déroulé sur un cas de collision de périmètre. Un métier déclare un « agent notes de frais » alors qu'un agent finance couvre déjà ce périmètre : le socle détecte la collision, classe le risque, déclenche le gate d'éval avec test de non-contradiction, le comité arbitre (fusion, pas doublon), l'agent retenu vit sous gateway + observabilité. C'est « gouverner sans centraliser » rendu concret.</figcaption>
+</figure>
+
+<p>Le scénario : un métier déclare au registre un nouvel « agent de réponse aux notes de frais », alors qu'un agent finance couvre déjà ce périmètre. Cinq étapes. <strong>Declare</strong> → le porteur remplit la fiche registre (owner, finalité, données, modèle, plateforme). <strong>Detect</strong> → le socle interroge le registre et détecte la collision — <code>registre-mcp.detect_collision(finalite)</code> remonte l'agent finance existant. <strong>Tier &amp; gate</strong> → classement tier 2, déclenchement du gate d'éval (régression suite de l'archétype conversationnel + test de non-contradiction contre l'agent existant). <strong>Arbitrate</strong> → le comité de portefeuille tranche : fusion avec l'agent finance plutôt qu'un doublon de plus. <strong>Govern</strong> → l'agent retenu vit sous gateway (accès tracés, coût attribué) et observabilité, son statut AI Act porté au registre. La paved road a évité une contradiction de plus dans la flotte — sans que le métier perde la main.</p>
+</section>
+
+<!-- ═════ SECTION 6 — Build/Buy/Hybride ═════ -->
+<section id="sec-6">
+<h2>6. Build, Buy, Hybride — l'arbitrage porte sur le socle</h2>
+
+<p>L'arbitrage build/buy ne porte pas ici sur un agent, mais sur <strong>le socle lui-même.</strong> Trois options, six critères, notation <code>--</code> (très défavorable) → <code>++</code> (très favorable).</p>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+  <th>Critère</th>
+  <th class="center">Build pur<br><span style="font-weight:300;font-size:12px;color:var(--text-faint)">Socle maison complet</span></th>
+  <th class="center">Buy mainstream<br><span style="font-weight:300;font-size:12px;color:var(--text-faint)">MS-native ou AgentOps tiers</span></th>
+  <th class="center recommended">Hybride fédéré (recommandé)<br><span style="font-weight:300;font-size:12px;color:var(--accent)">Natif MS + socle maison léger</span></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td><strong>Sensibilité data</strong></td>
+  <td class="center"><span class="score plus2">++</span></td>
+  <td class="center"><span class="score zero">0</span></td>
+  <td class="center recommended"><span class="score plus1">+</span></td>
+</tr>
+<tr>
+  <td><strong>Personnalisation</strong></td>
+  <td class="center"><span class="score plus2">++</span></td>
+  <td class="center"><span class="score minus1">−</span></td>
+  <td class="center recommended"><span class="score plus1">+</span></td>
+</tr>
+<tr>
+  <td><strong>Volumétrie</strong></td>
+  <td class="center"><span class="score plus1">+</span></td>
+  <td class="center"><span class="score plus2">++</span></td>
+  <td class="center recommended"><span class="score plus1">+</span></td>
+</tr>
+<tr>
+  <td><strong>Lock-in</strong></td>
+  <td class="center"><span class="score plus1">+</span></td>
+  <td class="center"><span class="score minus2">−−</span></td>
+  <td class="center recommended"><span class="score zero">0</span></td>
+</tr>
+<tr>
+  <td><strong>Time-to-value</strong></td>
+  <td class="center"><span class="score minus2">−−</span></td>
+  <td class="center"><span class="score plus2">++</span></td>
+  <td class="center recommended"><span class="score plus1">+</span></td>
+</tr>
+<tr>
+  <td><strong>Souveraineté</strong></td>
+  <td class="center"><span class="score plus2">++</span></td>
+  <td class="center"><span class="score minus1">−</span></td>
+  <td class="center recommended"><span class="score zero">0</span></td>
+</tr>
+<tr class="verdict-row">
+  <td><strong>Verdict</strong></td>
+  <td><em>Couvre tout, souverain — mais effort plateforme lourd, trop lent pour reprendre la main vite.</em></td>
+  <td><em>Le natif gouverne très bien les 50 Copilot — mais angle mort total sur build et shadow → lock-in et périmètre partiel.</em></td>
+  <td class="recommended"><strong>RECOMMANDÉ.</strong> <em>On exploite le natif sans le réinventer, on build le minimum qui fédère, on cadre le shadow par amnistie.</em></td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<p>La recommandation est l'<strong>hybride fédéré</strong> : exploiter le natif Microsoft pour gouverner les 50 Copilot (ne pas réinventer la roue) + un <strong>registre + gateway transverse maison léger</strong> qui chapeaute <strong>toutes</strong> les plateformes + un <strong>harness d'éval partagé</strong>. Le socle fédère, il ne centralise pas l'exécution. La discipline d'architecture est le prix — et c'est moins cher que la sprawl. Renvoi : <a href="../chapitres/ch22-runtime-manage.md">runtime managé vs maison (ch. 22)</a>.</p>
+
+<p>Et le <strong>modèle</strong> ? La question n'est pas « quel modèle » mais « comment gouverner une flotte multi-modèle ». Le <strong>gateway model-agnostic</strong> est le bon niveau d'abstraction : il route par agent et par politique (GPT-5 pour les Copilot, Claude pour les verticaux à reasoning, Mistral pour le souverain), attribue le coût, applique les garde-fous — sans figer le choix de modèle. La diversité des modèles devient un paramètre gouverné, pas un chaos subi.</p>
+</section>
+
+<!-- ═════ SECTION 7 — Huit postes ═════ -->
+<section id="sec-7">
+<h2>7. Les huit postes — quand le coût de coordination domine</h2>
+
+<p>Grille CC-11, en k€. Attention : ici le « coût par interaction » est en réalité un <strong>coût de gouvernance par agent</strong>, et l'inférence n'est pas le poste qu'on croit.</p>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr><th>Poste</th><th class="center">Socle minimal 3 m</th><th class="center">Fédération 6 m</th><th class="center">Régime fédéré 12 m</th><th class="center">Plateforme mature 36 m</th></tr>
+</thead>
+<tbody>
+<tr><td>Inférence <em>(judge mutualisé + overhead gateway)</em></td><td class="center">6</td><td class="center">25</td><td class="center">70</td><td class="center">110</td></tr>
+<tr><td>Infra <em>(registre + gateway + observabilité)</em></td><td class="center">20</td><td class="center">60</td><td class="center">140</td><td class="center">220</td></tr>
+<tr style="background:rgba(184,88,46,0.04)"><td><strong>Équipe</strong> <em>(le CoE / AgentOps)</em></td><td class="center"><strong>120</strong></td><td class="center"><strong>360</strong></td><td class="center"><strong>760</strong></td><td class="center"><strong>1 100</strong></td></tr>
+<tr><td>Data</td><td class="center">8</td><td class="center">30</td><td class="center">60</td><td class="center">90</td></tr>
+<tr style="background:rgba(184,88,46,0.04)"><td><strong>Évaluation</strong> <em>(harness partagé)</em></td><td class="center"><strong>10</strong></td><td class="center"><strong>90</strong></td><td class="center"><strong>240</strong></td><td class="center"><strong>380</strong></td></tr>
+<tr style="background:rgba(184,88,46,0.04)"><td><strong>Gouvernance</strong> <em>(registre + comité)</em></td><td class="center"><strong>30</strong></td><td class="center"><strong>120</strong></td><td class="center"><strong>320</strong></td><td class="center"><strong>480</strong></td></tr>
+<tr><td>Sécurité <em>(gateway / identité)</em></td><td class="center">20</td><td class="center">80</td><td class="center">200</td><td class="center">300</td></tr>
+<tr><td>Change <em>(enablement métier)</em></td><td class="center">15</td><td class="center">90</td><td class="center">260</td><td class="center">360</td></tr>
+<tr style="background:var(--bg-2);font-weight:500"><td><strong>Total k€</strong></td><td class="center"><strong>229</strong></td><td class="center"><strong>855</strong></td><td class="center"><strong>2 050</strong></td><td class="center"><strong>3 040</strong></td></tr>
+<tr style="background:rgba(45,138,138,0.06)"><td><em>Coût de gouvernance / agent</em></td><td class="center"><em>22,00 €</em></td><td class="center"><em>9,50 €</em></td><td class="center"><em>4,20 €</em></td><td class="center"><em>2,30 €</em></td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Lecture transverse, et elle est le cœur intellectuel du cas :</p>
+
+<ul>
+  <li><strong>L'inférence est le plus PETIT poste.</strong> À l'échelle flotte, l'inférence par agent baisse (<a href="../chapitres/ch23-roi-paradoxe-agentique.md">LLMflation, ch. 23.2.1</a>) et ne représente, côté socle, que le LLM-as-judge mutualisé et l'overhead du gateway.</li>
+  <li><strong>Les postes dominants sont l'équipe (le CoE), la gouvernance et l'évaluation</strong> — c'est-à-dire le <strong>coût de coordination.</strong> C'est le <strong>paradoxe agentique au carré</strong> (<a href="../chapitres/ch23-roi-paradoxe-agentique.md">ch. 23.7</a>) : au niveau d'un agent, le poste équipe dominait déjà l'inférence ; au niveau de la flotte, c'est le coût de <em>coordination de la flotte</em> qui domine. L'unité de mesure se déplace de l'agent vers le portefeuille.</li>
+  <li><strong>Le coût de gouvernance par agent divise par ~10</strong> (22 € → 2,30 €) non par optimisation technique, mais par <strong>amortissement du socle sur un nombre croissant d'agents.</strong> C'est le mécanisme central.</li>
+</ul>
+
+<p>D'où le <strong>crossover du socle</strong> : <strong>≈ 10-15 agents.</strong> En dessous, pas besoin d'un socle lourd — les agents se gouvernent à la main, et une gouvernance lourde sur 5 agents est du gâchis. Au-delà, la mutualisation (éval + MCP + garde-fous) s'amortit et le socle devient rentable. C'est l'<strong>analogue flotte du crossover build/buy.</strong></p>
+</section>
+
+<!-- ═════ SECTION 8 — Évaluer une flotte ═════ -->
+<section id="sec-8">
+<h2>8. Évaluer une flotte — le test de non-contradiction</h2>
+
+<p>L'éval <strong>à l'échelle de la flotte</strong> est un problème nouveau. On ne peut pas faire 50 régression suites artisanales — ce serait recommencer la duplication qu'on veut tuer.</p>
+
+<p><strong>1. Éval-as-a-service.</strong> Un harness <strong>partagé</strong>, des suites de régression réutilisables <strong>par archétype</strong> (RAG, tool-use, conversationnel), un LLM-as-judge mutualisé, des <strong>gates de promotion standardisés.</strong> Aucun agent en prod sans passer le gate. Renvoi : <a href="../chapitres/ch19-evaluation-benchmarks.md">évaluation (ch. 19)</a>.</p>
+
+<p><strong>2. Test de non-contradiction inter-agents.</strong> Les 50 agents donnent-ils des réponses <strong>cohérentes</strong> sur les politiques communes — notes de frais, congés ? C'est un test propre à la flotte, qu'aucun agent isolé ne peut faire sur lui-même. C'est ce test qui aurait attrapé les deux agents contradictoires du CODIR.</p>
+
+<p><strong>3. Détection de collision.</strong> Deux agents au périmètre qui se chevauchent et divergent — le doublon avant qu'il ne devienne une contradiction.</p>
+
+<p><strong>4. Validation continue, pas one-shot.</strong> La dérive d'un agent passe inaperçue si l'éval n'est pas mutualisée et permanente. L'observabilité transverse veille en continu : chute du taux d'usage (zombie en formation), pic de coût, réponse contradictoire, accès écriture non prévu au tiering. Renvoi : <a href="../chapitres/ch20-observabilite-cognitive-audit-trail.md">observabilité transverse / audit trail (ch. 20)</a>.</p>
+</section>
+
+<!-- ═════ SECTION 9 — Tiering et cycle de vie ═════ -->
+<section id="sec-9">
+<h2>9. Tiering et cycle de vie — la gouvernance proportionnée</h2>
+
+<p>On ne met <strong>pas</strong> la même gouvernance sur les 50. C'est la clé de la scalabilité : sans tiering, soit on sous-gouverne les agents à risque, soit on sur-gouverne les agents inoffensifs (et les métiers fuient).</p>
+
+<figure id="fig-02">
+  <button class="zoom-btn" aria-label="Zoom">⛶</button>
+  <img src="images/CC-11-flotte-agents/CC-11-fig-02-tiering-cycle-vie.svg" alt="Tiering par le risque + cycle de vie d'un agent">
+  <figcaption><a class="anchor" href="#fig-02">¶</a>À gauche, le tiering 3 niveaux (tier 1 lourd / tier 2 standard / tier 3 self-service cadré) qui rend la gouvernance proportionnée. À droite, le cycle de vie : idée → admission au registre → build → gate d'éval → prod → monitoring → revue périodique → dé-commissionnement. Le gate d'éval et le dé-commissionnement sont les deux portes que la sprawl n'avait pas.</figcaption>
+</figure>
+
+<ul>
+  <li><strong>Tier 1 (fort)</strong> : client-facing, écrit dans un système régulé, données sensibles → revue lourde (sécu, DPO), éval renforcée, supervision humaine.</li>
+  <li><strong>Tier 2 (moyen)</strong> : écrit dans des systèmes internes non régulés → revue standard.</li>
+  <li><strong>Tier 3 (faible)</strong> : RAG interne lecture seule → <strong>self-service cadré</strong> — la paved road dans sa forme la plus pure.</li>
+</ul>
+
+<p>Le <strong>cycle de vie</strong> d'un agent calque celui d'une application, mais pour agents : idée → <strong>admission au registre</strong> → build → <strong>gate d'éval</strong> → prod → monitoring → revue périodique → <strong>dé-commissionnement.</strong> Les deux portes que la sprawl n'avait pas sont le <strong>gate d'éval</strong> (rien en prod sans passer) et le <strong>dé-commissionnement</strong> (le zombie a une fin de vie).</p>
+
+<p><strong>AI Act par agent</strong> : la plupart des 50 relèvent du risque limité/minimal (productivité interne), mais certains basculent <strong>haut risque</strong> — un agent RH de tri de candidatures (Annexe III §4), un agent qui touche au crédit (Annexe III §5). Le <strong>registre porte le statut AI Act de chaque agent</strong> : le registre <strong>est</strong> l'outil de conformité de la flotte. Sans lui, on ne peut ni identifier ni documenter les agents haut risque face au régulateur. Renvoi : <a href="../chapitres/ch25-gouvernance-ai-act.md">AI Act, registre par agent (ch. 25)</a>.</p>
+
+<p><strong>Shadow agents</strong> : <strong>amnistie + onboarding</strong> (« ramène ton agent au registre, on t'aide à le mettre en conformité ») plutôt que la chasse. On convertit la sprawl en flotte au lieu de la combattre — la leçon shadow de CC-00, à l'échelle agents.</p>
+</section>
+
+<!-- ═════ SECTION 10 — ROI portefeuille ═════ -->
+<section id="sec-10">
+<h2>10. ROI au niveau portefeuille — éteindre vaut mieux qu'ajouter</h2>
+
+<p>Axe principal : <strong>Coût</strong> (TCO du portefeuille, fin des doublons et des zombies). Secondaires : Qualité (cohérence inter-agents), Bien-être (paved road). Méthode : <strong>TCO de portefeuille</strong> — et non par agent — + Cigref Hard/Soft.</p>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Métrique</th><th class="center">Borne basse</th><th class="center">Cible</th><th class="center">Borne haute</th><th class="center">Catégorie</th></tr></thead>
+<tbody>
+<tr><td><code>tco-infrastructure</code></td><td class="center">−10 %</td><td class="center"><strong>−25 % TCO portefeuille</strong></td><td class="center">−40 %</td><td class="center"><span style="color:var(--accent);font-weight:600">Hard</span></td></tr>
+<tr><td><code>response-consistency</code></td><td class="center">+5 pts</td><td class="center"><strong>+10 pts cohérence inter-agents</strong></td><td class="center">+15 pts</td><td class="center"><span style="color:var(--teal);font-weight:600">Soft</span></td></tr>
+<tr><td><code>regulatory-compliance</code></td><td class="center">tier 1 documentés</td><td class="center"><strong>registre = conformité tenue</strong></td><td class="center">audit passé</td><td class="center"><span style="color:var(--warn);font-weight:600">Mixed</span></td></tr>
+<tr><td><code>employee-engagement</code></td><td class="center">+2</td><td class="center"><strong>+5 (paved road facile)</strong></td><td class="center">+8</td><td class="center"><span style="color:var(--teal);font-weight:600">Soft</span></td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Le contre-pied à comprendre : <strong>le premier gisement de valeur n'est pas d'ajouter des agents, c'est d'éteindre les zombies.</strong> Sur 50 agents, souvent moins de 40 % sont réellement utilisés. Le coût de la sprawl tient en trois lignes : (a) licences/sièges dupliqués, (b) duplication d'effort (chacun rebuild les mêmes MCP), (c) risque et incidents. Le socle paie par <strong>mutualisation.</strong></p>
+
+<blockquote>
+KPI gardien — et principal — de flotte : le <strong>taux d'agents actifs avec ROI prouvé vs zombies.</strong> Un agent non utilisé est un coût pur, pas un actif. C'est aussi le gardien qui empêche le socle de devenir lui-même une bureaucratie : si le socle ne fait pas monter ce taux (en éteignant les zombies, en évitant les doublons), il ne se justifie pas. Le socle se mesure à ce qu'il nettoie, pas à ce qu'il ajoute.
+</blockquote>
+
+<p><strong>Métriques non retenues</strong> : <code>revenue</code> (le ROI du socle n'est pas du CA direct — il multiplie la valeur des agents en aval, comme le socle data de CC-03), <code>processing-time</code> (c'est le ROI de chaque agent métier — ne pas double-compter), <code>nps</code> (hors périmètre).</p>
+</section>
+
+<!-- ═════ SECTION 11 — Équipe / vélocité / sclérosants ═════ -->
+<section id="sec-11">
+<h2>11. L'équipe, la vélocité, les sclérosants</h2>
+
+<p><strong>5,6 ETP</strong> pour le socle minimal, avec un poste pivot qui est un rôle nouveau.</p>
+
+<div class="table-wrap">
+<table>
+<thead><tr><th>Rôle</th><th class="center">ETP</th><th>Profil cible</th></tr></thead>
+<tbody>
+<tr><td><strong>Head of AgentOps / Platform Owner</strong></td><td class="center">1,0</td><td><strong>pivot</strong> — pense portefeuille, arbitre le build/buy du socle, anime le comité (pas un chef de projet outil)</td></tr>
+<tr><td>Ingénieur plateforme (registre + observabilité)</td><td class="center">1,5</td><td>Schéma de métadonnées, ingestion des inventaires hétérogènes, OpenTelemetry GenAI</td></tr>
+<tr><td>Ingénieur gateway / identité agent</td><td class="center">1,0</td><td>Le sclérosant : authn/authz par agent, scopes MCP, routing, FinOps</td></tr>
+<tr><td>Référent éval-as-a-service</td><td class="center">0,8</td><td>Consolide les harness des verticaux en suites par archétype + non-contradiction</td></tr>
+<tr><td>RSSI référent flotte</td><td class="center">0,5</td><td>Politiques de garde-fous par tier, revue des accès écriture</td></tr>
+<tr><td>DPO référent flotte</td><td class="center">0,5</td><td>Statut AI Act par agent, tiering, FRIA des agents haut risque</td></tr>
+<tr><td>Change / animation paved road</td><td class="center">0,3</td><td>Amnistie shadow, onboarding des owners métier</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>En régime, 8 ETP de cœur (le CoE) + des agent product owners distribués dans les métiers — <strong>le coût n'est pas centralisé</strong>, chaque agent garde son owner.</p>
+
+<p><strong>Quatre sclérosants :</strong></p>
+<ul>
+  <li>Le <strong>gateway transverse</strong> : fédérer Copilot + verticaux + shadow sans casser l'existant — 2-3 mois incompressibles.</li>
+  <li>L'<strong>amnistie shadow</strong> : faire revenir les ~12 agents demande de la diplomatie, pas de la répression — sinon ils replongent dans l'ombre.</li>
+  <li>La <strong>résistance à la re-centralisation perçue</strong> : la paved road doit être PLUS facile que le shadow, sinon le socle est contourné. C'est du change, pas de la tech.</li>
+  <li>L'<strong>ingestion des inventaires hétérogènes</strong> : aligner Copilot admin, build et shadow dans un schéma de registre unique.</li>
+</ul>
+
+<p><strong>Deadlines</strong> : AI Act transparence + identification des agents haut risque (<strong>2026-08</strong>), obligations complètes (<strong>2027-08</strong>, le registre est la pièce qui prouve la conformité — amende jusqu'à 7 % du CA), et le comité de portefeuille trimestriel — sans dé-commissionnement actif, la sprawl revient.</p>
+</section>
+
+<!-- ═════ SECTION 12 — Le débat ═════ -->
+<section id="sec-12">
+<h2>12. Le débat — socle ou bureaucratie ?</h2>
+
+<div class="case-debate">
+  <div class="label">Controverse</div>
+  <div class="question">Faut-il un socle fédéré, ou est-ce une bureaucratie qui tuera la vélocité métier qui a fait naître la flotte ?</div>
+
+  <div class="columns">
+    <div class="col pour">
+      <h4>Pour le socle fédéré</h4>
+      <ul>
+        <li>Passé ~10-15 agents, la sprawl (doublons, zombies, accès non revus, réponses contradictoires) coûte plus que n'importe quel agent isolé — le ROI est au niveau du portefeuille.</li>
+        <li>Le registre est l'outil de conformité AI Act de la flotte : sans lui, on ne peut ni identifier ni documenter les agents haut risque.</li>
+        <li>La mutualisation (éval-as-a-service, catalogue de composants, garde-fous) paie le socle : on arrête de rebuilder 4 fois la même éval et N fois les mêmes MCP.</li>
+      </ul>
+    </div>
+    <div class="col contre">
+      <h4>Contre le risque de bureaucratie</h4>
+      <ul>
+        <li>La flotte est née bottom-up parce que l'IT était trop lent : un socle mal pensé re-centralise, redevient un goulot et repousse les métiers vers le shadow.</li>
+        <li>Le socle a un coût fixe (plateforme + CoE) : sous ~10-15 agents, il coûte plus qu'il ne rapporte — la gouvernance lourde sur 5 agents est du gâchis.</li>
+        <li>Un comité trimestriel qui ne dé-commissionne jamais devient une bureaucratie de plus : le socle doit se mesurer au taux d'agents actifs qu'il fait monter.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="verdict">
+    <strong>Verdict pondéré.</strong> GO socle fédéré — <strong>mais</strong> la gouvernance est <strong>proportionnée au risque</strong> (tiering 3 niveaux, pas uniforme) et le modèle est <strong>fédéré</strong> (le CoE possède le socle, les métiers possèdent leurs agents). La paved road doit être plus facile que le shadow. Le socle se justifie par un seul KPI : le <strong>taux d'agents actifs avec ROI prouvé</strong> qu'il fait monter en éteignant zombies et doublons. <em>(cf. <a href="../chapitres/ch23-roi-paradoxe-agentique.md">ch. 23.7</a> + <a href="../chapitres/ch26-ia-et-travail.md">ch. 26</a>.)</em>
+  </div>
+</div>
+</section>
+
+<!-- ═════ SECTION 13 — Trois choix ═════ -->
+<section id="sec-13">
+<h2>13. Trois choix qu'il faut faire — et leurs conséquences</h2>
+
+<p>Les bifurcations ne sont pas pour noter le lecteur ; elles sont pour le faire <strong>rencontrer</strong> les chemins. Chaque option est plausible. Une seule est sage.</p>
+
+<div class="case-choice">
+  <div class="scenario">13.1 — Vous êtes le DSI</div>
+  <div class="question">Face aux 50 agents métiers + 4 verticaux + 12 shadow, votre modèle opératoire est…</div>
+  <div class="options">
+    <div class="option">
+      <button class="option-toggle" type="button"><span class="badge">A</span> Centralisé — la DSI reprend et gère tous les agents <span class="arrow">▾</span></button>
+      <div class="reveal">
+        <p>Contrôle maximal sur le papier — mais goulot d'étranglement immédiat, file d'attente, l'innovation métier meurt. Ne passe pas à l'échelle de 50+ agents, et les métiers repartent en shadow.</p>
+        <p class="analyse">Antipattern de la re-centralisation (<a href="../chapitres/ch26-ia-et-travail.md">ch. 26</a>) : tue la vélocité qui a fait naître la flotte.</p>
+      </div>
+    </div>
+    <div class="option">
+      <button class="option-toggle" type="button"><span class="badge">B</span> Décentralisé — chaque métier continue à gérer ses agents <span class="arrow">▾</span></button>
+      <div class="reveal">
+        <p>Vélocité maximale — mais c'est exactement la sprawl actuelle : doublons, zombies, accès non revus, réponses contradictoires. Le risque explose sans personne pour le voir.</p>
+        <p class="analyse">C'est l'état initial du cas : l'absence de gouvernance EST une gouvernance, la pire (<a href="../chapitres/ch26-ia-et-travail.md">ch. 26</a>).</p>
+      </div>
+    </div>
+    <div class="option">
+      <button class="option-toggle" type="button"><span class="badge">C</span> Fédéré hub-and-spoke — le CoE possède le socle, les métiers possèdent leurs agents <span class="arrow">▾</span></button>
+      <div class="reveal">
+        <p>Le CoE tient le registre, les standards, l'éval-as-a-service, les garde-fous ; chaque agent garde son owner métier et son ROI. La paved road rend la voie conforme la plus facile. La sprawl devient une flotte.</p>
+        <p class="analyse">La bonne réponse (<a href="../chapitres/ch26-ia-et-travail.md">ch. 26</a>) : fédérer sans centraliser l'exécution.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="case-choice">
+  <div class="scenario">13.2 — Quel socle pour une flotte hétérogène ?</div>
+  <div class="question">Copilot + build + shadow : sur quoi vous appuyez-vous pour gouverner l'ensemble ?</div>
+  <div class="options">
+    <div class="option">
+      <button class="option-toggle" type="button"><span class="badge">A</span> Microsoft-native uniquement (Purview + Entra Agent ID) <span class="arrow">▾</span></button>
+      <div class="reveal">
+        <p>Vous gouvernez parfaitement les 50 Copilot — et vous êtes aveugle sur les 4 verticaux build et les 12 shadow. Vous croyez tenir la flotte, vous en tenez un tiers. Lock-in en prime.</p>
+        <p class="analyse">Piège de l'angle mort : le natif ne voit que sa propre plateforme (<a href="../chapitres/ch15-mcp-plateforme.md">ch. 15</a>).</p>
+      </div>
+    </div>
+    <div class="option">
+      <button class="option-toggle" type="button"><span class="badge">B</span> Hybride fédéré — natif MS + registre/gateway maison léger qui chapeaute tout <span class="arrow">▾</span></button>
+      <div class="reveal">
+        <p>Vous exploitez le natif sans le réinventer, vous fédérez le reste avec un socle minimal, vous cadrez le shadow par amnistie. Le socle fédère, il ne centralise pas l'exécution.</p>
+        <p class="analyse">La bonne réponse (<a href="../chapitres/ch15-mcp-plateforme.md">ch. 15</a> + <a href="../chapitres/ch16-mcp-securite.md">ch. 16</a>) : fédérer l'hétérogène par-dessus les plateformes.</p>
+      </div>
+    </div>
+    <div class="option">
+      <button class="option-toggle" type="button"><span class="badge">C</span> Tout raser et build un socle maison complet d'un coup <span class="arrow">▾</span></button>
+      <div class="reveal">
+        <p>Souverain et homogène — mais effort plateforme lourd, des mois sans reprendre la main, et vous réinventez ce que le natif Microsoft fait déjà bien pour les Copilot.</p>
+        <p class="analyse">Fausse pureté : on ne réinvente pas la gouvernance des Copilot (<a href="../chapitres/ch22-runtime-manage.md">ch. 22</a>).</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="case-choice">
+  <div class="scenario">13.3 — Que faire des 50 existants + des 12 shadow ?</div>
+  <div class="question">Vous tranchez le sort du stock déjà déployé.</div>
+  <div class="options">
+    <div class="option">
+      <button class="option-toggle" type="button"><span class="badge">A</span> Tout raser et repartir propre <span class="arrow">▾</span></button>
+      <div class="reveal">
+        <p>Vous perdez l'adhésion des métiers d'un coup, vous détruisez 18 mois d'apprentissage terrain, et le shadow se reforme aussitôt — en pire, parce que la confiance est cassée.</p>
+        <p class="analyse">Antipattern : la table rase tue l'adhésion (<a href="../chapitres/ch26-ia-et-travail.md">ch. 26</a>).</p>
+      </div>
+    </div>
+    <div class="option">
+      <button class="option-toggle" type="button"><span class="badge">B</span> Amnistie + onboarding + tiering proportionné <span class="arrow">▾</span></button>
+      <div class="reveal">
+        <p>« Ramène ton agent au registre, on t'aide à le mettre en conformité. » Vous convertissez la sprawl en flotte, vous récupérez le signal du shadow, vous classez par risque pour ne pas sur-gouverner les agents inoffensifs.</p>
+        <p class="analyse">La bonne réponse (<a href="../chapitres/ch26-ia-et-travail.md">ch. 26</a>) : convertir plutôt que combattre — la leçon shadow de CC-00 à l'échelle agents.</p>
+      </div>
+    </div>
+    <div class="option">
+      <button class="option-toggle" type="button"><span class="badge">C</span> Laisser courir, on verra plus tard <span class="arrow">▾</span></button>
+      <div class="reveal">
+        <p>La sprawl continue de grossir, les doublons se multiplient, et le jour où un agent haut risque déclenche un incident AI Act, vous n'avez ni registre ni audit trail à présenter au régulateur.</p>
+        <p class="analyse">Le risque différé : sans registre, pas de conformité possible (<a href="../chapitres/ch25-gouvernance-ai-act.md">ch. 25</a>).</p>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ═════ SECTION 14 — Quiz ═════ -->
+<section id="sec-14">
+<h2>14. Quiz — vérifier qu'on a saisi</h2>
+
+<div class="case-quiz" data-correct="1">
+  <div class="label">Q1</div>
+  <div class="question">Pourquoi le ROI d'une flotte d'agents se mesure-t-il au niveau du portefeuille, et non par agent ?</div>
+  <div class="options">
+    <button type="button">Parce que les agents sont trop nombreux pour être mesurés un par un</button>
+    <button type="button">Parce que le socle (registre, gateway, éval, garde-fous) a un coût fixe qui s'amortit sur N agents, et que les coûts de la sprawl (doublons, zombies, incidents) sont des coûts de portefeuille — pas d'agent isolé</button>
+    <button type="button">Parce que l'AI Act l'impose</button>
+    <button type="button">Parce que les agents n'ont pas de ROI individuel</button>
+  </div>
+  <div class="explication">Sous ~10-15 agents, le socle coûte plus qu'il ne rapporte. Au-delà, la mutualisation l'amortit (le crossover du socle) et le coût de gouvernance par agent s'effondre. Le coût de coordination devient le poste dominant — paradoxe agentique au carré (<a href="../chapitres/ch23-roi-paradoxe-agentique.md">ch. 23.7</a>).</div>
+</div>
+
+<div class="case-quiz" data-correct="2">
+  <div class="label">Q2</div>
+  <div class="question">Quel est le bon modèle opératoire pour gouverner une flotte qui a proliféré bottom-up ?</div>
+  <div class="options">
+    <button type="button">Centralisé : la DSI reprend tout en main</button>
+    <button type="button">Décentralisé : chaque métier garde la main sans cadre</button>
+    <button type="button">Fédéré hub-and-spoke : le CoE possède le socle et les standards, les métiers possèdent leurs agents dans le cadre — avec une paved road plus facile que le shadow</button>
+    <button type="button">Externalisé : un prestataire gère la flotte</button>
+  </div>
+  <div class="explication">Le centralisé tue la vélocité (goulot), le décentralisé EST la sprawl actuelle. Le fédéré fait posséder le socle au CoE et les agents aux métiers (owner + ROI), avec la paved road comme principe : rendre la voie conforme la plus facile à emprunter (<a href="../chapitres/ch26-ia-et-travail.md">ch. 26</a>).</div>
+</div>
+
+<div class="case-quiz" data-correct="1">
+  <div class="label">Q3</div>
+  <div class="question">Pourquoi le registre d'agents est-il plus qu'un inventaire ?</div>
+  <div class="options">
+    <button type="button">Parce qu'il liste les agents par ordre alphabétique</button>
+    <button type="button">Parce qu'il porte le statut AI Act de chaque agent : c'est l'outil de conformité de la flotte, qui permet d'identifier et de documenter les agents haut risque (Annexe III)</button>
+    <button type="button">Parce qu'il remplace le gateway</button>
+    <button type="button">Parce qu'il entraîne les modèles</button>
+  </div>
+  <div class="explication">Le registre transforme une collection ingouvernable en flotte pilotable. Surtout, il PORTE le statut AI Act par agent : sans lui, on ne peut ni identifier les agents Annexe III (RH, crédit) ni prouver leur conformité au régulateur (<a href="../chapitres/ch25-gouvernance-ai-act.md">ch. 25</a>).</div>
+</div>
+</section>
+
+<!-- ═════ SECTION 15 — Verdict ═════ -->
+<section id="sec-15">
+<h2>15. Verdict — GO socle fédéré</h2>
+
+<div class="case-verdict">
+  <div class="stamp">▰▰▰ GO socle fédéré ▰▰▰</div>
+  <h3>Gouverner le portefeuille, sinon la sprawl coûte plus qu'elle ne rapporte</h3>
+  <ul>
+    <li><strong>Registre obligatoire</strong> — aucun agent sans owner métier nommé + fiche au registre (sinon extinction).</li>
+    <li><strong>Gouvernance proportionnée au risque</strong> (tiering 3 niveaux), pas uniforme.</li>
+    <li><strong>Éval-as-a-service partagée</strong> + gate de prod pour tous les agents.</li>
+    <li><strong>Modèle fédéré</strong> — le CoE possède le socle, les métiers possèdent leurs agents ; paved road plus facile que le shadow.</li>
+    <li><strong>Dé-commissionnement actif des zombies</strong> (KPI taux d'agents actifs avec ROI prouvé).</li>
+    <li><strong>Socle hybride</strong> — natif Microsoft pour les Copilot + registre/gateway transverse maison pour fédérer le reste + amnistie/onboarding du shadow.</li>
+  </ul>
+</div>
+
+<p>Aux conditions remplies, la flotte cesse d'être une collection ingouvernable pour devenir un portefeuille piloté. <strong>CC-11 ferme l'arc que CC-00 ouvrait</strong> : là où l'assistant transverse montrait l'IA <em>non maîtrisée</em> qui entre par tous les côtés, le socle fédéré montre comment on <em>reprend la main</em> sur la flotte qui en résulte. Les MCP servers, les harness d'éval, les garde-fous que chaque cas avait buildés pour lui-même (CC-01, CC-02, CC-09, CC-10, CC-03) deviennent ici des <strong>composants mutualisés d'un socle commun.</strong> C'est le cas qui transforme une collection de projets en plateforme — et la leçon de clôture de l'annexe : <strong>on ne fait pas grandir une flotte, on la gouverne.</strong></p>
+</section>
+
+<!-- ═════ RENVOIS LIVRE ═════ -->
+<aside class="renvois-section" id="renvois">
+<div class="label">Renvois livre</div>
+<h2>Chapitres mobilisés</h2>
+<ul>
+  <li><a href="../chapitres/ch11-patterns-orchestration.md"><strong>Ch. 11</strong> — Patterns d'orchestration multi-agent</a></li>
+  <li><a href="../chapitres/ch13-surfaces-agentiques.md"><strong>Ch. 13</strong> — Surfaces agentiques</a></li>
+  <li><a href="../chapitres/ch15-mcp-plateforme.md"><strong>Ch. 15</strong> — MCP plateforme (le socle fédéré)</a></li>
+  <li><a href="../chapitres/ch16-mcp-securite.md"><strong>Ch. 16</strong> — Sécurité MCP (gateway / identité agent)</a></li>
+  <li><a href="../chapitres/ch19-evaluation-benchmarks.md"><strong>Ch. 19</strong> — Évaluation (éval-as-a-service, gate de promotion)</a></li>
+  <li><a href="../chapitres/ch20-observabilite-cognitive-audit-trail.md"><strong>Ch. 20</strong> — Observabilité transverse / audit trail de flotte</a></li>
+  <li><a href="../chapitres/ch21-gardefous-securite-globale.md"><strong>Ch. 21</strong> — Garde-fous &amp; politiques par niveau de risque</a></li>
+  <li><a href="../chapitres/ch22-runtime-manage.md"><strong>Ch. 22</strong> — Runtime managé vs maison (build/buy du socle)</a></li>
+  <li><a href="../chapitres/ch23-roi-paradoxe-agentique.md"><strong>Ch. 23.2.1</strong> — LLMflation (l'inférence par agent baisse)</a></li>
+  <li><a href="../chapitres/ch23-roi-paradoxe-agentique.md"><strong>Ch. 23.7</strong> — Paradoxe agentique (coût de coordination dominant)</a></li>
+  <li><a href="../chapitres/ch25-gouvernance-ai-act.md"><strong>Ch. 25</strong> — Gouvernance AI Act (le registre = conformité par agent)</a></li>
+  <li><a href="../chapitres/ch26-ia-et-travail.md"><strong>Ch. 26</strong> — IA et travail (métier vs DSI, modèle fédéré)</a></li>
+</ul>
+</aside>
+
+</main>
+
+<footer class="site-foot">
+  <p>Format co-écrit avec l'aide d'une IA · Données et calibrage : analyse Mathieu Guglielmino · juin 2026</p>
+  <p>Mathieu Guglielmino · Practice Manager Lincoln</p>
+</footer>
+
+<!-- ═════ ZOOM OVERLAY ═════ -->
+<div id="zoom-overlay" role="dialog" aria-modal="true" aria-label="Zoom plein écran">
+  <button class="zoom-close" aria-label="Fermer le zoom">×</button>
+  <div id="zoom-content"></div>
+</div>
+
+<script>
+// ═════ ZOOM ═════
+(function setupZoom() {
+  const overlay = document.getElementById('zoom-overlay');
+  const content = document.getElementById('zoom-content');
+  const closeBtn = overlay.querySelector('.zoom-close');
+
+  document.querySelectorAll('main figure .zoom-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.preventDefault();
+      const fig = btn.closest('figure');
+      const img = fig.querySelector('img, svg');
+      if (!img) return;
+      content.innerHTML = '';
+      const clone = img.cloneNode(true);
+      content.appendChild(clone);
+      overlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    });
+  });
+
+  closeBtn.addEventListener('click', closeOverlay);
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) closeOverlay();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && overlay.classList.contains('open')) closeOverlay();
+  });
+
+  function closeOverlay() {
+    overlay.classList.remove('open');
+    document.body.style.overflow = '';
+    content.innerHTML = '';
+  }
+})();
+
+// ═════ CASE-CHOICE — click to reveal ═════
+(function setupChoices() {
+  document.querySelectorAll('.case-choice .option-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const option = btn.closest('.option');
+      option.classList.toggle('open');
+    });
+  });
+})();
+
+// ═════ QUIZ — click answer to reveal ═════
+(function setupQuiz() {
+  document.querySelectorAll('.case-quiz').forEach(quiz => {
+    const correctIdx = parseInt(quiz.dataset.correct, 10);
+    const buttons = quiz.querySelectorAll('.options button');
+    buttons.forEach((btn, idx) => {
+      btn.addEventListener('click', () => {
+        if (quiz.classList.contains('answered')) return;
+        quiz.classList.add('answered');
+        buttons.forEach((b, i) => {
+          if (i === correctIdx) b.classList.add('correct');
+          else if (i === idx) b.classList.add('wrong');
+        });
+      });
+    });
+  });
+})();
+</script>
+
+</body>
+</html>

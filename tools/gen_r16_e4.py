@@ -278,8 +278,8 @@ def make_e4():
 
     svg = []
     svg.append('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {} {}" font-family="Inter, system-ui, sans-serif" role="img" aria-labelledby="title-e4">'.format(W, H))
-    svg.append('  <title id="title-e4">E4 — Threat model unifié 2026 : six surfaces, six familles, quatre parades load-bearing</title>')
-    svg.append('  <desc>Threat model unifié 2026 pour agents IA. Six surfaces d\'attaque : modèle, prompt, mémoire, outil, protocole, surface utilisateur. Pour chaque surface : 2-3 vecteurs typiques avec exemples CVE/incidents, parade load-bearing, renvoi chapitre. Quatre parades transverses : Sigstore + hash pinning, tool tagging, allowlist namespace, HITL writes.</desc>')
+    svg.append('  <title id="title-e4">E4 — Threat model unifié 2026 : six surfaces, six familles, quatre parades pivot</title>')
+    svg.append('  <desc>Threat model unifié 2026 pour agents IA. Six surfaces d\'attaque : modèle, prompt, mémoire, outil, protocole, surface utilisateur. Pour chaque surface : 2-3 vecteurs typiques avec exemples CVE/incidents, parade pivot, renvoi chapitre. Quatre parades transverses : Sigstore + hash pinning, tool tagging, allowlist namespace, HITL writes.</desc>')
 
     svg.append('''  <style>
     .tag { font: 700 12px 'JetBrains Mono', monospace; fill: #7a1e1e; letter-spacing: 0.18em; }
@@ -306,7 +306,7 @@ def make_e4():
     # Header
     svg.append('  <text x="50" y="40" class="tag">SCHÉMA E4 · ACTE IV CHARNIÈRE Ch.19 · SCHÉMA TRANSVERSE RSSI</text>')
     svg.append('  <text x="50" y="84" class="title">Threat model unifié 2026 — six surfaces d\'attaque agentiques</text>')
-    svg.append('  <text x="50" y="110" class="subtitle">Cartographie défensive : à chaque surface, deux à trois vecteurs typiques, une parade load-bearing, un renvoi chapitre détaillé.</text>')
+    svg.append('  <text x="50" y="110" class="subtitle">Cartographie défensive : à chaque surface, deux à trois vecteurs typiques, une parade pivot, un renvoi chapitre détaillé.</text>')
 
     # 6 surface cards in 3x2 grid
     surfaces = [
@@ -420,10 +420,10 @@ def make_e4():
         renvoi_y = cy + card_h - 14
         svg.append('  <text x="{:.1f}" y="{:.1f}" class="renvoi">{}</text>'.format(cx + 18, renvoi_y, escape(surf["renvoi"])))
 
-    # Bottom : 4 parades load-bearing transverses
+    # Bottom : 4 parades pivot transverses
     lb_y = grid_y + grid_h + 30
     lb_h = 90
-    svg.append('  <text x="50" y="{}" class="loadbearing-title">QUATRE PARADES LOAD-BEARING (transverses aux six surfaces)</text>'.format(lb_y - 8))
+    svg.append('  <text x="50" y="{}" class="loadbearing-title">QUATRE PARADES pivot (transverses aux six surfaces)</text>'.format(lb_y - 8))
 
     parades = [
         ("Sigstore + hash pinning", "Signature cryptographique des serveurs MCP. Spec v2 obligatoire automne 2026 (AAIF). Cible : compromise registry."),

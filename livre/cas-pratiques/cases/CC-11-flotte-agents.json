@@ -1,0 +1,914 @@
+{
+  "meta": {
+    "id": "CC-11",
+    "titre": "Gouverner une flotte d'agents",
+    "secteur": "Transverse",
+    "facette_scaling": "gouvernance",
+    "facettes_secondaires": [
+      "build_vs_buy",
+      "evaluation"
+    ],
+    "regime": "hybride_federe",
+    "ia_type": "agentic",
+    "gabarit": "charniere",
+    "thes_e_une_ligne": "Passé une dizaine d'agents, le problème n'est plus de faire un agent mais de gouverner une flotte : sans socle fédéré ni modèle opératoire, la prolifération coûte plus qu'elle ne rapporte. Le ROI n'est pas par agent, il est au niveau du portefeuille.",
+    "auteur": "Mathieu Guglielmino",
+    "date_v1": "2026-06-03"
+  },
+  "mise_en_situation": {
+    "scene": "CODIR de fin de trimestre, grand groupe / ETI. En 18 mois, l'IA agentique est entrée bottom-up, par tous les côtés. Le DSI prend la parole avec une diapositive qu'il aurait préféré ne pas montrer : un agent RH, monté en quelques clics par une équipe métier, écrit dans le SIRH — sans aucune revue sécu. Le DAF enchaîne : il a compté sept abonnements agentiques en doublon, payés par sept directions qui s'ignorent. La DRH signale que deux agents donnent des réponses contradictoires sur la politique de notes de frais. Et un agent client-facing est passé en production sans la moindre évaluation. La question qui s'impose, et que personne ne sait à qui adresser : « on a une cinquantaine d'agents là-dedans. Qui les gère, comment, sur quel socle — et est-ce que ça nous coûte plus que ça ne rapporte ? »",
+    "chiffres_bruts": [
+      {
+        "label": "Agents Microsoft Copilot Studio (métiers)",
+        "valeur": "≈ 50"
+      },
+      {
+        "label": "Agents verticaux « sérieux » (équipes data)",
+        "valeur": "4"
+      },
+      {
+        "label": "Agents shadow (plateformes grand public)",
+        "valeur": "≈ 12"
+      },
+      {
+        "label": "Agents « zombies » (déployés, jamais utilisés)",
+        "valeur": "≈ 60 %"
+      },
+      {
+        "label": "Agents avec owner métier nommé",
+        "valeur": "< 30 %"
+      },
+      {
+        "label": "Agents passés par un gate d'éval",
+        "valeur": "≈ 1 sur 5"
+      },
+      {
+        "label": "Registre central des agents",
+        "valeur": "0 (n'existe pas)"
+      }
+    ],
+    "horizon_temporel": "La flotte existe déjà (elle a proliféré). Le vrai projet : 6 mois pour poser un socle minimal (registre + gateway + éval-as-a-service), puis 18-24 mois pour fédérer la flotte et instaurer un comité de portefeuille."
+  },
+  "architecture_actuelle": {
+    "composants": [
+      {
+        "categorie": "plateforme_buy",
+        "nom": "Microsoft Copilot Studio — ≈ 50 agents montés bottom-up par les métiers (RH, finance, achats, IT, juridique, commerce, support)",
+        "criticite_pour_le_cas": "read_write",
+        "remarque": "La sprawl principale. Self-service métier sans cadre : chaque direction crée ses agents, certains écrivent dans des systèmes internes (SIRH, ERP) sans revue sécu. Gouvernable nativement via Purview + Entra Agent ID + admin center — mais ce natif ne voit QUE les agents Copilot."
+      },
+      {
+        "categorie": "plateforme_build",
+        "nom": "Verticaux « sérieux » buildés par les équipes data — copilot conseiller (CC-01), agent vocal (CC-02), agent guichet (CC-09), un agent fraude temps réel",
+        "criticite_pour_le_cas": "read_write_via_proxy_validation",
+        "remarque": "Les agents à fort enjeu, sur stacks hétérogènes (orchestrateurs maison, MCP custom, modèles variés). Hors du périmètre du natif Microsoft. Chacun a rebuildé sa propre éval, ses propres MCP servers, ses propres garde-fous — duplication d'effort massive."
+      },
+      {
+        "categorie": "shadow",
+        "nom": "≈ 12 agents shadow montés en douce sur des plateformes grand public (GPT builders, assistants tiers)",
+        "criticite_pour_le_cas": "non_concerne",
+        "remarque": "Invisibles du SI. Accès via comptes perso ou abonnements d'équipe non déclarés. Le risque le plus diffus : données internes qui transitent hors de tout cadre. À traiter par amnistie + onboarding, pas par la chasse."
+      },
+      {
+        "categorie": "systemes_sous_jacents",
+        "nom": "SI cible des agents — SIRH, ERP finance, CRM, datamart, ITSM, bases documentaires",
+        "criticite_pour_le_cas": "read_write_via_proxy_validation",
+        "remarque": "Ce que les agents touchent. Le problème : les accès sont accordés par agent, à la création, sans revue centralisée. Un agent RH écrit dans le SIRH, un agent finance lit le datamart — personne n'a la carte consolidée de qui accède à quoi."
+      },
+      {
+        "categorie": "identite_acces",
+        "nom": "Entra ID + Entra Agent ID (partiel) + secrets dispersés par équipe",
+        "criticite_pour_le_cas": "read_only",
+        "remarque": "L'identité agent existe côté Microsoft mais ne couvre pas les verticaux ni le shadow. Les scopes MCP, les secrets et le rate-limit sont gérés au cas par cas, par chaque équipe. Aucune attribution de coût par agent (FinOps agentique impossible)."
+      },
+      {
+        "categorie": "socle_manquant",
+        "nom": "L'ANGLE MORT — pas de registre, pas de gateway transverse, pas d'éval-as-a-service, pas d'observabilité de flotte, pas de catalogue de composants partagés",
+        "criticite_pour_le_cas": "read_write",
+        "remarque": "Le cœur du cas : ce qui n'existe pas. Sans registre, personne n'a la carte. Sans gateway, les accès ne sont pas revus et les coûts non imputables. Sans éval mutualisée, 50 évals artisanales = aucune éval. Sans observabilité, on ne détecte ni les zombies ni les dérives. C'est ce socle absent qu'il faut construire."
+      }
+    ],
+    "implications_structurantes": [
+      "Le natif Microsoft (Purview + Entra Agent ID + admin center) gouverne très bien les 50 Copilot — mais c'est un angle mort total sur les verticaux build et le shadow. S'appuyer dessus sans le compléter = gouverner un tiers de la flotte en croyant la tenir.",
+      "Le problème n'est pas technique par agent (chaque agent est faisable) : il est de portefeuille. La duplication d'effort (chaque équipe rebuild les mêmes MCP, la même éval) et la sprawl (doublons, zombies, accès non revus) coûtent plus que n'importe quel agent isolé.",
+      "Le registre n'est pas un inventaire bureaucratique : c'est l'outil qui transforme une collection ingouvernable en flotte pilotable — et l'outil de conformité AI Act (le statut de chaque agent y est porté).",
+      "Le shadow n'est pas un dérapage marginal à réprimer : c'est le signal que la paved road officielle n'existe pas encore. L'amnistie + onboarding convertit la sprawl en flotte mieux que la chasse — exactement la leçon du shadow AI de CC-00, généralisée aux agents."
+    ],
+    "renvoi_figure": "fig-00"
+  },
+  "application_concrete": {
+    "modes_usage": [
+      {
+        "id": "A",
+        "label": "Admission — l'entrée au registre (la paved road)",
+        "moment": "À la création d'un agent, sur tout plateforme (Copilot, build, ou shadow ramené à l'amnistie)",
+        "actions": [
+          "Déclare l'agent : owner métier nommé, finalité, données accédées, modèle, plateforme",
+          "Classe le niveau de risque (tier 1/2/3) → déclenche la revue proportionnée",
+          "Câble l'identité agent et les scopes MCP via le gateway (accès tracés, coût attribué)",
+          "Renseigne le statut AI Act — le registre devient la pièce de conformité"
+        ]
+      },
+      {
+        "id": "B",
+        "label": "Run — l'agent vit dans le cadre (gateway + observabilité + garde-fous)",
+        "moment": "En continu, pour tout agent admis, quelle que soit sa plateforme d'exécution",
+        "sous_modes": [
+          {
+            "id": "B1",
+            "label": "Gateway / identité",
+            "description": "Chaque appel passe par le gateway : authn/authz par agent, scopes MCP, rate-limit, routing modèle, attribution de coût (FinOps agentique)."
+          },
+          {
+            "id": "B2",
+            "label": "Garde-fous & politiques",
+            "description": "DLP, PII, anti prompt-injection appliqués par niveau de risque — politique uniforme côté plateforme, pas réinventée par agent."
+          },
+          {
+            "id": "B3",
+            "label": "Observabilité transverse",
+            "description": "Traces, coût/agent, latence, taux d'usage réel, escalades, incidents — la console qui détecte les zombies et les dérives."
+          }
+        ]
+      },
+      {
+        "id": "C",
+        "label": "Revue — le comité de portefeuille (admission, arbitrage, dé-commissionnement)",
+        "moment": "Trimestriel, plus alertes continues sur les dérives et les zombies",
+        "actions": [
+          "Arbitre les doublons (deux agents au périmètre qui se chevauchent)",
+          "Éteint les zombies (taux d'usage sous seuil → dé-commissionnement)",
+          "Valide les promotions en prod (aucun agent sans passer le gate d'éval)",
+          "Met à jour le tiering et le statut AI Act des agents qui changent de périmètre"
+        ]
+      }
+    ],
+    "niveaux_autonomie": [
+      {
+        "id": "L1",
+        "label": "Inventaire (observe)",
+        "description": "Le registre catalogue la flotte existante en lecture : on a enfin la carte. Aucun contrôle encore — on voit, on ne tient pas.",
+        "active_en": "Mois 1-3 (le socle minimal, découverte de la flotte)"
+      },
+      {
+        "id": "L2",
+        "label": "Gate d'admission (cadre l'entrée)",
+        "description": "Tout nouvel agent passe par le registre + le gate d'éval avant la prod. Le flux entrant est cadré ; le stock existant est en cours d'onboarding.",
+        "active_en": "Mois 3-9 (la paved road + amnistie)"
+      },
+      {
+        "id": "L3",
+        "label": "Gouvernance active (pilote le portefeuille)",
+        "description": "Le gateway route tous les appels, l'observabilité détecte zombies et dérives, le comité arbitre et dé-commissionne. La flotte est pilotée.",
+        "active_en": "Mois 9-24 (le régime fédéré)"
+      },
+      {
+        "id": "L4",
+        "label": "Auto-gouvernance pleine",
+        "description": "Le socle bloque/éteint automatiquement un agent hors-politique sans validation humaine.",
+        "active_en": "ENCADRÉ — l'extinction automatique est réservée aux violations sans ambiguïté (accès non autorisé, fuite PII) ; toute décision de portefeuille (doublon, dé-commissionnement) reste arbitrée par le comité."
+      }
+    ],
+    "trajectoire_multi_step_exemple": {
+      "scenario": "Mode A — un métier déclare au registre un nouvel « agent de réponse aux notes de frais », alors qu'un agent finance couvre déjà ce périmètre",
+      "etapes": [
+        {
+          "id": 1,
+          "label": "Declare",
+          "description": "Le porteur métier remplit la fiche registre : owner, finalité (« répondre aux questions notes de frais »), données accédées, modèle, plateforme Copilot.",
+          "renvoi_livre": "ch.25 registre par agent (conformité AI Act)"
+        },
+        {
+          "id": 2,
+          "label": "Detect",
+          "description": "Le socle interroge le registre et détecte une collision de périmètre : un agent finance répond déjà sur les notes de frais — risque de réponses contradictoires.",
+          "outils_appeles": [
+            "registre-mcp.search_by_purpose(domaine)",
+            "registre-mcp.detect_collision(finalite)",
+            "observabilite-mcp.usage_rate(agent_existant)"
+          ]
+        },
+        {
+          "id": 3,
+          "label": "Tier & gate",
+          "description": "Classement du risque (tier 2 — écrit pas dans un système régulé), déclenchement du gate d'éval : régression suite réutilisable de l'archétype conversationnel + test de non-contradiction contre l'agent existant.",
+          "renvoi_livre": "ch.19 éval (gate de promotion) + éval-as-a-service"
+        },
+        {
+          "id": 4,
+          "label": "Arbitrate",
+          "description": "Le comité de portefeuille tranche : fusion avec l'agent finance existant plutôt que doublon. La paved road a évité une contradiction de plus dans la flotte.",
+          "renvoi_livre": "ch.26 métier vs DSI (modèle fédéré)"
+        },
+        {
+          "id": 5,
+          "label": "Govern",
+          "description": "L'agent retenu vit sous le gateway (accès tracés, coût attribué) et l'observabilité (taux d'usage suivi) ; son statut AI Act est porté au registre. Audit trail complet.",
+          "renvoi_livre": "ch.20 observabilité transverse + ch.16 gateway/identité agent"
+        }
+      ]
+    }
+  },
+  "outils_internes": {
+    "mcp_servers": [
+      {
+        "systeme": "Registre d'agents (catalogue : owner, finalité, données, modèle, statut éval/risque/AI Act, cycle de vie)",
+        "mode": "read_write",
+        "type_mcp": "build maison léger (le cœur du socle) — pas de standard marché mature",
+        "effort_dev": "4-6 sem.",
+        "risque": "moyen",
+        "raison_risque": "schéma de métadonnées à stabiliser + ingestion des inventaires existants (Copilot admin, build, amnistie shadow)"
+      },
+      {
+        "systeme": "Gateway / identité agent (authn/authz par agent, scopes MCP, secrets, rate-limit, routing modèle, attribution de coût)",
+        "mode": "read_write_via_proxy",
+        "type_mcp": "build maison ou AgentOps tiers — fédère toutes les plateformes",
+        "effort_dev": "8-12 sem.",
+        "risque": "haut",
+        "raison_risque": "le composant pivot : doit chapeauter Copilot + verticaux + shadow sans casser les flux existants ; sécurité et FinOps en dépendent"
+      },
+      {
+        "systeme": "Éval-as-a-service (harness partagé, suites par archétype, LLM-as-judge mutualisé, gate de promotion)",
+        "mode": "read_write",
+        "type_mcp": "build maison (réutilise les harness des verticaux CC-01/CC-02)",
+        "effort_dev": "6-8 sem.",
+        "risque": "moyen",
+        "raison_risque": "consolider 4 harness artisanaux en suites réutilisables par archétype (RAG, tool-use, conversationnel) + test de non-contradiction inter-agents (nouveau)"
+      },
+      {
+        "systeme": "Observabilité transverse (traces, coût/agent, latence, usage réel, escalades, incidents)",
+        "mode": "read",
+        "type_mcp": "officiel / standard (OpenTelemetry GenAI) + collecteur maison",
+        "effort_dev": "4 sem.",
+        "risque": "moyen",
+        "raison_risque": "normaliser des traces hétérogènes (Copilot + build) dans un schéma commun pour calculer le taux d'usage et détecter les zombies"
+      },
+      {
+        "systeme": "Natif Microsoft (Purview + Entra Agent ID + Copilot admin center)",
+        "mode": "read_write_via_proxy",
+        "type_mcp": "officiel (déjà en place)",
+        "effort_dev": "2 sem. (intégration au registre)",
+        "risque": "bas",
+        "raison_risque": "gouverne les 50 Copilot nativement — à exploiter, pas à réinventer ; ne couvre ni build ni shadow"
+      },
+      {
+        "systeme": "Catalogue de composants (MCP servers partagés, prompts, templates réutilisables)",
+        "mode": "read",
+        "type_mcp": "build maison (registry interne de briques)",
+        "effort_dev": "3 sem.",
+        "risque": "bas",
+        "raison_risque": "mutualise les MCP rebuildés en doublon (ex. les MCP banque de CC-01) — gisement d'économie direct"
+      }
+    ],
+    "effort_total": "Socle minimal (registre + gateway léger + éval-as-a-service + observabilité) : ≈ 4-6 mois pour une équipe plateforme de 4-6 ETP (Head of AgentOps + 2-3 ingénieurs plateforme + sécu). Le gateway est le sclérosant : il doit fédérer des plateformes hétérogènes sans casser l'existant.",
+    "renvois_livre": [
+      "ch.15 MCP plateforme (le socle)",
+      "ch.16 sécurité MCP (gateway / identité agent)",
+      "ch.22 runtime managé vs maison"
+    ]
+  },
+  "modeles_cibles": {
+    "candidats": [
+      {
+        "modele": "GPT-5 (via Microsoft Copilot Studio)",
+        "force_pour_le_cas": "Le modèle de fait des 50 agents métiers — gouvernable nativement (Purview/Entra). Time-to-value des agents bottom-up.",
+        "faiblesse": "Lock-in Microsoft ; ne dit rien des verticaux et du shadow. Le natif gouverne le modèle, pas la flotte entière.",
+        "cout_indicatif": "inclus dans les licences Copilot"
+      },
+      {
+        "modele": "Claude 4.7 Sonnet / Opus (verticaux build via MCP)",
+        "force_pour_le_cas": "MCP first-class, reasoning pour les agents à fort enjeu (CC-01, CC-09). Routable via gateway.",
+        "faiblesse": "Cloud US (résidence EU via Bedrock) ; hétérogénéité à gouverner.",
+        "cout_indicatif": "$3 / $15 à $15 / $75 par M tokens"
+      },
+      {
+        "modele": "Mistral Large 3 / Le Chat Enterprise",
+        "force_pour_le_cas": "Option souveraine pour les agents à données sensibles ; argument fort en flotte régulée.",
+        "faiblesse": "Écosystème de connecteurs moins dense ; à router sélectivement.",
+        "cout_indicatif": "€ par M tokens, résidence EU"
+      },
+      {
+        "modele": "Modèles divers du shadow (GPT builders, assistants tiers grand public)",
+        "force_pour_le_cas": "Aucune — c'est le risque à cadrer, pas une option à recommander.",
+        "faiblesse": "Hors de tout contrôle : données internes hors cadre, pas d'audit, pas d'attribution.",
+        "cout_indicatif": "abonnements dispersés non imputables"
+      },
+      {
+        "modele": "LLM-as-judge mutualisé (modèle d'éval du socle)",
+        "force_pour_le_cas": "Un seul juge partagé pour l'éval-as-a-service de toute la flotte — cohérence et coût mutualisé.",
+        "faiblesse": "À calibrer par archétype ; doit rester indépendant des modèles jugés.",
+        "cout_indicatif": "OpEx socle (mutualisé sur N agents)"
+      }
+    ],
+    "recommandation": {
+      "regime": "gateway model-agnostic (router, pas choisir)",
+      "modele_primaire": "Le socle ne choisit PAS un modèle : le gateway route par agent et par politique (GPT-5 pour les Copilot, Claude pour les verticaux à reasoning, Mistral pour le souverain) — le registre reste agnostique",
+      "modele_gardien": "LLM-as-judge mutualisé pour l'éval-as-a-service + 2nd opinion souveraine sur les agents tier 1",
+      "voice_tier": "géré par agent (ex. l'agent vocal CC-02) — le socle attribue le coût, ne dicte pas le tier",
+      "embeddings_rag": "catalogue de composants partagés (embeddings, MCP, prompts) pour éviter que chaque équipe rebuild",
+      "argument_cascade": "La question n'est pas « quel modèle » mais « comment gouverner une flotte multi-modèle ». Le gateway model-agnostic est le bon niveau d'abstraction : il route, attribue le coût, applique les garde-fous, sans figer le choix de modèle d'un agent. C'est le pendant flotte de la cascade — la diversité des modèles devient un paramètre gouverné, pas un chaos subi."
+    }
+  },
+  "enjeux": {
+    "enjeux_chiffres": [
+      {
+        "label": "Éteindre les zombies",
+        "chiffre": "≈ 60 % des agents jamais utilisés",
+        "consequence": "le premier gisement de valeur n'est pas d'ajouter des agents, c'est d'en éteindre — coût de licence/siège récupéré"
+      },
+      {
+        "label": "Fin de la duplication d'effort",
+        "chiffre": "4 harness d'éval + N MCP servers rebuildés en doublon",
+        "consequence": "mutualisation via éval-as-a-service + catalogue de composants — le socle paie par réutilisation"
+      },
+      {
+        "label": "Maîtriser le risque non revu",
+        "chiffre": "< 30 % des agents avec owner, ≈ 1/5 passés par un gate",
+        "consequence": "accès écriture non revus + agents client-facing sans éval = incidents sécu et conformité AI Act non maîtrisée"
+      }
+    ],
+    "benchmark": {
+      "reference": "Pratiques AgentOps / plateformes internes d'IA 2025-2026 (hyperscalers et grands groupes ayant fédéré leurs agents)",
+      "metrique": "le coût de coordination (socle, gouvernance, éval transverse) devient le poste dominant dès qu'on dépasse ~10-15 agents — l'unité de mesure se déplace de l'agent vers la flotte",
+      "renvoi_livre": "ch.23.7"
+    },
+    "contre_benchmark": "Le piège symétrique de CC-00 : là où l'on déployait des sièges en croyant déployer de la valeur, ici on multiplie les agents en croyant multiplier le ROI. La sprawl agentique est le ROI fantôme au carré : chaque direction ajoute son agent, personne ne mesure le portefeuille, et la facture (licences en doublon, effort rebuildé, incidents) dépasse silencieusement la valeur. Sans registre ni comité, l'absence de gouvernance EST une gouvernance — la pire."
+  },
+  "build_buy": {
+    "criteres": [
+      "data_sensitivity",
+      "personnalisation",
+      "volumetrie",
+      "lock_in",
+      "time_to_value",
+      "souverainete"
+    ],
+    "options": [
+      {
+        "regime": "interne",
+        "stack": "Build socle maison complet (registre + gateway + harness + observabilité), souverain",
+        "scores": {
+          "data_sensitivity": "++",
+          "personnalisation": "++",
+          "volumetrie": "+",
+          "lock_in": "+",
+          "time_to_value": "--",
+          "souverainete": "++"
+        },
+        "verdict": "Couvre tout, souverain — mais effort plateforme lourd et équipe dédiée. Trop lent si on a besoin de reprendre la main vite."
+      },
+      {
+        "regime": "mainstream",
+        "solution": "Buy Microsoft-native (Copilot Studio + Purview + Entra Agent ID + admin center) OU AgentOps tiers multi-vendor",
+        "scores": {
+          "data_sensitivity": "0",
+          "personnalisation": "-",
+          "volumetrie": "++",
+          "lock_in": "--",
+          "time_to_value": "++",
+          "souverainete": "-"
+        },
+        "verdict": "Le natif Microsoft gouverne très bien les 50 Copilot — mais angle mort total sur build et shadow → lock-in et périmètre partiel. L'AgentOps tiers couvre l'hétérogène mais ré-introduit une dépendance et un re-lock-in."
+      },
+      {
+        "regime": "hybride",
+        "stack": "Natif Microsoft pour les Copilot + registre/gateway transverse maison léger qui chapeaute TOUTES les plateformes (Copilot + build + cadre le shadow) + harness d'éval partagé",
+        "scores": {
+          "data_sensitivity": "+",
+          "personnalisation": "+",
+          "volumetrie": "+",
+          "lock_in": "0",
+          "time_to_value": "+",
+          "souverainete": "0"
+        },
+        "verdict": "RECOMMANDÉ — hybride fédéré. On exploite le natif (on ne réinvente pas la gouvernance des Copilot), on build le minimum qui fédère le reste, on cadre le shadow par amnistie. Le socle fédère, il ne centralise pas l'exécution."
+      }
+    ],
+    "decision_ponderee": "Hybride fédéré : exploiter le natif Microsoft pour les 50 Copilot (gisement immédiat), + un registre + gateway transverse maison léger qui chapeaute toutes les plateformes, + un harness d'éval partagé. Le socle fédère, il ne centralise pas l'exécution. La discipline d'architecture est le prix — et c'est moins cher que la sprawl.",
+    "renvoi_livre": "ch.23.6 arbre décision + ch.15 MCP plateforme"
+  },
+  "trajectoire_couts": {
+    "phases": [
+      {
+        "id": "poc",
+        "label": "Socle minimal 3 mois",
+        "perimetre": "Registre + observabilité en lecture sur ≈ 10 agents pilotes — on fait la carte de la flotte"
+      },
+      {
+        "id": "pilote",
+        "label": "Fédération 6 mois",
+        "perimetre": "Gateway + éval-as-a-service ; ≈ 25 agents fédérés (Copilot + verticaux), amnistie shadow lancée"
+      },
+      {
+        "id": "prod",
+        "label": "Régime fédéré 12 mois",
+        "perimetre": "Flotte complète (50+ agents) sous gateway + observabilité, comité de portefeuille trimestriel, catalogue de composants"
+      },
+      {
+        "id": "scale",
+        "label": "Plateforme mature 36 mois",
+        "perimetre": "100+ agents, socle amorti, dé-commissionnement systématique des zombies, paved road self-service tier 3"
+      }
+    ],
+    "postes": {
+      "inference": {
+        "poc": 6,
+        "pilote": 25,
+        "prod": 70,
+        "scale": 110
+      },
+      "infra": {
+        "poc": 20,
+        "pilote": 60,
+        "prod": 140,
+        "scale": 220
+      },
+      "equipe": {
+        "poc": 120,
+        "pilote": 360,
+        "prod": 760,
+        "scale": 1100
+      },
+      "data": {
+        "poc": 8,
+        "pilote": 30,
+        "prod": 60,
+        "scale": 90
+      },
+      "evaluation": {
+        "poc": 10,
+        "pilote": 90,
+        "prod": 240,
+        "scale": 380
+      },
+      "gouvernance": {
+        "poc": 30,
+        "pilote": 120,
+        "prod": 320,
+        "scale": 480
+      },
+      "securite": {
+        "poc": 20,
+        "pilote": 80,
+        "prod": 200,
+        "scale": 300
+      },
+      "change": {
+        "poc": 15,
+        "pilote": 90,
+        "prod": 260,
+        "scale": 360
+      }
+    },
+    "cout_par_interaction": {
+      "poc": 22.0,
+      "pilote": 9.5,
+      "prod": 4.2,
+      "scale": 2.3
+    },
+    "crossover_point": "≈ 10-15 agents — LE CROSSOVER DU SOCLE. En dessous, pas besoin d'un socle lourd (les agents se gouvernent à la main). Au-delà, le socle devient rentable : la mutualisation de l'éval, des MCP et des garde-fous s'amortit sur N agents, et le coût de gouvernance par agent s'effondre. C'est l'analogue flotte du crossover build/buy.",
+    "commentaire_courbe": "Ici, cout_par_interaction = COÛT DE GOUVERNANCE PAR AGENT (et non par interaction d'un agent) : il divise par ~10 entre POC et Scale, non par optimisation technique mais par AMORTISSEMENT du socle sur un nombre croissant d'agents. L'inférence (ici, le LLM-as-judge mutualisé + l'overhead gateway) reste le plus petit poste : c'est le paradoxe agentique au carré (ch.23.7) — à l'échelle flotte, l'inférence par agent baisse (LLMflation, ch.23.2.1) mais le coût de COORDINATION (équipe CoE + gouvernance + éval transverse) devient le poste dominant. L'unité de mesure se déplace de l'agent vers le portefeuille."
+  },
+  "gouvernance": {
+    "raci": {
+      "responsable": "Plateforme / Center of Excellence agents (Head of AgentOff / Agent Platform Owner + ingénieurs plateforme + sécu + data) — possède le socle, les standards, l'éval-as-a-service",
+      "approbateur": "Comité de portefeuille d'agents (trimestriel) — admission, dé-commissionnement, arbitrage des doublons, priorisation ; arbitré au plus haut (DSI + métiers + sécu)",
+      "consultes": [
+        "RSSI (gateway, scopes MCP, accès écriture)",
+        "DPO (données sensibles, statut AI Act par agent)",
+        "Agent product owners métier (finalité, ROI de leur agent)",
+        "Contrôle de gestion (FinOps agentique, attribution de coût)"
+      ],
+      "informes": [
+        "CODIR (KPI de flotte : taux d'agents actifs avec ROI vs zombies)",
+        "Directions métiers (paved road, standards)",
+        "Équipes build des verticaux"
+      ]
+    },
+    "cadence_revue": {
+      "comite_eval": "Comité de portefeuille trimestriel (admission/dé-commissionnement/arbitrage) ; gate d'éval à chaque promotion en prod",
+      "alertes": "continues via observabilité transverse (dérive d'un agent, pic de coût, chute d'usage = zombie en formation, incident sécu, réponse contradictoire détectée)",
+      "audit_externe": "annuel — revue de conformité AI Act sur les agents tier 1 (haut risque) + audit des accès du gateway"
+    },
+    "ai_act_ligne": {
+      "niveau": "variable_par_agent",
+      "fondement": "La plupart des 50 agents relèvent du risque limité/minimal (productivité interne). MAIS certains basculent HAUT RISQUE (ex. un agent RH de tri de candidatures = Annexe III §4 recrutement ; un agent qui touche au crédit = Annexe III §5). Le registre PORTE le statut AI Act de chaque agent — le registre EST l'outil de conformité de la flotte.",
+      "echeance": "2026-08 (transparence) puis 2027-08 (obligations complètes pour les agents haut risque)",
+      "actions": [
+        "Statut AI Act renseigné par agent au registre (le registre = registre de conformité)",
+        "Tiering par le risque qui déclenche la revue proportionnée (FRIA + supervision humaine pour les tier 1 haut risque)",
+        "Reclassement automatique quand un agent change de périmètre (un tier 3 lecture seule qui se met à écrire dans un système régulé bascule de tier)",
+        "Audit trail de flotte ≥ 6 ans pour les agents haut risque, via l'observabilité transverse"
+      ]
+    },
+    "renvoi_livre": "ch.25 AI Act (registre par agent) + ch.26 métier vs DSI (modèle fédéré)"
+  },
+  "evaluation": {
+    "regression_suite": {
+      "taille": "Pas 50 régression suites artisanales : un harness PARTAGÉ avec des suites réutilisables PAR ARCHÉTYPE (RAG, tool-use, conversationnel) + un test de non-contradiction inter-agents + un détecteur de collision de périmètre",
+      "cadence": "gate de promotion à chaque mise en prod (aucun agent en prod sans passer le gate) ; revue trimestrielle des suites par le CoE",
+      "criteres": [
+        "passage du gate de l'archétype (réutilisé, pas réinventé par agent)",
+        "non-contradiction : les agents donnent-ils des réponses cohérentes sur les politiques communes (notes de frais, congés) ?",
+        "absence de collision : deux agents au périmètre qui se chevauchent et divergent",
+        "respect des garde-fous de flotte (DLP, PII, anti prompt-injection) par niveau de risque"
+      ]
+    },
+    "metriques_online": [
+      {
+        "id": "response-consistency",
+        "cible": "> 95 % de cohérence inter-agents sur les politiques communes",
+        "alerte": "< 90 % ou réponse contradictoire détectée → escalade comité"
+      },
+      {
+        "id": "regulatory-compliance",
+        "cible": "100 % des agents tier 1 avec statut AI Act à jour + FRIA",
+        "alerte": "agent haut risque en prod sans documentation → blocage gateway"
+      },
+      {
+        "id": "system-availability",
+        "cible": "gateway > 99,5 % (le socle ne doit pas être un point de panne unique)",
+        "alerte": "< 99 % → fallback dégradé par plateforme"
+      }
+    ],
+    "detection_derive": {
+      "outil": "Observabilité transverse (taux d'usage réel pour les zombies, coût/agent pour le FinOps, traces pour les dérives) + LLM-as-judge mutualisé sur échantillon + test de non-contradiction périodique",
+      "alerte": "chute du taux d'usage (zombie en formation) ; pic de coût d'un agent ; réponse contradictoire entre deux agents ; accès écriture non prévu au tiering",
+      "fenetre": "continue sur le gateway ; rolling 30 jours sur l'usage (détection zombie)"
+    },
+    "boucle_correction": {
+      "trigger": "alerte observabilité ou comité de portefeuille trimestriel",
+      "delai_re_prompt": "correction d'un agent : sous la responsabilité de son owner métier, dans le cadre du gate ré-éval",
+      "cadence_re_finetune": "non applicable au socle (modèles managés/routés) — l'itération porte sur les suites d'éval par archétype et les politiques de garde-fous",
+      "rollback": "le gateway peut suspendre un agent hors-politique en < 1 h ; le comité dé-commissionne les zombies et les doublons"
+    },
+    "renvoi_livre": [
+      "ch.19 évaluation (gate de promotion, éval-as-a-service)",
+      "ch.20 observabilité transverse / audit trail de flotte"
+    ]
+  },
+  "roi": {
+    "axe_principal": "cout",
+    "axes_secondaires": [
+      "qualite",
+      "bienetre"
+    ],
+    "methode_mobilisee": "TCO de portefeuille (et non par agent) + Cigref Hard/Soft + arbre décision ch.23.6 — le ROI se mesure au niveau de la flotte, pas de l'agent",
+    "metriques": [
+      {
+        "id": "tco-infrastructure",
+        "borne_basse": "-10 %",
+        "cible": "-25 % TCO portefeuille",
+        "borne_haute": "-40 %"
+      },
+      {
+        "id": "response-consistency",
+        "borne_basse": "+5 pts",
+        "cible": "+10 pts cohérence inter-agents",
+        "borne_haute": "+15 pts"
+      },
+      {
+        "id": "regulatory-compliance",
+        "borne_basse": "agents tier 1 documentés",
+        "cible": "registre = conformité AI Act tenue",
+        "borne_haute": "audit externe passé"
+      },
+      {
+        "id": "employee-engagement",
+        "borne_basse": "+2",
+        "cible": "+5 (paved road : créer un agent conforme devient facile)",
+        "borne_haute": "+8"
+      }
+    ],
+    "kpi_gardien": {
+      "id": "active-agent-roi-rate",
+      "role": "KPI GARDIEN ET PRINCIPAL DE FLOTTE (spécifique au portefeuille, hors catalogue standard) : taux d'agents actifs avec ROI prouvé vs agents zombies. Un agent non utilisé est un coût pur, pas un actif. C'est le gardien qui empêche le socle de devenir lui-même une bureaucratie : si le socle ne fait pas monter ce taux (en éteignant les zombies, en évitant les doublons), il ne se justifie pas.",
+      "borne": "taux d'agents actifs avec ROI prouvé en hausse trimestre après trimestre ; sinon le socle lui-même est questionné"
+    },
+    "non_retenu": [
+      {
+        "id": "revenue",
+        "raison": "le ROI du socle n'est pas du chiffre d'affaires direct : il multiplie la valeur des agents en aval (comme le socle data CC-03), attribution au portefeuille impossible à isoler par agent"
+      },
+      {
+        "id": "processing-time",
+        "raison": "c'est le ROI de CHAQUE agent métier (CC-01, CC-02…), pas du socle — ne pas double-compter"
+      },
+      {
+        "id": "nps",
+        "raison": "hors périmètre (gouvernance interne, pas relation client)"
+      }
+    ],
+    "renvoi_figure": "fig-01"
+  },
+  "operation_equipe": {
+    "personas": {
+      "porteur": {
+        "role": "Head of AgentOps / Agent Platform Owner",
+        "posture": "Nouveau rôle, convaincu que la flotte doit être gouvernée comme un portefeuille, pas comme une collection de projets",
+        "citation": "On n'a pas un problème d'agents, on a un problème de flotte. Tant qu'il n'y a pas de carte, personne ne peut décider quoi que ce soit."
+      },
+      "sponsor": {
+        "role": "DSI",
+        "posture": "A découvert au CODIR l'agent RH qui écrit dans le SIRH sans revue — veut reprendre la main sans tuer l'innovation métier",
+        "citation": "Je ne veux ni tout centraliser ni laisser courir. Je veux une voie conforme tellement facile que personne n'ait envie de la contourner."
+      },
+      "allie": {
+        "role": "DAF / Contrôle de gestion",
+        "posture": "Voit dans le FinOps agentique le levier pour arrêter de payer sept abonnements en doublon et éteindre les zombies",
+        "citation": "Sept abonnements pour le même usage, 60 % d'agents que personne n'ouvre — montrez-moi l'attribution de coût par agent et je finance le socle."
+      },
+      "opposant": {
+        "role": "Directions métiers (agent product owners)",
+        "posture": "Garde-fou légitime contre la re-centralisation : craignent que le socle redevienne un goulot d'étranglement IT qui tue leur vélocité — souvent ceux qui ont raison si le socle se bureaucratise",
+        "citation": "On a monté nos agents nous-mêmes parce que l'IT était trop lent. Si votre socle nous ralentit, on retournera dans le shadow."
+      }
+    },
+    "equipe_par_phase": {
+      "poc": {
+        "etp_total": 5.6,
+        "composition": [
+          {
+            "role": "Head of AgentOps / Platform Owner",
+            "etp": 1.0,
+            "profil": "pivot — pense portefeuille, arbitre build/buy du socle, anime le futur comité (pas un chef de projet outil)"
+          },
+          {
+            "role": "Ingénieur plateforme (registre + observabilité)",
+            "etp": 1.5,
+            "profil": "Backend, schéma de métadonnées, ingestion des inventaires hétérogènes, OpenTelemetry GenAI"
+          },
+          {
+            "role": "Ingénieur gateway / identité agent",
+            "etp": 1.0,
+            "profil": "Le sclérosant : authn/authz par agent, scopes MCP, routing, FinOps — fédère sans casser l'existant"
+          },
+          {
+            "role": "Référent éval-as-a-service",
+            "etp": 0.8,
+            "profil": "Consolide les harness des verticaux en suites par archétype + test de non-contradiction"
+          },
+          {
+            "role": "RSSI référent flotte",
+            "etp": 0.5,
+            "profil": "Politiques de garde-fous par tier, revue des accès écriture, threat model gateway"
+          },
+          {
+            "role": "DPO référent flotte",
+            "etp": 0.5,
+            "profil": "Statut AI Act par agent, tiering, FRIA des agents haut risque"
+          },
+          {
+            "role": "Change / animation paved road",
+            "etp": 0.3,
+            "profil": "Amnistie shadow, onboarding des owners métier, pédagogie de la voie conforme"
+          }
+        ]
+      },
+      "prod": {
+        "etp_total": 8.0,
+        "note": "Cœur plateforme/CoE 8 ETP + agent product owners distribués dans les métiers (chaque agent garde son owner — le coût n'est pas centralisé)"
+      }
+    },
+    "velocite": {
+      "poc": {
+        "duree": "3 mois",
+        "cadence_release": "bi-hebdo",
+        "perimetre": "Registre + observabilité lecture sur ≈ 10 agents — faire la carte"
+      },
+      "pilote": {
+        "duree": "6 mois",
+        "cadence_release": "hebdo",
+        "perimetre": "Gateway + éval-as-a-service, ≈ 25 agents fédérés, amnistie shadow lancée, premier comité de portefeuille"
+      },
+      "prod": {
+        "duree": "12 mois",
+        "cadence_release": "2 sem.",
+        "perimetre": "Flotte 50+ sous gateway + observabilité, comité trimestriel actif, dé-commissionnement des premiers zombies, catalogue de composants"
+      },
+      "scale": {
+        "duree": "36 mois",
+        "cadence_release": "mensuel",
+        "perimetre": "100+ agents, paved road self-service tier 3, socle amorti, dé-commissionnement systématique"
+      }
+    },
+    "sclerosants": [
+      "Le gateway transverse : fédérer Copilot + verticaux + shadow sans casser les flux existants est le vrai chantier d'architecture — 2-3 mois incompressibles.",
+      "L'amnistie shadow : faire revenir les ~12 agents shadow au registre demande de la diplomatie (aider à se mettre en conformité), pas de la répression — sinon ils replongent dans l'ombre.",
+      "La résistance des métiers à la re-centralisation perçue : la paved road doit être PLUS facile que le shadow, sinon le socle est contourné. C'est un sujet de change, pas de tech.",
+      "L'ingestion des inventaires hétérogènes : aligner les métadonnées de Copilot admin, des verticaux build et du shadow dans un schéma de registre unique."
+    ],
+    "deadlines_externes": [
+      {
+        "echeance": "2026-08",
+        "label": "AI Act transparence + identification des agents haut risque dans la flotte",
+        "consequence_si_ratee": "agents Annexe III (RH, crédit) en prod sans FRIA ni registre = non-conformité"
+      },
+      {
+        "echeance": "2027-08",
+        "label": "AI Act obligations complètes (agents haut risque)",
+        "consequence_si_ratee": "amende jusqu'à 7 % du CA ; le registre est la pièce qui prouve la conformité de la flotte"
+      },
+      {
+        "echeance": "Trimestriel",
+        "label": "Comité de portefeuille (KPI taux d'agents actifs vs zombies)",
+        "consequence_si_ratee": "sans dé-commissionnement actif, la sprawl revient et le socle devient une bureaucratie de plus"
+      }
+    ],
+    "deadline_operationnelle": "Socle minimal T3 2026 (carte de la flotte) → fédération T4-T1 (gateway + éval + amnistie) → régime fédéré 2027 avec comité de portefeuille trimestriel."
+  },
+  "debat": {
+    "question": "Faut-il un socle fédéré, ou est-ce une bureaucratie qui tuera la vélocité métier qui a fait naître la flotte ?",
+    "pour": [
+      {
+        "argument": "Passé ~10-15 agents, la sprawl (doublons, zombies, accès non revus, réponses contradictoires) coûte plus que n'importe quel agent isolé — le ROI est au niveau du portefeuille."
+      },
+      {
+        "argument": "Le registre est l'outil de conformité AI Act de la flotte : sans lui, on ne peut ni identifier ni documenter les agents haut risque."
+      },
+      {
+        "argument": "La mutualisation (éval-as-a-service, catalogue de composants, garde-fous) paie le socle : on arrête de rebuilder 4 fois la même éval et N fois les mêmes MCP."
+      }
+    ],
+    "contre": [
+      {
+        "argument": "La flotte est née bottom-up parce que l'IT était trop lent : un socle mal pensé re-centralise, redevient un goulot et repousse les métiers vers le shadow."
+      },
+      {
+        "argument": "Le socle a un coût fixe (plateforme + CoE) : sous ~10-15 agents, il coûte plus qu'il ne rapporte — la gouvernance lourde sur 5 agents est du gâchis."
+      },
+      {
+        "argument": "Un comité trimestriel qui ne dé-commissionne jamais devient une bureaucratie de plus : le socle doit se mesurer au taux d'agents actifs qu'il fait monter."
+      }
+    ],
+    "verdict_pondere": "GO socle fédéré — MAIS la gouvernance est PROPORTIONNÉE au risque (tiering 3 niveaux, pas uniforme) et le modèle est FÉDÉRÉ (le CoE possède le socle, les métiers possèdent leurs agents). La paved road doit être plus facile que le shadow. Le socle se justifie par un seul KPI : le taux d'agents actifs avec ROI prouvé qu'il fait monter en éteignant les zombies et les doublons.",
+    "renvois_livre": [
+      "ch.23.7",
+      "ch.26"
+    ]
+  },
+  "choix_lecteur": [
+    {
+      "question": "Vous êtes le DSI. Face aux 50 agents métiers + 4 verticaux + 12 shadow, votre modèle opératoire est…",
+      "options": [
+        {
+          "id": "A",
+          "label": "Centralisé — la DSI reprend et gère tous les agents",
+          "consequence": "Contrôle maximal sur le papier — mais goulot d'étranglement immédiat, file d'attente, l'innovation métier meurt. Ne passe pas à l'échelle de 50+ agents, et les métiers repartent en shadow.",
+          "grille_analyse": "Antipattern de la re-centralisation (ch.26) : tue la vélocité qui a fait naître la flotte.",
+          "renvoi_chapitre": "ch.26"
+        },
+        {
+          "id": "B",
+          "label": "Décentralisé — chaque métier continue à gérer ses agents",
+          "consequence": "Vélocité maximale — mais c'est exactement la sprawl actuelle : doublons, zombies, accès non revus, réponses contradictoires. Le risque explose sans personne pour le voir.",
+          "grille_analyse": "C'est l'état initial du cas : l'absence de gouvernance EST une gouvernance, la pire.",
+          "renvoi_chapitre": "ch.26"
+        },
+        {
+          "id": "C",
+          "label": "Fédéré hub-and-spoke — le CoE possède le socle, les métiers possèdent leurs agents",
+          "consequence": "Le CoE tient le registre, les standards, l'éval-as-a-service, les garde-fous ; chaque agent garde son owner métier et son ROI. La paved road rend la voie conforme la plus facile. La sprawl devient une flotte.",
+          "grille_analyse": "La bonne réponse (ch.26) : fédérer sans centraliser l'exécution.",
+          "renvoi_chapitre": "ch.26"
+        }
+      ]
+    },
+    {
+      "question": "Quel socle pour gouverner une flotte hétérogène (Copilot + build + shadow) ?",
+      "options": [
+        {
+          "id": "A",
+          "label": "Microsoft-native uniquement (Purview + Entra Agent ID)",
+          "consequence": "Vous gouvernez parfaitement les 50 Copilot — et vous êtes aveugle sur les 4 verticaux build et les 12 shadow. Vous croyez tenir la flotte, vous en tenez un tiers. Lock-in en prime.",
+          "grille_analyse": "Piège de l'angle mort : le natif ne voit que sa propre plateforme.",
+          "renvoi_chapitre": "ch.15"
+        },
+        {
+          "id": "B",
+          "label": "Hybride fédéré — natif MS pour les Copilot + registre/gateway maison léger qui chapeaute tout",
+          "consequence": "Vous exploitez le natif sans le réinventer, vous fédérez le reste avec un socle minimal, vous cadrez le shadow par amnistie. Le socle fédère, il ne centralise pas l'exécution.",
+          "grille_analyse": "La bonne réponse (ch.15 + ch.16) : fédérer l'hétérogène par-dessus les plateformes.",
+          "renvoi_chapitre": "ch.15"
+        },
+        {
+          "id": "C",
+          "label": "Tout raser et build un socle maison complet d'un coup",
+          "consequence": "Souverain et homogène — mais effort plateforme lourd, des mois sans reprendre la main, et vous réinventez ce que le natif Microsoft fait déjà bien pour les Copilot.",
+          "grille_analyse": "Fausse pureté : on ne réinvente pas la gouvernance des Copilot.",
+          "renvoi_chapitre": "ch.22"
+        }
+      ]
+    },
+    {
+      "question": "Que faire des 50 existants + des 12 agents shadow ?",
+      "options": [
+        {
+          "id": "A",
+          "label": "Tout raser et repartir propre",
+          "consequence": "Vous perdez l'adhésion des métiers d'un coup, vous détruisez 18 mois d'apprentissage terrain, et le shadow se reforme aussitôt — en pire, parce que la confiance est cassée.",
+          "grille_analyse": "Antipattern : la table rase tue l'adhésion.",
+          "renvoi_chapitre": "ch.26"
+        },
+        {
+          "id": "B",
+          "label": "Amnistie + onboarding + tiering proportionné",
+          "consequence": "« Ramène ton agent au registre, on t'aide à le mettre en conformité. » Vous convertissez la sprawl en flotte, vous récupérez le signal du shadow, vous classez par risque pour ne pas sur-gouverner les agents inoffensifs.",
+          "grille_analyse": "La bonne réponse (ch.26) : convertir plutôt que combattre — la leçon shadow de CC-00 à l'échelle agents.",
+          "renvoi_chapitre": "ch.26"
+        },
+        {
+          "id": "C",
+          "label": "Laisser courir, on verra plus tard",
+          "consequence": "La sprawl continue de grossir, les doublons se multiplient, et le jour où un agent haut risque déclenche un incident AI Act, vous n'avez ni registre ni audit trail à présenter au régulateur.",
+          "grille_analyse": "Le risque différé : sans registre, pas de conformité possible.",
+          "renvoi_chapitre": "ch.25"
+        }
+      ]
+    }
+  ],
+  "quiz": [
+    {
+      "question": "Pourquoi le ROI d'une flotte d'agents se mesure-t-il au niveau du portefeuille, et non par agent ?",
+      "options": [
+        "Parce que les agents sont trop nombreux pour être mesurés un par un",
+        "Parce que le socle (registre, gateway, éval, garde-fous) a un coût fixe qui s'amortit sur N agents, et que les coûts de la sprawl (doublons, zombies, incidents) sont des coûts de portefeuille — pas d'agent isolé",
+        "Parce que l'AI Act l'impose",
+        "Parce que les agents n'ont pas de ROI individuel"
+      ],
+      "bonne_reponse": 1,
+      "explication": "Sous ~10-15 agents, le socle coûte plus qu'il ne rapporte. Au-delà, la mutualisation l'amortit (le crossover du socle) et le coût de gouvernance par agent s'effondre. Le coût de coordination devient le poste dominant — paradoxe agentique au carré (ch.23.7).",
+      "renvoi_chapitre": "ch.23.7"
+    },
+    {
+      "question": "Quel est le bon modèle opératoire pour gouverner une flotte qui a proliféré bottom-up ?",
+      "options": [
+        "Centralisé : la DSI reprend tout en main",
+        "Décentralisé : chaque métier garde la main sans cadre",
+        "Fédéré hub-and-spoke : le CoE possède le socle et les standards, les métiers possèdent leurs agents dans le cadre — avec une paved road plus facile que le shadow",
+        "Externalisé : un prestataire gère la flotte"
+      ],
+      "bonne_reponse": 2,
+      "explication": "Le centralisé tue la vélocité (goulot), le décentralisé EST la sprawl actuelle. Le fédéré fait posséder le socle au CoE et les agents aux métiers (owner + ROI), avec la paved road comme principe : rendre la voie conforme la plus facile à emprunter (ch.26).",
+      "renvoi_chapitre": "ch.26"
+    },
+    {
+      "question": "Pourquoi le registre d'agents est-il plus qu'un inventaire ?",
+      "options": [
+        "Parce qu'il liste les agents par ordre alphabétique",
+        "Parce qu'il porte le statut AI Act de chaque agent : c'est l'outil de conformité de la flotte, qui permet d'identifier et de documenter les agents haut risque (Annexe III)",
+        "Parce qu'il remplace le gateway",
+        "Parce qu'il entraîne les modèles"
+      ],
+      "bonne_reponse": 1,
+      "explication": "Le registre transforme une collection ingouvernable en flotte pilotable. Surtout, il PORTE le statut AI Act par agent : sans lui, on ne peut ni identifier les agents Annexe III (RH, crédit) ni prouver leur conformité au régulateur (ch.25).",
+      "renvoi_chapitre": "ch.25"
+    }
+  ],
+  "verdict": {
+    "stamp": "GO_SOCLE_FEDERE",
+    "label": "GO socle fédéré — gouverner le portefeuille, sinon la sprawl coûte plus qu'elle ne rapporte",
+    "conditions": [
+      "Registre obligatoire — aucun agent sans owner métier nommé + fiche au registre (sinon extinction)",
+      "Gouvernance proportionnée au risque (tiering 3 niveaux), pas uniforme",
+      "Éval-as-a-service partagée + gate de prod pour tous les agents",
+      "Modèle fédéré — le CoE possède le socle, les métiers possèdent leurs agents, paved road plus facile que le shadow",
+      "Dé-commissionnement actif des zombies (KPI taux d'agents actifs avec ROI prouvé)",
+      "Socle hybride — natif Microsoft pour les Copilot + registre/gateway transverse maison pour fédérer le reste + amnistie/onboarding du shadow"
+    ]
+  },
+  "renvois_livre": [
+    "ch.11 patterns d'orchestration multi-agent",
+    "ch.15 MCP plateforme (le socle fédéré)",
+    "ch.16 sécurité MCP (gateway / identité agent)",
+    "ch.13 surfaces agentiques",
+    "ch.19 évaluation (éval-as-a-service, gate de promotion)",
+    "ch.20 observabilité transverse / audit trail de flotte",
+    "ch.21 garde-fous & politiques par niveau de risque",
+    "ch.22 runtime managé vs maison (build/buy du socle)",
+    "ch.23.2.1 LLMflation (l'inférence par agent baisse)",
+    "ch.23.7 paradoxe agentique (le coût de coordination devient dominant au niveau flotte)",
+    "ch.25 gouvernance AI Act (le registre = conformité par agent)",
+    "ch.26 IA et travail (métier vs DSI, modèle fédéré, conduite du changement)"
+  ],
+  "figures": [
+    {
+      "id": "fig-00",
+      "titre": "La flotte d'agents — l'état actuel (la « sprawl »)",
+      "fichier": "images/CC-11-flotte-agents/CC-11-fig-00-flotte-agents-sprawl.svg",
+      "caption": "La carte de la flotte avant gouvernance : ≈ 50 agents Copilot Studio montés par les métiers + 4 verticaux build + ≈ 12 shadow, sans socle commun. Les angles morts annotés — pas de registre, pas de gateway, pas d'éval mutualisée, pas d'observabilité, doublons, zombies, accès non revus. Le test de véracité : qui a la carte ? Personne."
+    },
+    {
+      "id": "fig-01",
+      "titre": "Le socle fédéré — six services + modèle opératoire hub-and-spoke",
+      "fichier": "images/CC-11-flotte-agents/CC-11-fig-01-socle-federe.svg",
+      "caption": "La plateforme « AgentOps » qui fédère sans centraliser : six services partagés (registre, gateway/identité, éval-as-a-service, observabilité, garde-fous, catalogue de composants) chapeautent les plateformes d'exécution (Copilot natif + verticaux build + shadow onboardé). En dessous, le RACI : le CoE possède le socle, les métiers possèdent leurs agents."
+    },
+    {
+      "id": "fig-02",
+      "titre": "Tiering par le risque + cycle de vie d'un agent",
+      "fichier": "images/CC-11-flotte-agents/CC-11-fig-02-tiering-cycle-vie.svg",
+      "caption": "À gauche, le tiering 3 niveaux (tier 1 lourd / tier 2 standard / tier 3 self-service cadré) qui rend la gouvernance proportionnée. À droite, le cycle de vie : idée → admission au registre → build → gate d'éval → prod → monitoring → revue périodique → dé-commissionnement. Le gate d'éval et le dé-commissionnement sont les deux portes que la sprawl n'avait pas."
+    }
+  ]
+}
