@@ -76,7 +76,7 @@ Quand on a le budget de calcul pour réentraîner — ou au moins affiner — le
 
 Le cas limite de la QAT renverse même la logique : au lieu de quantifier après coup, **entraîner directement en basse précision**. BitNet b1.58 (2024) entraîne un modèle dont chaque poids vaut {−1, 0, +1} — soit ~1,58 bit — dès la première itération.[^11] ==Un modèle ternaire remplace les multiplications matricielles par des additions et des soustractions== : plus de multiplieurs, une consommation énergétique effondrée, un profil idéal pour le CPU et le silicium embarqué. La contrepartie : il faut entraîner ce modèle *ab initio* dans ce régime, on ne peut pas ternariser un modèle FP16 existant sans dégât. La QAT, dans tous les cas, échange du calcul d'entraînement contre de la qualité récupérée à basse précision.
 
-[SCHEMA-06]
+![PTQ contre QAT : coût de calibration contre qualité récupérée|width=1200](images/20260708-06-ptq-vs-qat.svg)
 
 ## 7. Méta-évaluation : mesurer sans se mentir
 
