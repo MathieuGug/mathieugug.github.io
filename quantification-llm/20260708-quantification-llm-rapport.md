@@ -44,7 +44,7 @@ La réponse de LLM.int8() est une **décomposition à précision mixte** : isole
 
 SmoothQuant (2023) propose une idée plus élégante : puisque ==les poids se quantifient bien mais les activations résistent à cause des outliers, migrons la difficulté des activations vers les poids==.[^4] Une transformation mathématiquement équivalente — diviser un canal d'activation par un facteur α et multiplier le poids correspondant par le même α — déplace la « bosse » d'outlier de l'activation (difficile) vers le poids (facile), sans changer la sortie. On lisse les activations en durcissant à peine les poids. Ce principe de *migration de difficulté* devient la matrice conceptuelle de presque tout ce qui suit.
 
-[SCHEMA-03]
+![Le problème des outliers : emergent features, SmoothQuant, décomposition mixte|width=1200](images/20260708-03-outliers.svg)
 
 ## 4. La quantification post-entraînement (PTQ) : la famille dominante
 
@@ -58,7 +58,7 @@ En pratique, l'immense majorité des modèles quantifiés déployés le sont **s
 
 Enfin, pour viser le **2 bits**, les approches à *codebooks* prennent le relais : AQLM (quantification additive) et QuIP# combinent traitement d'incohérence et dictionnaires de vecteurs appris pour représenter des groupes de poids par des index vers un codebook, franchissant un seuil que la quantification scalaire uniforme ne tient pas.[^10]
 
-[SCHEMA-04]
+![Taxonomie de la PTQ : poids seuls contre poids+activations|width=900](images/20260708-04-taxonomie-ptq.svg)
 
 ## 5. Les rotations : dissoudre l'outlier plutôt que le contourner
 
