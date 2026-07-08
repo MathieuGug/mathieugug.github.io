@@ -1,0 +1,1832 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>La quantification des LLM : une bataille contre les outliers</title>
+  <meta name="description" content="Quantifier un LLM n'est pas tronquer sa précision mais neutraliser une poignée de valeurs aberrantes : outliers émergents, GPTQ, AWQ, rotations QuaRot/SpinQuant, QAT et ternaire natif. Deep dive par Mathieu Guglielmino, 8 juillet 2026.">
+  <!-- og:start -->
+<meta name="author" content="Mathieu Guglielmino">
+<link rel="canonical" href="https://mathieugug.github.io/quantification-llm/20260708-quantification-llm-app.html">
+<meta name="keywords" content="quantification, LLM, INT4, FP4, outliers, GPTQ, AWQ, SmoothQuant, QuaRot, SpinQuant, QAT, BitNet, NVFP4, Mathieu Guglielmino">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Mathieu Guglielmino">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:url" content="https://mathieugug.github.io/quantification-llm/20260708-quantification-llm-app.html">
+<meta property="og:title" content="La quantification des LLM">
+<meta property="og:description" content="Quantifier un LLM n'est pas tronquer sa précision mais neutraliser une poignée de valeurs aberrantes : outliers, GPTQ, AWQ, rotations QuaRot/SpinQuant, QAT et ternaire natif. Deep dive par Mathieu Guglielmino, 8 juillet 2026.">
+<meta property="og:image" content="https://mathieugug.github.io/quantification-llm/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="La quantification des LLM — couverture social">
+<meta property="article:published_time" content="2026-07-08">
+<meta property="article:author" content="Mathieu Guglielmino">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="La quantification des LLM">
+<meta name="twitter:description" content="Quantifier un LLM n'est pas tronquer sa précision mais neutraliser une poignée de valeurs aberrantes : outliers, GPTQ, AWQ, rotations QuaRot/SpinQuant, QAT et ternaire natif. Deep dive par Mathieu Guglielmino, 8 juillet 2026.">
+<meta name="twitter:image" content="https://mathieugug.github.io/quantification-llm/og.png">
+<script type="application/ld+json">
+{"@context": "https://schema.org","@type": "Article","headline": "La quantification des LLM","description": "Quantifier un LLM n'est pas tronquer sa précision mais neutraliser une poignée de valeurs aberrantes : outliers, GPTQ, AWQ, rotations QuaRot/SpinQuant, QAT et ternaire natif. Deep dive par Mathieu Guglielmino, 8 juillet 2026.","image": "https://mathieugug.github.io/quantification-llm/og.png","url": "https://mathieugug.github.io/quantification-llm/20260708-quantification-llm-app.html","datePublished": "2026-07-08","inLanguage": "fr-FR","author": {"@type": "Person","name": "Mathieu Guglielmino","url": "https://mathieugug.github.io/"},"publisher": {"@type": "Person","name": "Mathieu Guglielmino","url": "https://mathieugug.github.io/"}}
+</script>
+<!-- og:end -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/dossier-app.css">
+  <style>
+    /* ───────── Tokens ───────── */
+    :root {
+      --paper:    #FAF8F3;
+      --paper-2:  #F2EFE7;
+      --ink:      #1A1A1A;
+      --graphite: #5A5A5A;
+      --mist:     #B8B5AE;
+      --rule:     #E5E1D8;
+      --carmine:  #B7332C;
+      --teal:     #1F5560;
+      --mustard:  #B58A2C;
+
+      --serif: 'Spectral', 'Playfair Display', Georgia, serif;
+      --sans:  'Inter', system-ui, sans-serif;
+      --mono:  'JetBrains Mono', 'IBM Plex Mono', monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; max-width: 100vw; }
+    body {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    header.site {
+      grid-column: 1 / -1;
+      padding: 24px 32px;
+      border-bottom: 1px solid var(--rule);
+      display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap;
+    }
+    header.site .marker {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--carmine);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    header.site h1 {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 1.4rem;
+      margin: 0;
+      letter-spacing: -0.01em;
+    }
+    header.site .meta {
+      margin-left: auto;
+      font-size: 0.85rem;
+      color: var(--graphite);
+    }
+    header.site .meta a { color: var(--carmine); text-decoration: none; }
+    header.site .meta a:hover { text-decoration: underline; }
+    header.site .back {
+      font-family: var(--mono); font-size: 0.72rem;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--graphite); text-decoration: none;
+      white-space: nowrap;
+    }
+    header.site .back:hover { color: var(--carmine); }
+    .menu-toggle {
+      display: none;
+      background: none; border: 1px solid var(--rule);
+      padding: 6px 12px; border-radius: 4px; cursor: pointer;
+      font-family: var(--mono); font-size: 0.8rem;
+    }
+    @media (max-width: 1024px) { .menu-toggle { display: inline-block; } }
+
+    /* ───────── TOC (left) ───────── */
+    #toc {
+      padding: 32px 24px;
+      border-right: 1px solid var(--rule);
+      position: sticky; top: 56px; align-self: start;
+      height: calc(100vh - 56px); overflow-y: auto;
+    }
+    #toc h2 {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--graphite);
+      margin: 0 0 16px;
+    }
+    #toc ol {
+      list-style: none; padding: 0; margin: 0;
+      counter-reset: toc-counter;
+    }
+    #toc li {
+      counter-increment: toc-counter;
+      margin: 0 0 12px;
+      font-size: 0.92rem;
+      line-height: 1.4;
+    }
+    #toc li::before {
+      content: counter(toc-counter, decimal-leading-zero) ".";
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--mist);
+      margin-right: 8px;
+    }
+    #toc a {
+      color: var(--ink);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+    }
+    #toc a:hover, #toc a.active {
+      color: var(--carmine);
+      border-bottom-color: currentColor;
+    }
+
+    /* ───────── Main report ───────── */
+    main#report {
+      padding: 56px 48px 96px;
+      min-width: 0;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+    main#report > .lead {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 1.2rem;
+      color: var(--graphite);
+      line-height: 1.5;
+      margin: 0 0 48px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--rule);
+    }
+    main h1.report-title {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 2.6rem;
+      line-height: 1.1;
+      letter-spacing: -0.025em;
+      margin: 0 0 16px;
+    }
+    main h2 {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 1.55rem;
+      letter-spacing: -0.01em;
+      margin: 3.5rem 0 1rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--rule);
+    }
+    main h3 {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 1.18rem;
+      margin: 2rem 0 0.6rem;
+    }
+    main p { margin: 0 0 1.1rem; }
+    main ul, main ol { margin: 0 0 1.1rem; padding-left: 1.4rem; }
+    main li { margin-bottom: 0.4rem; }
+    main blockquote {
+      margin: 1.5rem 0;
+      padding: 12px 20px;
+      border-left: 3px solid var(--carmine);
+      background: var(--paper-2);
+      font-style: italic;
+      color: var(--graphite);
+    }
+    main code {
+      font-family: var(--mono);
+      font-size: 0.88em;
+      background: var(--paper-2);
+      padding: 2px 5px; border-radius: 3px;
+      overflow-wrap: anywhere;
+    }
+    main pre {
+      margin: 1.5rem 0;
+      padding: 14px 16px;
+      background: var(--paper-2);
+      border-radius: 4px;
+      overflow-x: auto;
+      max-width: 100%;
+      font-size: 0.85em;
+      line-height: 1.5;
+      -webkit-overflow-scrolling: touch;
+    }
+    main pre code {
+      background: transparent;
+      padding: 0;
+      border-radius: 0;
+      font-size: 1em;
+      overflow-wrap: normal;
+    }
+    main mark {
+      background: linear-gradient(transparent 58%, rgba(178, 59, 27, 0.14) 58%);
+      color: inherit;
+      padding: 0 2px;
+    }
+
+    /* ───────── Figures ───────── */
+    .figure {
+      margin: 3rem 0;
+      padding: 24px 0;
+      border-top: 1px solid var(--rule);
+      border-bottom: 1px solid var(--rule);
+      position: relative;
+    }
+    .figure svg {
+      width: 100%; height: auto;
+      display: block;
+      margin: 0 auto;
+    }
+    /* State-aware figure breakout on desktop — figure adapts to sources panel state:
+       - Default (sources expanded): fills main-cell only (between TOC and sources)
+       - .layout.sources-collapsed: extends from TOC-right to viewport-right
+       Neither state overlaps a visible sidebar. Smooth 280ms transition.
+       Full math + derivation: skill illustrated-deep-research, companion-app.md § 5. */
+    @media (min-width: 1025px) {
+      .figure {
+        margin-left: calc(-1 * max(0px, (100vw - 1320px) / 2 + 48px));
+        margin-right: calc(-1 * max(0px, (100vw - 1320px) / 2 + 48px));
+        transition: margin-left 280ms ease, margin-right 280ms ease;
+        padding-left: clamp(16px, 3vw, 48px);
+        padding-right: clamp(16px, 3vw, 48px);
+        border-radius: 0;
+      }
+      .layout.sources-collapsed .figure {
+        margin-left: calc(-1 * max(0px, (100vw - 904px) / 2));
+        margin-right: calc(-1 * max(0px, (100vw - 904px) / 2));
+      }
+      .figure-caption {
+        max-width: 760px;
+        margin-left: auto;
+        margin-right: auto;
+        padding: 0 48px;
+      }
+    }
+    .figure-caption {
+      font-size: 0.88rem;
+      color: var(--graphite);
+      font-style: italic;
+      margin-top: 12px;
+      padding: 0 8px;
+    }
+    .figure svg .interactive { cursor: pointer; transition: filter 140ms; }
+    .figure svg .interactive:hover,
+    .figure svg .interactive:focus-visible { outline: none; }
+    .figure svg .interactive:hover rect,
+    .figure svg .interactive:focus-visible rect,
+    .figure svg .interactive:hover path:not([fill="none"]),
+    .figure svg .interactive:focus-visible path:not([fill="none"]),
+    .figure svg .interactive:hover circle,
+    .figure svg .interactive:focus-visible circle {
+      stroke: var(--carmine);
+      stroke-width: 2.5;
+    }
+    .figure svg .interactive:focus-visible {
+      filter: drop-shadow(0 0 0 var(--carmine));
+    }
+
+    /* ───────── Sources sidebar (right) ───────── */
+    #sources {
+      padding: 32px 24px;
+      border-left: 1px solid var(--rule);
+      background: var(--paper-2);
+      position: sticky; top: 56px; align-self: start;
+      height: calc(100vh - 56px); overflow-y: auto;
+      transition: transform 280ms ease, opacity 200ms ease;
+    }
+    #sources .sources-inner { display: block; }
+
+    @media (max-width: 1024px) {
+      .menu-toggle { display: inline-block !important; }
+      header.site { padding: 14px 16px; gap: 10px; flex-wrap: wrap; }
+      header.site h1 { font-size: 1.05rem; min-width: 0; overflow-wrap: break-word; word-break: break-word; }
+      header.site .meta { font-size: 0.75rem; }
+      header.site .back { font-size: 0.7rem; letter-spacing: 0.08em; }
+      main#report { padding: 28px 18px 56px; max-width: 100%; min-width: 0; }
+      main h1.report-title { font-size: 1.8rem; overflow-wrap: break-word; word-break: break-word; }
+      main#report > .lead { font-size: 1.02rem; margin-bottom: 32px; padding-bottom: 18px; }
+      main h2 { font-size: 1.25rem; margin: 2.4rem 0 0.8rem; overflow-wrap: break-word; word-break: break-word; }
+      main h3 { font-size: 1.05rem; overflow-wrap: break-word; }
+      main p, main ul, main ol { overflow-wrap: break-word; word-break: break-word; }
+      .figure { margin: 2rem 0; padding: 16px 0; max-width: 100%; overflow: hidden; }
+      .figure svg { width: 100%; max-width: 100%; height: auto; }
+      main table {
+        display: block; max-width: 100%;
+        overflow-x: auto; -webkit-overflow-scrolling: touch;
+      }
+      main th, main td { white-space: normal; }
+    }
+    #sources h2 {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--graphite);
+      margin: 0 0 16px;
+    }
+    #sources ol { list-style: none; padding: 0; margin: 0; }
+    #sources li {
+      font-size: 0.82rem;
+      line-height: 1.5;
+      margin: 0 0 16px;
+      padding: 12px 14px;
+      border-radius: 4px;
+      border: 1px solid transparent;
+      transition: border-color 220ms, background 220ms;
+    }
+    #sources li .cite-num {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--carmine);
+      margin-right: 6px;
+    }
+    #sources li a {
+      display: inline-block;
+      margin-top: 4px;
+      color: var(--teal);
+      text-decoration: none;
+      font-size: 0.78rem;
+    }
+    #sources li a:hover { text-decoration: underline; }
+    #sources li .accessed {
+      display: block;
+      margin-top: 4px;
+      color: var(--mist);
+      font-style: italic;
+      font-size: 0.74rem;
+    }
+    #sources li.highlight {
+      background: var(--paper);
+      border-color: var(--carmine);
+    }
+
+    /* ───────── Print ───────── */
+    @media print {
+      .layout { grid-template-columns: 1fr; }
+      #toc, #sources, #modal-root, #zoom-overlay, .menu-toggle, .zoom-btn { display: none; }
+      main#report { max-width: none; padding: 0; }
+      .figure { page-break-inside: avoid; }
+    }
+
+    /* === infographie A4 portrait (exec sum visuelle) — pattern partagé === */
+    main .figure.figure--portrait,
+    .layout main .figure.figure--portrait,
+    .layout.sources-collapsed main .figure.figure--portrait {
+      margin-top: 3rem; margin-bottom: 3rem;
+      padding: 0 !important; border: none !important;
+      border-top: none !important; border-bottom: none !important;
+      width: auto;
+    }
+    @media (max-width: 1024px) {
+      main .figure.figure--portrait {
+        margin-left: auto !important; margin-right: auto !important;
+        max-width: 100%;
+      }
+    }
+    @media (min-width: 1025px) {
+      main .figure.figure--portrait,
+      .layout main .figure.figure--portrait,
+      .layout.sources-collapsed main .figure.figure--portrait {
+        margin-left: -60px !important; margin-right: -60px !important;
+        max-width: calc(100% + 120px);
+      }
+    }
+    @media (min-width: 1440px) {
+      main .figure.figure--portrait,
+      .layout main .figure.figure--portrait,
+      .layout.sources-collapsed main .figure.figure--portrait {
+        margin-left: -100px !important; margin-right: -100px !important;
+        max-width: calc(100% + 200px);
+      }
+    }
+    main .figure--portrait .figure-portrait-link { display: block; width: 100%; border: 1px solid var(--rule); background: var(--paper); border-radius: 2px; cursor: zoom-in; transition: box-shadow 220ms ease, border-color 220ms ease; overflow: hidden; }
+    main .figure--portrait .figure-portrait-link:hover { box-shadow: 0 8px 28px rgba(30,30,42,0.14); border-color: var(--accent); }
+    main .figure--portrait img { display: block; width: 100%; height: auto; }
+    main .figure--portrait .figure-caption { max-width: 100%; margin: 14px auto 0; padding: 0 8px; text-align: center; }
+    /* Sigil MG remonté sur les A4 portrait (au-dessus du header SVG, pas sur le titre) */
+    main .figure--portrait .schema-sigil {
+      top: 10px !important;
+      right: 14px !important;
+      width: 30px !important; height: 30px !important;
+      opacity: 0.60 !important;
+    }
+    @media (max-width: 640px) {
+      main .figure--portrait .schema-sigil { top: 8px !important; right: 10px !important; width: 24px !important; height: 24px !important; }
+    }
+
+    /* === quiz cards (vérification de compréhension) — pattern partagé avec evaluation-agentique === */
+    .quiz-card {
+      margin: 2rem 0 2.4rem;
+      padding: 18px 22px;
+      background: var(--paper-2);
+      border-left: 3px solid var(--carmine);
+      border-radius: 2px;
+    }
+    .quiz-card__head {
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .quiz-card__eyebrow {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--graphite);
+      flex-basis: 100%;
+      margin: 0 0 0.25rem;
+    }
+    .quiz-card__title {
+      font-family: var(--serif);
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin: 0;
+      flex: 1 1 auto;
+      color: var(--ink);
+    }
+    .quiz-card__toggle {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.06em;
+      background: transparent;
+      border: 1px solid var(--mist);
+      color: var(--ink);
+      padding: 6px 14px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: color .15s, border-color .15s;
+    }
+    .quiz-card__toggle:hover, .quiz-card__toggle:focus-visible {
+      color: var(--carmine);
+      border-color: var(--carmine);
+      outline: none;
+    }
+    .quiz-card__body {
+      margin-top: 1.2rem;
+      padding-top: 1rem;
+      border-top: 1px dashed var(--rule);
+    }
+    .quiz-card__body[hidden] { display: none; }
+
+    .quiz-q { margin: 0; padding: 0; }
+    .quiz-q + .quiz-q { margin-top: 1.6rem; padding-top: 1.6rem; border-top: 1px dashed var(--rule); }
+    .quiz-q fieldset { border: 0; padding: 0; margin: 0; }
+    .quiz-q__stem {
+      font-family: var(--serif);
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--ink);
+      padding: 0;
+      margin: 0 0 0.9rem;
+    }
+    .quiz-q__options { list-style: none; padding: 0; margin: 0 0 1rem; }
+    .quiz-q__options li {
+      margin: 0;
+      padding: 8px 0;
+      border-top: 1px solid var(--rule);
+    }
+    .quiz-q__options li:last-child { border-bottom: 1px solid var(--rule); }
+    .quiz-q__options label {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      cursor: pointer;
+      padding: 4px 0;
+    }
+    .quiz-q__options input { margin: 0.3em 0 0; flex: 0 0 auto; accent-color: var(--carmine); }
+    .quiz-q__options label > span { flex: 1; line-height: 1.5; }
+
+    .quiz-q__explain {
+      font-size: 0.92rem;
+      margin: 0.5rem 0 0 1.7rem;
+      padding: 8px 12px;
+      background: var(--paper);
+      border-left: 2px solid var(--mist);
+      color: var(--graphite);
+    }
+    .quiz-q__explain[hidden] { display: none; }
+    .quiz-q__options li.is-correct .quiz-q__explain,
+    .quiz-q__options li.expected .quiz-q__explain { border-left-color: var(--teal); }
+    .quiz-q__options li.is-wrong .quiz-q__explain { border-left-color: var(--carmine); }
+    .quiz-q__options li.is-correct > label > span,
+    .quiz-q__options li.expected > label > span {
+      background-image: linear-gradient(transparent 60%, rgba(31, 85, 96, 0.14) 60%);
+      background-size: 100% 1.5em;
+      background-repeat: repeat-y;
+    }
+    .quiz-q__options li.is-wrong > label > span {
+      background-image: linear-gradient(transparent 60%, rgba(183, 51, 44, 0.14) 60%);
+      background-size: 100% 1.5em;
+      background-repeat: repeat-y;
+    }
+
+    .quiz-q__check {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      background: var(--ink);
+      color: var(--paper);
+      border: 0;
+      padding: 8px 16px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .quiz-q__check:hover, .quiz-q__check:focus-visible { background: var(--carmine); outline: none; }
+    .quiz-q__check:disabled { background: var(--mist); cursor: not-allowed; }
+
+    .quiz-q__verdict {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      margin: 1rem 0 0;
+      padding: 8px 12px;
+      border-left: 2px solid var(--graphite);
+    }
+    .quiz-q__verdict[hidden] { display: none; }
+    .quiz-q__verdict.is-correct { border-left-color: var(--teal); color: var(--teal); }
+    .quiz-q__verdict.is-wrong { border-left-color: var(--carmine); color: var(--carmine); }
+
+    .quiz-q__retry {
+      font-family: var(--mono);
+      font-size: 0.74rem;
+      letter-spacing: 0.06em;
+      background: transparent;
+      border: 0;
+      color: var(--graphite);
+      padding: 6px 0;
+      margin: 0.6rem 0 0;
+      cursor: pointer;
+      text-decoration: underline;
+      text-decoration-color: var(--mist);
+      text-underline-offset: 3px;
+    }
+    .quiz-q__retry:hover, .quiz-q__retry:focus-visible { color: var(--ink); text-decoration-color: var(--carmine); outline: none; }
+    .quiz-q__retry[hidden] { display: none; }
+
+    /* === callouts de renvoi vers d'autres dossiers (pattern partagé avec agent-sdk) === */
+    main .callout { display: grid; grid-template-columns: 280px 1fr; gap: 0; align-items: stretch; margin: 2.4rem 0; padding: 0; background: var(--paper); border-left: 3px solid var(--teal); border-radius: 2px; transition: grid-template-columns 320ms cubic-bezier(.2,.7,.2,1); }
+    main .callout:hover { grid-template-columns: 440px 1fr; }
+    main .callout > .callout-thumb-link { position: relative; display: block; width: 100%; height: 100%; min-height: 200px; overflow: hidden; border-radius: 0; background: transparent; border: 0; border-right: 1px solid var(--rule); cursor: zoom-in; padding: 0; -webkit-appearance: none; appearance: none; font: inherit; color: inherit; text-align: left; transition: filter 200ms ease; }
+    main .callout > .callout-thumb-link:hover { filter: drop-shadow(0 4px 14px rgba(183,51,44,0.18)); border-right-color: var(--carmine); }
+    main .callout > .callout-thumb-link:focus-visible { outline: 2px solid var(--carmine); outline-offset: -2px; }
+    main .callout > .callout-thumb-link img.callout-thumb { width: 100%; height: 100%; object-fit: contain; object-position: center center; display: block; padding: 0; }
+    main .callout > .callout-thumb-link::after { content: '⛶ AGRANDIR'; position: absolute; top: 10px; right: 10px; padding: 4px 9px; font-family: var(--mono); font-size: 9.5px; font-weight: 600; letter-spacing: 0.10em; background: rgba(250,248,243,0.94); border: 1px solid var(--rule); border-radius: 2px; color: var(--graphite); opacity: 0; transition: opacity 180ms ease, color 180ms ease, border-color 180ms ease; pointer-events: none; }
+    main .callout > .callout-thumb-link:hover::after, main .callout > .callout-thumb-link:focus-visible::after { opacity: 1; color: var(--carmine); border-color: var(--carmine); }
+    main .callout > .callout-body { min-width: 0; padding: 22px 26px 22px 26px; align-self: center; }
+    main .callout .callout-eyebrow { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--teal); margin: 0 0 0.45rem; font-weight: 600; }
+    main .callout > .callout-body p { margin: 0; font-size: 0.95rem; line-height: 1.55; color: var(--ink); }
+    main .callout > .callout-body p a { color: var(--carmine); text-decoration: none; border-bottom: 1px dotted var(--carmine); }
+    main .callout > .callout-body p a:hover { color: var(--teal); border-bottom-color: var(--teal); }
+
+    @media (max-width: 1024px) {
+      /* === quiz cards : variantes mobile === */
+      .quiz-card { padding: 14px 16px; margin: 1.6rem 0 2rem; }
+      .quiz-card__head { gap: 0.6rem; }
+      .quiz-card__title { flex-basis: 100%; overflow-wrap: break-word; }
+      .quiz-card__toggle { width: 100%; padding: 12px; min-height: 44px; font-size: 0.82rem; }
+      .quiz-q__check { width: 100%; padding: 12px; min-height: 44px; font-size: 0.82rem; }
+      .quiz-q__options li { padding: 10px 0; }
+      .quiz-q__options label { padding: 8px 0; min-height: 44px; align-items: center; }
+      .quiz-q__explain { margin: 0.5rem 0 0 0; padding: 10px 12px; }
+      .quiz-q__retry { padding: 10px 0; min-height: 44px; }
+    }
+    @media (max-width: 640px) {
+      main .callout, main .callout:hover { grid-template-columns: 1fr; gap: 0; padding: 0; }
+      main .callout > .callout-thumb-link { min-height: 180px; border-right: 0; border-bottom: 1px solid var(--rule); }
+      main .callout > .callout-body { padding: 18px 20px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar" id="topbar">
+    <a href="../index.html">Mathieu <em>Guglielmino</em></a>
+    <span class="dossier-context">Quantification des LLM</span>
+    <div class="topbar-tools">
+      <button class="menu-toggle" id="toggle-toc">Sommaire</button>
+      <button class="menu-toggle" id="toggle-sources">Sources</button>
+    </div>
+    <nav class="back-nav" aria-label="Navigation retour">
+      <a href="index.html" class="back" title="Revenir au hub du dossier">← Hub</a>
+      <span class="back-sep" aria-hidden="true">·</span>
+      <a href="../index.html#series" class="back" title="Revenir à l'accueil">Accueil</a>
+    </nav>
+  </header>
+  <div class="layout">
+
+    <header class="site">
+      <span class="marker">Deep dive · Quantification des LLM</span>
+      <h1>La quantification des LLM</h1>
+      <span class="meta">
+        Mathieu Guglielmino · 8 juillet 2026
+      </span>
+    </header>
+
+    <nav id="toc" aria-label="Sommaire">
+      <button class="panel-close" type="button" aria-label="Fermer le sommaire">Fermer ✕</button>
+      <h2>Sommaire</h2>
+      <ol>
+        <li><a href="#q-1">1. La mémoire prime sur le calcul</a></li>
+        <li><a href="#q-2">2. Ce que « N bits » veut dire</a></li>
+        <li><a href="#q-3">3. La découverte : les outliers</a></li>
+        <li><a href="#q-4">4. La PTQ, famille dominante</a></li>
+        <li><a href="#q-5">5. Les rotations</a></li>
+        <li><a href="#q-6">6. La QAT</a></li>
+        <li><a href="#q-7">7. Méta-évaluation</a></li>
+        <li><a href="#q-8">8. Trajectoires 2026-2028</a></li>
+      </ol>
+    </nav>
+
+    <main id="report">
+<h1 class="report-title">L'IA embarquée : le budget mémoire commande</h1>
+      <p class="lead">L'IA embarquée ne se gagne pas au niveau du <strong>modèle</strong> mais au niveau du <strong>budget mémoire de l'appareil</strong> — et l'architecture réellement déployée en 2026 n'est pas « tout local » mais un routage vérifiable entre l'appareil et le cloud.</p>
+      <p class="byline"><em>6 juillet 2026 — Mathieu Guglielmino</em></p>
+
+      <p>Depuis dix-huit mois, une bascule discrète s'est opérée dans la façon dont les modèles de langage atteignent les utilisateurs. La question n'est plus seulement « quel est le meilleur modèle dans le cloud », mais « qu'est-ce qui peut tourner <strong>sur l'appareil que vous tenez en main</strong>, sans réseau, sans envoyer vos données ailleurs, sans vider la batterie ». Apple a livré un modèle de ~3 milliards de paramètres directement dans iOS<a class="cite" data-cite="1" href="#source-1">1</a> ; Google a publié Gemma 3n, taillé pour tourner sur 2&nbsp;Go de RAM<a class="cite" data-cite="4" href="#source-4">4</a> ; Microsoft embarque Phi-Silica dans chaque Copilot+ PC<a class="cite" data-cite="6" href="#source-6">6</a> ; Meta a poussé Llama 3.2 1B/3B sur Qualcomm et MediaTek dès le premier jour<a class="cite" data-cite="10" href="#source-10">10</a>.</p>
+
+      <p>Le récit dominant présente cette course comme une affaire de modèles : qui a le plus petit, le plus malin, le plus rapide. C'est une erreur de cadrage. <mark>La contrainte porteuse de l'IA embarquée n'est pas le calcul, c'est la mémoire.</mark> Un téléphone haut de gamme dispose de bien assez de <span class="term" data-tooltip="TOPS — Tera-Operations Per Second : mesure de capacité de calcul crête d'un accélérateur. Un chiffre marketing qui ne prédit pas le débit réel d'un LLM, plafonné par la mémoire.">TOPS</span> pour faire tourner un modèle de 3&nbsp;milliards de paramètres. Ce qu'il n'a pas, c'est la RAM pour y loger les poids, le cache d'attention et les activations <strong>en même temps que le système d'exploitation et l'application hôte</strong>. Tout l'art de l'IA embarquée consiste à tenir dans ce budget d'octets. Et quand on n'y tient pas — ce qui reste le cas pour la majorité des requêtes utiles — la vraie architecture 2026 n'est pas de renoncer, mais d'<strong>escalader vers le cloud de façon vérifiable</strong>.</p>
+
+      <p>Ce dossier prend le problème par la contrainte, pas par le modèle. Il montre pourquoi le mur mémoire commande tout le reste, quels leviers le repoussent (quantification, astuces d'architecture, silicium dédié), et pourquoi la frontière décisive de 2026 est celle du routage device↔cloud.</p>
+
+      <section>
+      <h2 id="mem-1">1. Le mur mémoire de l'appareil</h2>
+
+      <p>Un modèle de langage qui décode du texte est, sur un appareil, une opération <strong>limitée par la bande passante mémoire</strong>, pas par le calcul. À chaque token généré, il faut relire l'intégralité des poids du modèle depuis la RAM vers les unités de calcul. Un modèle de 3&nbsp;milliards de paramètres en <span class="term" data-tooltip="FP16 — virgule flottante 16 bits, le format typique d'entraînement et d'inférence non compressée. 2 octets par poids.">FP16</span> pèse ~6&nbsp;Go ; le lire une fois par token, à la <span class="term" data-tooltip="Bande passante mémoire — débit auquel les données transitent entre la RAM et les unités de calcul (Go/s). Sur mobile, ~50-120 Go/s : c'est elle, et non les TOPS, qui plafonne la génération.">bande passante mémoire</span> d'un SoC mobile (de l'ordre de 50 à 120&nbsp;Go/s), plafonne mécaniquement le débit — bien avant que les TOPS du NPU ne soient saturés<a class="cite" data-cite="12" href="#source-12">12</a>. <mark>Sur l'appareil, l'octet est la ressource rare, pas le FLOP.</mark></p>
+
+      <p>Le budget est encore plus serré qu'il n'y paraît, parce que le modèle ne tourne pas seul. La RAM d'un appareil est <strong>unifiée</strong> : le système d'exploitation, l'application hôte, le tampon graphique, les poids du modèle, le <span class="term" data-tooltip="KV-cache — cache clé-valeur de l'attention. Il mémorise les états des tokens déjà vus pour éviter de les recalculer ; son empreinte croît linéairement avec la longueur du contexte.">cache clé-valeur</span> de l'attention (<em>KV-cache</em>, qui croît avec la longueur du contexte) et les activations intermédiaires se partagent le même pool. Un flagship de 2026 embarque 8 à 16&nbsp;Go de RAM ; iOS ou Android en réservent une large part ; l'enveloppe réellement allouable à un modèle sans faire tuer l'application par le système tourne autour de <strong>2 à 4&nbsp;Go</strong><a class="cite" data-cite="12" href="#source-12">12</a>. C'est cette enveloppe — et non la taille théorique du modèle — qui définit ce qui est faisable (voir Schéma&nbsp;1).</p>
+
+      <figure class="figure" id="fig-01">
+        <svg data-schema-id="schema-01" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- HEADER -->
+  <text x="60" y="55" class="mono" font-size="13" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 01</text>
+  <text x="60" y="95" class="display" font-size="28" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Le mur mémoire de l'appareil</text>
+  <text x="60" y="123" class="display" font-size="18" font-style="italic" fill="#5A5A5A">Ce n'est pas la taille du modèle qui décide, mais l'enveloppe de RAM allouable une fois l'OS et l'app servis</text>
+  <line x1="60" y1="145" x2="1140" y2="145" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- RAM UNIFIÉE bar -->
+  <text x="60" y="195" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#5A5A5A">RAM UNIFIÉE D'UN FLAGSHIP — 12 Go partagés</text>
+  <g class="interactive" data-card="marge-os" tabindex="0" role="button" aria-label="OS et système — cliquez pour les détails">
+    <rect x="60" y="212" width="430" height="70" rx="3" fill="#1A1A1A" fill-opacity="0.82"/>
+    <text x="275" y="245" class="body" font-size="13" font-weight="500" fill="#FAF8F3" text-anchor="middle">Système d'exploitation</text>
+    <text x="275" y="266" class="mono" font-size="12" fill="#FAF8F3" text-anchor="middle" opacity="0.85">~5 Go réservés</text>
+  </g>
+  <g class="interactive" data-card="app-buffer" tabindex="0" role="button" aria-label="App et graphismes — cliquez pour les détails">
+    <rect x="494" y="212" width="230" height="70" rx="3" fill="#5A5A5A" fill-opacity="0.55"/>
+    <text x="609" y="245" class="body" font-size="13" font-weight="500" fill="#1A1A1A" text-anchor="middle">App + tampon</text>
+    <text x="609" y="266" class="mono" font-size="12" fill="#5A5A5A" text-anchor="middle">~3 Go</text>
+  </g>
+  <g class="interactive" data-card="ram-totale" tabindex="0" role="button" aria-label="Enveloppe allouable au modèle — cliquez pour les détails">
+    <rect x="728" y="212" width="412" height="70" rx="3" fill="#1F5560" fill-opacity="0.12" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="934" y="243" class="body" font-size="13" font-weight="600" fill="#1F5560" text-anchor="middle">Enveloppe allouable au modèle</text>
+    <text x="934" y="266" class="mono" font-size="13" font-weight="600" fill="#1F5560" text-anchor="middle">≈ 2 – 4 Go</text>
+  </g>
+  <!-- bracket under enveloppe -->
+  <path d="M728 292 L728 302 L1140 302 L1140 292" fill="none" stroke="#1F5560" stroke-width="1"/>
+  <text x="934" y="322" class="body" font-size="11" font-style="italic" fill="#5A5A5A" text-anchor="middle">Au-delà, le système tue l'application</text>
+
+  <!-- Model scenarios -->
+  <text x="60" y="380" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#5A5A5A">EMPREINTE D'UN MODÈLE 3 Md SELON LA PRÉCISION — rapportée à l'enveloppe</text>
+
+  <!-- scale reference: enveloppe max 4 Go maps to x 728..1140? Use own scale. 0 Go at x=200, 4 Go at x=760 -> but weights go to 6 Go. Use 1 Go = 140px from x=200 -->
+  <!-- allocatable zone shading 2-4 Go -->
+  <rect x="480" y="405" width="280" height="300" fill="#1F5560" fill-opacity="0.06"/>
+  <line x1="480" y1="405" x2="480" y2="705" stroke="#1F5560" stroke-width="0.75" stroke-dasharray="2 3"/>
+  <line x1="760" y1="405" x2="760" y2="705" stroke="#B7332C" stroke-width="1.25" stroke-dasharray="4 3"/>
+  <text x="620" y="425" class="body" font-size="11" font-style="italic" fill="#1F5560" text-anchor="middle">zone allouable</text>
+  <text x="766" y="425" class="mono" font-size="11" fill="#B7332C">plafond 4 Go</text>
+
+  <!-- FP16 -->
+  <text x="60" y="470" class="body" font-size="13" fill="#5A5A5A">FP16 · 16 bits</text>
+  <rect x="200" y="452" width="840" height="30" rx="2" fill="#B7332C" fill-opacity="0.5"/>
+  <text x="1050" y="472" class="mono" font-size="13" font-weight="600" fill="#B7332C">6 Go ✗</text>
+
+  <!-- INT8 -->
+  <text x="60" y="530" class="body" font-size="13" fill="#5A5A5A">INT8 · 8 bits</text>
+  <rect x="200" y="512" width="420" height="30" rx="2" fill="#B58A2C" fill-opacity="0.6"/>
+  <text x="632" y="532" class="mono" font-size="13" font-weight="600" fill="#B58A2C">3 Go ⚠</text>
+
+  <!-- INT4 weights + kv -->
+  <g class="interactive" data-card="poids-modele" tabindex="0" role="button" aria-label="Poids en INT4 — cliquez pour les détails">
+    <text x="60" y="590" class="body" font-size="13" fill="#5A5A5A">INT4 · 4 bits</text>
+    <rect x="200" y="572" width="210" height="30" rx="2" fill="#1F5560" fill-opacity="0.65"/>
+    <text x="305" y="592" class="mono" font-size="12" fill="#FAF8F3" text-anchor="middle">poids 1,5 Go</text>
+  </g>
+  <g class="interactive" data-card="kv-cache" tabindex="0" role="button" aria-label="KV-cache — cliquez pour les détails">
+    <rect x="412" y="572" width="150" height="30" rx="2" fill="#2F5D3F" fill-opacity="0.55"/>
+    <text x="487" y="592" class="mono" font-size="12" fill="#FAF8F3" text-anchor="middle">KV-cache</text>
+  </g>
+  <text x="580" y="592" class="mono" font-size="13" font-weight="600" fill="#1F5560">≈ 2,6 Go ✓</text>
+
+  <!-- caption verdict -->
+  <text x="60" y="660" class="display" font-size="18" font-style="italic" fill="#1A1A1A">Verdict : aucun modèle utile ne tient sur l'appareil sans compression 4 bits.</text>
+  <text x="60" y="688" class="body" font-size="13" fill="#5A5A5A">Le décodage relit tous les poids à chaque token — le débit est plafonné par la bande passante mémoire, pas par les TOPS.</text>
+
+  <!-- FOOTER -->
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="768" class="body" font-size="10" font-style="italic" letter-spacing="0.02em" fill="#5A5A5A">Source : arXiv:2501.14794 (Mobile SoC heterogeneous inference) ; ordres de grandeur pour un modèle 3 Md. Enveloppe allouable variable selon l'appareil.</text>
+</svg>
+
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-01" title="Lien direct vers ce schéma">¶</a> <em>Schéma 1 — Le mur mémoire de l'appareil. Ce n'est pas la taille du modèle qui décide, mais l'enveloppe de RAM allouable une fois l'OS et l'application servis : seul un modèle en 4 bits y tient.</em></figcaption>
+      </figure>
+
+      <p>D'où une arithmétique simple et impitoyable. Un modèle de 3&nbsp;milliards de paramètres : en FP16 (16&nbsp;bits/poids) pèse ~6&nbsp;Go → hors budget ; en INT8 (8&nbsp;bits) pèse ~3&nbsp;Go → à la limite haute, KV-cache compris c'est déjà trop ; en INT4 (4&nbsp;bits) pèse ~1,5&nbsp;Go → ça passe, avec de la marge pour le KV-cache et l'app.</p>
+
+      <p>Autrement dit, <strong>aucun modèle utile ne tient sur l'appareil sans compression agressive</strong>. La quantification n'est pas une optimisation optionnelle : c'est le prix d'entrée. Tout le reste — les astuces d'architecture, le silicium dédié, le routage hybride — se construit par-dessus ce constat.</p>
+      </section>
+
+      <section>
+      <h2 id="mem-2">2. La quantification, levier premier</h2>
+
+      <p><span class="term" data-tooltip="Quantification — réduction du nombre de bits par poids (16 → 8 → 4 → ternaire), qui divise d'autant l'empreinte mémoire au prix d'une perte de précision.">Quantifier</span> un modèle, c'est réduire le nombre de bits utilisés pour représenter chaque poids. L'échelle est directe : FP16 → INT8 divise l'empreinte par 2, INT8 → INT4 encore par 2, soit un facteur 8 entre le format d'entraînement (FP16/BF16) et le format embarqué courant<a class="cite" data-cite="13" href="#source-13">13</a>. C'est le levier qui fait passer un 3B de 6&nbsp;Go à 1,5&nbsp;Go — de l'infaisable au faisable (voir Schéma&nbsp;2).</p>
+
+      <figure class="figure" id="fig-02">
+        <svg data-schema-id="schema-02" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- HEADER -->
+  <text x="60" y="55" class="mono" font-size="13" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 02</text>
+  <text x="60" y="95" class="display" font-size="28" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">L'échelle de quantification et sa falaise</text>
+  <text x="60" y="123" class="display" font-size="18" font-style="italic" fill="#5A5A5A">Compresser divise l'empreinte — mais la qualité chute d'un coup en dessous de 4 bits, sauf à réentraîner ou entraîner natif</text>
+  <line x1="60" y1="145" x2="1140" y2="145" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- Axes -->
+  <line x1="180" y1="230" x2="180" y2="620" stroke="#1A1A1A" stroke-width="1.25"/>
+  <line x1="180" y1="620" x2="1080" y2="620" stroke="#1A1A1A" stroke-width="1.25"/>
+  <text x="70" y="235" class="body" font-size="11" fill="#5A5A5A">100 %</text>
+  <text x="88" y="430" class="body" font-size="11" fill="#5A5A5A">85 %</text>
+  <text x="88" y="615" class="body" font-size="11" fill="#5A5A5A">70 %</text>
+  <text x="120" y="400" class="body" font-size="12" fill="#5A5A5A" transform="rotate(-90 120 400)" text-anchor="middle">Qualité retenue vs FP16</text>
+  <text x="630" y="662" class="body" font-size="12" fill="#5A5A5A" text-anchor="middle">Facteur de compression (empreinte / FP16) →</text>
+  <!-- x ticks -->
+  <text x="200" y="642" class="mono" font-size="11" fill="#5A5A5A" text-anchor="middle">×1</text>
+  <text x="392" y="642" class="mono" font-size="11" fill="#5A5A5A" text-anchor="middle">×2</text>
+  <text x="584" y="642" class="mono" font-size="11" fill="#5A5A5A" text-anchor="middle">×4</text>
+  <text x="870" y="642" class="mono" font-size="11" fill="#5A5A5A" text-anchor="middle">×8</text>
+  <text x="1060" y="642" class="mono" font-size="11" fill="#5A5A5A" text-anchor="middle">×10</text>
+
+  <!-- PTQ cliff curve (drops after INT4) -->
+  <path d="M200 230 L392 240 L584 268 L870 470 L1000 590" fill="none" stroke="#B7332C" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- QAT curve (stays high) -->
+  <path d="M584 250 L870 300 L1000 360" fill="none" stroke="#1F5560" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="7 4"/>
+
+  <!-- cliff annotation -->
+  <rect x="720" y="490" width="230" height="70" rx="3" fill="#B7332C" fill-opacity="0.08" stroke="#B7332C" stroke-width="1" stroke-dasharray="2 3"/>
+  <text x="835" y="515" class="body" font-size="12" font-weight="600" fill="#B7332C" text-anchor="middle">La falaise PTQ</text>
+  <text x="835" y="536" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">sous 4 bits, la simple</text>
+  <text x="835" y="551" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">compression casse le modèle</text>
+
+  <!-- POINT: FP16 -->
+  <g class="interactive" data-card="fp16" tabindex="0" role="button" aria-label="FP16 référence — cliquez pour les détails">
+    <circle cx="200" cy="230" r="8" fill="#1A1A1A"/>
+    <text x="200" y="210" class="body" font-size="12" font-weight="600" fill="#1A1A1A" text-anchor="middle">FP16</text>
+    <text x="200" y="195" class="mono" font-size="10" fill="#5A5A5A" text-anchor="middle">6 Go · référence</text>
+  </g>
+  <!-- POINT: INT8 -->
+  <circle cx="392" cy="240" r="7" fill="#5A5A5A"/>
+  <text x="392" y="222" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">INT8</text>
+  <!-- POINT: INT4 PTQ -->
+  <g class="interactive" data-card="int4-ptq" tabindex="0" role="button" aria-label="INT4 post-training — cliquez pour les détails">
+    <circle cx="584" cy="268" r="8" fill="#B7332C"/>
+    <text x="584" y="248" class="body" font-size="12" font-weight="600" fill="#B7332C" text-anchor="middle">INT4 · PTQ</text>
+    <text x="584" y="300" class="mono" font-size="10" fill="#B7332C" text-anchor="middle">AWQ 97-99 %</text>
+  </g>
+  <!-- POINT: QAT -->
+  <g class="interactive" data-card="qat" tabindex="0" role="button" aria-label="QAT quantization-aware training — cliquez pour les détails">
+    <circle cx="870" cy="300" r="8" fill="#1F5560"/>
+    <text x="895" y="296" class="body" font-size="12" font-weight="600" fill="#1F5560">QAT + LoRA</text>
+    <text x="895" y="314" class="mono" font-size="10" fill="#5A5A5A">Apple 2-bit · Meta</text>
+  </g>
+  <!-- POINT: ternaire natif -->
+  <g class="interactive" data-card="ternaire" tabindex="0" role="button" aria-label="Natif ternaire BitNet — cliquez pour les détails">
+    <circle cx="1000" cy="360" r="9" fill="#B58A2C"/>
+    <text x="1000" y="340" class="body" font-size="12" font-weight="600" fill="#B58A2C" text-anchor="middle">Ternaire natif</text>
+    <text x="1000" y="392" class="mono" font-size="10" fill="#B58A2C" text-anchor="middle">1,58 bit · BitNet</text>
+  </g>
+
+  <!-- Legend -->
+  <line x1="200" y1="705" x2="240" y2="705" stroke="#B7332C" stroke-width="2.5"/>
+  <text x="250" y="709" class="body" font-size="12" fill="#5A5A5A">PTQ — compression post-entraînement (bon marché, s'effondre bas)</text>
+  <line x1="640" y1="705" x2="680" y2="705" stroke="#1F5560" stroke-width="2.5" stroke-dasharray="7 4"/>
+  <text x="690" y="709" class="body" font-size="12" fill="#5A5A5A">QAT / natif — le modèle apprend à résister à la perte</text>
+
+  <!-- FOOTER -->
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="768" class="body" font-size="10" font-style="italic" letter-spacing="0.02em" fill="#5A5A5A">Source : synthèse LLM quantization 2026 (AWQ/GPTQ/GGUF) ; Apple Foundation Models 2024-2025 ; BitNet b1.58 2B4T (arXiv:2504.12285). Courbes schématiques.</text>
+</svg>
+
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-02" title="Lien direct vers ce schéma">¶</a> <em>Schéma 2 — L'échelle de quantification et sa falaise. Compresser divise l'empreinte, mais la qualité s'effondre sous 4 bits — sauf à réentraîner (QAT) ou à entraîner nativement en basse précision.</em></figcaption>
+      </figure>
+
+      <p>Deux familles de méthodes coexistent, et la distinction est structurante.</p>
+
+      <p>La <span class="term" data-tooltip="PTQ — Post-Training Quantization : on compresse un modèle déjà entraîné, sans le réentraîner. Bon marché, mais s'effondre aux compressions extrêmes.">quantification post-entraînement (PTQ)</span> compresse un modèle déjà entraîné, sans le réentraîner. C'est la voie dominante en pratique parce qu'elle est bon marché<a class="cite" data-cite="13" href="#source-13">13</a>. Trois formats se sont imposés : <span class="term" data-tooltip="GGUF — format de fichier de llama.cpp et Ollama, avec des paliers de quantification Q2_K à Q8_0 ; standard de facto pour l'inférence locale CPU+GPU.">GGUF</span>, le format de <em>llama.cpp</em> et d'Ollama, avec ses paliers Q2_K à Q8_0 — le schéma <strong>Q4_K_M</strong> (4&nbsp;bits, à grain fin) est le standard de facto pour le mobile ; <strong>AWQ</strong> (<em>Activation-aware Weight Quantization</em>) qui protège les poids saillants et retient 97-99&nbsp;% de la qualité en INT4 ; et <strong>GPTQ</strong>, qui quantifie couche par couche en minimisant l'erreur locale.</p>
+
+      <p>La <span class="term" data-tooltip="QAT — Quantization-Aware Training : on simule la perte de précision pendant l'entraînement pour que le modèle apprenne à y résister. Plus cher, mais bien meilleur en dessous de 4 bits.">quantification pendant l'entraînement (QAT)</span> simule la perte de précision au fil de l'entraînement, si bien que le modèle apprend à y résister. Elle coûte plus cher mais récupère 2 à 5 points de qualité aux compressions extrêmes<a class="cite" data-cite="13" href="#source-13">13</a>. C'est la voie retenue par les acteurs qui contrôlent tout le pipeline : Apple entraîne son modèle on-device en <strong>QAT à 2&nbsp;bits par poids</strong>, avec la table d'<em>embeddings</em> à 4&nbsp;bits et le KV-cache à 8&nbsp;bits, puis récupère la qualité perdue via des adaptateurs <span class="term" data-tooltip="LoRA — Low-Rank Adaptation : petits adaptateurs de faible rang greffés sur un modèle gelé, ici utilisés pour récupérer la qualité perdue à la quantification.">LoRA</span><a class="cite" data-cite="1" href="#source-1">1</a>. Meta combine <strong>QAT + LoRA</strong> et <strong>SpinQuant</strong> pour ses Llama 3.2 quantifiés, avec −56&nbsp;% de taille et −41&nbsp;% de mémoire<a class="cite" data-cite="9" href="#source-9">9</a>.</p>
+
+      <p>La quantification n'est pas gratuite. <mark>La perte de précision ne frappe pas uniformément : le raisonnement mathématique, la logique formelle et la génération de code y sont bien plus sensibles que le résumé ou la conversation ouverte.</mark><a class="cite" data-cite="13" href="#source-13">13</a> Un 4-bit qui « passe » très bien en assistant de rédaction peut dégrader silencieusement sur du code. Mesurer la qualité d'un modèle quantifié sur la mauvaise tâche donne une confiance trompeuse.</p>
+      </section>
+
+      <section>
+      <h2 id="mem-3">3. Les astuces d'architecture</h2>
+
+      <p>La quantification a une limite : en dessous d'un certain seuil de bits, la qualité s'effondre quelle que soit la méthode. Pour aller plus loin, il faut changer non pas la précision des poids mais <strong>la façon dont le modèle occupe la mémoire</strong>. Trois idées se sont imposées en 2025-2026 (voir Schéma&nbsp;3).</p>
+
+      <figure class="figure" id="fig-03">
+        <svg data-schema-id="schema-03" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- HEADER -->
+  <text x="60" y="55" class="mono" font-size="13" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 03</text>
+  <text x="60" y="95" class="display" font-size="28" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Trois leviers pour tenir dans le budget</text>
+  <text x="60" y="123" class="display" font-size="18" font-style="italic" fill="#5A5A5A">Compresser après coup, réorganiser l'occupation mémoire, ou entraîner directement à basse précision</text>
+  <line x1="60" y1="145" x2="1140" y2="145" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- Column labels -->
+  <text x="235" y="185" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#5A5A5A" text-anchor="middle">LEVIER 1 · PRÉCISION</text>
+  <text x="600" y="185" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#5A5A5A" text-anchor="middle">LEVIER 2 · ARCHITECTURE</text>
+  <text x="965" y="185" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#5A5A5A" text-anchor="middle">LEVIER 3 · NATIF</text>
+
+  <!-- COL 1 : Quantif -->
+  <g class="interactive" data-card="quantif" tabindex="0" role="button" aria-label="Quantification post-hoc — cliquez pour les détails">
+    <rect x="60" y="205" width="350" height="470" rx="3" fill="#B7332C" fill-opacity="0.06" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="235" y="248" class="display" font-size="20" font-weight="600" fill="#B7332C" text-anchor="middle">Quantification</text>
+    <text x="235" y="272" class="body" font-size="12" font-style="italic" fill="#5A5A5A" text-anchor="middle">compresser un modèle déjà entraîné</text>
+    <line x1="90" y1="292" x2="380" y2="292" stroke="#B7332C" stroke-width="0.5" stroke-opacity="0.4"/>
+    <text x="90" y="325" class="body" font-size="13" font-weight="600" fill="#1A1A1A">Ce qu'on réduit</text>
+    <text x="90" y="348" class="body" font-size="12" fill="#5A5A5A">Les bits par poids : 16 → 8 → 4</text>
+    <text x="90" y="392" class="body" font-size="13" font-weight="600" fill="#1A1A1A">Comment</text>
+    <text x="90" y="415" class="mono" font-size="12" fill="#5A5A5A">GGUF Q4_K_M · AWQ · GPTQ</text>
+    <text x="90" y="435" class="body" font-size="12" fill="#5A5A5A">→ facteur ×2 à ×8 sur l'empreinte</text>
+    <text x="90" y="479" class="body" font-size="13" font-weight="600" fill="#1A1A1A">Le coût</text>
+    <text x="90" y="502" class="body" font-size="12" fill="#5A5A5A">Falaise de qualité sous 4 bits ;</text>
+    <text x="90" y="521" class="body" font-size="12" fill="#5A5A5A">code &amp; maths plus sensibles.</text>
+    <rect x="90" y="560" width="290" height="80" rx="3" fill="#FAF8F3" stroke="#E5E1D8" stroke-width="1"/>
+    <text x="235" y="588" class="body" font-size="12" font-style="italic" fill="#5A5A5A" text-anchor="middle">« Prix d'entrée » —</text>
+    <text x="235" y="610" class="body" font-size="12" font-style="italic" fill="#5A5A5A" text-anchor="middle">aucun modèle utile ne tient</text>
+    <text x="235" y="628" class="body" font-size="12" font-style="italic" fill="#5A5A5A" text-anchor="middle">sans passer par là.</text>
+  </g>
+
+  <!-- COL 2 : Architecture (two cards) -->
+  <g class="interactive" data-card="matformer" tabindex="0" role="button" aria-label="MatFormer matriochka — cliquez pour les détails">
+    <rect x="425" y="205" width="350" height="222" rx="3" fill="#1F5560" fill-opacity="0.07" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="600" y="240" class="display" font-size="18" font-weight="600" fill="#1F5560" text-anchor="middle">MatFormer</text>
+    <text x="600" y="261" class="body" font-size="12" font-style="italic" fill="#5A5A5A" text-anchor="middle">un modèle matriochka</text>
+    <!-- nested boxes -->
+    <rect x="470" y="278" width="260" height="120" rx="3" fill="none" stroke="#1F5560" stroke-width="1.25"/>
+    <rect x="500" y="298" width="200" height="80" rx="3" fill="none" stroke="#1F5560" stroke-width="1.25" stroke-opacity="0.7"/>
+    <rect x="530" y="318" width="140" height="40" rx="3" fill="#1F5560" fill-opacity="0.25" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="600" y="343" class="mono" font-size="11" fill="#1F5560" text-anchor="middle">cœur actif</text>
+    <text x="600" y="415" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">exécuter le sous-modèle sans activer l'englobant</text>
+  </g>
+  <g class="interactive" data-card="ple" tabindex="0" role="button" aria-label="Per-Layer Embeddings — cliquez pour les détails">
+    <rect x="425" y="440" width="350" height="235" rx="3" fill="#2F5D3F" fill-opacity="0.07" stroke="#2F5D3F" stroke-width="1.5"/>
+    <text x="600" y="475" class="display" font-size="18" font-weight="600" fill="#2F5D3F" text-anchor="middle">Per-Layer Embedding</text>
+    <text x="600" y="496" class="body" font-size="12" font-style="italic" fill="#5A5A5A" text-anchor="middle">décharger vers la RAM lente</text>
+    <!-- fast vs slow memory -->
+    <rect x="455" y="516" width="130" height="55" rx="3" fill="#B7332C" fill-opacity="0.12" stroke="#B7332C" stroke-width="1"/>
+    <text x="520" y="540" class="body" font-size="11" font-weight="600" fill="#B7332C" text-anchor="middle">mémoire rapide</text>
+    <text x="520" y="557" class="body" font-size="10" fill="#5A5A5A" text-anchor="middle">couches actives</text>
+    <rect x="615" y="516" width="130" height="55" rx="3" fill="#5A5A5A" fill-opacity="0.12" stroke="#5A5A5A" stroke-width="1"/>
+    <text x="680" y="540" class="body" font-size="11" font-weight="600" fill="#5A5A5A" text-anchor="middle">RAM lente</text>
+    <text x="680" y="557" class="body" font-size="10" fill="#5A5A5A" text-anchor="middle">embeddings cachés</text>
+    <path d="M615 543 L590 543" stroke="#2F5D3F" stroke-width="1.5" marker-end="url(#arr3)"/>
+    <text x="600" y="612" class="mono" font-size="12" font-weight="600" fill="#2F5D3F" text-anchor="middle">Gemma 3n : 8B brut → 3 Go résidents</text>
+    <text x="600" y="640" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">l'empreinte compte, pas le décompte</text>
+  </g>
+
+  <!-- COL 3 : Natif ternaire -->
+  <g class="interactive" data-card="bitnet-natif" tabindex="0" role="button" aria-label="BitNet natif ternaire — cliquez pour les détails">
+    <rect x="790" y="205" width="350" height="470" rx="3" fill="#B58A2C" fill-opacity="0.08" stroke="#B58A2C" stroke-width="1.5"/>
+    <text x="965" y="248" class="display" font-size="20" font-weight="600" fill="#B58A2C" text-anchor="middle">Natif ternaire</text>
+    <text x="965" y="272" class="body" font-size="12" font-style="italic" fill="#5A5A5A" text-anchor="middle">entraîner directement en 1,58 bit</text>
+    <line x1="820" y1="292" x2="1110" y2="292" stroke="#B58A2C" stroke-width="0.5" stroke-opacity="0.5"/>
+    <!-- ternary values -->
+    <g>
+      <rect x="850" y="315" width="60" height="50" rx="3" fill="#B58A2C" fill-opacity="0.2" stroke="#B58A2C" stroke-width="1.25"/>
+      <text x="880" y="347" class="mono" font-size="20" font-weight="600" fill="#B58A2C" text-anchor="middle">−1</text>
+      <rect x="935" y="315" width="60" height="50" rx="3" fill="#B58A2C" fill-opacity="0.2" stroke="#B58A2C" stroke-width="1.25"/>
+      <text x="965" y="347" class="mono" font-size="20" font-weight="600" fill="#B58A2C" text-anchor="middle">0</text>
+      <rect x="1020" y="315" width="60" height="50" rx="3" fill="#B58A2C" fill-opacity="0.2" stroke="#B58A2C" stroke-width="1.25"/>
+      <text x="1050" y="347" class="mono" font-size="20" font-weight="600" fill="#B58A2C" text-anchor="middle">+1</text>
+    </g>
+    <text x="965" y="392" class="mono" font-size="12" fill="#5A5A5A" text-anchor="middle">log₂(3) ≈ 1,58 bit/poids</text>
+    <text x="820" y="432" class="body" font-size="13" font-weight="600" fill="#1A1A1A">Trois gains d'un coup</text>
+    <text x="820" y="458" class="body" font-size="12" fill="#5A5A5A">• Mémoire minimale</text>
+    <text x="820" y="480" class="body" font-size="12" fill="#5A5A5A">• −82 % d'énergie</text>
+    <text x="820" y="502" class="body" font-size="12" fill="#5A5A5A">• Additions au lieu de ×  → CPU sans GPU</text>
+    <rect x="820" y="535" width="290" height="105" rx="3" fill="#FAF8F3" stroke="#E5E1D8" stroke-width="1"/>
+    <text x="965" y="565" class="body" font-size="12" font-weight="600" fill="#B58A2C" text-anchor="middle">BitNet b1.58 2B4T</text>
+    <text x="965" y="588" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">2 Md, entraîné natif sur 4 000 Md tokens</text>
+    <text x="965" y="612" class="body" font-size="11" font-style="italic" fill="#5A5A5A" text-anchor="middle">jusqu'à 100 Md sur un seul CPU,</text>
+    <text x="965" y="629" class="body" font-size="11" font-style="italic" fill="#5A5A5A" text-anchor="middle">à vitesse de lecture humaine</text>
+  </g>
+
+  <defs>
+    <marker id="arr3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6" fill="none" stroke="#2F5D3F" stroke-width="1.25"/>
+    </marker>
+  </defs>
+
+  <!-- FOOTER -->
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="768" class="body" font-size="10" font-style="italic" letter-spacing="0.02em" fill="#5A5A5A">Sources : Gemma 3n (ai.google.dev) ; BitNet b1.58 2B4T (arXiv:2504.12285) &amp; bitnet.cpp (github.com/microsoft/BitNet) ; Apple Foundation Models 2024.</text>
+</svg>
+
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-03" title="Lien direct vers ce schéma">¶</a> <em>Schéma 3 — Trois leviers pour tenir dans le budget : compresser après coup (quantification), réorganiser l'occupation mémoire (MatFormer, Per-Layer Embedding), ou entraîner directement à basse précision (ternaire natif).</em></figcaption>
+      </figure>
+
+      <p>Le <span class="term" data-tooltip="MatFormer — Matryoshka Transformer : un modèle qui imbrique des sous-modèles plus petits, exécutables seuls sans activer les couches englobantes. Un jeu de poids, plusieurs points de fonctionnement.">MatFormer</span> (transformer matriochka). Gemma 3n imbrique des sous-modèles plus petits à l'intérieur d'un modèle plus grand, comme des poupées russes<a class="cite" data-cite="5" href="#source-5">5</a>. On peut exécuter le seul cœur — le plus petit modèle imbriqué — sans activer les paramètres englobants, ce qui réduit à la volée le calcul, la latence et l'énergie selon la difficulté de la requête.</p>
+
+      <p>Le <span class="term" data-tooltip="Per-Layer Embedding (PLE) — technique de Gemma 3n : les tables d'embeddings sont déchargées vers la RAM lente et réinjectées couche par couche, sortant du budget de mémoire de travail.">Per-Layer Embedding (PLE)</span>. Les tables d'<em>embeddings</em> sont volumineuses et peu utilisées à chaque instant. Gemma 3n les <strong>décharge de la mémoire de travail rapide vers la RAM plus lente</strong>, les régénère et les réinjecte couche par couche au fil de l'inférence<a class="cite" data-cite="4" href="#source-4">4</a>. Le résultat est spectaculaire : les modèles E2B et E4B ont un décompte brut de 5 et 8&nbsp;milliards de paramètres, mais tournent avec l'empreinte de modèles 2B et 4B classiques — <strong>aussi peu que 2&nbsp;Go (E2B) et 3&nbsp;Go (E4B)</strong><a class="cite" data-cite="4" href="#source-4">4</a>. Ce qui compte n'est pas le nombre de paramètres, mais combien d'octets sont résidents en mémoire de travail à un instant donné. Apple joue la même partition avec le <strong>partage du KV-cache</strong> entre couches<a class="cite" data-cite="1" href="#source-1">1</a>.</p>
+
+      <p>Le <span class="term" data-tooltip="Ternaire natif — poids qui ne prennent que trois valeurs {−1, 0, +1}, soit log₂(3) ≈ 1,58 bit, entraînés directement ainsi (BitNet) plutôt que compressés après coup.">natif ternaire</span>. BitNet renverse la logique : au lieu d'entraîner en haute précision puis de compresser, il <strong>entraîne directement des poids ternaires</strong> {−1, 0, +1}, soit log₂(3) ≈ 1,58&nbsp;bit par poids<a class="cite" data-cite="7" href="#source-7">7</a>. Le zéro autorise une parcimonie apprise que les modèles 1-bit purs n'ont pas. BitNet b1.58 2B4T est le premier modèle natif 1,58-bit à 2&nbsp;milliards de paramètres entraîné sur 4&nbsp;000&nbsp;milliards de tokens<a class="cite" data-cite="7" href="#source-7">7</a>. Des poids ternaires remplacent les multiplications par des additions, ce qui donne une inférence CPU sans GPU : le framework <em>bitnet.cpp</em> affiche des accélérations de 1,37× à 6,17× et <strong>jusqu'à −82&nbsp;% d'énergie</strong><a class="cite" data-cite="8" href="#source-8">8</a>. <mark>Le natif ternaire est le seul des trois leviers qui attaque simultanément la mémoire, l'énergie et la dépendance au GPU.</mark></p>
+      </section>
+
+      <section>
+      <h2 id="mem-4">4. Le NPU et le silicium</h2>
+
+      <p>Faire tenir le modèle en mémoire ne suffit pas : encore faut-il l'exécuter sans vider la batterie ni monopoliser le processeur. C'est le rôle du <span class="term" data-tooltip="NPU — Neural Processing Unit : accélérateur dédié aux réseaux de neurones, optimisé pour l'efficacité énergétique plutôt que la polyvalence.">NPU</span>, un accélérateur dédié optimisé pour l'efficacité énergétique. L'argument est chiffré : Phi-Silica tourne sur le NPU Hexagon des Copilot+ PC à ~650&nbsp;tokens/seconde pour <strong>environ 1,5&nbsp;watt</strong>, en libérant CPU et GPU pour le reste<a class="cite" data-cite="6" href="#source-6">6</a>. Un modèle exécuté sur CPU ferait chauffer l'appareil et fondrait la batterie ; sur NPU, il devient une fonction de fond soutenable (voir Schéma&nbsp;4).</p>
+
+      <figure class="figure" id="fig-04">
+        <svg data-schema-id="schema-04" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+    <marker id="arr4" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6" fill="none" stroke="#5A5A5A" stroke-width="1.25"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- HEADER -->
+  <text x="60" y="55" class="mono" font-size="13" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 04</text>
+  <text x="60" y="95" class="display" font-size="28" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Le NPU, la mémoire et le pipeline hétérogène</text>
+  <text x="60" y="123" class="display" font-size="18" font-style="italic" fill="#5A5A5A">Trois unités se partagent une mémoire unifiée — le TOPS vend le silicium, la bande passante décide du débit</text>
+  <line x1="60" y1="145" x2="1140" y2="145" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- LEFT : SoC diagram -->
+  <text x="70" y="185" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#5A5A5A">LE SoC — CALCUL PARTAGÉ, MÉMOIRE COMMUNE</text>
+
+  <!-- CPU -->
+  <rect x="90" y="205" width="150" height="80" rx="3" fill="#5A5A5A" fill-opacity="0.12" stroke="#5A5A5A" stroke-width="1.25"/>
+  <text x="165" y="240" class="body" font-size="14" font-weight="600" fill="#1A1A1A" text-anchor="middle">CPU</text>
+  <text x="165" y="262" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">polyvalent</text>
+  <!-- GPU -->
+  <rect x="255" y="205" width="150" height="80" rx="3" fill="#5A5A5A" fill-opacity="0.12" stroke="#5A5A5A" stroke-width="1.25"/>
+  <text x="330" y="240" class="body" font-size="14" font-weight="600" fill="#1A1A1A" text-anchor="middle">GPU</text>
+  <text x="330" y="262" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">parallèle</text>
+  <!-- NPU highlighted -->
+  <g class="interactive" data-card="npu" tabindex="0" role="button" aria-label="Le NPU — cliquez pour les détails">
+    <rect x="420" y="205" width="170" height="80" rx="3" fill="#B7332C" fill-opacity="0.14" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="505" y="238" class="body" font-size="14" font-weight="600" fill="#B7332C" text-anchor="middle">NPU</text>
+    <text x="505" y="260" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">neuronal · efficace</text>
+    <text x="505" y="277" class="mono" font-size="10" fill="#B7332C" text-anchor="middle">~1,5 W</text>
+  </g>
+
+  <!-- arrows to bus -->
+  <path d="M165 285 L165 340" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#arr4)"/>
+  <path d="M330 285 L330 340" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#arr4)"/>
+  <path d="M505 285 L505 340" stroke="#B7332C" stroke-width="1.5" marker-end="url(#arr4)"/>
+
+  <!-- bandwidth throat -->
+  <g class="interactive" data-card="bande-passante" tabindex="0" role="button" aria-label="La bande passante mémoire — cliquez pour les détails">
+    <path d="M90 348 L590 348 L470 400 L210 400 Z" fill="#B58A2C" fill-opacity="0.16" stroke="#B58A2C" stroke-width="1.5"/>
+    <text x="340" y="372" class="body" font-size="13" font-weight="600" fill="#B58A2C" text-anchor="middle">Bande passante mémoire</text>
+    <text x="340" y="390" class="mono" font-size="11" fill="#5A5A5A" text-anchor="middle">~50–120 Go/s — le goulot du décodage</text>
+  </g>
+
+  <!-- unified memory -->
+  <rect x="90" y="420" width="500" height="110" rx="3" fill="#1F5560" fill-opacity="0.08" stroke="#1F5560" stroke-width="1.5"/>
+  <text x="340" y="450" class="body" font-size="14" font-weight="600" fill="#1F5560" text-anchor="middle">Mémoire unifiée (RAM)</text>
+  <rect x="115" y="465" width="230" height="45" rx="3" fill="#1F5560" fill-opacity="0.3"/>
+  <text x="230" y="492" class="mono" font-size="12" fill="#1A1A1A" text-anchor="middle">poids résidents</text>
+  <rect x="360" y="465" width="205" height="45" rx="3" fill="#2F5D3F" fill-opacity="0.3"/>
+  <text x="462" y="492" class="mono" font-size="12" fill="#1A1A1A" text-anchor="middle">KV-cache + activations</text>
+
+  <text x="90" y="575" class="body" font-size="12" font-style="italic" fill="#5A5A5A">À chaque token, tous les poids sont relus depuis la RAM :</text>
+  <text x="90" y="595" class="body" font-size="12" font-style="italic" fill="#5A5A5A">un NPU à 45 TOPS relié à une RAM lente reste bridé par la RAM.</text>
+
+  <!-- RIGHT : landscape -->
+  <text x="700" y="185" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#5A5A5A">LE PAYSAGE SILICIUM 2026</text>
+
+  <g class="interactive" data-card="apple-ane" tabindex="0" role="button" aria-label="Apple — cliquez pour les détails">
+    <rect x="700" y="205" width="440" height="105" rx="3" fill="#FAF8F3" stroke="#E5E1D8" stroke-width="1.25"/>
+    <text x="720" y="235" class="body" font-size="14" font-weight="600" fill="#1A1A1A">Apple</text>
+    <text x="720" y="260" class="body" font-size="12" fill="#5A5A5A">Neural Engine jusqu'au M5 (oct. 2025), puis bascule</text>
+    <text x="720" y="279" class="body" font-size="12" fill="#5A5A5A">vers des accélérateurs neuronaux par cœur GPU.</text>
+    <text x="720" y="299" class="mono" font-size="11" fill="#B7332C">TOPS ANE non publié — la frontière NPU/GPU se brouille</text>
+  </g>
+  <g class="interactive" data-card="hexagon" tabindex="0" role="button" aria-label="Qualcomm Hexagon — cliquez pour les détails">
+    <rect x="700" y="325" width="440" height="105" rx="3" fill="#FAF8F3" stroke="#E5E1D8" stroke-width="1.25"/>
+    <text x="720" y="355" class="body" font-size="14" font-weight="600" fill="#1A1A1A">Qualcomm — Hexagon</text>
+    <text x="1120" y="355" class="mono" font-size="15" font-weight="600" fill="#B7332C" text-anchor="end">45 TOPS</text>
+    <text x="720" y="380" class="body" font-size="12" fill="#5A5A5A">Snapdragon X ; socle des Copilot+ PC.</text>
+    <text x="720" y="400" class="body" font-size="12" fill="#5A5A5A">Phi-Silica : 650 tok/s à ~1,5 W.</text>
+    <text x="720" y="420" class="mono" font-size="11" fill="#5A5A5A">collaboration Windows AI Foundry</text>
+  </g>
+  <g>
+    <rect x="700" y="445" width="440" height="90" rx="3" fill="#FAF8F3" stroke="#E5E1D8" stroke-width="1.25"/>
+    <text x="720" y="475" class="body" font-size="14" font-weight="600" fill="#1A1A1A">MediaTek · Arm · Intel · AMD</text>
+    <text x="720" y="500" class="body" font-size="12" fill="#5A5A5A">Ciblés day one par Meta pour Llama 3.2 ;</text>
+    <text x="720" y="520" class="body" font-size="12" fill="#5A5A5A">l'inférence répartit CPU + GPU + NPU.</text>
+  </g>
+
+  <!-- bottom insight strip -->
+  <rect x="90" y="620" width="1050" height="90" rx="3" fill="#B7332C" fill-opacity="0.05" stroke="#B7332C" stroke-width="1" stroke-dasharray="2 3"/>
+  <text x="115" y="655" class="display" font-size="18" font-style="italic" fill="#1A1A1A">Le NPU n'est pas un remplaçant, c'est un membre d'un pipeline hétérogène.</text>
+  <text x="115" y="685" class="body" font-size="12" fill="#5A5A5A">Prochain champ de bataille : non pas plus de TOPS, mais plus de bande passante mémoire.</text>
+
+  <!-- FOOTER -->
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="768" class="body" font-size="10" font-style="italic" letter-spacing="0.02em" fill="#5A5A5A">Sources : Notebookcheck (Snapdragon X, 45 TOPS) ; VentureBeat (Phi-Silica) ; arXiv:2501.14794 (heterogeneous mobile inference).</text>
+</svg>
+
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-04" title="Lien direct vers ce schéma">¶</a> <em>Schéma 4 — Le NPU, la mémoire et le pipeline hétérogène. Trois unités (CPU, GPU, NPU) se partagent une mémoire unifiée ; le TOPS vend le silicium, mais c'est la bande passante mémoire qui décide du débit.</em></figcaption>
+      </figure>
+
+      <p>Mais <strong>le TOPS n'est pas la performance</strong>. Qualcomm annonce 45&nbsp;TOPS pour le Hexagon des Snapdragon X<a class="cite" data-cite="11" href="#source-11">11</a> ; ce chiffre mesure une capacité de calcul crête, pas le débit réel d'un LLM. Comme établi en section&nbsp;1, le décodage est limité par la bande passante mémoire : un NPU à 45&nbsp;TOPS relié à une RAM lente reste bridé par la RAM. <mark>Le TOPS vend le silicium ; la bande passante mémoire décide du débit.</mark></p>
+
+      <p>Le paysage 2026 s'est fragmenté : <strong>Apple</strong> a cessé de publier un chiffre de TOPS pour le Neural Engine avec le M5 (octobre 2025) et route désormais une large part de l'IA on-device via des <strong>accélérateurs neuronaux intégrés à chaque cœur GPU</strong><a class="cite" data-cite="11" href="#source-11">11</a> ; <strong>Qualcomm</strong> pousse le Hexagon à 45&nbsp;TOPS et collabore avec Microsoft sur Windows AI Foundry<a class="cite" data-cite="6" href="#source-6">6</a> ; <strong>MediaTek</strong> et les partenaires Arm sont ciblés dès le premier jour par Meta pour Llama 3.2<a class="cite" data-cite="10" href="#source-10">10</a>. En pratique, l'inférence est <strong>hétérogène</strong> : un même modèle répartit ses opérations entre CPU, GPU et NPU, la mémoire unifiée servant de substrat commun<a class="cite" data-cite="12" href="#source-12">12</a>. Le NPU n'est pas un remplaçant mais un membre d'un pipeline.</p>
+      </section>
+
+      <section>
+      <h2 id="mem-5">5. Le paysage des modèles embarqués 2026</h2>
+
+      <p>En croisant contrainte mémoire, technique de compression et cible matérielle, une petite famille de modèles a émergé comme état de l'art embarqué. Elle tourne autour d'un point de convergence remarquable : <strong>~2 à 4&nbsp;milliards de paramètres, compressés à 2-4 bits, pour une empreinte de 1 à 3&nbsp;Go</strong> (voir Schéma&nbsp;5).</p>
+
+      <figure class="figure" id="fig-05">
+        <svg data-schema-id="schema-05" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- HEADER -->
+  <text x="60" y="55" class="mono" font-size="13" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 05</text>
+  <text x="60" y="95" class="display" font-size="28" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Le paysage des modèles embarqués 2026</text>
+  <text x="60" y="123" class="display" font-size="18" font-style="italic" fill="#5A5A5A">La contrainte mémoire dessine une convergence : ~2-4 Md de paramètres, 2-4 bits, 1-3 Go d'empreinte</text>
+  <line x1="60" y1="145" x2="1140" y2="145" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- Column headers -->
+  <text x="80" y="200" class="mono" font-size="11" font-weight="600" letter-spacing="0.1em" fill="#5A5A5A">MODÈLE</text>
+  <text x="360" y="200" class="mono" font-size="11" font-weight="600" letter-spacing="0.1em" fill="#5A5A5A" text-anchor="middle">PARAMS</text>
+  <text x="500" y="200" class="mono" font-size="11" font-weight="600" letter-spacing="0.1em" fill="#5A5A5A" text-anchor="middle">EMPREINTE</text>
+  <text x="650" y="200" class="mono" font-size="11" font-weight="600" letter-spacing="0.1em" fill="#5A5A5A">TECHNIQUE DE COMPRESSION</text>
+  <text x="1000" y="200" class="mono" font-size="11" font-weight="600" letter-spacing="0.1em" fill="#5A5A5A">CIBLE MATÉRIELLE</text>
+  <line x1="80" y1="212" x2="1120" y2="212" stroke="#1A1A1A" stroke-width="1.25"/>
+
+  <!-- Row 1 : Apple -->
+  <g class="interactive" data-card="apple-fm" tabindex="0" role="button" aria-label="Apple Foundation — cliquez pour les détails">
+    <rect x="80" y="220" width="1040" height="76" fill="#B7332C" fill-opacity="0.05"/>
+    <text x="92" y="252" class="body" font-size="15" font-weight="600" fill="#1A1A1A">Apple Foundation</text>
+    <text x="92" y="274" class="body" font-size="11" font-style="italic" fill="#5A5A5A">livré dans iOS · Foundation Models framework</text>
+    <text x="360" y="262" class="mono" font-size="13" fill="#1A1A1A" text-anchor="middle">~3 Md</text>
+    <text x="500" y="262" class="mono" font-size="13" font-weight="600" fill="#1F5560" text-anchor="middle">~1 Go</text>
+    <text x="650" y="262" class="body" font-size="12" fill="#5A5A5A">QAT 2-bit + LoRA + KV-cache partagé</text>
+    <text x="1000" y="262" class="body" font-size="12" fill="#5A5A5A">Apple Silicon</text>
+  </g>
+  <!-- Row 2 : Gemma 3n -->
+  <g class="interactive" data-card="gemma3n" tabindex="0" role="button" aria-label="Gemma 3n — cliquez pour les détails">
+    <rect x="80" y="296" width="1040" height="76" fill="#1F5560" fill-opacity="0.04"/>
+    <text x="92" y="328" class="body" font-size="15" font-weight="600" fill="#1A1A1A">Gemma 3n E4B</text>
+    <text x="92" y="350" class="body" font-size="11" font-style="italic" fill="#5A5A5A">multimodal · mobile-first (Google)</text>
+    <text x="360" y="338" class="mono" font-size="13" fill="#1A1A1A" text-anchor="middle">8 Md brut</text>
+    <text x="500" y="338" class="mono" font-size="13" font-weight="600" fill="#1F5560" text-anchor="middle">3 Go</text>
+    <text x="650" y="338" class="body" font-size="12" fill="#5A5A5A">MatFormer + Per-Layer Embedding</text>
+    <text x="1000" y="338" class="body" font-size="12" fill="#5A5A5A">téléphone / tablette</text>
+  </g>
+  <!-- Row 3 : Phi-Silica -->
+  <g class="interactive" data-card="phi-silica" tabindex="0" role="button" aria-label="Phi-Silica — cliquez pour les détails">
+    <rect x="80" y="372" width="1040" height="76" fill="#B7332C" fill-opacity="0.05"/>
+    <text x="92" y="404" class="body" font-size="15" font-weight="600" fill="#1A1A1A">Phi-Silica</text>
+    <text x="92" y="426" class="body" font-size="11" font-style="italic" fill="#5A5A5A">650 tok/s à ~1,5 W (Microsoft)</text>
+    <text x="360" y="414" class="mono" font-size="13" fill="#1A1A1A" text-anchor="middle">3,3 Md</text>
+    <text x="500" y="414" class="mono" font-size="13" fill="#5A5A5A" text-anchor="middle">NPU-résident</text>
+    <text x="650" y="414" class="body" font-size="12" fill="#5A5A5A">distillation, optimisé Hexagon</text>
+    <text x="1000" y="414" class="body" font-size="12" fill="#5A5A5A">Copilot+ PC</text>
+  </g>
+  <!-- Row 4 : Llama 3.2 -->
+  <g>
+    <rect x="80" y="448" width="1040" height="76" fill="#1F5560" fill-opacity="0.04"/>
+    <text x="92" y="480" class="body" font-size="15" font-weight="600" fill="#1A1A1A">Llama 3.2 3B</text>
+    <text x="92" y="502" class="body" font-size="11" font-style="italic" fill="#5A5A5A">contexte 128K · day one (Meta)</text>
+    <text x="360" y="490" class="mono" font-size="13" fill="#1A1A1A" text-anchor="middle">3 Md</text>
+    <text x="500" y="490" class="mono" font-size="13" fill="#5A5A5A" text-anchor="middle">~1,8 Go</text>
+    <text x="650" y="490" class="body" font-size="12" fill="#5A5A5A">QAT+LoRA / SpinQuant (−56 % taille)</text>
+    <text x="1000" y="490" class="body" font-size="12" fill="#5A5A5A">Qualcomm/MediaTek/Arm</text>
+  </g>
+  <!-- Row 5 : Qwen -->
+  <g>
+    <rect x="80" y="524" width="1040" height="76" fill="#B7332C" fill-opacity="0.05"/>
+    <text x="92" y="556" class="body" font-size="15" font-weight="600" fill="#1A1A1A">Qwen2.5-3B</text>
+    <text x="92" y="578" class="body" font-size="11" font-style="italic" fill="#5A5A5A">populaire en GGUF (Alibaba)</text>
+    <text x="360" y="566" class="mono" font-size="13" fill="#1A1A1A" text-anchor="middle">3 Md</text>
+    <text x="500" y="566" class="mono" font-size="13" fill="#5A5A5A" text-anchor="middle">~1,9 Go</text>
+    <text x="650" y="566" class="body" font-size="12" fill="#5A5A5A">GPTQ 4-bit (PTQ, écosystème ouvert)</text>
+    <text x="1000" y="566" class="body" font-size="12" fill="#5A5A5A">flagship ~15-40 tok/s</text>
+  </g>
+  <!-- Row 6 : BitNet -->
+  <g class="interactive" data-card="bitnet" tabindex="0" role="button" aria-label="BitNet 2B4T — cliquez pour les détails">
+    <rect x="80" y="600" width="1040" height="76" fill="#B58A2C" fill-opacity="0.08" stroke="#B58A2C" stroke-width="1.25"/>
+    <text x="92" y="632" class="body" font-size="15" font-weight="600" fill="#B58A2C">BitNet b1.58 2B4T</text>
+    <text x="92" y="654" class="body" font-size="11" font-style="italic" fill="#5A5A5A">le seul natif ternaire (Microsoft)</text>
+    <text x="360" y="642" class="mono" font-size="13" fill="#1A1A1A" text-anchor="middle">2 Md</text>
+    <text x="500" y="642" class="mono" font-size="13" font-weight="600" fill="#B58A2C" text-anchor="middle">minimal</text>
+    <text x="650" y="642" class="body" font-size="12" fill="#5A5A5A">entraîné natif 1,58-bit (pas compressé)</text>
+    <text x="1000" y="642" class="body" font-size="12" fill="#5A5A5A">CPU sans GPU</text>
+  </g>
+
+  <!-- insight -->
+  <text x="80" y="710" class="display" font-size="16" font-style="italic" fill="#5A5A5A">La stratégie de compression trahit le contrôle du pipeline : QAT quand on maîtrise l'entraînement, PTQ dans l'écosystème ouvert.</text>
+
+  <!-- FOOTER -->
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="768" class="body" font-size="10" font-style="italic" letter-spacing="0.02em" fill="#5A5A5A">Sources : Apple, Google, Microsoft, Meta (blogs officiels 2024-2025) ; BitNet arXiv:2504.12285. Empreintes = ordres de grandeur en 4-bit sauf mention.</text>
+</svg>
+
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-05" title="Lien direct vers ce schéma">¶</a> <em>Schéma 5 — Le paysage des modèles embarqués 2026. La contrainte mémoire dessine une convergence vers ~3 Md de paramètres ; la stratégie de compression (QAT vs PTQ vs natif) trahit qui contrôle le pipeline.</em></figcaption>
+      </figure>
+
+      <p>Deux enseignements. D'abord, <strong>la convergence vers ~3B n'est pas un hasard</strong> : c'est le plus gros modèle qui tient dans l'enveloppe mémoire allouable après quantification 2-4 bits. La contrainte de la section&nbsp;1 dessine directement la taille des modèles. Ensuite, <strong>la stratégie de compression trahit le contrôle du pipeline</strong> : Apple et Meta, qui maîtrisent l'entraînement, misent sur le QAT ; l'écosystème ouvert (Qwen, Llama en GGUF) sur la PTQ ; Microsoft sur la distillation ciblée matériel. Apple revendique d'ailleurs que son modèle ~3B dépasse Phi-3-mini, Mistral-7B, Gemma-7B et Llama-3-8B — des modèles pourtant plus gros<a class="cite" data-cite="1" href="#source-1">1</a>.</p>
+      </section>
+
+      <section>
+      <h2 id="mem-6">6. L'architecture hybride device↔cloud</h2>
+
+      <p>Le point le plus mal compris de l'IA embarquée est celui-ci : <mark>la réponse de 2026 n'est pas « tout sur l'appareil », c'est le routage.</mark> Un modèle de 3B, même excellent, ne remplace pas un modèle frontière pour les requêtes complexes. L'architecture réellement déployée garde le petit modèle local pour ce qu'il fait bien — latence nulle, hors-ligne, confidentialité — et <strong>escalade vers le cloud le reste</strong>, mais sous une contrainte inédite : que cette escalade soit <strong>vérifiablement privée</strong> (voir Schéma&nbsp;6).</p>
+
+      <figure class="figure" id="fig-06">
+        <svg data-schema-id="schema-06" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+    <marker id="arr6" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6" fill="none" stroke="#5A5A5A" stroke-width="1.5"/>
+    </marker>
+    <marker id="arr6t" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6" fill="none" stroke="#1F5560" stroke-width="1.5"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- HEADER -->
+  <text x="60" y="55" class="mono" font-size="13" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 06</text>
+  <text x="60" y="95" class="display" font-size="28" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">La frontière de routage device ↔ cloud</text>
+  <text x="60" y="123" class="display" font-size="18" font-style="italic" fill="#5A5A5A">La réponse de 2026 n'est pas « tout local » mais une escalade vérifiablement privée quand le budget ne suffit pas</text>
+  <line x1="60" y1="145" x2="1140" y2="145" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- Device -->
+  <g class="interactive" data-card="on-device" tabindex="0" role="button" aria-label="Le modèle on-device — cliquez pour les détails">
+    <rect x="70" y="250" width="250" height="190" rx="6" fill="#1F5560" fill-opacity="0.08" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="195" y="285" class="mono" font-size="11" font-weight="600" letter-spacing="0.1em" fill="#5A5A5A" text-anchor="middle">L'APPAREIL</text>
+    <rect x="100" y="305" width="190" height="110" rx="3" fill="#1F5560" fill-opacity="0.15" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="195" y="345" class="body" font-size="14" font-weight="600" fill="#1F5560" text-anchor="middle">Modèle on-device</text>
+    <text x="195" y="368" class="body" font-size="12" fill="#5A5A5A" text-anchor="middle">~3 Md, 2-4 bits</text>
+    <text x="195" y="392" class="body" font-size="11" font-style="italic" fill="#5A5A5A" text-anchor="middle">latence nulle · hors-ligne · privé</text>
+  </g>
+
+  <!-- arrow to diamond -->
+  <path d="M320 345 L410 345" stroke="#5A5A5A" stroke-width="1.5" marker-end="url(#arr6)"/>
+
+  <!-- decision diamond -->
+  <g class="interactive" data-card="critere-escalade" tabindex="0" role="button" aria-label="Les critères d'escalade — cliquez pour les détails">
+    <path d="M540 345 L620 275 L700 345 L620 415 Z" fill="#B58A2C" fill-opacity="0.14" stroke="#B58A2C" stroke-width="1.5"/>
+    <text x="620" y="340" class="body" font-size="13" font-weight="600" fill="#B58A2C" text-anchor="middle">Escalader ?</text>
+    <text x="620" y="360" class="body" font-size="10" fill="#5A5A5A" text-anchor="middle">4 critères</text>
+  </g>
+  <!-- criteria card -->
+  <rect x="430" y="470" width="380" height="150" rx="3" fill="#FAF8F3" stroke="#E5E1D8" stroke-width="1.25"/>
+  <text x="450" y="500" class="mono" font-size="11" font-weight="600" letter-spacing="0.1em" fill="#5A5A5A">LA FRONTIÈRE DE DÉCISION</text>
+  <text x="450" y="528" class="body" font-size="12" fill="#5A5A5A">① Complexité de la requête</text>
+  <text x="450" y="551" class="body" font-size="12" fill="#5A5A5A">② Confidentialité des données</text>
+  <text x="450" y="574" class="body" font-size="12" fill="#5A5A5A">③ État réseau (hors-ligne → local forcé)</text>
+  <text x="450" y="597" class="body" font-size="12" fill="#5A5A5A">④ Budget énergétique (batterie)</text>
+  <path d="M620 415 L620 470" stroke="#5A5A5A" stroke-width="0.75" stroke-dasharray="2 3"/>
+
+  <!-- branch NON : local answer -->
+  <path d="M578 383 L410 383 L410 620 L470 620" stroke="#1F5560" stroke-width="1.5" fill="none" marker-end="url(#arr6t)"/>
+  <text x="360" y="500" class="mono" font-size="12" font-weight="600" fill="#1F5560">NON</text>
+  <rect x="90" y="580" width="290" height="80" rx="3" fill="#1F5560" fill-opacity="0.1" stroke="#1F5560" stroke-width="1.25"/>
+  <text x="235" y="614" class="body" font-size="14" font-weight="600" fill="#1F5560" text-anchor="middle">Réponse locale</text>
+  <text x="235" y="637" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">rien ne quitte l'appareil</text>
+
+  <!-- branch OUI : to PCC -->
+  <path d="M700 320 L740 320" stroke="#B7332C" stroke-width="1.5" marker-end="url(#arr6)"/>
+  <text x="712" y="305" class="mono" font-size="12" font-weight="600" fill="#B7332C">OUI</text>
+
+  <!-- PCC cluster -->
+  <rect x="748" y="250" width="392" height="370" rx="6" fill="#B7332C" fill-opacity="0.04" stroke="#B7332C" stroke-width="1.5"/>
+  <text x="944" y="282" class="mono" font-size="11" font-weight="600" letter-spacing="0.1em" fill="#B7332C" text-anchor="middle">PRIVATE CLOUD COMPUTE</text>
+
+  <g class="interactive" data-card="pcc-attestation" tabindex="0" role="button" aria-label="Attestation cryptographique — cliquez pour les détails">
+    <rect x="772" y="298" width="344" height="110" rx="3" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.25"/>
+    <text x="792" y="328" class="body" font-size="14" font-weight="600" fill="#1A1A1A">Nœud attesté</text>
+    <text x="792" y="352" class="body" font-size="12" fill="#5A5A5A">La charge est chiffrée uniquement vers</text>
+    <text x="792" y="371" class="body" font-size="12" fill="#5A5A5A">les nœuds dont la mesure figure au</text>
+    <text x="792" y="390" class="mono" font-size="12" fill="#B7332C">journal de transparence public</text>
+  </g>
+  <g class="interactive" data-card="stateless" tabindex="0" role="button" aria-label="Sans état — cliquez pour les détails">
+    <rect x="772" y="420" width="344" height="90" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="792" y="450" class="body" font-size="14" font-weight="600" fill="#1A1A1A">Sans état</text>
+    <text x="792" y="474" class="body" font-size="12" fill="#5A5A5A">Données jamais stockées, utilisées pour</text>
+    <text x="792" y="493" class="body" font-size="12" fill="#5A5A5A">la seule requête. « No privileged access ».</text>
+  </g>
+  <text x="944" y="545" class="display" font-size="16" font-style="italic" fill="#1A1A1A" text-anchor="middle">Vérifier, plutôt que faire confiance.</text>
+  <text x="944" y="575" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">La confidentialité devient une propriété architecturale,</text>
+  <text x="944" y="592" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">pas une clause contractuelle.</text>
+
+  <!-- bottom insight -->
+  <text x="70" y="700" class="display" font-size="18" font-style="italic" fill="#5A5A5A">Le petit modèle local n'est pas une fin en soi : c'est le premier étage d'une pile où le vrai produit est le routage.</text>
+
+  <!-- FOOTER -->
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="768" class="body" font-size="10" font-style="italic" letter-spacing="0.02em" fill="#5A5A5A">Source : Apple Security Research, « Private Cloud Compute » (2024) ; Apple Foundation Models 2024-2025.</text>
+</svg>
+
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-06" title="Lien direct vers ce schéma">¶</a> <em>Schéma 6 — La frontière de routage device↔cloud. Le petit modèle local traite ce qu'il peut ; au-delà, l'escalade vers Private Cloud Compute est chiffrée vers des nœuds attestés et sans état.</em></figcaption>
+      </figure>
+
+      <p>Apple a posé le patron de référence avec <strong>Private Cloud Compute (PCC)</strong>. Quand une requête dépasse les capacités du modèle on-device, elle part vers des serveurs en silicium Apple conçus autour de deux principes : ils sont <strong>sans état</strong> (les données ne sont jamais stockées, utilisées seulement pour la requête en cours) et leur comportement est <strong>cryptographiquement vérifiable</strong><a class="cite" data-cite="3" href="#source-3">3</a>. Le mécanisme est précis : l'appareil chiffre la charge utile uniquement vers les clés publiques des nœuds PCC dont les mesures <span class="term" data-tooltip="Attestation — preuve cryptographique qu'un serveur exécute bien une image logicielle donnée, publiée dans un journal de transparence public que l'appareil peut vérifier.">attestées</span> correspondent à une image logicielle publiée dans un <strong>journal de transparence</strong> public<a class="cite" data-cite="3" href="#source-3">3</a>. L'utilisateur n'a plus à <em>faire confiance</em> au fournisseur cloud : il peut <em>vérifier</em> qu'aucun logiciel non attesté ne verra ses données.</p>
+
+      <p>La frontière de décision — <strong>quand rester local, quand escalader</strong> — arbitre quatre critères : la <strong>complexité</strong> de la requête (un résumé court reste local ; un raisonnement multi-étapes escalade) ; la <strong>confidentialité</strong> (les données les plus sensibles restent sur l'appareil par défaut) ; l'<strong>état réseau</strong> (hors-ligne force le local) ; le <strong>budget énergétique</strong> (une longue génération sur NPU peut coûter plus de batterie qu'un aller-retour réseau). Ce routage est le véritable produit. Le petit modèle local n'est pas une fin en soi : c'est le premier étage d'une pile où la confidentialité devient une propriété <strong>architecturale et vérifiable</strong>, pas une promesse contractuelle<a class="cite" data-cite="11" href="#source-11">11</a>.</p>
+      </section>
+
+      <section>
+      <h2 id="mem-7">7. Trajectoires 2026-2028</h2>
+
+      <p>Quatre lignes de force se dessinent (voir Schéma&nbsp;7).</p>
+
+      <figure class="figure" id="fig-07">
+        <svg data-schema-id="schema-07" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- HEADER -->
+  <text x="60" y="55" class="mono" font-size="13" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 07</text>
+  <text x="60" y="95" class="display" font-size="28" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Quatre lignes de force, 2026-2028</text>
+  <text x="60" y="123" class="display" font-size="18" font-style="italic" fill="#5A5A5A">Où l'IA embarquée se dirige : matériel, méthode, usage et régulation convergent</text>
+  <line x1="60" y1="145" x2="1140" y2="145" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- time axis -->
+  <line x1="330" y1="185" x2="330" y2="660" stroke="#E5E1D8" stroke-width="1" stroke-dasharray="2 4"/>
+  <line x1="660" y1="185" x2="660" y2="660" stroke="#E5E1D8" stroke-width="1" stroke-dasharray="2 4"/>
+  <line x1="990" y1="185" x2="990" y2="660" stroke="#E5E1D8" stroke-width="1" stroke-dasharray="2 4"/>
+  <text x="330" y="180" class="mono" font-size="12" font-weight="600" fill="#5A5A5A" text-anchor="middle">2026</text>
+  <text x="660" y="180" class="mono" font-size="12" font-weight="600" fill="#5A5A5A" text-anchor="middle">2027</text>
+  <text x="990" y="180" class="mono" font-size="12" font-weight="600" fill="#5A5A5A" text-anchor="middle">2028</text>
+
+  <!-- Track 1 : ternaire -->
+  <g class="interactive" data-card="ternaire-2027" tabindex="0" role="button" aria-label="Natif ternaire généralisé — cliquez pour les détails">
+    <rect x="70" y="205" width="1070" height="100" rx="3" fill="#B58A2C" fill-opacity="0.07" stroke="#B58A2C" stroke-width="1.25"/>
+    <text x="90" y="235" class="body" font-size="15" font-weight="600" fill="#B58A2C">① Le natif ternaire se généralise</text>
+    <rect x="330" y="252" width="700" height="30" rx="15" fill="#B58A2C" fill-opacity="0.25"/>
+    <circle cx="660" cy="267" r="7" fill="#B58A2C"/>
+    <text x="350" y="272" class="body" font-size="12" fill="#1A1A1A">modèles ternaires natifs plus gros &amp; multimodaux · kernels CPU dédiés · le NPU devient un luxe</text>
+  </g>
+
+  <!-- Track 2 : NPU-first -->
+  <g class="interactive" data-card="npu-first" tabindex="0" role="button" aria-label="NPU comme unité première — cliquez pour les détails">
+    <rect x="70" y="320" width="1070" height="100" rx="3" fill="#B7332C" fill-opacity="0.06" stroke="#B7332C" stroke-width="1.25"/>
+    <text x="90" y="350" class="body" font-size="15" font-weight="600" fill="#B7332C">② Le NPU devient l'unité première</text>
+    <rect x="330" y="367" width="700" height="30" rx="15" fill="#B7332C" fill-opacity="0.22"/>
+    <circle cx="990" cy="382" r="7" fill="#B7332C"/>
+    <text x="350" y="387" class="body" font-size="12" fill="#1A1A1A">l'inférence neuronale, citoyen de première classe du SoC · la bande passante mémoire, prochain champ de bataille</text>
+  </g>
+
+  <!-- Track 3 : agents on-device -->
+  <g class="interactive" data-card="agents-local" tabindex="0" role="button" aria-label="Agents on-device — cliquez pour les détails">
+    <rect x="70" y="435" width="1070" height="100" rx="3" fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="90" y="465" class="body" font-size="15" font-weight="600" fill="#1F5560">③ Les agents on-device arrivent</text>
+    <rect x="500" y="482" width="530" height="30" rx="15" fill="#1F5560" fill-opacity="0.22"/>
+    <circle cx="820" cy="497" r="7" fill="#1F5560"/>
+    <text x="520" y="502" class="body" font-size="12" fill="#1A1A1A">du chatbot local à l'agent local · le KV-cache du contexte long devient le poste mémoire dominant</text>
+  </g>
+
+  <!-- Track 4 : regulation -->
+  <g class="interactive" data-card="regulation" tabindex="0" role="button" aria-label="Confidentialité et régulation — cliquez pour les détails">
+    <rect x="70" y="550" width="1070" height="100" rx="3" fill="#2F5D3F" fill-opacity="0.06" stroke="#2F5D3F" stroke-width="1.25"/>
+    <text x="90" y="580" class="body" font-size="15" font-weight="600" fill="#2F5D3F">④ La confidentialité, argument produit &amp; levier réglementaire</text>
+    <rect x="330" y="597" width="700" height="30" rx="15" fill="#2F5D3F" fill-opacity="0.22"/>
+    <circle cx="660" cy="612" r="7" fill="#2F5D3F"/>
+    <text x="350" y="617" class="body" font-size="12" fill="#1A1A1A">traitement local = minimisation (RGPD) · attestation vérifiable · un angle que l'AI Act est outillé pour récompenser</text>
+  </g>
+
+  <!-- closing line -->
+  <text x="600" y="705" class="display" font-size="18" font-style="italic" fill="#1A1A1A" text-anchor="middle">L'IA embarquée n'est pas qu'une optimisation technique : c'est une architecture de la confiance.</text>
+
+  <!-- FOOTER -->
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="768" class="body" font-size="10" font-style="italic" letter-spacing="0.02em" fill="#5A5A5A">Synthèse de l'auteur, à partir des sources du dossier. Positions temporelles indicatives.</text>
+</svg>
+
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-07" title="Lien direct vers ce schéma">¶</a> <em>Schéma 7 — Quatre lignes de force, 2026-2028 : natif ternaire généralisé, NPU comme unité première, agents on-device, et confidentialité comme argument produit et levier réglementaire.</em></figcaption>
+      </figure>
+
+      <p><strong>Le natif ternaire se généralise.</strong> BitNet a montré qu'entraîner directement en 1,58&nbsp;bit bat la compression post-hoc sur les trois axes qui comptent à l'edge : mémoire, énergie, indépendance au GPU<a class="cite" data-cite="7" href="#source-7">7</a><a class="cite" data-cite="8" href="#source-8">8</a>. Attendre des modèles ternaires natifs plus gros et multimodaux, avec des kernels CPU dédiés.</p>
+
+      <p><strong>Le NPU devient l'unité première.</strong> Le brouillage Apple entre Neural Engine et accélérateurs GPU<a class="cite" data-cite="11" href="#source-11">11</a>, la course aux TOPS de Qualcomm, l'intégration Windows AI Foundry<a class="cite" data-cite="6" href="#source-6">6</a> convergent vers un SoC où l'inférence neuronale est un citoyen de première classe — avec la bande passante mémoire, et non le TOPS, comme prochain champ de bataille.</p>
+
+      <p><strong>Les agents on-device arrivent.</strong> Le passage d'un chatbot local à un agent local — qui appelle des outils, lit l'écran, enchaîne des étapes — change la donne mémoire : le KV-cache d'un contexte agentique long devient le poste dominant, ce qui rejoint les problématiques de compaction et de gestion du cache déjà critiques côté datacenter.</p>
+
+      <p><strong>La confidentialité devient argument produit et levier réglementaire.</strong> Le traitement local est, du point de vue du RGPD, une forme de <strong>minimisation</strong> : ce qui ne quitte jamais l'appareil n'est pas un transfert de données. Combiné à l'attestation vérifiable de PCC, cela transforme la privacy d'une clause de confiance en une propriété démontrable. <mark>L'IA embarquée n'est pas seulement une optimisation technique : c'est une architecture de la confiance.</mark></p>
+
+      <p>Le fil rouge de ce dossier tient en une phrase : <strong>l'IA embarquée est un problème de budget mémoire, pas de modèle.</strong> La contrainte d'octets sur l'appareil dessine la taille des modèles (~3B), impose la quantification (2-4 bits), justifie les astuces d'architecture et le silicium dédié, et — quand le budget ne suffit pas — commande une architecture hybride où le vrai produit est le <strong>routage vérifiable</strong> device↔cloud. Qui raisonne en « quel modèle » se trompe de question ; la bonne est « combien d'octets, où, et selon quelle frontière de confiance ».</p>
+      </section>
+
+      <p class="report-outro"><em>Format co-écrit avec l'aide d'une IA · 6 juillet 2026 — Mathieu Guglielmino</em></p>
+    </main>
+
+    <aside id="sources" aria-label="Sources">
+      <button class="panel-close" type="button" aria-label="Fermer les sources">Fermer ✕</button>
+      <div class="sources-inner">
+      <h2>Sources</h2>
+      <ol id="sources-list">
+<li id="source-1">
+          <span class="cite-num">[1]</span> Apple Machine Learning Research, <em>Introducing Apple's On-Device and Server Foundation Models</em>, 2024. Architecture du modèle ~3B, QAT 2-bit, embeddings 4-bit, KV-cache 8-bit partagé, adaptateurs LoRA.<br>
+          <a href="https://machinelearning.apple.com/research/introducing-apple-foundation-models" target="_blank" rel="noopener">machinelearning.apple.com ↗</a>
+          <span class="accessed">consulté le 6 juillet 2026</span>
+        </li>
+        <li id="source-2">
+          <span class="cite-num">[2]</span> Apple Machine Learning Research, <em>Introducing the Third Generation of Apple's Foundation Models</em>, 2025. Foundation Models framework, ~3B on-device, empreinte ~1&nbsp;Go sur Apple Silicon.<br>
+          <a href="https://machinelearning.apple.com/research/introducing-third-generation-of-apple-foundation-models" target="_blank" rel="noopener">machinelearning.apple.com ↗</a>
+          <span class="accessed">consulté le 6 juillet 2026</span>
+        </li>
+        <li id="source-3">
+          <span class="cite-num">[3]</span> Apple Security Research, <em>Private Cloud Compute: A new frontier for AI privacy in the cloud</em>, 2024. Attestation, serveurs sans état, journal de transparence, « no privileged access », double racine de confiance.<br>
+          <a href="https://security.apple.com/blog/private-cloud-compute/" target="_blank" rel="noopener">security.apple.com ↗</a>
+          <span class="accessed">consulté le 6 juillet 2026</span>
+        </li>
+        <li id="source-4">
+          <span class="cite-num">[4]</span> Google AI for Developers, <em>Gemma 3n model overview</em>. MatFormer, Per-Layer Embedding, empreintes E2B 2&nbsp;Go / E4B 3&nbsp;Go pour des décomptes bruts 5B/8B.<br>
+          <a href="https://ai.google.dev/gemma/docs/gemma-3n" target="_blank" rel="noopener">ai.google.dev/gemma ↗</a>
+          <span class="accessed">consulté le 6 juillet 2026</span>
+        </li>
+        <li id="source-5">
+          <span class="cite-num">[5]</span> R. Raj (Hugging Face), <em>Understanding Gemma 3n: How MatFormer Gives You Many Models in One</em>. Le principe matriochka des sous-modèles imbriqués.<br>
+          <a href="https://huggingface.co/blog/rishiraj/matformer-in-gemma-3n" target="_blank" rel="noopener">huggingface.co/blog ↗</a>
+          <span class="accessed">consulté le 6 juillet 2026</span>
+        </li>
+        <li id="source-6">
+          <span class="cite-num">[6]</span> VentureBeat, <em>Microsoft introduces Phi-Silica, a 3.3B parameter model made for Copilot+ PC NPUs</em>, 2024. 650 tok/s, ~1,5&nbsp;W, NPU Hexagon 45 TOPS, Windows AI Foundry.<br>
+          <a href="https://venturebeat.com/ai/microsoft-introduces-phi-silica-a-3-3b-parameter-model-made-for-copilot-pc-npus" target="_blank" rel="noopener">venturebeat.com ↗</a>
+          <span class="accessed">consulté le 6 juillet 2026</span>
+        </li>
+        <li id="source-7">
+          <span class="cite-num">[7]</span> S. Ma, H. Wang et al. (Microsoft Research), <em>BitNet b1.58 2B4T Technical Report</em>, arXiv:2504.12285, avril 2025. Premier modèle natif 1,58-bit à 2&nbsp;Md, entraîné sur 4&nbsp;000&nbsp;Md tokens, poids ternaires {−1,0,+1}.<br>
+          <a href="https://arxiv.org/abs/2504.12285" target="_blank" rel="noopener">arxiv.org/2504.12285 ↗</a>
+          <span class="accessed">consulté le 6 juillet 2026</span>
+        </li>
+        <li id="source-8">
+          <span class="cite-num">[8]</span> Microsoft, <em>BitNet — Official inference framework for 1-bit LLMs</em> (bitnet.cpp). Accélérations CPU 1,37×-6,17×, −82&nbsp;% d'énergie, jusqu'à 100&nbsp;Md sur un seul CPU.<br>
+          <a href="https://github.com/microsoft/BitNet" target="_blank" rel="noopener">github.com/microsoft/BitNet ↗</a>
+          <span class="accessed">consulté le 6 juillet 2026</span>
+        </li>
+        <li id="source-9">
+          <span class="cite-num">[9]</span> Meta AI, <em>Introducing quantized Llama models with increased speed and a reduced memory footprint</em>, 2024. QAT+LoRA et SpinQuant : −56&nbsp;% de taille, −41&nbsp;% de mémoire vs BF16.<br>
+          <a href="https://ai.meta.com/blog/meta-llama-quantized-lightweight-models/" target="_blank" rel="noopener">ai.meta.com/blog ↗</a>
+          <span class="accessed">consulté le 6 juillet 2026</span>
+        </li>
+        <li id="source-10">
+          <span class="cite-num">[10]</span> Meta AI, <em>Llama 3.2: Revolutionizing edge AI and vision with open, customizable models</em>, 2024. 1B/3B, contexte 128K, Qualcomm/MediaTek/Arm day one ; le 3B bat Gemma 2 2.6B et Phi-3.5-mini.<br>
+          <a href="https://ai.meta.com/blog/llama-3-2-connect-2024-vision-edge-mobile-devices/" target="_blank" rel="noopener">ai.meta.com/blog ↗</a>
+          <span class="accessed">consulté le 6 juillet 2026</span>
+        </li>
+        <li id="source-11">
+          <span class="cite-num">[11]</span> Notebookcheck, <em>Qualcomm releases official Snapdragon X Plus/Elite benchmarks for 45 TOPS Hexagon NPU</em>, 2025. 45 TOPS ; bascule Apple M5 vers des accélérateurs neuronaux par cœur GPU.<br>
+          <a href="https://www.notebookcheck.net/Qualcomm-releases-official-Snapdragon-X-Plus-and-Snapdragon-X-Elite-benchmarks-for-45-TOPS-Hexagon-NPU.841811.0.html" target="_blank" rel="noopener">notebookcheck.net ↗</a>
+          <span class="accessed">consulté le 6 juillet 2026</span>
+        </li>
+        <li id="source-12">
+          <span class="cite-num">[12]</span> <em>Characterizing Mobile SoC for Accelerating Heterogeneous LLM Inference</em>, arXiv:2501.14794, 2025. Inférence hétérogène CPU/GPU/NPU, plafond de bande passante mémoire, RAM unifiée.<br>
+          <a href="https://arxiv.org/abs/2501.14794" target="_blank" rel="noopener">arxiv.org/2501.14794 ↗</a>
+          <span class="accessed">consulté le 6 juillet 2026</span>
+        </li>
+        <li id="source-13">
+          <span class="cite-num">[13]</span> Synthèse <em>LLM Quantization Explained: INT4, INT8, FP8, AWQ, GPTQ</em> (VRLA Tech / SitePoint, 2026). Facteurs de compression, AWQ 97-99&nbsp;%, PTQ vs QAT, sensibilité par tâche.<br>
+          <a href="https://vrlatech.com/llm-quantization-explained-int4-int8-fp8-awq-and-gptq-in-2026/" target="_blank" rel="noopener">vrlatech.com ↗</a>
+          <span class="accessed">consulté le 6 juillet 2026</span>
+        </li>
+        </ol>
+      </div>
+    </aside>
+
+  </div>
+
+
+  <div id="zoom-overlay" hidden role="dialog" aria-modal="true" aria-label="Schéma agrandi">
+    <header id="zoom-header">
+      <span id="zoom-caption"></span>
+      <div class="zoom-controls">
+        <button type="button" class="zoom-out" aria-label="Dézoomer" title="Dézoomer (−)">−</button>
+        <button type="button" class="zoom-reset" aria-label="Ajuster à l'écran" title="Ajuster à l'écran">Reset</button>
+        <button type="button" class="zoom-in" aria-label="Zoomer" title="Zoomer (+)">+</button>
+        <button type="button" class="zoom-close" aria-label="Fermer (Échap)" title="Fermer (Échap)">×</button>
+      </div>
+    </header>
+    <div id="zoom-stage" tabindex="-1">
+      <div id="zoom-content"></div>
+      <div id="zoom-hint">Molette pour zoomer · glisser pour déplacer · Échap pour fermer</div>
+      <a class="schema-sigil zoom-sigil" href="https://mathieugug.github.io/" target="_blank" rel="noopener" aria-label="Mathieu Guglielmino — visiter mathieugug.github.io" title="Mathieu Guglielmino · mathieugug.github.io">
+        <svg class="sigil-mark" viewBox="0 0 44 44" aria-hidden="true" focusable="false">
+          <circle class="sigil-bg" cx="22" cy="22" r="20.5"/>
+          <circle class="sigil-ring" cx="22" cy="22" r="17.5"/>
+          <g class="sigil-letters"><text x="7.5" y="29">M</text><text x="22" y="29">G</text></g>
+        </svg>
+      </a>
+    </div>
+  </div>
+
+  <div id="modal-root" hidden role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card">
+      <button class="modal-close" data-close aria-label="Fermer">×</button>
+      <p class="modal-eyebrow" id="modal-eyebrow"></p>
+      <h3 class="modal-title" id="modal-title"></h3>
+      <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <script>
+    // ─────────────────────────────────────────────────
+    // DATA — replace these placeholders with real content
+    // ─────────────────────────────────────────────────
+
+    const SCHEMAS = {
+  "schema-01": {
+    "marge-os": {
+      title: "Le système d'exploitation",
+      eyebrow: "La part réservée d'office",
+      body: "<p>iOS ou Android réservent une large part de la RAM unifiée pour le noyau, les services de fond, le compositeur graphique et les applications actives. Sur un flagship de 12&nbsp;Go, l'ordre de grandeur réservé au système tourne autour de 5&nbsp;Go.</p><p>Ce n'est pas négociable : un modèle qui déborde de son enveloppe fait <em>tuer l'application hôte</em> par le gestionnaire mémoire. La contrainte est donc plus dure que le simple « combien de RAM ai-je » — c'est « combien puis-je réserver sans être expulsé ».</p>"
+    },
+    "app-buffer": {
+      title: "L'application et son tampon",
+      eyebrow: "Le voisin qui prend sa place",
+      body: "<p>Le modèle ne tourne jamais seul : l'application hôte (clavier, navigateur, assistant) et son tampon graphique occupent eux aussi la mémoire unifiée pendant l'inférence.</p><p>C'est pourquoi l'enveloppe réellement disponible pour le modèle est bien inférieure à la RAM totale — quelques giga-octets au mieux, et souvent moins quand l'utilisateur a d'autres apps ouvertes.</p>"
+    },
+    "ram-totale": {
+      title: "L'enveloppe allouable",
+      eyebrow: "≈ 2 – 4 Go, pas 12",
+      body: "<p>C'est le chiffre qui compte vraiment : l'espace qu'un modèle peut occuper <em>durablement</em> sans se faire expulser. Sur un appareil de 8 à 16&nbsp;Go, il tourne autour de 2 à 4&nbsp;Go<a class='cite' data-cite='12' href='#source-12'>12</a>.</p><p>Cette enveloppe, et non la taille théorique du modèle, définit ce qui est faisable. Elle explique directement pourquoi les modèles embarqués convergent vers ~3&nbsp;Md de paramètres : c'est le plus gros qui tient une fois quantifié à 4&nbsp;bits.</p>"
+    },
+    "poids-modele": {
+      title: "Les poids en INT4",
+      eyebrow: "1,5 Go pour un 3B",
+      body: "<p>Un modèle de 3&nbsp;milliards de paramètres quantifié à 4&nbsp;bits pèse ~1,5&nbsp;Go — contre ~6&nbsp;Go en FP16. C'est la différence entre l'infaisable et le faisable.</p><p>Mais les poids ne sont pas seuls dans l'enveloppe : il faut aussi loger le KV-cache et les activations. C'est l'addition des trois qui doit tenir sous le plafond, pas les poids seuls.</p>"
+    },
+    "kv-cache": {
+      title: "Le KV-cache",
+      eyebrow: "Le poste qui grandit avec le contexte",
+      body: "<p>Le cache clé-valeur mémorise les états des tokens déjà traités pour éviter de les recalculer. Son empreinte croît <em>linéairement</em> avec la longueur du contexte : plus la conversation est longue, plus il mange de RAM.</p><p>Sur un appareil, c'est un poste critique — et ce sera le poste dominant pour les agents on-device, dont les contextes sont longs. D'où l'intérêt du partage de KV-cache entre couches, comme le fait Apple<a class='cite' data-cite='1' href='#source-1'>1</a>.</p>"
+    }
+  },
+  "schema-02": {
+    "fp16": {
+      title: "FP16 — la référence",
+      eyebrow: "16 bits, 100 % de qualité",
+      body: "<p>Le format de virgule flottante 16&nbsp;bits est celui de l'entraînement et de l'inférence non compressée : 2 octets par poids, aucune perte. C'est l'étalon de qualité contre lequel on mesure toutes les quantifications.</p><p>Son défaut : un modèle 3B y pèse ~6&nbsp;Go, hors de portée de l'enveloppe allouable d'un téléphone. Il faut descendre.</p>"
+    },
+    "int4-ptq": {
+      title: "INT4 en post-training",
+      eyebrow: "Le bon compromis, jusqu'à la falaise",
+      body: "<p>La quantification post-entraînement (PTQ) en 4&nbsp;bits est bon marché et bien outillée : GGUF Q4_K_M pour le mobile, AWQ qui retient 97-99&nbsp;% de la qualité, GPTQ<a class='cite' data-cite='13' href='#source-13'>13</a>.</p><p>À 4&nbsp;bits, la qualité tient encore. Mais en dessous, la simple compression post-hoc s'effondre — c'est la « falaise ». Passer sous ce seuil demande une autre méthode : réentraîner (QAT) ou entraîner natif.</p>"
+    },
+    "qat": {
+      title: "QAT — apprendre à résister",
+      eyebrow: "2 à 5 points regagnés en bas",
+      body: "<p>La quantification pendant l'entraînement (QAT) simule la perte de précision au fil de l'apprentissage : le modèle apprend à y résister. Plus coûteuse, elle récupère 2 à 5 points de qualité aux compressions extrêmes<a class='cite' data-cite='13' href='#source-13'>13</a>.</p><p>C'est la voie des acteurs qui maîtrisent le pipeline : Apple entraîne en QAT 2-bit puis recolle la qualité via des adaptateurs LoRA<a class='cite' data-cite='1' href='#source-1'>1</a> ; Meta combine QAT+LoRA et SpinQuant<a class='cite' data-cite='9' href='#source-9'>9</a>.</p>"
+    },
+    "ternaire": {
+      title: "Le natif ternaire",
+      eyebrow: "1,58 bit, haut malgré tout",
+      body: "<p>BitNet ne compresse pas après coup : il <em>entraîne</em> directement des poids ternaires {−1, 0, +1}, soit ~1,58&nbsp;bit<a class='cite' data-cite='7' href='#source-7'>7</a>. Le modèle naît à basse précision, il n'a rien à « perdre ».</p><p>C'est ce qui lui permet de rester compétitif à une compression où la PTQ serait au fond de la falaise — tout en gagnant l'énergie et l'inférence CPU sans GPU.</p>"
+    }
+  },
+  "schema-03": {
+    "quantif": {
+      title: "Levier 1 — la quantification",
+      eyebrow: "Le prix d'entrée",
+      body: "<p>Réduire les bits par poids (16 → 8 → 4) divise d'autant l'empreinte : facteur ×2 à ×8. C'est ce qui fait passer un 3B de 6&nbsp;Go à 1,5&nbsp;Go et le rend embarquable<a class='cite' data-cite='13' href='#source-13'>13</a>.</p><p>Son coût : la falaise de qualité sous 4&nbsp;bits, et une sensibilité inégale selon la tâche — code et maths souffrent plus que le résumé. C'est le levier obligatoire, mais pas suffisant pour aller très bas.</p>"
+    },
+    "matformer": {
+      title: "MatFormer — le modèle matriochka",
+      eyebrow: "Un jeu de poids, plusieurs tailles",
+      body: "<p>Gemma 3n imbrique des sous-modèles plus petits dans un modèle plus grand, comme des poupées russes<a class='cite' data-cite='5' href='#source-5'>5</a>. On peut exécuter le seul cœur sans activer les couches englobantes.</p><p>Résultat : un même modèle offre plusieurs points de fonctionnement (calcul, latence, énergie) selon la difficulté de la requête — au lieu d'imposer une taille fixe. Le modèle s'adapte au budget disponible.</p>"
+    },
+    "ple": {
+      title: "Per-Layer Embedding",
+      eyebrow: "Décharger vers la RAM lente",
+      body: "<p>Les tables d'embeddings sont volumineuses mais peu sollicitées à chaque instant. Gemma 3n les décharge vers la RAM lente et les réinjecte couche par couche<a class='cite' data-cite='4' href='#source-4'>4</a>.</p><p>Effet spectaculaire : E4B a 8&nbsp;Md de paramètres bruts mais ne tient que 3&nbsp;Go en mémoire de travail. Le principe est celui de tout le dossier : ce qui compte, c'est l'empreinte résidente, pas le décompte total.</p>"
+    },
+    "bitnet-natif": {
+      title: "Levier 3 — le natif ternaire",
+      eyebrow: "Trois gains d'un coup",
+      body: "<p>BitNet b1.58 2B4T est entraîné directement en 1,58&nbsp;bit sur 4&nbsp;000&nbsp;Md tokens<a class='cite' data-cite='7' href='#source-7'>7</a>. Les poids ternaires remplacent les multiplications par des additions.</p><p>D'où trois gains simultanés : mémoire minimale, jusqu'à −82&nbsp;% d'énergie, et inférence CPU sans GPU — au point de faire tourner un modèle de 100&nbsp;Md sur un seul processeur à vitesse de lecture humaine<a class='cite' data-cite='8' href='#source-8'>8</a>. Le seul levier qui attaque les trois axes à la fois.</p>"
+    }
+  },
+  "schema-04": {
+    "npu": {
+      title: "Le NPU",
+      eyebrow: "L'efficacité énergétique",
+      body: "<p>Le Neural Processing Unit est un accélérateur dédié aux réseaux de neurones, optimisé pour l'efficacité plutôt que la polyvalence. Phi-Silica y tourne à ~650&nbsp;tok/s pour ~1,5&nbsp;W, en libérant CPU et GPU<a class='cite' data-cite='6' href='#source-6'>6</a>.</p><p>Sur CPU, le même modèle ferait chauffer l'appareil et fondrait la batterie. Sur NPU, l'inférence devient une fonction de fond soutenable — condition sine qua non d'un usage permanent.</p>"
+    },
+    "bande-passante": {
+      title: "La bande passante mémoire",
+      eyebrow: "Le vrai goulot du décodage",
+      body: "<p>À chaque token, tous les poids sont relus depuis la RAM. Le débit de génération est donc plafonné par la vitesse de ce transfert (~50-120&nbsp;Go/s sur mobile), pas par la puissance de calcul<a class='cite' data-cite='12' href='#source-12'>12</a>.</p><p>Conséquence : un NPU à 45&nbsp;TOPS relié à une RAM lente reste bridé par la RAM. C'est le prochain champ de bataille du silicium embarqué — plus de bande passante, pas plus de TOPS.</p>"
+    },
+    "apple-ane": {
+      title: "Apple — la frontière qui se brouille",
+      eyebrow: "Du Neural Engine aux cœurs GPU",
+      body: "<p>Apple a cessé de publier un chiffre de TOPS pour le Neural Engine avec le M5 (octobre 2025) et route désormais une large part de l'IA on-device via des accélérateurs neuronaux intégrés à chaque cœur GPU<a class='cite' data-cite='11' href='#source-11'>11</a>.</p><p>Signe que la distinction nette NPU/GPU s'estompe : ce qui compte n'est plus l'unité nommée mais l'efficacité par watt de l'ensemble du SoC.</p>"
+    },
+    "hexagon": {
+      title: "Qualcomm Hexagon — 45 TOPS",
+      eyebrow: "Le socle des Copilot+ PC",
+      body: "<p>Le NPU Hexagon des Snapdragon X annonce 45&nbsp;TOPS<a class='cite' data-cite='11' href='#source-11'>11</a> et sert de socle aux Copilot+ PC, avec Phi-Silica embarqué et une collaboration Windows AI Foundry<a class='cite' data-cite='6' href='#source-6'>6</a>.</p><p>Mais le TOPS vend le silicium ; il ne prédit pas le débit réel d'un LLM, plafonné par la mémoire. Les mesures sérieuses portent sur des tokens/seconde à budget énergétique donné.</p>"
+    }
+  },
+  "schema-05": {
+    "apple-fm": {
+      title: "Apple Foundation ~3B",
+      eyebrow: "QAT 2-bit, ~1 Go",
+      body: "<p>Livré dans iOS via le Foundation Models framework, ~1&nbsp;Go d'empreinte grâce au QAT 2-bit, avec adaptateurs LoRA et KV-cache partagé<a class='cite' data-cite='1' href='#source-1'>1</a><a class='cite' data-cite='2' href='#source-2'>2</a>.</p><p>Apple revendique qu'il dépasse Phi-3-mini, Mistral-7B, Gemma-7B et Llama-3-8B — des modèles pourtant plus gros. Exemple type de l'acteur qui maîtrise tout le pipeline et mise sur le QAT.</p>"
+    },
+    "gemma3n": {
+      title: "Gemma 3n E4B",
+      eyebrow: "MatFormer + PLE",
+      body: "<p>Décompte brut de 8&nbsp;Md, mais empreinte de 3&nbsp;Go grâce au MatFormer et au Per-Layer Embedding<a class='cite' data-cite='4' href='#source-4'>4</a>. Multimodal, taillé mobile-first par Google.</p><p>Illustration directe du principe du dossier : la stratégie n'est pas de réduire le modèle mais de réorganiser son occupation mémoire pour que l'empreinte résidente tienne dans l'enveloppe.</p>"
+    },
+    "phi-silica": {
+      title: "Phi-Silica 3.3B",
+      eyebrow: "Distillé, NPU-résident",
+      body: "<p>Distillé de la famille Phi et optimisé pour le NPU Hexagon 45 TOPS, il est embarqué dans tous les Copilot+ PC : ~650&nbsp;tok/s à ~1,5&nbsp;W<a class='cite' data-cite='6' href='#source-6'>6</a>.</p><p>La stratégie Microsoft : ni QAT maison ni PTQ ouverte, mais une distillation ciblée sur un silicium précis. Le modèle et la puce sont co-conçus.</p>"
+    },
+    "bitnet": {
+      title: "BitNet b1.58 2B4T",
+      eyebrow: "Le seul natif ternaire",
+      body: "<p>2&nbsp;Md de paramètres entraînés nativement en 1,58&nbsp;bit sur 4&nbsp;000&nbsp;Md tokens<a class='cite' data-cite='7' href='#source-7'>7</a>. Empreinte et énergie minimales, inférence CPU sans GPU<a class='cite' data-cite='8' href='#source-8'>8</a>.</p><p>L'outsider du paysage : il ne compresse pas un modèle existant, il en propose un nouveau né à basse précision. La trajectoire la plus prometteuse pour l'edge à moyen terme.</p>"
+    }
+  },
+  "schema-06": {
+    "on-device": {
+      title: "Le modèle on-device",
+      eyebrow: "Premier étage de la pile",
+      body: "<p>Un modèle ~3B quantifié tourne localement : latence nulle, fonctionnement hors-ligne, données qui ne quittent pas l'appareil. Il traite ce qu'il fait bien — résumé, réécriture, réponses courtes.</p><p>Mais il ne remplace pas un modèle frontière pour les requêtes complexes. D'où la nécessité d'une frontière de décision : que garder ici, que faire escalader.</p>"
+    },
+    "critere-escalade": {
+      title: "La frontière de décision",
+      eyebrow: "Quatre critères d'escalade",
+      body: "<p>Le routage arbitre quatre facteurs : la <strong>complexité</strong> (un raisonnement multi-étapes dépasse le modèle local), la <strong>confidentialité</strong> (les données sensibles restent par défaut sur l'appareil), l'<strong>état réseau</strong> (hors-ligne force le local), et le <strong>budget énergétique</strong> (une longue génération sur NPU peut coûter plus qu'un aller-retour réseau).</p><p>Ce routage est le véritable produit de l'IA embarquée — pas le petit modèle pris isolément.</p>"
+    },
+    "pcc-attestation": {
+      title: "Le nœud attesté",
+      eyebrow: "Vérifier plutôt que faire confiance",
+      body: "<p>Avec Private Cloud Compute, l'appareil chiffre la charge utile uniquement vers les clés publiques des nœuds dont la mesure attestée figure dans un journal de transparence public<a class='cite' data-cite='3' href='#source-3'>3</a>.</p><p>L'utilisateur n'a plus à croire le fournisseur sur parole : il peut vérifier qu'aucun logiciel non attesté ne verra ses données. La confidentialité devient une propriété démontrable, pas une clause contractuelle.</p>"
+    },
+    "stateless": {
+      title: "Sans état",
+      eyebrow: "« No privileged access »",
+      body: "<p>Les serveurs PCC sont sans état : les données ne sont jamais stockées, elles ne servent qu'à la requête en cours<a class='cite' data-cite='3' href='#source-3'>3</a>. La conception exclut explicitement l'accès administrateur (« no privileged access »).</p><p>S'y ajoute un registre matériel append-only à double racine de confiance contre les attaques de chaîne d'approvisionnement. L'ensemble fait de la cloud-AI un prolongement vérifiable du traitement local, pas une boîte noire.</p>"
+    }
+  },
+  "schema-07": {
+    "ternaire-2027": {
+      title: "Le natif ternaire se généralise",
+      eyebrow: "Trajectoire 1",
+      body: "<p>BitNet a montré qu'entraîner directement en 1,58&nbsp;bit bat la compression post-hoc sur les trois axes de l'edge : mémoire, énergie, indépendance au GPU<a class='cite' data-cite='7' href='#source-7'>7</a><a class='cite' data-cite='8' href='#source-8'>8</a>.</p><p>À attendre : des modèles ternaires natifs plus gros et multimodaux, avec des kernels CPU dédiés qui feront du NPU un luxe plutôt qu'une nécessité pour une partie des charges.</p>"
+    },
+    "npu-first": {
+      title: "Le NPU, unité première",
+      eyebrow: "Trajectoire 2",
+      body: "<p>Le brouillage Apple entre Neural Engine et cœurs GPU<a class='cite' data-cite='11' href='#source-11'>11</a>, la course aux TOPS de Qualcomm et l'intégration Windows AI Foundry<a class='cite' data-cite='6' href='#source-6'>6</a> convergent vers un SoC où l'inférence neuronale est un citoyen de première classe.</p><p>Le prochain champ de bataille n'est pas le TOPS mais la bande passante mémoire — la ressource qui plafonne réellement le débit.</p>"
+    },
+    "agents-local": {
+      title: "Les agents on-device",
+      eyebrow: "Trajectoire 3",
+      body: "<p>Passer d'un chatbot local à un agent local — qui appelle des outils, lit l'écran, enchaîne des étapes — change la donne mémoire : le KV-cache d'un contexte agentique long devient le poste dominant.</p><p>Cela rejoint directement les problématiques de compaction et de gestion du cache déjà critiques côté datacenter, mais sous une contrainte d'octets bien plus dure.</p>"
+    },
+    "regulation": {
+      title: "La confidentialité, levier réglementaire",
+      eyebrow: "Trajectoire 4",
+      body: "<p>Le traitement local est, du point de vue du RGPD, une forme de <em>minimisation</em> : ce qui ne quitte jamais l'appareil n'est pas un transfert de données.</p><p>Combiné à l'attestation vérifiable de PCC<a class='cite' data-cite='3' href='#source-3'>3</a>, cela transforme la privacy d'une clause de confiance en une propriété démontrable — un angle que la régulation européenne (RGPD, AI Act) est outillée pour récompenser. L'IA embarquée devient une architecture de la confiance.</p>"
+    }
+  }
+};
+    /* shape:
+      {
+        'schema-01': {
+          'region-id': { title: '...', body: '<p>...</p>', eyebrow: 'Schéma 1' },
+          ...
+        },
+        ...
+      }
+    */
+
+    const TOOLTIPS = {
+  "ttft": "Time to first token : délai entre l'envoi de la requête et l'arrivée du premier token de la réponse. Métrique critique pour l'expérience utilisateur en streaming.",
+  "llm-judge": "LLM-as-judge : utilisation d'un LLM pour scorer la qualité d'une autre sortie LLM (factualité, pertinence, ton). Permet l'évaluation à l'échelle, mais introduit ses propres biais.",
+  "mcp": "Model Context Protocol : standard ouvert de communication entre LLMs et outils externes, lancé par Anthropic en novembre 2024. Adopté par OpenAI, Google, Microsoft en 2025.",
+  "otlp": "OpenTelemetry Protocol : protocole standardisé (gRPC ou HTTP) pour transporter les signaux d'observabilité (traces, metrics, logs) vers un backend.",
+  "melt": "Metrics, Events, Logs, Traces : les quatre signaux fondamentaux de l'observabilité moderne, popularisés par l'écosystème cloud-native.",
+  "rag": "Retrieval-Augmented Generation : technique qui enrichit le contexte d'un LLM avec des documents récupérés dynamiquement depuis une base vectorielle.",
+  "slo": "Service Level Objective : cible mesurable de qualité de service (ex. 99,9 % des réponses sous 2 secondes). Base contractuelle de l'observabilité opérationnelle."
+};
+    /* shape: { 'CoT': 'Chain-of-Thought : ...', ... } */
+
+    const SOURCES = [
+  {
+    "n": 1,
+    "citation": "OpenTelemetry, <em>AI Agent Observability Standards</em>, OpenTelemetry Blog, mars 2025.",
+    "url": "https://opentelemetry.io/blog/2025/ai-agent-observability/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 2,
+    "citation": "InsightFinder, <em>AI Observability vs Traditional Monitoring</em>, décembre 2025.",
+    "url": "https://insightfinder.com/blog/ai-observability-vs-traditional-monitoring/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 3,
+    "citation": "IBM Think, <em>Observability Trends 2026</em>, IBM Institute for Business Value, mars 2026.",
+    "url": "https://www.ibm.com/think/insights/observability-trends",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 4,
+    "citation": "Dynatrace, <em>Six Observability Predictions for 2026</em>, décembre 2025.",
+    "url": "https://www.dynatrace.com/news/blog/six-observability-predictions-for-2026/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 5,
+    "citation": "Kore.ai, <em>AI Observability: Monitoring &amp; Governing AI Agents</em>, mars 2026.",
+    "url": "https://www.kore.ai/blog/what-is-ai-observability",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 6,
+    "citation": "Voiceflow, <em>What Is AI Agent Observability? A 2026 Guide</em>, mars 2026.",
+    "url": "https://www.voiceflow.com/blog/what-is-ai-agent-observability",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 7,
+    "citation": "Anthropic, <em>Building Effective Agents</em>, whitepaper, décembre 2024.",
+    "url": "https://www.anthropic.com/research/building-effective-agents",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 8,
+    "citation": "Groundcover, <em>AI Agent Observability Guide: Telemetry, Traces, Metrics</em>, février 2026.",
+    "url": "https://www.groundcover.com/learn/observability/ai-agent-observability",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 9,
+    "citation": "N-iX, <em>AI Agent Observability: Practical Framework</em>, décembre 2025.",
+    "url": "https://www.n-ix.com/ai-agent-observability/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 10,
+    "citation": "Langfuse, <em>AI Agent Observability, Tracing &amp; Evaluation</em>, février 2026.",
+    "url": "https://langfuse.com/blog/2024-07-ai-agent-observability-with-langfuse",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 11,
+    "citation": "OpenTelemetry, <em>GenAI Semantic Conventions (specification)</em>, version 1.37, 2026.",
+    "url": "https://opentelemetry.io/docs/specs/semconv/gen-ai/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 12,
+    "citation": "OpenTelemetry, <em>GenAI Agent Spans, Model Spans, Tool Spans, Events</em>, 2026.",
+    "url": "https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-agent-spans/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 13,
+    "citation": "Datadog, <em>LLM Observability + OTel GenAI Semantic Convention support</em>, décembre 2025.",
+    "url": "https://www.datadoghq.com/blog/llm-otel-semantic-convention/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 14,
+    "citation": "Braintrust, <em>AI Observability Tools: Buyer's Guide 2026</em>, janvier 2026.",
+    "url": "https://www.braintrust.dev/articles/best-ai-observability-tools-2026",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 15,
+    "citation": "GetMaxim, <em>Top 5 AI Agent Observability Platforms 2026</em>, décembre 2025.",
+    "url": "https://www.getmaxim.ai/articles/top-5-ai-agent-observability-platforms-in-2026/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 16,
+    "citation": "Traceloop, <em>OpenLLMetry — auto-instrumentation OTel pour 44+ providers LLM</em>, GitHub, 2026.",
+    "url": "https://github.com/traceloop/openllmetry",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 17,
+    "citation": "OpenLIT, <em>OpenLIT SDK — auto-instrumentation 1 ligne LLMs/vector DBs/GPUs</em>, GitHub, 2026.",
+    "url": "https://github.com/openlit/openlit",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 18,
+    "citation": "Gartner, <em>Magic Quadrant for Observability Platforms 2025</em>, juillet 2025.",
+    "url": "https://www.gartner.com/en/documents/6688834",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 19,
+    "citation": "OneUptime, <em>AI Workloads Observability: Cost Crisis</em>, avril 2026.",
+    "url": "https://oneuptime.com/blog/ai-workloads-observability-cost-crisis",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 20,
+    "citation": "Dynatrace, <em>Dynatrace Intelligence — Agentic OS announcement at Perform 2026</em>, février 2026.",
+    "url": "https://www.dynatrace.com/news/blog/dynatrace-intelligence-platform/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 21,
+    "citation": "Splunk, <em>Q1 2026 Observability Update — AI Agent Monitoring</em>, février 2026.",
+    "url": "https://www.splunk.com/en_us/blog/observability/splunk-observability-ai-agent-monitoring-innovations.html",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 22,
+    "citation": "Grafana Labs, <em>Leader Gartner Magic Quadrant Observability 2025 — #1 Completeness of Vision</em>, 2025.",
+    "url": "https://grafana.com/about/press/2025/07/",
+    "accessed": "2026-04-30"
+  }
+];
+    window.SCHEMAS = SCHEMAS;
+
+  </script>
+  <script src="/assets/dossier-app.js" defer></script>
+</body>
+</html>
