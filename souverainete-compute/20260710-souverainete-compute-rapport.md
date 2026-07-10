@@ -35,7 +35,7 @@ Tout commence par la lumière. Graver un transistor de quelques nanomètres supp
 
 Le mot « monopole » est ici littéral. ==ASML détient 100 % du marché de la lithographie EUV et environ 94 % de la lithographie tous types confondus[^4] ; aucun concurrent, ni japonais (Nikon, Canon) ni chinois (SMEE), n'a jamais livré une seule machine EUV de production.== Ce monopole a coûté trente ans de recherche et plus de dix milliards de dollars à construire — et il repose lui-même sur une sous-chaîne de dépendances en poupées russes. Voir le schéma 3.
 
-[SCHEMA-03]
+![La sous-chaîne EUV en poupées russes : ASML dépend elle-même de fournisseurs uniques (Zeiss, TRUMPF)|1200](images/20260710-03-souschaine-euv.svg)
 
 La machine EUV n'est pas un produit ASML « pur ». C'est un intégrateur :
 
@@ -59,7 +59,7 @@ La conséquence stratégique porte un nom : le **« bouclier de silicium »** (*
 
 Voici le retournement contre-intuitif de tout ce dossier. Pendant deux ans, ce qui a limité la livraison des accélérateurs Nvidia n'a été **ni la gravure des dies logiques, ni la HBM prise isolément, mais l'opération qui les réunit** : le *packaging avancé* de type **CoWoS** (*Chip-on-Wafer-on-Substrate*). Voir le schéma 4.
 
-[SCHEMA-04]
+![La falaise du packaging : capacité CoWoS en rampe mais toujours sous la demande, et accaparée par Nvidia|1200](images/20260710-04-falaise-packaging.svg)
 
 Pourquoi le packaging et pas le wafer ? Parce qu'un accélérateur moderne a dépassé la limite de taille d'une puce monolithique (le *reticle limit*, ~858 mm²). Pour aller plus loin, il faut poser plusieurs *chiplets* logiques et plusieurs tours de HBM côte à côte sur un **interposeur** — une galette de silicium percée de milliers de vias traversants (*TSV*) et gravée de pistes ultra-fines. C'est cet interposeur, et l'assemblage qu'il permet, qui est rare.
 
