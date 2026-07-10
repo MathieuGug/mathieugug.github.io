@@ -71,7 +71,7 @@ Le glissement technologique CoWoS-S → **CoWoS-L** (avec ponts de silicium *LSI
 
 Un accélérateur passe l'essentiel de son temps non pas à calculer mais à **attendre la mémoire**. Le décodage d'un LLM est plafonné par la bande passante mémoire, pas par les FLOPs — c'est le « mur mémoire » déjà décrit dans les dossiers `kv-cache` et `ia-embarquee`. La réponse matérielle à ce mur est la **HBM** (*High Bandwidth Memory*) : des puces DRAM empilées verticalement, reliées par des TSV, offrant une bande passante d'un ordre de grandeur supérieure à la DDR classique. Voir le schéma 5.
 
-[SCHEMA-05]
+![La mémoire empilée : anatomie d'une pile HBM et l'oligopole SK hynix / Samsung / Micron|1200](images/20260710-05-memoire-hbm.svg)
 
 Fabriquer de la HBM est brutalement difficile : empiler douze à seize dies amincis sans casser les connexions, évacuer la chaleur, garantir le rendement d'une tour entière. Résultat, un **oligopole** à trois acteurs, tous est-asiatiques. ==SK hynix domine avec environ 63 % du marché HBM en 2025[^9], devant Samsung et Micron ; les trois se partagent la totalité du marché mondial.== Aucun autre fabricant n'a de HBM en production de volume.
 
@@ -81,7 +81,7 @@ La HBM est aussi le lieu d'un couplage devenu critique avec le packaging : c'est
 
 Sous le lithographe, le fondeur, le packaging et la mémoire, il existe une couche que personne ne voit jamais dans les présentations d'entreprise : les **consommables et matériaux** sans lesquels rien ne fonctionne. Et cette couche a une nationalité dominante : le **Japon**. Voir le schéma 6.
 
-[SCHEMA-06]
+![La carte des points de passage : qui tient quel maillon, pays par pays|1200](images/20260710-06-carte-chokepoints.svg)
 
 Le cartographe le plus rigoureux de cette couche est le CSET de Georgetown, qui a documenté maillon par maillon des concentrations qui donnent le vertige[^3] :
 
@@ -99,7 +99,7 @@ Cette section clôt la remontée de la chaîne. On peut maintenant la lire d'un 
 
 Une chaîne aussi concentrée est, par construction, une **surface géopolitique**. Si tout advanced compute doit franchir une poignée de points de passage, alors contrôler ces points, c'est contrôler qui accède à l'IA. C'est exactement la logique qu'ont adoptée les États-Unis à partir de 2022. Voir le schéma 7.
 
-[SCHEMA-07]
+![Le compute sous contrôle : contrôles à l'export, relocalisation et substitution chinoise, 2022-2028|1200](images/20260710-07-compute-sous-controle.svg)
 
 Le *Bureau of Industry and Security* (BIS) du Département du Commerce a construit, par vagues successives, un régime de contrôle à l'export ciblé sur les chokepoints :
 
