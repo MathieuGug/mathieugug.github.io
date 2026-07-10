@@ -10,7 +10,7 @@ Or « avoir des GPU » n'est pas une donnée, c'est le sommet d'un entonnoir. So
 
 Ce dossier prend le problème par le bas. Il ne demande pas « quel modèle tourne sur le GPU » mais « qui peut fabriquer le GPU, et où ». La réponse dessine un entonnoir dont chaque rétrécissement est un **point de passage obligé** : un maillon que rien ne contourne. Et cet entonnoir a une géographie très précise — Veldhoven, Hsinchu, Icheon, quelques villes japonaises. Voir le schéma 1.
 
-[SCHEMA-01]
+![L'entonnoir du compute : chaque étage rétréci concentre le marché sur un ou deux acteurs|1200](images/20260710-01-entonnoir-compute.svg)
 
 La thèse est simple à énoncer, dérangeante à admettre : la contrainte porteuse de l'IA en 2026 n'est pas algorithmique, elle est **physique et géographique**. Et le maillon le plus tendu n'est même pas celui qu'on croit — pas la gravure du silicium, mais le *packaging avancé* qui assemble le processeur et sa mémoire.
 
@@ -18,7 +18,7 @@ La thèse est simple à énoncer, dérangeante à admettre : la contrainte porte
 
 Pour comprendre l'entonnoir, il faut ouvrir le module. Un accélérateur d'IA moderne — un superchip GB200 de Nvidia, un MI400 d'AMD — n'est pas *une* puce. C'est un **assemblage hétérogène** de composants venus de fournisseurs distincts, tenus ensemble par une prouesse d'ingénierie qui, elle-même, n'existe qu'à un seul endroit. Voir le schéma 2.
 
-[SCHEMA-02]
+![Anatomie d'un module accélérateur : quatre briques, quatre fournisseurs est-asiatiques|1200](images/20260710-02-anatomie-module.svg)
 
 Décomposons de haut en bas :
 
