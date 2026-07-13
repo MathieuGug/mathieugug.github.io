@@ -4,25 +4,6 @@ Detailed step-by-step. Follow in order. Don't skip the research phase, even if y
 
 ---
 
-## Phase 0 — Anti-doublon (avant de lancer, non négociable)
-
-Le `BACKLOG.md` (section « Déjà couverts ») est l'état partagé qui évite de refaire un dossier déjà publié. **Mais il ne se met à jour qu'au merge** : deux dossiers construits en parallèle sur deux branches `claude/research-*` sont mutuellement aveugles jusqu'à ce que l'un soit mergé. Vérifier le seul backlog ne suffit donc pas — c'est exactement le trou par lequel `mixture-of-experts` (#159) et `melange-experts` (#160) sont passés : même sujet MoE, même numéro de dossier, produits à deux jours d'écart depuis la même base.
-
-Avant d'écrire la moindre ligne, faire **les deux** checks :
-
-1. **Backlog mergé** — lire `BACKLOG.md` sur `main` à jour (`git fetch origin main` d'abord si la branche est vieille). Chercher le sujet dans « Déjà couverts » **et** dans les gloses des dossiers existants (un sujet peut être traité comme angle secondaire ailleurs — MoE était cité dans `economie-inference` sans y être le sujet).
-2. **PR ouvertes en vol** — lister les PR ouvertes et scanner leurs titres/branches `claude/research-*` :
-   ```
-   mcp__github__list_pull_requests(owner=mathieugug, repo=mathieugug.github.io, state=open)
-   ```
-   Une PR ouverte sur le même sujet = un dossier en cours de construction que le backlog ne peut pas encore voir.
-
-Si un sujet équivalent est **déjà couvert** ou **déjà en vol dans une PR ouverte** : s'arrêter et demander à Mathieu (angle différencié ? remplacement ? abandon ?) avant de construire. Ne jamais lancer un dossier sur la foi du seul backlog.
-
-Une fois le sujet validé comme neuf : le réserver immédiatement dans `BACKLOG.md` § « En cours / prio haute » (`- [ ] <slug> — <angle> (en cours, branche claude/research-<slug>-<date>)`) et pousser ce claim tôt, pour réduire la fenêtre de course avec une session ultérieure.
-
----
-
 ## Phase 1 — Research
 
 ### 1.1 Decompose the topic
