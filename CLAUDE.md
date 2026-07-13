@@ -5,6 +5,7 @@ Site personnel de Mathieu Guglielmino, hébergé sur GitHub Pages. Il publie des
 ## Quick Reference
 
 **Publier un nouveau dossier** :
+0. **Anti-doublon (avant d'écrire la moindre ligne)** : vérifier que le sujet n'est ni **déjà couvert** (`BACKLOG.md` § « Déjà couverts » sur `main` à jour — chercher aussi dans les gloses des dossiers voisins, un sujet peut y être un angle secondaire) ni **déjà en vol** dans une PR ouverte (`mcp__github__list_pull_requests` `state=open`, scanner les branches `claude/research-*`). Le backlog seul ne suffit pas : il ne se met à jour qu'au merge, donc deux dossiers construits en parallèle sont mutuellement invisibles (c'est le trou par lequel `mixture-of-experts` #159 et `melange-experts` #160 sont passés — même sujet MoE, même numéro). Si le sujet est déjà pris → s'arrêter et demander avant de construire. Sinon, le réserver tout de suite dans `BACKLOG.md` § « En cours ».
 1. Créer `<slug>/` avec son `index.html` (hub) + le(s) format(s) (app, slideshow, journal, scrolly, livre…).
 2. Ajouter la tuile dans `index.html` racine (typologie + date + lien vers `<slug>/`).
 3. `python tools/seo_dossiers.py --only <slug>` — génère `og.png` et injecte le bloc SEO dans toutes les pages du dossier (idempotent, à re-runner après modif titre/desc/date).
