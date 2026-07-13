@@ -1,0 +1,1565 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Le modèle du monde caché dans le prédicteur de tokens</title>
+  <meta name="description" content="Prédire parfaitement le prochain token ne prouve pas qu'on ait induit le monde qui l'a généré : Othello-GPT, échecs, taxis de Vafa, Kepler contre Newton, potemkine. Deep dive par Mathieu Guglielmino, 13 juillet 2026.">
+  <!-- og:start -->
+<meta name="author" content="Mathieu Guglielmino">
+<link rel="canonical" href="https://mathieugug.github.io/llm-modele-du-monde/20260713-llm-modele-du-monde-app.html">
+<meta name="keywords" content="modèle du monde, world model, Othello-GPT, sonde linéaire, probing, Vafa, Kepler Newton, potemkine, interprétabilité, LLM, Mathieu Guglielmino">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Mathieu Guglielmino">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:url" content="https://mathieugug.github.io/llm-modele-du-monde/20260713-llm-modele-du-monde-app.html">
+<meta property="og:title" content="Le modèle du monde caché dans le prédicteur de tokens">
+<meta property="og:description" content="Prédire parfaitement le prochain token ne prouve pas qu'on ait induit le monde qui l'a généré : Othello-GPT, échecs, taxis de Vafa, Kepler contre Newton, potemkine. Deep dive par Mathieu Guglielmino, 13 juillet 2026.">
+<meta property="og:image" content="https://mathieugug.github.io/llm-modele-du-monde/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Le modèle du monde caché dans le prédicteur de tokens — couverture social">
+<meta property="article:published_time" content="2026-07-13">
+<meta property="article:author" content="Mathieu Guglielmino">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Le modèle du monde caché dans le prédicteur de tokens">
+<meta name="twitter:description" content="Prédire parfaitement le prochain token ne prouve pas qu'on ait induit le monde qui l'a généré : Othello-GPT, échecs, taxis de Vafa, Kepler contre Newton, potemkine. Deep dive par Mathieu Guglielmino, 13 juillet 2026.">
+<meta name="twitter:image" content="https://mathieugug.github.io/llm-modele-du-monde/og.png">
+<script type="application/ld+json">
+{"@context": "https://schema.org","@type": "Article","headline": "Le modèle du monde caché dans le prédicteur de tokens","description": "Prédire parfaitement le prochain token ne prouve pas qu'on ait induit le monde qui l'a généré : Othello-GPT, échecs, taxis de Vafa, Kepler contre Newton, potemkine. Deep dive par Mathieu Guglielmino, 13 juillet 2026.","image": "https://mathieugug.github.io/llm-modele-du-monde/og.png","url": "https://mathieugug.github.io/llm-modele-du-monde/20260713-llm-modele-du-monde-app.html","datePublished": "2026-07-13","inLanguage": "fr-FR","author": {"@type": "Person","name": "Mathieu Guglielmino","url": "https://mathieugug.github.io/"},"publisher": {"@type": "Person","name": "Mathieu Guglielmino","url": "https://mathieugug.github.io/"}}
+</script>
+<!-- og:end -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/dossier-app.css">
+  <style>
+    /* ───────── Tokens ───────── */
+    :root {
+      --paper:    #FAF8F3;
+      --paper-2:  #F2EFE7;
+      --ink:      #1A1A1A;
+      --graphite: #5A5A5A;
+      --mist:     #B8B5AE;
+      --rule:     #E5E1D8;
+      --carmine:  #B7332C;
+      --teal:     #1F5560;
+      --mustard:  #B58A2C;
+
+      --serif: 'Spectral', 'Playfair Display', Georgia, serif;
+      --sans:  'Inter', system-ui, sans-serif;
+      --mono:  'JetBrains Mono', 'IBM Plex Mono', monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; max-width: 100vw; }
+    body {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    header.site {
+      grid-column: 1 / -1;
+      padding: 24px 32px;
+      border-bottom: 1px solid var(--rule);
+      display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap;
+    }
+    header.site .marker {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--carmine);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    header.site h1 {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 1.4rem;
+      margin: 0;
+      letter-spacing: -0.01em;
+    }
+    header.site .meta {
+      margin-left: auto;
+      font-size: 0.85rem;
+      color: var(--graphite);
+    }
+    header.site .meta a { color: var(--carmine); text-decoration: none; }
+    header.site .meta a:hover { text-decoration: underline; }
+    header.site .back {
+      font-family: var(--mono); font-size: 0.72rem;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--graphite); text-decoration: none;
+      white-space: nowrap;
+    }
+    header.site .back:hover { color: var(--carmine); }
+    .menu-toggle {
+      display: none;
+      background: none; border: 1px solid var(--rule);
+      padding: 6px 12px; border-radius: 4px; cursor: pointer;
+      font-family: var(--mono); font-size: 0.8rem;
+    }
+    @media (max-width: 1024px) { .menu-toggle { display: inline-block; } }
+
+    /* ───────── TOC (left) ───────── */
+    #toc {
+      padding: 32px 24px;
+      border-right: 1px solid var(--rule);
+      position: sticky; top: 56px; align-self: start;
+      height: calc(100vh - 56px); overflow-y: auto;
+    }
+    #toc h2 {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--graphite);
+      margin: 0 0 16px;
+    }
+    #toc ol {
+      list-style: none; padding: 0; margin: 0;
+      counter-reset: toc-counter;
+    }
+    #toc li {
+      counter-increment: toc-counter;
+      margin: 0 0 12px;
+      font-size: 0.92rem;
+      line-height: 1.4;
+    }
+    #toc li::before {
+      content: counter(toc-counter, decimal-leading-zero) ".";
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--mist);
+      margin-right: 8px;
+    }
+    #toc a {
+      color: var(--ink);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+    }
+    #toc a:hover, #toc a.active {
+      color: var(--carmine);
+      border-bottom-color: currentColor;
+    }
+
+    /* ───────── Main report ───────── */
+    main#report {
+      padding: 56px 48px 96px;
+      min-width: 0;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+    main#report > .lead {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 1.2rem;
+      color: var(--graphite);
+      line-height: 1.5;
+      margin: 0 0 48px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--rule);
+    }
+    main h1.report-title {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 2.6rem;
+      line-height: 1.1;
+      letter-spacing: -0.025em;
+      margin: 0 0 16px;
+    }
+    main h2 {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 1.55rem;
+      letter-spacing: -0.01em;
+      margin: 3.5rem 0 1rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--rule);
+    }
+    main h3 {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 1.18rem;
+      margin: 2rem 0 0.6rem;
+    }
+    main p { margin: 0 0 1.1rem; }
+    main ul, main ol { margin: 0 0 1.1rem; padding-left: 1.4rem; }
+    main li { margin-bottom: 0.4rem; }
+    main blockquote {
+      margin: 1.5rem 0;
+      padding: 12px 20px;
+      border-left: 3px solid var(--carmine);
+      background: var(--paper-2);
+      font-style: italic;
+      color: var(--graphite);
+    }
+    main code {
+      font-family: var(--mono);
+      font-size: 0.88em;
+      background: var(--paper-2);
+      padding: 2px 5px; border-radius: 3px;
+      overflow-wrap: anywhere;
+    }
+    main pre {
+      margin: 1.5rem 0;
+      padding: 14px 16px;
+      background: var(--paper-2);
+      border-radius: 4px;
+      overflow-x: auto;
+      max-width: 100%;
+      font-size: 0.85em;
+      line-height: 1.5;
+      -webkit-overflow-scrolling: touch;
+    }
+    main pre code {
+      background: transparent;
+      padding: 0;
+      border-radius: 0;
+      font-size: 1em;
+      overflow-wrap: normal;
+    }
+    main mark {
+      background: linear-gradient(transparent 58%, rgba(178, 59, 27, 0.14) 58%);
+      color: inherit;
+      padding: 0 2px;
+    }
+
+    /* ───────── Figures ───────── */
+    .figure {
+      margin: 3rem 0;
+      padding: 24px 0;
+      border-top: 1px solid var(--rule);
+      border-bottom: 1px solid var(--rule);
+      position: relative;
+    }
+    .figure svg {
+      width: 100%; height: auto;
+      display: block;
+      margin: 0 auto;
+    }
+    /* State-aware figure breakout on desktop — figure adapts to sources panel state:
+       - Default (sources expanded): fills main-cell only (between TOC and sources)
+       - .layout.sources-collapsed: extends from TOC-right to viewport-right
+       Neither state overlaps a visible sidebar. Smooth 280ms transition.
+       Full math + derivation: skill illustrated-deep-research, companion-app.md § 5. */
+    @media (min-width: 1025px) {
+      .figure {
+        margin-left: calc(-1 * max(0px, (100vw - 1320px) / 2 + 48px));
+        margin-right: calc(-1 * max(0px, (100vw - 1320px) / 2 + 48px));
+        transition: margin-left 280ms ease, margin-right 280ms ease;
+        padding-left: clamp(16px, 3vw, 48px);
+        padding-right: clamp(16px, 3vw, 48px);
+        border-radius: 0;
+      }
+      .layout.sources-collapsed .figure {
+        margin-left: calc(-1 * max(0px, (100vw - 904px) / 2));
+        margin-right: calc(-1 * max(0px, (100vw - 904px) / 2));
+      }
+      .figure-caption {
+        max-width: 760px;
+        margin-left: auto;
+        margin-right: auto;
+        padding: 0 48px;
+      }
+    }
+    .figure-caption {
+      font-size: 0.88rem;
+      color: var(--graphite);
+      font-style: italic;
+      margin-top: 12px;
+      padding: 0 8px;
+    }
+    .figure svg .interactive { cursor: pointer; transition: filter 140ms; }
+    .figure svg .interactive:hover,
+    .figure svg .interactive:focus-visible { outline: none; }
+    .figure svg .interactive:hover rect,
+    .figure svg .interactive:focus-visible rect,
+    .figure svg .interactive:hover path:not([fill="none"]),
+    .figure svg .interactive:focus-visible path:not([fill="none"]),
+    .figure svg .interactive:hover circle,
+    .figure svg .interactive:focus-visible circle {
+      stroke: var(--carmine);
+      stroke-width: 2.5;
+    }
+    .figure svg .interactive:focus-visible {
+      filter: drop-shadow(0 0 0 var(--carmine));
+    }
+
+    /* ───────── Sources sidebar (right) ───────── */
+    #sources {
+      padding: 32px 24px;
+      border-left: 1px solid var(--rule);
+      background: var(--paper-2);
+      position: sticky; top: 56px; align-self: start;
+      height: calc(100vh - 56px); overflow-y: auto;
+      transition: transform 280ms ease, opacity 200ms ease;
+    }
+    #sources .sources-inner { display: block; }
+
+    @media (max-width: 1024px) {
+      .menu-toggle { display: inline-block !important; }
+      header.site { padding: 14px 16px; gap: 10px; flex-wrap: wrap; }
+      header.site h1 { font-size: 1.05rem; min-width: 0; overflow-wrap: break-word; word-break: break-word; }
+      header.site .meta { font-size: 0.75rem; }
+      header.site .back { font-size: 0.7rem; letter-spacing: 0.08em; }
+      main#report { padding: 28px 18px 56px; max-width: 100%; min-width: 0; }
+      main h1.report-title { font-size: 1.8rem; overflow-wrap: break-word; word-break: break-word; }
+      main#report > .lead { font-size: 1.02rem; margin-bottom: 32px; padding-bottom: 18px; }
+      main h2 { font-size: 1.25rem; margin: 2.4rem 0 0.8rem; overflow-wrap: break-word; word-break: break-word; }
+      main h3 { font-size: 1.05rem; overflow-wrap: break-word; }
+      main p, main ul, main ol { overflow-wrap: break-word; word-break: break-word; }
+      .figure { margin: 2rem 0; padding: 16px 0; max-width: 100%; overflow: hidden; }
+      .figure svg { width: 100%; max-width: 100%; height: auto; }
+      main table {
+        display: block; max-width: 100%;
+        overflow-x: auto; -webkit-overflow-scrolling: touch;
+      }
+      main th, main td { white-space: normal; }
+    }
+    #sources h2 {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--graphite);
+      margin: 0 0 16px;
+    }
+    #sources ol { list-style: none; padding: 0; margin: 0; }
+    #sources li {
+      font-size: 0.82rem;
+      line-height: 1.5;
+      margin: 0 0 16px;
+      padding: 12px 14px;
+      border-radius: 4px;
+      border: 1px solid transparent;
+      transition: border-color 220ms, background 220ms;
+    }
+    #sources li .cite-num {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--carmine);
+      margin-right: 6px;
+    }
+    #sources li a {
+      display: inline-block;
+      margin-top: 4px;
+      color: var(--teal);
+      text-decoration: none;
+      font-size: 0.78rem;
+    }
+    #sources li a:hover { text-decoration: underline; }
+    #sources li .accessed {
+      display: block;
+      margin-top: 4px;
+      color: var(--mist);
+      font-style: italic;
+      font-size: 0.74rem;
+    }
+    #sources li.highlight {
+      background: var(--paper);
+      border-color: var(--carmine);
+    }
+
+    /* ───────── Print ───────── */
+    @media print {
+      .layout { grid-template-columns: 1fr; }
+      #toc, #sources, #modal-root, #zoom-overlay, .menu-toggle, .zoom-btn { display: none; }
+      main#report { max-width: none; padding: 0; }
+      .figure { page-break-inside: avoid; }
+    }
+
+    /* === infographie A4 portrait (exec sum visuelle) — pattern partagé === */
+    main .figure.figure--portrait,
+    .layout main .figure.figure--portrait,
+    .layout.sources-collapsed main .figure.figure--portrait {
+      margin-top: 3rem; margin-bottom: 3rem;
+      padding: 0 !important; border: none !important;
+      border-top: none !important; border-bottom: none !important;
+      width: auto;
+    }
+    @media (max-width: 1024px) {
+      main .figure.figure--portrait {
+        margin-left: auto !important; margin-right: auto !important;
+        max-width: 100%;
+      }
+    }
+    @media (min-width: 1025px) {
+      main .figure.figure--portrait,
+      .layout main .figure.figure--portrait,
+      .layout.sources-collapsed main .figure.figure--portrait {
+        margin-left: -60px !important; margin-right: -60px !important;
+        max-width: calc(100% + 120px);
+      }
+    }
+    @media (min-width: 1440px) {
+      main .figure.figure--portrait,
+      .layout main .figure.figure--portrait,
+      .layout.sources-collapsed main .figure.figure--portrait {
+        margin-left: -100px !important; margin-right: -100px !important;
+        max-width: calc(100% + 200px);
+      }
+    }
+    main .figure--portrait .figure-portrait-link { display: block; width: 100%; border: 1px solid var(--rule); background: var(--paper); border-radius: 2px; cursor: zoom-in; transition: box-shadow 220ms ease, border-color 220ms ease; overflow: hidden; }
+    main .figure--portrait .figure-portrait-link:hover { box-shadow: 0 8px 28px rgba(30,30,42,0.14); border-color: var(--accent); }
+    main .figure--portrait img { display: block; width: 100%; height: auto; }
+    main .figure--portrait .figure-caption { max-width: 100%; margin: 14px auto 0; padding: 0 8px; text-align: center; }
+    /* Sigil MG remonté sur les A4 portrait (au-dessus du header SVG, pas sur le titre) */
+    main .figure--portrait .schema-sigil {
+      top: 10px !important;
+      right: 14px !important;
+      width: 30px !important; height: 30px !important;
+      opacity: 0.60 !important;
+    }
+    @media (max-width: 640px) {
+      main .figure--portrait .schema-sigil { top: 8px !important; right: 10px !important; width: 24px !important; height: 24px !important; }
+    }
+
+    /* === quiz cards (vérification de compréhension) — pattern partagé avec evaluation-agentique === */
+    .quiz-card {
+      margin: 2rem 0 2.4rem;
+      padding: 18px 22px;
+      background: var(--paper-2);
+      border-left: 3px solid var(--carmine);
+      border-radius: 2px;
+    }
+    .quiz-card__head {
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .quiz-card__eyebrow {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--graphite);
+      flex-basis: 100%;
+      margin: 0 0 0.25rem;
+    }
+    .quiz-card__title {
+      font-family: var(--serif);
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin: 0;
+      flex: 1 1 auto;
+      color: var(--ink);
+    }
+    .quiz-card__toggle {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.06em;
+      background: transparent;
+      border: 1px solid var(--mist);
+      color: var(--ink);
+      padding: 6px 14px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: color .15s, border-color .15s;
+    }
+    .quiz-card__toggle:hover, .quiz-card__toggle:focus-visible {
+      color: var(--carmine);
+      border-color: var(--carmine);
+      outline: none;
+    }
+    .quiz-card__body {
+      margin-top: 1.2rem;
+      padding-top: 1rem;
+      border-top: 1px dashed var(--rule);
+    }
+    .quiz-card__body[hidden] { display: none; }
+
+    .quiz-q { margin: 0; padding: 0; }
+    .quiz-q + .quiz-q { margin-top: 1.6rem; padding-top: 1.6rem; border-top: 1px dashed var(--rule); }
+    .quiz-q fieldset { border: 0; padding: 0; margin: 0; }
+    .quiz-q__stem {
+      font-family: var(--serif);
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--ink);
+      padding: 0;
+      margin: 0 0 0.9rem;
+    }
+    .quiz-q__options { list-style: none; padding: 0; margin: 0 0 1rem; }
+    .quiz-q__options li {
+      margin: 0;
+      padding: 8px 0;
+      border-top: 1px solid var(--rule);
+    }
+    .quiz-q__options li:last-child { border-bottom: 1px solid var(--rule); }
+    .quiz-q__options label {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      cursor: pointer;
+      padding: 4px 0;
+    }
+    .quiz-q__options input { margin: 0.3em 0 0; flex: 0 0 auto; accent-color: var(--carmine); }
+    .quiz-q__options label > span { flex: 1; line-height: 1.5; }
+
+    .quiz-q__explain {
+      font-size: 0.92rem;
+      margin: 0.5rem 0 0 1.7rem;
+      padding: 8px 12px;
+      background: var(--paper);
+      border-left: 2px solid var(--mist);
+      color: var(--graphite);
+    }
+    .quiz-q__explain[hidden] { display: none; }
+    .quiz-q__options li.is-correct .quiz-q__explain,
+    .quiz-q__options li.expected .quiz-q__explain { border-left-color: var(--teal); }
+    .quiz-q__options li.is-wrong .quiz-q__explain { border-left-color: var(--carmine); }
+    .quiz-q__options li.is-correct > label > span,
+    .quiz-q__options li.expected > label > span {
+      background-image: linear-gradient(transparent 60%, rgba(31, 85, 96, 0.14) 60%);
+      background-size: 100% 1.5em;
+      background-repeat: repeat-y;
+    }
+    .quiz-q__options li.is-wrong > label > span {
+      background-image: linear-gradient(transparent 60%, rgba(183, 51, 44, 0.14) 60%);
+      background-size: 100% 1.5em;
+      background-repeat: repeat-y;
+    }
+
+    .quiz-q__check {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      background: var(--ink);
+      color: var(--paper);
+      border: 0;
+      padding: 8px 16px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .quiz-q__check:hover, .quiz-q__check:focus-visible { background: var(--carmine); outline: none; }
+    .quiz-q__check:disabled { background: var(--mist); cursor: not-allowed; }
+
+    .quiz-q__verdict {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      margin: 1rem 0 0;
+      padding: 8px 12px;
+      border-left: 2px solid var(--graphite);
+    }
+    .quiz-q__verdict[hidden] { display: none; }
+    .quiz-q__verdict.is-correct { border-left-color: var(--teal); color: var(--teal); }
+    .quiz-q__verdict.is-wrong { border-left-color: var(--carmine); color: var(--carmine); }
+
+    .quiz-q__retry {
+      font-family: var(--mono);
+      font-size: 0.74rem;
+      letter-spacing: 0.06em;
+      background: transparent;
+      border: 0;
+      color: var(--graphite);
+      padding: 6px 0;
+      margin: 0.6rem 0 0;
+      cursor: pointer;
+      text-decoration: underline;
+      text-decoration-color: var(--mist);
+      text-underline-offset: 3px;
+    }
+    .quiz-q__retry:hover, .quiz-q__retry:focus-visible { color: var(--ink); text-decoration-color: var(--carmine); outline: none; }
+    .quiz-q__retry[hidden] { display: none; }
+
+    /* === callouts de renvoi vers d'autres dossiers (pattern partagé avec agent-sdk) === */
+    main .callout { display: grid; grid-template-columns: 280px 1fr; gap: 0; align-items: stretch; margin: 2.4rem 0; padding: 0; background: var(--paper); border-left: 3px solid var(--teal); border-radius: 2px; transition: grid-template-columns 320ms cubic-bezier(.2,.7,.2,1); }
+    main .callout:hover { grid-template-columns: 440px 1fr; }
+    main .callout > .callout-thumb-link { position: relative; display: block; width: 100%; height: 100%; min-height: 200px; overflow: hidden; border-radius: 0; background: transparent; border: 0; border-right: 1px solid var(--rule); cursor: zoom-in; padding: 0; -webkit-appearance: none; appearance: none; font: inherit; color: inherit; text-align: left; transition: filter 200ms ease; }
+    main .callout > .callout-thumb-link:hover { filter: drop-shadow(0 4px 14px rgba(183,51,44,0.18)); border-right-color: var(--carmine); }
+    main .callout > .callout-thumb-link:focus-visible { outline: 2px solid var(--carmine); outline-offset: -2px; }
+    main .callout > .callout-thumb-link img.callout-thumb { width: 100%; height: 100%; object-fit: contain; object-position: center center; display: block; padding: 0; }
+    main .callout > .callout-thumb-link::after { content: '⛶ AGRANDIR'; position: absolute; top: 10px; right: 10px; padding: 4px 9px; font-family: var(--mono); font-size: 9.5px; font-weight: 600; letter-spacing: 0.10em; background: rgba(250,248,243,0.94); border: 1px solid var(--rule); border-radius: 2px; color: var(--graphite); opacity: 0; transition: opacity 180ms ease, color 180ms ease, border-color 180ms ease; pointer-events: none; }
+    main .callout > .callout-thumb-link:hover::after, main .callout > .callout-thumb-link:focus-visible::after { opacity: 1; color: var(--carmine); border-color: var(--carmine); }
+    main .callout > .callout-body { min-width: 0; padding: 22px 26px 22px 26px; align-self: center; }
+    main .callout .callout-eyebrow { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--teal); margin: 0 0 0.45rem; font-weight: 600; }
+    main .callout > .callout-body p { margin: 0; font-size: 0.95rem; line-height: 1.55; color: var(--ink); }
+    main .callout > .callout-body p a { color: var(--carmine); text-decoration: none; border-bottom: 1px dotted var(--carmine); }
+    main .callout > .callout-body p a:hover { color: var(--teal); border-bottom-color: var(--teal); }
+
+    @media (max-width: 1024px) {
+      /* === quiz cards : variantes mobile === */
+      .quiz-card { padding: 14px 16px; margin: 1.6rem 0 2rem; }
+      .quiz-card__head { gap: 0.6rem; }
+      .quiz-card__title { flex-basis: 100%; overflow-wrap: break-word; }
+      .quiz-card__toggle { width: 100%; padding: 12px; min-height: 44px; font-size: 0.82rem; }
+      .quiz-q__check { width: 100%; padding: 12px; min-height: 44px; font-size: 0.82rem; }
+      .quiz-q__options li { padding: 10px 0; }
+      .quiz-q__options label { padding: 8px 0; min-height: 44px; align-items: center; }
+      .quiz-q__explain { margin: 0.5rem 0 0 0; padding: 10px 12px; }
+      .quiz-q__retry { padding: 10px 0; min-height: 44px; }
+    }
+    @media (max-width: 640px) {
+      main .callout, main .callout:hover { grid-template-columns: 1fr; gap: 0; padding: 0; }
+      main .callout > .callout-thumb-link { min-height: 180px; border-right: 0; border-bottom: 1px solid var(--rule); }
+      main .callout > .callout-body { padding: 18px 20px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar" id="topbar">
+    <a href="../index.html">Mathieu <em>Guglielmino</em></a>
+    <span class="dossier-context">Modèle du monde des LLM</span>
+    <div class="topbar-tools">
+      <button class="menu-toggle" id="toggle-toc">Sommaire</button>
+      <button class="menu-toggle" id="toggle-sources">Sources</button>
+    </div>
+    <nav class="back-nav" aria-label="Navigation retour">
+      <a href="index.html" class="back" title="Revenir au hub du dossier">← Hub</a>
+      <span class="back-sep" aria-hidden="true">·</span>
+      <a href="../index.html#series" class="back" title="Revenir à l'accueil">Accueil</a>
+    </nav>
+  </header>
+  <div class="layout">
+
+    <header class="site">
+      <span class="marker">Deep dive · World models × Raisonnement</span>
+      <h1>Le modèle du monde caché dans le prédicteur de tokens</h1>
+      <span class="meta">
+        Mathieu Guglielmino · 13 juillet 2026
+      </span>
+    </header>
+
+    <nav id="toc" aria-label="Sommaire">
+      <button class="panel-close" type="button" aria-label="Fermer le sommaire">Fermer ✕</button>
+      <h2>Sommaire</h2>
+      <ol>
+        <li><a href="#s-1">1. Pourquoi un modèle du monde ?</a></li>
+        <li><a href="#s-2">2. La sonde : Othello</a></li>
+        <li><a href="#s-3">3. Le faisceau converge</a></li>
+        <li><a href="#s-4">4. La carte fantôme</a></li>
+        <li><a href="#s-5">5. Kepler, pas Newton</a></li>
+        <li><a href="#s-6">6. Le piège du benchmark</a></li>
+        <li><a href="#s-7">7. Ce que « avoir un modèle du monde » veut dire</a></li>
+      </ol>
+    </nav>
+
+    <main id="report">
+<h1 class="report-title">Le modèle du monde caché dans le prédicteur de tokens</h1>
+      <p class="lead">Prédire parfaitement le prochain token ne prouve pas qu'on ait induit le monde qui l'a généré. Les sondes montrent que des représentations structurées émergent vraiment — mais un excellent prédicteur peut tout aussi bien reposer sur un patchwork d'heuristiques qui s'effondre hors distribution. <mark>« Avoir un modèle du monde » n'est pas binaire : c'est une propriété mesurable, et la mesure sépare la performance de la compréhension.</mark></p>
+      <p class="lead-note"><em>Deep dive croisant les dossiers <a href="../world-models/">World models</a> et <a href="../modeles-raisonnement/">Modèles de raisonnement</a>. Là où <code>world-models</code> traitait des modèles visuels — JEPA, diffusion, Genie — construits <strong>explicitement</strong> pour simuler une physique, celui-ci pose la question inverse et plus troublante : un prédicteur de séquence entraîné <strong>sans aucune intention de modéliser le monde</strong> en construit-il un par accident&nbsp;?</em></p>
+
+      <section>
+      <h2 id="s-1">1. Pourquoi un prédicteur de tokens aurait-il un modèle du monde&nbsp;?</h2>
+      <p>Un grand modèle de langage n'a qu'un seul objectif d'entraînement&nbsp;: prédire le token suivant. Rien, dans cette tâche, n'exige explicitement qu'il se représente la géographie de Manhattan, l'état d'un échiquier ou les lois de la gravitation. Et pourtant l'intuition qui anime une part entière de la recherche depuis 2022 est la suivante&nbsp;: <mark>pour prédire assez bien, il faut finir par modéliser le processus qui génère les données</mark>.</p>
+      <p>C'est la <strong>thèse de la compression</strong>, défendue de longue date par Ilya Sutskever et d'autres&nbsp;: prédire, c'est comprimer&nbsp;; et comprimer une source au maximum, c'est en capturer la structure générative. Si un modèle prédit sans faute les coups d'une partie d'Othello, la façon la plus économique de le faire n'est-elle pas de se représenter le plateau&nbsp;? Prédire la fin d'un roman policier suppose de «&nbsp;savoir&nbsp;» qui est le coupable&nbsp;; prédire la trajectoire d'une planète suppose de «&nbsp;connaître&nbsp;» la mécanique céleste. La performance, poussée assez loin, forcerait l'émergence d'un modèle du monde (schéma&nbsp;1).</p>
+      <figure class="figure" id="fig-01"><svg data-schema-id="schema-01" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif">
+  <style>
+    .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+    .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+    .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    .interactive { cursor: pointer; }
+  </style>
+  <defs>
+    <marker id="arw01" markerWidth="10" markerHeight="8" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#1A1A1A"/></marker>
+  </defs>
+  <rect x="0" y="0" width="1200" height="800" fill="#FAF8F3"/>
+
+  <text x="60" y="58" class="mono" font-size="12" letter-spacing="3" fill="#B7332C">SCHÉMA 01</text>
+  <text x="60" y="98" class="display" font-size="30" font-weight="600" fill="#1A1A1A">La thèse de la compression — et sa faille</text>
+  <text x="60" y="128" class="display" font-size="17" font-style="italic" fill="#5A5A5A">Prédire assez bien forcerait un modèle du monde. Mais il y a toujours plus d'une façon de prédire.</text>
+  <line x1="60" y1="150" x2="1140" y2="150" stroke="#E5E1D8" stroke-width="1"/>
+
+  <!-- Chain -->
+  <g class="interactive" data-card="predict" tabindex="0" role="button" aria-label="Prédire le prochain token">
+    <rect x="70" y="300" width="230" height="96" rx="4" fill="#1F5560" fill-opacity="0.10" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="185" y="340" class="body" font-size="15" font-weight="600" fill="#1A1A1A" text-anchor="middle">Prédire</text>
+    <text x="185" y="362" class="body" font-size="13" fill="#5A5A5A" text-anchor="middle">le prochain token</text>
+    <text x="185" y="383" class="mono" font-size="11" fill="#1F5560" text-anchor="middle">seul objectif d'entraînement</text>
+  </g>
+
+  <line x1="300" y1="348" x2="392" y2="348" stroke="#1A1A1A" stroke-width="1.5" marker-end="url(#arw01)"/>
+
+  <g class="interactive" data-card="compress" tabindex="0" role="button" aria-label="Comprimer la source">
+    <rect x="406" y="300" width="230" height="96" rx="4" fill="#1F5560" fill-opacity="0.10" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="521" y="340" class="body" font-size="15" font-weight="600" fill="#1A1A1A" text-anchor="middle">Comprimer</text>
+    <text x="521" y="362" class="body" font-size="13" fill="#5A5A5A" text-anchor="middle">= capturer la structure</text>
+    <text x="521" y="383" class="mono" font-size="11" fill="#1F5560" text-anchor="middle">prédire ⇒ compresser</text>
+  </g>
+
+  <!-- Fork -->
+  <line x1="636" y1="348" x2="705" y2="348" stroke="#1A1A1A" stroke-width="1.5"/>
+  <circle cx="712" cy="348" r="7" fill="#B7332C"/>
+  <text x="712" y="326" class="mono" font-size="11" fill="#B7332C" text-anchor="middle">≥ 1 façon de prédire</text>
+  <path d="M718,344 C755,344 760,258 800,258" fill="none" stroke="#1A1A1A" stroke-width="1.5" marker-end="url(#arw01)"/>
+  <path d="M718,352 C755,352 760,438 800,438" fill="none" stroke="#1A1A1A" stroke-width="1.5" marker-end="url(#arw01)"/>
+
+  <g class="interactive" data-card="issue-vrai-modele" tabindex="0" role="button" aria-label="Vrai modèle du monde">
+    <rect x="814" y="212" width="316" height="96" rx="4" fill="#1F5560" fill-opacity="0.16" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="832" y="246" class="body" font-size="15" font-weight="600" fill="#1F5560">Vrai modèle du monde</text>
+    <text x="832" y="270" class="body" font-size="13" fill="#1A1A1A">carte compacte, cohérente,</text>
+    <text x="832" y="290" class="body" font-size="13" fill="#1A1A1A">causalement branchée</text>
+  </g>
+
+  <g class="interactive" data-card="issue-patchwork" tabindex="0" role="button" aria-label="Patchwork d'heuristiques">
+    <rect x="814" y="392" width="316" height="96" rx="4" fill="#B7332C" fill-opacity="0.10" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="832" y="426" class="body" font-size="15" font-weight="600" fill="#B7332C">Patchwork d'heuristiques</text>
+    <text x="832" y="450" class="body" font-size="13" fill="#1A1A1A">règles locales, associations,</text>
+    <text x="832" y="470" class="body" font-size="13" fill="#1A1A1A">mémorisation par cas</text>
+  </g>
+
+  <!-- Divergence banner -->
+  <line x1="70" y1="580" x2="1130" y2="580" stroke="#E5E1D8" stroke-width="1"/>
+  <rect x="70" y="600" width="510" height="120" rx="4" fill="#FFFFFF" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="90" y="632" class="mono" font-size="12" letter-spacing="2" fill="#5A5A5A">SUR LA DISTRIBUTION D'ENTRAÎNEMENT</text>
+  <text x="90" y="664" class="display" font-size="19" font-style="italic" fill="#1A1A1A">Sorties identiques.</text>
+  <text x="90" y="694" class="body" font-size="13" fill="#5A5A5A">Les deux stratégies sont indiscernables par la seule performance.</text>
+
+  <rect x="620" y="600" width="510" height="120" rx="4" fill="#B7332C" fill-opacity="0.06" stroke="#B7332C" stroke-width="1.25"/>
+  <text x="640" y="632" class="mono" font-size="12" letter-spacing="2" fill="#B7332C">HORS DISTRIBUTION</text>
+  <text x="640" y="664" class="display" font-size="19" font-style="italic" fill="#1A1A1A">Divergence radicale.</text>
+  <text x="640" y="694" class="body" font-size="13" fill="#5A5A5A">C'est l'écart que la recherche a appris à mesurer (§4-§5).</text>
+</svg>
+<figcaption class="figure-caption">Schéma 1 — La thèse de la compression et sa faille&nbsp;: prédire correctement admet toujours plus d'une solution. <a class="anchor" href="#fig-01" title="Lien direct vers ce schéma">¶</a></figcaption></figure>
+      <p>Le problème est que cette thèse a une faille logique. <strong>Il existe toujours plus d'une manière de prédire correctement.</strong> Un modèle peut se représenter fidèlement le processus générateur — un vrai modèle du monde, compact et cohérent. Ou bien il peut mémoriser un immense patchwork de règles locales, d'associations statistiques et d'heuristiques par cas, qui reproduisent le comportement observé sans jamais en capturer la logique sous-jacente. <mark>Les deux stratégies donnent la même sortie sur la distribution d'entraînement&nbsp;; elles divergent radicalement dès qu'on sort de cette <span class="term" data-tooltip="Hors distribution (out-of-distribution) : des entrées différentes de celles vues à l'entraînement. C'est le seul régime où un vrai modèle du monde et un patchwork d'heuristiques se distinguent.">distribution</span>.</mark> C'est précisément cet écart que la recherche des trois dernières années a appris à mesurer.</p>
+      <p>Ce rapport suit le fil de ce débat. D'abord les preuves que des modèles du monde émergent réellement (§2-§3). Puis le contre-feu&nbsp;: la démonstration qu'un prédicteur excellent peut n'avoir qu'une carte incohérente du monde (§4-§5). Enfin, pourquoi les benchmarks nous trompent sur cette question (§6), et ce que «&nbsp;avoir un modèle du monde&nbsp;» veut dire une fois qu'on cesse de le traiter comme un oui/non (§7).</p>
+      </section>
+
+      <section>
+      <h2 id="s-2">2. La preuve par la sonde&nbsp;: Othello</h2>
+      <p>Le cas fondateur est délibérément minuscule, pour être irréprochable. En 2022, Kenneth Li et ses coauteurs entraînent un transformeur — <em>Othello-GPT</em> — uniquement à prédire le prochain coup légal dans des parties d'Othello, sans jamais lui montrer le plateau ni les règles, rien que des séquences de coups<a class="cite" data-cite="1" href="#source-1">1</a>. La question&nbsp;: le modèle a-t-il, quelque part dans ses activations, reconstruit l'état du plateau qu'aucune donnée ne lui a explicitement fourni&nbsp;?</p>
+      <p>La méthode pour le savoir est le <span class="term" data-tooltip="Probing (sondage) : entraîner un petit classifieur à prédire une variable du monde à partir des activations internes du modèle. S'il y parvient, l'information est présente dans la représentation.">probing</span> (sondage)&nbsp;: on entraîne un petit classifieur — une <em>sonde</em> — à prédire, à partir des activations internes du modèle à un instant donné, une variable du monde qu'on suppose «&nbsp;cachée&nbsp;» là-dedans (ici&nbsp;: chaque case est-elle noire, blanche ou vide&nbsp;?) (schéma&nbsp;2). Si la sonde y parvient avec une haute précision, c'est que l'information est bien présente et linéairement — ou non — accessible dans la représentation interne.</p>
+      <figure class="figure" id="fig-02"><svg data-schema-id="schema-02" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif">
+  <style>
+    .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+    .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+    .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    .interactive { cursor: pointer; }
+  </style>
+  <defs>
+    <marker id="arw02" markerWidth="10" markerHeight="8" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#1A1A1A"/></marker>
+    <marker id="arw02c" markerWidth="10" markerHeight="8" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#B7332C"/></marker>
+  </defs>
+  <rect x="0" y="0" width="1200" height="800" fill="#FAF8F3"/>
+
+  <text x="60" y="58" class="mono" font-size="12" letter-spacing="3" fill="#B7332C">SCHÉMA 02</text>
+  <text x="60" y="98" class="display" font-size="30" font-weight="600" fill="#1A1A1A">Anatomie d'une sonde linéaire</text>
+  <text x="60" y="128" class="display" font-size="17" font-style="italic" fill="#5A5A5A">Othello-GPT n'a jamais vu le plateau. On le retrouve pourtant dans ses activations — et on peut l'éditer.</text>
+  <line x1="60" y1="150" x2="1140" y2="150" stroke="#E5E1D8" stroke-width="1"/>
+
+  <!-- Input sequence -->
+  <text x="70" y="205" class="mono" font-size="12" fill="#5A5A5A">Entrée : suite de coups (aucune règle, aucun plateau)</text>
+  <g class="mono" font-size="13" fill="#1A1A1A">
+    <rect x="70" y="220" width="46" height="30" rx="3" fill="#FFFFFF" stroke="#E5E1D8"/><text x="93" y="240" text-anchor="middle">E4</text>
+    <rect x="122" y="220" width="46" height="30" rx="3" fill="#FFFFFF" stroke="#E5E1D8"/><text x="145" y="240" text-anchor="middle">D3</text>
+    <rect x="174" y="220" width="46" height="30" rx="3" fill="#FFFFFF" stroke="#E5E1D8"/><text x="197" y="240" text-anchor="middle">C5</text>
+    <rect x="226" y="220" width="46" height="30" rx="3" fill="#FFFFFF" stroke="#E5E1D8"/><text x="249" y="240" text-anchor="middle">F6</text>
+    <text x="282" y="240">…</text>
+  </g>
+
+  <!-- Model / activations -->
+  <g class="interactive" data-card="activations" tabindex="0" role="button" aria-label="Activations internes">
+    <rect x="70" y="300" width="240" height="240" rx="4" fill="#1F5560" fill-opacity="0.08" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="190" y="330" class="body" font-size="14" font-weight="600" fill="#1F5560" text-anchor="middle">Othello-GPT</text>
+    <line x1="95" y1="348" x2="285" y2="348" stroke="#1F5560" stroke-opacity="0.3"/>
+    <text x="190" y="368" class="mono" font-size="10.5" fill="#5A5A5A" text-anchor="middle">couche 1 · 2 · 3 · 4 · …</text>
+    <!-- activation vector -->
+    <g>
+      <rect x="120" y="400" width="20" height="100" fill="#1F5560" fill-opacity="0.25"/>
+      <rect x="145" y="400" width="20" height="100" fill="#1F5560" fill-opacity="0.55"/>
+      <rect x="170" y="400" width="20" height="100" fill="#1F5560" fill-opacity="0.15"/>
+      <rect x="195" y="400" width="20" height="100" fill="#1F5560" fill-opacity="0.70"/>
+      <rect x="220" y="400" width="20" height="100" fill="#1F5560" fill-opacity="0.35"/>
+    </g>
+    <text x="190" y="522" class="mono" font-size="10.5" fill="#1A1A1A" text-anchor="middle">vecteur d'activation (couche 4+)</text>
+  </g>
+  <line x1="197" y1="252" x2="197" y2="296" stroke="#1A1A1A" stroke-width="1.5" marker-end="url(#arw02)"/>
+
+  <!-- Probe -->
+  <line x1="310" y1="420" x2="392" y2="420" stroke="#1A1A1A" stroke-width="1.5" marker-end="url(#arw02)"/>
+  <g class="interactive" data-card="probe-lineaire" tabindex="0" role="button" aria-label="Sonde linéaire">
+    <rect x="406" y="360" width="200" height="120" rx="4" fill="#B58A2C" fill-opacity="0.12" stroke="#B58A2C" stroke-width="1.5"/>
+    <text x="506" y="392" class="body" font-size="15" font-weight="600" fill="#1A1A1A" text-anchor="middle">Sonde linéaire</text>
+    <text x="506" y="416" class="mono" font-size="13" fill="#B58A2C" text-anchor="middle">y = W · h</text>
+    <text x="506" y="444" class="body" font-size="12" fill="#5A5A5A" text-anchor="middle">un simple classifieur</text>
+    <text x="506" y="462" class="body" font-size="12" fill="#5A5A5A" text-anchor="middle">linéaire entraîné</text>
+  </g>
+
+  <!-- Board reconstructed -->
+  <line x1="606" y1="420" x2="700" y2="420" stroke="#1A1A1A" stroke-width="1.5" marker-end="url(#arw02)"/>
+  <g class="interactive" data-card="board-reconstruit" tabindex="0" role="button" aria-label="Plateau reconstruit">
+    <text x="880" y="330" class="body" font-size="14" font-weight="600" fill="#1A1A1A" text-anchor="middle">Plateau reconstruit — référentiel joueur</text>
+    <g stroke="#E5E1D8" stroke-width="1">
+      <!-- 8x8 grid, 38px cells, origin 720,350 -->
+      <rect x="720" y="350" width="320" height="320" fill="#FFFFFF"/>
+      <!-- sample fills: teal=MINE, carmine=YOURS -->
+      <rect x="796" y="426" width="40" height="40" fill="#1F5560" fill-opacity="0.55"/>
+      <rect x="836" y="426" width="40" height="40" fill="#B7332C" fill-opacity="0.5"/>
+      <rect x="836" y="466" width="40" height="40" fill="#1F5560" fill-opacity="0.55"/>
+      <rect x="876" y="466" width="40" height="40" fill="#B7332C" fill-opacity="0.5"/>
+      <rect x="876" y="426" width="40" height="40" fill="#1F5560" fill-opacity="0.55"/>
+      <rect x="796" y="466" width="40" height="40" fill="#B7332C" fill-opacity="0.5"/>
+      <!-- grid lines -->
+      <line x1="760" y1="350" x2="760" y2="670"/><line x1="800" y1="350" x2="800" y2="670"/><line x1="840" y1="350" x2="840" y2="670"/><line x1="880" y1="350" x2="880" y2="670"/><line x1="920" y1="350" x2="920" y2="670"/><line x1="960" y1="350" x2="960" y2="670"/><line x1="1000" y1="350" x2="1000" y2="670"/>
+      <line x1="720" y1="390" x2="1040" y2="390"/><line x1="720" y1="430" x2="1040" y2="430"/><line x1="720" y1="470" x2="1040" y2="470"/><line x1="720" y1="510" x2="1040" y2="510"/><line x1="720" y1="550" x2="1040" y2="550"/><line x1="720" y1="590" x2="1040" y2="590"/><line x1="720" y1="630" x2="1040" y2="630"/>
+      <rect x="720" y="350" width="320" height="320" fill="none" stroke="#1A1A1A" stroke-width="1.25"/>
+    </g>
+    <rect x="720" y="692" width="18" height="14" fill="#1F5560" fill-opacity="0.55"/><text x="744" y="704" class="mono" font-size="11" fill="#5A5A5A">MINE</text>
+    <rect x="820" y="692" width="18" height="14" fill="#B7332C" fill-opacity="0.5"/><text x="844" y="704" class="mono" font-size="11" fill="#5A5A5A">YOURS</text>
+    <rect x="930" y="692" width="18" height="14" fill="#FFFFFF" stroke="#E5E1D8"/><text x="954" y="704" class="mono" font-size="11" fill="#5A5A5A">EMPTY</text>
+    <text x="1040" y="704" class="mono" font-size="12" fill="#1F5560" text-anchor="end" font-weight="600">précision &gt; 99 %</text>
+  </g>
+
+  <!-- Intervention -->
+  <g class="interactive" data-card="intervention" tabindex="0" role="button" aria-label="Intervention causale">
+    <path d="M796,440 C560,600 360,600 190,548" fill="none" stroke="#B7332C" stroke-width="1.75" stroke-dasharray="6 5" marker-end="url(#arw02c)"/>
+    <rect x="410" y="560" width="360" height="72" rx="4" fill="#B7332C" fill-opacity="0.07" stroke="#B7332C" stroke-width="1.25"/>
+    <text x="590" y="588" class="body" font-size="14" font-weight="600" fill="#B7332C" text-anchor="middle">Intervention causale</text>
+    <text x="590" y="612" class="body" font-size="12.5" fill="#1A1A1A" text-anchor="middle">on édite le vecteur → le modèle joue dans le nouvel état</text>
+  </g>
+</svg>
+<figcaption class="figure-caption">Schéma 2 — Anatomie d'une sonde linéaire&nbsp;: des activations au plateau reconstruit, jusqu'à l'intervention causale. <a class="anchor" href="#fig-02" title="Lien direct vers ce schéma">¶</a></figcaption></figure>
+      <p>Li et al. trouvent que oui&nbsp;: l'état du plateau est récupérable. Mais leur sonde initiale devait être <strong>non linéaire</strong> pour bien fonctionner, ce qui laissait planer un doute — une sonde assez puissante peut extraire à peu près n'importe quoi, y compris des motifs que le modèle n'«&nbsp;utilise&nbsp;» pas vraiment. La clarification décisive vient de Neel Nanda en 2023<a class="cite" data-cite="2" href="#source-2">2</a>. Son intuition&nbsp;: le modèle ne se représente pas le plateau en termes absolus «&nbsp;noir/blanc&nbsp;», mais <strong>relativement au joueur dont c'est le tour</strong> — «&nbsp;ma pièce / ta pièce / vide&nbsp;». Une fois recodée dans ce <span class="term" data-tooltip="Référentiel joueur : coder les cases en MINE / YOURS / EMPTY plutôt qu'en noir/blanc absolu. C'est ce changement de repère qui rend la représentation linéairement lisible.">référentiel</span> {MINE, YOURS, EMPTY}, la représentation devient <mark>linéairement lisible&nbsp;: une simple <span class="term" data-tooltip="Sonde linéaire : un classifieur qui lit l'information par une simple combinaison linéaire des activations. Une info linéairement lisible est celle que le modèle peut lui-même exploiter dans ses calculs.">sonde linéaire</span> atteint plus de 99&nbsp;% de précision à partir de la couche 4</mark>.</p>
+      <p>Ce n'est pas une curiosité de vocabulaire. La linéarité change la portée du résultat, pour deux raisons. D'abord parce qu'une représentation linéaire est celle que le modèle peut réellement lire et exploiter dans ses propres calculs. Ensuite parce qu'elle rend possible l'<span class="term" data-tooltip="Intervention causale : modifier directement les activations le long du vecteur de la sonde pour changer l'état que le modèle « croit » voir, et vérifier que son comportement suit.">intervention causale</span>&nbsp;: en poussant les activations le long du vecteur de la sonde, on peut <em>éditer</em> l'état du plateau que le modèle «&nbsp;croit&nbsp;» voir — et le modèle se met alors à jouer des coups légaux dans le nouvel état, même s'ils étaient illégaux dans l'ancien. La représentation n'est donc pas un épiphénomène décoratif&nbsp;: elle est <strong>causalement branchée</strong> sur les prédictions. Othello-GPT n'a pas mémorisé des séquences&nbsp;; il tient à jour un modèle de l'état du jeu.</p>
+      </section>
+
+      <section>
+      <h2 id="s-3">3. Le faisceau converge&nbsp;: échecs, programmes, espace-temps</h2>
+      <p>Un jouet synthétique ne prouve rien sur les vrais modèles. La force du dossier «&nbsp;émergence&nbsp;» tient à la convergence d'études indépendantes, dans des domaines de plus en plus réalistes (schéma&nbsp;3).</p>
+      <figure class="figure" id="fig-03"><svg data-schema-id="schema-03" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif">
+  <style>
+    .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+    .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+    .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    .interactive { cursor: pointer; }
+  </style>
+  <rect x="0" y="0" width="1200" height="800" fill="#FAF8F3"/>
+
+  <text x="60" y="58" class="mono" font-size="12" letter-spacing="3" fill="#B7332C">SCHÉMA 03</text>
+  <text x="60" y="98" class="display" font-size="30" font-weight="600" fill="#1A1A1A">Le faisceau converge</text>
+  <text x="60" y="128" class="display" font-size="17" font-style="italic" fill="#5A5A5A">Quatre études indépendantes, du jouet synthétique au vrai LLM : le même signal.</text>
+  <line x1="60" y1="150" x2="1140" y2="150" stroke="#E5E1D8" stroke-width="1"/>
+
+  <!-- column headers -->
+  <text x="80" y="192" class="mono" font-size="11" letter-spacing="2" fill="#5A5A5A">ÉTUDE</text>
+  <text x="370" y="192" class="mono" font-size="11" letter-spacing="2" fill="#5A5A5A">VARIABLE DU MONDE RÉCUPÉRÉE</text>
+  <text x="700" y="192" class="mono" font-size="11" letter-spacing="2" fill="#5A5A5A">PREUVE</text>
+  <text x="960" y="192" class="mono" font-size="11" letter-spacing="2" fill="#5A5A5A">PORTÉE</text>
+  <line x1="60" y1="205" x2="1140" y2="205" stroke="#1A1A1A" stroke-width="1"/>
+
+  <!-- row 1 : Othello -->
+  <g class="interactive" data-card="othello" tabindex="0" role="button" aria-label="Othello-GPT">
+    <rect x="60" y="210" width="1080" height="120" fill="#1F5560" fill-opacity="0.04"/>
+    <text x="80" y="252" class="body" font-size="17" font-weight="600" fill="#1A1A1A">Othello-GPT</text>
+    <text x="80" y="276" class="mono" font-size="11.5" fill="#5A5A5A">Li 2023 · Nanda 2023</text>
+    <text x="80" y="300" class="body" font-size="12" fill="#5A5A5A">jouet synthétique</text>
+    <text x="370" y="258" class="body" font-size="13.5" fill="#1A1A1A">État du plateau, en référentiel</text>
+    <text x="370" y="278" class="body" font-size="13.5" fill="#1A1A1A">joueur (MINE / YOURS / EMPTY)</text>
+    <text x="700" y="258" class="body" font-size="13.5" fill="#1A1A1A">Sonde linéaire &gt; 99 %</text>
+    <text x="700" y="278" class="body" font-size="13.5" fill="#1A1A1A">+ intervention causale</text>
+    <rect x="960" y="242" width="150" height="26" rx="13" fill="#1F5560" fill-opacity="0.14"/>
+    <text x="1035" y="260" class="mono" font-size="12" fill="#1F5560" text-anchor="middle">preuve nette</text>
+  </g>
+  <line x1="60" y1="330" x2="1140" y2="330" stroke="#E5E1D8"/>
+
+  <!-- row 2 : Échecs -->
+  <g class="interactive" data-card="echecs" tabindex="0" role="button" aria-label="Chess-GPT">
+    <rect x="60" y="330" width="1080" height="120" fill="#1F5560" fill-opacity="0.0"/>
+    <text x="80" y="372" class="body" font-size="17" font-weight="600" fill="#1A1A1A">Chess-GPT</text>
+    <text x="80" y="396" class="mono" font-size="11.5" fill="#5A5A5A">Karvonen 2024</text>
+    <text x="80" y="420" class="body" font-size="12" fill="#5A5A5A">parties réelles, texte brut</text>
+    <text x="370" y="378" class="body" font-size="13.5" fill="#1A1A1A">Échiquier + variable latente</text>
+    <text x="370" y="398" class="body" font-size="13.5" fill="#1A1A1A">jamais écrite : le niveau du joueur</text>
+    <text x="700" y="378" class="body" font-size="13.5" fill="#1A1A1A">Sonde + intervention ;</text>
+    <text x="700" y="398" class="body" font-size="13.5" fill="#1A1A1A">« vecteur de niveau » → victoires ×2,6</text>
+    <rect x="960" y="362" width="150" height="26" rx="13" fill="#1F5560" fill-opacity="0.14"/>
+    <text x="1035" y="380" class="mono" font-size="12" fill="#1F5560" text-anchor="middle">preuve nette</text>
+  </g>
+  <line x1="60" y1="450" x2="1140" y2="450" stroke="#E5E1D8"/>
+
+  <!-- row 3 : Karel -->
+  <g class="interactive" data-card="karel" tabindex="0" role="button" aria-label="Programmes Karel">
+    <rect x="60" y="450" width="1080" height="120" fill="#1F5560" fill-opacity="0.04"/>
+    <text x="80" y="492" class="body" font-size="17" font-weight="600" fill="#1A1A1A">Programmes Karel</text>
+    <text x="80" y="516" class="mono" font-size="11.5" fill="#5A5A5A">Jin &amp; Rinard 2024</text>
+    <text x="80" y="540" class="body" font-size="12" fill="#5A5A5A">code de navigation</text>
+    <text x="370" y="498" class="body" font-size="13.5" fill="#1A1A1A">Sémantique des états</text>
+    <text x="370" y="518" class="body" font-size="13.5" fill="#1A1A1A">intermédiaires du programme</text>
+    <text x="700" y="498" class="body" font-size="13.5" fill="#1A1A1A">Sonde dont la précision</text>
+    <text x="700" y="518" class="body" font-size="13.5" fill="#1A1A1A">croît au fil de l'entraînement</text>
+    <rect x="960" y="482" width="150" height="26" rx="13" fill="#1F5560" fill-opacity="0.14"/>
+    <text x="1035" y="500" class="mono" font-size="12" fill="#1F5560" text-anchor="middle">preuve nette</text>
+  </g>
+  <line x1="60" y1="570" x2="1140" y2="570" stroke="#E5E1D8"/>
+
+  <!-- row 4 : Space/Time -->
+  <g class="interactive" data-card="espace-temps" tabindex="0" role="button" aria-label="Espace et temps dans Llama-2">
+    <rect x="60" y="570" width="1080" height="120" fill="#B58A2C" fill-opacity="0.05"/>
+    <text x="80" y="612" class="body" font-size="17" font-weight="600" fill="#1A1A1A">Espace &amp; temps</text>
+    <text x="80" y="636" class="mono" font-size="11.5" fill="#5A5A5A">Gurnee &amp; Tegmark 2024</text>
+    <text x="80" y="660" class="body" font-size="12" fill="#B58A2C" font-weight="600">vrai LLM : Llama-2</text>
+    <text x="370" y="618" class="body" font-size="13.5" fill="#1A1A1A">Coordonnées spatiales et</text>
+    <text x="370" y="638" class="body" font-size="13.5" fill="#1A1A1A">temporelles, unifiées entre entités</text>
+    <text x="700" y="618" class="body" font-size="13.5" fill="#1A1A1A">Sondes de régression ;</text>
+    <text x="700" y="638" class="body" font-size="13.5" fill="#1A1A1A">« neurones d'espace » et « de temps »</text>
+    <rect x="960" y="602" width="150" height="26" rx="13" fill="#B58A2C" fill-opacity="0.18"/>
+    <text x="1035" y="620" class="mono" font-size="12" fill="#B58A2C" text-anchor="middle">à l'échelle</text>
+  </g>
+  <line x1="60" y1="690" x2="1140" y2="690" stroke="#1A1A1A" stroke-width="1"/>
+  <text x="60" y="720" class="body" font-size="13" font-style="italic" fill="#5A5A5A">Un même verdict : entraîné seulement à prédire, un transformeur construit des représentations structurées, linéaires et causalement actives.</text>
+</svg>
+<figcaption class="figure-caption">Schéma 3 — Quatre études, quatre domaines, un même signal&nbsp;: du jouet synthétique au vrai LLM. <a class="anchor" href="#fig-03" title="Lien direct vers ce schéma">¶</a></figcaption></figure>
+      <p><strong>Les échecs.</strong> Adam Karvonen entraîne un modèle sur des transcriptions de parties (notation textuelle brute, aucune règle fournie) et retrouve, par sonde linéaire, l'état de l'échiquier — validé, là encore, par intervention causale&nbsp;: on édite l'état interne, le jeu suit<a class="cite" data-cite="3" href="#source-3">3</a>. Plus frappant&nbsp;: le modèle estime aussi une <span class="term" data-tooltip="Variable latente : une grandeur qui n'apparaît nulle part dans le texte d'entrée mais que le modèle infère parce qu'elle aide à prédire — ici, le niveau de jeu des joueurs.">variable latente</span> qui n'apparaît nulle part dans le texte, le niveau des joueurs. En extrayant ce «&nbsp;vecteur de niveau&nbsp;» et en le manipulant, Karvonen fait grimper le taux de victoire du modèle jusqu'à ×2,6. <mark>Le modèle n'a pas seulement reconstruit le plateau&nbsp;; il a inféré une propriété du monde — la compétence — pour mieux prédire.</mark></p>
+      <p><strong>Les programmes.</strong> Charles Jin et Martin Rinard entraînent un transformeur sur du code Karel (un langage de navigation en grille), à prédire du texte de programme<a class="cite" data-cite="4" href="#source-4">4</a>. Une sonde extrait, avec une précision qui <em>croît au fil de l'entraînement</em>, la sémantique des <strong>états intermédiaires du programme</strong> — l'état de la grille après chaque instruction — alors même que ces états ne figurent jamais dans les données. Autrement dit&nbsp;: le modèle apprend à <em>interpréter</em> les programmes au sens formel, pas seulement à en imiter la syntaxe. La compréhension de la sémantique émerge comme sous-produit de la prédiction.</p>
+      <p><strong>L'espace et le temps, sur de vrais LLM.</strong> Wes Gurnee et Max Tegmark quittent les jouets&nbsp;: ils sondent les activations de <strong>Llama-2</strong> sur des lieux (villes, monuments, à l'échelle du monde, des États-Unis, de New York) et des dates (personnages historiques, œuvres, titres de presse)<a class="cite" data-cite="5" href="#source-5">5</a>. Ils trouvent des représentations linéaires des coordonnées spatiales et temporelles, robustes aux variations de formulation et <strong>unifiées</strong> entre types d'entités — et isolent même des «&nbsp;neurones d'espace&nbsp;» et «&nbsp;neurones de temps&nbsp;» individuels. Leur conclusion&nbsp;: à mesure que la taille augmente, le modèle n'améliore pas seulement sa prédiction, il <strong>améliore aussi sa modélisation interne du monde</strong>.</p>
+      <p>Quatre études, quatre domaines, un même signal&nbsp;: <mark>entraîné seulement à prédire, un transformeur construit spontanément des représentations structurées, linéaires et causalement actives de variables du monde qu'on ne lui a jamais montrées</mark>. Le camp de la compression semble avoir gagné. Sauf que ces études partagent un angle mort.</p>
+      </section>
+
+      <section>
+      <h2 id="s-4">4. Le contre-feu&nbsp;: un excellent prédicteur peut mentir</h2>
+      <p>Toutes les études du §3 démontrent qu'<em>une partie</em> du monde est récupérable dans les activations. Aucune ne mesure si le modèle du monde ainsi extrait est <strong>cohérent</strong> — s'il forme une carte unique et sans contradiction, ou une mosaïque de fragments localement corrects mais globalement incompatibles. C'est le vide qu'attaque Keyon Vafa et ses coauteurs à NeurIPS 2024<a class="cite" data-cite="6" href="#source-6">6</a>.</p>
+      <p>Leur cadre&nbsp;: quand la réalité est gouvernée par un <span class="term" data-tooltip="Automate déterministe : un système d'états et de transitions où chaque action mène à un état unique. Il fournit une définition rigoureuse du « vrai » modèle du monde à retrouver.">automate déterministe</span> (un graphe d'états et de transitions), on peut définir rigoureusement ce que serait le «&nbsp;vrai&nbsp;» modèle du monde, et donc mesurer l'écart. Ils proposent deux métriques inspirées du <span class="term" data-tooltip="Théorème de Myhill-Nerode : résultat de théorie des langages qui caractérise un automate par la façon dont il regroupe les séquences menant au même état. Vafa s'en inspire pour mesurer la cohérence d'un modèle du monde.">théorème de Myhill-Nerode</span> en théorie des langages (schéma&nbsp;4)&nbsp;:</p>
+      <ul>
+        <li>la <strong>compression de séquences</strong>&nbsp;: deux historiques qui aboutissent au <em>même</em> état du monde doivent être traités comme équivalents par le modèle. S'il les distingue, il n'a pas compris qu'ils mènent au même endroit.</li>
+        <li>la <strong>distinction de séquences</strong>&nbsp;: deux historiques qui aboutissent à des états <em>différents</em> doivent être distingués. S'il les confond, il ignore qu'ils divergent.</li>
+      </ul>
+      <p>Un vrai modèle du monde réussit les deux. Un patchwork d'heuristiques peut réussir la tâche de prédiction tout en échouant massivement à l'une ou l'autre.</p>
+      <figure class="figure" id="fig-04"><svg data-schema-id="schema-04" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif">
+  <style>
+    .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+    .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+    .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    .interactive { cursor: pointer; }
+  </style>
+  <rect x="0" y="0" width="1200" height="800" fill="#FAF8F3"/>
+
+  <text x="60" y="58" class="mono" font-size="12" letter-spacing="3" fill="#B7332C">SCHÉMA 04</text>
+  <text x="60" y="98" class="display" font-size="30" font-weight="600" fill="#1A1A1A">La carte fantôme</text>
+  <text x="60" y="128" class="display" font-size="17" font-style="italic" fill="#5A5A5A">Le modèle des taxis donne des itinéraires presque parfaits — sur une carte de Manhattan qui n'existe pas.</text>
+  <line x1="60" y1="150" x2="1140" y2="150" stroke="#E5E1D8" stroke-width="1"/>
+
+  <!-- LEFT : true map -->
+  <g class="interactive" data-card="carte-vraie" tabindex="0" role="button" aria-label="Vraie carte de Manhattan">
+    <text x="80" y="192" class="mono" font-size="12" letter-spacing="1" fill="#1F5560">VRAIE MANHATTAN — grille cohérente</text>
+    <rect x="70" y="205" width="470" height="340" rx="4" fill="#FFFFFF" stroke="#1F5560" stroke-width="1.25"/>
+    <g stroke="#1F5560" stroke-opacity="0.55" stroke-width="1.5">
+      <line x1="130" y1="205" x2="130" y2="545"/><line x1="200" y1="205" x2="200" y2="545"/><line x1="270" y1="205" x2="270" y2="545"/><line x1="340" y1="205" x2="340" y2="545"/><line x1="410" y1="205" x2="410" y2="545"/><line x1="480" y1="205" x2="480" y2="545"/>
+      <line x1="70" y1="265" x2="540" y2="265"/><line x1="70" y1="325" x2="540" y2="325"/><line x1="70" y1="385" x2="540" y2="385"/><line x1="70" y1="445" x2="540" y2="445"/><line x1="70" y1="505" x2="540" y2="505"/>
+    </g>
+    <!-- a route -->
+    <path d="M130,505 L130,325 L340,325 L340,265" fill="none" stroke="#1A1A1A" stroke-width="3"/>
+    <circle cx="130" cy="505" r="6" fill="#1A1A1A"/><circle cx="340" cy="265" r="6" fill="#B7332C"/>
+    <text x="305" y="535" class="body" font-size="12" fill="#5A5A5A">itinéraire valide</text>
+  </g>
+
+  <!-- RIGHT : implicit map -->
+  <g class="interactive" data-card="carte-implicite" tabindex="0" role="button" aria-label="Carte implicite du modèle">
+    <text x="650" y="192" class="mono" font-size="12" letter-spacing="1" fill="#B7332C">CARTE IMPLICITE DU MODÈLE — incohérente</text>
+    <rect x="640" y="205" width="470" height="340" rx="4" fill="#FFFFFF" stroke="#B7332C" stroke-width="1.25"/>
+    <!-- distorted base grid -->
+    <g stroke="#B8B5AE" stroke-width="1.2">
+      <line x1="700" y1="205" x2="710" y2="545"/><line x1="770" y1="205" x2="758" y2="545"/><line x1="840" y1="205" x2="852" y2="545"/><line x1="912" y1="205" x2="905" y2="545"/><line x1="980" y1="205" x2="992" y2="545"/><line x1="1050" y1="205" x2="1044" y2="545"/>
+      <line x1="640" y1="265" x2="1110" y2="272"/><line x1="640" y1="326" x2="1110" y2="318"/><line x1="640" y1="386" x2="1110" y2="392"/><line x1="640" y1="446" x2="1110" y2="440"/><line x1="640" y1="505" x2="1110" y2="510"/>
+    </g>
+  </g>
+
+  <!-- phantom streets (own clickable region, drawn on top) -->
+  <g class="interactive" data-card="rues-fantomes" tabindex="0" role="button" aria-label="Rues fantômes">
+    <line x1="700" y1="500" x2="905" y2="300" stroke="#B7332C" stroke-width="2.5" stroke-dasharray="7 5"/>
+    <line x1="770" y1="270" x2="1050" y2="470" stroke="#B7332C" stroke-width="2.5" stroke-dasharray="7 5"/>
+    <line x1="840" y1="520" x2="990" y2="230" stroke="#B7332C" stroke-width="2.5" stroke-dasharray="7 5"/>
+    <circle cx="905" cy="300" r="5" fill="#B7332C"/><circle cx="1050" cy="470" r="5" fill="#B7332C"/>
+    <rect x="820" y="470" width="240" height="60" rx="4" fill="#FAF8F3" stroke="#B7332C" stroke-width="1"/>
+    <text x="940" y="494" class="body" font-size="12.5" font-weight="600" fill="#B7332C" text-anchor="middle">Rues fantômes</text>
+    <text x="940" y="514" class="body" font-size="11.5" fill="#5A5A5A" text-anchor="middle">segments qui traversent des immeubles</text>
+  </g>
+
+  <!-- fragility -->
+  <g class="interactive" data-card="fragilite-detour" tabindex="0" role="button" aria-label="Fragilité au détour">
+    <line x1="60" y1="590" x2="1140" y2="590" stroke="#E5E1D8"/>
+    <text x="80" y="630" class="body" font-size="15" font-weight="600" fill="#1A1A1A">Le test qui trahit le vernis : fermer 1 % des rues (un simple détour)</text>
+    <!-- bar 100% -->
+    <text x="80" y="672" class="mono" font-size="12" fill="#5A5A5A">avant</text>
+    <rect x="160" y="658" width="500" height="24" rx="3" fill="#1F5560" fill-opacity="0.55"/>
+    <text x="672" y="676" class="mono" font-size="14" fill="#1F5560" font-weight="600">≈ 100 %</text>
+    <!-- bar 67% -->
+    <text x="80" y="712" class="mono" font-size="12" fill="#5A5A5A">après</text>
+    <rect x="160" y="698" width="335" height="24" rx="3" fill="#B7332C" fill-opacity="0.5"/>
+    <text x="507" y="716" class="mono" font-size="14" fill="#B7332C" font-weight="600">67 %</text>
+    <text x="760" y="690" class="body" font-size="13" fill="#5A5A5A">La justesse s'effondre :</text>
+    <text x="760" y="710" class="body" font-size="13" fill="#5A5A5A">la performance était un vernis.</text>
+  </g>
+</svg>
+<figcaption class="figure-caption">Schéma 4 — La carte de Manhattan implicite dans le modèle des taxis&nbsp;: des rues fantômes, et un effondrement au premier détour. <a class="anchor" href="#fig-04" title="Lien direct vers ce schéma">¶</a></figcaption></figure>
+      <p>Le cas d'étude est un uppercut. Les auteurs entraînent un modèle sur des trajectoires de taxis new-yorkais, converties en suites d'ordres directionnels, et il apprend à donner des itinéraires <strong>presque parfaits</strong>. Mais quand on reconstruit la carte de Manhattan implicite dans ses prédictions, ce n'est pas Manhattan&nbsp;: <mark>c'est une ville impossible, striée de rues fantômes qui n'existent pas, de segments qui traversent des immeubles, d'orientations qui se contredisent</mark>. Le modèle a mémorisé assez de trajets pour paraître compétent, sans jamais tenir de plan cohérent. Et la fragilité se révèle dès qu'on perturbe&nbsp;: <strong>en fermant seulement 1&nbsp;% des rues</strong> — un détour, chose banale dans la vraie vie — la justesse des itinéraires s'effondre de près de 100&nbsp;% à 67&nbsp;%<a class="cite" data-cite="6" href="#source-6">6</a>. La performance était un vernis. Le verdict des auteurs&nbsp;: un modèle génératif peut accomplir des tâches impressionnantes tout en s'appuyant sur un modèle du monde incohérent, et cette incohérence le rend fragile pour toute tâche voisine.</p>
+      <p>Le probing du §3 et l'évaluation de Vafa ne se contredisent pas&nbsp;: ils mesurent deux choses différentes. <strong>L'état du monde peut être partiellement récupérable <em>et</em> la carte globale rester incohérente.</strong> Récupérabilité n'est pas cohérence.</p>
+      </section>
+
+      <section>
+      <h2 id="s-5">5. Kepler, pas Newton</h2>
+      <p>Vafa pousse le raisonnement d'un cran en 2025, avec une question plus exigeante encore&nbsp;: même quand un modèle prédit parfaitement, a-t-il capturé la <strong>loi</strong> qui gouverne le phénomène, ou seulement des régularités de surface suffisantes pour la prédiction&nbsp;?<a class="cite" data-cite="7" href="#source-7">7</a> L'analogie est astronomique. Kepler a décrit les orbites planétaires avec une précision totale — mais ses lois sont descriptives&nbsp;; il a fallu Newton pour la <em>cause</em>, la gravitation, qui généralise bien au-delà des orbites (schéma&nbsp;5).</p>
+      <figure class="figure" id="fig-05"><svg data-schema-id="schema-05" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif">
+  <style>
+    .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+    .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+    .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    .interactive { cursor: pointer; }
+  </style>
+  <defs>
+    <marker id="arw05t" markerWidth="9" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#1F5560"/></marker>
+    <marker id="arw05c" markerWidth="9" markerHeight="8" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#B7332C"/></marker>
+  </defs>
+  <rect x="0" y="0" width="1200" height="800" fill="#FAF8F3"/>
+
+  <text x="60" y="58" class="mono" font-size="12" letter-spacing="3" fill="#B7332C">SCHÉMA 05</text>
+  <text x="60" y="98" class="display" font-size="30" font-weight="600" fill="#1A1A1A">Kepler, pas Newton</text>
+  <text x="60" y="128" class="display" font-size="17" font-style="italic" fill="#5A5A5A">Prédire parfaitement l'orbite ne prouve pas qu'on a capturé la loi. La preuve arrive avec la tâche suivante.</text>
+  <line x1="60" y1="150" x2="1140" y2="150" stroke="#E5E1D8" stroke-width="1"/>
+
+  <!-- LEFT : orbit both predict identically -->
+  <g class="interactive" data-card="meme-prediction" tabindex="0" role="button" aria-label="Même prédiction de l'orbite">
+    <text x="80" y="192" class="mono" font-size="12" letter-spacing="1" fill="#5A5A5A">LES DEUX MODÈLES PRÉDISENT L'ORBITE À L'IDENTIQUE</text>
+    <rect x="70" y="205" width="520" height="360" rx="4" fill="#FFFFFF" stroke="#E5E1D8" stroke-width="1"/>
+    <ellipse cx="340" cy="385" rx="220" ry="135" fill="none" stroke="#1F5560" stroke-width="2.5"/>
+    <ellipse cx="340" cy="385" rx="220" ry="135" fill="none" stroke="#B7332C" stroke-width="2.5" stroke-dasharray="8 7"/>
+    <circle cx="470" cy="385" r="16" fill="#B58A2C" fill-opacity="0.85"/>
+    <text x="470" y="420" class="mono" font-size="11" fill="#B58A2C" text-anchor="middle">foyer</text>
+    <circle cx="340" cy="250" r="9" fill="#1A1A1A"/>
+    <rect x="330" y="530" width="18" height="12" fill="#1F5560"/><text x="356" y="540" class="mono" font-size="11" fill="#5A5A5A">modèle N</text>
+    <rect x="440" y="530" width="18" height="12" fill="#B7332C"/><text x="466" y="540" class="mono" font-size="11" fill="#5A5A5A">modèle K</text>
+    <text x="200" y="540" class="body" font-size="12" fill="#5A5A5A">prédictions superposées</text>
+  </g>
+
+  <!-- method callout -->
+  <g class="interactive" data-card="biais-inductif" tabindex="0" role="button" aria-label="Sonde de biais inductif">
+    <rect x="70" y="590" width="520" height="135" rx="4" fill="#B58A2C" fill-opacity="0.06" stroke="#B58A2C" stroke-width="1.25"/>
+    <text x="90" y="622" class="body" font-size="14" font-weight="600" fill="#1A1A1A">Sonde de biais inductif</text>
+    <text x="90" y="650" class="body" font-size="12.5" fill="#5A5A5A">On ne sonde plus ce que le modèle <tspan font-style="italic">représente</tspan>, mais comment il</text>
+    <text x="90" y="670" class="body" font-size="12.5" fill="#5A5A5A"><tspan font-style="italic">s'adapte</tspan> à de petites tâches issues d'un modèle du monde postulé.</text>
+    <text x="90" y="698" class="body" font-size="12.5" fill="#5A5A5A">Un modèle qui a intériorisé la loi apprend avec son biais.</text>
+  </g>
+
+  <!-- RIGHT : new task -->
+  <text x="650" y="192" class="mono" font-size="12" letter-spacing="1" fill="#B7332C">NOUVELLE TÂCHE : PRÉDIRE LE VECTEUR DE FORCE</text>
+
+  <g class="interactive" data-card="kepler" tabindex="0" role="button" aria-label="Modèle Kepler échoue">
+    <rect x="640" y="205" width="490" height="245" rx="4" fill="#B7332C" fill-opacity="0.06" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="662" y="238" class="body" font-size="14" font-weight="600" fill="#B7332C">Modèle « Kepler » — heuristiques par tâche</text>
+    <circle cx="885" cy="345" r="12" fill="#B58A2C" fill-opacity="0.7"/>
+    <!-- scattered incoherent force arrows -->
+    <line x1="760" y1="300" x2="720" y2="270" stroke="#B7332C" stroke-width="2" marker-end="url(#arw05c)"/>
+    <line x1="1010" y1="320" x2="1060" y2="300" stroke="#B7332C" stroke-width="2" marker-end="url(#arw05c)"/>
+    <line x1="820" y1="410" x2="800" y2="440" stroke="#B7332C" stroke-width="2" marker-end="url(#arw05c)"/>
+    <line x1="970" y1="400" x2="1010" y2="425" stroke="#B7332C" stroke-width="2" marker-end="url(#arw05c)"/>
+    <line x1="900" y1="270" x2="905" y2="235" stroke="#B7332C" stroke-width="2" marker-end="url(#arw05c)"/>
+    <text x="885" y="432" class="body" font-size="12.5" fill="#5A5A5A" text-anchor="middle">forces incohérentes — ne généralise pas</text>
+  </g>
+
+  <g class="interactive" data-card="newton" tabindex="0" role="button" aria-label="Modèle Newton réussit">
+    <rect x="640" y="470" width="490" height="245" rx="4" fill="#1F5560" fill-opacity="0.08" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="662" y="503" class="body" font-size="14" font-weight="600" fill="#1F5560">Modèle « Newton » — loi générative</text>
+    <circle cx="885" cy="605" r="12" fill="#B58A2C" fill-opacity="0.7"/>
+    <!-- radial force arrows pointing toward the sun -->
+    <line x1="760" y1="560" x2="850" y2="592" stroke="#1F5560" stroke-width="2" marker-end="url(#arw05t)"/>
+    <line x1="1010" y1="560" x2="920" y2="592" stroke="#1F5560" stroke-width="2" marker-end="url(#arw05t)"/>
+    <line x1="770" y1="655" x2="852" y2="618" stroke="#1F5560" stroke-width="2" marker-end="url(#arw05t)"/>
+    <line x1="1000" y1="660" x2="918" y2="618" stroke="#1F5560" stroke-width="2" marker-end="url(#arw05t)"/>
+    <line x1="885" y1="520" x2="885" y2="580" stroke="#1F5560" stroke-width="2" marker-end="url(#arw05t)"/>
+    <text x="885" y="695" class="body" font-size="12.5" fill="#5A5A5A" text-anchor="middle">force radiale correcte — généralise à des tâches inédites</text>
+  </g>
+</svg>
+<figcaption class="figure-caption">Schéma 5 — Deux modèles prédisent l'orbite à l'identique&nbsp;; seule une tâche nouvelle révèle lequel a capturé la loi. <a class="anchor" href="#fig-05" title="Lien direct vers ce schéma">¶</a></figcaption></figure>
+      <p>L'outil proposé est la <span class="term" data-tooltip="Sonde de biais inductif : au lieu de mesurer ce qu'un modèle représente, on mesure comment il s'adapte à de petites tâches issues d'un modèle du monde postulé. Un modèle qui a intériorisé la loi apprend avec le biais de cette loi.">sonde de biais inductif</span> (<em>inductive bias probe</em>)&nbsp;: plutôt que de sonder ce que le modèle <em>représente</em>, on mesure comment il <em>s'adapte</em> à de petits jeux de données issus d'un modèle du monde postulé. Un modèle qui a réellement intériorisé la loi devrait apprendre les nouvelles tâches avec le biais de cette loi. Résultat&nbsp;: des modèles entraînés sur des <strong>trajectoires orbitales</strong> les prédisent impeccablement, mais lorsqu'on les adapte à une tâche physique nouvelle — par exemple prédire le vecteur de force — <mark>ils se comportent comme s'ils avaient développé des heuristiques propres à chaque tâche, sans jamais converger vers la mécanique newtonienne sous-jacente</mark>. Ils sont Kepler, pas Newton. Une étude de suivi de février 2026 raffine le tableau&nbsp;: les <span class="term" data-tooltip="Biais inductif : les préférences a priori d'un modèle (dues à son architecture et à ses données) sur les hypothèses qu'il forme. Ils décident s'il reste descriptif ou s'il capte la loi générative.">biais inductifs</span> de l'architecture et des données <em>guident</em> le modèle du monde appris, et déterminent s'il reste au stade descriptif ou bascule vers la loi générative<a class="cite" data-cite="8" href="#source-8">8</a>.</p>
+      <p>Ce résultat déplace la barre. Le §2-§3 montrait&nbsp;: <em>l'état</em> du monde est souvent récupérable. Le §4 ajoutait&nbsp;: cet état n'est pas forcément <em>cohérent</em> à l'échelle globale. Le §5 conclut&nbsp;: même cohérent, il n'est pas forcément <em>la bonne loi</em> — celle qui généralise à des tâches inédites. Trois exigences emboîtées, de plus en plus dures.</p>
+      </section>
+
+      <section>
+      <h2 id="s-6">6. Potemkine&nbsp;: quand le benchmark ment</h2>
+      <p>Reste une objection de bon sens&nbsp;: si ces modèles réussissent nos examens — y compris des examens conçus pour des humains — n'est-ce pas la preuve qu'ils comprennent&nbsp;? La réponse tient dans un concept forgé par Marina Mancoridis, Keyon Vafa, Sendhil Mullainathan et Bec Weeks en 2025&nbsp;: le <strong>potemkine</strong> (schéma&nbsp;6)<a class="cite" data-cite="9" href="#source-9">9</a>.</p>
+      <figure class="figure" id="fig-06"><svg data-schema-id="schema-06" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif">
+  <style>
+    .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+    .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+    .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    .interactive { cursor: pointer; }
+  </style>
+  <defs>
+    <marker id="arw06" markerWidth="10" markerHeight="8" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="#5A5A5A"/></marker>
+  </defs>
+  <rect x="0" y="0" width="1200" height="800" fill="#FAF8F3"/>
+
+  <text x="60" y="58" class="mono" font-size="12" letter-spacing="3" fill="#B7332C">SCHÉMA 06</text>
+  <text x="60" y="98" class="display" font-size="30" font-weight="600" fill="#1A1A1A">Le piège du benchmark</text>
+  <text x="60" y="128" class="display" font-size="17" font-style="italic" fill="#5A5A5A">Réussir un examen humain ne mesure la compréhension que si la machine se trompe comme un humain.</text>
+  <line x1="60" y1="150" x2="1140" y2="150" stroke="#E5E1D8" stroke-width="1"/>
+
+  <!-- Définir -->
+  <g class="interactive" data-card="definir" tabindex="0" role="button" aria-label="Définir — ce que mesure le benchmark">
+    <rect x="80" y="205" width="360" height="150" rx="4" fill="#1F5560" fill-opacity="0.10" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="100" y="240" class="mono" font-size="11" letter-spacing="2" fill="#1F5560">CE QUE MESURE LE BENCHMARK</text>
+    <text x="100" y="272" class="body" font-size="18" font-weight="600" fill="#1A1A1A">Définir le concept</text>
+    <text x="100" y="302" class="body" font-size="13" fill="#5A5A5A">Le modèle donne la bonne définition.</text>
+    <circle cx="115" cy="326" r="9" fill="#1F5560"/><path d="M110,326 l4,4 l7,-8" stroke="#FFFFFF" stroke-width="2" fill="none"/>
+    <text x="132" y="331" class="body" font-size="13" fill="#1F5560" font-weight="600">réponse correcte</text>
+  </g>
+
+  <!-- inference broken -->
+  <text x="600" y="252" class="body" font-size="13" fill="#5A5A5A" text-anchor="middle">l'inférence tacite :</text>
+  <text x="600" y="274" class="mono" font-size="13" fill="#1A1A1A" text-anchor="middle">définir ⇒ appliquer</text>
+  <line x1="450" y1="300" x2="560" y2="300" stroke="#5A5A5A" stroke-width="1.5" marker-end="url(#arw06)"/>
+  <line x1="640" y1="300" x2="750" y2="300" stroke="#5A5A5A" stroke-width="1.5" marker-end="url(#arw06)"/>
+  <g stroke="#B7332C" stroke-width="3"><line x1="588" y1="288" x2="612" y2="312"/><line x1="612" y1="288" x2="588" y2="312"/></g>
+  <text x="600" y="338" class="body" font-size="11.5" fill="#B7332C" text-anchor="middle">valide chez l'humain,</text>
+  <text x="600" y="354" class="body" font-size="11.5" fill="#B7332C" text-anchor="middle">rompue chez le LLM</text>
+
+  <!-- Appliquer -->
+  <g class="interactive" data-card="appliquer" tabindex="0" role="button" aria-label="Appliquer — où le modèle se contredit">
+    <rect x="760" y="205" width="360" height="150" rx="4" fill="#B7332C" fill-opacity="0.08" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="780" y="240" class="mono" font-size="11" letter-spacing="2" fill="#B7332C">CE QUE LE BENCHMARK NE VOIT PAS</text>
+    <text x="780" y="272" class="body" font-size="18" font-weight="600" fill="#1A1A1A">Appliquer le concept</text>
+    <text x="780" y="302" class="body" font-size="13" fill="#5A5A5A">Le modèle se contredit dès l'usage.</text>
+    <g stroke="#B7332C" stroke-width="2.5"><line x1="789" y1="320" x2="801" y2="332"/><line x1="801" y1="320" x2="789" y2="332"/></g>
+    <text x="814" y="331" class="body" font-size="13" fill="#B7332C" font-weight="600">incohérence</text>
+  </g>
+
+  <line x1="60" y1="410" x2="1140" y2="410" stroke="#E5E1D8"/>
+  <text x="60" y="448" class="body" font-size="15" font-weight="600" fill="#1A1A1A">Deux façons de mentir</text>
+
+  <!-- Hallucination -->
+  <g class="interactive" data-card="hallucination" tabindex="0" role="button" aria-label="Hallucination">
+    <rect x="80" y="470" width="500" height="250" rx="4" fill="#FFFFFF" stroke="#E5E1D8" stroke-width="1.25"/>
+    <text x="105" y="512" class="body" font-size="18" font-weight="600" fill="#5A5A5A">Hallucination</text>
+    <text x="105" y="540" class="mono" font-size="11" letter-spacing="1" fill="#5A5A5A">CONNAISSANCE FACTUELLE</text>
+    <line x1="105" y1="558" x2="555" y2="558" stroke="#E5E1D8"/>
+    <text x="105" y="592" class="body" font-size="14" fill="#1A1A1A">Fabrique un <tspan font-weight="600">faux fait</tspan>.</text>
+    <text x="105" y="628" class="body" font-size="13" fill="#5A5A5A">« La tour Eiffel mesure 450 m. »</text>
+    <text x="105" y="676" class="body" font-size="12.5" font-style="italic" fill="#5A5A5A">Une donnée est fausse ; le concept</text>
+    <text x="105" y="695" class="body" font-size="12.5" font-style="italic" fill="#5A5A5A">reste, lui, correctement manié.</text>
+  </g>
+
+  <!-- Potemkine -->
+  <g class="interactive" data-card="potemkine" tabindex="0" role="button" aria-label="Potemkine">
+    <rect x="620" y="470" width="500" height="250" rx="4" fill="#B7332C" fill-opacity="0.07" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="645" y="512" class="body" font-size="18" font-weight="600" fill="#B7332C">Potemkine</text>
+    <text x="645" y="540" class="mono" font-size="11" letter-spacing="1" fill="#B7332C">CONNAISSANCE CONCEPTUELLE</text>
+    <line x1="645" y1="558" x2="1095" y2="558" stroke="#B7332C" stroke-opacity="0.3"/>
+    <text x="645" y="592" class="body" font-size="14" fill="#1A1A1A">Fabrique une <tspan font-weight="600">fausse cohérence</tspan>.</text>
+    <text x="645" y="628" class="body" font-size="13" fill="#5A5A5A">Définit juste, applique faux.</text>
+    <text x="645" y="676" class="body" font-size="12.5" font-style="italic" fill="#5A5A5A">La façade conceptuelle tient ;</text>
+    <text x="645" y="695" class="body" font-size="12.5" font-style="italic" fill="#5A5A5A">rien ne la soutient. Ubiquitaire.</text>
+  </g>
+</svg>
+<figcaption class="figure-caption">Schéma 6 — Le potemkine&nbsp;: définir juste, appliquer faux. Pourquoi la performance benchmark surestime le modèle du monde. <a class="anchor" href="#fig-06" title="Lien direct vers ce schéma">¶</a></figcaption></figure>
+      <p>Un village Potemkine est une façade sans bâtiment derrière. Un <em>potemkine de compréhension</em>, c'est <mark>une réponse correcte qui coexiste avec une incapacité à appliquer le concept d'une manière cohérente avec cette réponse</mark>. Le modèle définit correctement un terme, puis se contredit dès qu'il faut l'utiliser. Les auteurs le formulent d'une phrase&nbsp;: <em>«&nbsp;les potemkines sont à la connaissance conceptuelle ce que les hallucinations sont à la connaissance factuelle — les hallucinations fabriquent de faux faits, les potemkines fabriquent une fausse cohérence conceptuelle.&nbsp;»</em></p>
+      <p>L'argument sur la validité des benchmarks est le cœur du problème. Un examen conçu pour les humains n'est un test valide de la compréhension d'une IA <strong>que si l'IA se trompe de la même façon que les humains</strong>. Chez un humain, savoir définir un concept prédit fortement savoir l'appliquer&nbsp;; on peut donc économiser en ne testant que la définition. Cette inférence ne tient plus pour un LLM, dont les modes d'échec ne recoupent pas les nôtres. Mesurer la définition surestime alors l'application. Les auteurs montrent que les potemkines sont <strong>ubiquitaires</strong>, à travers modèles, tâches et domaines&nbsp;: la performance benchmark et le modèle du monde sous-jacent sont deux choses distinctes.</p>
+      <p>C'est le point de rencontre avec la critique de fond portée par Subbarao Kambhampati&nbsp;: les LLM excellent en <strong>récupération approximative</strong> plus qu'en raisonnement&nbsp;; ce sont, selon sa formule, de «&nbsp;gigantesques mémoires non-véridiques&nbsp;»<a class="cite" data-cite="10" href="#source-10">10</a>. Sa position est plus dure que celle de Vafa — pour lui la planification robuste requiert un vérificateur externe (le cadre <em>LLM-modulo</em>) — mais elle converge sur le diagnostic&nbsp;: ne pas lire la fluidité comme une preuve de modèle du monde. Le lien avec le dossier <a href="../modeles-raisonnement/">modèles de raisonnement</a> est direct&nbsp;: le <span class="term" data-tooltip="RLVR — Reinforcement Learning from Verifiable Rewards : apprentissage par renforcement où la récompense vient d'un vérificateur automatique (réponse juste ou non), sans juge humain.">RLVR</span> récompense la <em>réponse correcte vérifiable</em>, pas la cohérence du modèle du monde — d'où le risque, déjà documenté pour les <a href="../process-reward-models/">process reward models</a>, qu'un modèle apprenne à produire le bon résultat par le mauvais chemin.</p>
+      </section>
+
+      <section>
+      <h2 id="s-7">7. Ce que «&nbsp;avoir un modèle du monde&nbsp;» veut dire</h2>
+      <p>La dispute «&nbsp;les LLM ont-ils un modèle du monde&nbsp;?&nbsp;» est mal posée tant qu'on la traite en oui/non. Les résultats des sections précédentes dessinent en réalité un <strong>spectre mesurable</strong>, une échelle d'exigences emboîtées (schéma&nbsp;7)&nbsp;:</p>
+      <figure class="figure" id="fig-07"><svg data-schema-id="schema-07" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif">
+  <style>
+    .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+    .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+    .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    .interactive { cursor: pointer; }
+  </style>
+  <rect x="0" y="0" width="1200" height="800" fill="#FAF8F3"/>
+
+  <text x="60" y="58" class="mono" font-size="12" letter-spacing="3" fill="#B7332C">SCHÉMA 07</text>
+  <text x="60" y="98" class="display" font-size="30" font-weight="600" fill="#1A1A1A">Le spectre du modèle du monde</text>
+  <text x="60" y="128" class="display" font-size="17" font-style="italic" fill="#5A5A5A">Non pas un oui/non, mais quatre exigences emboîtées, de plus en plus dures.</text>
+  <line x1="60" y1="150" x2="1140" y2="150" stroke="#E5E1D8" stroke-width="1"/>
+
+  <!-- staircase, baseline y=660 -->
+  <!-- Step 1 -->
+  <g class="interactive" data-card="palier-1-surface" tabindex="0" role="button" aria-label="Palier 1 — corrélations de surface">
+    <rect x="70" y="565" width="258" height="95" fill="#B8B5AE" fill-opacity="0.22" stroke="#5A5A5A" stroke-width="1.25"/>
+    <text x="86" y="595" class="mono" font-size="12" fill="#5A5A5A">PALIER 1</text>
+    <text x="86" y="620" class="body" font-size="15" font-weight="600" fill="#1A1A1A">Corrélations</text>
+    <text x="86" y="640" class="body" font-size="15" font-weight="600" fill="#1A1A1A">de surface</text>
+  </g>
+  <!-- Step 2 -->
+  <g class="interactive" data-card="palier-2-etat" tabindex="0" role="button" aria-label="Palier 2 — état récupérable">
+    <rect x="328" y="470" width="258" height="190" fill="#1F5560" fill-opacity="0.12" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="344" y="500" class="mono" font-size="12" fill="#1F5560">PALIER 2</text>
+    <text x="344" y="525" class="body" font-size="15" font-weight="600" fill="#1A1A1A">État récupérable</text>
+    <text x="344" y="552" class="body" font-size="12.5" fill="#5A5A5A">une variable est décodable</text>
+    <text x="344" y="570" class="body" font-size="12.5" fill="#5A5A5A">et causalement active</text>
+    <text x="344" y="600" class="body" font-size="11.5" font-style="italic" fill="#1F5560">Othello · échecs · Karel ·</text>
+    <text x="344" y="617" class="body" font-size="11.5" font-style="italic" fill="#1F5560">espace-temps</text>
+  </g>
+  <!-- Step 3 -->
+  <g class="interactive" data-card="palier-3-coherent" tabindex="0" role="button" aria-label="Palier 3 — modèle cohérent">
+    <rect x="586" y="375" width="258" height="285" fill="#1F5560" fill-opacity="0.20" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="602" y="405" class="mono" font-size="12" fill="#1F5560">PALIER 3</text>
+    <text x="602" y="430" class="body" font-size="15" font-weight="600" fill="#1A1A1A">Modèle cohérent</text>
+    <text x="602" y="457" class="body" font-size="12.5" fill="#5A5A5A">une carte unique, sans</text>
+    <text x="602" y="475" class="body" font-size="12.5" fill="#5A5A5A">contradiction (compression</text>
+    <text x="602" y="493" class="body" font-size="12.5" fill="#5A5A5A">et distinction réussies)</text>
+    <text x="602" y="523" class="body" font-size="11.5" font-style="italic" fill="#B7332C">manque au modèle des taxis</text>
+    <text x="602" y="540" class="body" font-size="11.5" font-style="italic" fill="#5A5A5A">de Vafa ; atteint en</text>
+    <text x="602" y="557" class="body" font-size="11.5" font-style="italic" fill="#5A5A5A">domaines étroits</text>
+  </g>
+  <!-- Step 4 -->
+  <g class="interactive" data-card="palier-4-loi" tabindex="0" role="button" aria-label="Palier 4 — loi générative correcte">
+    <rect x="844" y="280" width="258" height="380" fill="#B58A2C" fill-opacity="0.16" stroke="#B58A2C" stroke-width="1.5"/>
+    <text x="860" y="310" class="mono" font-size="12" fill="#B58A2C">PALIER 4</text>
+    <text x="860" y="335" class="body" font-size="15" font-weight="600" fill="#1A1A1A">Loi générative</text>
+    <text x="860" y="355" class="body" font-size="15" font-weight="600" fill="#1A1A1A">correcte</text>
+    <text x="860" y="385" class="body" font-size="12.5" fill="#5A5A5A">la structure causale qui</text>
+    <text x="860" y="403" class="body" font-size="12.5" fill="#5A5A5A">généralise à des tâches</text>
+    <text x="860" y="421" class="body" font-size="12.5" fill="#5A5A5A">inédites</text>
+    <text x="860" y="452" class="body" font-size="13" font-weight="600" font-style="italic" fill="#B58A2C">Newton, pas Kepler</text>
+    <text x="860" y="480" class="body" font-size="11.5" font-style="italic" fill="#5A5A5A">non atteint, même par</text>
+    <text x="860" y="497" class="body" font-size="11.5" font-style="italic" fill="#5A5A5A">les modèles cohérents</text>
+  </g>
+
+  <line x1="70" y1="660" x2="1102" y2="660" stroke="#1A1A1A" stroke-width="1.25"/>
+  <text x="70" y="690" class="body" font-size="13" fill="#5A5A5A">exigence croissante · la performance seule ne distingue pas ces paliers</text>
+  <text x="1102" y="690" class="body" font-size="13" fill="#1A1A1A" text-anchor="end">seule la perturbation les sépare →</text>
+
+  <!-- 2026 position marker -->
+  <path d="M457,468 C457,430 590,430 640,395" fill="none" stroke="#B7332C" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <rect x="360" y="200" width="470" height="56" rx="4" fill="#B7332C" fill-opacity="0.06" stroke="#B7332C" stroke-width="1"/>
+  <text x="380" y="225" class="body" font-size="13" font-weight="600" fill="#B7332C">Où en sont les systèmes de 2026</text>
+  <text x="380" y="245" class="body" font-size="12.5" fill="#5A5A5A">solidement au palier 2, palier 3 en domaines étroits, palier 4 hors d'atteinte.</text>
+</svg>
+<figcaption class="figure-caption">Schéma 7 — Le spectre en quatre paliers, et où se situent les systèmes de 2026. <a class="anchor" href="#fig-07" title="Lien direct vers ce schéma">¶</a></figcaption></figure>
+      <ol>
+        <li><strong>Corrélations de surface</strong> — le modèle exploite des régularités statistiques sans variable latente structurée. Suffisant pour beaucoup de tâches, indétectable par la seule performance.</li>
+        <li><strong>État récupérable</strong> — une variable du monde (plateau, échiquier, coordonnées) est linéairement décodable et causalement active dans les activations. C'est ce que prouvent Othello, les échecs, Karel, l'espace-temps de Llama-2.</li>
+        <li><strong>Modèle cohérent</strong> — l'état récupérable forme une carte unique et sans contradiction, qui passe les tests de compression et de distinction de séquences. C'est ce qui <em>manque</em> au modèle des taxis de Vafa.</li>
+        <li><strong>Loi générative correcte</strong> — le modèle a capturé la structure causale qui généralise à des tâches inédites (Newton, pas Kepler). Le palier que même les modèles cohérents n'atteignent pas encore.</li>
+      </ol>
+      <p>Situés sur cette échelle, les systèmes de 2026 vivent surtout au <strong>palier 2</strong>, atteignent le <strong>palier 3</strong> dans des domaines étroits et bien structurés, et achoppent au <strong>palier 4</strong>. Ce cadrage a trois conséquences pratiques&nbsp;:</p>
+      <ul>
+        <li><strong>La sonde devient un instrument d'audit.</strong> Le probing linéaire et l'intervention causale ne sont plus de simples curiosités d'interprétabilité&nbsp;: ce sont des tests de présence d'une variable, mobilisables pour vérifier qu'un système critique se représente bien ce qu'il est censé suivre. Le pont avec l'<a href="../observabilite-agents-ia/">observabilité des agents</a> est naturel.</li>
+        <li><strong>La robustesse hors-distribution est le vrai test.</strong> La performance sur la distribution d'entraînement ne distingue pas les quatre paliers&nbsp;; seule la perturbation — fermer 1&nbsp;% des rues, changer de tâche physique — les sépare. Évaluer un modèle du monde, c'est le sortir de sa zone de confort.</li>
+        <li><strong>Le pont avec <code>world-models</code> s'inverse.</strong> Les architectures JEPA, diffusion et Genie construisent <em>délibérément</em> un modèle du monde cohérent et prédictif, avec objectifs et représentations pensés pour cela. Les LLM y accèdent <em>par accident</em>, sous la pression de la seule prédiction — et plafonnent au palier où l'accident cesse de payer. La question de la prochaine marche n'est peut-être pas «&nbsp;plus d'échelle&nbsp;» mais «&nbsp;quels biais inductifs font passer du palier 3 au palier 4&nbsp;» — ce que suggère la lignée Kepler→Newton.</li>
+      </ul>
+      <p>Un prédicteur de tokens n'est donc ni la boîte vide des sceptiques ni le petit physicien des enthousiastes. <mark>C'est un système qui, pour prédire, construit <em>juste assez</em> de monde — et pas un gramme de plus.</mark> Toute la difficulté d'ingénierie, et tout l'enjeu d'évaluation des prochaines années, tient dans cet écart entre «&nbsp;assez pour prédire&nbsp;» et «&nbsp;assez pour comprendre&nbsp;».</p>
+      </section>
+
+      <p class="report-outro"><em>Format co-écrit avec l'aide d'une IA · 13 juillet 2026 — Mathieu Guglielmino</em></p>
+    </main>
+
+    <aside id="sources" aria-label="Sources">
+      <button class="panel-close" type="button" aria-label="Fermer les sources">Fermer ✕</button>
+      <div class="sources-inner">
+      <h2>Sources</h2>
+      <ol id="sources-list">
+<li id="source-1">
+          <span class="cite-num">[1]</span> Li, Kenneth et al., <em>Emergent World Representations: Exploring a Sequence Model Trained on a Synthetic Task</em> (Othello-GPT). ICLR 2023. Le cas fondateur : l'état du plateau émerge dans les activations d'un modèle entraîné seulement à prédire des coups.<br>
+          <a href="https://arxiv.org/abs/2210.13382" target="_blank" rel="noopener">arxiv.org/2210.13382 ↗</a>
+          <span class="accessed">consulté le 13 juillet 2026</span>
+        </li>
+        <li id="source-2">
+          <span class="cite-num">[2]</span> Nanda, Neel, Andrew Lee, Martin Wattenberg, <em>Emergent Linear Representations in World Models of Self-Supervised Sequence Models</em>. BlackboxNLP @ EMNLP 2023. La reformulation MINE/YOURS/EMPTY rend la sonde linéaire (&gt;99&nbsp;%) et l'intervention causale possibles.<br>
+          <a href="https://arxiv.org/abs/2309.00941" target="_blank" rel="noopener">arxiv.org/2309.00941 ↗</a>
+          <span class="accessed">consulté le 13 juillet 2026</span>
+        </li>
+        <li id="source-3">
+          <span class="cite-num">[3]</span> Karvonen, Adam, <em>Emergent World Models and Latent Variable Estimation in Chess-Playing Language Models</em>. 2024. Échiquier reconstruit par sonde + intervention causale, et estimation d'une variable latente (le niveau) — « vecteur de niveau » qui multiplie les victoires.<br>
+          <a href="https://arxiv.org/abs/2403.15498" target="_blank" rel="noopener">arxiv.org/2403.15498 ↗</a>
+          <span class="accessed">consulté le 13 juillet 2026</span>
+        </li>
+        <li id="source-4">
+          <span class="cite-num">[4]</span> Jin, Charles, Martin Rinard, <em>Emergent Representations of Program Semantics in Language Models Trained on Programs</em>. ICML 2024. La sémantique des états intermédiaires (grilles Karel) émerge, avec une précision de sonde qui croît au fil de l'entraînement.<br>
+          <a href="https://arxiv.org/abs/2305.11169" target="_blank" rel="noopener">arxiv.org/2305.11169 ↗</a>
+          <span class="accessed">consulté le 13 juillet 2026</span>
+        </li>
+        <li id="source-5">
+          <span class="cite-num">[5]</span> Gurnee, Wes, Max Tegmark, <em>Language Models Represent Space and Time</em>. ICLR 2024. Représentations linéaires de l'espace et du temps dans Llama-2 — la preuve portée sur un vrai LLM, avec « neurones d'espace » et « de temps ».<br>
+          <a href="https://arxiv.org/abs/2310.02207" target="_blank" rel="noopener">arxiv.org/2310.02207 ↗</a>
+          <span class="accessed">consulté le 13 juillet 2026</span>
+        </li>
+        <li id="source-6">
+          <span class="cite-num">[6]</span> Vafa, Keyon, Justin Y. Chen, Ashesh Rambachan, Jon Kleinberg, Sendhil Mullainathan, <em>Evaluating the World Model Implicit in a Generative Model</em>. NeurIPS 2024 (spotlight). Métriques inspirées de Myhill-Nerode ; taxis new-yorkais : carte incohérente, effondrement de 100&nbsp;% à 67&nbsp;% en fermant 1&nbsp;% des rues.<br>
+          <a href="https://arxiv.org/abs/2406.03689" target="_blank" rel="noopener">arxiv.org/2406.03689 ↗</a>
+          <span class="accessed">consulté le 13 juillet 2026</span>
+        </li>
+        <li id="source-7">
+          <span class="cite-num">[7]</span> Vafa, Keyon, Peter G. Chang, Ashesh Rambachan, Sendhil Mullainathan, <em>What Has a Foundation Model Found? Using Inductive Bias to Probe for World Models</em>. ICML 2025. La sonde de biais inductif : orbites parfaitement prédites, mais heuristiques par tâche au lieu de la mécanique newtonienne.<br>
+          <a href="https://arxiv.org/abs/2507.06952" target="_blank" rel="noopener">arxiv.org/2507.06952 ↗</a>
+          <span class="accessed">consulté le 13 juillet 2026</span>
+        </li>
+        <li id="source-8">
+          <span class="cite-num">[8]</span> <em>From Kepler to Newton: Inductive Biases Guide Learned World Models in Transformers</em>. 2026. Étude de suivi : les biais inductifs de l'architecture et des données décident si le modèle reste descriptif ou capte la loi générative.<br>
+          <a href="https://arxiv.org/abs/2602.06923" target="_blank" rel="noopener">arxiv.org/2602.06923 ↗</a>
+          <span class="accessed">consulté le 13 juillet 2026</span>
+        </li>
+        <li id="source-9">
+          <span class="cite-num">[9]</span> Mancoridis, Marina, Bec Weeks, Keyon Vafa, Sendhil Mullainathan, <em>Potemkin Understanding in Large Language Models</em>. ICML 2025. Le « potemkine » : définir juste, appliquer faux ; les benchmarks humains ne sont valides que si l'IA se trompe comme un humain.<br>
+          <a href="https://arxiv.org/abs/2506.21521" target="_blank" rel="noopener">arxiv.org/2506.21521 ↗</a>
+          <span class="accessed">consulté le 13 juillet 2026</span>
+        </li>
+        <li id="source-10">
+          <span class="cite-num">[10]</span> Kambhampati, Subbarao, <em>Can Large Language Models Reason and Plan?</em> Annals of the New York Academy of Sciences, 2024. La thèse sceptique : LLM = récupération approximative et « mémoires non-véridiques » ; la planification robuste requiert un vérificateur externe (LLM-modulo).<br>
+          <a href="https://nyaspubs.onlinelibrary.wiley.com/doi/abs/10.1111/nyas.15125" target="_blank" rel="noopener">nyaspubs.onlinelibrary.wiley.com ↗</a>
+          <span class="accessed">consulté le 13 juillet 2026</span>
+        </li>
+        <li id="source-11">
+          <span class="cite-num">[11]</span> Huh, Minyoung, Brian Cheung, Tongzhou Wang, Phillip Isola, <em>The Platonic Representation Hypothesis</em>. ICML 2024. Argument de convergence : des modèles différents tendent vers une même représentation statistique de la réalité — le steelman de la thèse « émergence ».<br>
+          <a href="https://arxiv.org/abs/2405.07987" target="_blank" rel="noopener">arxiv.org/2405.07987 ↗</a>
+          <span class="accessed">consulté le 13 juillet 2026</span>
+        </li>
+        <li id="source-12">
+          <span class="cite-num">[12]</span> MIT News, <em>Despite its impressive output, generative AI doesn't have a coherent understanding of the world</em>. 5 novembre 2024. Vulgarisation des travaux de Vafa et al. — la formulation « incoherent world model » pour le grand public.<br>
+          <a href="https://news.mit.edu/2024/generative-ai-lacks-coherent-world-understanding-1105" target="_blank" rel="noopener">news.mit.edu ↗</a>
+          <span class="accessed">consulté le 13 juillet 2026</span>
+        </li>
+        </ol>
+      </div>
+    </aside>
+
+  </div>
+
+
+  <div id="zoom-overlay" hidden role="dialog" aria-modal="true" aria-label="Schéma agrandi">
+    <header id="zoom-header">
+      <span id="zoom-caption"></span>
+      <div class="zoom-controls">
+        <button type="button" class="zoom-out" aria-label="Dézoomer" title="Dézoomer (−)">−</button>
+        <button type="button" class="zoom-reset" aria-label="Ajuster à l'écran" title="Ajuster à l'écran">Reset</button>
+        <button type="button" class="zoom-in" aria-label="Zoomer" title="Zoomer (+)">+</button>
+        <button type="button" class="zoom-close" aria-label="Fermer (Échap)" title="Fermer (Échap)">×</button>
+      </div>
+    </header>
+    <div id="zoom-stage" tabindex="-1">
+      <div id="zoom-content"></div>
+      <div id="zoom-hint">Molette pour zoomer · glisser pour déplacer · Échap pour fermer</div>
+      <a class="schema-sigil zoom-sigil" href="https://mathieugug.github.io/" target="_blank" rel="noopener" aria-label="Mathieu Guglielmino — visiter mathieugug.github.io" title="Mathieu Guglielmino · mathieugug.github.io">
+        <svg class="sigil-mark" viewBox="0 0 44 44" aria-hidden="true" focusable="false">
+          <circle class="sigil-bg" cx="22" cy="22" r="20.5"/>
+          <circle class="sigil-ring" cx="22" cy="22" r="17.5"/>
+          <g class="sigil-letters"><text x="7.5" y="29">M</text><text x="22" y="29">G</text></g>
+        </svg>
+      </a>
+    </div>
+  </div>
+
+  <div id="modal-root" hidden role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card">
+      <button class="modal-close" data-close aria-label="Fermer">×</button>
+      <p class="modal-eyebrow" id="modal-eyebrow"></p>
+      <h3 class="modal-title" id="modal-title"></h3>
+      <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <script>
+    // ─────────────────────────────────────────────────
+    // DATA — replace these placeholders with real content
+    // ─────────────────────────────────────────────────
+
+    const SCHEMAS = {
+      "schema-01": {
+        "predict": { title: "Prédire le prochain token", body: `<p>C'est le seul objectif d'entraînement d'un LLM : minimiser l'erreur de prédiction du token suivant. Rien, dans cette fonction de perte, n'exige explicitement une carte du monde, un échiquier ou des lois physiques.</p><p>Toute la question du rapport est de savoir si un tel objectif, poussé assez loin, <em>force</em> l'apparition d'un modèle du monde — ou s'en passe très bien.</p>` },
+        "compress": { title: "Comprimer = capturer la structure", body: `<p>La <strong>thèse de la compression</strong> (défendue notamment par Ilya Sutskever) : prédire au mieux, c'est comprimer au mieux ; et comprimer une source au maximum, c'est en capturer le processus générateur.</p><p>Sous cet angle, se représenter le plateau serait la façon la plus économique de prédire des coups d'Othello. La performance tirerait la compréhension derrière elle. C'est le steelman de tout le camp « émergence » (§2-§3).</p>` },
+        "issue-vrai-modele": { title: "Issue A — un vrai modèle du monde", body: `<p>Première façon de prédire : intérioriser fidèlement le processus générateur, sous forme d'une représentation compacte, cohérente et <strong>causalement branchée</strong> sur les sorties.</p><p>C'est le cas idéal. Les sondes d'Othello et des échecs (§2-§3) montrent qu'il se produit vraiment, au moins pour l'<em>état</em> du monde. Reste à savoir s'il est cohérent (§4) et s'il capte la loi (§5).</p>` },
+        "issue-patchwork": { title: "Issue B — un patchwork d'heuristiques", body: `<p>Seconde façon de prédire, tout aussi efficace sur la distribution d'entraînement : mémoriser un vaste ensemble de règles locales, d'associations et d'heuristiques par cas, sans jamais former de modèle unifié.</p><p>Les deux stratégies sont <strong>indiscernables par la seule performance</strong>. Elles ne divergent qu'hors distribution — c'est là que le modèle des taxis de Vafa se trahit (§4).</p>` }
+      },
+      "schema-02": {
+        "activations": { title: "Les activations internes", body: `<p>Othello-GPT reçoit une suite de coups (aucune règle, aucun plateau) et produit, couche après couche, des <em>activations</em> : les vecteurs internes qui portent son calcul.</p><p>L'hypothèse testée : quelque part dans ces vecteurs — à partir de la couche 4 — se cache une image de l'état du plateau que rien dans les données ne fournit explicitement.</p>` },
+        "probe-lineaire": { title: "La sonde linéaire", body: `<p>Une <strong>sonde</strong> est un petit classifieur qu'on entraîne à lire une variable du monde à partir des activations. Si elle réussit, l'information est présente.</p><p>Nanda montre qu'une sonde <em>linéaire</em> suffit — <code>y = W·h</code> — une fois le plateau recodé en référentiel joueur. La linéarité compte : c'est la forme d'information que le modèle peut lui-même exploiter, pas un artefact qu'une sonde surpuissante aurait fabriqué.</p>` },
+        "board-reconstruit": { title: "Le plateau reconstruit", body: `<p>La sonde reconstruit l'état de chaque case en <strong>{MINE, YOURS, EMPTY}</strong> — relativement au joueur dont c'est le tour, pas en noir/blanc absolu. C'est ce changement de repère qui rend la lecture linéaire.</p><p>Précision : <strong>plus de 99&nbsp;%</strong> à partir de la couche 4. Le modèle tient donc bien à jour, en interne, un état du jeu qu'on ne lui a jamais montré.</p>` },
+        "intervention": { title: "L'intervention causale", body: `<p>Le test décisif : en poussant les activations le long du vecteur de la sonde, on <em>édite</em> l'état du plateau que le modèle « croit » voir.</p><p>Résultat : le modèle se met à jouer des coups légaux dans le <strong>nouvel</strong> état — même illégaux dans l'ancien. La représentation n'est pas décorative : elle est causalement branchée sur les prédictions. Othello-GPT ne récite pas des séquences, il raisonne sur un état.</p>` }
+      },
+      "schema-03": {
+        "othello": { title: "Othello-GPT (jouet synthétique)", body: `<p>Li 2023 + Nanda 2023. Domaine contrôlé, choisi pour être irréprochable. L'état du plateau est récupérable par sonde linéaire (&gt;99&nbsp;%) et éditable par intervention causale.<a class="cite" data-cite="1" href="#source-1">1</a><a class="cite" data-cite="2" href="#source-2">2</a></p><p>Force : preuve nette de l'émergence d'une variable du monde. Limite : un jouet ne dit rien des vrais LLM — d'où les trois études suivantes.</p>` },
+        "echecs": { title: "Chess-GPT (parties réelles)", body: `<p>Karvonen 2024. Entraîné sur du texte brut de parties, le modèle reconstruit l'échiquier (sonde + intervention) et infère en plus une <strong>variable latente jamais écrite</strong> : le niveau des joueurs.<a class="cite" data-cite="3" href="#source-3">3</a></p><p>En manipulant ce « vecteur de niveau », on multiplie son taux de victoire (jusqu'à ×2,6). Le modèle ne modélise pas seulement le plateau, mais une propriété du monde utile à la prédiction.</p>` },
+        "karel": { title: "Programmes Karel (sémantique)", body: `<p>Jin &amp; Rinard 2024. Un transformeur entraîné sur du code Karel voit émerger, dans ses activations, la <strong>sémantique des états intermédiaires</strong> du programme — l'état de la grille après chaque instruction, absent des données.<a class="cite" data-cite="4" href="#source-4">4</a></p><p>Signal fort : la précision de la sonde <em>croît au fil de l'entraînement</em>, signe d'une compréhension formelle qui se construit, pas d'un artefact.</p>` },
+        "espace-temps": { title: "Espace &amp; temps dans Llama-2", body: `<p>Gurnee &amp; Tegmark 2024. Le saut vers un vrai LLM. Des sondes de régression retrouvent des coordonnées spatiales (villes, monuments) et temporelles (dates) linéairement encodées et <strong>unifiées entre types d'entités</strong>.<a class="cite" data-cite="5" href="#source-5">5</a></p><p>Ils isolent même des « neurones d'espace » et « neurones de temps ». Conclusion : plus le modèle grandit, mieux il modélise le monde — pas seulement le texte.</p>` }
+      },
+      "schema-04": {
+        "carte-vraie": { title: "La vraie Manhattan", body: `<p>La référence : une grille cohérente, où chaque itinéraire valide correspond à un chemin réel. C'est le « vrai » modèle du monde que le graphe des rues définit rigoureusement.</p><p>Un modèle qui l'aurait intériorisé passerait les deux tests de Vafa : <strong>compression</strong> (deux chemins vers le même carrefour = équivalents) et <strong>distinction</strong> (deux chemins vers des carrefours différents = distingués).</p>` },
+        "carte-implicite": { title: "La carte implicite du modèle", body: `<p>Quand on reconstruit la carte que le modèle des taxis utilise réellement, ce n'est <em>pas</em> Manhattan : une grille déformée, localement plausible, globalement incohérente.</p><p>Le modèle donne pourtant des itinéraires presque parfaits. C'est toute la leçon : <strong>bien prédire n'impose pas une carte cohérente</strong>. Récupérabilité de fragments ≠ cohérence de l'ensemble.</p>` },
+        "rues-fantomes": { title: "Les rues fantômes", body: `<p>Le symptôme le plus parlant de l'incohérence : des rues qui n'existent pas, des segments qui traversent des immeubles, des orientations qui se contredisent.</p><p>Ces raccourcis impossibles sont invisibles tant qu'on reste sur les trajets d'entraînement — ils sont la trace d'un patchwork d'heuristiques cousu de fragments incompatibles.</p>` },
+        "fragilite-detour": { title: "L'effondrement au premier détour", body: `<p>Le test qui trahit le vernis : fermer seulement <strong>1&nbsp;% des rues</strong> — un détour banal. La justesse des itinéraires chute de près de <strong>100&nbsp;% à 67&nbsp;%</strong>.<a class="cite" data-cite="6" href="#source-6">6</a></p><p>Un vrai modèle du monde absorberait le détour ; un patchwork s'écroule dès qu'on sort des chemins mémorisés. La fragilité hors-distribution est la signature de l'incohérence.</p>` }
+      },
+      "schema-05": {
+        "meme-prediction": { title: "Même prédiction de l'orbite", body: `<p>Deux modèles — l'un « Kepler » (heuristiques par tâche), l'autre « Newton » (loi générative) — prédisent l'orbite de façon <strong>strictement identique</strong>.</p><p>Sur la tâche d'entraînement, ils sont indiscernables. C'est exactement le problème posé au §1 : la performance seule ne dit pas lequel a compris. Il faut changer de tâche.</p>` },
+        "biais-inductif": { title: "La sonde de biais inductif", body: `<p>L'outil de Vafa 2025. On ne sonde plus ce que le modèle <em>représente</em>, mais comment il <em>s'adapte</em> à de petites tâches issues d'un modèle du monde postulé.<a class="cite" data-cite="7" href="#source-7">7</a></p><p>Logique : un modèle qui a réellement intériorisé la loi apprend les nouvelles tâches <strong>avec le biais de cette loi</strong>. On mesure donc la compréhension par la façon de généraliser, pas par la performance brute.</p>` },
+        "kepler": { title: "Modèle « Kepler » — il échoue", body: `<p>Adapté à une tâche nouvelle (prédire le vecteur de force), le modèle produit des forces <strong>incohérentes</strong> : il a développé des heuristiques propres à chaque tâche, sans loi commune.</p><p>Comme Kepler : une description parfaite des orbites, mais aucune cause générale. Il ne généralise pas. Une étude de suivi de 2026 montre que les biais inductifs décident de ce plafond.<a class="cite" data-cite="8" href="#source-8">8</a></p>` },
+        "newton": { title: "Modèle « Newton » — il réussit", body: `<p>Le modèle qui a capté la loi générative applique une <strong>force radiale correcte</strong> vers le foyer, même sur une tâche jamais vue.</p><p>C'est le palier 4 du spectre (§7) : la structure causale qui généralise. Le résultat de Vafa est que les modèles entraînés sur les seules trajectoires <em>n'y parviennent pas</em> — ils restent des Kepler.</p>` }
+      },
+      "schema-06": {
+        "definir": { title: "Définir — ce que mesure le benchmark", body: `<p>Sur un examen conçu pour des humains, le modèle donne la <strong>bonne définition</strong> d'un concept. C'est cette réussite qu'on prend pour une preuve de compréhension.</p><p>Chez un humain, savoir définir prédit fortement savoir appliquer — on peut donc ne tester que la définition. L'inférence est économique… mais elle suppose que la machine échoue comme nous.</p>` },
+        "appliquer": { title: "Appliquer — l'angle mort", body: `<p>Dès qu'il faut <em>utiliser</em> le concept qu'il vient de définir, le modèle se contredit. C'est ce que le benchmark ne mesure pas.</p><p>L'écart entre définir juste et appliquer faux est précisément ce qu'un test taillé pour les humains laisse passer — parce qu'il fait l'hypothèse d'une cohérence que le LLM n'a pas.</p>` },
+        "hallucination": { title: "Hallucination — connaissance factuelle", body: `<p>Une hallucination fabrique un <strong>faux fait</strong> (« la tour Eiffel mesure 450&nbsp;m »). Une donnée est erronée, mais le <em>concept</em> reste, lui, correctement manié.</p><p>C'est le mode d'échec bien connu, et distinct du potemkine : ici la structure conceptuelle tient, seul le contenu déraille.</p>` },
+        "potemkine": { title: "Potemkine — connaissance conceptuelle", body: `<p>Un potemkine fabrique une <strong>fausse cohérence conceptuelle</strong> : la définition est correcte, l'application la contredit. Une façade sans bâtiment derrière.<a class="cite" data-cite="9" href="#source-9">9</a></p><p>Mancoridis et al. montrent que les potemkines sont <strong>ubiquitaires</strong>. Conséquence directe : la performance benchmark et le modèle du monde sous-jacent sont deux choses distinctes — c'est la thèse sceptique de Kambhampati (récupération approximative).<a class="cite" data-cite="10" href="#source-10">10</a></p>` }
+      },
+      "schema-07": {
+        "palier-1-surface": { title: "Palier 1 — corrélations de surface", body: `<p>Le modèle exploite des régularités statistiques sans variable latente structurée. Suffisant pour beaucoup de tâches, et <strong>indétectable par la seule performance</strong>.</p><p>C'est le plancher : rien n'y garantit un modèle du monde, mais rien ne l'exclut non plus tant qu'on ne perturbe pas les entrées.</p>` },
+        "palier-2-etat": { title: "Palier 2 — état récupérable", body: `<p>Une variable du monde (plateau, échiquier, coordonnées) est <strong>linéairement décodable et causalement active</strong> dans les activations.</p><p>C'est le palier prouvé par Othello, les échecs, Karel et l'espace-temps de Llama-2. La majorité des systèmes de 2026 vivent ici : de vrais fragments de monde, mais sans garantie de cohérence globale.</p>` },
+        "palier-3-coherent": { title: "Palier 3 — modèle cohérent", body: `<p>L'état récupérable forme une <strong>carte unique et sans contradiction</strong>, qui passe les tests de compression et de distinction de séquences de Vafa.</p><p>C'est précisément ce qui <em>manque</em> au modèle des taxis. Atteint seulement dans des domaines étroits et très structurés. La barre où beaucoup de systèmes trébuchent.</p>` },
+        "palier-4-loi": { title: "Palier 4 — loi générative correcte", body: `<p>Le modèle a capturé la <strong>structure causale qui généralise à des tâches inédites</strong> : Newton, pas Kepler.</p><p>Non atteint, même par les modèles cohérents (résultat orbital de Vafa). La question de la prochaine marche n'est peut-être pas « plus d'échelle » mais « quels biais inductifs font passer du palier 3 au palier 4 ».</p>` }
+      }
+    };
+    /* shape:
+      {
+        'schema-01': {
+          'region-id': { title: '...', body: '<p>...</p>', eyebrow: 'Schéma 1' },
+          ...
+        },
+        ...
+      }
+    */
+
+    const TOOLTIPS = {
+  "ttft": "Time to first token : délai entre l'envoi de la requête et l'arrivée du premier token de la réponse. Métrique critique pour l'expérience utilisateur en streaming.",
+  "llm-judge": "LLM-as-judge : utilisation d'un LLM pour scorer la qualité d'une autre sortie LLM (factualité, pertinence, ton). Permet l'évaluation à l'échelle, mais introduit ses propres biais.",
+  "mcp": "Model Context Protocol : standard ouvert de communication entre LLMs et outils externes, lancé par Anthropic en novembre 2024. Adopté par OpenAI, Google, Microsoft en 2025.",
+  "otlp": "OpenTelemetry Protocol : protocole standardisé (gRPC ou HTTP) pour transporter les signaux d'observabilité (traces, metrics, logs) vers un backend.",
+  "melt": "Metrics, Events, Logs, Traces : les quatre signaux fondamentaux de l'observabilité moderne, popularisés par l'écosystème cloud-native.",
+  "rag": "Retrieval-Augmented Generation : technique qui enrichit le contexte d'un LLM avec des documents récupérés dynamiquement depuis une base vectorielle.",
+  "slo": "Service Level Objective : cible mesurable de qualité de service (ex. 99,9 % des réponses sous 2 secondes). Base contractuelle de l'observabilité opérationnelle."
+};
+    /* shape: { 'CoT': 'Chain-of-Thought : ...', ... } */
+
+    const SOURCES = [
+  {
+    "n": 1,
+    "citation": "OpenTelemetry, <em>AI Agent Observability Standards</em>, OpenTelemetry Blog, mars 2025.",
+    "url": "https://opentelemetry.io/blog/2025/ai-agent-observability/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 2,
+    "citation": "InsightFinder, <em>AI Observability vs Traditional Monitoring</em>, décembre 2025.",
+    "url": "https://insightfinder.com/blog/ai-observability-vs-traditional-monitoring/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 3,
+    "citation": "IBM Think, <em>Observability Trends 2026</em>, IBM Institute for Business Value, mars 2026.",
+    "url": "https://www.ibm.com/think/insights/observability-trends",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 4,
+    "citation": "Dynatrace, <em>Six Observability Predictions for 2026</em>, décembre 2025.",
+    "url": "https://www.dynatrace.com/news/blog/six-observability-predictions-for-2026/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 5,
+    "citation": "Kore.ai, <em>AI Observability: Monitoring &amp; Governing AI Agents</em>, mars 2026.",
+    "url": "https://www.kore.ai/blog/what-is-ai-observability",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 6,
+    "citation": "Voiceflow, <em>What Is AI Agent Observability? A 2026 Guide</em>, mars 2026.",
+    "url": "https://www.voiceflow.com/blog/what-is-ai-agent-observability",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 7,
+    "citation": "Anthropic, <em>Building Effective Agents</em>, whitepaper, décembre 2024.",
+    "url": "https://www.anthropic.com/research/building-effective-agents",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 8,
+    "citation": "Groundcover, <em>AI Agent Observability Guide: Telemetry, Traces, Metrics</em>, février 2026.",
+    "url": "https://www.groundcover.com/learn/observability/ai-agent-observability",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 9,
+    "citation": "N-iX, <em>AI Agent Observability: Practical Framework</em>, décembre 2025.",
+    "url": "https://www.n-ix.com/ai-agent-observability/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 10,
+    "citation": "Langfuse, <em>AI Agent Observability, Tracing &amp; Evaluation</em>, février 2026.",
+    "url": "https://langfuse.com/blog/2024-07-ai-agent-observability-with-langfuse",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 11,
+    "citation": "OpenTelemetry, <em>GenAI Semantic Conventions (specification)</em>, version 1.37, 2026.",
+    "url": "https://opentelemetry.io/docs/specs/semconv/gen-ai/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 12,
+    "citation": "OpenTelemetry, <em>GenAI Agent Spans, Model Spans, Tool Spans, Events</em>, 2026.",
+    "url": "https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-agent-spans/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 13,
+    "citation": "Datadog, <em>LLM Observability + OTel GenAI Semantic Convention support</em>, décembre 2025.",
+    "url": "https://www.datadoghq.com/blog/llm-otel-semantic-convention/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 14,
+    "citation": "Braintrust, <em>AI Observability Tools: Buyer's Guide 2026</em>, janvier 2026.",
+    "url": "https://www.braintrust.dev/articles/best-ai-observability-tools-2026",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 15,
+    "citation": "GetMaxim, <em>Top 5 AI Agent Observability Platforms 2026</em>, décembre 2025.",
+    "url": "https://www.getmaxim.ai/articles/top-5-ai-agent-observability-platforms-in-2026/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 16,
+    "citation": "Traceloop, <em>OpenLLMetry — auto-instrumentation OTel pour 44+ providers LLM</em>, GitHub, 2026.",
+    "url": "https://github.com/traceloop/openllmetry",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 17,
+    "citation": "OpenLIT, <em>OpenLIT SDK — auto-instrumentation 1 ligne LLMs/vector DBs/GPUs</em>, GitHub, 2026.",
+    "url": "https://github.com/openlit/openlit",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 18,
+    "citation": "Gartner, <em>Magic Quadrant for Observability Platforms 2025</em>, juillet 2025.",
+    "url": "https://www.gartner.com/en/documents/6688834",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 19,
+    "citation": "OneUptime, <em>AI Workloads Observability: Cost Crisis</em>, avril 2026.",
+    "url": "https://oneuptime.com/blog/ai-workloads-observability-cost-crisis",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 20,
+    "citation": "Dynatrace, <em>Dynatrace Intelligence — Agentic OS announcement at Perform 2026</em>, février 2026.",
+    "url": "https://www.dynatrace.com/news/blog/dynatrace-intelligence-platform/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 21,
+    "citation": "Splunk, <em>Q1 2026 Observability Update — AI Agent Monitoring</em>, février 2026.",
+    "url": "https://www.splunk.com/en_us/blog/observability/splunk-observability-ai-agent-monitoring-innovations.html",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 22,
+    "citation": "Grafana Labs, <em>Leader Gartner Magic Quadrant Observability 2025 — #1 Completeness of Vision</em>, 2025.",
+    "url": "https://grafana.com/about/press/2025/07/",
+    "accessed": "2026-04-30"
+  }
+];
+    window.SCHEMAS = SCHEMAS;
+
+  </script>
+  <script src="/assets/dossier-app.js" defer></script>
+</body>
+</html>

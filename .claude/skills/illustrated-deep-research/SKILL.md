@@ -35,7 +35,6 @@ The companion app ships with three baseline interactive features and two power-u
 
 ## Workflow at a glance
 
-0. **Anti-doublon (avant tout)** — vérifier que le sujet n'est ni **déjà couvert** (`BACKLOG.md` sur `main` à jour) ni **déjà en vol** dans une PR ouverte (`mcp__github__list_pull_requests state=open`, scanner les branches `claude/research-*`). Le backlog seul ne suffit pas : il ne voit pas les dossiers construits en parallèle avant leur merge. Si le sujet est déjà pris → s'arrêter et demander. Détail : `references/workflow.md` § Phase 0.
 1. **Research** — conduct deep, parallel web searches; prioritize premium sources; web_fetch the most valuable for full text.
 2. **Outline** — propose a 6–10 section outline to the user before writing (unless they explicitly say "go ahead and produce it").
 3. **Draft the report** in Markdown with placeholders `[SCHEMA-01]` … `[SCHEMA-N]` where schemas will go.
