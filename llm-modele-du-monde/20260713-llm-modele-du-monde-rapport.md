@@ -61,7 +61,9 @@ Le probing du §3 et l'évaluation de Vafa ne se contredisent pas : ils mesurent
 
 ## 5. Kepler, pas Newton
 
-Vafa pousse le raisonnement d'un cran en 2025, avec une question plus exigeante encore : même quand un modèle prédit parfaitement, a-t-il capturé la **loi** qui gouverne le phénomène, ou seulement des régularités de surface suffisantes pour la prédiction ?[^7] L'analogie est astronomique. Kepler a décrit les orbites planétaires avec une précision totale — mais ses lois sont descriptives ; il a fallu Newton pour la *cause*, la gravitation, qui généralise bien au-delà des orbites [SCHEMA-05].
+Vafa pousse le raisonnement d'un cran en 2025, avec une question plus exigeante encore : même quand un modèle prédit parfaitement, a-t-il capturé la **loi** qui gouverne le phénomène, ou seulement des régularités de surface suffisantes pour la prédiction ?[^7] L'analogie est astronomique. Kepler a décrit les orbites planétaires avec une précision totale — mais ses lois sont descriptives ; il a fallu Newton pour la *cause*, la gravitation, qui généralise bien au-delà des orbites (schéma 5).
+
+![Kepler contre Newton : même prédiction, biais inductif divergent|width=1200](images/20260713-05-kepler-newton.svg)
 
 L'outil proposé est la **sonde de biais inductif** (*inductive bias probe*) : plutôt que de sonder ce que le modèle *représente*, on mesure comment il *s'adapte* à de petits jeux de données issus d'un modèle du monde postulé. Un modèle qui a réellement intériorisé la loi devrait apprendre les nouvelles tâches avec le biais de cette loi. Résultat : des modèles entraînés sur des **trajectoires orbitales** les prédisent impeccablement, mais lorsqu'on les adapte à une tâche physique nouvelle — par exemple prédire le vecteur de force — ==ils se comportent comme s'ils avaient développé des heuristiques propres à chaque tâche, sans jamais converger vers la mécanique newtonienne sous-jacente==. Ils sont Kepler, pas Newton. Une étude de suivi de février 2026 raffine le tableau : les biais inductifs de l'architecture et des données *guident* le modèle du monde appris, et déterminent s'il reste au stade descriptif ou bascule vers la loi générative[^8].
 
@@ -69,7 +71,9 @@ Ce résultat déplace la barre. Le §2-§3 montrait : *l'état* du monde est sou
 
 ## 6. Potemkine : quand le benchmark ment
 
-Reste une objection de bon sens : si ces modèles réussissent nos examens — y compris des examens conçus pour des humains — n'est-ce pas la preuve qu'ils comprennent ? La réponse tient dans un concept forgé par Marina Mancoridis, Keyon Vafa, Sendhil Mullainathan et Bec Weeks en 2025 : le **potemkine** [SCHEMA-06][^9].
+Reste une objection de bon sens : si ces modèles réussissent nos examens — y compris des examens conçus pour des humains — n'est-ce pas la preuve qu'ils comprennent ? La réponse tient dans un concept forgé par Marina Mancoridis, Keyon Vafa, Sendhil Mullainathan et Bec Weeks en 2025 : le **potemkine** (schéma 6)[^9].
+
+![Le piège du benchmark : potemkine contre hallucination|width=1200](images/20260713-06-piege-benchmark.svg)
 
 Un village Potemkine est une façade sans bâtiment derrière. Un *potemkine de compréhension*, c'est ==une réponse correcte qui coexiste avec une incapacité à appliquer le concept d'une manière cohérente avec cette réponse==. Le modèle définit correctement un terme, puis se contredit dès qu'il faut l'utiliser. Les auteurs le formulent d'une phrase : *« les potemkines sont à la connaissance conceptuelle ce que les hallucinations sont à la connaissance factuelle — les hallucinations fabriquent de faux faits, les potemkines fabriquent une fausse cohérence conceptuelle. »*
 
@@ -79,7 +83,9 @@ C'est le point de rencontre avec la critique de fond portée par Subbarao Kambha
 
 ## 7. Ce que « avoir un modèle du monde » veut dire
 
-La dispute « les LLM ont-ils un modèle du monde ? » est mal posée tant qu'on la traite en oui/non. Les résultats des sections précédentes dessinent en réalité un **spectre mesurable**, une échelle d'exigences emboîtées [SCHEMA-07] :
+La dispute « les LLM ont-ils un modèle du monde ? » est mal posée tant qu'on la traite en oui/non. Les résultats des sections précédentes dessinent en réalité un **spectre mesurable**, une échelle d'exigences emboîtées (schéma 7) :
+
+![Le spectre du modèle du monde en quatre paliers|width=1200](images/20260713-07-spectre.svg)
 
 1. **Corrélations de surface** — le modèle exploite des régularités statistiques sans variable latente structurée. Suffisant pour beaucoup de tâches, indétectable par la seule performance.
 2. **État récupérable** — une variable du monde (plateau, échiquier, coordonnées) est linéairement décodable et causalement active dans les activations. C'est ce que prouvent Othello, les échecs, Karel, l'espace-temps de Llama-2.
