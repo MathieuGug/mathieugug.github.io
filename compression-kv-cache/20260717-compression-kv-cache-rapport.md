@@ -6,7 +6,7 @@ Le rapport [*L'économie du KV-cache*](../kv-cache/) posait le diagnostic : sur 
 
 Ce rapport traite de l'autre moitié du problème : **rendre le cache plus petit à la source**. Là où la gestion mémoire optimise l'allocation d'un objet de taille fixée, la compression change la taille de l'objet lui-même. Et cette bascule fait remonter la décision d'un cran : elle ne se joue plus dans l'ordonnanceur du serveur d'inférence, mais dans l'architecture du modèle, souvent au moment de l'entraînement. ==Comprimer le KV-cache, c'est reconnaître que la forme du cache est une variable de conception du modèle, pas une constante physique.==
 
-[SCHEMA-01]
+![Les trois étages de la compression du KV-cache : architectural (entraînement), numérique (quantification), token (éviction) — orthogonaux et composables.|width=1200](images/20260717-01-trois-etages.svg)
 
 ## 1. Pourquoi le cache pèse trop — et pourquoi c'est un problème d'architecture
 
