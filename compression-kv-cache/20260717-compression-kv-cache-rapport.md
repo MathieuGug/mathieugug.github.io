@@ -106,7 +106,7 @@ Le troisième étage fait un pari plus radical : et si la plupart des tokens du 
 
 Les trois étages ne sont pas des alternatives : ce sont des couches. On peut servir un modèle **MLA** (architecture), dont le cache latent est **quantifié en 4 bits** (numérique), et dont les tokens froids sont **évincés** au-delà d'un budget (token). Les facteurs de réduction se multiplient. C'est l'état de l'art des piles d'inférence 2026.
 
-[SCHEMA-07]
+![Frontière de Pareto qualité × mémoire : zone sûre, falaise, position de MLA et de la composition des trois étages.|width=1200](images/20260717-07-pareto-qualite-memoire.svg)
 
 Mais la composition a une limite, et c'est la vraie leçon de méthode. Chaque étage entame une réserve de redondance ; une fois la redondance épuisée, chaque bit gagné se paie en qualité. Le benchmark de Yuan et al. (2024), qui évalue frontalement la question — *« compresser le cache, mais que rend-on en échange ? »* — montre que les méthodes ne se comparent pas sur un seul axe mais sur une **frontière de Pareto** qualité × mémoire, et que cette frontière plonge brutalement (la « falaise ») au-delà d'un certain taux de compression[^14]. Deux enseignements en découlent :
 
