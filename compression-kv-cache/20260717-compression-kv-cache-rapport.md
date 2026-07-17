@@ -92,7 +92,7 @@ Le message des deux travaux converge. ==La quantification du cache ne consiste p
 
 Le troisième étage fait un pari plus radical : et si la plupart des tokens du cache ne servaient à rien ? Si l'on pouvait en *jeter* la majorité sans perdre en qualité ? La réponse — nuancée — a ouvert toute une famille de méthodes d'éviction et de sélection.
 
-[SCHEMA-06]
+![Taxonomie de l'éviction : puits d'attention (StreamingLLM), gros contributeurs (H2O), fenêtre récente, saillance par requête (SnapKV/FastGen).|width=1200](images/20260717-06-taxonomie-eviction.svg)
 
 **Les puits d'attention (StreamingLLM).** Xiao et al. (ICLR 2024) font une observation contre-intuitive : les tout premiers tokens d'une séquence captent une part énorme du poids d'attention, même quand leur contenu est insignifiant[^10]. Ces *attention sinks* agissent comme un « dépotoir » où le softmax déverse la masse de probabilité qu'il ne sait où mettre. Corollaire pratique : si l'on veut faire glisser une fenêtre d'attention sur un flux infini, il ne faut *surtout pas* jeter les premiers tokens — les garder (quelques-uns suffisent) plus une fenêtre récente permet une génération stable sur des millions de tokens sans ré-entraînement[^10]. StreamingLLM ne comprime pas tant qu'il *borne* le cache à taille constante.
 
