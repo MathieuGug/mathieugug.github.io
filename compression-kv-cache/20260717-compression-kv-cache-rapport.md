@@ -64,7 +64,7 @@ DeepSeek-V3, fin 2024, industrialise MLA sur un modèle de 671 milliards de para
 
 Nous avons donc deux réponses architecturales concurrentes à la même question. Le choix entre elles est la décision d'attention structurante de 2026.
 
-[SCHEMA-04]
+![Matrice comparative MHA / MQA / GQA / MLA sur cinq dimensions : taille du cache, qualité, simplicité, conversion post-hoc, moment de décision.|width=1200](images/20260717-04-matrice-variantes.svg)
 
 **En faveur de GQA : la simplicité et l'inertie.** GQA est trivial à implémenter, se greffe sur un checkpoint MHA par uptraining à 5 %, est supporté nativement par tous les noyaux d'attention (FlashAttention, les kernels de vLLM et SGLang), et son comportement est parfaitement compris. Un labo qui part d'un modèle existant, ou qui veut minimiser le risque d'ingénierie, choisit GQA sans hésiter. La quasi-totalité de l'écosystème ouvert 2024-2025 est en GQA.
 
