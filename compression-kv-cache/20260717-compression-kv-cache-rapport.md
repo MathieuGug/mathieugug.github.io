@@ -52,7 +52,7 @@ DeepSeek-V2, en mai 2024, prend le problème par l'autre bout[^4]. Plutôt que d
 
 Comment obtenir *à la fois* plus de compression que GQA *et* plus de qualité que MHA ? Parce que la projection latente est **apprise** : le modèle découvre lui-même le sous-espace basse-dimension qui préserve l'information utile de l'attention. Là où GQA impose une structure de partage arbitraire (« ces 8 têtes partagent »), MLA laisse la descente de gradient trouver la meilleure compression. C'est la différence entre couper des têtes au hasard et apprendre une base optimale.
 
-[SCHEMA-03]
+![Anatomie de MLA : down-projection vers un latent c_KV mis en cache, clé RoPE découplée, up-projections reconstruisant K/V, et absorption des matrices à l'inférence.|width=1200](images/20260717-03-anatomie-mla.svg)
 
 **Le piège de RoPE, et le RoPE découplé.** Un détail technique a failli tout faire échouer, et sa résolution est le cœur de l'élégance de MLA. Les modèles modernes encodent la position par *rotary position embedding* (RoPE), qui applique aux clés une rotation dépendant de leur position. Or RoPE est *position-dépendant et non linéaire* : il ne commute pas avec la projection latente. Si l'on met en cache le latent *c_KV* puis qu'on applique RoPE à la reconstruction, on ne peut plus « absorber » proprement les matrices de projection, et l'avantage mémoire s'évapore.
 
