@@ -38,7 +38,7 @@ L'idée la plus ancienne est aussi la plus simple. En MHA classique, chaque têt
 
 **Grouped-Query Attention (GQA).** En 2023, Ainslie et ses co-auteurs proposent l'interpolation évidente : au lieu de 1 ou de *H* jeux clé/valeur, en avoir *g*, avec 1 < *g* < *H*[^3]. Les *H* têtes de requête sont réparties en *g* groupes ; chaque groupe partage un jeu clé/valeur. Avec *g* = 8 sur un modèle à 64 têtes, le cache est divisé par 8, presque toute la qualité MHA est préservée, et l'instabilité de MQA disparaît. Mieux : les auteurs montrent qu'on peut *convertir* un modèle MHA existant en GQA par « uptraining » — en moyennant les projections clé/valeur par groupe puis en ré-entraînant sur ~5 % du budget de pré-entraînement d'origine[^3]. On n'a pas besoin de repartir de zéro.
 
-[SCHEMA-02]
+![Continuum des têtes clé/valeur : MHA (une par tête) → GQA (g groupes) → MQA (une seule), et l'effet sur la taille du cache.|width=1200](images/20260717-02-continuum-tetes.svg)
 
 Ce détail — la conversion bon marché — explique l'adoption massive de GQA. Llama-2 70B l'adopte, puis Llama-3 sur *toutes* ses tailles, Mistral, Qwen, et l'essentiel des modèles ouverts de 2024-2025. ==GQA est devenu le réglage par défaut de l'attention moderne non parce qu'il est optimal, mais parce qu'il offre ~90 % du gain de MQA pour ~10 % de son risque, et qu'il se greffe sur un checkpoint existant.== C'est un compromis d'ingénieur, pas une percée théorique — et c'est précisément ce qui en fait le standard.
 
