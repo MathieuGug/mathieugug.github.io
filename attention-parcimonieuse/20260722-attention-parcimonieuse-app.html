@@ -1,0 +1,1783 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>L'attention parcimonieuse entraînée</title>
+  <meta name="description" content="L'attention parcimonieuse a changé de nature : longtemps optimisation greffée à l'inférence (motifs fixes, éviction gloutonne), elle est devenue une propriété entraînée du modèle — NSA, MoBA, DeepSeek Sparse Attention. La parcimonie native est à l'éviction ce que MLA est à GQA. Deep dive prolongeant L'attention parcimonieuse entraînée, par Mathieu Guglielmino, 22 juillet 2026.">
+  <!-- og:start -->
+<meta name="author" content="Mathieu Guglielmino">
+<link rel="canonical" href="https://mathieugug.github.io/attention-parcimonieuse/20260722-attention-parcimonieuse-app.html">
+<meta name="keywords" content="IA agentique, Mathieu Guglielmino, agents IA, dossier, attention, parcimonie, sparse, NSA">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Mathieu Guglielmino">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:url" content="https://mathieugug.github.io/attention-parcimonieuse/20260722-attention-parcimonieuse-app.html">
+<meta property="og:title" content="L'attention parcimonieuse entraînée">
+<meta property="og:description" content="L'attention parcimonieuse a changé de nature : longtemps optimisation greffée à l'inférence (motifs fixes, éviction gloutonne), elle est devenue une propriété entraînée du modèle — NSA, MoBA, DeepSeek Sparse Attention. La parcimonie native est à l'éviction ce que MLA est à GQA. Deep dive prolongeant L'attention parcimonieuse entraînée, par Mathieu Guglielmino, 22 juillet 2026.">
+<meta property="og:image" content="https://mathieugug.github.io/attention-parcimonieuse/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="L'attention parcimonieuse entraînée — couverture social">
+<meta property="article:published_time" content="2026-07-22">
+<meta property="article:author" content="Mathieu Guglielmino">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="L'attention parcimonieuse entraînée">
+<meta name="twitter:description" content="L'attention parcimonieuse a changé de nature : longtemps optimisation greffée à l'inférence (motifs fixes, éviction gloutonne), elle est devenue une propriété entraînée du modèle — NSA, MoBA, DeepSeek Sparse Attention. La parcimonie native est à l'éviction ce que MLA est à GQA. Deep dive prolongeant L'attention parcimonieuse entraînée, par Mathieu Guglielmino, 22 juillet 2026.">
+<meta name="twitter:image" content="https://mathieugug.github.io/attention-parcimonieuse/og.png">
+<script type="application/ld+json">
+{"@context": "https://schema.org","@type": "Article","headline": "L'attention parcimonieuse entraînée","description": "L'attention parcimonieuse a changé de nature : longtemps optimisation greffée à l'inférence (motifs fixes, éviction gloutonne), elle est devenue une propriété entraînée du modèle — NSA, MoBA, DeepSeek Sparse Attention. La parcimonie native est à l'éviction ce que MLA est à GQA. Deep dive prolongeant L'attention parcimonieuse entraînée, par Mathieu Guglielmino, 22 juillet 2026.","image": "https://mathieugug.github.io/attention-parcimonieuse/og.png","url": "https://mathieugug.github.io/attention-parcimonieuse/20260722-attention-parcimonieuse-app.html","datePublished": "2026-07-22","inLanguage": "fr-FR","author": {"@type": "Person","name": "Mathieu Guglielmino","url": "https://mathieugug.github.io/"},"publisher": {"@type": "Person","name": "Mathieu Guglielmino","url": "https://mathieugug.github.io/"}}
+</script>
+<!-- og:end -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/dossier-app.css">
+  <style>
+    /* ───────── Tokens ───────── */
+    :root {
+      --paper:    #FAF8F3;
+      --paper-2:  #F2EFE7;
+      --ink:      #1A1A1A;
+      --graphite: #5A5A5A;
+      --mist:     #B8B5AE;
+      --rule:     #E5E1D8;
+      --carmine:  #B7332C;
+      --teal:     #1F5560;
+      --mustard:  #B58A2C;
+
+      --serif: 'Spectral', 'Playfair Display', Georgia, serif;
+      --sans:  'Inter', system-ui, sans-serif;
+      --mono:  'JetBrains Mono', 'IBM Plex Mono', monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; max-width: 100vw; }
+    body {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    header.site {
+      grid-column: 1 / -1;
+      padding: 24px 32px;
+      border-bottom: 1px solid var(--rule);
+      display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap;
+    }
+    header.site .marker {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--carmine);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    header.site h1 {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 1.4rem;
+      margin: 0;
+      letter-spacing: -0.01em;
+    }
+    header.site .meta {
+      margin-left: auto;
+      font-size: 0.85rem;
+      color: var(--graphite);
+    }
+    header.site .meta a { color: var(--carmine); text-decoration: none; }
+    header.site .meta a:hover { text-decoration: underline; }
+    header.site .back {
+      font-family: var(--mono); font-size: 0.72rem;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--graphite); text-decoration: none;
+      white-space: nowrap;
+    }
+    header.site .back:hover { color: var(--carmine); }
+    .menu-toggle {
+      display: none;
+      background: none; border: 1px solid var(--rule);
+      padding: 6px 12px; border-radius: 4px; cursor: pointer;
+      font-family: var(--mono); font-size: 0.8rem;
+    }
+    @media (max-width: 1024px) { .menu-toggle { display: inline-block; } }
+
+    /* ───────── TOC (left) ───────── */
+    #toc {
+      padding: 32px 24px;
+      border-right: 1px solid var(--rule);
+      position: sticky; top: 56px; align-self: start;
+      height: calc(100vh - 56px); overflow-y: auto;
+    }
+    #toc h2 {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--graphite);
+      margin: 0 0 16px;
+    }
+    #toc ol {
+      list-style: none; padding: 0; margin: 0;
+      counter-reset: toc-counter;
+    }
+    #toc li {
+      counter-increment: toc-counter;
+      margin: 0 0 12px;
+      font-size: 0.92rem;
+      line-height: 1.4;
+    }
+    #toc li::before {
+      content: counter(toc-counter, decimal-leading-zero) ".";
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--mist);
+      margin-right: 8px;
+    }
+    #toc a {
+      color: var(--ink);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+    }
+    #toc a:hover, #toc a.active {
+      color: var(--carmine);
+      border-bottom-color: currentColor;
+    }
+
+    /* ───────── Main report ───────── */
+    main#report {
+      padding: 56px 48px 96px;
+      min-width: 0;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+    main#report > .lead {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 1.2rem;
+      color: var(--graphite);
+      line-height: 1.5;
+      margin: 0 0 48px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--rule);
+    }
+    main h1.report-title {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 2.6rem;
+      line-height: 1.1;
+      letter-spacing: -0.025em;
+      margin: 0 0 16px;
+    }
+    main h2 {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 1.55rem;
+      letter-spacing: -0.01em;
+      margin: 3.5rem 0 1rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--rule);
+    }
+    main h3 {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 1.18rem;
+      margin: 2rem 0 0.6rem;
+    }
+    main p { margin: 0 0 1.1rem; }
+    main ul, main ol { margin: 0 0 1.1rem; padding-left: 1.4rem; }
+    main li { margin-bottom: 0.4rem; }
+    main blockquote {
+      margin: 1.5rem 0;
+      padding: 12px 20px;
+      border-left: 3px solid var(--carmine);
+      background: var(--paper-2);
+      font-style: italic;
+      color: var(--graphite);
+    }
+    main code {
+      font-family: var(--mono);
+      font-size: 0.88em;
+      background: var(--paper-2);
+      padding: 2px 5px; border-radius: 3px;
+      overflow-wrap: anywhere;
+    }
+    main pre {
+      margin: 1.5rem 0;
+      padding: 14px 16px;
+      background: var(--paper-2);
+      border-radius: 4px;
+      overflow-x: auto;
+      max-width: 100%;
+      font-size: 0.85em;
+      line-height: 1.5;
+      -webkit-overflow-scrolling: touch;
+    }
+    main pre code {
+      background: transparent;
+      padding: 0;
+      border-radius: 0;
+      font-size: 1em;
+      overflow-wrap: normal;
+    }
+    main mark {
+      background: linear-gradient(transparent 58%, rgba(178, 59, 27, 0.14) 58%);
+      color: inherit;
+      padding: 0 2px;
+    }
+
+    /* ───────── Figures ───────── */
+    .figure {
+      margin: 3rem 0;
+      padding: 24px 0;
+      border-top: 1px solid var(--rule);
+      border-bottom: 1px solid var(--rule);
+      position: relative;
+    }
+    .figure svg {
+      width: 100%; height: auto;
+      display: block;
+      margin: 0 auto;
+    }
+    /* State-aware figure breakout on desktop — figure adapts to sources panel state:
+       - Default (sources expanded): fills main-cell only (between TOC and sources)
+       - .layout.sources-collapsed: extends from TOC-right to viewport-right
+       Neither state overlaps a visible sidebar. Smooth 280ms transition.
+       Full math + derivation: skill illustrated-deep-research, companion-app.md § 5. */
+    @media (min-width: 1025px) {
+      .figure {
+        margin-left: calc(-1 * max(0px, (100vw - 1320px) / 2 + 48px));
+        margin-right: calc(-1 * max(0px, (100vw - 1320px) / 2 + 48px));
+        transition: margin-left 280ms ease, margin-right 280ms ease;
+        padding-left: clamp(16px, 3vw, 48px);
+        padding-right: clamp(16px, 3vw, 48px);
+        border-radius: 0;
+      }
+      .layout.sources-collapsed .figure {
+        margin-left: calc(-1 * max(0px, (100vw - 904px) / 2));
+        margin-right: calc(-1 * max(0px, (100vw - 904px) / 2));
+      }
+      .figure-caption {
+        max-width: 760px;
+        margin-left: auto;
+        margin-right: auto;
+        padding: 0 48px;
+      }
+    }
+    .figure-caption {
+      font-size: 0.88rem;
+      color: var(--graphite);
+      font-style: italic;
+      margin-top: 12px;
+      padding: 0 8px;
+    }
+    .figure svg .interactive { cursor: pointer; transition: filter 140ms; }
+    .figure svg .interactive:hover,
+    .figure svg .interactive:focus-visible { outline: none; }
+    .figure svg .interactive:hover rect,
+    .figure svg .interactive:focus-visible rect,
+    .figure svg .interactive:hover path:not([fill="none"]),
+    .figure svg .interactive:focus-visible path:not([fill="none"]),
+    .figure svg .interactive:hover circle,
+    .figure svg .interactive:focus-visible circle {
+      stroke: var(--carmine);
+      stroke-width: 2.5;
+    }
+    .figure svg .interactive:focus-visible {
+      filter: drop-shadow(0 0 0 var(--carmine));
+    }
+
+    /* ───────── Sources sidebar (right) ───────── */
+    #sources {
+      padding: 32px 24px;
+      border-left: 1px solid var(--rule);
+      background: var(--paper-2);
+      position: sticky; top: 56px; align-self: start;
+      height: calc(100vh - 56px); overflow-y: auto;
+      transition: transform 280ms ease, opacity 200ms ease;
+    }
+    #sources .sources-inner { display: block; }
+
+    @media (max-width: 1024px) {
+      .menu-toggle { display: inline-block !important; }
+      header.site { padding: 14px 16px; gap: 10px; flex-wrap: wrap; }
+      header.site h1 { font-size: 1.05rem; min-width: 0; overflow-wrap: break-word; word-break: break-word; }
+      header.site .meta { font-size: 0.75rem; }
+      header.site .back { font-size: 0.7rem; letter-spacing: 0.08em; }
+      main#report { padding: 28px 18px 56px; max-width: 100%; min-width: 0; }
+      main h1.report-title { font-size: 1.8rem; overflow-wrap: break-word; word-break: break-word; }
+      main#report > .lead { font-size: 1.02rem; margin-bottom: 32px; padding-bottom: 18px; }
+      main h2 { font-size: 1.25rem; margin: 2.4rem 0 0.8rem; overflow-wrap: break-word; word-break: break-word; }
+      main h3 { font-size: 1.05rem; overflow-wrap: break-word; }
+      main p, main ul, main ol { overflow-wrap: break-word; word-break: break-word; }
+      .figure { margin: 2rem 0; padding: 16px 0; max-width: 100%; overflow: hidden; }
+      .figure svg { width: 100%; max-width: 100%; height: auto; }
+      main table {
+        display: block; max-width: 100%;
+        overflow-x: auto; -webkit-overflow-scrolling: touch;
+      }
+      main th, main td { white-space: normal; }
+    }
+    #sources h2 {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--graphite);
+      margin: 0 0 16px;
+    }
+    #sources ol { list-style: none; padding: 0; margin: 0; }
+    #sources li {
+      font-size: 0.82rem;
+      line-height: 1.5;
+      margin: 0 0 16px;
+      padding: 12px 14px;
+      border-radius: 4px;
+      border: 1px solid transparent;
+      transition: border-color 220ms, background 220ms;
+    }
+    #sources li .cite-num {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--carmine);
+      margin-right: 6px;
+    }
+    #sources li a {
+      display: inline-block;
+      margin-top: 4px;
+      color: var(--teal);
+      text-decoration: none;
+      font-size: 0.78rem;
+    }
+    #sources li a:hover { text-decoration: underline; }
+    #sources li .accessed {
+      display: block;
+      margin-top: 4px;
+      color: var(--mist);
+      font-style: italic;
+      font-size: 0.74rem;
+    }
+    #sources li.highlight {
+      background: var(--paper);
+      border-color: var(--carmine);
+    }
+
+    /* ───────── Print ───────── */
+    @media print {
+      .layout { grid-template-columns: 1fr; }
+      #toc, #sources, #modal-root, #zoom-overlay, .menu-toggle, .zoom-btn { display: none; }
+      main#report { max-width: none; padding: 0; }
+      .figure { page-break-inside: avoid; }
+    }
+
+    /* === infographie A4 portrait (exec sum visuelle) — pattern partagé === */
+    main .figure.figure--portrait,
+    .layout main .figure.figure--portrait,
+    .layout.sources-collapsed main .figure.figure--portrait {
+      margin-top: 3rem; margin-bottom: 3rem;
+      padding: 0 !important; border: none !important;
+      border-top: none !important; border-bottom: none !important;
+      width: auto;
+    }
+    @media (max-width: 1024px) {
+      main .figure.figure--portrait {
+        margin-left: auto !important; margin-right: auto !important;
+        max-width: 100%;
+      }
+    }
+    @media (min-width: 1025px) {
+      main .figure.figure--portrait,
+      .layout main .figure.figure--portrait,
+      .layout.sources-collapsed main .figure.figure--portrait {
+        margin-left: -60px !important; margin-right: -60px !important;
+        max-width: calc(100% + 120px);
+      }
+    }
+    @media (min-width: 1440px) {
+      main .figure.figure--portrait,
+      .layout main .figure.figure--portrait,
+      .layout.sources-collapsed main .figure.figure--portrait {
+        margin-left: -100px !important; margin-right: -100px !important;
+        max-width: calc(100% + 200px);
+      }
+    }
+    main .figure--portrait .figure-portrait-link { display: block; width: 100%; border: 1px solid var(--rule); background: var(--paper); border-radius: 2px; cursor: zoom-in; transition: box-shadow 220ms ease, border-color 220ms ease; overflow: hidden; }
+    main .figure--portrait .figure-portrait-link:hover { box-shadow: 0 8px 28px rgba(30,30,42,0.14); border-color: var(--accent); }
+    main .figure--portrait img { display: block; width: 100%; height: auto; }
+    main .figure--portrait .figure-caption { max-width: 100%; margin: 14px auto 0; padding: 0 8px; text-align: center; }
+    /* Sigil MG remonté sur les A4 portrait (au-dessus du header SVG, pas sur le titre) */
+    main .figure--portrait .schema-sigil {
+      top: 10px !important;
+      right: 14px !important;
+      width: 30px !important; height: 30px !important;
+      opacity: 0.60 !important;
+    }
+    @media (max-width: 640px) {
+      main .figure--portrait .schema-sigil { top: 8px !important; right: 10px !important; width: 24px !important; height: 24px !important; }
+    }
+
+    /* === quiz cards (vérification de compréhension) — pattern partagé avec evaluation-agentique === */
+    .quiz-card {
+      margin: 2rem 0 2.4rem;
+      padding: 18px 22px;
+      background: var(--paper-2);
+      border-left: 3px solid var(--carmine);
+      border-radius: 2px;
+    }
+    .quiz-card__head {
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .quiz-card__eyebrow {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--graphite);
+      flex-basis: 100%;
+      margin: 0 0 0.25rem;
+    }
+    .quiz-card__title {
+      font-family: var(--serif);
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin: 0;
+      flex: 1 1 auto;
+      color: var(--ink);
+    }
+    .quiz-card__toggle {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.06em;
+      background: transparent;
+      border: 1px solid var(--mist);
+      color: var(--ink);
+      padding: 6px 14px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: color .15s, border-color .15s;
+    }
+    .quiz-card__toggle:hover, .quiz-card__toggle:focus-visible {
+      color: var(--carmine);
+      border-color: var(--carmine);
+      outline: none;
+    }
+    .quiz-card__body {
+      margin-top: 1.2rem;
+      padding-top: 1rem;
+      border-top: 1px dashed var(--rule);
+    }
+    .quiz-card__body[hidden] { display: none; }
+
+    .quiz-q { margin: 0; padding: 0; }
+    .quiz-q + .quiz-q { margin-top: 1.6rem; padding-top: 1.6rem; border-top: 1px dashed var(--rule); }
+    .quiz-q fieldset { border: 0; padding: 0; margin: 0; }
+    .quiz-q__stem {
+      font-family: var(--serif);
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--ink);
+      padding: 0;
+      margin: 0 0 0.9rem;
+    }
+    .quiz-q__options { list-style: none; padding: 0; margin: 0 0 1rem; }
+    .quiz-q__options li {
+      margin: 0;
+      padding: 8px 0;
+      border-top: 1px solid var(--rule);
+    }
+    .quiz-q__options li:last-child { border-bottom: 1px solid var(--rule); }
+    .quiz-q__options label {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      cursor: pointer;
+      padding: 4px 0;
+    }
+    .quiz-q__options input { margin: 0.3em 0 0; flex: 0 0 auto; accent-color: var(--carmine); }
+    .quiz-q__options label > span { flex: 1; line-height: 1.5; }
+
+    .quiz-q__explain {
+      font-size: 0.92rem;
+      margin: 0.5rem 0 0 1.7rem;
+      padding: 8px 12px;
+      background: var(--paper);
+      border-left: 2px solid var(--mist);
+      color: var(--graphite);
+    }
+    .quiz-q__explain[hidden] { display: none; }
+    .quiz-q__options li.is-correct .quiz-q__explain,
+    .quiz-q__options li.expected .quiz-q__explain { border-left-color: var(--teal); }
+    .quiz-q__options li.is-wrong .quiz-q__explain { border-left-color: var(--carmine); }
+    .quiz-q__options li.is-correct > label > span,
+    .quiz-q__options li.expected > label > span {
+      background-image: linear-gradient(transparent 60%, rgba(31, 85, 96, 0.14) 60%);
+      background-size: 100% 1.5em;
+      background-repeat: repeat-y;
+    }
+    .quiz-q__options li.is-wrong > label > span {
+      background-image: linear-gradient(transparent 60%, rgba(183, 51, 44, 0.14) 60%);
+      background-size: 100% 1.5em;
+      background-repeat: repeat-y;
+    }
+
+    .quiz-q__check {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      background: var(--ink);
+      color: var(--paper);
+      border: 0;
+      padding: 8px 16px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .quiz-q__check:hover, .quiz-q__check:focus-visible { background: var(--carmine); outline: none; }
+    .quiz-q__check:disabled { background: var(--mist); cursor: not-allowed; }
+
+    .quiz-q__verdict {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      margin: 1rem 0 0;
+      padding: 8px 12px;
+      border-left: 2px solid var(--graphite);
+    }
+    .quiz-q__verdict[hidden] { display: none; }
+    .quiz-q__verdict.is-correct { border-left-color: var(--teal); color: var(--teal); }
+    .quiz-q__verdict.is-wrong { border-left-color: var(--carmine); color: var(--carmine); }
+
+    .quiz-q__retry {
+      font-family: var(--mono);
+      font-size: 0.74rem;
+      letter-spacing: 0.06em;
+      background: transparent;
+      border: 0;
+      color: var(--graphite);
+      padding: 6px 0;
+      margin: 0.6rem 0 0;
+      cursor: pointer;
+      text-decoration: underline;
+      text-decoration-color: var(--mist);
+      text-underline-offset: 3px;
+    }
+    .quiz-q__retry:hover, .quiz-q__retry:focus-visible { color: var(--ink); text-decoration-color: var(--carmine); outline: none; }
+    .quiz-q__retry[hidden] { display: none; }
+
+    /* === callouts de renvoi vers d'autres dossiers (pattern partagé avec agent-sdk) === */
+    main .callout { display: grid; grid-template-columns: 280px 1fr; gap: 0; align-items: stretch; margin: 2.4rem 0; padding: 0; background: var(--paper); border-left: 3px solid var(--teal); border-radius: 2px; transition: grid-template-columns 320ms cubic-bezier(.2,.7,.2,1); }
+    main .callout:hover { grid-template-columns: 440px 1fr; }
+    main .callout > .callout-thumb-link { position: relative; display: block; width: 100%; height: 100%; min-height: 200px; overflow: hidden; border-radius: 0; background: transparent; border: 0; border-right: 1px solid var(--rule); cursor: zoom-in; padding: 0; -webkit-appearance: none; appearance: none; font: inherit; color: inherit; text-align: left; transition: filter 200ms ease; }
+    main .callout > .callout-thumb-link:hover { filter: drop-shadow(0 4px 14px rgba(183,51,44,0.18)); border-right-color: var(--carmine); }
+    main .callout > .callout-thumb-link:focus-visible { outline: 2px solid var(--carmine); outline-offset: -2px; }
+    main .callout > .callout-thumb-link img.callout-thumb { width: 100%; height: 100%; object-fit: contain; object-position: center center; display: block; padding: 0; }
+    main .callout > .callout-thumb-link::after { content: '⛶ AGRANDIR'; position: absolute; top: 10px; right: 10px; padding: 4px 9px; font-family: var(--mono); font-size: 9.5px; font-weight: 600; letter-spacing: 0.10em; background: rgba(250,248,243,0.94); border: 1px solid var(--rule); border-radius: 2px; color: var(--graphite); opacity: 0; transition: opacity 180ms ease, color 180ms ease, border-color 180ms ease; pointer-events: none; }
+    main .callout > .callout-thumb-link:hover::after, main .callout > .callout-thumb-link:focus-visible::after { opacity: 1; color: var(--carmine); border-color: var(--carmine); }
+    main .callout > .callout-body { min-width: 0; padding: 22px 26px 22px 26px; align-self: center; }
+    main .callout .callout-eyebrow { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--teal); margin: 0 0 0.45rem; font-weight: 600; }
+    main .callout > .callout-body p { margin: 0; font-size: 0.95rem; line-height: 1.55; color: var(--ink); }
+    main .callout > .callout-body p a { color: var(--carmine); text-decoration: none; border-bottom: 1px dotted var(--carmine); }
+    main .callout > .callout-body p a:hover { color: var(--teal); border-bottom-color: var(--teal); }
+
+    @media (max-width: 1024px) {
+      /* === quiz cards : variantes mobile === */
+      .quiz-card { padding: 14px 16px; margin: 1.6rem 0 2rem; }
+      .quiz-card__head { gap: 0.6rem; }
+      .quiz-card__title { flex-basis: 100%; overflow-wrap: break-word; }
+      .quiz-card__toggle { width: 100%; padding: 12px; min-height: 44px; font-size: 0.82rem; }
+      .quiz-q__check { width: 100%; padding: 12px; min-height: 44px; font-size: 0.82rem; }
+      .quiz-q__options li { padding: 10px 0; }
+      .quiz-q__options label { padding: 8px 0; min-height: 44px; align-items: center; }
+      .quiz-q__explain { margin: 0.5rem 0 0 0; padding: 10px 12px; }
+      .quiz-q__retry { padding: 10px 0; min-height: 44px; }
+    }
+    @media (max-width: 640px) {
+      main .callout, main .callout:hover { grid-template-columns: 1fr; gap: 0; padding: 0; }
+      main .callout > .callout-thumb-link { min-height: 180px; border-right: 0; border-bottom: 1px solid var(--rule); }
+      main .callout > .callout-body { padding: 18px 20px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar" id="topbar">
+    <a href="../index.html">Mathieu <em>Guglielmino</em></a>
+    <span class="dossier-context">Attention parcimonieuse</span>
+    <div class="topbar-tools">
+      <button class="menu-toggle" id="toggle-toc">Sommaire</button>
+      <button class="menu-toggle" id="toggle-sources">Sources</button>
+    </div>
+    <nav class="back-nav" aria-label="Navigation retour">
+      <a href="index.html" class="back" title="Revenir au hub du dossier">← Hub</a>
+      <span class="back-sep" aria-hidden="true">·</span>
+      <a href="../index.html#series" class="back" title="Revenir à l'accueil">Accueil</a>
+    </nav>
+  </header>
+  <div class="layout">
+
+    <header class="site">
+      <span class="marker">Deep dive · Attention parcimonieuse × Long contexte</span>
+      <h1>L'attention parcimonieuse</h1>
+      <span class="meta">
+        Mathieu Guglielmino · 22 juillet 2026
+      </span>
+    </header>
+
+    <nav id="toc" aria-label="Sommaire">
+      <button class="panel-close" type="button" aria-label="Fermer le sommaire">Fermer ✕</button>
+      <h2>Sommaire</h2>
+      <ol>
+        <li><a href="#s-1">1. Le mur quadratique</a></li>
+        <li><a href="#s-2">2. Deux générations de parcimonie</a></li>
+        <li><a href="#s-3">3. La ligne de partage</a></li>
+        <li><a href="#s-4">4. NSA · trois branches</a></li>
+        <li><a href="#s-5">5. MoBA · l'attention-MoE</a></li>
+        <li><a href="#s-6">6. Le gate distillé</a></li>
+        <li><a href="#s-7">7. DSA en production</a></li>
+        <li><a href="#s-8">8. Trajectoires 2026-2028</a></li>
+      </ol>
+    </nav>
+
+    <main id="report">
+<h1 class="report-title">Ignorer pour lire vite</h1>
+      <p class="lead">L'attention parcimonieuse a changé de nature. Longtemps <strong>optimisation greffée à l'inférence</strong> — motifs fixes conçus à la main, éviction gloutonne du cache — elle est devenue en 2025 une <strong>propriété entraînée</strong> du modèle : le réseau apprend, <em>pendant le pré-entraînement</em>, quels tokens ignorer, avec des noyaux alignés sur le matériel. <mark>La parcimonie native est à l'éviction ce que MLA est à GQA : non pas une optimisation de plus, mais un déplacement de la décision vers l'endroit où le modèle peut l'internaliser.</mark></p>
+      <p class="lead-note"><em>Deep dive prolongeant le dossier <a href="../compression-kv-cache/">Compresser le KV-cache</a>. Là où <code>compression-kv-cache</code> réduisait la <strong>taille</strong> d'un cache déjà calculé — partage de têtes, latent, quantification, éviction — celui-ci attaque l'autre moitié du problème&nbsp;: <strong>ne pas calculer</strong> l'attention sur la plupart des tokens. La décision ne descend plus de l'ordonnanceur vers le service ; elle remonte du service vers l'entraînement.</em></p>
+
+      <p>L'attention est le cœur du <span class="term" data-tooltip="Transformer : l'architecture de réseau de neurones (Vaswani et al. 2017) dont l'attention est le mécanisme central, qui domine les grands modèles de langage.">Transformer</span> et son péché originel. Chaque token regarde tous les autres : le coût grimpe en carré de la longueur. Pendant huit ans, on a cherché à contourner ce mur en fabriquant des <em>raccourcis</em> — ne regarder qu'une fenêtre locale, quelques tokens globaux, un motif fixe décidé à la conception. Ces raccourcis fonctionnaient sur des tâches longues mais restaient une couche greffée, extérieure au modèle. En 2025, une bascule s'opère : la parcimonie cesse d'être un artifice d'inférence pour devenir un <strong>objet appris</strong>, entraîné de bout en bout, aligné sur le matériel. Trois travaux la scellent — NSA (DeepSeek), MoBA (Moonshot), DSA (DeepSeek-V3.2 en production). Ce dossier lit cette bascule serré : ce qu'elle change, pourquoi elle referme un trou que l'éviction gloutonne ne pouvait pas combler, et où elle mène.</p>
+
+      <section>
+      <h2 id="s-1">1. Le mur quadratique</h2>
+      <p>Le mécanisme d'attention calcule, pour chaque token de requête (<em>query</em>), un score de compatibilité avec chaque token de clé (<em>key</em>), puis une somme pondérée des valeurs (<em>values</em>). Sur une séquence de longueur <em>n</em>, c'est une matrice <em>n × n</em> de scores : le coût de calcul et l'empreinte mémoire des scores croissent en <strong>O(n²)</strong>. Doubler le contexte quadruple le travail. À 128 000 tokens, la matrice d'attention d'une seule tête compte plus de seize milliards d'entrées.</p>
+      <p>Il faut distinguer deux régimes, car ils ne souffrent pas du même mal. Le <span class="term" data-tooltip="Prefill : la phase de lecture du prompt d'entrée, où toutes les positions sont traitées en parallèle. Bornée par le calcul.">prefill</span> — la lecture du prompt d'entrée — est <em>borné par le calcul</em> (<em>compute-bound</em>) : on multiplie de grandes matrices, et c'est là que le O(n²) mord. Le <span class="term" data-tooltip="Decode : la génération token par token, chacun exigeant une relecture de tout le cache déjà écrit. Bornée par la mémoire.">decode</span> — la génération token par token — est <em>borné par la mémoire</em> (<em>memory-bound</em>) : à chaque nouveau token, on relit tout le <span class="term" data-tooltip="KV-cache : les clés (K) et valeurs (V) déjà calculées pour les tokens passés, mémorisées pour éviter de les recalculer à chaque étape.">KV-cache</span> déjà écrit, et c'est sa <em>taille</em> qui plafonne le débit<a class="cite" data-cite="1" href="#source-1">1</a>. <mark>Les dossiers <code>kv-cache</code> et <code>compression-kv-cache</code> traitaient de la mémoire : rendre le cache plus petit ou mieux paginé. Ce dossier traite du calcul : ne pas parcourir la plupart des clés du tout.</mark> Ce sont deux moitiés distinctes du même problème long-contexte, souvent confondues sous l'étiquette vague « attention efficace ».</p>
+      <p>L'intuition de la parcimonie est empirique : dans un Transformer entraîné, la matrice d'attention est <em>presque vide</em>. La plupart des scores sont négligeables ; l'information utile se concentre sur une poignée de tokens — le début de séquence, le voisinage local, quelques ancres sémantiques<a class="cite" data-cite="11" href="#source-11">11</a>. Si chaque requête ne devait attendre que <em>k</em> clés au lieu de <em>n</em>, le coût tomberait de O(n²) à <strong>O(n·k)</strong> — linéaire en longueur dès lors que <em>k</em> est fixe. Tout l'art de l'attention parcimonieuse tient dans une seule question : <em>comment choisir ces k clés, sans casser la qualité, et sans que le choix lui-même coûte plus cher que l'économie réalisée&nbsp;?</em></p>
+      <figure class="figure" id="fig-01"><svg data-schema-id="schema-01" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif">
+  <style>
+    .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+    .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+    .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    .interactive { cursor: pointer; }
+  </style>
+  <defs>
+    <marker id="arr1" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L9,5 L0,10" fill="none" stroke="#5A5A5A" stroke-width="1.4"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- Header -->
+  <text x="60" y="58" class="mono" font-size="12" letter-spacing="3" fill="#B7332C">SCHÉMA 01</text>
+  <text x="60" y="98" class="display" font-size="30" font-weight="600" fill="#1A1A1A">Le mur quadratique</text>
+  <text x="60" y="128" class="display" font-size="17" font-style="italic" fill="#5A5A5A">L'attention dense coûte O(n²) ; la parcimonie ramène le calcul à O(n·k), linéaire en longueur.</text>
+  <line x1="60" y1="150" x2="1140" y2="150" stroke="#E5E1D8" stroke-width="1"/>
+
+  <!-- Plot axes -->
+  <line x1="150" y1="670" x2="740" y2="670" stroke="#1A1A1A" stroke-width="1.25" marker-end="url(#arr1)"/>
+  <line x1="150" y1="670" x2="150" y2="210" stroke="#1A1A1A" stroke-width="1.25" marker-end="url(#arr1)"/>
+  <text x="745" y="695" class="body" font-size="12" fill="#5A5A5A">longueur de séquence n</text>
+  <text x="150" y="198" class="body" font-size="12" fill="#5A5A5A" text-anchor="middle">coût</text>
+
+  <!-- gridlines -->
+  <line x1="150" y1="440" x2="740" y2="440" stroke="#E5E1D8" stroke-width="0.5" stroke-dasharray="2 3"/>
+
+  <!-- Dense curve O(n^2) -->
+  <path d="M150,670 C420,660 590,520 720,235" fill="none" stroke="#B7332C" stroke-width="2.5"/>
+  <g class="interactive" data-card="cout-dense" tabindex="0" role="button" aria-label="Coût dense O(n carré)">
+    <rect x="560" y="250" width="200" height="58" rx="3" fill="#B7332C" fill-opacity="0.06" stroke="#B7332C" stroke-width="1"/>
+    <text x="575" y="277" class="mono" font-size="15" font-weight="500" fill="#B7332C">O(n²)</text>
+    <text x="575" y="298" class="body" font-size="12" fill="#5A5A5A">attention dense</text>
+  </g>
+
+  <!-- Sparse curve O(nk) -->
+  <path d="M150,670 L720,548" fill="none" stroke="#1F5560" stroke-width="2.5"/>
+  <g class="interactive" data-card="cout-sparse" tabindex="0" role="button" aria-label="Coût parcimonieux O(n fois k)">
+    <rect x="540" y="560" width="200" height="58" rx="3" fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1"/>
+    <text x="555" y="587" class="mono" font-size="15" font-weight="500" fill="#1F5560">O(n·k)</text>
+    <text x="555" y="608" class="body" font-size="12" fill="#5A5A5A">k clés fixées par requête</text>
+  </g>
+
+  <!-- Crossover marker -->
+  <g class="interactive" data-card="point-bascule" tabindex="0" role="button" aria-label="Point de bascule long contexte">
+    <circle cx="333" cy="622" r="8" fill="#B58A2C"/>
+    <text x="333" y="627" class="mono" font-size="11" font-weight="600" fill="#FAF8F3" text-anchor="middle">×</text>
+    <line x1="333" y1="614" x2="333" y2="440" stroke="#B58A2C" stroke-width="0.75" stroke-dasharray="2 3"/>
+    <text x="345" y="428" class="body" font-size="12" fill="#B58A2C">au-delà, l'écart explose</text>
+    <text x="345" y="446" class="body" font-size="11" fill="#5A5A5A">— le long contexte devient inabordable en dense</text>
+  </g>
+
+  <!-- Right panel: prefill vs decode -->
+  <g class="interactive" data-card="prefill-vs-decode" tabindex="0" role="button" aria-label="Prefill compute-bound vs decode memory-bound">
+    <rect x="820" y="215" width="320" height="470" rx="4" fill="#1A1A1A" fill-opacity="0.03" stroke="#1A1A1A" stroke-width="1"/>
+    <text x="840" y="252" class="mono" font-size="12" letter-spacing="1.5" fill="#1A1A1A">DEUX RÉGIMES</text>
+
+    <rect x="840" y="272" width="280" height="176" rx="3" fill="#B7332C" fill-opacity="0.06" stroke="#B7332C" stroke-width="1.25"/>
+    <text x="858" y="302" class="display" font-size="19" font-weight="600" fill="#1A1A1A">Prefill</text>
+    <text x="858" y="328" class="body" font-size="13" fill="#5A5A5A">lecture du prompt d'entrée</text>
+    <text x="858" y="360" class="mono" font-size="12" fill="#B7332C">borné par le CALCUL</text>
+    <text x="858" y="388" class="body" font-size="12.5" fill="#5A5A5A">la matrice n×n est le goulot ;</text>
+    <text x="858" y="406" class="body" font-size="12.5" fill="#5A5A5A">c'est ici que O(n²) mord —</text>
+    <text x="858" y="424" class="body" font-size="12.5" fill="#5A5A5A">et ce que la parcimonie attaque.</text>
+
+    <rect x="840" y="466" width="280" height="176" rx="3" fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="858" y="496" class="display" font-size="19" font-weight="600" fill="#1A1A1A">Decode</text>
+    <text x="858" y="522" class="body" font-size="13" fill="#5A5A5A">génération token par token</text>
+    <text x="858" y="554" class="mono" font-size="12" fill="#1F5560">borné par la MÉMOIRE</text>
+    <text x="858" y="582" class="body" font-size="12.5" fill="#5A5A5A">c'est la taille du KV-cache</text>
+    <text x="858" y="600" class="body" font-size="12.5" fill="#5A5A5A">qui plafonne — objet des dossiers</text>
+    <text x="858" y="618" class="body" font-size="12.5" fill="#5A5A5A">kv-cache et compression-kv-cache.</text>
+  </g>
+
+  <!-- Footer -->
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="60" y="770" class="body" font-size="10" font-style="italic" letter-spacing="0.4" fill="#5A5A5A">Source : Vaswani et al. 2017 ; Kwon et al. (vLLM) SOSP 2023. Coûts schématiques (ordres de grandeur, non à l'échelle).</text>
+</svg>
+<figcaption class="figure-caption"><a class="anchor" href="#fig-01" title="Lien direct vers ce schéma">¶</a> Schéma 1 — Le mur quadratique : coût de l'attention dense O(n²) contre parcimonieuse O(n·k), et la distinction prefill (calcul) vs decode (mémoire).</figcaption></figure>
+      </section>
+
+      <section>
+      <h2 id="s-2">2. Deux générations de parcimonie</h2>
+      <p>La première génération, née en 2019-2020, choisit les <em>k</em> clés par un <strong>motif fixe, conçu à la main</strong>. Les <em>Sparse Transformers</em> d'OpenAI<a class="cite" data-cite="6" href="#source-6">6</a> factorisent l'attention en deux passes — une attention par blocs locaux (<em>strided</em>) et une attention sur des positions fixes (<em>fixed</em>) — ramenant le coût à O(n·√n). Longformer<a class="cite" data-cite="7" href="#source-7">7</a> combine une <strong>fenêtre glissante</strong> (chaque token regarde ses voisins) avec une poignée de tokens à <strong>attention globale</strong> (le token <code>[CLS]</code>, les questions dans un QA). BigBird<a class="cite" data-cite="8" href="#source-8">8</a> ajoute un troisième ingrédient — des <strong>connexions aléatoires</strong> — et démontre que ce triptyque <em>fenêtre + global + aléatoire</em> préserve les propriétés théoriques du Transformer dense : c'est un approximateur universel de fonctions séquence-à-séquence, et il est Turing-complet. Reformer<a class="cite" data-cite="9" href="#source-9">9</a>, la même année, remplace le motif par un <em>hachage sensible à la localité</em> (LSH) qui regroupe dynamiquement les requêtes et clés proches.</p>
+      <p>Ces méthodes partagent un présupposé : <em>le concepteur sait à l'avance où l'attention doit se porter</em>. Une fenêtre de 512, quelques tokens globaux, un peu d'aléatoire. Le motif est un <strong>biais inductif imposé de l'extérieur</strong>. Il marche sur l'encodage (BERT, classification de longs documents) mais résiste mal au décodage génératif, où la structure des dépendances varie d'un token à l'autre et d'une tâche à l'autre.</p>
+      <p>La seconde génération renverse ce présupposé : <em>laisser le modèle décider où regarder</em>. Le motif n'est plus gravé dans l'architecture ; il est <strong>calculé dynamiquement</strong> en fonction de l'entrée, voire <strong>appris</strong> par descente de gradient. C'est là que se joue toute la bascule de 2024-2025. Mais « dynamique » recouvre encore deux mondes très différents, que la section suivante sépare. <mark>Le clivage porteur n'est pas fixe contre dynamique — c'est <em>où</em> la décision de parcimonie est prise : à la conception, à l'inférence sur un modèle figé, ou à l'entraînement du modèle lui-même.</mark></p>
+      <figure class="figure" id="fig-02"><svg data-schema-id="schema-02" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif">
+  <style>
+    .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+    .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+    .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    .interactive { cursor: pointer; }
+  </style>
+  <defs>
+    <marker id="arr2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L9,5 L0,10" fill="none" stroke="#B7332C" stroke-width="1.4"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- Header -->
+  <text x="60" y="58" class="mono" font-size="12" letter-spacing="3" fill="#B7332C">SCHÉMA 02</text>
+  <text x="60" y="98" class="display" font-size="30" font-weight="600" fill="#1A1A1A">Deux générations de parcimonie</text>
+  <text x="60" y="128" class="display" font-size="17" font-style="italic" fill="#5A5A5A">Du motif fixe conçu à la main à la parcimonie apprise par descente de gradient.</text>
+  <line x1="60" y1="150" x2="1140" y2="150" stroke="#E5E1D8" stroke-width="1"/>
+
+  <!-- Generation 1 lane -->
+  <g class="interactive" data-card="motifs-fixes" tabindex="0" role="button" aria-label="Génération 1 — motifs fixes">
+    <rect x="60" y="180" width="1080" height="180" rx="4" fill="#1F5560" fill-opacity="0.05" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="80" y="212" class="mono" font-size="12" letter-spacing="1.5" fill="#1F5560">GÉNÉRATION 1 · MOTIFS FIXES · 2019-2020</text>
+    <text x="80" y="240" class="display" font-size="16" font-style="italic" fill="#5A5A5A">« Le concepteur sait à l'avance où l'attention doit se porter. »</text>
+  </g>
+  <g class="interactive" data-card="sparse-transformers" tabindex="0" role="button" aria-label="Sparse Transformers">
+    <rect x="80" y="262" width="330" height="80" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="98" y="290" class="display" font-size="16" font-weight="600" fill="#1A1A1A">Sparse Transformers</text>
+    <text x="98" y="312" class="body" font-size="12" fill="#5A5A5A">OpenAI 2019 · factorisé strided/fixed</text>
+    <text x="98" y="330" class="mono" font-size="11" fill="#1F5560">O(n·√n)</text>
+  </g>
+  <g>
+    <rect x="430" y="262" width="330" height="80" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="448" y="290" class="display" font-size="16" font-weight="600" fill="#1A1A1A">Longformer</text>
+    <text x="448" y="312" class="body" font-size="12" fill="#5A5A5A">AllenAI 2020 · fenêtre glissante</text>
+    <text x="448" y="330" class="body" font-size="11" fill="#5A5A5A">+ quelques tokens à attention globale</text>
+  </g>
+  <g class="interactive" data-card="bigbird-theorie" tabindex="0" role="button" aria-label="BigBird — garanties théoriques">
+    <rect x="780" y="262" width="340" height="80" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="798" y="290" class="display" font-size="16" font-weight="600" fill="#1A1A1A">BigBird</text>
+    <text x="798" y="312" class="body" font-size="12" fill="#5A5A5A">Google 2020 · fenêtre + global + aléatoire</text>
+    <text x="798" y="330" class="mono" font-size="11" fill="#1F5560">approximateur universel · Turing-complet</text>
+  </g>
+
+  <!-- Bascule arrow -->
+  <g class="interactive" data-card="bascule-apprise" tabindex="0" role="button" aria-label="La bascule vers la parcimonie apprise">
+    <line x1="600" y1="372" x2="600" y2="428" stroke="#B7332C" stroke-width="2.5" marker-end="url(#arr2)"/>
+    <rect x="330" y="384" width="540" height="34" rx="17" fill="#B7332C" fill-opacity="0.10" stroke="#B7332C" stroke-width="1"/>
+    <text x="600" y="406" class="mono" font-size="12" letter-spacing="1" fill="#B7332C" text-anchor="middle">LA BASCULE · 2024-2025 · « laisser le modèle décider »</text>
+  </g>
+
+  <!-- Generation 2 lane -->
+  <rect x="60" y="440" width="1080" height="230" rx="4" fill="#B7332C" fill-opacity="0.05" stroke="#B7332C" stroke-width="1.25"/>
+  <text x="80" y="472" class="mono" font-size="12" letter-spacing="1.5" fill="#B7332C">GÉNÉRATION 2 · PARCIMONIE APPRISE / DYNAMIQUE · 2024-2025</text>
+  <text x="80" y="500" class="display" font-size="16" font-style="italic" fill="#5A5A5A">Le motif n'est plus gravé dans l'architecture : il est calculé selon l'entrée, voire appris.</text>
+
+  <g>
+    <rect x="80" y="516" width="250" height="132" rx="3" fill="#FAF8F3" stroke="#B58A2C" stroke-width="1.25"/>
+    <text x="98" y="544" class="display" font-size="15" font-weight="600" fill="#1A1A1A">MInference</text>
+    <text x="98" y="564" class="body" font-size="11.5" fill="#5A5A5A">NeurIPS 2024 · dynamique</text>
+    <text x="98" y="581" class="body" font-size="11.5" fill="#5A5A5A">mais training-free (prefill)</text>
+    <text x="98" y="616" class="mono" font-size="10.5" fill="#B58A2C">post-hoc</text>
+    <text x="98" y="634" class="body" font-size="11" fill="#5A5A5A">motifs reconnus en ligne</text>
+  </g>
+  <g>
+    <rect x="344" y="516" width="250" height="132" rx="3" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.25"/>
+    <text x="362" y="544" class="display" font-size="15" font-weight="600" fill="#1A1A1A">SeerAttention</text>
+    <text x="362" y="564" class="body" font-size="11.5" fill="#5A5A5A">MS 2024 · gate distillé</text>
+    <text x="362" y="616" class="mono" font-size="10.5" fill="#B7332C">appris (post-training)</text>
+    <text x="362" y="634" class="body" font-size="11" fill="#5A5A5A">sur modèle dense existant</text>
+  </g>
+  <g>
+    <rect x="608" y="516" width="250" height="132" rx="3" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="626" y="544" class="display" font-size="15" font-weight="600" fill="#1A1A1A">NSA · MoBA</text>
+    <text x="626" y="564" class="body" font-size="11.5" fill="#5A5A5A">DeepSeek / Moonshot 2025</text>
+    <text x="626" y="616" class="mono" font-size="10.5" fill="#B7332C">appris (from-scratch)</text>
+    <text x="626" y="634" class="body" font-size="11" fill="#5A5A5A">parcimonie native, pré-entraînée</text>
+  </g>
+  <g>
+    <rect x="872" y="516" width="248" height="132" rx="3" fill="#B7332C" fill-opacity="0.08" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="890" y="544" class="display" font-size="15" font-weight="600" fill="#1A1A1A">DSA</text>
+    <text x="890" y="564" class="body" font-size="11.5" fill="#5A5A5A">DeepSeek-V3.2 · sept. 2025</text>
+    <text x="890" y="616" class="mono" font-size="10.5" fill="#B7332C">en production</text>
+    <text x="890" y="634" class="body" font-size="11" fill="#5A5A5A">servi, tarifé, −50 % API</text>
+  </g>
+
+  <!-- Footer -->
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="60" y="770" class="body" font-size="10" font-style="italic" letter-spacing="0.4" fill="#5A5A5A">Sources : Child et al. 2019 ; Beltagy et al. 2020 ; Zaheer et al. 2020 ; Jiang et al. 2024 ; Gao et al. 2024 ; Yuan et al. 2025 ; Lu et al. 2025 ; DeepSeek 2025.</text>
+</svg>
+<figcaption class="figure-caption"><a class="anchor" href="#fig-02" title="Lien direct vers ce schéma">¶</a> Schéma 2 — Deux générations de parcimonie : des motifs fixes conçus à la main (Sparse Transformers, Longformer, BigBird) à la parcimonie apprise (MInference, SeerAttention, NSA, MoBA, DSA).</figcaption></figure>
+      </section>
+
+      <section>
+      <h2 id="s-3">3. La ligne de partage : post-hoc contre entraîné</h2>
+      <p>Prenez un modèle déjà entraîné en attention dense, et rendez-le parcimonieux <em>après coup</em>. C'est la voie <strong>post-hoc</strong>, la plus répandue parce que la moins coûteuse : elle ne retouche pas les poids. Elle se décline en deux familles.</p>
+      <p>Côté <strong>decode</strong>, on évince des tokens du KV-cache. H2O<a class="cite" data-cite="12" href="#source-12">12</a> identifie des <span class="term" data-tooltip="Heavy hitters : les tokens dont les scores d'attention cumulés dominent le total — H2O ne conserve qu'eux, plus une fenêtre récente.">heavy hitters</span> — les tokens dont les scores d'attention cumulés dominent — et ne garde qu'eux plus une fenêtre récente. StreamingLLM<a class="cite" data-cite="11" href="#source-11">11</a> observe que les tout premiers tokens agissent comme des <span class="term" data-tooltip="Attention sinks (puits d'attention) : les premiers tokens de la séquence, sur lesquels l'attention se déverse par défaut ; les retirer déstabilise la génération.">attention sinks</span> (puits d'attention) indispensables à la stabilité, et borne le cache à ces puits plus une fenêtre glissante. SnapKV compresse par tête selon la saillance vue depuis la fin du prompt. Côté <strong>prefill</strong>, MInference<a class="cite" data-cite="5" href="#source-5">5</a> accélère la lecture des longs prompts en reconnaissant en ligne trois motifs récurrents dans les têtes — <em>A-shape</em>, <em>vertical-slash</em>, <em>block-sparse</em> — et applique à chaque tête le masque parcimonieux qui lui correspond, sans jamais toucher aux poids : jusqu'à 10× plus vite sur un million de tokens.</p>
+      <p>Ces méthodes sont ingénieuses et déployables immédiatement. Mais elles portent un défaut structurel : <strong>le modèle n'a jamais vu ces trous à l'entraînement</strong>. Il a appris à attendre une attention dense ; on lui en sert une trouée. Tant que l'éviction devine juste, tout va bien. Dès qu'elle se trompe — un token évincé qui redevient pertinent 10 000 positions plus loin — le modèle est en situation <span class="term" data-tooltip="Hors distribution (out-of-distribution, OOD) : un régime que le modèle n'a pas rencontré à l'entraînement, où ses garanties de qualité ne tiennent plus.">hors distribution</span> (OOD) et n'a aucun recours : l'information a été jetée. <mark>L'éviction gloutonne est un pari fait à l'aveugle sur le futur d'une génération que le modèle n'a jamais été entraîné à honorer.</mark></p>
+      <p>La voie <strong>entraînée</strong> (<em>natively trainable</em>, <em>trained-in</em>) supprime ce pari. La parcimonie est présente <em>dès le pré-entraînement</em> : le modèle apprend, gradient à l'appui, à produire de bonnes sorties <em>sachant qu'il ne verra qu'une fraction du contexte</em>. Le trou n'est plus une surprise d'inférence ; c'est le régime nominal. Le gain de généralisation est le même que celui qui sépare, dans le dossier <code>compression-kv-cache</code>, <span class="term" data-tooltip="MLA (Multi-head Latent Attention, DeepSeek) : projette les clés/valeurs dans un latent conjoint compressé, appris et intégré à l'objectif d'entraînement.">MLA</span> de <span class="term" data-tooltip="GQA (Grouped-Query Attention) : partage les têtes clé/valeur entre groupes de têtes de requête — une compression simple, souvent appliquée par uptraining.">GQA</span> : une compression <em>apprise et intégrée à l'objectif</em> domine une compression <em>plaquée après coup</em>. <strong>La parcimonie native est à l'éviction ce que MLA est à GQA</strong> — non pas une optimisation de plus, mais un déplacement de la décision vers l'endroit où le modèle peut l'internaliser.</p>
+      <figure class="figure" id="fig-03"><svg data-schema-id="schema-03" viewBox="0 0 900 900" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif">
+  <style>
+    .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+    .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+    .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    .interactive { cursor: pointer; }
+    .chip { font-size: 12px; }
+  </style>
+  <rect x="0" y="0" width="900" height="900" fill="#FAF8F3"/>
+
+  <!-- Header -->
+  <text x="55" y="52" class="mono" font-size="12" letter-spacing="3" fill="#B7332C">SCHÉMA 03</text>
+  <text x="55" y="90" class="display" font-size="27" font-weight="600" fill="#1A1A1A">La ligne de partage</text>
+  <text x="55" y="118" class="display" font-size="15.5" font-style="italic" fill="#5A5A5A">Deux axes : quand la parcimonie est-elle décidée, et que cible-t-elle ?</text>
+  <line x1="55" y1="138" x2="845" y2="138" stroke="#E5E1D8" stroke-width="1"/>
+
+  <!-- Quadrant backgrounds -->
+  <rect x="185" y="200" width="315" height="290" fill="#B58A2C" fill-opacity="0.05"/>
+  <rect x="500" y="200" width="315" height="290" fill="#B7332C" fill-opacity="0.06"/>
+  <rect x="185" y="490" width="315" height="290" fill="#1A1A1A" fill-opacity="0.04"/>
+  <rect x="500" y="490" width="315" height="290" fill="#1F5560" fill-opacity="0.06"/>
+
+  <!-- Axes -->
+  <line x1="185" y1="490" x2="815" y2="490" stroke="#1A1A1A" stroke-width="1.5"/>
+  <line x1="500" y1="200" x2="500" y2="780" stroke="#1A1A1A" stroke-width="1.5"/>
+  <rect x="185" y="200" width="630" height="580" fill="none" stroke="#1A1A1A" stroke-width="1.25"/>
+
+  <!-- Axis labels -->
+  <text x="342" y="188" class="mono" font-size="11.5" letter-spacing="1" fill="#5A5A5A" text-anchor="middle">DÉCIDÉ À L'INFÉRENCE · POST-HOC</text>
+  <text x="658" y="188" class="mono" font-size="11.5" letter-spacing="1" fill="#B7332C" text-anchor="middle">DÉCIDÉ À L'ENTRAÎNEMENT · NATIF</text>
+  <text x="175" y="345" class="mono" font-size="11.5" letter-spacing="1" fill="#5A5A5A" text-anchor="middle" transform="rotate(-90 175 345)">CIBLE : LE CALCUL DE L'ATTENTION</text>
+  <text x="175" y="635" class="mono" font-size="11.5" letter-spacing="1" fill="#5A5A5A" text-anchor="middle" transform="rotate(-90 175 635)">CIBLE : LES OCTETS DU CACHE</text>
+
+  <!-- Q top-left: post-hoc × compute -->
+  <g class="interactive" data-card="quadrant-posthoc" tabindex="0" role="button" aria-label="Post-hoc — parcimonie greffée sur modèle figé">
+    <text x="205" y="230" class="display" font-size="15" font-style="italic" fill="#B58A2C">Parcimonie dynamique, non apprise</text>
+    <rect x="205" y="245" width="130" height="46" rx="4" fill="#FAF8F3" stroke="#B58A2C" stroke-width="1.25"/>
+    <text x="270" y="266" class="body chip" fill="#1A1A1A" text-anchor="middle" font-weight="500">MInference</text>
+    <text x="270" y="282" class="body" font-size="10" fill="#5A5A5A" text-anchor="middle">prefill dynamique</text>
+    <rect x="345" y="245" width="130" height="46" rx="4" fill="#FAF8F3" stroke="#B58A2C" stroke-width="1.25"/>
+    <text x="410" y="266" class="body chip" fill="#1A1A1A" text-anchor="middle" font-weight="500">Quest</text>
+    <text x="410" y="282" class="body" font-size="10" fill="#5A5A5A" text-anchor="middle">pages requête-conscientes</text>
+    <text x="205" y="330" class="body" font-size="12" fill="#5A5A5A">Motif calculé selon l'entrée, mais</text>
+    <text x="205" y="348" class="body" font-size="12" fill="#5A5A5A">les poids ne changent pas.</text>
+  </g>
+
+  <!-- Q top-right: trained × compute -->
+  <g class="interactive" data-card="quadrant-entraine" tabindex="0" role="button" aria-label="Natif — parcimonie entraînée dans le modèle">
+    <text x="520" y="230" class="display" font-size="15" font-style="italic" fill="#B7332C">Parcimonie native, apprise</text>
+    <rect x="520" y="245" width="128" height="46" rx="4" fill="#B7332C" fill-opacity="0.08" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="584" y="266" class="body chip" fill="#1A1A1A" text-anchor="middle" font-weight="600">NSA</text>
+    <text x="584" y="282" class="body" font-size="10" fill="#5A5A5A" text-anchor="middle">trois branches</text>
+    <rect x="656" y="245" width="128" height="46" rx="4" fill="#B7332C" fill-opacity="0.08" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="720" y="266" class="body chip" fill="#1A1A1A" text-anchor="middle" font-weight="600">MoBA</text>
+    <text x="720" y="282" class="body" font-size="10" fill="#5A5A5A" text-anchor="middle">blocs = experts</text>
+    <rect x="520" y="300" width="128" height="42" rx="4" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.25"/>
+    <text x="584" y="326" class="body chip" fill="#1A1A1A" text-anchor="middle" font-weight="500">DSA</text>
+    <rect x="656" y="300" width="128" height="42" rx="4" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.25"/>
+    <text x="720" y="320" class="body" font-size="11" fill="#1A1A1A" text-anchor="middle" font-weight="500">SeerAttention</text>
+    <text x="720" y="335" class="body" font-size="10" fill="#5A5A5A" text-anchor="middle">gate distillé</text>
+    <text x="520" y="372" class="body" font-size="12" fill="#5A5A5A">Le trou est le régime nominal :</text>
+    <text x="520" y="390" class="body" font-size="12" fill="#5A5A5A">le modèle apprend à vivre avec.</text>
+  </g>
+
+  <!-- Q bottom-left: post-hoc × memory (OOD risk) -->
+  <g class="interactive" data-card="risque-ood" tabindex="0" role="button" aria-label="Éviction gloutonne — le risque hors distribution">
+    <text x="205" y="522" class="display" font-size="15" font-style="italic" fill="#5A5A5A">Éviction gloutonne du cache</text>
+    <rect x="205" y="538" width="128" height="44" rx="4" fill="#FAF8F3" stroke="#1A1A1A" stroke-width="1.1"/>
+    <text x="269" y="565" class="body chip" fill="#1A1A1A" text-anchor="middle" font-weight="500">H2O</text>
+    <rect x="343" y="538" width="132" height="44" rx="4" fill="#FAF8F3" stroke="#1A1A1A" stroke-width="1.1"/>
+    <text x="409" y="560" class="body" font-size="11" fill="#1A1A1A" text-anchor="middle" font-weight="500">StreamingLLM</text>
+    <text x="409" y="574" class="body" font-size="10" fill="#5A5A5A" text-anchor="middle">puits d'attention</text>
+    <rect x="205" y="600" width="270" height="8" rx="4" fill="#B7332C" fill-opacity="0.15"/>
+    <text x="205" y="638" class="body" font-size="12" fill="#B7332C" font-weight="500">⚠ risque OOD</text>
+    <text x="205" y="658" class="body" font-size="12" fill="#5A5A5A">le modèle n'a jamais vu ces trous</text>
+    <text x="205" y="676" class="body" font-size="12" fill="#5A5A5A">à l'entraînement : l'info jetée est perdue.</text>
+  </g>
+
+  <!-- Q bottom-right: trained × memory (MLA analogy) -->
+  <g class="interactive" data-card="analogie-mla" tabindex="0" role="button" aria-label="MLA / GQA — l'analogie de la compression apprise">
+    <text x="520" y="522" class="display" font-size="15" font-style="italic" fill="#1F5560">Compression apprise de la mémoire</text>
+    <rect x="520" y="538" width="128" height="44" rx="4" fill="#1F5560" fill-opacity="0.07" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="584" y="565" class="body chip" fill="#1A1A1A" text-anchor="middle" font-weight="600">MLA</text>
+    <rect x="656" y="538" width="128" height="44" rx="4" fill="#1F5560" fill-opacity="0.07" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="720" y="565" class="body chip" fill="#1A1A1A" text-anchor="middle" font-weight="600">GQA</text>
+    <text x="520" y="614" class="body" font-size="12" fill="#5A5A5A">L'objet du dossier compression-kv-cache.</text>
+    <text x="520" y="646" class="display" font-size="13.5" font-style="italic" fill="#1F5560">L'analogie porteuse ↔</text>
+    <text x="520" y="668" class="body" font-size="12" fill="#5A5A5A">la parcimonie native est à l'éviction</text>
+    <text x="520" y="686" class="body" font-size="12" fill="#5A5A5A">ce que MLA est à GQA.</text>
+  </g>
+
+  <!-- Diagonal analogy hint -->
+  <line x1="336" y1="604" x2="518" y2="604" stroke="#B7332C" stroke-width="0.75" stroke-dasharray="3 3"/>
+
+  <!-- Footer -->
+  <line x1="55" y1="840" x2="845" y2="840" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="55" y="868" class="body" font-size="10" font-style="italic" letter-spacing="0.3" fill="#5A5A5A">Sources : Zhang et al. 2023 ; Xiao et al. 2024 ; Jiang et al. 2024 ; Tang et al. 2024 ; Yuan et al. 2025 ; Lu et al. 2025 ; DeepSeek 2025.</text>
+</svg>
+<figcaption class="figure-caption"><a class="anchor" href="#fig-03" title="Lien direct vers ce schéma">¶</a> Schéma 3 — La ligne de partage : matrice 2×2 (décidé à l'inférence vs à l'entraînement) × (cible : calcul de l'attention vs octets du cache), plaçant H2O, StreamingLLM, MInference, NSA, MoBA, DSA, MLA, GQA.</figcaption></figure>
+      </section>
+
+      <section>
+      <h2 id="s-4">4. NSA — l'anatomie des trois branches</h2>
+      <p><em>Native Sparse Attention</em>, primé meilleur article à l'ACL 2025<a class="cite" data-cite="2" href="#source-2">2</a>, est la formulation la plus complète de la parcimonie entraînée. Sa réponse à la question « quelles <em>k</em> clés » n'est pas <em>un</em> mécanisme mais <strong>trois chemins parallèles</strong>, dont un gate appris pondère les sorties pour chaque requête.</p>
+      <p>Le premier chemin, la <strong>compression</strong>, découpe le passé en blocs contigus et résume chaque bloc en un unique token compressé (via un petit réseau appris). La requête attend alors ces résumés grossiers : une vue à basse résolution de tout le contexte, pour un coût réduit d'un facteur égal à la taille de bloc. Le deuxième chemin, la <strong>sélection</strong>, réutilise les scores de compression pour <em>classer</em> les blocs, en retient les <em>top-n</em> les plus prometteurs, et y applique une attention <strong>fine, pleine résolution</strong>. C'est ici que se concentre la précision : le modèle regarde finement là où le résumé grossier lui a signalé de l'information. Le troisième chemin, la <strong>fenêtre glissante</strong>, garantit l'accès au voisinage local immédiat, que les deux premiers pourraient négliger.</p>
+      <p>Deux propriétés font la force de NSA. D'abord, la sélection par blocs est <span class="term" data-tooltip="Différentiable : le gradient de la fonction de perte peut traverser l'opération, si bien qu'elle s'apprend par descente de gradient plutôt que d'être fixée à la main.">différentiable</span> : le gradient traverse le choix des top-n, si bien que le modèle apprend <em>conjointement</em> à représenter et à sélectionner. Ensuite — et c'est le mot « hardware-aligned » du titre — les noyaux GPU sont conçus pour que la sélection par blocs produise des accès mémoire contigus et une <strong>intensité arithmétique équilibrée</strong>, dans l'esprit de FlashAttention<a class="cite" data-cite="10" href="#source-10">10</a> : la parcimonie théorique se traduit en accélération réelle, ce qui n'est pas garanti (un motif épars mais irrégulier peut être <em>plus lent</em> que le dense sur GPU). Le résultat : un modèle pré-entraîné avec NSA <strong>égale ou dépasse</strong> l'attention dense sur les benchmarks généraux, le long contexte et le raisonnement instruit, tout en étant jusqu'à <strong>11× plus rapide</strong> sur des séquences de 64k, et en s'étendant jusqu'à un million de tokens<a class="cite" data-cite="2" href="#source-2">2</a>.</p>
+      <figure class="figure" id="fig-04"><svg data-schema-id="schema-04" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif">
+  <style>
+    .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+    .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+    .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    .interactive { cursor: pointer; }
+  </style>
+  <defs>
+    <marker id="arr4" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L9,5 L0,10" fill="none" stroke="#5A5A5A" stroke-width="1.4"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- Header -->
+  <text x="60" y="58" class="mono" font-size="12" letter-spacing="3" fill="#B7332C">SCHÉMA 04</text>
+  <text x="60" y="98" class="display" font-size="30" font-weight="600" fill="#1A1A1A">NSA · trois branches, un gate appris</text>
+  <text x="60" y="128" class="display" font-size="17" font-style="italic" fill="#5A5A5A">Résumer grossièrement, sélectionner finement, garder le local — puis pondérer le tout par un gate différentiable.</text>
+  <line x1="60" y1="150" x2="1140" y2="150" stroke="#E5E1D8" stroke-width="1"/>
+
+  <!-- Query -->
+  <rect x="70" y="330" width="120" height="150" rx="4" fill="#1A1A1A" fill-opacity="0.06" stroke="#1A1A1A" stroke-width="1.25"/>
+  <text x="130" y="398" class="display" font-size="18" font-weight="600" fill="#1A1A1A" text-anchor="middle">requête</text>
+  <text x="130" y="422" class="body" font-size="12" fill="#5A5A5A" text-anchor="middle">token courant</text>
+  <text x="130" y="524" class="body" font-size="12" fill="#5A5A5A" text-anchor="middle">tout le passé,</text>
+  <text x="130" y="542" class="body" font-size="12" fill="#5A5A5A" text-anchor="middle">découpé en blocs</text>
+
+  <!-- Arrows to branches -->
+  <line x1="196" y1="365" x2="288" y2="248" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#arr4)"/>
+  <line x1="196" y1="405" x2="288" y2="412" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#arr4)"/>
+  <line x1="196" y1="445" x2="288" y2="576" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#arr4)"/>
+
+  <!-- Branch 1: compression -->
+  <g class="interactive" data-card="branche-compression" tabindex="0" role="button" aria-label="Branche compression — résumés grossiers par bloc">
+    <rect x="295" y="200" width="470" height="118" rx="4" fill="#1F5560" fill-opacity="0.07" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="315" y="230" class="mono" font-size="12" letter-spacing="1.2" fill="#1F5560">BRANCHE 1 · COMPRESSION</text>
+    <text x="315" y="258" class="display" font-size="18" font-weight="600" fill="#1A1A1A">Résumer chaque bloc en un token</text>
+    <text x="315" y="284" class="body" font-size="12.5" fill="#5A5A5A">Un petit réseau appris compresse chaque bloc contigu.</text>
+    <text x="315" y="302" class="body" font-size="12.5" fill="#5A5A5A">Vue basse résolution de TOUT le contexte, coût réduit.</text>
+  </g>
+
+  <!-- Branch 2: selection -->
+  <g class="interactive" data-card="branche-selection" tabindex="0" role="button" aria-label="Branche sélection — top-n blocs en pleine résolution">
+    <rect x="295" y="358" width="470" height="118" rx="4" fill="#B7332C" fill-opacity="0.07" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="315" y="388" class="mono" font-size="12" letter-spacing="1.2" fill="#B7332C">BRANCHE 2 · SÉLECTION</text>
+    <text x="315" y="416" class="display" font-size="18" font-weight="600" fill="#1A1A1A">Top-n blocs, pleine résolution</text>
+    <text x="315" y="442" class="body" font-size="12.5" fill="#5A5A5A">Les scores de compression classent les blocs ; on retient</text>
+    <text x="315" y="460" class="body" font-size="12.5" fill="#5A5A5A">les meilleurs et on y regarde FINEMENT. La précision.</text>
+  </g>
+
+  <!-- Branch 3: window -->
+  <g class="interactive" data-card="branche-fenetre" tabindex="0" role="button" aria-label="Branche fenêtre glissante — le voisinage local">
+    <rect x="295" y="516" width="470" height="110" rx="4" fill="#B58A2C" fill-opacity="0.08" stroke="#B58A2C" stroke-width="1.25"/>
+    <text x="315" y="546" class="mono" font-size="12" letter-spacing="1.2" fill="#B58A2C">BRANCHE 3 · FENÊTRE GLISSANTE</text>
+    <text x="315" y="574" class="display" font-size="18" font-weight="600" fill="#1A1A1A">Garantir le voisinage local</text>
+    <text x="315" y="600" class="body" font-size="12.5" fill="#5A5A5A">Accès direct aux tokens récents, que les deux premières</text>
+    <text x="315" y="618" class="body" font-size="12.5" fill="#5A5A5A">branches pourraient négliger.</text>
+  </g>
+
+  <!-- Arrows to gate -->
+  <line x1="768" y1="259" x2="858" y2="378" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#arr4)"/>
+  <line x1="768" y1="417" x2="858" y2="410" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#arr4)"/>
+  <line x1="768" y1="571" x2="858" y2="442" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#arr4)"/>
+
+  <!-- Gate -->
+  <g class="interactive" data-card="gate-appris" tabindex="0" role="button" aria-label="Gate appris — pondération différentiable des trois branches">
+    <rect x="865" y="340" width="150" height="150" rx="4" fill="#1A1A1A" fill-opacity="0.06" stroke="#1A1A1A" stroke-width="1.5"/>
+    <text x="940" y="392" class="display" font-size="18" font-weight="600" fill="#1A1A1A" text-anchor="middle">gate</text>
+    <text x="940" y="414" class="display" font-size="16" font-style="italic" fill="#5A5A5A" text-anchor="middle">appris</text>
+    <text x="940" y="446" class="body" font-size="11.5" fill="#5A5A5A" text-anchor="middle">pondère les 3</text>
+    <text x="940" y="463" class="body" font-size="11.5" fill="#5A5A5A" text-anchor="middle">par requête</text>
+  </g>
+  <line x1="1017" y1="415" x2="1095" y2="415" stroke="#B7332C" stroke-width="2.5" marker-end="url(#arr4)"/>
+  <text x="1100" y="410" class="body" font-size="12" fill="#1A1A1A">sortie</text>
+  <text x="1100" y="428" class="body" font-size="11" fill="#5A5A5A">d'attention</text>
+
+  <!-- Hardware band -->
+  <g class="interactive" data-card="hardware-align" tabindex="0" role="button" aria-label="Alignement matériel et sélection différentiable">
+    <rect x="60" y="654" width="1080" height="66" rx="4" fill="#B7332C" fill-opacity="0.05" stroke="#B7332C" stroke-width="1.25"/>
+    <text x="80" y="682" class="mono" font-size="12" letter-spacing="1.2" fill="#B7332C">NATIVELY TRAINABLE · HARDWARE-ALIGNED</text>
+    <text x="80" y="706" class="body" font-size="12.5" fill="#5A5A5A">Le gradient traverse la sélection par blocs (représenter et sélectionner s'apprennent ensemble). Noyaux GPU à accès contigus, intensité arithmétique équilibrée — 11× sur 64k.</text>
+  </g>
+
+  <!-- Footer -->
+  <line x1="60" y1="742" x2="1140" y2="742" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="60" y="770" class="body" font-size="10" font-style="italic" letter-spacing="0.4" fill="#5A5A5A">Source : Yuan et al., « Native Sparse Attention », ACL 2025 (Best Paper), arXiv:2502.11089.</text>
+</svg>
+<figcaption class="figure-caption"><a class="anchor" href="#fig-04" title="Lien direct vers ce schéma">¶</a> Schéma 4 — NSA : la requête alimente trois branches parallèles (compression, sélection top-n, fenêtre glissante) pondérées par un gate appris ; noyaux alignés matériel.</figcaption></figure>
+      </section>
+
+      <section>
+      <h2 id="s-5">5. MoBA — l'attention comme mélange d'experts</h2>
+      <p>MoBA<a class="cite" data-cite="3" href="#source-3">3</a>, publié à quelques jours de NSA, part de la même intuition mais l'habille d'une autre métaphore : et si les blocs de contexte étaient des <strong>experts</strong>, et l'attention un <strong>routeur</strong> à la manière du <span class="term" data-tooltip="Mixture-of-Experts (MoE) : architecture où un routeur envoie chaque token vers un petit sous-ensemble d'experts (réseaux FFN), découplant la capacité du coût de calcul.">mixture-of-experts</span> (MoE) ?</p>
+      <p>Le contexte est découpé en blocs. Pour chaque requête, un routeur léger calcule une affinité avec chaque bloc (via le score entre la requête et une représentation résumée du bloc), puis sélectionne le <span class="term" data-tooltip="Top-k : ne retenir que les k éléments de plus haut score — ici, les k blocs de contexte les plus pertinents pour la requête.">top-k</span> des blocs les plus pertinents ; l'attention n'est calculée que sur eux. Le parallèle avec <code>melange-experts</code> est direct : là où le MoE route chaque token vers <em>k</em> experts FFN sur <em>N</em>, MoBA route chaque requête vers <em>k</em> blocs de contexte sur <em>N</em>. La parcimonie devient un problème de <strong>routage appris</strong>, avec les mêmes vertus (capacité découplée du calcul) et les mêmes écueils potentiels (équilibrage de charge entre blocs).</p>
+      <p>La signature de MoBA est son principe de <strong>« moins de structure »</strong> (<em>less structure</em>) : contrairement à Longformer ou StreamingLLM qui <em>imposent</em> fenêtre et puits, MoBA ne présuppose rien sur <em>où</em> se trouve l'information — il laisse le routeur l'apprendre. Autre atout revendiqué : la <strong>bascule sans couture entre attention pleine et parcimonieuse</strong>. On peut activer MoBA sur certaines couches et garder la dense sur d'autres, ou passer de l'une à l'autre selon la phase, sans réentraîner — une souplesse précieuse en production. MoBA est d'ailleurs <em>déployé</em> : il sert les requêtes long-contexte de Kimi, l'assistant de Moonshot. Face à NSA — trois branches fixes dont chacune est apprise — MoBA propose <strong>une seule branche, mais dont la sélection est un routage de type MoE</strong>. Deux philosophies de la même bascule.</p>
+      <figure class="figure" id="fig-05"><svg data-schema-id="schema-05" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif">
+  <style>
+    .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+    .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+    .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    .interactive { cursor: pointer; }
+  </style>
+  <defs>
+    <marker id="arr5" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L9,5 L0,10" fill="none" stroke="#B7332C" stroke-width="1.4"/>
+    </marker>
+    <marker id="arr5g" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L9,5 L0,10" fill="none" stroke="#B8B5AE" stroke-width="1.4"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- Header -->
+  <text x="60" y="58" class="mono" font-size="12" letter-spacing="3" fill="#B7332C">SCHÉMA 05</text>
+  <text x="60" y="98" class="display" font-size="30" font-weight="600" fill="#1A1A1A">MoBA · l'attention comme mélange d'experts</text>
+  <text x="60" y="128" class="display" font-size="17" font-style="italic" fill="#5A5A5A">Les blocs de contexte deviennent des experts ; un routeur envoie chaque requête vers les top-k blocs.</text>
+  <line x1="60" y1="150" x2="1140" y2="150" stroke="#E5E1D8" stroke-width="1"/>
+
+  <!-- Query + router -->
+  <rect x="70" y="230" width="110" height="120" rx="4" fill="#1A1A1A" fill-opacity="0.06" stroke="#1A1A1A" stroke-width="1.25"/>
+  <text x="125" y="288" class="display" font-size="16" font-weight="600" fill="#1A1A1A" text-anchor="middle">requête</text>
+  <text x="125" y="310" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">token courant</text>
+  <line x1="182" y1="290" x2="228" y2="290" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#arr5)"/>
+
+  <g class="interactive" data-card="routeur-topk" tabindex="0" role="button" aria-label="Routeur top-k — sélection apprise des blocs">
+    <rect x="232" y="230" width="130" height="120" rx="4" fill="#B7332C" fill-opacity="0.08" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="297" y="282" class="display" font-size="16" font-weight="600" fill="#1A1A1A" text-anchor="middle">routeur</text>
+    <text x="297" y="304" class="body" font-size="11.5" fill="#5A5A5A" text-anchor="middle">affinité requête</text>
+    <text x="297" y="320" class="body" font-size="11.5" fill="#5A5A5A" text-anchor="middle">× bloc → top-k</text>
+  </g>
+
+  <!-- Blocks (experts) -->
+  <g class="interactive" data-card="blocs-experts" tabindex="0" role="button" aria-label="Blocs de contexte comme experts">
+    <text x="400" y="204" class="mono" font-size="12" letter-spacing="1" fill="#5A5A5A">CONTEXTE DÉCOUPÉ EN BLOCS = EXPERTS</text>
+    <!-- selected blocks (carmine) -->
+    <rect x="400" y="222" width="92" height="70" rx="3" fill="#B7332C" fill-opacity="0.14" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="446" y="262" class="mono" font-size="13" fill="#B7332C" text-anchor="middle">bloc 1</text>
+    <rect x="700" y="222" width="92" height="70" rx="3" fill="#B7332C" fill-opacity="0.14" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="746" y="262" class="mono" font-size="13" fill="#B7332C" text-anchor="middle">bloc 4</text>
+    <rect x="1000" y="222" width="92" height="70" rx="3" fill="#B7332C" fill-opacity="0.14" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="1046" y="262" class="mono" font-size="13" fill="#B7332C" text-anchor="middle">bloc 7</text>
+    <!-- skipped blocks (grey) -->
+    <rect x="500" y="222" width="92" height="70" rx="3" fill="#B8B5AE" fill-opacity="0.10" stroke="#B8B5AE" stroke-width="1.1"/>
+    <text x="546" y="262" class="mono" font-size="13" fill="#9a9ca5" text-anchor="middle">bloc 2</text>
+    <rect x="600" y="222" width="92" height="70" rx="3" fill="#B8B5AE" fill-opacity="0.10" stroke="#B8B5AE" stroke-width="1.1"/>
+    <text x="646" y="262" class="mono" font-size="13" fill="#9a9ca5" text-anchor="middle">bloc 3</text>
+    <rect x="800" y="222" width="92" height="70" rx="3" fill="#B8B5AE" fill-opacity="0.10" stroke="#B8B5AE" stroke-width="1.1"/>
+    <text x="846" y="262" class="mono" font-size="13" fill="#9a9ca5" text-anchor="middle">bloc 5</text>
+    <rect x="900" y="222" width="92" height="70" rx="3" fill="#B8B5AE" fill-opacity="0.10" stroke="#B8B5AE" stroke-width="1.1"/>
+    <text x="946" y="262" class="mono" font-size="13" fill="#9a9ca5" text-anchor="middle">bloc 6</text>
+    <text x="400" y="316" class="body" font-size="11.5" fill="#B7332C">■ sélectionnés (calculés)</text>
+    <text x="640" y="316" class="body" font-size="11.5" fill="#9a9ca5">■ ignorés (économie)</text>
+  </g>
+
+  <!-- router arrows to selected -->
+  <line x1="364" y1="278" x2="398" y2="262" stroke="#B7332C" stroke-width="1.5" marker-end="url(#arr5)"/>
+  <line x1="364" y1="286" x2="698" y2="258" stroke="#B7332C" stroke-width="1.25" marker-end="url(#arr5)"/>
+  <line x1="364" y1="294" x2="998" y2="258" stroke="#B7332C" stroke-width="1.25" marker-end="url(#arr5)"/>
+  <line x1="364" y1="304" x2="498" y2="258" stroke="#B8B5AE" stroke-width="0.75" stroke-dasharray="2 3"/>
+
+  <!-- less structure -->
+  <g class="interactive" data-card="less-structure" tabindex="0" role="button" aria-label="Le principe less structure">
+    <rect x="60" y="400" width="530" height="150" rx="4" fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="82" y="432" class="mono" font-size="12" letter-spacing="1.2" fill="#1F5560">PRINCIPE · « LESS STRUCTURE »</text>
+    <text x="82" y="462" class="display" font-size="18" font-weight="600" fill="#1A1A1A">Ne rien présupposer sur le « où »</text>
+    <text x="82" y="490" class="body" font-size="12.5" fill="#5A5A5A">Contrairement à Longformer ou StreamingLLM qui imposent</text>
+    <text x="82" y="508" class="body" font-size="12.5" fill="#5A5A5A">fenêtre et puits, MoBA n'impose aucun motif : le routeur</text>
+    <text x="82" y="526" class="body" font-size="12.5" fill="#5A5A5A">apprend seul où se trouve l'information pertinente.</text>
+  </g>
+
+  <!-- switch full/sparse -->
+  <g class="interactive" data-card="switch-full-sparse" tabindex="0" role="button" aria-label="Bascule sans couture full vers sparse">
+    <rect x="610" y="400" width="530" height="150" rx="4" fill="#B58A2C" fill-opacity="0.08" stroke="#B58A2C" stroke-width="1.25"/>
+    <text x="632" y="432" class="mono" font-size="12" letter-spacing="1.2" fill="#B58A2C">BASCULE SANS COUTURE</text>
+    <text x="632" y="462" class="display" font-size="18" font-weight="600" fill="#1A1A1A">Full ↔ sparse, sans réentraîner</text>
+    <text x="632" y="490" class="body" font-size="12.5" fill="#5A5A5A">MoBA sur certaines couches, dense sur d'autres ; passage</text>
+    <text x="632" y="508" class="body" font-size="12.5" fill="#5A5A5A">de l'un à l'autre selon la phase. Déployé en production</text>
+    <text x="632" y="526" class="body" font-size="12.5" fill="#5A5A5A">sur Kimi (Moonshot) pour les requêtes long-contexte.</text>
+  </g>
+
+  <!-- NSA vs MoBA comparison -->
+  <rect x="60" y="580" width="1080" height="132" rx="4" fill="#1A1A1A" fill-opacity="0.03" stroke="#1A1A1A" stroke-width="1"/>
+  <text x="82" y="610" class="mono" font-size="12" letter-spacing="1.2" fill="#1A1A1A">DEUX PHILOSOPHIES DE LA MÊME BASCULE</text>
+  <line x1="600" y1="626" x2="600" y2="694" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="82" y="644" class="display" font-size="15" font-weight="600" fill="#B7332C">NSA</text>
+  <text x="140" y="644" class="body" font-size="13" fill="#5A5A5A">trois branches FIXES, chacune apprise</text>
+  <text x="82" y="668" class="body" font-size="12.5" fill="#5A5A5A">compression + sélection + fenêtre, combinées par un gate.</text>
+  <text x="82" y="690" class="body" font-size="12.5" fill="#5A5A5A">La structure est posée ; ses paramètres s'apprennent.</text>
+  <text x="622" y="644" class="display" font-size="15" font-weight="600" fill="#1F5560">MoBA</text>
+  <text x="692" y="644" class="body" font-size="13" fill="#5A5A5A">une branche, mais un ROUTAGE de type MoE</text>
+  <text x="622" y="668" class="body" font-size="12.5" fill="#5A5A5A">router chaque requête vers k blocs sur N, comme un MoE</text>
+  <text x="622" y="690" class="body" font-size="12.5" fill="#5A5A5A">route un token vers k experts FFN. Moins de structure.</text>
+
+  <!-- Footer -->
+  <line x1="60" y1="742" x2="1140" y2="742" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="60" y="770" class="body" font-size="10" font-style="italic" letter-spacing="0.4" fill="#5A5A5A">Source : Lu et al., « MoBA: Mixture of Block Attention for Long-Context LLMs », Moonshot AI, arXiv:2502.13189.</text>
+</svg>
+<figcaption class="figure-caption"><a class="anchor" href="#fig-05" title="Lien direct vers ce schéma">¶</a> Schéma 5 — MoBA : le contexte découpé en blocs-experts, un routeur qui envoie chaque requête vers les top-k blocs ; comparaison des philosophies NSA (branches fixes) et MoBA (routage MoE).</figcaption></figure>
+      </section>
+
+      <section>
+      <h2 id="s-6">6. La voie de l'adaptation : le gate distillé</h2>
+      <p>NSA et MoBA supposent qu'on pré-entraîne (ou re-entraîne lourdement) un modèle. Or il existe des milliers de modèles denses déjà entraînés. Peut-on leur <em>greffer</em> une parcimonie entraînée sans repartir de zéro ? C'est la promesse de SeerAttention<a class="cite" data-cite="4" href="#source-4">4</a>.</p>
+      <p>L'idée : la parcimonie utile est déjà <strong>latente</strong> dans le modèle dense — il suffit de l'extraire. SeerAttention ajoute un module léger, l'<strong>AttnGate</strong>, chargé de prédire quels blocs de clés méritent d'être calculés. Ce gate n'est pas conçu à la main : il est <span class="term" data-tooltip="Auto-distillation (self-distillation) : le modèle sert de professeur à un module ajouté ; la cible d'entraînement est extraite du comportement du modèle lui-même.">auto-distillé</span>. On fait tourner le modèle dense, on récupère ses vraies cartes d'attention, on les réduit par un <span class="term" data-tooltip="2D-maxpool : réduction d'une carte d'attention en agrégeant par blocs (le maximum de chaque bloc), pour obtenir une cible au niveau bloc.">2D-maxpool</span> au niveau des blocs (ce qui donne la cible : « quels blocs le modèle regarde-t-il vraiment&nbsp;? »), et on entraîne l'AttnGate à reproduire cette cible. Seuls les paramètres du gate sont appris — le corps du modèle reste figé — d'où une convergence rapide et un coût minime. À l'inférence, le gate prédit la parcimonie par bloc, et un <strong>noyau block-sparse compatible FlashAttention</strong> ne calcule que les blocs retenus.</p>
+      <p>SeerAttention trace ainsi une <strong>troisième voie</strong>, à mi-chemin : ni motif fixe post-hoc (le gate est appris, pas deviné), ni pré-entraînement complet (le modèle n'est pas retouché). <mark>Entre l'éviction training-free et la parcimonie native from-scratch, la distillation du gate offre le compromis pragmatique : de la parcimonie <em>apprise</em> sur un modèle <em>existant</em>.</mark> La suite, SeerAttention-R, spécialise l'approche pour le <strong>raisonnement long</strong> — les longues chaînes de pensée où le contexte à parcourir explose. La parcimonie entraînée n'est donc pas réservée aux nouveaux modèles : elle devient une opération d'adaptation.</p>
+      <figure class="figure" id="fig-06"><svg data-schema-id="schema-06" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif">
+  <style>
+    .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+    .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+    .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    .interactive { cursor: pointer; }
+  </style>
+  <defs>
+    <marker id="arr6" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L9,5 L0,10" fill="none" stroke="#5A5A5A" stroke-width="1.4"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- Header -->
+  <text x="60" y="58" class="mono" font-size="12" letter-spacing="3" fill="#B7332C">SCHÉMA 06</text>
+  <text x="60" y="98" class="display" font-size="30" font-weight="600" fill="#1A1A1A">Le gate distillé · SeerAttention</text>
+  <text x="60" y="128" class="display" font-size="17" font-style="italic" fill="#5A5A5A">Extraire la parcimonie déjà latente d'un modèle dense, sans retoucher ses poids.</text>
+  <line x1="60" y1="150" x2="1140" y2="150" stroke="#E5E1D8" stroke-width="1"/>
+
+  <!-- Stage 1 -->
+  <rect x="70" y="240" width="180" height="130" rx="4" fill="#1A1A1A" fill-opacity="0.05" stroke="#1A1A1A" stroke-width="1.25"/>
+  <text x="160" y="292" class="display" font-size="16" font-weight="600" fill="#1A1A1A" text-anchor="middle">modèle dense</text>
+  <text x="160" y="314" class="body" font-size="12" fill="#5A5A5A" text-anchor="middle">déjà entraîné,</text>
+  <text x="160" y="332" class="body" font-size="12" fill="#5A5A5A" text-anchor="middle">poids FIGÉS</text>
+  <line x1="252" y1="305" x2="296" y2="305" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#arr6)"/>
+
+  <!-- Stage 2: attn maps -->
+  <g class="interactive" data-card="attn-maps" tabindex="0" role="button" aria-label="Cartes d'attention réelles">
+    <rect x="300" y="240" width="200" height="130" rx="4" fill="#1F5560" fill-opacity="0.07" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="320" y="268" class="mono" font-size="11" letter-spacing="1" fill="#1F5560">OBSERVER</text>
+    <text x="400" y="300" class="display" font-size="15.5" font-weight="600" fill="#1A1A1A" text-anchor="middle">cartes d'attention</text>
+    <!-- mini heatmap -->
+    <rect x="340" y="316" width="120" height="42" fill="#FAF8F3" stroke="#1F5560" stroke-width="0.75"/>
+    <rect x="344" y="320" width="10" height="10" fill="#1F5560" fill-opacity="0.7"/>
+    <rect x="356" y="332" width="10" height="10" fill="#1F5560" fill-opacity="0.5"/>
+    <rect x="380" y="344" width="10" height="10" fill="#1F5560" fill-opacity="0.8"/>
+    <rect x="416" y="322" width="10" height="10" fill="#1F5560" fill-opacity="0.4"/>
+  </g>
+  <line x1="502" y1="305" x2="546" y2="305" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#arr6)"/>
+
+  <!-- Stage 3: maxpool target -->
+  <g class="interactive" data-card="maxpool-cible" tabindex="0" role="button" aria-label="2D-maxpool par bloc — la cible de distillation">
+    <rect x="550" y="240" width="200" height="130" rx="4" fill="#B58A2C" fill-opacity="0.08" stroke="#B58A2C" stroke-width="1.25"/>
+    <text x="570" y="268" class="mono" font-size="11" letter-spacing="1" fill="#B58A2C">RÉDUIRE</text>
+    <text x="650" y="300" class="display" font-size="15.5" font-weight="600" fill="#1A1A1A" text-anchor="middle">2D-maxpool</text>
+    <text x="650" y="320" class="body" font-size="12" fill="#5A5A5A" text-anchor="middle">par bloc = la CIBLE</text>
+    <text x="650" y="350" class="body" font-size="11.5" fill="#5A5A5A" text-anchor="middle">« quels blocs le modèle</text>
+    <text x="650" y="366" class="body" font-size="11.5" fill="#5A5A5A" text-anchor="middle">regarde-t-il vraiment ? »</text>
+  </g>
+  <line x1="752" y1="305" x2="796" y2="305" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#arr6)"/>
+
+  <!-- Stage 4: AttnGate -->
+  <g class="interactive" data-card="attngate" tabindex="0" role="button" aria-label="AttnGate — le seul module appris">
+    <rect x="800" y="240" width="200" height="130" rx="4" fill="#B7332C" fill-opacity="0.08" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="820" y="268" class="mono" font-size="11" letter-spacing="1" fill="#B7332C">APPRENDRE</text>
+    <text x="900" y="300" class="display" font-size="16" font-weight="600" fill="#1A1A1A" text-anchor="middle">AttnGate</text>
+    <text x="900" y="322" class="body" font-size="12" fill="#5A5A5A" text-anchor="middle">seul module entraîné</text>
+    <text x="900" y="350" class="body" font-size="11.5" fill="#5A5A5A" text-anchor="middle">distillé pour imiter la</text>
+    <text x="900" y="366" class="body" font-size="11.5" fill="#5A5A5A" text-anchor="middle">cible → convergence rapide</text>
+  </g>
+  <line x1="1002" y1="305" x2="1046" y2="305" stroke="#B7332C" stroke-width="2.5" marker-end="url(#arr6)"/>
+
+  <!-- Stage 5: inference -->
+  <rect x="1050" y="240" width="92" height="130" rx="4" fill="#B7332C" fill-opacity="0.05" stroke="#B7332C" stroke-width="1.25"/>
+  <text x="1096" y="292" class="body" font-size="12" fill="#1A1A1A" text-anchor="middle" font-weight="500">noyau</text>
+  <text x="1096" y="310" class="body" font-size="12" fill="#1A1A1A" text-anchor="middle" font-weight="500">block-</text>
+  <text x="1096" y="328" class="body" font-size="12" fill="#1A1A1A" text-anchor="middle" font-weight="500">sparse</text>
+
+  <!-- distillation loop annotation -->
+  <path d="M650,378 C650,410 900,410 900,378" fill="none" stroke="#B7332C" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="775" y="426" class="body" font-size="11.5" font-style="italic" fill="#B7332C" text-anchor="middle">auto-distillation : la cible vient du modèle lui-même</text>
+
+  <!-- deux voies -->
+  <g class="interactive" data-card="deux-voies" tabindex="0" role="button" aria-label="Deux voies vers la parcimonie entraînée">
+    <rect x="60" y="470" width="1080" height="240" rx="4" fill="#1A1A1A" fill-opacity="0.03" stroke="#1A1A1A" stroke-width="1"/>
+    <text x="82" y="502" class="mono" font-size="12" letter-spacing="1.2" fill="#1A1A1A">DEUX VOIES VERS LA PARCIMONIE ENTRAÎNÉE</text>
+    <line x1="600" y1="520" x2="600" y2="690" stroke="#E5E1D8" stroke-width="1"/>
+
+    <text x="82" y="546" class="display" font-size="17" font-weight="600" fill="#1A1A1A">Voie A · from-scratch</text>
+    <text x="82" y="572" class="body" font-size="13" fill="#5A5A5A">NSA, MoBA</text>
+    <text x="82" y="600" class="body" font-size="12.5" fill="#5A5A5A">La parcimonie est présente dès le pré-entraînement.</text>
+    <text x="82" y="620" class="body" font-size="12.5" fill="#5A5A5A">Meilleure qualité, mais coûte un entraînement complet.</text>
+    <text x="82" y="656" class="body" font-size="12.5" fill="#5A5A5A">Pour les modèles neufs.</text>
+
+    <text x="622" y="546" class="display" font-size="17" font-weight="600" fill="#1A1A1A">Voie B · post-training</text>
+    <text x="622" y="572" class="body" font-size="13" fill="#5A5A5A">SeerAttention (et SeerAttention-R pour le raisonnement long)</text>
+    <text x="622" y="600" class="body" font-size="12.5" fill="#5A5A5A">Distiller la parcimonie d'un modèle dense EXISTANT.</text>
+    <text x="622" y="620" class="body" font-size="12.5" fill="#5A5A5A">Le corps reste figé ; seul le gate s'apprend.</text>
+    <text x="622" y="656" class="display" font-size="13" font-style="italic" fill="#B7332C">Le compromis pragmatique : parcimonie apprise, pas de reprise à zéro.</text>
+  </g>
+
+  <!-- Footer -->
+  <line x1="60" y1="742" x2="1140" y2="742" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="60" y="770" class="body" font-size="10" font-style="italic" letter-spacing="0.4" fill="#5A5A5A">Source : Gao et al., « SeerAttention: Learning Intrinsic Sparse Attention in Your LLMs », Microsoft, arXiv:2410.13276 ; SeerAttention-R, arXiv:2506.08889.</text>
+</svg>
+<figcaption class="figure-caption"><a class="anchor" href="#fig-06" title="Lien direct vers ce schéma">¶</a> Schéma 6 — SeerAttention : pipeline de distillation du gate (modèle dense figé → cartes d'attention → 2D-maxpool → AttnGate appris → noyau block-sparse) ; les deux voies from-scratch vs post-training.</figcaption></figure>
+      </section>
+
+      <section>
+      <h2 id="s-7">7. La production : DeepSeek Sparse Attention</h2>
+      <p>La preuve qu'une idée d'architecture a mûri, c'est qu'elle entre dans un modèle <em>servi à grande échelle</em>. En septembre 2025, DeepSeek publie <strong>V3.2-Exp</strong>, identique à V3.1-Terminus à une exception près : l'introduction de <strong>DeepSeek Sparse Attention (DSA)</strong><a class="cite" data-cite="13" href="#source-13">13</a>.</p>
+      <p>DSA repose sur deux composants. Le premier, le <span class="term" data-tooltip="Lightning indexer : une fonction de similarité pondérée, volontairement légère, entraînée à prédire quels tokens l'attention dense aurait regardés.">lightning indexer</span>, est une fonction de similarité pondérée, volontairement légère, dont le rôle est de dire, pour chaque requête, <em>quels tokens la dense aurait regardés</em>. Fait remarquable : cet indexeur est <strong>entraîné sur 2,1 milliards de tokens à imiter le comportement de l'attention dense de V3.1-Terminus</strong> — c'est une distillation de la carte d'attention, dans le même esprit que SeerAttention, mais intégrée au pipeline de service. Le second composant, la <strong>sélection fine top-k</strong>, ne calcule l'attention (ici en MLA, l'attention latente de DeepSeek) que sur les <em>k</em> tokens désignés par l'indexeur. La complexité cœur passe de <strong>O(L²) à O(Lk)</strong> : le coût d'inférence croît désormais <em>linéairement</em> avec la longueur d'entrée.</p>
+      <p>Les conséquences sont tangibles. Qualité de sortie <strong>quasi identique</strong> à la dense, mais coût divisé : DeepSeek a répercuté l'économie en <strong>baissant ses prix d'API d'environ 50 %</strong>. Et l'écosystème a suivi immédiatement — vLLM et SGLang ont annoncé un <strong>support day-0</strong> des noyaux DSA. <mark>DSA marque le moment où l'attention parcimonieuse entraînée cesse d'être un résultat de laboratoire pour devenir une brique de service, tarifée et servie en production.</mark> C'est aussi la convergence des fils de ce dossier : un indexeur <em>distillé</em> (SeerAttention), une sélection <em>top-k</em> (NSA/MoBA), le tout branché sur MLA (<code>compression-kv-cache</code>) — la parcimonie du <em>calcul</em> et la compression de la <em>mémoire</em> co-conçues dans un même modèle.</p>
+      <figure class="figure" id="fig-07"><svg data-schema-id="schema-07" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif">
+  <style>
+    .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+    .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+    .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    .interactive { cursor: pointer; }
+  </style>
+  <defs>
+    <marker id="arr7" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L9,5 L0,10" fill="none" stroke="#5A5A5A" stroke-width="1.4"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- Header -->
+  <text x="60" y="58" class="mono" font-size="12" letter-spacing="3" fill="#B7332C">SCHÉMA 07</text>
+  <text x="60" y="98" class="display" font-size="30" font-weight="600" fill="#1A1A1A">DSA · la parcimonie entre en production</text>
+  <text x="60" y="128" class="display" font-size="17" font-style="italic" fill="#5A5A5A">Un indexeur distillé désigne les tokens ; la sélection top-k rend le coût linéaire. DeepSeek-V3.2-Exp.</text>
+  <line x1="60" y1="150" x2="1140" y2="150" stroke="#E5E1D8" stroke-width="1"/>
+
+  <!-- Mechanism (left) -->
+  <rect x="70" y="205" width="100" height="110" rx="4" fill="#1A1A1A" fill-opacity="0.06" stroke="#1A1A1A" stroke-width="1.25"/>
+  <text x="120" y="256" class="display" font-size="15" font-weight="600" fill="#1A1A1A" text-anchor="middle">requête</text>
+  <text x="120" y="278" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">+ contexte</text>
+  <line x1="172" y1="260" x2="214" y2="260" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#arr7)"/>
+
+  <g class="interactive" data-card="lightning-indexer" tabindex="0" role="button" aria-label="Lightning indexer — la fonction de score distillée">
+    <rect x="218" y="200" width="230" height="120" rx="4" fill="#B7332C" fill-opacity="0.08" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="238" y="228" class="mono" font-size="11" letter-spacing="1" fill="#B7332C">LIGHTNING INDEXER</text>
+    <text x="238" y="256" class="display" font-size="16" font-weight="600" fill="#1A1A1A">Score de similarité léger</text>
+    <text x="238" y="282" class="body" font-size="12" fill="#5A5A5A">Entraîné sur 2,1 Md tokens à prédire</text>
+    <text x="238" y="300" class="body" font-size="12" fill="#5A5A5A">ce que la dense de V3.1 regardait.</text>
+  </g>
+  <line x1="450" y1="260" x2="492" y2="260" stroke="#5A5A5A" stroke-width="1.25" marker-end="url(#arr7)"/>
+
+  <g class="interactive" data-card="topk-select" tabindex="0" role="button" aria-label="Sélection top-k fine sur MLA">
+    <rect x="496" y="200" width="210" height="120" rx="4" fill="#1F5560" fill-opacity="0.07" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="516" y="228" class="mono" font-size="11" letter-spacing="1" fill="#1F5560">SÉLECTION TOP-K</text>
+    <text x="516" y="256" class="display" font-size="16" font-weight="600" fill="#1A1A1A">k tokens seulement</text>
+    <text x="516" y="282" class="body" font-size="12" fill="#5A5A5A">Attention calculée en MLA</text>
+    <text x="516" y="300" class="body" font-size="12" fill="#5A5A5A">sur les k désignés (pont latent).</text>
+  </g>
+
+  <!-- Cost chart (right) -->
+  <g class="interactive" data-card="cout-lineaire" tabindex="0" role="button" aria-label="Coût linéaire O(Lk)">
+    <rect x="740" y="190" width="400" height="240" rx="4" fill="#FAF8F3" stroke="#1A1A1A" stroke-width="1"/>
+    <text x="762" y="220" class="mono" font-size="11" letter-spacing="1" fill="#1A1A1A">COÛT CŒUR D'ATTENTION</text>
+    <line x1="775" y1="400" x2="1110" y2="400" stroke="#1A1A1A" stroke-width="1.1" marker-end="url(#arr7)"/>
+    <line x1="775" y1="400" x2="775" y2="240" stroke="#1A1A1A" stroke-width="1.1" marker-end="url(#arr7)"/>
+    <text x="1085" y="420" class="body" font-size="11" fill="#5A5A5A">longueur L</text>
+    <path d="M775,400 C930,392 1010,320 1070,250" fill="none" stroke="#B7332C" stroke-width="2" stroke-dasharray="4 3"/>
+    <text x="1000" y="288" class="mono" font-size="12" fill="#B7332C">O(L²) dense</text>
+    <line x1="775" y1="400" x2="1090" y2="336" stroke="#1F5560" stroke-width="2.5"/>
+    <text x="900" y="352" class="mono" font-size="12" fill="#1F5560">O(Lk) — DSA</text>
+    <text x="762" y="392" class="body" font-size="11" font-style="italic" fill="#5A5A5A">linéaire en longueur d'entrée</text>
+  </g>
+
+  <!-- Key result strip -->
+  <rect x="70" y="360" width="636" height="70" rx="4" fill="#B7332C" fill-opacity="0.05" stroke="#B7332C" stroke-width="1.25"/>
+  <text x="92" y="388" class="display" font-size="16" font-weight="600" fill="#1A1A1A">Qualité quasi identique à la dense — pour la moitié du prix.</text>
+  <text x="92" y="412" class="body" font-size="12.5" fill="#5A5A5A">Seule modification de V3.2-Exp vs V3.1-Terminus. La complexité passe de O(L²) à O(Lk).</text>
+
+  <!-- Adoption timeline -->
+  <g class="interactive" data-card="adoption" tabindex="0" role="button" aria-label="Adoption — de l'artefact de recherche à la brique de service">
+    <rect x="60" y="470" width="1080" height="240" rx="4" fill="#1A1A1A" fill-opacity="0.03" stroke="#1A1A1A" stroke-width="1"/>
+    <text x="82" y="502" class="mono" font-size="12" letter-spacing="1.2" fill="#1A1A1A">DE L'ARTEFACT DE RECHERCHE À LA BRIQUE DE SERVICE</text>
+    <line x1="150" y1="590" x2="1080" y2="590" stroke="#B8B5AE" stroke-width="1.25"/>
+
+    <circle cx="220" cy="590" r="8" fill="#5A5A5A"/>
+    <text x="220" y="558" class="display" font-size="15" font-weight="600" fill="#1A1A1A" text-anchor="middle">V3.1-Terminus</text>
+    <text x="220" y="622" class="body" font-size="12" fill="#5A5A5A" text-anchor="middle">dense (référence)</text>
+
+    <circle cx="560" cy="590" r="9" fill="#B7332C"/>
+    <text x="560" y="558" class="display" font-size="15" font-weight="600" fill="#1A1A1A" text-anchor="middle">V3.2-Exp · sept. 2025</text>
+    <text x="560" y="622" class="body" font-size="12" fill="#5A5A5A" text-anchor="middle">introduit DSA</text>
+    <text x="560" y="642" class="body" font-size="12" fill="#5A5A5A" text-anchor="middle">indexeur + top-k</text>
+
+    <circle cx="920" cy="590" r="8" fill="#1F5560"/>
+    <text x="920" y="558" class="display" font-size="15" font-weight="600" fill="#1A1A1A" text-anchor="middle">vLLM · SGLang</text>
+    <text x="920" y="622" class="body" font-size="12" fill="#5A5A5A" text-anchor="middle">support day-0 des noyaux</text>
+    <text x="920" y="642" class="body" font-size="12" fill="#5A5A5A" text-anchor="middle">DSA · prix API −50 %</text>
+
+    <text x="600" y="690" class="display" font-size="14" font-style="italic" fill="#B7332C" text-anchor="middle">La parcimonie entraînée cesse d'être un résultat de laboratoire : elle est servie, tarifée, à grande échelle.</text>
+  </g>
+
+  <!-- Footer -->
+  <line x1="60" y1="742" x2="1140" y2="742" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="60" y="770" class="body" font-size="10" font-style="italic" letter-spacing="0.4" fill="#5A5A5A">Source : DeepSeek-AI, « DeepSeek-V3.2 », arXiv:2512.02556 ; dépôt deepseek-ai/DeepSeek-V3.2-Exp ; blogs vLLM / SGLang, 29 septembre 2025.</text>
+</svg>
+<figcaption class="figure-caption"><a class="anchor" href="#fig-07" title="Lien direct vers ce schéma">¶</a> Schéma 7 — DeepSeek Sparse Attention en production : lightning indexer distillé + sélection top-k sur MLA, coût cœur O(Lk) linéaire, et la timeline d'adoption V3.1 → V3.2-Exp → support day-0 vLLM/SGLang.</figcaption></figure>
+      </section>
+
+      <section>
+      <h2 id="s-8">8. Trajectoires 2026-2028</h2>
+      <p><strong>Parcimonie par défaut.</strong> NSA, MoBA et DSA établissent qu'un modèle <em>pré-entraîné</em> parcimonieux égale la dense en qualité pour une fraction du coût long-contexte. L'attention dense complète deviendra probablement l'exception — réservée aux courts contextes ou aux couches où elle reste indispensable — et la parcimonie entraînée, le régime nominal des modèles à contexte long.</p>
+      <p><strong>Co-conception sparse × MLA.</strong> DSA le montre déjà : la parcimonie du calcul (ne pas regarder tous les tokens) et la compression de la mémoire (MLA : projeter les clés/valeurs dans un latent) sont deux leviers <em>complémentaires</em>, pas concurrents. Le pont vers <code>compression-kv-cache</code> est structurel : l'attention se pense désormais comme un <strong>système mémoire couplé</strong>, où l'on décide conjointement <em>quoi stocker</em> (latent) et <em>quoi lire</em> (sélection top-k).</p>
+      <p><strong>Sparse × MoE : la double parcimonie.</strong> MoBA rend l'analogie explicite — router des blocs de contexte, c'est router des experts. Un modèle 2027 pourrait être <em>doublement creux</em> : creux dans ses FFN (MoE, <code>melange-experts</code>) et creux dans son attention (blocs sélectionnés). La question ouverte est celle de l'équilibrage conjoint de ces deux routages.</p>
+      <p><strong>La théorie manque encore.</strong> On sait <em>empiriquement</em> que la sélection apprise généralise mieux que l'éviction gloutonne. On ne sait pas <em>le prouver</em> : quelle borne sur la dégradation OOD ? quelle garantie qu'un bloc jamais sélectionné à l'entraînement le sera à bon escient à l'inférence ? La parcimonie entraînée attend sa théorie de la généralisation, comme le raisonnement attend sa théorie du modèle du monde (<code>llm-modele-du-monde</code>).</p>
+      <p><strong>Le banc d'évaluation est périmé.</strong> Long Range Arena, référence de l'ère « efficient transformers », mesure surtout la classification de longues séquences — pas le raisonnement génératif à contexte long. Évaluer la parcimonie entraînée exige des bancs qui piègent l'oubli : rappel d'un fait enfoui loin dans le contexte, raisonnement multi-sauts sur un million de tokens. C'est le prolongement naturel du débat de <code>benchmarks-contestes</code>.</p>
+      <p>L'attention parcimonieuse aura mis huit ans à faire le chemin du raccourci bricolé à la propriété apprise. La leçon dépasse l'attention : à chaque étage de la pile — cache, précision, experts, attention — la même trajectoire se répète. <em>Ce qu'on plaquait après coup, on finit par l'apprendre.</em></p>
+      </section>
+
+      <p class="report-outro"><em>Format co-écrit avec l'aide d'une IA · 22 juillet 2026 — Mathieu Guglielmino</em></p>
+    </main>
+
+    <aside id="sources" aria-label="Sources">
+      <button class="panel-close" type="button" aria-label="Fermer les sources">Fermer ✕</button>
+      <div class="sources-inner">
+      <h2>Sources</h2>
+      <ol id="sources-list">
+<li id="source-1">
+  <span class="cite-num">[1]</span> Kwon, Woosuk et al., <em>Efficient Memory Management for Large Language Model Serving with PagedAttention</em>. SOSP 2023. Pose la distinction prefill compute-bound / decode memory-bound qui organise tout le dossier.<br>
+  <a href="https://arxiv.org/abs/2309.06180" target="_blank" rel="noopener">arxiv.org/2309.06180 ↗</a>
+  <span class="accessed">consulté le 22 juillet 2026</span>
+</li>
+<li id="source-2">
+  <span class="cite-num">[2]</span> Yuan, Jingyang et al., <em>Native Sparse Attention: Hardware-Aligned and Natively Trainable Sparse Attention</em>. ACL 2025 (Best Paper), DeepSeek / Université de Pékin / Université de Washington. Le papier fondateur : trois branches (compression, sélection, fenêtre), sélection différentiable, noyaux alignés matériel, 11× sur 64k.<br>
+  <a href="https://arxiv.org/abs/2502.11089" target="_blank" rel="noopener">arxiv.org/2502.11089 ↗</a>
+  <span class="accessed">consulté le 22 juillet 2026</span>
+</li>
+<li id="source-3">
+  <span class="cite-num">[3]</span> Lu, Enzhe et al., <em>MoBA: Mixture of Block Attention for Long-Context LLMs</em>. Moonshot AI, 2025. L'attention-comme-MoE : blocs-experts, routeur top-k, principe « less structure », bascule sans couture full↔sparse, déployé sur Kimi.<br>
+  <a href="https://arxiv.org/abs/2502.13189" target="_blank" rel="noopener">arxiv.org/2502.13189 ↗</a>
+  <span class="accessed">consulté le 22 juillet 2026</span>
+</li>
+<li id="source-4">
+  <span class="cite-num">[4]</span> Gao, Yizhao et al., <em>SeerAttention: Learning Intrinsic Sparse Attention in Your LLMs</em>. Microsoft Research, 2024. AttnGate auto-distillé sur le 2D-maxpool des cartes d'attention, noyau block-sparse. Suite : SeerAttention-R (arXiv:2506.08889) pour le raisonnement long.<br>
+  <a href="https://arxiv.org/abs/2410.13276" target="_blank" rel="noopener">arxiv.org/2410.13276 ↗</a>
+  <span class="accessed">consulté le 22 juillet 2026</span>
+</li>
+<li id="source-5">
+  <span class="cite-num">[5]</span> Jiang, Huiqiang et al., <em>MInference 1.0: Accelerating Pre-filling for Long-Context LLMs via Dynamic Sparse Attention</em>. NeurIPS 2024, Microsoft. Motifs A-shape / vertical-slash / block-sparse, masque dynamique par tête, 10× sur 1M tokens, training-free.<br>
+  <a href="https://arxiv.org/abs/2407.02490" target="_blank" rel="noopener">arxiv.org/2407.02490 ↗</a>
+  <span class="accessed">consulté le 22 juillet 2026</span>
+</li>
+<li id="source-6">
+  <span class="cite-num">[6]</span> Child, Rewon et al., <em>Generating Long Sequences with Sparse Transformers</em>. OpenAI, 2019. L'origine des motifs factorisés strided/fixed, O(n√n).<br>
+  <a href="https://arxiv.org/abs/1904.10509" target="_blank" rel="noopener">arxiv.org/1904.10509 ↗</a>
+  <span class="accessed">consulté le 22 juillet 2026</span>
+</li>
+<li id="source-7">
+  <span class="cite-num">[7]</span> Beltagy, Iz, Matthew Peters, Arman Cohan, <em>Longformer: The Long-Document Transformer</em>. Allen Institute for AI, 2020. Fenêtre glissante + attention globale.<br>
+  <a href="https://arxiv.org/abs/2004.05150" target="_blank" rel="noopener">arxiv.org/2004.05150 ↗</a>
+  <span class="accessed">consulté le 22 juillet 2026</span>
+</li>
+<li id="source-8">
+  <span class="cite-num">[8]</span> Zaheer, Manzil et al., <em>Big Bird: Transformers for Longer Sequences</em>. NeurIPS 2020, Google. Fenêtre + global + aléatoire ; approximateur universel, Turing-complet.<br>
+  <a href="https://arxiv.org/abs/2007.14062" target="_blank" rel="noopener">arxiv.org/2007.14062 ↗</a>
+  <span class="accessed">consulté le 22 juillet 2026</span>
+</li>
+<li id="source-9">
+  <span class="cite-num">[9]</span> Kitaev, Nikita, Łukasz Kaiser, Anselm Levskaya, <em>Reformer: The Efficient Transformer</em>. ICLR 2020. Attention par hachage sensible à la localité (LSH).<br>
+  <a href="https://arxiv.org/abs/2001.04451" target="_blank" rel="noopener">arxiv.org/2001.04451 ↗</a>
+  <span class="accessed">consulté le 22 juillet 2026</span>
+</li>
+<li id="source-10">
+  <span class="cite-num">[10]</span> Dao, Tri et al., <em>FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness</em>. NeurIPS 2022. Le socle IO-aware dont NSA hérite la philosophie « hardware-aligned ».<br>
+  <a href="https://arxiv.org/abs/2205.14135" target="_blank" rel="noopener">arxiv.org/2205.14135 ↗</a>
+  <span class="accessed">consulté le 22 juillet 2026</span>
+</li>
+<li id="source-11">
+  <span class="cite-num">[11]</span> Xiao, Guangxuan et al., <em>Efficient Streaming Language Models with Attention Sinks (StreamingLLM)</em>. ICLR 2024. Les puits d'attention, éviction training-free bornée — cas d'école du risque OOD.<br>
+  <a href="https://arxiv.org/abs/2309.17453" target="_blank" rel="noopener">arxiv.org/2309.17453 ↗</a>
+  <span class="accessed">consulté le 22 juillet 2026</span>
+</li>
+<li id="source-12">
+  <span class="cite-num">[12]</span> Zhang, Zhenyu et al., <em>H2O: Heavy-Hitter Oracle for Efficient Generative Inference of Large Language Models</em>. NeurIPS 2023. Éviction gloutonne par heavy hitters.<br>
+  <a href="https://arxiv.org/abs/2306.14048" target="_blank" rel="noopener">arxiv.org/2306.14048 ↗</a>
+  <span class="accessed">consulté le 22 juillet 2026</span>
+</li>
+<li id="source-13">
+  <span class="cite-num">[13]</span> DeepSeek-AI, <em>DeepSeek-V3.2</em> (rapport technique) et dépôt <code>deepseek-ai/DeepSeek-V3.2-Exp</code>. Septembre 2025. DeepSeek Sparse Attention (DSA) : lightning indexer distillé sur 2,1 Md tokens, sélection top-k, O(L²)→O(Lk), −50 % prix API. La parcimonie entraînée en production.<br>
+  <a href="https://arxiv.org/abs/2512.02556" target="_blank" rel="noopener">arxiv.org/2512.02556 ↗</a>
+  <span class="accessed">consulté le 22 juillet 2026</span>
+</li>
+<li id="source-14">
+  <span class="cite-num">[14]</span> Tang, Jiaming et al., <em>Quest: Query-Aware Sparsity for Efficient Long-Context LLM Inference</em>. ICML 2024. Sélection de pages requête-consciente, pont entre l'éviction training-free et la sélection par blocs.<br>
+  <a href="https://arxiv.org/abs/2406.10774" target="_blank" rel="noopener">arxiv.org/2406.10774 ↗</a>
+  <span class="accessed">consulté le 22 juillet 2026</span>
+</li>
+        </ol>
+      </div>
+    </aside>
+
+  </div>
+
+
+  <div id="zoom-overlay" hidden role="dialog" aria-modal="true" aria-label="Schéma agrandi">
+    <header id="zoom-header">
+      <span id="zoom-caption"></span>
+      <div class="zoom-controls">
+        <button type="button" class="zoom-out" aria-label="Dézoomer" title="Dézoomer (−)">−</button>
+        <button type="button" class="zoom-reset" aria-label="Ajuster à l'écran" title="Ajuster à l'écran">Reset</button>
+        <button type="button" class="zoom-in" aria-label="Zoomer" title="Zoomer (+)">+</button>
+        <button type="button" class="zoom-close" aria-label="Fermer (Échap)" title="Fermer (Échap)">×</button>
+      </div>
+    </header>
+    <div id="zoom-stage" tabindex="-1">
+      <div id="zoom-content"></div>
+      <div id="zoom-hint">Molette pour zoomer · glisser pour déplacer · Échap pour fermer</div>
+      <a class="schema-sigil zoom-sigil" href="https://mathieugug.github.io/" target="_blank" rel="noopener" aria-label="Mathieu Guglielmino — visiter mathieugug.github.io" title="Mathieu Guglielmino · mathieugug.github.io">
+        <svg class="sigil-mark" viewBox="0 0 44 44" aria-hidden="true" focusable="false">
+          <circle class="sigil-bg" cx="22" cy="22" r="20.5"/>
+          <circle class="sigil-ring" cx="22" cy="22" r="17.5"/>
+          <g class="sigil-letters"><text x="7.5" y="29">M</text><text x="22" y="29">G</text></g>
+        </svg>
+      </a>
+    </div>
+  </div>
+
+  <div id="modal-root" hidden role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card">
+      <button class="modal-close" data-close aria-label="Fermer">×</button>
+      <p class="modal-eyebrow" id="modal-eyebrow"></p>
+      <h3 class="modal-title" id="modal-title"></h3>
+      <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <script>
+    // ─────────────────────────────────────────────────
+    // DATA — replace these placeholders with real content
+    // ─────────────────────────────────────────────────
+
+    const SCHEMAS = {
+  "schema-01": {
+    "cout-dense": {
+      title: "Attention dense — O(n²)",
+      body: `<p>Chaque token de requête calcule un score avec <em>chacun</em> des n tokens de clé : la matrice d'attention compte n² entrées. Doubler le contexte quadruple le calcul et l'empreinte des scores. À 128 000 tokens, une seule tête manipule plus de seize milliards de scores.</p><p>C'est le « péché originel » du Transformer : exact, mais quadratique. Toute la recherche sur l'attention efficace cherche à en sortir sans sacrifier la qualité<a class="cite" data-cite="1" href="#source-1">1</a>.</p>`
+    },
+    "cout-sparse": {
+      title: "Attention parcimonieuse — O(n·k)",
+      body: `<p>Si chaque requête ne regardait que <em>k</em> clés soigneusement choisies au lieu des n, le coût tomberait à n·k — <strong>linéaire</strong> en longueur dès que k est fixe. C'est le pari de toute la parcimonie.</p><p>Toute la difficulté est dans le choix des k clés : bien choisir (qualité préservée), et choisir <em>vite</em> — un mécanisme de sélection plus coûteux que l'économie réalisée annulerait le gain.</p>`
+    },
+    "point-bascule": {
+      title: "Le point de bascule",
+      body: `<p>À court contexte, dense et parcimonieux se valent — l'écart est négligeable. C'est au-delà d'un certain seuil de longueur que la courbe quadratique décolle et rend le long contexte inabordable en dense.</p><p>La parcimonie ne « gagne » donc pas partout : elle devient décisive exactement là où l'on en a besoin, sur les très longues séquences (documents, bases de code, longues chaînes de raisonnement).</p>`
+    },
+    "prefill-vs-decode": {
+      title: "Prefill vs decode — deux goulots distincts",
+      body: `<p>Le <span class="term" data-tooltip="Lecture parallèle du prompt d'entrée.">prefill</span> est <strong>borné par le calcul</strong> : c'est là que le O(n²) mord, et c'est ce que la parcimonie attaque. Le <span class="term" data-tooltip="Génération token par token.">decode</span> est <strong>borné par la mémoire</strong> : c'est la taille du KV-cache qui plafonne, objet des dossiers <code>kv-cache</code> et <code>compression-kv-cache</code>.</p><p>Confondre les deux mène à optimiser le mauvais goulot. Ce dossier traite du calcul de l'attention ; les précédents traitaient de la mémoire du cache<a class="cite" data-cite="1" href="#source-1">1</a>.</p>`
+    }
+  },
+  "schema-02": {
+    "motifs-fixes": {
+      title: "Génération 1 — les motifs fixes",
+      body: `<p>2019-2020 : la parcimonie est un <strong>motif conçu à la main</strong>, gravé dans l'architecture. Le concepteur décide à l'avance où l'attention doit se porter — une fenêtre locale, quelques tokens globaux, un peu d'aléatoire.</p><p>Ces motifs excellent en encodage (classification de longs documents) mais résistent mal au décodage génératif, où la structure des dépendances varie d'un token et d'une tâche à l'autre. Un biais inductif imposé de l'extérieur.</p>`
+    },
+    "sparse-transformers": {
+      title: "Sparse Transformers (2019)",
+      body: `<p>Le point de départ. OpenAI factorise l'attention en deux passes — une attention par blocs locaux (<em>strided</em>) et une attention sur des positions fixes (<em>fixed</em>) — ramenant le coût de O(n²) à O(n·√n)<a class="cite" data-cite="6" href="#source-6">6</a>.</p><p>Utilisé pour générer images, texte et audio à longue portée. C'est la première démonstration qu'un motif épars bien choisi préserve la qualité générative.</p>`
+    },
+    "bigbird-theorie": {
+      title: "BigBird — la garantie théorique",
+      body: `<p>BigBird combine trois ingrédients : fenêtre glissante, tokens à attention globale, et connexions <strong>aléatoires</strong>. Sa contribution majeure est théorique : ce triptyque préserve les propriétés du Transformer dense — c'est un <strong>approximateur universel</strong> de fonctions séquence-à-séquence, et il est Turing-complet<a class="cite" data-cite="8" href="#source-8">8</a>.</p><p>Autrement dit, on peut être épars sans rien perdre en puissance d'expression — à condition de garder un peu d'aléatoire pour connecter le graphe.</p>`
+    },
+    "bascule-apprise": {
+      title: "La bascule de 2024-2025",
+      body: `<p>Le renversement : <em>laisser le modèle décider où regarder</em>. Le motif n'est plus gravé dans l'architecture ; il est calculé selon l'entrée, voire appris par descente de gradient.</p><p>Le clivage porteur n'est pas « fixe contre dynamique » — c'est <strong>où la décision est prise</strong> : à la conception (gén. 1), à l'inférence sur un modèle figé (MInference, éviction), ou à l'entraînement du modèle lui-même (NSA, MoBA, DSA). C'est cette dernière voie que le dossier lit serré.</p>`
+    }
+  },
+  "schema-03": {
+    "quadrant-posthoc": {
+      title: "Colonne « post-hoc » — décidé à l'inférence",
+      body: `<p>La parcimonie est appliquée à un modèle <strong>déjà entraîné, aux poids figés</strong>. La plus répandue car la moins coûteuse. MInference reconnaît en ligne des motifs dans le prefill<a class="cite" data-cite="5" href="#source-5">5</a> ; Quest sélectionne des pages de cache selon la requête<a class="cite" data-cite="14" href="#source-14">14</a>.</p><p>Déployable immédiatement, mais avec un plafond : le modèle n'a jamais été entraîné à vivre avec ces trous.</p>`
+    },
+    "quadrant-entraine": {
+      title: "Colonne « natif » — décidé à l'entraînement",
+      body: `<p>La parcimonie est présente <strong>dès le pré-entraînement</strong> (NSA, MoBA) ou distillée dans le modèle (SeerAttention, DSA). Le trou n'est plus une surprise d'inférence : c'est le régime nominal, que le modèle apprend à honorer.</p><p>Coût d'entrée plus élevé (entraînement ou distillation), mais qualité préservée et généralisation robuste. C'est la thèse du dossier : cette colonne domine la précédente pour les mêmes raisons que MLA domine GQA.</p>`
+    },
+    "risque-ood": {
+      title: "Le risque hors distribution (OOD)",
+      body: `<p>L'éviction gloutonne — H2O garde les <span class="term" data-tooltip="Tokens dont les scores d'attention cumulés dominent.">heavy hitters</span><a class="cite" data-cite="12" href="#source-12">12</a>, StreamingLLM borne aux <span class="term" data-tooltip="Premiers tokens, puits d'attention par défaut.">puits</span> + fenêtre<a class="cite" data-cite="11" href="#source-11">11</a> — jette de l'information de façon irréversible.</p><p>Tant que la devinette est juste, tout va bien. Mais un token évincé qui redevient pertinent 10 000 positions plus loin place le modèle <strong>hors distribution</strong> : il n'a jamais vu ce cas à l'entraînement, et l'information est perdue. C'est le défaut structurel que la parcimonie entraînée supprime.</p>`
+    },
+    "analogie-mla": {
+      title: "L'analogie MLA / GQA",
+      body: `<p>Le dossier <code>compression-kv-cache</code> montrait que <span class="term" data-tooltip="Compression latente conjointe, apprise et intégrée à l'objectif.">MLA</span> (compression apprise) domine <span class="term" data-tooltip="Partage de têtes, souvent appliqué par uptraining.">GQA</span> (compression simple) parce qu'elle est <em>intégrée à l'objectif d'entraînement</em>.</p><p>La même logique s'applique un cran plus loin, sur le calcul plutôt que la mémoire : <strong>la parcimonie native est à l'éviction ce que MLA est à GQA</strong>. Ce n'est pas une optimisation de plus — c'est déplacer la décision vers l'endroit où le modèle peut l'internaliser.</p>`
+    }
+  },
+  "schema-04": {
+    "branche-compression": {
+      title: "Branche 1 — compression",
+      body: `<p>Le passé est découpé en blocs contigus ; un petit réseau appris résume chaque bloc en un <strong>unique token compressé</strong>. La requête attend ces résumés grossiers : une vue basse résolution de <em>tout</em> le contexte, pour un coût divisé par la taille de bloc.</p><p>C'est la vue d'ensemble bon marché — elle ne rate rien globalement, mais manque de finesse. Elle sert aussi à alimenter la branche de sélection.</p>`
+    },
+    "branche-selection": {
+      title: "Branche 2 — sélection top-n",
+      body: `<p>Le cœur de la précision de NSA. Les scores de compression <em>classent</em> les blocs ; on retient les <strong>top-n</strong> les plus prometteurs et on y applique une attention <strong>fine, pleine résolution</strong>.</p><p>Le modèle regarde donc finement là où le résumé grossier lui a signalé de l'information. Point clé : cette sélection est <span class="term" data-tooltip="Le gradient traverse l'opération : elle s'apprend au lieu d'être fixée.">différentiable</span>, si bien que représenter et sélectionner s'apprennent ensemble<a class="cite" data-cite="2" href="#source-2">2</a>.</p>`
+    },
+    "branche-fenetre": {
+      title: "Branche 3 — fenêtre glissante",
+      body: `<p>La garantie du local. Un accès direct aux tokens les plus récents, que les deux premières branches (résumés grossiers, blocs distants sélectionnés) pourraient négliger.</p><p>C'est l'héritage assumé de Longformer et StreamingLLM : le voisinage immédiat compte presque toujours, autant le câbler explicitement plutôt que d'espérer que la sélection le retrouve.</p>`
+    },
+    "gate-appris": {
+      title: "Le gate appris",
+      body: `<p>Les trois branches produisent chacune une sortie d'attention ; un <strong>gate appris</strong> les pondère, <em>par requête</em>. Selon le token courant, le modèle donne plus de poids au résumé global, à la sélection fine ou au voisinage local.</p><p>C'est ce qui fait de NSA un mécanisme unifié et non trois heuristiques juxtaposées : la combinaison elle-même est optimisée par descente de gradient.</p>`
+    },
+    "hardware-align": {
+      title: "Natively trainable · hardware-aligned",
+      body: `<p>Deux propriétés font la force de NSA. <strong>Nativement entraînable</strong> : le gradient traverse la sélection par blocs, donc la parcimonie s'apprend au lieu d'être plaquée. <strong>Aligné matériel</strong> : les noyaux GPU sont conçus pour que la sélection par blocs produise des accès mémoire contigus et une intensité arithmétique équilibrée, dans l'esprit de FlashAttention<a class="cite" data-cite="10" href="#source-10">10</a>.</p><p>Sans cet alignement, un motif épars mais irrégulier peut être <em>plus lent</em> que le dense sur GPU. Résultat : qualité ≥ dense, et jusqu'à 11× plus vite sur 64k, ACL 2025 Best Paper<a class="cite" data-cite="2" href="#source-2">2</a>.</p>`
+    }
+  },
+  "schema-05": {
+    "blocs-experts": {
+      title: "Les blocs comme experts",
+      body: `<p>L'intuition de MoBA : et si les blocs de contexte étaient des <strong>experts</strong>, comme dans un <span class="term" data-tooltip="Architecture où un routeur envoie chaque token vers un petit sous-ensemble d'experts FFN.">mixture-of-experts</span> ? Le contexte est découpé en blocs ; seuls quelques-uns sont calculés pour une requête donnée, les autres sont ignorés — l'économie.</p><p>Le parallèle avec <code>melange-experts</code> est direct : là où le MoE route un token vers k experts FFN, MoBA route une requête vers k blocs de contexte<a class="cite" data-cite="3" href="#source-3">3</a>.</p>`
+    },
+    "routeur-topk": {
+      title: "Le routeur top-k",
+      body: `<p>Pour chaque requête, un routeur léger calcule une affinité avec chaque bloc (score entre la requête et une représentation résumée du bloc), puis sélectionne le <strong>top-k</strong>. L'attention n'est calculée que sur ces blocs.</p><p>La parcimonie devient un problème de <strong>routage appris</strong> — avec ses vertus (capacité découplée du calcul) et ses écueils hérités du MoE (l'équilibrage de charge entre blocs, pour éviter qu'un petit nombre capte tout le trafic).</p>`
+    },
+    "less-structure": {
+      title: "Le principe « less structure »",
+      body: `<p>La signature de MoBA : ne <strong>rien présupposer</strong> sur l'endroit où se trouve l'information. Contrairement à Longformer (fenêtre) ou StreamingLLM (puits), MoBA n'impose aucun motif — le routeur apprend seul quels blocs comptent.</p><p>C'est le pari maximaliste de la génération apprise : moins on grave de biais dans l'architecture, plus le modèle peut s'adapter à des structures de dépendance qu'aucun concepteur n'aurait anticipées.</p>`
+    },
+    "switch-full-sparse": {
+      title: "Bascule sans couture full ↔ sparse",
+      body: `<p>MoBA peut être activé sur certaines couches et remplacé par la dense sur d'autres, ou basculer de l'un à l'autre selon la phase — <strong>sans réentraîner</strong>. Une souplesse précieuse en production : on garde la dense là où elle est critique, l'éparse ailleurs.</p><p>MoBA n'est pas un prototype : il sert les requêtes long-contexte de <strong>Kimi</strong>, l'assistant de Moonshot<a class="cite" data-cite="3" href="#source-3">3</a>. Face à NSA (trois branches fixes apprises), MoBA propose une seule branche, mais un routage de type MoE.</p>`
+    }
+  },
+  "schema-06": {
+    "attn-maps": {
+      title: "Observer les cartes d'attention",
+      body: `<p>Le point de départ de SeerAttention : la parcimonie utile est <strong>déjà latente</strong> dans le modèle dense. On fait tourner le modèle figé et on récupère ses vraies cartes d'attention — la trace de ce qu'il regarde réellement.</p><p>Nul besoin de la deviner (motif fixe) ni de la réapprendre de zéro : il suffit de l'<em>extraire</em> du comportement observé<a class="cite" data-cite="4" href="#source-4">4</a>.</p>`
+    },
+    "maxpool-cible": {
+      title: "2D-maxpool — la cible de distillation",
+      body: `<p>Les cartes d'attention sont réduites par un <span class="term" data-tooltip="Agrégation par blocs : le maximum de chaque bloc.">2D-maxpool</span> au niveau des blocs. Le résultat répond à la question : « <em>quels blocs le modèle regarde-t-il vraiment ?</em> »</p><p>C'est la <strong>cible</strong> d'entraînement du gate. On ne cherche pas à reproduire chaque score individuel — trop fin, trop coûteux — mais la structure grossière de la parcimonie, au grain du bloc, qui suffit à décider quoi calculer.</p>`
+    },
+    "attngate": {
+      title: "L'AttnGate — le seul module appris",
+      body: `<p>Un module léger, l'<strong>AttnGate</strong>, est entraîné à reproduire la cible 2D-maxpool. Crucialement, <strong>seuls ses paramètres sont appris</strong> — le corps du modèle reste figé — d'où une convergence rapide et un coût de calibration minime.</p><p>À l'inférence, le gate prédit la parcimonie par bloc, et un <strong>noyau block-sparse compatible FlashAttention</strong> ne calcule que les blocs retenus. C'est de l'auto-distillation : le modèle est son propre professeur<a class="cite" data-cite="4" href="#source-4">4</a>.</p>`
+    },
+    "deux-voies": {
+      title: "Deux voies vers la parcimonie entraînée",
+      body: `<p><strong>Voie A — from-scratch</strong> (NSA, MoBA) : la parcimonie est présente dès le pré-entraînement. Meilleure qualité, mais coûte un entraînement complet. Pour les modèles neufs.</p><p><strong>Voie B — post-training</strong> (SeerAttention) : distiller la parcimonie d'un modèle dense <em>existant</em>, corps figé, seul le gate appris. Le compromis pragmatique. SeerAttention-R spécialise l'approche pour le raisonnement long, où les chaînes de pensée font exploser le contexte à parcourir.</p>`
+    }
+  },
+  "schema-07": {
+    "lightning-indexer": {
+      title: "Le lightning indexer",
+      body: `<p>Premier composant de DSA : une <strong>fonction de similarité pondérée, volontairement légère</strong>, qui désigne pour chaque requête les tokens que l'attention dense aurait regardés.</p><p>Fait remarquable : l'indexeur est <strong>entraîné sur 2,1 milliards de tokens à imiter la dense de V3.1-Terminus</strong>. C'est une distillation de la carte d'attention — l'esprit de SeerAttention, mais intégré au pipeline de service d'un modèle servi à grande échelle<a class="cite" data-cite="13" href="#source-13">13</a>.</p>`
+    },
+    "topk-select": {
+      title: "La sélection top-k sur MLA",
+      body: `<p>Second composant : la sélection fine top-k ne calcule l'attention que sur les <em>k</em> tokens désignés par l'indexeur. L'attention elle-même reste en <span class="term" data-tooltip="Multi-head Latent Attention, l'attention latente compressée de DeepSeek.">MLA</span> — la parcimonie du calcul se branche donc directement sur la compression de la mémoire.</p><p>C'est la co-conception explicite des deux moitiés du problème long-contexte : quoi lire (top-k) et quoi stocker (latent MLA), dans un même modèle<a class="cite" data-cite="13" href="#source-13">13</a>.</p>`
+    },
+    "cout-lineaire": {
+      title: "O(L²) → O(Lk)",
+      body: `<p>En ne calculant l'attention que sur k tokens fixés, DSA fait passer la complexité cœur de l'attention de <strong>O(L²) à O(Lk)</strong> : le coût d'inférence croît désormais <em>linéairement</em> avec la longueur d'entrée.</p><p>C'est exactement la promesse du schéma 1 (O(n·k)) tenue en production. La qualité de sortie reste <strong>quasi identique</strong> à la dense — la falaise de qualité redoutée n'a pas lieu, parce que l'indexeur a été entraîné à imiter précisément la dense.</p>`
+    },
+    "adoption": {
+      title: "De l'artefact à la brique de service",
+      body: `<p>V3.2-Exp est identique à V3.1-Terminus <em>à une exception près</em> : DSA. DeepSeek a répercuté l'économie en <strong>baissant ses prix d'API d'environ 50 %</strong>, et vLLM comme SGLang ont livré un <strong>support day-0</strong> des noyaux DSA<a class="cite" data-cite="13" href="#source-13">13</a>.</p><p>C'est le moment où l'attention parcimonieuse entraînée cesse d'être un résultat de laboratoire pour devenir une brique tarifée, servie à grande échelle. La bascule est consommée.</p>`
+    }
+  }
+};
+    /* shape:
+      {
+        'schema-01': {
+          'region-id': { title: '...', body: '<p>...</p>', eyebrow: 'Schéma 1' },
+          ...
+        },
+        ...
+      }
+    */
+
+    const TOOLTIPS = {
+  "ttft": "Time to first token : délai entre l'envoi de la requête et l'arrivée du premier token de la réponse. Métrique critique pour l'expérience utilisateur en streaming.",
+  "llm-judge": "LLM-as-judge : utilisation d'un LLM pour scorer la qualité d'une autre sortie LLM (factualité, pertinence, ton). Permet l'évaluation à l'échelle, mais introduit ses propres biais.",
+  "mcp": "Model Context Protocol : standard ouvert de communication entre LLMs et outils externes, lancé par Anthropic en novembre 2024. Adopté par OpenAI, Google, Microsoft en 2025.",
+  "otlp": "OpenTelemetry Protocol : protocole standardisé (gRPC ou HTTP) pour transporter les signaux d'observabilité (traces, metrics, logs) vers un backend.",
+  "melt": "Metrics, Events, Logs, Traces : les quatre signaux fondamentaux de l'observabilité moderne, popularisés par l'écosystème cloud-native.",
+  "rag": "Retrieval-Augmented Generation : technique qui enrichit le contexte d'un LLM avec des documents récupérés dynamiquement depuis une base vectorielle.",
+  "slo": "Service Level Objective : cible mesurable de qualité de service (ex. 99,9 % des réponses sous 2 secondes). Base contractuelle de l'observabilité opérationnelle."
+};
+    /* shape: { 'CoT': 'Chain-of-Thought : ...', ... } */
+
+    const SOURCES = [
+  {
+    "n": 1,
+    "citation": "OpenTelemetry, <em>AI Agent Observability Standards</em>, OpenTelemetry Blog, mars 2025.",
+    "url": "https://opentelemetry.io/blog/2025/ai-agent-observability/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 2,
+    "citation": "InsightFinder, <em>AI Observability vs Traditional Monitoring</em>, décembre 2025.",
+    "url": "https://insightfinder.com/blog/ai-observability-vs-traditional-monitoring/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 3,
+    "citation": "IBM Think, <em>Observability Trends 2026</em>, IBM Institute for Business Value, mars 2026.",
+    "url": "https://www.ibm.com/think/insights/observability-trends",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 4,
+    "citation": "Dynatrace, <em>Six Observability Predictions for 2026</em>, décembre 2025.",
+    "url": "https://www.dynatrace.com/news/blog/six-observability-predictions-for-2026/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 5,
+    "citation": "Kore.ai, <em>AI Observability: Monitoring &amp; Governing AI Agents</em>, mars 2026.",
+    "url": "https://www.kore.ai/blog/what-is-ai-observability",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 6,
+    "citation": "Voiceflow, <em>What Is AI Agent Observability? A 2026 Guide</em>, mars 2026.",
+    "url": "https://www.voiceflow.com/blog/what-is-ai-agent-observability",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 7,
+    "citation": "Anthropic, <em>Building Effective Agents</em>, whitepaper, décembre 2024.",
+    "url": "https://www.anthropic.com/research/building-effective-agents",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 8,
+    "citation": "Groundcover, <em>AI Agent Observability Guide: Telemetry, Traces, Metrics</em>, février 2026.",
+    "url": "https://www.groundcover.com/learn/observability/ai-agent-observability",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 9,
+    "citation": "N-iX, <em>AI Agent Observability: Practical Framework</em>, décembre 2025.",
+    "url": "https://www.n-ix.com/ai-agent-observability/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 10,
+    "citation": "Langfuse, <em>AI Agent Observability, Tracing &amp; Evaluation</em>, février 2026.",
+    "url": "https://langfuse.com/blog/2024-07-ai-agent-observability-with-langfuse",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 11,
+    "citation": "OpenTelemetry, <em>GenAI Semantic Conventions (specification)</em>, version 1.37, 2026.",
+    "url": "https://opentelemetry.io/docs/specs/semconv/gen-ai/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 12,
+    "citation": "OpenTelemetry, <em>GenAI Agent Spans, Model Spans, Tool Spans, Events</em>, 2026.",
+    "url": "https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-agent-spans/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 13,
+    "citation": "Datadog, <em>LLM Observability + OTel GenAI Semantic Convention support</em>, décembre 2025.",
+    "url": "https://www.datadoghq.com/blog/llm-otel-semantic-convention/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 14,
+    "citation": "Braintrust, <em>AI Observability Tools: Buyer's Guide 2026</em>, janvier 2026.",
+    "url": "https://www.braintrust.dev/articles/best-ai-observability-tools-2026",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 15,
+    "citation": "GetMaxim, <em>Top 5 AI Agent Observability Platforms 2026</em>, décembre 2025.",
+    "url": "https://www.getmaxim.ai/articles/top-5-ai-agent-observability-platforms-in-2026/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 16,
+    "citation": "Traceloop, <em>OpenLLMetry — auto-instrumentation OTel pour 44+ providers LLM</em>, GitHub, 2026.",
+    "url": "https://github.com/traceloop/openllmetry",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 17,
+    "citation": "OpenLIT, <em>OpenLIT SDK — auto-instrumentation 1 ligne LLMs/vector DBs/GPUs</em>, GitHub, 2026.",
+    "url": "https://github.com/openlit/openlit",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 18,
+    "citation": "Gartner, <em>Magic Quadrant for Observability Platforms 2025</em>, juillet 2025.",
+    "url": "https://www.gartner.com/en/documents/6688834",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 19,
+    "citation": "OneUptime, <em>AI Workloads Observability: Cost Crisis</em>, avril 2026.",
+    "url": "https://oneuptime.com/blog/ai-workloads-observability-cost-crisis",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 20,
+    "citation": "Dynatrace, <em>Dynatrace Intelligence — Agentic OS announcement at Perform 2026</em>, février 2026.",
+    "url": "https://www.dynatrace.com/news/blog/dynatrace-intelligence-platform/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 21,
+    "citation": "Splunk, <em>Q1 2026 Observability Update — AI Agent Monitoring</em>, février 2026.",
+    "url": "https://www.splunk.com/en_us/blog/observability/splunk-observability-ai-agent-monitoring-innovations.html",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 22,
+    "citation": "Grafana Labs, <em>Leader Gartner Magic Quadrant Observability 2025 — #1 Completeness of Vision</em>, 2025.",
+    "url": "https://grafana.com/about/press/2025/07/",
+    "accessed": "2026-04-30"
+  }
+];
+    window.SCHEMAS = SCHEMAS;
+
+  </script>
+  <script src="/assets/dossier-app.js" defer></script>
+</body>
+</html>
