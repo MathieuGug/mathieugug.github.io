@@ -52,7 +52,7 @@ Le premier chemin, la **compression**, découpe le passé en blocs contigus et r
 
 Deux propriétés font la force de NSA. D'abord, la sélection par blocs est **différentiable** : le gradient traverse le choix des top-n, si bien que le modèle apprend *conjointement* à représenter et à sélectionner. Ensuite — et c'est le mot « hardware-aligned » du titre — les noyaux GPU sont conçus pour que la sélection par blocs produise des accès mémoire contigus et une **intensité arithmétique équilibrée**, dans l'esprit de FlashAttention[^10] : la parcimonie théorique se traduit en accélération réelle, ce qui n'est pas garanti (un motif épars mais irrégulier peut être *plus lent* que le dense sur GPU). Le résultat : un modèle pré-entraîné avec NSA **égale ou dépasse** l'attention dense sur les benchmarks généraux, le long contexte et le raisonnement instruit, tout en étant jusqu'à **11× plus rapide** sur des séquences de 64k, et en s'étendant jusqu'à un million de tokens.[^2]
 
-[SCHEMA-04]
+![NSA : la requête alimente trois branches parallèles — compression (résumés grossiers), sélection (top-n blocs en pleine résolution), fenêtre glissante — pondérées par un gate appris ; noyaux alignés matériel.|1200](images/20260722-04-nsa-trois-branches.svg)
 
 ## 5. MoBA — l'attention comme mélange d'experts
 
@@ -62,7 +62,7 @@ Le contexte est découpé en blocs. Pour chaque requête, un routeur léger calc
 
 La signature de MoBA est son principe de **« moins de structure »** (*less structure*) : contrairement à Longformer ou StreamingLLM qui *imposent* fenêtre et puits, MoBA ne présuppose rien sur *où* se trouve l'information — il laisse le routeur l'apprendre. Autre atout revendiqué : la **bascule sans couture entre attention pleine et parcimonieuse**. On peut activer MoBA sur certaines couches et garder la dense sur d'autres, ou passer de l'une à l'autre selon la phase, sans réentraîner — une souplesse précieuse en production. MoBA est d'ailleurs *déployé* : il sert les requêtes long-contexte de Kimi, l'assistant de Moonshot. Face à NSA — trois branches fixes dont chacune est apprise — MoBA propose **une seule branche, mais dont la sélection est un routage de type MoE**. Deux philosophies de la même bascule.
 
-[SCHEMA-05]
+![MoBA : le contexte découpé en blocs-experts, un routeur qui envoie chaque requête vers les top-k blocs pertinents ; comparaison des philosophies NSA (branches fixes) et MoBA (routage MoE).|1200](images/20260722-05-moba-attention-moe.svg)
 
 ## 6. La voie de l'adaptation : le gate distillé
 
@@ -72,7 +72,7 @@ L'idée : la parcimonie utile est déjà **latente** dans le modèle dense — i
 
 SeerAttention trace ainsi une **troisième voie**, à mi-chemin : ni motif fixe post-hoc (le gate est appris, pas deviné), ni pré-entraînement complet (le modèle n'est pas retouché). ==Entre l'éviction training-free et la parcimonie native from-scratch, la distillation du gate offre le compromis pragmatique : de la parcimonie *apprise* sur un modèle *existant*.== La suite, SeerAttention-R, spécialise l'approche pour le **raisonnement long** — les longues chaînes de pensée où le contexte à parcourir explose. La parcimonie entraînée n'est donc pas réservée aux nouveaux modèles : elle devient une opération d'adaptation.
 
-[SCHEMA-06]
+![SeerAttention : pipeline de distillation du gate — modèle dense figé → cartes d'attention → 2D-maxpool (cible) → AttnGate appris → noyau block-sparse ; les deux voies from-scratch vs post-training.|1200](images/20260722-06-gate-distille.svg)
 
 ## 7. La production : DeepSeek Sparse Attention
 
@@ -82,7 +82,7 @@ DSA repose sur deux composants. Le premier, le **lightning indexer**, est une fo
 
 Les conséquences sont tangibles. Qualité de sortie **quasi identique** à la dense, mais coût divisé : DeepSeek a répercuté l'économie en **baissant ses prix d'API d'environ 50 %**. Et l'écosystème a suivi immédiatement — vLLM et SGLang ont annoncé un **support day-0** des noyaux DSA. ==DSA marque le moment où l'attention parcimonieuse entraînée cesse d'être un résultat de laboratoire pour devenir une brique de service, tarifée et servie en production.== C'est aussi la convergence des fils de ce dossier : un indexeur *distillé* (SeerAttention), une sélection *top-k* (NSA/MoBA), le tout branché sur MLA (`compression-kv-cache`) — la parcimonie du *calcul* et la compression de la *mémoire* co-conçues dans un même modèle.
 
-[SCHEMA-07]
+![DeepSeek Sparse Attention en production : lightning indexer distillé + sélection top-k sur MLA, coût cœur O(Lk) linéaire, et la timeline d'adoption V3.1 → V3.2-Exp → support day-0 vLLM/SGLang.|1200](images/20260722-07-dsa-production.svg)
 
 ## 8. Trajectoires 2026-2028
 
