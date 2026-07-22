@@ -20,7 +20,7 @@ Il faut distinguer deux régimes, car ils ne souffrent pas du même mal. Le **pr
 
 L'intuition de la parcimonie est empirique : dans un Transformer entraîné, la matrice d'attention est *presque vide*. La plupart des scores sont négligeables ; l'information utile se concentre sur une poignée de tokens — le début de séquence, le voisinage local, quelques ancres sémantiques.[^11] Si chaque requête ne devait attendre que *k* clés au lieu de *n*, le coût tomberait de O(n²) à **O(n·k)** — linéaire en longueur dès lors que *k* est fixe. Tout l'art de l'attention parcimonieuse tient dans une seule question : *comment choisir ces k clés, sans casser la qualité, et sans que le choix lui-même coûte plus cher que l'économie réalisée ?*
 
-[SCHEMA-01]
+![Le mur quadratique : coût de l'attention dense O(n²) contre parcimonieuse O(n·k), et la distinction prefill (calcul) vs decode (mémoire).|1200](images/20260722-01-mur-quadratique.svg)
 
 ## 2. Deux générations de parcimonie
 
@@ -30,7 +30,7 @@ Ces méthodes partagent un présupposé : *le concepteur sait à l'avance où l'
 
 La seconde génération renverse ce présupposé : *laisser le modèle décider où regarder*. Le motif n'est plus gravé dans l'architecture ; il est **calculé dynamiquement** en fonction de l'entrée, voire **appris** par descente de gradient. C'est là que se joue toute la bascule de 2024-2025. Mais « dynamique » recouvre encore deux mondes très différents, que la section suivante sépare. ==Le clivage porteur n'est pas fixe contre dynamique — c'est *où* la décision de parcimonie est prise : à la conception, à l'inférence sur un modèle figé, ou à l'entraînement du modèle lui-même.==
 
-[SCHEMA-02]
+![Deux générations de parcimonie : des motifs fixes conçus à la main (Sparse Transformers, Longformer, BigBird) à la parcimonie apprise (MInference, SeerAttention, NSA, MoBA, DSA).|1200](images/20260722-02-deux-generations.svg)
 
 ## 3. La ligne de partage : post-hoc contre entraîné
 
@@ -42,7 +42,7 @@ Ces méthodes sont ingénieuses et déployables immédiatement. Mais elles porte
 
 La voie **entraînée** (*natively trainable*, *trained-in*) supprime ce pari. La parcimonie est présente *dès le pré-entraînement* : le modèle apprend, gradient à l'appui, à produire de bonnes sorties *sachant qu'il ne verra qu'une fraction du contexte*. Le trou n'est plus une surprise d'inférence ; c'est le régime nominal. Le gain de généralisation est le même que celui qui sépare, dans le dossier `compression-kv-cache`, MLA de GQA : une compression *apprise et intégrée à l'objectif* domine une compression *plaquée après coup*. **La parcimonie native est à l'éviction ce que MLA est à GQA** — non pas une optimisation de plus, mais un déplacement de la décision vers l'endroit où le modèle peut l'internaliser.
 
-[SCHEMA-03]
+![La ligne de partage : matrice 2×2 (décidé à l'inférence vs à l'entraînement) × (cible : calcul de l'attention vs octets du cache), plaçant H2O, StreamingLLM, MInference, NSA, MoBA, DSA, MLA, GQA.|900](images/20260722-03-ligne-de-partage.svg)
 
 ## 4. NSA — l'anatomie des trois branches
 
