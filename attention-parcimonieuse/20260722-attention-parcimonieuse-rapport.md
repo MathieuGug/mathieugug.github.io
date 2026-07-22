@@ -56,7 +56,7 @@ Deux propriétés font la force de NSA. D'abord, la sélection par blocs est **d
 
 ## 5. MoBA — l'attention comme mélange d'experts
 
-MoBA[^3], publié à quelques jours de NSA, part de la même intuition mais l'habille d'une autre métaphore : et si les blocs de contexte étaient des **experts**, et l'attention un **routeur** à la manière du *mixture-of-experts* ?
+MoBA[^14], publié à quelques jours de NSA, part de la même intuition mais l'habille d'une autre métaphore : et si les blocs de contexte étaient des **experts**, et l'attention un **routeur** à la manière du *mixture-of-experts* ?
 
 Le contexte est découpé en blocs. Pour chaque requête, un routeur léger calcule une affinité avec chaque bloc (via le score entre la requête et une représentation résumée du bloc), puis sélectionne le **top-k** des blocs les plus pertinents ; l'attention n'est calculée que sur eux. Le parallèle avec `melange-experts` est direct : là où le MoE route chaque token vers *k* experts FFN sur *N*, MoBA route chaque requête vers *k* blocs de contexte sur *N*. La parcimonie devient un problème de **routage appris**, avec les mêmes vertus (capacité découplée du calcul) et les mêmes écueils potentiels (équilibrage de charge entre blocs).
 
@@ -127,3 +127,5 @@ L'attention parcimonieuse aura mis huit ans à faire le chemin du raccourci bric
 [^12]: Zhang, Zhenyu et al. *H2O: Heavy-Hitter Oracle for Efficient Generative Inference of Large Language Models*, NeurIPS 2023. Éviction gloutonne par heavy hitters. arXiv:2306.14048.
 
 [^13]: Tang, Jiaming et al. *Quest: Query-Aware Sparsity for Efficient Long-Context LLM Inference*, ICML 2024. Sélection de pages requête-consciente, pont training-free ↔ sélection par blocs. arXiv:2406.10774.
+[^14]: Lu, Enzhe et al. *MoBA: Mixture of Block Attention for Long-Context LLMs*, Moonshot AI, 2025. L'attention-comme-MoE : blocs-experts, routeur top-k, principe « less structure », déployé sur Kimi. arXiv:2502.13189.
+
