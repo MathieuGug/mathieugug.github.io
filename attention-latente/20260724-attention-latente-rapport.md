@@ -14,7 +14,7 @@ La réponse dominante, de 2023 à 2025, a été le **partage de têtes**. L'atte
 
 ==Mais GQA réduit *grossièrement* : réduire le cache y revient toujours à partager davantage de têtes, c'est-à-dire à **jeter de l'information** — moins de directions distinctes dans l'espace des clés et des valeurs.== La question que MLA pose, et à laquelle GQA ne sait pas répondre, est la suivante : peut-on rendre le cache plus petit sans le rendre plus pauvre ? Peut-on compresser au lieu de trancher ?
 
-[SCHEMA-01]
+![Comparaison du KV-cache par token entre MHA, GQA, MQA et MLA sur échelle logarithmique|width=1200](images/20260724-01-mur-memoire-echelle.svg)
 
 ## 2. L'idée centrale : compresser conjointement K et V dans un latent
 
@@ -26,7 +26,7 @@ Les chiffres de DeepSeek-V2 donnent la mesure du gain. Le vecteur latent y est d
 
 La subtilité — et le piège — tient à ce que cette reconstruction *à la volée* pourrait coûter cher : décompresser le latent en K et V pleins à chaque pas de décodage, pour chaque token du contexte, réintroduirait exactement le calcul qu'on cherchait à éviter. La section 4 montre pourquoi il n'en est rien. Mais avant cela, il faut régler un obstacle que la compression naïve ne voit pas venir : la position.
 
-[SCHEMA-02]
+![Anatomie d'une couche MLA : down-projection, latent mis en cache, up-projections, voie requête|width=1200](images/20260724-02-anatomie-couche-mla.svg)
 
 ## 3. Le piège RoPE et la parade du découplage
 
