@@ -1,0 +1,1604 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>L'attention latente, lue serré</title>
+  <meta name="description" content="MLA (Multi-head Latent Attention) lue ligne à ligne : compression latente conjointe de K et V, RoPE découplé, absorption des matrices, MLA contre GQA à budget cache égal, FlashMLA et TransMLA. Deep dive par Mathieu Guglielmino, 24 juillet 2026.">
+  <!-- og:start -->
+<meta name="author" content="Mathieu Guglielmino">
+<link rel="canonical" href="https://mathieugug.github.io/attention-latente/20260724-attention-latente-app.html">
+<meta name="keywords" content="IA agentique, Mathieu Guglielmino, agents IA, dossier, attention, latente">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Mathieu Guglielmino">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:url" content="https://mathieugug.github.io/attention-latente/20260724-attention-latente-app.html">
+<meta property="og:title" content="L'attention latente, lue serré">
+<meta property="og:description" content="MLA (Multi-head Latent Attention) lue ligne à ligne : compression latente conjointe de K et V, RoPE découplé, absorption des matrices, MLA contre GQA à budget cache égal, FlashMLA et TransMLA. Deep dive par Mathieu Guglielmino, 24 juillet 2026.">
+<meta property="og:image" content="https://mathieugug.github.io/attention-latente/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="L'attention latente, lue serré — couverture social">
+<meta property="article:published_time" content="2026-07-24">
+<meta property="article:author" content="Mathieu Guglielmino">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="L'attention latente, lue serré">
+<meta name="twitter:description" content="MLA (Multi-head Latent Attention) lue ligne à ligne : compression latente conjointe de K et V, RoPE découplé, absorption des matrices, MLA contre GQA à budget cache égal, FlashMLA et TransMLA. Deep dive par Mathieu Guglielmino, 24 juillet 2026.">
+<meta name="twitter:image" content="https://mathieugug.github.io/attention-latente/og.png">
+<script type="application/ld+json">
+{"@context": "https://schema.org","@type": "Article","headline": "L'attention latente, lue serré","description": "MLA (Multi-head Latent Attention) lue ligne à ligne : compression latente conjointe de K et V, RoPE découplé, absorption des matrices, MLA contre GQA à budget cache égal, FlashMLA et TransMLA. Deep dive par Mathieu Guglielmino, 24 juillet 2026.","image": "https://mathieugug.github.io/attention-latente/og.png","url": "https://mathieugug.github.io/attention-latente/20260724-attention-latente-app.html","datePublished": "2026-07-24","inLanguage": "fr-FR","author": {"@type": "Person","name": "Mathieu Guglielmino","url": "https://mathieugug.github.io/"},"publisher": {"@type": "Person","name": "Mathieu Guglielmino","url": "https://mathieugug.github.io/"}}
+</script>
+<!-- og:end -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/dossier-app.css">
+  <style>
+    /* ───────── Tokens ───────── */
+    :root {
+      --paper:    #FAF8F3;
+      --paper-2:  #F2EFE7;
+      --ink:      #1A1A1A;
+      --graphite: #5A5A5A;
+      --mist:     #B8B5AE;
+      --rule:     #E5E1D8;
+      --carmine:  #B7332C;
+      --teal:     #1F5560;
+      --mustard:  #B58A2C;
+
+      --serif: 'Spectral', 'Playfair Display', Georgia, serif;
+      --sans:  'Inter', system-ui, sans-serif;
+      --mono:  'JetBrains Mono', 'IBM Plex Mono', monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; max-width: 100vw; }
+    body {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    header.site {
+      grid-column: 1 / -1;
+      padding: 24px 32px;
+      border-bottom: 1px solid var(--rule);
+      display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap;
+    }
+    header.site .marker {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--carmine);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    header.site h1 {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 1.4rem;
+      margin: 0;
+      letter-spacing: -0.01em;
+    }
+    header.site .meta {
+      margin-left: auto;
+      font-size: 0.85rem;
+      color: var(--graphite);
+    }
+    header.site .meta a { color: var(--carmine); text-decoration: none; }
+    header.site .meta a:hover { text-decoration: underline; }
+    header.site .back {
+      font-family: var(--mono); font-size: 0.72rem;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--graphite); text-decoration: none;
+      white-space: nowrap;
+    }
+    header.site .back:hover { color: var(--carmine); }
+    .menu-toggle {
+      display: none;
+      background: none; border: 1px solid var(--rule);
+      padding: 6px 12px; border-radius: 4px; cursor: pointer;
+      font-family: var(--mono); font-size: 0.8rem;
+    }
+    @media (max-width: 1024px) { .menu-toggle { display: inline-block; } }
+
+    /* ───────── TOC (left) ───────── */
+    #toc {
+      padding: 32px 24px;
+      border-right: 1px solid var(--rule);
+      position: sticky; top: 56px; align-self: start;
+      height: calc(100vh - 56px); overflow-y: auto;
+    }
+    #toc h2 {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--graphite);
+      margin: 0 0 16px;
+    }
+    #toc ol {
+      list-style: none; padding: 0; margin: 0;
+      counter-reset: toc-counter;
+    }
+    #toc li {
+      counter-increment: toc-counter;
+      margin: 0 0 12px;
+      font-size: 0.92rem;
+      line-height: 1.4;
+    }
+    #toc li::before {
+      content: counter(toc-counter, decimal-leading-zero) ".";
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--mist);
+      margin-right: 8px;
+    }
+    #toc a {
+      color: var(--ink);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+    }
+    #toc a:hover, #toc a.active {
+      color: var(--carmine);
+      border-bottom-color: currentColor;
+    }
+
+    /* ───────── Main report ───────── */
+    main#report {
+      padding: 56px 48px 96px;
+      min-width: 0;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+    main#report > .lead {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 1.2rem;
+      color: var(--graphite);
+      line-height: 1.5;
+      margin: 0 0 48px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--rule);
+    }
+    main h1.report-title {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 2.6rem;
+      line-height: 1.1;
+      letter-spacing: -0.025em;
+      margin: 0 0 16px;
+    }
+    main h2 {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 1.55rem;
+      letter-spacing: -0.01em;
+      margin: 3.5rem 0 1rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--rule);
+    }
+    main h3 {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 1.18rem;
+      margin: 2rem 0 0.6rem;
+    }
+    main p { margin: 0 0 1.1rem; }
+    main ul, main ol { margin: 0 0 1.1rem; padding-left: 1.4rem; }
+    main li { margin-bottom: 0.4rem; }
+    main blockquote {
+      margin: 1.5rem 0;
+      padding: 12px 20px;
+      border-left: 3px solid var(--carmine);
+      background: var(--paper-2);
+      font-style: italic;
+      color: var(--graphite);
+    }
+    main code {
+      font-family: var(--mono);
+      font-size: 0.88em;
+      background: var(--paper-2);
+      padding: 2px 5px; border-radius: 3px;
+      overflow-wrap: anywhere;
+    }
+    main pre {
+      margin: 1.5rem 0;
+      padding: 14px 16px;
+      background: var(--paper-2);
+      border-radius: 4px;
+      overflow-x: auto;
+      max-width: 100%;
+      font-size: 0.85em;
+      line-height: 1.5;
+      -webkit-overflow-scrolling: touch;
+    }
+    main pre code {
+      background: transparent;
+      padding: 0;
+      border-radius: 0;
+      font-size: 1em;
+      overflow-wrap: normal;
+    }
+    main mark {
+      background: linear-gradient(transparent 58%, rgba(178, 59, 27, 0.14) 58%);
+      color: inherit;
+      padding: 0 2px;
+    }
+
+    /* ───────── Figures ───────── */
+    .figure {
+      margin: 3rem 0;
+      padding: 24px 0;
+      border-top: 1px solid var(--rule);
+      border-bottom: 1px solid var(--rule);
+      position: relative;
+    }
+    .figure svg {
+      width: 100%; height: auto;
+      display: block;
+      margin: 0 auto;
+    }
+    /* State-aware figure breakout on desktop — figure adapts to sources panel state:
+       - Default (sources expanded): fills main-cell only (between TOC and sources)
+       - .layout.sources-collapsed: extends from TOC-right to viewport-right
+       Neither state overlaps a visible sidebar. Smooth 280ms transition.
+       Full math + derivation: skill illustrated-deep-research, companion-app.md § 5. */
+    @media (min-width: 1025px) {
+      .figure {
+        margin-left: calc(-1 * max(0px, (100vw - 1320px) / 2 + 48px));
+        margin-right: calc(-1 * max(0px, (100vw - 1320px) / 2 + 48px));
+        transition: margin-left 280ms ease, margin-right 280ms ease;
+        padding-left: clamp(16px, 3vw, 48px);
+        padding-right: clamp(16px, 3vw, 48px);
+        border-radius: 0;
+      }
+      .layout.sources-collapsed .figure {
+        margin-left: calc(-1 * max(0px, (100vw - 904px) / 2));
+        margin-right: calc(-1 * max(0px, (100vw - 904px) / 2));
+      }
+      .figure-caption {
+        max-width: 760px;
+        margin-left: auto;
+        margin-right: auto;
+        padding: 0 48px;
+      }
+    }
+    .figure-caption {
+      font-size: 0.88rem;
+      color: var(--graphite);
+      font-style: italic;
+      margin-top: 12px;
+      padding: 0 8px;
+    }
+    .figure svg .interactive { cursor: pointer; transition: filter 140ms; }
+    .figure svg .interactive:hover,
+    .figure svg .interactive:focus-visible { outline: none; }
+    .figure svg .interactive:hover rect,
+    .figure svg .interactive:focus-visible rect,
+    .figure svg .interactive:hover path:not([fill="none"]),
+    .figure svg .interactive:focus-visible path:not([fill="none"]),
+    .figure svg .interactive:hover circle,
+    .figure svg .interactive:focus-visible circle {
+      stroke: var(--carmine);
+      stroke-width: 2.5;
+    }
+    .figure svg .interactive:focus-visible {
+      filter: drop-shadow(0 0 0 var(--carmine));
+    }
+
+    /* ───────── Sources sidebar (right) ───────── */
+    #sources {
+      padding: 32px 24px;
+      border-left: 1px solid var(--rule);
+      background: var(--paper-2);
+      position: sticky; top: 56px; align-self: start;
+      height: calc(100vh - 56px); overflow-y: auto;
+      transition: transform 280ms ease, opacity 200ms ease;
+    }
+    #sources .sources-inner { display: block; }
+
+    @media (max-width: 1024px) {
+      .menu-toggle { display: inline-block !important; }
+      header.site { padding: 14px 16px; gap: 10px; flex-wrap: wrap; }
+      header.site h1 { font-size: 1.05rem; min-width: 0; overflow-wrap: break-word; word-break: break-word; }
+      header.site .meta { font-size: 0.75rem; }
+      header.site .back { font-size: 0.7rem; letter-spacing: 0.08em; }
+      main#report { padding: 28px 18px 56px; max-width: 100%; min-width: 0; }
+      main h1.report-title { font-size: 1.8rem; overflow-wrap: break-word; word-break: break-word; }
+      main#report > .lead { font-size: 1.02rem; margin-bottom: 32px; padding-bottom: 18px; }
+      main h2 { font-size: 1.25rem; margin: 2.4rem 0 0.8rem; overflow-wrap: break-word; word-break: break-word; }
+      main h3 { font-size: 1.05rem; overflow-wrap: break-word; }
+      main p, main ul, main ol { overflow-wrap: break-word; word-break: break-word; }
+      .figure { margin: 2rem 0; padding: 16px 0; max-width: 100%; overflow: hidden; }
+      .figure svg { width: 100%; max-width: 100%; height: auto; }
+      main table {
+        display: block; max-width: 100%;
+        overflow-x: auto; -webkit-overflow-scrolling: touch;
+      }
+      main th, main td { white-space: normal; }
+    }
+    #sources h2 {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--graphite);
+      margin: 0 0 16px;
+    }
+    #sources ol { list-style: none; padding: 0; margin: 0; }
+    #sources li {
+      font-size: 0.82rem;
+      line-height: 1.5;
+      margin: 0 0 16px;
+      padding: 12px 14px;
+      border-radius: 4px;
+      border: 1px solid transparent;
+      transition: border-color 220ms, background 220ms;
+    }
+    #sources li .cite-num {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--carmine);
+      margin-right: 6px;
+    }
+    #sources li a {
+      display: inline-block;
+      margin-top: 4px;
+      color: var(--teal);
+      text-decoration: none;
+      font-size: 0.78rem;
+    }
+    #sources li a:hover { text-decoration: underline; }
+    #sources li .accessed {
+      display: block;
+      margin-top: 4px;
+      color: var(--mist);
+      font-style: italic;
+      font-size: 0.74rem;
+    }
+    #sources li.highlight {
+      background: var(--paper);
+      border-color: var(--carmine);
+    }
+
+    /* ───────── Print ───────── */
+    @media print {
+      .layout { grid-template-columns: 1fr; }
+      #toc, #sources, #modal-root, #zoom-overlay, .menu-toggle, .zoom-btn { display: none; }
+      main#report { max-width: none; padding: 0; }
+      .figure { page-break-inside: avoid; }
+    }
+
+    /* === infographie A4 portrait (exec sum visuelle) — pattern partagé === */
+    main .figure.figure--portrait,
+    .layout main .figure.figure--portrait,
+    .layout.sources-collapsed main .figure.figure--portrait {
+      margin-top: 3rem; margin-bottom: 3rem;
+      padding: 0 !important; border: none !important;
+      border-top: none !important; border-bottom: none !important;
+      width: auto;
+    }
+    @media (max-width: 1024px) {
+      main .figure.figure--portrait {
+        margin-left: auto !important; margin-right: auto !important;
+        max-width: 100%;
+      }
+    }
+    @media (min-width: 1025px) {
+      main .figure.figure--portrait,
+      .layout main .figure.figure--portrait,
+      .layout.sources-collapsed main .figure.figure--portrait {
+        margin-left: -60px !important; margin-right: -60px !important;
+        max-width: calc(100% + 120px);
+      }
+    }
+    @media (min-width: 1440px) {
+      main .figure.figure--portrait,
+      .layout main .figure.figure--portrait,
+      .layout.sources-collapsed main .figure.figure--portrait {
+        margin-left: -100px !important; margin-right: -100px !important;
+        max-width: calc(100% + 200px);
+      }
+    }
+    main .figure--portrait .figure-portrait-link { display: block; width: 100%; border: 1px solid var(--rule); background: var(--paper); border-radius: 2px; cursor: zoom-in; transition: box-shadow 220ms ease, border-color 220ms ease; overflow: hidden; }
+    main .figure--portrait .figure-portrait-link:hover { box-shadow: 0 8px 28px rgba(30,30,42,0.14); border-color: var(--accent); }
+    main .figure--portrait img { display: block; width: 100%; height: auto; }
+    main .figure--portrait .figure-caption { max-width: 100%; margin: 14px auto 0; padding: 0 8px; text-align: center; }
+    /* Sigil MG remonté sur les A4 portrait (au-dessus du header SVG, pas sur le titre) */
+    main .figure--portrait .schema-sigil {
+      top: 10px !important;
+      right: 14px !important;
+      width: 30px !important; height: 30px !important;
+      opacity: 0.60 !important;
+    }
+    @media (max-width: 640px) {
+      main .figure--portrait .schema-sigil { top: 8px !important; right: 10px !important; width: 24px !important; height: 24px !important; }
+    }
+
+    /* === quiz cards (vérification de compréhension) — pattern partagé avec evaluation-agentique === */
+    .quiz-card {
+      margin: 2rem 0 2.4rem;
+      padding: 18px 22px;
+      background: var(--paper-2);
+      border-left: 3px solid var(--carmine);
+      border-radius: 2px;
+    }
+    .quiz-card__head {
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .quiz-card__eyebrow {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--graphite);
+      flex-basis: 100%;
+      margin: 0 0 0.25rem;
+    }
+    .quiz-card__title {
+      font-family: var(--serif);
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin: 0;
+      flex: 1 1 auto;
+      color: var(--ink);
+    }
+    .quiz-card__toggle {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.06em;
+      background: transparent;
+      border: 1px solid var(--mist);
+      color: var(--ink);
+      padding: 6px 14px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: color .15s, border-color .15s;
+    }
+    .quiz-card__toggle:hover, .quiz-card__toggle:focus-visible {
+      color: var(--carmine);
+      border-color: var(--carmine);
+      outline: none;
+    }
+    .quiz-card__body {
+      margin-top: 1.2rem;
+      padding-top: 1rem;
+      border-top: 1px dashed var(--rule);
+    }
+    .quiz-card__body[hidden] { display: none; }
+
+    .quiz-q { margin: 0; padding: 0; }
+    .quiz-q + .quiz-q { margin-top: 1.6rem; padding-top: 1.6rem; border-top: 1px dashed var(--rule); }
+    .quiz-q fieldset { border: 0; padding: 0; margin: 0; }
+    .quiz-q__stem {
+      font-family: var(--serif);
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--ink);
+      padding: 0;
+      margin: 0 0 0.9rem;
+    }
+    .quiz-q__options { list-style: none; padding: 0; margin: 0 0 1rem; }
+    .quiz-q__options li {
+      margin: 0;
+      padding: 8px 0;
+      border-top: 1px solid var(--rule);
+    }
+    .quiz-q__options li:last-child { border-bottom: 1px solid var(--rule); }
+    .quiz-q__options label {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      cursor: pointer;
+      padding: 4px 0;
+    }
+    .quiz-q__options input { margin: 0.3em 0 0; flex: 0 0 auto; accent-color: var(--carmine); }
+    .quiz-q__options label > span { flex: 1; line-height: 1.5; }
+
+    .quiz-q__explain {
+      font-size: 0.92rem;
+      margin: 0.5rem 0 0 1.7rem;
+      padding: 8px 12px;
+      background: var(--paper);
+      border-left: 2px solid var(--mist);
+      color: var(--graphite);
+    }
+    .quiz-q__explain[hidden] { display: none; }
+    .quiz-q__options li.is-correct .quiz-q__explain,
+    .quiz-q__options li.expected .quiz-q__explain { border-left-color: var(--teal); }
+    .quiz-q__options li.is-wrong .quiz-q__explain { border-left-color: var(--carmine); }
+    .quiz-q__options li.is-correct > label > span,
+    .quiz-q__options li.expected > label > span {
+      background-image: linear-gradient(transparent 60%, rgba(31, 85, 96, 0.14) 60%);
+      background-size: 100% 1.5em;
+      background-repeat: repeat-y;
+    }
+    .quiz-q__options li.is-wrong > label > span {
+      background-image: linear-gradient(transparent 60%, rgba(183, 51, 44, 0.14) 60%);
+      background-size: 100% 1.5em;
+      background-repeat: repeat-y;
+    }
+
+    .quiz-q__check {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      background: var(--ink);
+      color: var(--paper);
+      border: 0;
+      padding: 8px 16px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .quiz-q__check:hover, .quiz-q__check:focus-visible { background: var(--carmine); outline: none; }
+    .quiz-q__check:disabled { background: var(--mist); cursor: not-allowed; }
+
+    .quiz-q__verdict {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      margin: 1rem 0 0;
+      padding: 8px 12px;
+      border-left: 2px solid var(--graphite);
+    }
+    .quiz-q__verdict[hidden] { display: none; }
+    .quiz-q__verdict.is-correct { border-left-color: var(--teal); color: var(--teal); }
+    .quiz-q__verdict.is-wrong { border-left-color: var(--carmine); color: var(--carmine); }
+
+    .quiz-q__retry {
+      font-family: var(--mono);
+      font-size: 0.74rem;
+      letter-spacing: 0.06em;
+      background: transparent;
+      border: 0;
+      color: var(--graphite);
+      padding: 6px 0;
+      margin: 0.6rem 0 0;
+      cursor: pointer;
+      text-decoration: underline;
+      text-decoration-color: var(--mist);
+      text-underline-offset: 3px;
+    }
+    .quiz-q__retry:hover, .quiz-q__retry:focus-visible { color: var(--ink); text-decoration-color: var(--carmine); outline: none; }
+    .quiz-q__retry[hidden] { display: none; }
+
+    /* === callouts de renvoi vers d'autres dossiers (pattern partagé avec agent-sdk) === */
+    main .callout { display: grid; grid-template-columns: 280px 1fr; gap: 0; align-items: stretch; margin: 2.4rem 0; padding: 0; background: var(--paper); border-left: 3px solid var(--teal); border-radius: 2px; transition: grid-template-columns 320ms cubic-bezier(.2,.7,.2,1); }
+    main .callout:hover { grid-template-columns: 440px 1fr; }
+    main .callout > .callout-thumb-link { position: relative; display: block; width: 100%; height: 100%; min-height: 200px; overflow: hidden; border-radius: 0; background: transparent; border: 0; border-right: 1px solid var(--rule); cursor: zoom-in; padding: 0; -webkit-appearance: none; appearance: none; font: inherit; color: inherit; text-align: left; transition: filter 200ms ease; }
+    main .callout > .callout-thumb-link:hover { filter: drop-shadow(0 4px 14px rgba(183,51,44,0.18)); border-right-color: var(--carmine); }
+    main .callout > .callout-thumb-link:focus-visible { outline: 2px solid var(--carmine); outline-offset: -2px; }
+    main .callout > .callout-thumb-link img.callout-thumb { width: 100%; height: 100%; object-fit: contain; object-position: center center; display: block; padding: 0; }
+    main .callout > .callout-thumb-link::after { content: '⛶ AGRANDIR'; position: absolute; top: 10px; right: 10px; padding: 4px 9px; font-family: var(--mono); font-size: 9.5px; font-weight: 600; letter-spacing: 0.10em; background: rgba(250,248,243,0.94); border: 1px solid var(--rule); border-radius: 2px; color: var(--graphite); opacity: 0; transition: opacity 180ms ease, color 180ms ease, border-color 180ms ease; pointer-events: none; }
+    main .callout > .callout-thumb-link:hover::after, main .callout > .callout-thumb-link:focus-visible::after { opacity: 1; color: var(--carmine); border-color: var(--carmine); }
+    main .callout > .callout-body { min-width: 0; padding: 22px 26px 22px 26px; align-self: center; }
+    main .callout .callout-eyebrow { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--teal); margin: 0 0 0.45rem; font-weight: 600; }
+    main .callout > .callout-body p { margin: 0; font-size: 0.95rem; line-height: 1.55; color: var(--ink); }
+    main .callout > .callout-body p a { color: var(--carmine); text-decoration: none; border-bottom: 1px dotted var(--carmine); }
+    main .callout > .callout-body p a:hover { color: var(--teal); border-bottom-color: var(--teal); }
+
+    @media (max-width: 1024px) {
+      /* === quiz cards : variantes mobile === */
+      .quiz-card { padding: 14px 16px; margin: 1.6rem 0 2rem; }
+      .quiz-card__head { gap: 0.6rem; }
+      .quiz-card__title { flex-basis: 100%; overflow-wrap: break-word; }
+      .quiz-card__toggle { width: 100%; padding: 12px; min-height: 44px; font-size: 0.82rem; }
+      .quiz-q__check { width: 100%; padding: 12px; min-height: 44px; font-size: 0.82rem; }
+      .quiz-q__options li { padding: 10px 0; }
+      .quiz-q__options label { padding: 8px 0; min-height: 44px; align-items: center; }
+      .quiz-q__explain { margin: 0.5rem 0 0 0; padding: 10px 12px; }
+      .quiz-q__retry { padding: 10px 0; min-height: 44px; }
+    }
+    @media (max-width: 640px) {
+      main .callout, main .callout:hover { grid-template-columns: 1fr; gap: 0; padding: 0; }
+      main .callout > .callout-thumb-link { min-height: 180px; border-right: 0; border-bottom: 1px solid var(--rule); }
+      main .callout > .callout-body { padding: 18px 20px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar" id="topbar">
+    <a href="../index.html">Mathieu <em>Guglielmino</em></a>
+    <span class="dossier-context">L'attention latente (MLA)</span>
+    <div class="topbar-tools">
+      <button class="menu-toggle" id="toggle-toc">Sommaire</button>
+      <button class="menu-toggle" id="toggle-sources">Sources</button>
+    </div>
+    <nav class="back-nav" aria-label="Navigation retour">
+      <a href="index.html" class="back" title="Revenir au hub du dossier">← Hub</a>
+      <span class="back-sep" aria-hidden="true">·</span>
+      <a href="../index.html#series" class="back" title="Revenir à l'accueil">Accueil</a>
+    </nav>
+  </header>
+  <div class="layout">
+
+    <header class="site">
+      <span class="marker">Deep dive · Inférence × Architecture d'attention</span>
+      <h1>L'attention latente, lue serré</h1>
+      <span class="meta">
+        Mathieu Guglielmino · 24 juillet 2026
+      </span>
+    </header>
+
+    <nav id="toc" aria-label="Sommaire">
+      <button class="panel-close" type="button" aria-label="Fermer le sommaire">Fermer ✕</button>
+      <h2>Sommaire</h2>
+      <ol>
+        <li><a href="#s-1">1. La mémoire prime, GQA est un pansement</a></li>
+        <li><a href="#s-2">2. Compresser K et V dans un latent</a></li>
+        <li><a href="#s-3">3. Le piège RoPE et le découplage</a></li>
+        <li><a href="#s-4">4. L'absorption des matrices</a></li>
+        <li><a href="#s-5">5. MLA contre GQA</a></li>
+        <li><a href="#s-6">6. Du papier au silicium</a></li>
+        <li><a href="#s-7">7. TransMLA : MLA absorbe-t-elle GQA ?</a></li>
+        <li><a href="#s-8">8. Trajectoires 2026</a></li>
+      </ol>
+    </nav>
+
+    <main id="report">
+<h1 class="report-title">L'attention latente, lue serré</h1>
+      <p class="lead"><span class="term" data-tooltip="Multi-head Latent Attention : au lieu de mettre en cache les clés et valeurs pleines, on met en cache un unique vecteur latent basse-dimension, reconstruit à la volée par des projections montantes.">MLA</span> n'est pas une compression du cache de plus greffée au service : c'est une <strong>reparamétrisation entraînée de l'attention</strong> où un vecteur latent par token remplace toutes les paires clé/valeur, et où l'<span class="term" data-tooltip="Absorption des matrices : à l'inférence, les projections montantes de MLA se fondent dans les matrices de requête et de sortie, si bien qu'on calcule l'attention directement dans le latent sans matérialiser K/V pleines.">absorption des matrices</span> rend gratuit à l'inférence le surcoût de re-projection. <mark>D'où son statut de choix d'architecture d'attention 2026.</mark></p>
+      <p class="lead-note"><em>Deep dive prolongeant le dossier <a href="../compression-kv-cache/">Compresser le KV-cache</a>. Là où ce dernier traitait la compression comme un choix d'architecture à <strong>trois étages</strong> — partager les têtes (MQA/GQA), les projeter dans un latent (MLA), compresser les octets (quantification, éviction) — celui-ci ouvre l'étage du milieu et le lit ligne à ligne : la dérivation exacte de MLA, l'astuce d'absorption qui la rend praticable, la comparaison chiffrée avec GQA à budget cache égal, ses kernels, et le pari — TransMLA — qu'elle finisse par absorber tout l'écosystème GQA.</em></p>
+
+      <section>
+      <h2 id="s-1">1. La mémoire prime, et GQA n'est qu'un pansement</h2>
+      <p>Le dossier <a href="../kv-cache/">L'économie du KV-cache</a> posait le diagnostic qui gouverne tout le reste : à la génération, un modèle de langage n'est pas limité par le calcul mais par la mémoire. Chaque nouveau token exige de relire les clés et valeurs (K, V) de tous les tokens précédents ; ces tenseurs sont mis en cache pour éviter un recalcul quadratique, et ce cache — pas les poids — devient le poste dominant à contexte long. La phase de décodage est <span class="term" data-tooltip="Memory-bound : limité par la vitesse de lecture de la mémoire, pas par la puissance de calcul. Le GPU passe l'essentiel du temps à lire le cache depuis la HBM.">memory-bound</span> : le facteur limitant est la bande passante mémoire qu'il faut dépenser pour rapatrier le cache, pas les FLOP de l'attention<a class="cite" data-cite="1" href="#source-1">1</a>.</p>
+      <p>La réponse dominante, de 2023 à 2025, a été le <strong>partage de têtes</strong>. L'attention multi-têtes classique (MHA) attribue à chacune de ses <em>n_h</em> têtes sa propre projection K et V ; le cache pèse donc <code>2 · n_h · d_h</code> éléments par token et par couche. <span class="term" data-tooltip="Multi-Query Attention : toutes les têtes de requête partagent une unique tête clé/valeur. Cache divisé par n_h, mais qualité fragile et entraînement instable sur les gros modèles.">MQA</span> (Shazeer 2019) pousse le curseur à l'extrême : une seule tête K/V partagée par toutes les têtes de requête, soit une division du cache par <em>n_h</em><a class="cite" data-cite="2" href="#source-2">2</a>. Le gain est spectaculaire mais l'appauvrissement l'est aussi — une unique paire K/V pour des dizaines de requêtes dégrade la qualité et rend l'entraînement instable. <span class="term" data-tooltip="Grouped-Query Attention : g groupes de têtes de requête partagent chacun un jeu clé/valeur. Interpolation entre MHA et MQA. Le défaut de l'écosystème depuis Llama-2.">GQA</span> (Ainslie et al. 2023) est le compromis qui s'est imposé : <em>g</em> groupes de têtes de requête partagent chacun une paire K/V, avec <code>1 &lt; g &lt; n_h</code>. Llama 2/3, Mistral, Qwen, Gemma : presque tous les modèles ouverts de 2024-2025 sont des modèles GQA, souvent obtenus par <span class="term" data-tooltip="Uptraining : convertir un checkpoint MHA en GQA en moyennant les projections clé/valeur par groupe, puis en ré-entraînant sur ~5 % du budget de pré-entraînement d'origine.">uptraining</span> d'un modèle MHA sur ~5 % de son budget de tokens<a class="cite" data-cite="3" href="#source-3">3</a>.</p>
+      <p><mark>Mais GQA réduit <em>grossièrement</em> : réduire le cache y revient toujours à partager davantage de têtes, c'est-à-dire à <strong>jeter de l'information</strong> — moins de directions distinctes dans l'espace des clés et des valeurs.</mark> La question que MLA pose, et à laquelle GQA ne sait pas répondre, est la suivante : peut-on rendre le cache plus petit sans le rendre plus pauvre ? Peut-on compresser au lieu de trancher ?</p>
+      <figure class="figure" id="fig-01"><svg data-schema-id="schema-01" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif">
+  <style>
+    .display { font-family: 'Spectral','Playfair Display',Georgia,serif; }
+    .body    { font-family: 'Inter','Helvetica Neue',system-ui,sans-serif; }
+    .mono    { font-family: 'JetBrains Mono','IBM Plex Mono',monospace; }
+    .interactive { cursor: pointer; }
+  </style>
+  <rect x="0" y="0" width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- Header -->
+  <text x="70" y="66" class="mono" font-size="13" letter-spacing="0.08em" fill="#B7332C">SCHÉMA 01</text>
+  <text x="70" y="104" class="display" font-size="28" font-weight="600" fill="#1A1A1A">Compresser sans jeter : le cache par token</text>
+  <text x="70" y="134" class="display" font-size="18" font-style="italic" fill="#5A5A5A">Éléments de KV-cache par token et par couche — échelle logarithmique (128 têtes, d_h = 128)</text>
+  <line x1="70" y1="156" x2="1130" y2="156" stroke="#E5E1D8" stroke-width="1"/>
+
+  <!-- log axis gridlines: 256, 512, 2048, 32768 -->
+  <!-- x = 340 + (log10(v) - 2.2) * 266.7 -->
+  <g class="mono" font-size="12" fill="#B8B5AE" text-anchor="middle">
+    <line x1="395.5" y1="205" x2="395.5" y2="600" stroke="#E5E1D8" stroke-width="0.5"/>
+    <text x="395.5" y="625">256</text>
+    <line x1="475.8" y1="205" x2="475.8" y2="600" stroke="#E5E1D8" stroke-width="0.5"/>
+    <text x="475.8" y="625">512</text>
+    <line x1="636" y1="205" x2="636" y2="600" stroke="#E5E1D8" stroke-width="0.5"/>
+    <text x="636" y="625">2 048</text>
+    <line x1="956" y1="205" x2="956" y2="600" stroke="#E5E1D8" stroke-width="0.5"/>
+    <text x="956" y="625">32 768</text>
+  </g>
+  <text x="700" y="655" class="body" font-size="13" fill="#5A5A5A" text-anchor="middle" font-style="italic">← plus petit = moins de mémoire à relire à chaque token</text>
+
+  <!-- Rows: MHA, GQA-8, MLA, GQA-2, MQA. x0 = 340 -->
+  <!-- MHA -->
+  <g class="interactive" data-card="mha" tabindex="0" role="button" aria-label="MHA — détails">
+    <rect x="70" y="212" width="1060" height="58" rx="3" fill="#00000000"/>
+    <text x="80" y="248" class="body" font-size="15" font-weight="600" fill="#1A1A1A">MHA</text>
+    <text x="80" y="266" class="mono" font-size="11" fill="#5A5A5A">2·n_h·d_h</text>
+    <rect x="340" y="222" width="616" height="34" rx="2" fill="#1F5560" opacity="0.85"/>
+    <text x="946" y="244" class="mono" font-size="13" fill="#FAF8F3" text-anchor="end">32 768</text>
+    <text x="1000" y="244" class="body" font-size="13" fill="#5A5A5A">qualité : réf.</text>
+  </g>
+  <!-- GQA-8 -->
+  <g class="interactive" data-card="gqa" tabindex="0" role="button" aria-label="GQA — détails">
+    <rect x="70" y="282" width="1060" height="58" rx="3" fill="#00000000"/>
+    <text x="80" y="318" class="body" font-size="15" font-weight="600" fill="#1A1A1A">GQA · 8 groupes</text>
+    <text x="80" y="336" class="mono" font-size="11" fill="#5A5A5A">2·n_g·d_h</text>
+    <rect x="340" y="292" width="296" height="34" rx="2" fill="#1F5560" opacity="0.6"/>
+    <text x="626" y="314" class="mono" font-size="13" fill="#FAF8F3" text-anchor="end">2 048</text>
+    <text x="1000" y="314" class="body" font-size="13" fill="#5A5A5A">≤ MHA</text>
+  </g>
+  <!-- MLA (highlight) -->
+  <g class="interactive" data-card="mla" tabindex="0" role="button" aria-label="MLA — détails">
+    <rect x="70" y="352" width="1060" height="58" rx="3" fill="#B7332C" opacity="0.06"/>
+    <text x="80" y="388" class="body" font-size="15" font-weight="600" fill="#B7332C">MLA</text>
+    <text x="80" y="406" class="mono" font-size="11" fill="#B7332C">d_c + d_R = 576</text>
+    <rect x="340" y="362" width="149" height="34" rx="2" fill="#B7332C"/>
+    <text x="499" y="384" class="mono" font-size="13" fill="#1A1A1A" text-anchor="start"> 576</text>
+    <text x="1000" y="384" class="body" font-size="13" font-weight="600" fill="#B7332C">&gt; MHA</text>
+  </g>
+  <!-- GQA-2 -->
+  <g class="interactive" data-card="gqa" tabindex="0" role="button" aria-label="GQA-2 — détails">
+    <rect x="70" y="422" width="1060" height="52" rx="3" fill="#00000000"/>
+    <text x="80" y="454" class="body" font-size="15" font-weight="600" fill="#1A1A1A">GQA · 2 groupes</text>
+    <rect x="340" y="430" width="136" height="30" rx="2" fill="#1F5560" opacity="0.45"/>
+    <text x="486" y="451" class="mono" font-size="13" fill="#5A5A5A" text-anchor="start"> 512</text>
+    <text x="1000" y="451" class="body" font-size="13" fill="#5A5A5A">−−</text>
+  </g>
+  <!-- MQA -->
+  <g class="interactive" data-card="mqa" tabindex="0" role="button" aria-label="MQA — détails">
+    <rect x="70" y="480" width="1060" height="52" rx="3" fill="#00000000"/>
+    <text x="80" y="512" class="body" font-size="15" font-weight="600" fill="#1A1A1A">MQA</text>
+    <rect x="340" y="488" width="55.5" height="30" rx="2" fill="#B8B5AE"/>
+    <text x="405" y="509" class="mono" font-size="13" fill="#5A5A5A" text-anchor="start"> 256</text>
+    <text x="1000" y="509" class="body" font-size="13" fill="#5A5A5A">instable</text>
+  </g>
+
+  <!-- Annotation -->
+  <line x1="489" y1="379" x2="489" y2="690" stroke="#B7332C" stroke-width="0.75" stroke-dasharray="2 3"/>
+  <text x="500" y="700" class="body" font-size="13" fill="#1A1A1A">MLA (576) ≈ GQA-2 (512) en <tspan font-weight="600">taille</tspan> — mais en <tspan font-weight="600" fill="#B7332C">qualité</tspan>, MLA dépasse MHA.</text>
+  <text x="500" y="722" class="body" font-size="13" fill="#5A5A5A">GQA glisse le long d'un compromis fixe ; MLA déplace la frontière.</text>
+
+  <!-- Footer -->
+  <line x1="70" y1="748" x2="1130" y2="748" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="70" y="772" class="body" font-size="12" font-style="italic" fill="#5A5A5A">Source : DeepSeek-V2 (arXiv:2405.04434), Table 1 · valeurs pour n_h = 128, d_h = 128, d_c = 512, d_R = 64.</text>
+</svg>
+<figcaption class="figure-caption"><a class="anchor" href="#fig-01" title="Lien direct vers ce schéma">¶</a> Schéma 1 — Le KV-cache par token de MHA à MLA (échelle logarithmique). MLA ≈ GQA-2 en taille, mais dépasse MHA en qualité.</figcaption></figure>
+      </section>
+
+      <section>
+      <h2 id="s-2">2. Compresser conjointement K et V dans un latent</h2>
+      <p><em>Multi-head Latent Attention</em> (MLA), introduite avec DeepSeek-V2 en mai 2024, change la nature de l'opération<a class="cite" data-cite="4" href="#source-4">4</a>. Au lieu de partager des têtes, elle <strong>projette</strong> l'information des clés et valeurs dans un vecteur latent de basse dimension, et ne met en cache que ce vecteur.</p>
+      <p>Concrètement : pour chaque token <em>t</em>, une matrice de <em>down-projection</em> <code>W^DKV</code> comprime l'état caché <em>h_t</em> (dimension du modèle, plusieurs milliers) en un unique <span class="term" data-tooltip="Latent c_KV : le vecteur basse-dimension mis en cache par MLA, obtenu par projection descendante de l'état caché. Les K/V pleines sont reconstruites à la volée par projection montante.">vecteur latent</span> <em>c_KV</em> de dimension <em>d_c</em>, choisie bien plus petite que <code>n_h · d_h</code>. <mark>C'est ce vecteur <em>c_KV</em> — et lui seul — qui est écrit dans le cache.</mark> Au moment de calculer l'attention, deux matrices de <em>up-projection</em>, <code>W^UK</code> et <code>W^UV</code>, reconstruisent à la volée les clés et les valeurs pleines à partir du latent. La compression est <span class="term" data-tooltip="Low-rank : de rang faible. Le latent vit dans un sous-espace de dimension réduite ; on suppose que l'essentiel de l'information K/V y tient.">de rang faible</span> et surtout <strong>conjointe</strong> : un même latent porte à la fois K et V, là où toutes les autres méthodes les traitent séparément.</p>
+      <p>Les chiffres de DeepSeek-V2 donnent la mesure du gain. Le vecteur latent y est de dimension <em>d_c</em> = 512, contre un cache MHA de <code>2 · n_h · d_h</code> éléments par token — pour un modèle à 128 têtes de dimension 128, cela ferait 32 768 éléments. En pratique, DeepSeek-V2 revendique une <strong>réduction du KV-cache de 93,3 %</strong> par rapport à son équivalent MHA, une <strong>multiplication par 5,76 du débit maximal de génération</strong> face à DeepSeek 67B, et au passage <strong>42,5 % de coûts d'entraînement économisés</strong><a class="cite" data-cite="4" href="#source-4">4</a>. La compression latente n'est donc pas un artefact théorique : elle se lit directement au compteur de tokens par seconde.</p>
+      <p>La subtilité — et le piège — tient à ce que cette reconstruction <em>à la volée</em> pourrait coûter cher : décompresser le latent en K et V pleins à chaque pas de décodage, pour chaque token du contexte, réintroduirait exactement le calcul qu'on cherchait à éviter. La section 4 montre pourquoi il n'en est rien. Mais avant cela, il faut régler un obstacle que la compression naïve ne voit pas venir : la position.</p>
+      <figure class="figure" id="fig-02"><svg data-schema-id="schema-02" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif">
+  <style>
+    .display { font-family: 'Spectral','Playfair Display',Georgia,serif; }
+    .body    { font-family: 'Inter','Helvetica Neue',system-ui,sans-serif; }
+    .mono    { font-family: 'JetBrains Mono','IBM Plex Mono',monospace; }
+    .interactive { cursor: pointer; }
+  </style>
+  <defs>
+    <marker id="arrow02" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L9,5 L0,10" fill="none" stroke="#5A5A5A" stroke-width="1.4"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- Header -->
+  <text x="70" y="66" class="mono" font-size="13" letter-spacing="0.08em" fill="#B7332C">SCHÉMA 02</text>
+  <text x="70" y="104" class="display" font-size="28" font-weight="600" fill="#1A1A1A">Anatomie d'une couche MLA</text>
+  <text x="70" y="134" class="display" font-size="18" font-style="italic" fill="#5A5A5A">Un seul vecteur latent par token est mis en cache ; K et V sont reconstruits à la volée</text>
+  <line x1="70" y1="156" x2="1130" y2="156" stroke="#E5E1D8" stroke-width="1"/>
+
+  <!-- input token -->
+  <g class="interactive" data-card="down-proj" tabindex="0" role="button" aria-label="Down-projection">
+    <rect x="70" y="330" width="150" height="90" rx="4" fill="#FAF8F3" stroke="#1A1A1A" stroke-width="1.25"/>
+    <text x="145" y="370" class="body" font-size="15" font-weight="600" fill="#1A1A1A" text-anchor="middle">token h_t</text>
+    <text x="145" y="392" class="mono" font-size="11" fill="#5A5A5A" text-anchor="middle">état caché</text>
+    <text x="145" y="408" class="mono" font-size="11" fill="#5A5A5A" text-anchor="middle">dim ≈ 5120</text>
+  </g>
+
+  <!-- down projection -->
+  <line x1="220" y1="375" x2="290" y2="375" stroke="#5A5A5A" stroke-width="1.4" marker-end="url(#arrow02)"/>
+  <text x="255" y="365" class="mono" font-size="12" fill="#B7332C" text-anchor="middle">W^DKV</text>
+  <g class="interactive" data-card="down-proj" tabindex="0" role="button" aria-label="Down-projection">
+    <rect x="308" y="345" width="70" height="60" rx="30" fill="#1F5560" opacity="0.12" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="343" y="380" class="body" font-size="13" fill="#1F5560" text-anchor="middle">↓</text>
+  </g>
+
+  <!-- latent c_KV cached -->
+  <line x1="378" y1="375" x2="448" y2="375" stroke="#5A5A5A" stroke-width="1.4" marker-end="url(#arrow02)"/>
+  <g class="interactive" data-card="latent-cache" tabindex="0" role="button" aria-label="Latent mis en cache">
+    <rect x="466" y="322" width="180" height="106" rx="4" fill="#B7332C" opacity="0.08"/>
+    <rect x="466" y="322" width="180" height="106" rx="4" fill="none" stroke="#B7332C" stroke-width="2.5"/>
+    <text x="556" y="356" class="body" font-size="16" font-weight="600" fill="#B7332C" text-anchor="middle">c_KV</text>
+    <text x="556" y="378" class="mono" font-size="12" fill="#B7332C" text-anchor="middle">d_c = 512</text>
+    <text x="556" y="404" class="body" font-size="11.5" fill="#B7332C" text-anchor="middle">seul objet</text>
+    <text x="556" y="419" class="body" font-size="11.5" fill="#B7332C" text-anchor="middle">mis en cache</text>
+  </g>
+  <text x="556" y="300" class="mono" font-size="12" fill="#B7332C" text-anchor="middle" font-weight="600">EN CACHE</text>
+
+  <!-- up projection -->
+  <line x1="646" y1="358" x2="716" y2="330" stroke="#5A5A5A" stroke-width="1.4" marker-end="url(#arrow02)"/>
+  <line x1="646" y1="392" x2="716" y2="420" stroke="#5A5A5A" stroke-width="1.4" marker-end="url(#arrow02)"/>
+  <text x="690" y="330" class="mono" font-size="12" fill="#5A5A5A">W^UK</text>
+  <text x="690" y="440" class="mono" font-size="12" fill="#5A5A5A">W^UV</text>
+  <g class="interactive" data-card="up-proj" tabindex="0" role="button" aria-label="Up-projections">
+    <rect x="734" y="300" width="150" height="56" rx="4" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="809" y="333" class="body" font-size="15" font-weight="600" fill="#1F5560" text-anchor="middle">clés K</text>
+    <rect x="734" y="394" width="150" height="56" rx="4" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="809" y="427" class="body" font-size="15" font-weight="600" fill="#1F5560" text-anchor="middle">valeurs V</text>
+  </g>
+  <text x="809" y="472" class="body" font-size="11.5" font-style="italic" fill="#5A5A5A" text-anchor="middle">reconstruites à la volée</text>
+
+  <!-- attention -->
+  <line x1="884" y1="328" x2="954" y2="360" stroke="#5A5A5A" stroke-width="1.4" marker-end="url(#arrow02)"/>
+  <line x1="884" y1="422" x2="954" y2="392" stroke="#5A5A5A" stroke-width="1.4" marker-end="url(#arrow02)"/>
+  <rect x="972" y="336" width="158" height="80" rx="4" fill="#1A1A1A"/>
+  <text x="1051" y="372" class="body" font-size="15" font-weight="600" fill="#FAF8F3" text-anchor="middle">attention</text>
+  <text x="1051" y="394" class="mono" font-size="11" fill="#B8B5AE" text-anchor="middle">softmax(q·kᵀ)·v</text>
+
+  <!-- query path (top band) -->
+  <g class="interactive" data-card="query" tabindex="0" role="button" aria-label="Voie requête">
+    <rect x="308" y="210" width="576" height="60" rx="4" fill="#B58A2C" opacity="0.09" stroke="#B58A2C" stroke-width="1.25" stroke-dasharray="2 3"/>
+    <text x="596" y="236" class="body" font-size="14" font-weight="600" fill="#B58A2C" text-anchor="middle">voie requête : h_t → W^DQ → c_Q (d = 1536) → W^UQ → q</text>
+    <text x="596" y="256" class="body" font-size="11.5" font-style="italic" fill="#5A5A5A" text-anchor="middle">les requêtes sont elles aussi compressées en un latent</text>
+  </g>
+  <line x1="884" y1="252" x2="1000" y2="330" stroke="#B58A2C" stroke-width="1.4" marker-end="url(#arrow02)" opacity="0.8"/>
+
+  <!-- caption strip bottom -->
+  <text x="70" y="560" class="body" font-size="14" fill="#1A1A1A"><tspan font-weight="600">La compression est conjointe :</tspan> un même latent c_KV porte à la fois K et V, là où toute autre méthode les traite séparément.</text>
+  <text x="70" y="588" class="body" font-size="14" fill="#5A5A5A">Décompresser K et V à chaque pas semblerait coûteux — mais l'absorption des matrices (schéma 04) rend ce coût nul à l'inférence.</text>
+
+  <!-- Footer -->
+  <line x1="70" y1="748" x2="1130" y2="748" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="70" y="772" class="body" font-size="12" font-style="italic" fill="#5A5A5A">Source : DeepSeek-V2 (arXiv:2405.04434), §2.1 · dimensions de production DeepSeek-V3.</text>
+</svg>
+<figcaption class="figure-caption"><a class="anchor" href="#fig-02" title="Lien direct vers ce schéma">¶</a> Schéma 2 — Anatomie d'une couche MLA : un seul latent <em>c_KV</em> est mis en cache ; K et V sont reconstruits à la volée.</figcaption></figure>
+      </section>
+
+      <section>
+      <h2 id="s-3">3. Le piège RoPE et la parade du découplage</h2>
+      <p>Les modèles de 2024 encodent la position des tokens par <span class="term" data-tooltip="Rotary Position Embedding : encodage de position appliquant aux requêtes et clés une rotation dépendant de leur position. Le score d'attention ne dépend alors que de la position relative.">RoPE</span> (Su et al.) : à chaque tête, la requête et la clé sont <strong>tournées</strong> d'un angle proportionnel à leur position avant le produit scalaire, si bien que le score d'attention ne dépend plus que de la position <em>relative</em> des deux tokens<a class="cite" data-cite="5" href="#source-5">5</a>. Élégant, universellement adopté — et incompatible avec la compression latente telle qu'on vient de la décrire.</p>
+      <p>Pourquoi ? Parce que le gain de MLA à l'inférence (section 4) repose sur la possibilité de <strong>fusionner</strong> la matrice <code>W^UK</code> qui reconstruit les clés dans la matrice <code>W^UQ</code> qui produit les requêtes, une fois pour toutes, hors ligne. Or RoPE insère entre les deux une matrice de rotation <em>R_t</em> qui <em>dépend de la position</em> <em>t</em> du token : <code>q_t · k_s</code> devient <code>(R_t q_t) · (R_s k_s)</code>. Cette rotation, différente pour chaque paire de positions, ne peut pas être pré-absorbée dans un produit de poids constant. <mark>RoPE et absorption des matrices sont, en l'état, mutuellement exclusifs : appliquer la rotation force à matérialiser les clés pleines, ce qui annule tout l'intérêt de ne cacher qu'un latent.</mark></p>
+      <p>La parade de DeepSeek est un <span class="term" data-tooltip="RoPE découplé : MLA sépare chaque clé/requête en une part contenu (compressée, sans position) et une petite part position dédiée à RoPE, hors du chemin comprimé. C'est ce qui préserve l'absorption.">découplage</span> (<em>decoupled RoPE</em>). L'attention est scindée en deux voies. Une voie <em>contenu</em> : des dimensions de clé et de requête sans position, low-rank, compressées dans le latent et absorbables. Une voie <em>position</em> : des dimensions <strong>découplées</strong> <em>k^R</em> et <em>q^R</em>, de petite taille (<code>d_R = 64</code> par tête chez DeepSeek), qui portent <em>uniquement</em> le signal RoPE et ne passent pas par la compression latente. Les deux voies sont concaténées avant le produit scalaire ; la voie position subit sa rotation sans empêcher la voie contenu de rester absorbable. Le cache, dès lors, stocke deux choses par token : le latent conjoint <em>c_KV</em> (dimension 512) et <strong>une</strong> clé RoPE découplée partagée par toutes les têtes (dimension 64), soit <strong>576 éléments par token</strong><a class="cite" data-cite="4" href="#source-4">4</a> — un ordre de grandeur sous les 32 768 du MHA.</p>
+      <figure class="figure" id="fig-03"><svg data-schema-id="schema-03" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif">
+  <style>
+    .display { font-family: 'Spectral','Playfair Display',Georgia,serif; }
+    .body    { font-family: 'Inter','Helvetica Neue',system-ui,sans-serif; }
+    .mono    { font-family: 'JetBrains Mono','IBM Plex Mono',monospace; }
+    .interactive { cursor: pointer; }
+  </style>
+  <defs>
+    <marker id="arrow03" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L9,5 L0,10" fill="none" stroke="#5A5A5A" stroke-width="1.4"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- Header -->
+  <text x="70" y="66" class="mono" font-size="13" letter-spacing="0.08em" fill="#B7332C">SCHÉMA 03</text>
+  <text x="70" y="104" class="display" font-size="28" font-weight="600" fill="#1A1A1A">Le piège RoPE et la parade du découplage</text>
+  <text x="70" y="134" class="display" font-size="18" font-style="italic" fill="#5A5A5A">La position casse l'absorption ; DeepSeek scinde l'attention en une voie contenu et une voie position</text>
+  <line x1="70" y1="156" x2="1130" y2="156" stroke="#E5E1D8" stroke-width="1"/>
+
+  <!-- token source -->
+  <rect x="70" y="360" width="120" height="80" rx="4" fill="#FAF8F3" stroke="#1A1A1A" stroke-width="1.25"/>
+  <text x="130" y="396" class="body" font-size="15" font-weight="600" fill="#1A1A1A" text-anchor="middle">token</text>
+  <text x="130" y="416" class="mono" font-size="11" fill="#5A5A5A" text-anchor="middle">h_t</text>
+  <line x1="190" y1="392" x2="250" y2="300" stroke="#5A5A5A" stroke-width="1.4" marker-end="url(#arrow03)"/>
+  <line x1="190" y1="408" x2="250" y2="512" stroke="#5A5A5A" stroke-width="1.4" marker-end="url(#arrow03)"/>
+
+  <!-- CONTENT path (top) -->
+  <g class="interactive" data-card="content-path" tabindex="0" role="button" aria-label="Voie contenu">
+    <rect x="268" y="250" width="520" height="108" rx="4" fill="#1F5560" opacity="0.08"/>
+    <rect x="268" y="250" width="520" height="108" rx="4" fill="none" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="288" y="282" class="body" font-size="15" font-weight="600" fill="#1F5560">Voie contenu — sans position</text>
+    <text x="288" y="308" class="body" font-size="13" fill="#1A1A1A">compressée dans le latent c_KV (d_c = 512), de rang faible</text>
+    <text x="288" y="332" class="mono" font-size="12" fill="#1F5560">✓ ABSORBABLE — W^UK fusionnable dans W^UQ</text>
+  </g>
+
+  <!-- POSITION path (bottom) -->
+  <g class="interactive" data-card="position-path" tabindex="0" role="button" aria-label="Voie position">
+    <rect x="268" y="460" width="520" height="108" rx="4" fill="#B7332C" opacity="0.07"/>
+    <rect x="268" y="460" width="520" height="108" rx="4" fill="none" stroke="#B7332C" stroke-width="1.25"/>
+    <text x="288" y="492" class="body" font-size="15" font-weight="600" fill="#B7332C">Voie position — dimensions découplées</text>
+    <text x="288" y="518" class="body" font-size="13" fill="#1A1A1A">petits vecteurs k^R, q^R (d_R = 64 / tête) portant seulement RoPE</text>
+    <text x="288" y="542" class="mono" font-size="12" fill="#B7332C">✗ NON ABSORBABLE — rotation R_t dépend de la position</text>
+  </g>
+
+  <!-- concat -->
+  <line x1="788" y1="304" x2="858" y2="376" stroke="#5A5A5A" stroke-width="1.4" marker-end="url(#arrow03)"/>
+  <line x1="788" y1="514" x2="858" y2="432" stroke="#5A5A5A" stroke-width="1.4" marker-end="url(#arrow03)"/>
+  <g class="interactive" data-card="rope-break" tabindex="0" role="button" aria-label="Concaténation et produit">
+    <rect x="876" y="366" width="120" height="80" rx="40" fill="#1A1A1A"/>
+    <text x="936" y="400" class="body" font-size="14" font-weight="600" fill="#FAF8F3" text-anchor="middle">concat</text>
+    <text x="936" y="422" class="mono" font-size="11" fill="#B8B5AE" text-anchor="middle">q · kᵀ</text>
+  </g>
+
+  <!-- cache store -->
+  <g class="interactive" data-card="cache-store" tabindex="0" role="button" aria-label="Ce que le cache stocke">
+    <rect x="1006" y="352" width="124" height="108" rx="4" fill="#B7332C" opacity="0.06"/>
+    <rect x="1006" y="352" width="124" height="108" rx="4" fill="none" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="1068" y="380" class="mono" font-size="11" font-weight="600" fill="#B7332C" text-anchor="middle">CACHE / TOKEN</text>
+    <text x="1068" y="406" class="body" font-size="13" fill="#1A1A1A" text-anchor="middle">c_KV : 512</text>
+    <text x="1068" y="426" class="body" font-size="13" fill="#1A1A1A" text-anchor="middle">+ k^R : 64</text>
+    <line x1="1026" y1="436" x2="1110" y2="436" stroke="#B7332C" stroke-width="0.75"/>
+    <text x="1068" y="452" class="mono" font-size="13" font-weight="600" fill="#B7332C" text-anchor="middle">= 576</text>
+  </g>
+
+  <!-- explanation callout why RoPE breaks -->
+  <rect x="70" y="620" width="1060" height="76" rx="4" fill="#FAF8F3" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="90" y="650" class="body" font-size="14" fill="#1A1A1A"><tspan font-weight="600">Pourquoi la rotation casse tout :</tspan>  q_t · k_s  devient  (R_t q_t) · (R_s k_s). La matrice R_t change à chaque position —</text>
+  <text x="90" y="674" class="body" font-size="14" fill="#5A5A5A">elle s'intercale entre requête et clé et ne peut donc pas être pré-fusionnée dans un produit de poids constant. D'où le découplage.</text>
+
+  <!-- Footer -->
+  <line x1="70" y1="748" x2="1130" y2="748" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="70" y="772" class="body" font-size="12" font-style="italic" fill="#5A5A5A">Source : DeepSeek-V2 (arXiv:2405.04434), decoupled RoPE ; RoFormer (arXiv:2104.09864).</text>
+</svg>
+<figcaption class="figure-caption"><a class="anchor" href="#fig-03" title="Lien direct vers ce schéma">¶</a> Schéma 3 — Le piège RoPE : voie contenu absorbable contre voie position découplée, concaténées avant le produit scalaire.</figcaption></figure>
+      </section>
+
+      <section>
+      <h2 id="s-4">4. L'absorption des matrices : le surcoût de projection est gratuit</h2>
+      <p>C'est ici que MLA cesse d'être une jolie idée pour devenir un mécanisme praticable. La clé — le mot n'est pas innocent — est que <mark>les up-projections <code>W^UK</code> et <code>W^UV</code> n'ont jamais besoin d'être exécutées explicitement au décodage : elles se replient dans des matrices voisines et disparaissent.</mark></p>
+      <p><strong>Côté clés.</strong> Le score d'attention d'une tête est <code>q_t · k_s</code>, où <code>k_s = W^UK c_KV_s</code> (la clé pleine reconstruite depuis le latent) et <code>q_t = W^UQ c_Q_t</code> (la requête). Développé : <code>(W^UQ c_Q_t) · (W^UK c_KV_s) = c_Q_t · (W^UQ)ᵀ W^UK · c_KV_s</code>. Le produit <code>(W^UQ)ᵀ W^UK</code> est une matrice <strong>constante</strong>, calculable hors ligne. Autrement dit, on peut <strong>absorber</strong> <code>W^UK</code> dans la projection de requête et calculer le score d'attention <em>directement entre la requête et le latent caché</em>, sans jamais reconstruire la clé pleine <em>k_s</em>.</p>
+      <p><strong>Côté valeurs.</strong> Symétriquement, la valeur pleine <code>v_s = W^UV c_KV_s</code> n'apparaît que multipliée par la matrice de sortie <code>W^O</code> après agrégation. On absorbe donc <code>W^UV</code> dans <code>W^O</code> : l'attention pondère les latents <em>c_KV</em>, et la reconstruction des valeurs est repoussée dans la projection de sortie, déjà présente. <mark>Résultat : le cache latent n'est pas une version <em>comprimée</em> de l'état à décompresser — il <em>est</em> l'état sur lequel l'attention opère.</mark> Le surcoût apparent des up-projections est nul à l'inférence ; il ne subsiste qu'à l'entraînement, où les K/V pleins sont matérialisés pour le calcul des gradients.</p>
+      <p>Cette absorption est la raison profonde pour laquelle MLA n'est pas « GQA avec des étapes en plus » mais une architecture distincte. GQA économise de la mémoire en <em>dupliquant</em> moins de têtes ; MLA économise de la mémoire en <em>reparamétrant</em> l'attention pour qu'elle vive dans un espace latent — et le fait sans payer de calcul supplémentaire au décodage. Le prix se limite à une légère gymnastique d'implémentation : les kernels doivent gérer ce calcul-dans-le-latent, et c'est précisément ce que <span class="term" data-tooltip="FlashMLA : kernel de décodage MLA open-source de DeepSeek (fév. 2025) pour GPU Hopper, avec cache paginé par blocs de 64.">FlashMLA</span> industrialise (section 6).</p>
+      <figure class="figure" id="fig-04"><svg data-schema-id="schema-04" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif">
+  <style>
+    .display { font-family: 'Spectral','Playfair Display',Georgia,serif; }
+    .body    { font-family: 'Inter','Helvetica Neue',system-ui,sans-serif; }
+    .mono    { font-family: 'JetBrains Mono','IBM Plex Mono',monospace; }
+    .interactive { cursor: pointer; }
+  </style>
+  <defs>
+    <marker id="arrow04" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L9,5 L0,10" fill="none" stroke="#5A5A5A" stroke-width="1.4"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- Header -->
+  <text x="70" y="66" class="mono" font-size="13" letter-spacing="0.08em" fill="#B7332C">SCHÉMA 04</text>
+  <text x="70" y="104" class="display" font-size="28" font-weight="600" fill="#1A1A1A">L'absorption des matrices : le surcoût disparaît</text>
+  <text x="70" y="134" class="display" font-size="18" font-style="italic" fill="#5A5A5A">À l'inférence, K et V pleins ne sont jamais matérialisés : l'attention opère dans le latent</text>
+  <line x1="70" y1="156" x2="1130" y2="156" stroke="#E5E1D8" stroke-width="1"/>
+
+  <!-- TOP band: naive -->
+  <text x="70" y="204" class="mono" font-size="12" font-weight="600" fill="#5A5A5A">NAÏF · reconstruire puis calculer  (utile à l'entraînement)</text>
+  <rect x="70" y="216" width="1060" height="120" rx="4" fill="#F2EFE7"/>
+  <g class="interactive" data-card="latent-compute" tabindex="0" role="button" aria-label="Chemin naïf">
+    <rect x="90" y="248" width="120" height="56" rx="4" fill="#B7332C" opacity="0.10" stroke="#B7332C" stroke-width="1.25"/>
+    <text x="150" y="281" class="body" font-size="14" font-weight="600" fill="#B7332C" text-anchor="middle">c_KV</text>
+  </g>
+  <line x1="210" y1="276" x2="278" y2="276" stroke="#5A5A5A" stroke-width="1.4" marker-end="url(#arrow04)"/>
+  <text x="244" y="266" class="mono" font-size="11" fill="#5A5A5A" text-anchor="middle">W^UK</text>
+  <rect x="296" y="248" width="130" height="56" rx="4" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
+  <text x="361" y="281" class="body" font-size="14" fill="#1F5560" text-anchor="middle">K plein</text>
+  <line x1="426" y1="276" x2="494" y2="276" stroke="#5A5A5A" stroke-width="1.4" marker-end="url(#arrow04)"/>
+  <rect x="512" y="248" width="150" height="56" rx="4" fill="#1A1A1A"/>
+  <text x="587" y="281" class="body" font-size="14" fill="#FAF8F3" text-anchor="middle">q · kᵀ</text>
+  <text x="760" y="272" class="body" font-size="13" fill="#5A5A5A">coûteux : décompresse tout le contexte</text>
+  <text x="760" y="292" class="body" font-size="13" fill="#5A5A5A">à chaque pas de décodage.</text>
+
+  <!-- transform arrow -->
+  <line x1="600" y1="352" x2="600" y2="392" stroke="#B7332C" stroke-width="2.5" marker-end="url(#arrow04)"/>
+  <text x="620" y="380" class="body" font-size="14" font-style="italic" fill="#B7332C">on fusionne les matrices, une fois pour toutes</text>
+
+  <!-- BOTTOM band: absorbed -->
+  <text x="70" y="428" class="mono" font-size="12" font-weight="600" fill="#B7332C">ABSORBÉ · calculer dans le latent  (à l'inférence)</text>
+
+  <!-- keys absorption -->
+  <g class="interactive" data-card="absorb-keys" tabindex="0" role="button" aria-label="Absorption côté clés">
+    <rect x="70" y="444" width="510" height="130" rx="4" fill="#1F5560" opacity="0.06"/>
+    <rect x="70" y="444" width="510" height="130" rx="4" fill="none" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="90" y="474" class="body" font-size="14" font-weight="600" fill="#1F5560">Côté clés</text>
+    <text x="90" y="502" class="mono" font-size="13" fill="#1A1A1A">(W^UQ c_Q) · (W^UK c_KV)</text>
+    <text x="90" y="524" class="mono" font-size="13" fill="#1A1A1A">= c_Q · [ (W^UQ)ᵀ W^UK ] · c_KV</text>
+    <text x="90" y="552" class="body" font-size="12.5" fill="#1F5560">matrice constante → W^UK absorbé dans la requête</text>
+  </g>
+
+  <!-- values absorption -->
+  <g class="interactive" data-card="absorb-values" tabindex="0" role="button" aria-label="Absorption côté valeurs">
+    <rect x="600" y="444" width="530" height="130" rx="4" fill="#B58A2C" opacity="0.07"/>
+    <rect x="600" y="444" width="530" height="130" rx="4" fill="none" stroke="#B58A2C" stroke-width="1.25"/>
+    <text x="620" y="474" class="body" font-size="14" font-weight="600" fill="#B58A2C">Côté valeurs</text>
+    <text x="620" y="502" class="mono" font-size="13" fill="#1A1A1A">v = W^UV c_KV,  sortie = W^O v</text>
+    <text x="620" y="524" class="mono" font-size="13" fill="#1A1A1A">→ W^UV absorbé dans W^O</text>
+    <text x="620" y="552" class="body" font-size="12.5" fill="#B58A2C">l'attention pondère les latents, la sortie reconstruit</text>
+  </g>
+
+  <!-- punchline -->
+  <g class="interactive" data-card="cache-is-state" tabindex="0" role="button" aria-label="Le cache est l'état">
+    <rect x="70" y="606" width="1060" height="92" rx="4" fill="#B7332C"/>
+    <text x="600" y="646" class="display" font-size="22" font-weight="600" fill="#FAF8F3" text-anchor="middle">Le cache latent n'est pas une version comprimée de l'état à décompresser —</text>
+    <text x="600" y="678" class="display" font-size="22" font-weight="600" fill="#FAF8F3" text-anchor="middle">il <tspan font-style="italic">est</tspan> l'état sur lequel l'attention opère.</text>
+  </g>
+
+  <!-- Footer -->
+  <line x1="70" y1="728" x2="1130" y2="728" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="70" y="752" class="body" font-size="12" font-style="italic" fill="#5A5A5A">Source : DeepSeek-V2 (arXiv:2405.04434), §2.1 : « W^UK can be absorbed into W^UQ, and W^UV into W^O ».</text>
+  <text x="70" y="772" class="body" font-size="12" font-style="italic" fill="#5A5A5A">Note : vLLM et FlashMLA implémentent deux variantes — « naive » (recalcul) et « absorb » (pré-fusion) — selon l'arbitrage calcul ↔ mémoire.</text>
+</svg>
+<figcaption class="figure-caption"><a class="anchor" href="#fig-04" title="Lien direct vers ce schéma">¶</a> Schéma 4 — L'absorption : chemin naïf reconstruisant K/V pleins contre chemin absorbé calculant dans le latent.</figcaption></figure>
+      </section>
+
+      <section>
+      <h2 id="s-5">5. MLA contre GQA : même budget cache, plus de qualité</h2>
+      <p>Le vrai test n'est pas « MLA réduit-elle le cache » — MQA le fait davantage — mais « à budget cache égal, quelle méthode préserve le mieux la qualité ». C'est sur ce front de Pareto que MLA se distingue.</p>
+      <p>L'ablation de DeepSeek-V2 est nette : <strong>GQA reste au mieux à parité avec MHA</strong>, tandis que <strong>MLA <em>dépasse</em> MHA</strong> tout en consommant une fraction de sa mémoire<a class="cite" data-cite="4" href="#source-4">4</a>. Le cache de MLA y est présenté comme équivalent à celui d'un GQA à <strong>2,25 groupes</strong> — une valeur qu'aucun GQA réel n'atteint (les groupes sont entiers) et qui situe MLA sous le régime le plus courant, mais avec une qualité que même MHA n'égale pas. En chiffres bruts, à l'échelle DeepSeek (128 têtes, <em>d_h</em> = 128), MLA cache <strong>576 éléments par token</strong> là où une GQA à 8 groupes en cache <strong>2 048</strong> — un facteur 3,5 en mémoire, <em>à qualité supérieure</em>.</p>
+      <p><mark>Là où GQA ne fait que <em>suivre</em> le front de Pareto qualité × mémoire en glissant le long d'un compromis fixe, MLA le <em>déplace</em> : elle achète, au même prix mémoire, une expressivité que le partage de têtes ne peut pas offrir.</mark> L'intuition tient en une phrase : un latent <strong>appris</strong> capture plus d'information par octet qu'un partage de têtes <strong>structurel</strong>. GQA impose <em>a priori</em> que certaines têtes partagent exactement les mêmes K/V ; MLA laisse l'entraînement décider quelles directions de l'espace K/V méritent d'être conservées dans le latent. La compression est optimisée plutôt qu'imposée — la même différence de nature que celle qui sépare, côté attention parcimonieuse, l'éviction gloutonne d'un cache de la <a href="../attention-parcimonieuse/">parcimonie native entraînée</a>.</p>
+      <figure class="figure" id="fig-05"><svg data-schema-id="schema-05" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif">
+  <style>
+    .display { font-family: 'Spectral','Playfair Display',Georgia,serif; }
+    .body    { font-family: 'Inter','Helvetica Neue',system-ui,sans-serif; }
+    .mono    { font-family: 'JetBrains Mono','IBM Plex Mono',monospace; }
+    .interactive { cursor: pointer; }
+  </style>
+  <defs>
+    <marker id="arrow05" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L9,5 L0,10" fill="none" stroke="#B7332C" stroke-width="1.6"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- Header -->
+  <text x="70" y="66" class="mono" font-size="13" letter-spacing="0.08em" fill="#B7332C">SCHÉMA 05</text>
+  <text x="70" y="104" class="display" font-size="28" font-weight="600" fill="#1A1A1A">MLA déplace le front de Pareto que GQA ne fait que suivre</text>
+  <text x="70" y="134" class="display" font-size="18" font-style="italic" fill="#5A5A5A">Qualité de modélisation en fonction de la mémoire de cache — à budget égal, MLA domine</text>
+  <line x1="70" y1="156" x2="1130" y2="156" stroke="#E5E1D8" stroke-width="1"/>
+
+  <!-- axes -->
+  <line x1="240" y1="240" x2="240" y2="620" stroke="#1A1A1A" stroke-width="1.25"/>
+  <line x1="240" y1="620" x2="1060" y2="620" stroke="#1A1A1A" stroke-width="1.25"/>
+  <text x="230" y="250" class="body" font-size="13" fill="#5A5A5A" text-anchor="end">qualité ↑</text>
+  <text x="1060" y="648" class="body" font-size="13" fill="#5A5A5A" text-anchor="end">mémoire de cache / token →</text>
+  <text x="205" y="440" class="body" font-size="13" fill="#5A5A5A" text-anchor="middle" transform="rotate(-90 205 440)">meilleure ← qualité</text>
+
+  <!-- GQA/MHA tradeoff frontier (dashed) -->
+  <path d="M 340 540 Q 470 470 593 375 T 954 335" fill="none" stroke="#1F5560" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <text x="820" y="410" class="body" font-size="13" font-style="italic" fill="#1F5560">frontière GQA / MHA</text>
+  <text x="820" y="430" class="body" font-size="12" font-style="italic" fill="#5A5A5A">un compromis fixe</text>
+
+  <!-- MLA displaced frontier (carmine) -->
+  <g class="interactive" data-card="frontier" tabindex="0" role="button" aria-label="La frontière déplacée">
+    <path d="M 330 400 Q 430 320 600 300 T 960 300" fill="none" stroke="#B7332C" stroke-width="2.5"/>
+    <rect x="300" y="270" width="360" height="150" fill="#00000000"/>
+  </g>
+  <text x="330" y="290" class="body" font-size="13" font-style="italic" fill="#B7332C">frontière déplacée par MLA</text>
+
+  <!-- points -->
+  <!-- MQA -->
+  <g class="interactive" data-card="mqa" tabindex="0" role="button" aria-label="MQA">
+    <circle cx="340" cy="540" r="9" fill="#B8B5AE"/>
+    <text x="356" y="545" class="body" font-size="13" fill="#5A5A5A">MQA — petit cache, qualité faible, instable</text>
+  </g>
+  <!-- GQA-2 -->
+  <g class="interactive" data-card="gqa-point" tabindex="0" role="button" aria-label="GQA-2">
+    <circle cx="430" cy="470" r="9" fill="#1F5560"/>
+    <text x="446" y="475" class="body" font-size="13" fill="#1A1A1A">GQA-2</text>
+  </g>
+  <!-- GQA-8 -->
+  <g class="interactive" data-card="gqa-point" tabindex="0" role="button" aria-label="GQA-8">
+    <circle cx="593" cy="375" r="9" fill="#1F5560"/>
+    <text x="609" y="380" class="body" font-size="13" fill="#1A1A1A">GQA-8 — 2 048 / token</text>
+  </g>
+  <!-- MHA -->
+  <g class="interactive" data-card="mha" tabindex="0" role="button" aria-label="MHA">
+    <circle cx="954" cy="335" r="9" fill="#1A1A1A"/>
+    <text x="954" y="322" class="body" font-size="13" fill="#1A1A1A" text-anchor="middle">MHA (réf.)</text>
+    <text x="954" y="358" class="mono" font-size="11" fill="#5A5A5A" text-anchor="middle">32 768 / token</text>
+  </g>
+  <!-- MLA (winner) -->
+  <g class="interactive" data-card="mla-point" tabindex="0" role="button" aria-label="MLA">
+    <circle cx="429" cy="300" r="12" fill="#B7332C"/>
+    <text x="447" y="296" class="body" font-size="15" font-weight="600" fill="#B7332C">MLA — 576 / token</text>
+    <text x="447" y="316" class="body" font-size="12.5" fill="#B7332C">petit cache ET qualité &gt; MHA</text>
+  </g>
+
+  <!-- TransMLA arrow -->
+  <g class="interactive" data-card="transmla" tabindex="0" role="button" aria-label="TransMLA : conversion GQA vers MLA">
+    <path d="M 588 372 C 520 350 470 330 441 308" fill="none" stroke="#B7332C" stroke-width="2" stroke-dasharray="3 3" marker-end="url(#arrow05)"/>
+    <rect x="470" y="336" width="170" height="24" fill="#FAF8F3" opacity="0.85"/>
+    <text x="472" y="353" class="mono" font-size="12" font-weight="600" fill="#B7332C">TransMLA : GQA → MLA</text>
+  </g>
+
+  <!-- legend note -->
+  <rect x="70" y="656" width="1060" height="60" rx="4" fill="#F2EFE7"/>
+  <text x="90" y="684" class="body" font-size="14" fill="#1A1A1A"><tspan font-weight="600">Un latent appris capture plus d'information par octet qu'un partage de têtes structurel.</tspan> GQA impose a priori quelles têtes partagent K/V ;</text>
+  <text x="90" y="706" class="body" font-size="14" fill="#5A5A5A">MLA laisse l'entraînement choisir les directions à conserver — la compression est optimisée, pas imposée.</text>
+
+  <!-- Footer -->
+  <line x1="70" y1="748" x2="1130" y2="748" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="70" y="772" class="body" font-size="12" font-style="italic" fill="#5A5A5A">Source : ablations DeepSeek-V2 (GQA ≤ MHA &lt; MLA) ; TransMLA (arXiv:2502.07864), inclusion GQA ⊂ MLA. Positions schématiques.</text>
+</svg>
+<figcaption class="figure-caption"><a class="anchor" href="#fig-05" title="Lien direct vers ce schéma">¶</a> Schéma 5 — MLA déplace le front de Pareto : à budget cache égal, MLA (haut-gauche) domine GQA et MHA. La flèche TransMLA convertit GQA en MLA.</figcaption></figure>
+      </section>
+
+      <section>
+      <h2 id="s-6">6. Du papier au silicium : FlashMLA et le service</h2>
+      <p>Une architecture d'attention ne vaut que par les kernels qui la servent. DeepSeek-V3, publié fin 2024, généralise MLA à un modèle de <strong>671 milliards de paramètres dont 37 milliards activés</strong> par token (l'architecture est aussi un mélange d'experts — voir <a href="../melange-experts/">Le mélange d'experts</a>)<a class="cite" data-cite="6" href="#source-6">6</a>. Les dimensions de son attention latente sont désormais un standard de fait : <em>d_c</em> = 512 pour le latent conjoint, 128 têtes, <em>d_R</em> = 64 pour la voie RoPE découplée, soit <strong>576 éléments de cache par token et par couche</strong> — à comparer aux dizaines de milliers d'un MHA équivalent.</p>
+      <p>En février 2025, DeepSeek a ouvert <strong>FlashMLA</strong>, le kernel qui rend cette attention efficace sur les GPU Hopper<a class="cite" data-cite="7" href="#source-7">7</a>. Trois traits le définissent. D'abord un <strong>cache paginé</strong> (<em>paged KV cache</em>) à blocs de <strong>64 tokens</strong>, dans la lignée de PagedAttention : le cache latent est alloué par pages pour éviter la fragmentation. Ensuite un régime de performance qui trahit la nature memory-bound de la tâche : FlashMLA atteint jusqu'à <strong>~3 000 Go/s</strong> de bande passante mémoire dans le cas limité par la mémoire, et ~<strong>580 TFLOPS</strong> dans le cas limité par le calcul, sur H800. Enfin une gestion de longueurs de séquences variables optimisée pour le service par lots réel, où chaque requête a son propre historique.</p>
+      <p>Cette efficacité a des effets systémiques. Un cache par token dix à vingt fois plus petit change l'arithmétique de la <span class="term" data-tooltip="Désagrégation prefill/decode : séparer la phase de préremplissage (compute-bound) de la phase de génération (memory-bound) sur des pools de GPU distincts, avec transfert du KV entre les deux.">désagrégation</span> prefill/decode : le transfert du KV entre pool de prefill et pool de decode, souvent le coût central de la <a href="../desagregation-prefill-decode/">désagrégation</a>, devient beaucoup moins lourd quand ce qu'on transfère est un latent de 576 éléments plutôt qu'un cache plein. MLA n'est donc pas seulement une optimisation locale de l'attention : elle desserre simultanément la mémoire, le débit et le réseau — trois contraintes que les dossiers voisins traitaient séparément.</p>
+      <figure class="figure" id="fig-06"><svg data-schema-id="schema-06" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif">
+  <style>
+    .display { font-family: 'Spectral','Playfair Display',Georgia,serif; }
+    .body    { font-family: 'Inter','Helvetica Neue',system-ui,sans-serif; }
+    .mono    { font-family: 'JetBrains Mono','IBM Plex Mono',monospace; }
+    .interactive { cursor: pointer; }
+  </style>
+  <defs>
+    <marker id="arrow06" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L9,5 L0,10" fill="none" stroke="#5A5A5A" stroke-width="1.4"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- Header -->
+  <text x="70" y="66" class="mono" font-size="13" letter-spacing="0.08em" fill="#B7332C">SCHÉMA 06</text>
+  <text x="70" y="104" class="display" font-size="28" font-weight="600" fill="#1A1A1A">Du papier au silicium</text>
+  <text x="70" y="134" class="display" font-size="18" font-style="italic" fill="#5A5A5A">Une architecture d'attention ne vaut que par les kernels qui la servent</text>
+  <line x1="70" y1="156" x2="1130" y2="156" stroke="#E5E1D8" stroke-width="1"/>
+
+  <!-- Card 1: DeepSeek-V3 -->
+  <g class="interactive" data-card="deepseek-v3" tabindex="0" role="button" aria-label="DeepSeek-V3">
+    <rect x="70" y="220" width="230" height="230" rx="4" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="90" y="252" class="mono" font-size="12" fill="#1F5560">MODÈLE</text>
+    <text x="90" y="282" class="display" font-size="19" font-weight="600" fill="#1A1A1A">DeepSeek-V3</text>
+    <text x="90" y="316" class="body" font-size="13.5" fill="#1A1A1A">671 Md params</text>
+    <text x="90" y="338" class="body" font-size="13.5" fill="#1A1A1A">37 Md activés / token</text>
+    <line x1="90" y1="352" x2="280" y2="352" stroke="#E5E1D8" stroke-width="1"/>
+    <text x="90" y="378" class="mono" font-size="12" fill="#5A5A5A">d_c = 512 · 128 têtes</text>
+    <text x="90" y="398" class="mono" font-size="12" fill="#5A5A5A">RoPE découplé d_R = 64</text>
+    <text x="90" y="428" class="mono" font-size="13" font-weight="600" fill="#B7332C">576 elts / token / couche</text>
+  </g>
+  <line x1="300" y1="335" x2="360" y2="335" stroke="#5A5A5A" stroke-width="1.4" marker-end="url(#arrow06)"/>
+
+  <!-- Card 2: FlashMLA -->
+  <g class="interactive" data-card="flashmla" tabindex="0" role="button" aria-label="FlashMLA">
+    <rect x="378" y="220" width="230" height="230" rx="4" fill="#B7332C" opacity="0.05"/>
+    <rect x="378" y="220" width="230" height="230" rx="4" fill="none" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="398" y="252" class="mono" font-size="12" fill="#B7332C">KERNEL · fév. 2025</text>
+    <text x="398" y="282" class="display" font-size="19" font-weight="600" fill="#1A1A1A">FlashMLA</text>
+    <text x="398" y="314" class="body" font-size="13.5" fill="#1A1A1A">décodage MLA sur Hopper</text>
+    <line x1="398" y1="330" x2="588" y2="330" stroke="#E5E1D8" stroke-width="1"/>
+    <text x="398" y="356" class="mono" font-size="13" fill="#B7332C">~3 000 Go/s</text>
+    <text x="398" y="374" class="body" font-size="11.5" fill="#5A5A5A">cas memory-bound</text>
+    <text x="398" y="402" class="mono" font-size="13" fill="#B7332C">~580 TFLOPS</text>
+    <text x="398" y="420" class="body" font-size="11.5" fill="#5A5A5A">cas compute-bound · H800</text>
+  </g>
+  <line x1="608" y1="335" x2="668" y2="335" stroke="#5A5A5A" stroke-width="1.4" marker-end="url(#arrow06)"/>
+
+  <!-- Card 3: paged cache -->
+  <g class="interactive" data-card="paged-cache" tabindex="0" role="button" aria-label="Cache paginé">
+    <rect x="686" y="220" width="230" height="230" rx="4" fill="#FAF8F3" stroke="#B58A2C" stroke-width="1.25"/>
+    <text x="706" y="252" class="mono" font-size="12" fill="#B58A2C">MÉMOIRE</text>
+    <text x="706" y="282" class="display" font-size="19" font-weight="600" fill="#1A1A1A">Cache paginé</text>
+    <text x="706" y="314" class="body" font-size="13.5" fill="#1A1A1A">blocs de 64 tokens</text>
+    <text x="706" y="336" class="body" font-size="12.5" fill="#5A5A5A">(lignée PagedAttention)</text>
+    <!-- mini page grid -->
+    <g>
+      <rect x="706" y="356" width="26" height="26" rx="2" fill="#B58A2C" opacity="0.5"/>
+      <rect x="738" y="356" width="26" height="26" rx="2" fill="#B58A2C" opacity="0.5"/>
+      <rect x="770" y="356" width="26" height="26" rx="2" fill="#B58A2C" opacity="0.3"/>
+      <rect x="802" y="356" width="26" height="26" rx="2" fill="#B58A2C" opacity="0.3"/>
+      <rect x="834" y="356" width="26" height="26" rx="2" fill="#E5E1D8"/>
+      <rect x="866" y="356" width="26" height="26" rx="2" fill="#E5E1D8"/>
+    </g>
+    <text x="706" y="416" class="body" font-size="12.5" fill="#5A5A5A">alloué par pages :</text>
+    <text x="706" y="434" class="body" font-size="12.5" fill="#5A5A5A">zéro fragmentation</text>
+  </g>
+
+  <!-- arrow down to service band -->
+  <line x1="500" y1="450" x2="500" y2="500" stroke="#5A5A5A" stroke-width="1.4" marker-end="url(#arrow06)"/>
+
+  <!-- service band -->
+  <g class="interactive" data-card="service" tabindex="0" role="button" aria-label="Effet sur le service">
+    <rect x="70" y="518" width="1060" height="150" rx="4" fill="#1F5560" opacity="0.06"/>
+    <rect x="70" y="518" width="1060" height="150" rx="4" fill="none" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="90" y="550" class="body" font-size="15" font-weight="600" fill="#1F5560">Effet systémique : un cache 10–20× plus petit desserre trois contraintes à la fois</text>
+    <text x="90" y="584" class="body" font-size="13.5" fill="#1A1A1A">• <tspan font-weight="600">Mémoire</tspan> — plus de requêtes concurrentes tiennent en HBM.</text>
+    <text x="90" y="610" class="body" font-size="13.5" fill="#1A1A1A">• <tspan font-weight="600">Débit</tspan> — moins d'octets à relire par token généré (decode memory-bound).</text>
+    <text x="90" y="636" class="body" font-size="13.5" fill="#1A1A1A">• <tspan font-weight="600">Réseau</tspan> — la désagrégation prefill/decode transfère un latent de 576 éléments, pas un cache plein.</text>
+  </g>
+
+  <!-- Footer -->
+  <line x1="70" y1="728" x2="1130" y2="728" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="70" y="752" class="body" font-size="12" font-style="italic" fill="#5A5A5A">Source : DeepSeek-V3 Technical Report (arXiv:2412.19437) ; dépôt FlashMLA (github.com/deepseek-ai/FlashMLA), chiffres de lancement fév. 2025.</text>
+  <text x="70" y="772" class="body" font-size="12" font-style="italic" fill="#5A5A5A">Note : le README FlashMLA affiche depuis des chiffres révisés (≈660 TFLOPS dense, variante Sparse MLA, support B200).</text>
+</svg>
+<figcaption class="figure-caption"><a class="anchor" href="#fig-06" title="Lien direct vers ce schéma">¶</a> Schéma 6 — Du papier au silicium : DeepSeek-V3, kernel FlashMLA, cache paginé par blocs de 64, et l'effet systémique sur le service.</figcaption></figure>
+      </section>
+
+      <section>
+      <h2 id="s-7">7. TransMLA : et si MLA absorbait GQA ?</h2>
+      <p>Si MLA domine GQA à budget égal, une question stratégique se pose : faut-il réentraîner de zéro les centaines de modèles GQA déjà déployés, ou peut-on les <strong>convertir</strong> ? En février 2025, un article au titre volontairement provocateur — <span class="term" data-tooltip="TransMLA : méthode de conversion post-hoc d'un checkpoint GQA en MLA, en absorbant le partage de groupes dans une projection latente équivalente puis en fine-tunant. NeurIPS 2025 spotlight.">TransMLA</span> : <em>Multi-Head Latent Attention Is All You Need</em> — apporte une réponse théorique et pratique<a class="cite" data-cite="8" href="#source-8">8</a>.</p>
+      <p>L'argument central est démontré formellement (l'article est un <em>spotlight</em> NeurIPS 2025) : <mark>« GQA peut toujours être représentée par MLA à budget de cache égal, mais la réciproque est fausse » — GQA est un <strong>cas particulier restreint</strong> de MLA, qui dispose à mémoire identique d'une expressivité strictement supérieure</mark> que le partage de têtes laisse inexploitée. Concrètement, TransMLA convertit les projections K/V d'un modèle GQA en la paramétrisation latente de MLA, puis exploite les degrés de liberté nouvellement libérés par un court réentraînement. Le résultat est frappant : sur <strong>LLaMA-2-7B</strong>, la conversion comprime <strong>93 % du KV-cache</strong> et débloque une <strong>accélération d'inférence ×10,6 à 8 000 tokens de contexte</strong>, en ne réentraînant que <strong>6 milliards de tokens</strong> — une fraction du budget d'origine<a class="cite" data-cite="8" href="#source-8">8</a>. L'écosystème Llama/Qwen/Mistral devient, en principe, un vivier de modèles convertibles.</p>
+      <p>Il faut lire ce résultat avec la prudence due à un titre-slogan : « all you need » est une thèse, pas un théorème d'adoption. La conversion suppose un budget de réentraînement, un support kernel (FlashMLA côté Hopper), et une inertie d'écosystème considérable — les frameworks, les formats de poids, les pipelines de quantification sont tous calibrés sur GQA. Mais la direction est claire : <mark>MLA a cessé d'être une singularité DeepSeek pour devenir un attracteur vers lequel l'architecture d'attention ouverte pourrait converger.</mark></p>
+      </section>
+
+      <section>
+      <h2 id="s-8">8. Trajectoires : MLA comme défaut d'architecture 2026</h2>
+      <p>Trois lignes de force se dégagent pour les dix-huit mois qui viennent.</p>
+      <p><strong>Co-conception avec la parcimonie entraînée.</strong> MLA compresse l'attention dans l'espace des <em>canaux</em> (le latent K/V) ; l'<a href="../attention-parcimonieuse/">attention parcimonieuse native</a> la compresse dans l'espace des <em>tokens</em> (on ne calcule l'attention que sur une fraction du contexte). Les deux sont orthogonales et composables : DeepSeek-V3.2-Exp couple précisément une attention parcimoniée à MLA, remontant les deux décisions à l'entraînement<a class="cite" data-cite="9" href="#source-9">9</a>. La <em>double parcimonie</em> — creux en têtes latentes et creux en tokens attendus — est le chantier système le plus riche de 2026.</p>
+      <p><strong>Quantification du latent.</strong> Le cache MLA est déjà un ordre de grandeur plus petit ; le quantifier (voir <a href="../quantification-llm/">Quantifier les LLM</a>) le réduit encore. Mais le latent conjoint est un objet plus fragile qu'un K/V plein — une erreur de quantification s'y propage à toutes les têtes reconstruites. Le couplage MLA × quantification est un terrain où le gain n'est pas additif et demande une calibration dédiée.</p>
+      <p><strong>Adoption et tensions.</strong> Au-delà de DeepSeek, MLA gagne du terrain — Kimi K2 de Moonshot est un modèle MLA à grande échelle<a class="cite" data-cite="10" href="#source-10">10</a> — mais deux frictions demeurent. D'abord le <span class="term" data-tooltip="Tensor parallelism : découper les têtes d'attention sur plusieurs GPU. GQA se shard proprement par groupe ; le latent unique de MLA, partagé par toutes les têtes, ne se partitionne pas.">parallélisme de tenseur</span> : GQA se découpe proprement par groupe de têtes sur plusieurs GPU ; le latent conjoint de MLA n'a qu'une seule « tête » latente <strong>non partitionnable</strong>, si bien qu'en décodage réparti chaque GPU doit charger <em>redondamment</em> le cache latent complet — le bénéfice du sharding s'annule, et des travaux récents documentent ce trafic mémoire excédentaire comme la limite structurelle de MLA<a class="cite" data-cite="11" href="#source-11">11</a>. Ensuite la <strong>complexité d'entraînement</strong> : le découplage RoPE, l'absorption et la stabilité du latent ajoutent des pièces mobiles qu'un GQA n'a pas. <mark>L'histoire de MLA en 2026 n'est donc pas celle d'une victoire acquise mais d'un basculement en cours : une architecture qui a prouvé qu'on peut compresser sans jeter, et dont l'adoption générale dépend maintenant moins de sa qualité — établie — que de l'inertie de l'écosystème GQA qu'elle prétend absorber.</mark></p>
+      <figure class="figure" id="fig-07"><svg data-schema-id="schema-07" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" font-family="Inter, sans-serif">
+  <style>
+    .display { font-family: 'Spectral','Playfair Display',Georgia,serif; }
+    .body    { font-family: 'Inter','Helvetica Neue',system-ui,sans-serif; }
+    .mono    { font-family: 'JetBrains Mono','IBM Plex Mono',monospace; }
+    .interactive { cursor: pointer; }
+  </style>
+  <defs>
+    <marker id="arrow07" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L9,5 L0,10" fill="none" stroke="#5A5A5A" stroke-width="1.4"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- Header -->
+  <text x="70" y="66" class="mono" font-size="13" letter-spacing="0.08em" fill="#B7332C">SCHÉMA 07</text>
+  <text x="70" y="104" class="display" font-size="28" font-weight="600" fill="#1A1A1A">MLA, point de convergence de l'attention 2026</text>
+  <text x="70" y="134" class="display" font-size="18" font-style="italic" fill="#5A5A5A">Un attracteur pour l'architecture ouverte — et les tensions qui subsistent</text>
+  <line x1="70" y1="156" x2="1130" y2="156" stroke="#E5E1D8" stroke-width="1"/>
+
+  <!-- spokes from center (600,430) -->
+  <!-- to sparse (300,290) -->
+  <line x1="527" y1="396" x2="392" y2="315" stroke="#1F5560" stroke-width="1.4" marker-end="url(#arrow07)"/>
+  <!-- to quant (900,290) -->
+  <line x1="673" y1="396" x2="808" y2="315" stroke="#1F5560" stroke-width="1.4" marker-end="url(#arrow07)"/>
+  <!-- to conversion (300,570) -->
+  <line x1="527" y1="464" x2="392" y2="545" stroke="#1F5560" stroke-width="1.4" marker-end="url(#arrow07)"/>
+  <!-- to tensions (900,570) -->
+  <line x1="673" y1="464" x2="808" y2="545" stroke="#B7332C" stroke-width="1.4" marker-end="url(#arrow07)"/>
+
+  <!-- center hub MLA -->
+  <circle cx="600" cy="430" r="74" fill="#B7332C"/>
+  <text x="600" y="424" class="display" font-size="26" font-weight="600" fill="#FAF8F3" text-anchor="middle">MLA</text>
+  <text x="600" y="450" class="body" font-size="12" fill="#FAF8F3" text-anchor="middle" opacity="0.9">attention latente</text>
+
+  <!-- node: sparse -->
+  <g class="interactive" data-card="sparse" tabindex="0" role="button" aria-label="Co-conception avec la parcimonie">
+    <rect x="120" y="248" width="272" height="118" rx="4" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="140" y="278" class="body" font-size="15" font-weight="600" fill="#1F5560">Co-conception × parcimonie</text>
+    <text x="140" y="304" class="body" font-size="12.5" fill="#1A1A1A">MLA compresse les canaux (latent),</text>
+    <text x="140" y="322" class="body" font-size="12.5" fill="#1A1A1A">la sparse attention compresse les tokens.</text>
+    <text x="140" y="348" class="mono" font-size="12" fill="#1F5560">DeepSeek-V3.2 : double parcimonie</text>
+  </g>
+
+  <!-- node: quant -->
+  <g class="interactive" data-card="quant" tabindex="0" role="button" aria-label="Quantification du latent">
+    <rect x="808" y="248" width="272" height="118" rx="4" fill="#FAF8F3" stroke="#B58A2C" stroke-width="1.25"/>
+    <text x="828" y="278" class="body" font-size="15" font-weight="600" fill="#B58A2C">Quantification du latent</text>
+    <text x="828" y="304" class="body" font-size="12.5" fill="#1A1A1A">réduire encore un cache déjà petit,</text>
+    <text x="828" y="322" class="body" font-size="12.5" fill="#1A1A1A">mais le latent conjoint est fragile —</text>
+    <text x="828" y="348" class="mono" font-size="12" fill="#B58A2C">gain non additif, calibration dédiée</text>
+  </g>
+
+  <!-- node: conversion -->
+  <g class="interactive" data-card="conversion" tabindex="0" role="button" aria-label="Conversion universelle">
+    <rect x="120" y="494" width="272" height="118" rx="4" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/>
+    <text x="140" y="524" class="body" font-size="15" font-weight="600" fill="#1F5560">Conversion universelle</text>
+    <text x="140" y="550" class="body" font-size="12.5" fill="#1A1A1A">TransMLA : tout modèle GQA</text>
+    <text x="140" y="568" class="body" font-size="12.5" fill="#1A1A1A">convertible en MLA post-hoc.</text>
+    <text x="140" y="594" class="mono" font-size="12" fill="#1F5560">Llama / Qwen / Mistral : un vivier</text>
+  </g>
+
+  <!-- node: tensions -->
+  <g class="interactive" data-card="tensions" tabindex="0" role="button" aria-label="Tensions restantes">
+    <rect x="808" y="494" width="272" height="118" rx="4" fill="#B7332C" opacity="0.05"/>
+    <rect x="808" y="494" width="272" height="118" rx="4" fill="none" stroke="#B7332C" stroke-width="1.25"/>
+    <text x="828" y="524" class="body" font-size="15" font-weight="600" fill="#B7332C">Tensions restantes</text>
+    <text x="828" y="550" class="body" font-size="12.5" fill="#1A1A1A">latent unique non partitionnable</text>
+    <text x="828" y="568" class="body" font-size="12.5" fill="#1A1A1A">→ friction avec le tensor parallelism ;</text>
+    <text x="828" y="594" class="mono" font-size="12" fill="#B7332C">+ complexité d'entraînement, inertie GQA</text>
+  </g>
+
+  <!-- caption -->
+  <text x="600" y="690" class="body" font-size="14" fill="#1A1A1A" text-anchor="middle"><tspan font-weight="600">Pas une victoire acquise mais un basculement en cours :</tspan> l'adoption dépend moins de la qualité — établie —</text>
+  <text x="600" y="712" class="body" font-size="14" fill="#5A5A5A" text-anchor="middle">que de l'inertie de l'écosystème GQA que MLA prétend absorber.</text>
+
+  <!-- Footer -->
+  <line x1="70" y1="748" x2="1130" y2="748" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="70" y="772" class="body" font-size="12" font-style="italic" fill="#5A5A5A">Source : DeepSeek-V3.2-Exp ; TransMLA (arXiv:2502.07864) ; analyses matérielles de MLA (arXiv:2506.02523). Synthèse de l'auteur.</text>
+</svg>
+<figcaption class="figure-caption"><a class="anchor" href="#fig-07" title="Lien direct vers ce schéma">¶</a> Schéma 7 — MLA comme point de convergence : co-conception parcimonie, quantification du latent, conversion universelle, et les tensions restantes.</figcaption></figure>
+      </section>
+
+      <p class="report-outro"><em>Format co-écrit avec l'aide d'une IA · 24 juillet 2026 — Mathieu Guglielmino</em></p>
+    </main>
+
+    <aside id="sources" aria-label="Sources">
+      <button class="panel-close" type="button" aria-label="Fermer les sources">Fermer ✕</button>
+      <div class="sources-inner">
+      <h2>Sources</h2>
+      <ol id="sources-list">
+<li id="source-1">
+  <span class="cite-num">[1]</span> Kwon, Woosuk et al., <em>Efficient Memory Management for Large Language Model Serving with PagedAttention</em>. SOSP 2023. Pose le diagnostic du décodage <em>memory-bound</em> et du coût du KV-cache — la contrainte que MLA attaque à la racine.<br>
+  <a href="https://arxiv.org/abs/2309.06180" target="_blank" rel="noopener">arxiv.org/2309.06180 ↗</a>
+  <span class="accessed">consulté le 24 juillet 2026</span>
+</li>
+<li id="source-2">
+  <span class="cite-num">[2]</span> Shazeer, Noam, <em>Fast Transformer Decoding: One Write-Head is All You Need</em>. 2019. Origine du partage de têtes (MQA) : une seule tête clé/valeur pour toutes les requêtes.<br>
+  <a href="https://arxiv.org/abs/1911.02150" target="_blank" rel="noopener">arxiv.org/1911.02150 ↗</a>
+  <span class="accessed">consulté le 24 juillet 2026</span>
+</li>
+<li id="source-3">
+  <span class="cite-num">[3]</span> Ainslie, Joshua et al., <em>GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints</em>. EMNLP 2023. Grouped-Query Attention et l'uptraining à ~5 % du budget — le défaut de l'écosystème que MLA conteste.<br>
+  <a href="https://arxiv.org/abs/2305.13245" target="_blank" rel="noopener">arxiv.org/2305.13245 ↗</a>
+  <span class="accessed">consulté le 24 juillet 2026</span>
+</li>
+<li id="source-4">
+  <span class="cite-num">[4]</span> DeepSeek-AI, <em>DeepSeek-V2: A Strong, Economical, and Efficient Mixture-of-Experts Language Model</em>. 2024. Introduction de MLA : réduction du KV-cache de 93,3 %, débit ×5,76, 42,5 % de coûts d'entraînement en moins, RoPE découplé, absorption des matrices.<br>
+  <a href="https://arxiv.org/abs/2405.04434" target="_blank" rel="noopener">arxiv.org/2405.04434 ↗</a>
+  <span class="accessed">consulté le 24 juillet 2026</span>
+</li>
+<li id="source-5">
+  <span class="cite-num">[5]</span> Su, Jianlin et al., <em>RoFormer: Enhanced Transformer with Rotary Position Embedding</em>. 2021. RoPE : la rotation position-dépendante des requêtes et clés, source du « piège » que le découplage résout.<br>
+  <a href="https://arxiv.org/abs/2104.09864" target="_blank" rel="noopener">arxiv.org/2104.09864 ↗</a>
+  <span class="accessed">consulté le 24 juillet 2026</span>
+</li>
+<li id="source-6">
+  <span class="cite-num">[6]</span> DeepSeek-AI, <em>DeepSeek-V3 Technical Report</em>. 2024. MLA industrialisée à l'échelle 671 Md / 37 Md activés ; dimensions de production de l'attention latente (d_c = 512, 128 têtes, d_R = 64, 576 éléments/token).<br>
+  <a href="https://arxiv.org/abs/2412.19437" target="_blank" rel="noopener">arxiv.org/2412.19437 ↗</a>
+  <span class="accessed">consulté le 24 juillet 2026</span>
+</li>
+<li id="source-7">
+  <span class="cite-num">[7]</span> DeepSeek-AI, <em>FlashMLA</em> (dépôt open-source). Février 2025. Kernel de décodage MLA pour GPU Hopper : cache paginé par blocs de 64, ~3 000 Go/s / ~580 TFLOPS sur H800 au lancement.<br>
+  <a href="https://github.com/deepseek-ai/FlashMLA" target="_blank" rel="noopener">github.com/deepseek-ai/FlashMLA ↗</a>
+  <span class="accessed">consulté le 24 juillet 2026</span>
+</li>
+<li id="source-8">
+  <span class="cite-num">[8]</span> Meng, Fanxu et al., <em>TransMLA: Multi-Head Latent Attention Is All You Need</em>. NeurIPS 2025 (spotlight). GQA comme cas restreint de MLA ; conversion post-hoc (LLaMA-2-7B : −93 % de cache, ×10,6 à 8K, 6 Md tokens de réentraînement).<br>
+  <a href="https://arxiv.org/abs/2502.07864" target="_blank" rel="noopener">arxiv.org/2502.07864 ↗</a>
+  <span class="accessed">consulté le 24 juillet 2026</span>
+</li>
+<li id="source-9">
+  <span class="cite-num">[9]</span> DeepSeek-AI, <em>DeepSeek-V3.2-Exp</em> — attention parcimonieuse couplée à MLA. 2025. La double parcimonie tokens × latent, remontée à l'entraînement.<br>
+  <a href="https://github.com/deepseek-ai/DeepSeek-V3.2-Exp" target="_blank" rel="noopener">github.com/deepseek-ai/DeepSeek-V3.2-Exp ↗</a>
+  <span class="accessed">consulté le 24 juillet 2026</span>
+</li>
+<li id="source-10">
+  <span class="cite-num">[10]</span> Moonshot AI, <em>Kimi K2</em> — modèle mélange d'experts à grande échelle fondé sur l'attention latente (MLA) hors écosystème DeepSeek.<br>
+  <a href="https://github.com/MoonshotAI/Kimi-K2" target="_blank" rel="noopener">github.com/MoonshotAI/Kimi-K2 ↗</a>
+  <span class="accessed">consulté le 24 juillet 2026</span>
+</li>
+<li id="source-11">
+  <span class="cite-num">[11]</span> <em>A Hardware-Centric Analysis of DeepSeek's Multi-Head Latent Attention</em> (arXiv:2506.02523) et travaux apparentés sur les latents partitionnables. Documentent la friction de MLA avec le parallélisme de tenseur : un latent unique non shardable force chaque GPU à charger le cache complet.<br>
+  <a href="https://arxiv.org/abs/2506.02523" target="_blank" rel="noopener">arxiv.org/2506.02523 ↗</a>
+  <span class="accessed">consulté le 24 juillet 2026</span>
+</li>
+        </ol>
+      </div>
+    </aside>
+
+  </div>
+
+
+  <div id="zoom-overlay" hidden role="dialog" aria-modal="true" aria-label="Schéma agrandi">
+    <header id="zoom-header">
+      <span id="zoom-caption"></span>
+      <div class="zoom-controls">
+        <button type="button" class="zoom-out" aria-label="Dézoomer" title="Dézoomer (−)">−</button>
+        <button type="button" class="zoom-reset" aria-label="Ajuster à l'écran" title="Ajuster à l'écran">Reset</button>
+        <button type="button" class="zoom-in" aria-label="Zoomer" title="Zoomer (+)">+</button>
+        <button type="button" class="zoom-close" aria-label="Fermer (Échap)" title="Fermer (Échap)">×</button>
+      </div>
+    </header>
+    <div id="zoom-stage" tabindex="-1">
+      <div id="zoom-content"></div>
+      <div id="zoom-hint">Molette pour zoomer · glisser pour déplacer · Échap pour fermer</div>
+      <a class="schema-sigil zoom-sigil" href="https://mathieugug.github.io/" target="_blank" rel="noopener" aria-label="Mathieu Guglielmino — visiter mathieugug.github.io" title="Mathieu Guglielmino · mathieugug.github.io">
+        <svg class="sigil-mark" viewBox="0 0 44 44" aria-hidden="true" focusable="false">
+          <circle class="sigil-bg" cx="22" cy="22" r="20.5"/>
+          <circle class="sigil-ring" cx="22" cy="22" r="17.5"/>
+          <g class="sigil-letters"><text x="7.5" y="29">M</text><text x="22" y="29">G</text></g>
+        </svg>
+      </a>
+    </div>
+  </div>
+
+  <div id="modal-root" hidden role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card">
+      <button class="modal-close" data-close aria-label="Fermer">×</button>
+      <p class="modal-eyebrow" id="modal-eyebrow"></p>
+      <h3 class="modal-title" id="modal-title"></h3>
+      <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <script>
+    // ─────────────────────────────────────────────────
+    // DATA — replace these placeholders with real content
+    // ─────────────────────────────────────────────────
+
+    const SCHEMAS = {
+      "schema-01": {
+        "mha": { title: "MHA — la référence coûteuse", body: `<p>L'attention multi-têtes classique donne à chacune de ses <em>n_h</em> têtes sa propre projection clé et valeur. Le cache pèse <code>2·n_h·d_h</code> éléments par token et par couche — 32 768 pour 128 têtes de dimension 128. C'est le maximum de qualité, mais aussi le maximum de mémoire à relire à chaque token généré. Toute la famille MQA/GQA/MLA existe pour réduire ce chiffre sans trop toucher à la qualité.</p>` },
+        "gqa": { title: "GQA — le compromis dominant", body: `<p><em>Grouped-Query Attention</em> partage un jeu clé/valeur entre <em>g</em> groupes de têtes de requête. Avec 8 groupes sur 128 têtes, le cache tombe à 2 048 éléments/token tout en préservant l'essentiel de la qualité MHA. C'est le défaut de Llama, Qwen, Mistral, Gemma — souvent obtenu par <em>uptraining</em> d'un checkpoint MHA sur ~5 % du budget. Mais réduire davantage y revient toujours à partager plus de têtes : on <em>jette</em> de l'information plutôt que de la comprimer.</p>` },
+        "mqa": { title: "MQA — trop loin", body: `<p><em>Multi-Query Attention</em> (Shazeer 2019) pousse le partage à l'extrême : une seule tête clé/valeur pour toutes les requêtes, soit le plus petit cache possible (256 éléments/token ici). Le prix est une perte de qualité mesurable et une instabilité d'entraînement sur les gros modèles. MQA a montré la voie mais s'est révélé trop agressif — GQA est né pour l'adoucir.</p>` },
+        "mla": { title: "MLA — comprimer, pas trancher", body: `<p>MLA ne partage pas de têtes : elle projette clés et valeurs dans un <strong>latent conjoint</strong> de dimension 512, plus une petite clé RoPE partagée de 64, soit <strong>576 éléments/token</strong> — à peine plus qu'une GQA à 2 groupes. Mais là où GQA à cette taille dégrade la qualité, MLA <em>dépasse</em> MHA. La compression est apprise, pas structurelle : l'entraînement choisit les directions à conserver. <mark>Petit cache ET meilleure qualité : c'est le déplacement du front de Pareto.</mark></p>` }
+      },
+      "schema-02": {
+        "down-proj": { title: "Down-projection W^DKV", body: `<p>Pour chaque token, la matrice <code>W^DKV</code> comprime l'état caché (dimension du modèle, ~5 120) en un unique vecteur latent <em>c_KV</em> de dimension 512. C'est une projection descendante de rang faible : on suppose que l'essentiel de l'information clé/valeur du token tient dans ce sous-espace réduit. Rien d'autre n'est conservé pour le cache.</p>` },
+        "latent-cache": { title: "c_KV — le seul objet mis en cache", body: `<p>Le latent <em>c_KV</em> (512 éléments) est la <strong>seule</strong> chose écrite dans le cache, au lieu des clés et valeurs pleines. C'est la source du gain mémoire : un ordre de grandeur sous le MHA. Point crucial de la section 4 : à l'inférence, ce latent n'est pas décompressé — l'attention opère directement dessus grâce à l'absorption des matrices. <mark>Le cache latent n'est pas une version comprimée de l'état : il <em>est</em> l'état.</mark></p>` },
+        "up-proj": { title: "Up-projections W^UK, W^UV", body: `<p>Deux matrices montantes reconstruisent, à partir du latent, les clés (<code>W^UK</code>) et valeurs (<code>W^UV</code>) pleines. Naïvement, cette reconstruction à chaque pas de décodage annulerait le gain. Mais à l'inférence ces matrices se <em>replient</em> dans des matrices voisines (schéma 4) et ne sont jamais exécutées explicitement. Elles ne servent réellement qu'à l'entraînement, où K/V pleins sont matérialisés pour les gradients.</p>` },
+        "query": { title: "La voie requête aussi comprimée", body: `<p>DeepSeek comprime également les requêtes en un latent (dimension 1 536) via <code>W^DQ</code>, puis les reconstruit par <code>W^UQ</code>. Ce n'est pas un gain mémoire (les requêtes ne sont pas cachées) mais une réduction du coût d'activation à l'entraînement, et c'est <code>W^UQ</code> qui absorbe <code>W^UK</code> à l'inférence. La compression latente est donc appliquée symétriquement aux deux côtés du produit d'attention.</p>` }
+      },
+      "schema-03": {
+        "content-path": { title: "Voie contenu — absorbable", body: `<p>Les dimensions « contenu » des clés et requêtes ne portent aucune information de position. Elles sont compressées dans le latent <em>c_KV</em>, de rang faible, et surtout <strong>absorbables</strong> : <code>W^UK</code> peut se fondre dans <code>W^UQ</code> hors ligne, car aucune rotation position-dépendante ne s'intercale. C'est cette voie qui permet le calcul-dans-le-latent de la section 4.</p>` },
+        "position-path": { title: "Voie position — découplée", body: `<p>De petits vecteurs dédiés <em>k^R</em> et <em>q^R</em> (64 dimensions par tête) portent <em>uniquement</em> le signal RoPE. Ils ne passent pas par la compression latente et subissent leur rotation normalement. La clé RoPE est <strong>partagée</strong> par toutes les têtes et cachée à part. En les isolant, DeepSeek confine la partie non-absorbable à un petit budget fixe, laissant la voie contenu pleinement compressible.</p>` },
+        "rope-break": { title: "Concaténation et produit", body: `<p>Avant le produit scalaire, voie contenu et voie position sont concaténées. Le score d'attention combine ainsi une part absorbable (contenu, dans le latent) et une part explicitement calculée (position, après rotation). C'est ce montage à deux voies qui réconcilie deux exigences qu'on croyait incompatibles : encoder la position par RoPE <em>et</em> ne cacher qu'un latent.</p>` },
+        "cache-store": { title: "Ce que le cache stocke : 576", body: `<p>Le cache MLA par token et par couche contient exactement deux objets : le latent conjoint <em>c_KV</em> (512) et la clé RoPE découplée partagée (64), soit <strong>576 éléments</strong>. À comparer aux 32 768 d'un MHA à 128 têtes — une réduction de 93,3 % annoncée par DeepSeek-V2<a class="cite" data-cite="4" href="#source-4">4</a>. La position n'ajoute qu'un terme constant et partagé, pas un cache par tête.</p>` }
+      },
+      "schema-04": {
+        "latent-compute": { title: "Le chemin naïf (entraînement)", body: `<p>La voie intuitive : depuis le latent <em>c_KV</em>, remonter aux clés pleines via <code>W^UK</code>, puis calculer <code>q·kᵀ</code>. Correct, mais coûteux à l'inférence : il faudrait décompresser tout le contexte à chaque pas de décodage. C'est le chemin utilisé à l'entraînement, où les K/V pleins servent au calcul des gradients — pas au service.</p>` },
+        "absorb-keys": { title: "Absorption côté clés", body: `<p>Le score <code>(W^UQ c_Q)·(W^UK c_KV)</code> se réécrit <code>c_Q · [(W^UQ)ᵀ W^UK] · c_KV</code>. Le produit entre crochets est une matrice <strong>constante</strong>, calculable une fois hors ligne. <code>W^UK</code> est donc <em>absorbée</em> dans la projection de requête : on calcule le score directement entre requête et latent, sans jamais reconstruire la clé pleine. Le surcoût de la up-projection disparaît.</p>` },
+        "absorb-values": { title: "Absorption côté valeurs", body: `<p>Symétriquement, la valeur pleine <code>v = W^UV c_KV</code> n'apparaît que multipliée par la matrice de sortie <code>W^O</code>. On absorbe donc <code>W^UV</code> dans <code>W^O</code> : l'attention pondère les latents, et la reconstruction des valeurs est repoussée dans une projection déjà présente. Là encore, aucun calcul supplémentaire au décodage.</p>` },
+        "cache-is-state": { title: "Le cache est l'état", body: `<p>Conséquence des deux absorptions : à l'inférence, on ne matérialise jamais K et V pleins. L'attention opère <em>directement</em> sur les latents cachés. <mark>Le cache latent n'est pas une version comprimée de l'état à décompresser — il <em>est</em> l'état sur lequel l'attention opère.</mark> C'est ce qui distingue MLA d'une simple compression greffée. Note : vLLM et FlashMLA implémentent aussi une variante « naive » (recalcul) selon l'arbitrage calcul ↔ mémoire.</p>` }
+      },
+      "schema-05": {
+        "frontier": { title: "Deux frontières", body: `<p>La courbe teal est le compromis qualité × mémoire qu'atteignent MHA et les variantes GQA : un arbitrage fixe le long duquel on glisse en changeant le nombre de groupes. La courbe carmine est celle que MLA rend accessible : à mémoire égale, une meilleure qualité. <mark>GQA <em>suit</em> le front ; MLA le <em>déplace</em>.</mark> C'est la différence entre optimiser un compromis et en changer la nature.</p>` },
+        "gqa-point": { title: "Où tombe GQA", body: `<p>Les points GQA se situent sur la frontière fixe : GQA-8 offre presque la qualité MHA à 2 048 éléments/token ; GQA-2 descend en mémoire mais paie en qualité. On ne peut pas être à la fois plus petit et meilleur — le partage de têtes impose ce troc. L'ablation DeepSeek-V2 place GQA au mieux à parité avec MHA, jamais au-dessus.</p>` },
+        "mla-point": { title: "Où domine MLA", body: `<p>MLA occupe le coin convoité : haut (qualité > MHA) et gauche (petit cache, 576 éléments/token). À l'échelle DeepSeek, c'est un facteur 3,5 de mémoire sous GQA-8, <em>avec</em> une qualité supérieure. La raison : un latent appris capture plus d'information par octet qu'un partage de têtes structurel — l'entraînement choisit les directions à garder au lieu de les imposer a priori.</p>` },
+        "transmla": { title: "TransMLA : la flèche GQA → MLA", body: `<p>TransMLA<a class="cite" data-cite="8" href="#source-8">8</a> prouve que GQA est un cas restreint de MLA : tout modèle GQA se réécrit en MLA de même taille de cache, avec une expressivité en réserve. La flèche figure la conversion post-hoc — sur LLaMA-2-7B, −93 % de cache et ×10,6 d'inférence à 8K, pour seulement 6 Md tokens de réentraînement. L'écosystème GQA devient un vivier de modèles convertibles.</p>` },
+        "mha": { title: "MHA — la référence", body: `<p>MHA fixe le haut de la frontière fixe : la meilleure qualité de la famille par partage de têtes, mais au cache maximal (32 768 éléments/token). Toute la question de MLA est de dépasser ce plafond de qualité tout en consommant une fraction de cette mémoire — ce que l'ablation DeepSeek-V2 confirme.</p>` },
+        "mqa": { title: "MQA — le coin sacrifié", body: `<p>MQA occupe le coin bas-gauche : le plus petit cache, mais la qualité la plus faible et une instabilité d'entraînement. Il borne le compromis GQA du côté agressif. MLA atteint une taille de cache comparable <em>sans</em> le sacrifice de qualité, ce qui le rend qualitativement différent d'un simple partage de têtes poussé à l'extrême.</p>` }
+      },
+      "schema-06": {
+        "deepseek-v3": { title: "DeepSeek-V3 — MLA à l'échelle", body: `<p>DeepSeek-V3<a class="cite" data-cite="6" href="#source-6">6</a> généralise MLA à un modèle mélange d'experts de 671 Md de paramètres, dont 37 Md activés par token. Les dimensions de son attention latente — <em>d_c</em> = 512, 128 têtes, RoPE découplé 64 — sont devenues un standard de fait : 576 éléments de cache par token et par couche. MLA n'est plus une curiosité de papier mais la brique mémoire d'un des modèles frontière les plus servis de 2025.</p>` },
+        "flashmla": { title: "FlashMLA — le kernel", body: `<p>Ouvert par DeepSeek en février 2025<a class="cite" data-cite="7" href="#source-7">7</a>, FlashMLA est le kernel de décodage MLA pour GPU Hopper. Au lancement : ~3 000 Go/s en régime memory-bound et ~580 TFLOPS en régime compute-bound sur H800. Le README a depuis évolué (≈660 TFLOPS dense, variante Sparse MLA, support B200). Sans un tel kernel, le calcul-dans-le-latent resterait théorique.</p>` },
+        "paged-cache": { title: "Cache paginé, blocs de 64", body: `<p>FlashMLA alloue le cache latent par <strong>pages de 64 tokens</strong>, dans la lignée de PagedAttention : plus de sur-réservation contiguë, la fragmentation tombe à quelques pourcents. Combiné à la compression MLA, cela signifie que davantage de requêtes concurrentes tiennent en mémoire haute bande passante — le déterminant du débit en service par lots.</p>` },
+        "service": { title: "Effet systémique sur le service", body: `<p>Un cache 10 à 20× plus petit desserre trois contraintes d'un coup : la <strong>mémoire</strong> (plus de requêtes concurrentes), le <strong>débit</strong> (moins d'octets relus par token, en régime memory-bound), et le <strong>réseau</strong> — la <a href="../desagregation-prefill-decode/">désagrégation prefill/decode</a> transfère un latent de 576 éléments au lieu d'un cache plein. MLA n'est donc pas une optimisation locale : elle réduit simultanément trois postes que les dossiers voisins traitaient séparément.</p>` }
+      },
+      "schema-07": {
+        "sparse": { title: "Co-conception avec la parcimonie", body: `<p>MLA compresse dans l'espace des <em>canaux</em> (le latent) ; l'<a href="../attention-parcimonieuse/">attention parcimonieuse native</a> compresse dans l'espace des <em>tokens</em>. Orthogonales et composables : DeepSeek-V3.2-Exp couple une attention parcimoniée à MLA<a class="cite" data-cite="9" href="#source-9">9</a>, remontant les deux décisions à l'entraînement. La <em>double parcimonie</em> — creux en têtes latentes et creux en tokens — est le chantier système le plus riche de 2026.</p>` },
+        "quant": { title: "Quantification du latent", body: `<p>Le cache MLA est déjà un ordre de grandeur plus petit ; le <a href="../quantification-llm/">quantifier</a> le réduit encore. Mais le latent conjoint est fragile : une erreur de quantification s'y propage à <em>toutes</em> les têtes reconstruites, là où un K/V plein isole l'erreur. Le couplage MLA × quantification n'est pas additif et demande une calibration dédiée — un terrain de recherche ouvert.</p>` },
+        "conversion": { title: "Conversion universelle", body: `<p>TransMLA<a class="cite" data-cite="8" href="#source-8">8</a> rend potentiellement convertible tout l'écosystème GQA (Llama, Qwen, Mistral) en MLA post-hoc, sans réentraînement complet. Si cette conversion se banalise et que l'outillage (kernels, formats de poids) suit, le principal frein à l'adoption de MLA tombe — et GQA devient un socle transitoire plutôt qu'un point d'arrivée.</p>` },
+        "tensions": { title: "Tensions restantes", body: `<p>Deux frictions demeurent. Le <strong>parallélisme de tenseur</strong> : le latent unique de MLA n'est pas partitionnable, si bien qu'en décodage réparti chaque GPU charge redondamment le cache complet — des travaux récents<a class="cite" data-cite="11" href="#source-11">11</a> documentent ce trafic comme la limite structurelle de MLA. Et la <strong>complexité d'entraînement</strong> : découplage RoPE, absorption, stabilité du latent. L'adoption dépend moins de la qualité — établie — que de l'inertie de l'écosystème GQA.</p>` }
+      }
+    };
+    /* shape:
+      {
+        'schema-01': {
+          'region-id': { title: '...', body: '<p>...</p>', eyebrow: 'Schéma 1' },
+          ...
+        },
+        ...
+      }
+    */
+
+    const TOOLTIPS = {
+  "ttft": "Time to first token : délai entre l'envoi de la requête et l'arrivée du premier token de la réponse. Métrique critique pour l'expérience utilisateur en streaming.",
+  "llm-judge": "LLM-as-judge : utilisation d'un LLM pour scorer la qualité d'une autre sortie LLM (factualité, pertinence, ton). Permet l'évaluation à l'échelle, mais introduit ses propres biais.",
+  "mcp": "Model Context Protocol : standard ouvert de communication entre LLMs et outils externes, lancé par Anthropic en novembre 2024. Adopté par OpenAI, Google, Microsoft en 2025.",
+  "otlp": "OpenTelemetry Protocol : protocole standardisé (gRPC ou HTTP) pour transporter les signaux d'observabilité (traces, metrics, logs) vers un backend.",
+  "melt": "Metrics, Events, Logs, Traces : les quatre signaux fondamentaux de l'observabilité moderne, popularisés par l'écosystème cloud-native.",
+  "rag": "Retrieval-Augmented Generation : technique qui enrichit le contexte d'un LLM avec des documents récupérés dynamiquement depuis une base vectorielle.",
+  "slo": "Service Level Objective : cible mesurable de qualité de service (ex. 99,9 % des réponses sous 2 secondes). Base contractuelle de l'observabilité opérationnelle."
+};
+    /* shape: { 'CoT': 'Chain-of-Thought : ...', ... } */
+
+    const SOURCES = [
+  {
+    "n": 1,
+    "citation": "OpenTelemetry, <em>AI Agent Observability Standards</em>, OpenTelemetry Blog, mars 2025.",
+    "url": "https://opentelemetry.io/blog/2025/ai-agent-observability/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 2,
+    "citation": "InsightFinder, <em>AI Observability vs Traditional Monitoring</em>, décembre 2025.",
+    "url": "https://insightfinder.com/blog/ai-observability-vs-traditional-monitoring/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 3,
+    "citation": "IBM Think, <em>Observability Trends 2026</em>, IBM Institute for Business Value, mars 2026.",
+    "url": "https://www.ibm.com/think/insights/observability-trends",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 4,
+    "citation": "Dynatrace, <em>Six Observability Predictions for 2026</em>, décembre 2025.",
+    "url": "https://www.dynatrace.com/news/blog/six-observability-predictions-for-2026/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 5,
+    "citation": "Kore.ai, <em>AI Observability: Monitoring &amp; Governing AI Agents</em>, mars 2026.",
+    "url": "https://www.kore.ai/blog/what-is-ai-observability",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 6,
+    "citation": "Voiceflow, <em>What Is AI Agent Observability? A 2026 Guide</em>, mars 2026.",
+    "url": "https://www.voiceflow.com/blog/what-is-ai-agent-observability",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 7,
+    "citation": "Anthropic, <em>Building Effective Agents</em>, whitepaper, décembre 2024.",
+    "url": "https://www.anthropic.com/research/building-effective-agents",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 8,
+    "citation": "Groundcover, <em>AI Agent Observability Guide: Telemetry, Traces, Metrics</em>, février 2026.",
+    "url": "https://www.groundcover.com/learn/observability/ai-agent-observability",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 9,
+    "citation": "N-iX, <em>AI Agent Observability: Practical Framework</em>, décembre 2025.",
+    "url": "https://www.n-ix.com/ai-agent-observability/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 10,
+    "citation": "Langfuse, <em>AI Agent Observability, Tracing &amp; Evaluation</em>, février 2026.",
+    "url": "https://langfuse.com/blog/2024-07-ai-agent-observability-with-langfuse",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 11,
+    "citation": "OpenTelemetry, <em>GenAI Semantic Conventions (specification)</em>, version 1.37, 2026.",
+    "url": "https://opentelemetry.io/docs/specs/semconv/gen-ai/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 12,
+    "citation": "OpenTelemetry, <em>GenAI Agent Spans, Model Spans, Tool Spans, Events</em>, 2026.",
+    "url": "https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-agent-spans/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 13,
+    "citation": "Datadog, <em>LLM Observability + OTel GenAI Semantic Convention support</em>, décembre 2025.",
+    "url": "https://www.datadoghq.com/blog/llm-otel-semantic-convention/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 14,
+    "citation": "Braintrust, <em>AI Observability Tools: Buyer's Guide 2026</em>, janvier 2026.",
+    "url": "https://www.braintrust.dev/articles/best-ai-observability-tools-2026",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 15,
+    "citation": "GetMaxim, <em>Top 5 AI Agent Observability Platforms 2026</em>, décembre 2025.",
+    "url": "https://www.getmaxim.ai/articles/top-5-ai-agent-observability-platforms-in-2026/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 16,
+    "citation": "Traceloop, <em>OpenLLMetry — auto-instrumentation OTel pour 44+ providers LLM</em>, GitHub, 2026.",
+    "url": "https://github.com/traceloop/openllmetry",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 17,
+    "citation": "OpenLIT, <em>OpenLIT SDK — auto-instrumentation 1 ligne LLMs/vector DBs/GPUs</em>, GitHub, 2026.",
+    "url": "https://github.com/openlit/openlit",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 18,
+    "citation": "Gartner, <em>Magic Quadrant for Observability Platforms 2025</em>, juillet 2025.",
+    "url": "https://www.gartner.com/en/documents/6688834",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 19,
+    "citation": "OneUptime, <em>AI Workloads Observability: Cost Crisis</em>, avril 2026.",
+    "url": "https://oneuptime.com/blog/ai-workloads-observability-cost-crisis",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 20,
+    "citation": "Dynatrace, <em>Dynatrace Intelligence — Agentic OS announcement at Perform 2026</em>, février 2026.",
+    "url": "https://www.dynatrace.com/news/blog/dynatrace-intelligence-platform/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 21,
+    "citation": "Splunk, <em>Q1 2026 Observability Update — AI Agent Monitoring</em>, février 2026.",
+    "url": "https://www.splunk.com/en_us/blog/observability/splunk-observability-ai-agent-monitoring-innovations.html",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 22,
+    "citation": "Grafana Labs, <em>Leader Gartner Magic Quadrant Observability 2025 — #1 Completeness of Vision</em>, 2025.",
+    "url": "https://grafana.com/about/press/2025/07/",
+    "accessed": "2026-04-30"
+  }
+];
+    window.SCHEMAS = SCHEMAS;
+
+  </script>
+  <script src="/assets/dossier-app.js" defer></script>
+</body>
+</html>
