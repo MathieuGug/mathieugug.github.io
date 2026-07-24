@@ -36,7 +36,7 @@ Pourquoi ? Parce que le gain de MLA à l'inférence (section 4) repose sur la po
 
 La parade de DeepSeek est un **découplage** (*decoupled RoPE*). L'attention est scindée en deux voies. Une voie *contenu* : des dimensions de clé et de requête sans position, low-rank, compressées dans le latent et absorbables. Une voie *position* : des dimensions **découplées** `k^R` et `q^R`, de petite taille (`d_h^R = 64` par tête chez DeepSeek), qui portent *uniquement* le signal RoPE et ne passent pas par la compression latente. Les deux voies sont concaténées avant le produit scalaire ; la voie position subit sa rotation sans empêcher la voie contenu de rester absorbable. Le cache, dès lors, stocke deux choses par token : le latent conjoint `c_KV` (dimension `d_c = 512`) et **une** clé RoPE découplée partagée par toutes les têtes (dimension `d_h^R = 64`), soit **576 éléments par token**[^4] — un ordre de grandeur sous les 32 768 du MHA.
 
-[SCHEMA-03]
+![Le piège RoPE : voie contenu absorbable contre voie position découplée, concaténées avant le produit scalaire|width=1200](images/20260724-03-piege-rope-decouplage.svg)
 
 ## 4. L'absorption des matrices : le surcoût de projection est gratuit à l'inférence
 
@@ -48,7 +48,7 @@ Côté valeurs. Symétriquement, la valeur pleine `v_s = W^UV c_KV_s` n'apparaî
 
 Cette absorption est la raison profonde pour laquelle MLA n'est pas « GQA avec des étapes en plus » mais une architecture distincte. GQA économise de la mémoire en *dupliquant* moins de têtes ; MLA économise de la mémoire en *reparamétrant* l'attention pour qu'elle vive dans un espace latent — et le fait sans payer de calcul supplémentaire au décodage. Le prix se limite à une légère gymnastique d'implémentation : les kernels doivent gérer ce calcul-dans-le-latent, et c'est précisément ce que FlashMLA industrialise (section 6).
 
-[SCHEMA-04]
+![L'absorption des matrices : chemin naïf reconstruisant K et V contre chemin absorbé calculant dans le latent|width=1200](images/20260724-04-absorption-matrices.svg)
 
 ## 5. MLA contre GQA : même budget cache, plus de qualité
 
