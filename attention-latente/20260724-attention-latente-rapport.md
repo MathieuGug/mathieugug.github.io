@@ -58,7 +58,7 @@ L'ablation de DeepSeek-V2 est nette : **GQA reste au mieux à parité avec MHA**
 
 L'intuition tient en une phrase : un latent **appris** capture plus d'information par octet qu'un partage de têtes **structurel**. GQA impose *a priori* que certaines têtes partagent exactement les mêmes K/V ; MLA laisse l'entraînement décider quelles directions de l'espace K/V méritent d'être conservées dans le latent. La compression est optimisée plutôt qu'imposée — la même différence de nature que celle qui sépare, côté attention parcimonieuse, l'éviction gloutonne d'un cache de la [parcimonie native entraînée](../attention-parcimonieuse/). C'est le fil conducteur de tout ce cluster de dossiers : ce qui remonte de l'ingénierie de service vers l'entraînement gagne en qualité ce qu'il perd en simplicité.
 
-[SCHEMA-05]
+![Nuage de points qualité vs mémoire : MLA en haut à gauche domine la frontière GQA/MHA, flèche TransMLA de GQA vers MLA|width=1200](images/20260724-05-pareto-mla-gqa.svg)
 
 ## 6. Du papier au silicium : FlashMLA et le service en production
 
@@ -68,7 +68,7 @@ En février 2025, DeepSeek a ouvert **FlashMLA**, le kernel qui rend cette atten
 
 Cette efficacité a des effets systémiques. Un cache par token dix à vingt fois plus petit change l'arithmétique de la [désagrégation prefill/decode](../desagregation-prefill-decode/) : le transfert du KV entre pool de prefill et pool de decode, souvent le coût central de la désagrégation, devient beaucoup moins lourd quand ce qu'on transfère est un latent de 576 éléments plutôt qu'un cache plein. MLA n'est donc pas seulement une optimisation locale de l'attention : elle desserre simultanément la mémoire, le débit et le réseau — trois contraintes que les dossiers voisins traitaient séparément.
 
-[SCHEMA-06]
+![Du papier au silicium : DeepSeek-V3, kernel FlashMLA, cache paginé par blocs de 64, effet systémique sur le service|width=1200](images/20260724-06-papier-silicium.svg)
 
 ## 7. TransMLA : et si MLA absorbait GQA ?
 
