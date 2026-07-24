@@ -88,7 +88,7 @@ Trois lignes de force se dégagent pour les dix-huit mois qui viennent.
 
 **Adoption et tensions.** Au-delà de DeepSeek, MLA gagne du terrain — Kimi K2 de Moonshot est un modèle MLA à grande échelle[^10] — mais deux frictions demeurent. D'abord le **parallélisme de tenseur** : GQA se découpe proprement par groupe de têtes sur plusieurs GPU ; le latent conjoint de MLA n'a qu'une seule « tête » latente **non partitionnable**, si bien qu'en décodage réparti chaque GPU doit charger *redondamment* le cache latent complet — le bénéfice du sharding s'annule, et des travaux récents (analyses matérielles de MLA, propositions de latents partitionnables type *Multi-head Low-rank Attention*) documentent ce trafic mémoire excédentaire comme la limite structurelle de MLA[^11]. Ensuite la **complexité d'entraînement** : le découplage RoPE, l'absorption et la stabilité du latent ajoutent des pièces mobiles qu'un GQA n'a pas. ==L'histoire de MLA en 2026 n'est donc pas celle d'une victoire acquise mais d'un basculement en cours : une architecture qui a prouvé qu'on peut compresser sans jeter, et dont l'adoption générale dépend maintenant moins de sa qualité — établie — que de l'inertie de l'écosystème GQA qu'elle prétend absorber.==
 
-[SCHEMA-07]
+![Diagramme radial : MLA au centre, quatre trajectoires — co-conception parcimonie, quantification du latent, conversion universelle, tensions restantes|width=1200](images/20260724-07-trajectoires-mla.svg)
 
 ---
 
