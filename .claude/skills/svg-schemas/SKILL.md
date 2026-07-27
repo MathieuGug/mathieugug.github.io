@@ -133,26 +133,26 @@ Sur les apps deep-research desktop (`header.site` + `main#report` + sidebars), l
 
 ### Largeur des schémas adaptative selon l'état des sidebars
 
-Sous `@media (min-width: 1025px)`, la `.figure` casse `main#report` (max-width 760 px) pour prendre **toute la place horizontale visible**, en s'arrêtant pile aux sidebars actuelles.
+Sous `@media (min-width: 1025px)`, la `.figure` casse `main#report` (max-width 760 px) pour prendre **80 % de la place horizontale visible**, centrée dans le main-cell. Le cap à 80 % (au lieu de 100 % jusqu'au 2026-07-27) laisse respirer les schémas larges sur les écrans 1600+ ; un plancher à 48 px de débord empêche la figure de descendre sous la largeur de la colonne de texte sur les portables ~1440.
 
 **Deux états :**
 
-- **Sources ouvertes (par défaut)** : figure couvre le main-cell entier `[TOC-right, Sources-left]`.
-  - 1320 px : figure = 760 (= main)
-  - 1440 px : 880
-  - 1920 px : 1360
-- **Sources repliées (`.layout.sources-collapsed`)** : figure s'étend `[TOC-right, viewport-right]`.
-  - 1920 px : 1680
+- **Sources ouvertes (par défaut)** : figure = 80 % du main-cell `[TOC-right, Sources-left]`.
+  - ≤ 1510 px : figure = 760 (plancher = boîte de `main#report`)
+  - 1600 px : 832
+  - 1920 px : 1088
+- **Sources repliées (`.layout.sources-collapsed`)** : figure = 80 % de `[TOC-right, viewport-right]`.
+  - 1920 px : 1344
 
 **Formules CSS :**
 
 ```css
 .figure {
-  margin-inline: calc(-1 * max(0px, (100vw - 1320px) / 2 + 48px));
+  margin-inline: calc(-1 * max(48px, 40vw - 556px));
   width: auto;
 }
 .layout.sources-collapsed .figure {
-  margin-inline: calc(-1 * max(0px, (100vw - 904px) / 2));
+  margin-inline: calc(-1 * max(48px, 40vw - 428px));
 }
 ```
 
@@ -175,7 +175,7 @@ main#report {
 }
 ```
 
-Les deux constantes magiques de la formule (1320 et 904) sont dérivées en supposant `main#report` cappé à 760 et centré dans le main-cell. Si à la place `main#report` remplit toute la grid-cell (ancien pattern où chaque enfant `> .lead, > h1, > p…` était cappé individuellement à 760), la figure part de `240 + 48 = 288` au lieu de `(100vw - 520) / 2 + 48` et la formule de breakout calcule une marge négative beaucoup trop large → la figure recouvre le TOC à gauche et la sidebar Sources à droite.
+Les deux constantes magiques de la formule (556 et 428, soit `(0,8 × largeur_cell - 664) / 2` développé) sont dérivées en supposant `main#report` cappé à 760 et centré dans le main-cell — 664 px étant sa largeur utile (760 - 2 × 48 de padding). Si à la place `main#report` remplit toute la grid-cell (ancien pattern où chaque enfant `> .lead, > h1, > p…` était cappé individuellement à 760), la figure part de `240 + 48 = 288` au lieu de `(100vw - 520) / 2 + 48` et la formule de breakout calcule une marge négative beaucoup trop large → la figure recouvre le TOC à gauche et la sidebar Sources à droite.
 
 **Cas corrigé le 2026-05-16** sur `llm-jailbreaking/20260428-…-app.html` : figure dépassait à `x=100` avec TOC right à `x=240`, soit 140 px de chevauchement.
 
@@ -247,7 +247,7 @@ La proba est une **estimation éditoriale** ; elle doit suivre les pivots de la 
 - [ ] Bouton zoom `⛶` présent et fonctionnel
 - [ ] `<figure id="fig-NN">` + anchor `<a class="anchor" href="#fig-NN">¶</a>` au début de la figcaption (deep-link)
 - [ ] Page narrative : full-bleed avec `margin: … calc(50% - 50vw); padding: 0 clamp(16px, 3vw, 48px)` ; `<figcaption>` re-centré à 760 px
-- [ ] App deep-research : `main#report` container-capped à 760 px ; formule `.figure` margin-inline adaptative aux deux états sidebar (vérifier à 1320 / 1440 / 1920 px que ni TOC ni Sources ne sont recouverts)
+- [ ] App deep-research : `main#report` container-capped à 760 px ; formule `.figure` margin-inline adaptative aux deux états sidebar, capée à 80 % (vérifier à 1320 / 1440 / 1920 px que ni TOC ni Sources ne sont recouverts et que la figure ne passe jamais sous la largeur de la colonne de texte)
 - [ ] Branche interactive (journal Musk) : `data-modal-id` présent + entrée correspondante dans `modals`
 - [ ] Tracker Musk (si nouvelle entrée journal) : `DATA` mis à jour + `python tools/insert_tracker.py` re-runné
 - [ ] Typographie : tailles ≥ 11pt sur l'échelle de référence

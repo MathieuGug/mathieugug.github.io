@@ -138,30 +138,32 @@ Per the host site's `CLAUDE.md`, every published page (hub, app, scrolly, livre,
 
 ### 5. State-aware figure breakout on desktop (readability without sidebar overlap)
 
-On desktop (`min-width: 1025px`), `.figure` elements **break out of `main#report`'s 760 px column to grab as much horizontal space as the layout allows**, **stopping precisely at the visible sidebars**. The pattern is **state-aware**: when the user collapses the Sources panel via its edge toggle, schemas widen to claim the freed-up space.
+On desktop (`min-width: 1025px`), `.figure` elements **break out of `main#report`'s 760 px column to grab 80 % of the horizontal space the layout allows**, staying centered and **never reaching the visible sidebars**. The pattern is **state-aware**: when the user collapses the Sources panel via its edge toggle, schemas widen to claim part of the freed-up space.
 
 The `.layout` grid is **uncapped** — it spans the entire viewport (no `max-width: 1440px; margin: 0 auto`), so the TOC sticks to the viewport's left edge, the Sources panel sticks to the right edge, and the main-cell fills everything in between. `main#report` stays centered at 760 px max within the main-cell, so the body text width is constant; only schemas grab the extra space. Two states:
 
-- **Default (Sources panel expanded)**: figure fills the main-cell entirely — between TOC's right edge and Sources' left edge. At 1320 px viewport the figure equals main (760 px). At 1440 px: 880 px. At 1920 px: 1360 px.
-- **`.layout.sources-collapsed` (Sources panel collapsed)**: figure extends from TOC's right edge to the viewport's right edge. At 1920 px: 1680 px.
+- **Default (Sources panel expanded)**: figure spans 80 % of the main-cell, centered. At 1600 px viewport: 832 px. At 1920 px: 1088 px.
+- **`.layout.sources-collapsed` (Sources panel collapsed)**: figure spans 80 % of the `[TOC-right, viewport-right]` band. At 1920 px: 1344 px.
+
+**Why 80 % and not 100 % (changed 2026-07-27)**: full-width schemas read as oversized on 1600+ screens — the eye has to sweep the whole viewport to follow a single flow. The cap keeps the same breakout mechanics but leaves symmetric air on both sides. A `48px` floor on the breakout stops the figure from ever rendering **narrower than the prose column** on ~1440 px laptops (below ≈1510 px viewport, 80 % of the main-cell would fall under `main#report`'s own box).
 
 The text body keeps its 760 px max for readability in both states. **Neither the TOC nor the visible Sources sidebar is overlapped** — that was a deliberate constraint after observing that schemas with `width: 100vw` painted their `var(--paper)` background over the TOC items, visually clipping them. The figure transitions smoothly between states (280 ms ease, matching the layout's grid-template-columns transition).
 
 ```css
 @media (min-width: 1025px) {
-  /* Default state (sources panel expanded): figure spans the main-cell. */
+  /* Default state (sources panel expanded): figure spans 80% of the main-cell. */
   .figure {
-    margin-left: calc(-1 * max(0px, (100vw - 1320px) / 2 + 48px));
-    margin-right: calc(-1 * max(0px, (100vw - 1320px) / 2 + 48px));
+    margin-left: calc(-1 * max(48px, 40vw - 556px));
+    margin-right: calc(-1 * max(48px, 40vw - 556px));
     transition: margin-left 280ms ease, margin-right 280ms ease;
     padding-left: clamp(16px, 3vw, 48px);
     padding-right: clamp(16px, 3vw, 48px);
     border-radius: 0;
   }
-  /* Sources panel collapsed: figure extends from TOC's right edge to viewport's right. */
+  /* Sources panel collapsed: figure spans 80% of [TOC-right, viewport-right]. */
   .layout.sources-collapsed .figure {
-    margin-left: calc(-1 * max(0px, (100vw - 904px) / 2));
-    margin-right: calc(-1 * max(0px, (100vw - 904px) / 2));
+    margin-left: calc(-1 * max(48px, 40vw - 428px));
+    margin-right: calc(-1 * max(48px, 40vw - 428px));
   }
   .figure-caption {
     max-width: 760px;
@@ -172,35 +174,40 @@ The text body keeps its 760 px max for readability in both states. **Neither the
 }
 ```
 
-Note: `width` is **not** set — it's `auto`, and the negative symmetric margins make the figure expand outward symmetrically from `main#report`'s content edges. The browser computes the resulting width as `main_content_width + |margin-left| + |margin-right|`, which conveniently equals the main-cell width (default) or the `[TOC-right, viewport-right]` span (collapsed).
+Note: `width` is **not** set — it's `auto`, and the negative symmetric margins make the figure expand outward symmetrically from `main#report`'s content edges. The browser computes the resulting width as `main_content_width + |margin-left| + |margin-right|`, i.e. 80 % of the main-cell width (default) or of the `[TOC-right, viewport-right]` span (collapsed).
 
 **Math (so future readers can adapt the formulas):**
 
 Assumed layout: `.layout { grid-template-columns: 240px minmax(0, 1fr) 320px }` (uncapped, full viewport). Collapsed state: `.layout.sources-collapsed { grid-template-columns: 240px minmax(0, 1fr) 0 }`. `main#report { max-width: 760px; margin: 0 auto; padding: 56px 48px 96px }`. So `main#report` content area is `760 - 96 = 664 px` wide.
 
+General form: the figure's computed width is `664 + 2 × |margin|`, so targeting a width `W` means `margin = (W - 664) / 2`. With `W = 0.8 × main-cell`:
+
 **Default (sources expanded), grid `240 | 1fr | 320`:**
 - main-cell width = `100vw - 560`
-- `main#report` is centered in main-cell → distance from main's outer edge to main-cell's edge = `(main-cell - 760) / 2 = (100vw - 1320) / 2`
-- main has `padding: 0 48px` inside, so distance from main's content edge to main-cell's edge = `(100vw - 1320) / 2 + 48`
-- To pull the figure's edge from main's content edge to main-cell's edge: `margin-inline = -((100vw - 1320) / 2 + 48)`, clamped to 0 with `max(0px, …)` on viewports below 1320 px (where main-cell ≤ 760, main fills it, no centering offset)
-- Figure width (computed) = `664 + 2 × |margin| = 664 + (100vw - 1224) = 100vw - 560` ✓ matches main-cell width
+- target `W = 0.8 × (100vw - 560) = 80vw - 448`
+- `margin = (80vw - 448 - 664) / 2 = 40vw - 556`, floored with `max(48px, …)`
+- Figure width (computed) = `664 + 2 × (40vw - 556) = 80vw - 448` ✓ = 80 % of the main-cell
+- Symmetric margins keep the figure centered on `main#report`, itself centered in the main-cell → the 20 % of leftover space splits evenly on both sides
 
 **Sources collapsed, grid `240 | 1fr | 0`:**
 - main-cell width = `100vw - 240`
-- `main#report` is centered in main-cell → main is asymmetric in the viewport (more space on its right than its left)
-- Distance from main's content edge to main-cell's edge = `(main-cell - 760) / 2 + 48 = (100vw - 1000) / 2 + 48 = (100vw - 904) / 2`
-- Symmetric margin `-((100vw - 904) / 2)` works because the negative-margin symmetry around main exactly cancels main's asymmetric centering within the asymmetric main-cell
-  - Figure left = `main_content_left - |margin| = 240` (TOC's right edge) ✓
-  - Figure right = `main_content_right + |margin| = 100vw` (viewport's right edge) ✓
-- Figure width = `664 + (100vw - 904) = 100vw - 240` ✓ matches main-cell width
+- target `W = 0.8 × (100vw - 240) = 80vw - 192`
+- `margin = (80vw - 192 - 664) / 2 = 40vw - 428`, floored with `max(48px, …)`
+- The symmetric margin still works because the negative-margin symmetry around main exactly cancels main's asymmetric centering within the asymmetric main-cell — the figure stays centered on the `[TOC-right, viewport-right]` band without touching either edge
+
+**The `48px` floor:**
+- At `margin = 48px` the figure's box equals `main#report`'s own border box (`664 + 96 = 760`, or the whole cell when the cell is narrower than 760) — the widest a figure can be without breaking out at all, and the narrowest this pattern should ever render.
+- It binds below ≈1510 px (default state) / ≈1070 px (collapsed), where 80 % of the cell would otherwise fall under the prose column. Above those widths the 80 % term wins.
+- It can never overlap a sidebar: `main_content + 2 × 48 = main's border box ≤ main-cell`.
 
 The 280 ms transition matches the layout's `grid-template-columns: 280ms ease` so figure and sidebars animate in lockstep when the user toggles the panel.
 
 **Trade-offs and pitfalls:**
-- This pattern assumes the standard `header.site` + `main#report` + sidebars layout, with the layout **uncapped** (no `max-width: 1440px` on `.layout`). If you change the grid columns (wider TOC, narrower Sources) or `main#report`'s max-width / padding, recompute the magic constants `1320` and `904`:
-  - `1320 = TOC + main-max + sources = 240 + 760 + 320` (default state breakpoint where main starts being centered)
-  - `904 = TOC + main-max + 2 × main-padding = 240 + 760 + 96` (collapsed state same idea)
-- On viewports between 1025 and 1320 (default state), `main#report` already fills the cell (no centering offset), so the inner `(100vw - 1320) / 2 + 48` is negative-or-small; the `max(0px, …)` clamps the negative case to 0 and you get `margin-inline: 0`. Correct, but worth knowing if you debug a narrow desktop browser.
+- This pattern assumes the standard `header.site` + `main#report` + sidebars layout, with the layout **uncapped** (no `max-width: 1440px` on `.layout`). If you change the grid columns (wider TOC, narrower Sources) or `main#report`'s max-width / padding, recompute the constants `556` and `428` from the general form `margin = (0.8 × main-cell - main_content_width) / 2`:
+  - default: `(0.8 × (100vw - 240 - 320) - 664) / 2 = 40vw - 556`
+  - collapsed: `(0.8 × (100vw - 240) - 664) / 2 = 40vw - 428`
+  - the `664` is `main#report`'s content width (`760 - 2 × 48`); the `48px` floor is that same padding
+- On narrow desktops (1025 → ≈1510 px in the default state), the `48px` floor is what applies, so the figure renders exactly as wide as `main#report`'s box. Correct, but worth knowing if you debug a narrow desktop browser and wonder why the schema doesn't grow with the window.
 - The pattern requires `body { overflow-x: hidden }` (shipped via the mobile-friendliness defensive overflow above). Defensive — this CSS shouldn't actually trigger overflow if the math is right.
 - Below `1025px`, the layout collapses to a single column. Figures naturally fill the column, no override needed.
 - **Don't reintroduce `max-width: 1440px; margin: 0 auto` on `.layout`** — it caps the grid mid-viewport on 1440+ screens, leaves empty bands on the sides, and pushes the Sources collapse button (`right: 320px`) off the panel's left edge. The uncapped layout is the load-bearing assumption of these formulas.
