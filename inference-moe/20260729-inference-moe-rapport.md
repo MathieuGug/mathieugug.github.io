@@ -22,7 +22,7 @@ Le retournement est là. Sur un dense, optimiser l'inférence, c'est optimiser l
 
 ## 2. Anatomie du tout-à-tout
 
-[SCHEMA-02]
+![Topologie du tout-à-tout : deux nœuds de 8 GPU reliés en NVLink intra-nœud rapide et RDMA inter-nœud lent, avec le routage borné aux nœuds comme parade.|1200](images/20260729-02-tout-a-tout-topologie.svg)
 
 Le motif a été fixé par GShard en 2020, la première mise à l'échelle sérieuse d'un MoE[^3]. Une couche MoE distribuée par *parallélisme d'experts* (voir §3) enchaîne quatre étapes :
 
