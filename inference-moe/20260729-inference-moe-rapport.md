@@ -42,7 +42,7 @@ Cette asymétrie commande une parade que DeepSeek a inscrite jusque dans l'entra
 
 ## 3. EP contre TP contre DP : la grammaire du parallélisme
 
-[SCHEMA-03]
+![EP contre TP contre DP : quatre panneaux comparant le parallélisme de tenseurs, d'experts, de données sur l'attention, et leur combinaison canonique, avec le compromis mémoire.|900](images/20260729-03-ep-tp-dp.svg)
 
 Comment répartit-on une couche MoE sur *G* GPU ? Trois grammaires, qu'on combine en pratique.
 
