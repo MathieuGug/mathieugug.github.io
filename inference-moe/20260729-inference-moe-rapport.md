@@ -96,7 +96,7 @@ L'autre levier de cette performance est le **recouvrement à deux lots** (*two-b
 
 ## 7. Le paysage outillage 2026
 
-[SCHEMA-07]
+![Le paysage outillage 2026 : matrice SGLang, vLLM, NVIDIA Dynamo sur cinq capacités, le socle ouvert DeepEP/DeepGEMM/EPLB, et la fabric scale-up NVL72.|1200](images/20260729-07-paysage-outillage.svg)
 
 Le marché de l'inférence MoE s'est structuré en 2025-2026 autour d'une pile ouverte étonnamment convergente. Le **socle** est le trio DeepSeek — DeepEP (communication), DeepGEMM (calcul FP8), EPLB (équilibrage) — que la plupart des serveurs intègrent plutôt que de le réimplémenter.
 
