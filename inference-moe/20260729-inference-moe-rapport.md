@@ -83,7 +83,7 @@ Le coût de la redondance est mémoire : répliquer des experts consomme de la V
 
 ## 6. Deux régimes EP : prefill contre decode
 
-[SCHEMA-06]
+![Deux régimes EP : pool prefill EP32 sur 4 nœuds contre pool decode EP144 sur 18 nœuds avec 32 experts redondants, recouvrement à deux lots, et les chiffres SGLang 52,3k/22,3k tokens par seconde et par nœud.|1200](images/20260729-06-regimes-ep-prefill-decode.svg)
 
 La séparation *prefill*/*decode* (traitée dans [`desagregation-prefill-decode`](../desagregation-prefill-decode/)) prend, sous l'angle EP, une forme spécifique. Les deux phases n'ont pas le même profil, donc pas la même taille de groupe EP optimale :
 
