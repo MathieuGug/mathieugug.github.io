@@ -653,749 +653,769 @@
     </nav>
 
     <main id="report">
-<h1 class="report-title">La chaîne du silicium</h1>
-      <p class="lead">Sous les modèles, une chaîne d'approvisionnement en forme d'entonnoir : un lithographe, un fondeur, un packaging, une mémoire — chacun un point de passage quasi unique, tous concentrés en Asie de l'Est. Le facteur limitant de l'IA en 2026 n'est ni le modèle ni les FLOPs ; c'est le <strong>packaging avancé</strong>, et cette concentration fait du compute un objet géopolitique.</p>
-      <p class="byline"><em>10 juillet 2026 — Mathieu Guglielmino</em></p>
+<h1 class="report-title">Servir un mélange d'experts</h1>
+      <p class="lead">Le mélange d'experts a gagné la bataille de l'architecture. Ce qu'on raconte moins, c'est ce que ce choix coûte <em>une fois le modèle mis en service</em> : à chaque couche, le modèle doit expédier chaque token vers les experts que son routeur a choisis — répartis sur des dizaines de GPU — puis rapatrier les résultats. En production, <mark>le mélange d'experts ne se paie plus en calcul mais en communication</mark>, et l'arbitrage porteur de 2026 est parallélisme d'experts contre parallélisme de tenseurs.</p>
 
-      <h2 id="sc-1">1. Le substrat oublié</h2>
-      <p>Les dossiers de ce site parlent des modèles : comment ils raisonnent, comment on les évalue, comment on les sert à moindre coût. L'économie de l'inférence<a class="cite" data-cite="1" href="#source-1">1</a>, la gestion du KV-cache, le mélange d'experts, l'IA embarquée — tous partent d'un présupposé si évident qu'on l'oublie : <em>il y a des accélérateurs disponibles</em>. On optimise la façon dont un GPU est rempli, jamais la question de savoir d'où vient le GPU.</p>
-      <p>Or « avoir des GPU » n'est pas une donnée, c'est le sommet d'un entonnoir. Sous chaque module Blackwell ou MI400 se cache une chaîne d'approvisionnement d'une profondeur vertigineuse et d'une étroitesse inquiétante. <mark>À chaque étage de cette chaîne, un seul acteur — ou une poignée — détient plus de 90 % du marché mondial, sans substitut viable et avec des délais de 12 à 24 mois.</mark> Une étude conjointe de la <em>Semiconductor Industry Association</em> et du Boston Consulting Group a recensé <strong>plus de cinquante points</strong> dans la chaîne de valeur où une seule région détient plus de 65 % de la part de marché mondiale<a class="cite" data-cite="2" href="#source-2">2</a>.</p>
-      <p>Ce dossier prend le problème par le bas. Il ne demande pas « quel modèle tourne sur le GPU » mais « qui peut fabriquer le GPU, et où ». La réponse dessine un entonnoir dont chaque rétrécissement est un <strong>point de passage obligé</strong> : un maillon que rien ne contourne. Et cet entonnoir a une géographie très précise — Veldhoven, Hsinchu, Icheon, quelques villes japonaises (schéma 1).</p>
+      <section>
+        <p>Le mélange d'experts (<span class="term" data-tooltip="Mixture-of-Experts : architecture où seule une fraction des paramètres — quelques « experts » sur des centaines — est activée pour chaque token.">MoE</span>) est presque partout dans les modèles frontières ouverts de 2025-2026 : DeepSeek-V3, Llama 4, Qwen3, Mixtral portent des centaines de milliards de paramètres mais n'en activent qu'une fraction par token. La promesse est démontrée — à budget de calcul fixé, un modèle routé bat un modèle dense<a class="cite" data-cite="12" href="#source-12">12</a>.</p>
+        <p>La contrepartie tient en un mot : le <strong>tout-à-tout</strong>. Là où un modèle dense fait circuler ses activations le long d'un chemin prévisible, un MoE doit, à chaque couche, faire se rencontrer chaque token et ses experts — physiquement, sur le réseau. Deux communications collectives <span class="term" data-tooltip="Collectif où chaque GPU échange des données avec tous les autres, avec des volumes qui dépendent des décisions dynamiques du routeur.">all-to-all</span> par couche, synchrones, sur le chemin critique du décodage. À grande échelle, ce n'est plus l'algèbre linéaire des experts qui domine le temps de réponse, c'est le déplacement des tokens.</p>
+        <p>Ce dossier prend la suite de <a href="../melange-experts/">melange-experts</a>, qui traitait le MoE comme architecture, et de <a href="../desagregation-prefill-decode/">desagregation-prefill-decode</a>, qui traitait la séparation des phases. Ici on descend dans la <strong>couche de service</strong> : comment on place les experts sur le matériel, comment on route les tokens entre eux, et pourquoi la bibliothèque de communication est devenue aussi structurante que le modèle.</p>
+      </section>
 
       <figure class="figure" id="fig-01">
-        <svg data-schema-id="schema-01" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+        <svg data-schema-id="schema-01" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" font-family="Inter, sans-serif">
   <defs>
+    <marker id="arrow01" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#1A1A1A"/>
+    </marker>
     <style>
-      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
-      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
-      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+      .display{font-family:'Fraunces','Spectral',Georgia,serif;}
+      .mono{font-family:'JetBrains Mono','IBM Plex Mono',monospace;}
+      .interactive{cursor:pointer;}
     </style>
   </defs>
+  <rect x="0" y="0" width="1200" height="800" fill="#FAF8F3"/>
 
-  <rect width="1200" height="800" fill="#FAF8F3"/>
+  <!-- Header -->
+  <text x="60" y="52" class="mono" font-size="13" letter-spacing="0.08em" fill="#B7332C">SCHÉMA 01</text>
+  <text x="60" y="90" class="display" font-size="30" font-weight="600" fill="#1A1A1A">Anatomie d'une couche MoE en service</text>
+  <text x="60" y="118" class="display" font-size="17" font-style="italic" fill="#5A5A5A">Deux tout-à-tout synchrones par couche — et en décodage, ce sont eux qui dominent le temps.</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="1"/>
 
-  <!-- HEADER -->
-  <text x="60" y="55" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 01</text>
-  <text x="60" y="92" class="display" font-size="26" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">L'entonnoir du compute</text>
-  <text x="60" y="118" class="display" font-size="16" font-style="italic" fill="#5A5A5A">De la matière première au datacenter : à chaque étage, un acteur ou deux détiennent le marché</text>
-  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
-
-  <!-- concentration axis -->
-  <line x1="132" y1="185" x2="132" y2="620" stroke="#B8B5AE" stroke-width="1" stroke-dasharray="2 3"/>
-  <path d="M132 626 l-5 -10 h10 z" fill="#B8B5AE"/>
-  <text x="120" y="400" class="body" font-size="11" fill="#5A5A5A" letter-spacing="0.02em" transform="rotate(-90 120 400)" text-anchor="middle">concentration croissante · substituabilité décroissante</text>
-
-  <!-- BAND 1 — Matériaux (non interactive) -->
-  <rect x="210" y="175" width="780" height="62" rx="3" fill="#5A5A5A" fill-opacity="0.07" stroke="#B8B5AE" stroke-width="1"/>
-  <text x="600" y="203" class="body" font-size="14" font-weight="500" fill="#1A1A1A" text-anchor="middle">Matériaux &amp; consommables</text>
-  <text x="600" y="223" class="mono" font-size="11" fill="#5A5A5A" text-anchor="middle">Japon · &gt; 90 % (résists, plaquettes, ABF)</text>
-
-  <!-- BAND 2 — EUV (interactive) -->
-  <g class="interactive" data-card="etage-euv" tabindex="0" role="button" aria-label="Étage lithographie EUV — ASML">
-    <rect x="270" y="251" width="660" height="62" rx="3" fill="#1F5560" fill-opacity="0.08" stroke="#1F5560" stroke-width="1.5"/>
-    <text x="600" y="279" class="body" font-size="14" font-weight="500" fill="#1A1A1A" text-anchor="middle">Lithographie EUV</text>
-    <text x="600" y="299" class="mono" font-size="11" font-weight="600" fill="#1F5560" text-anchor="middle">ASML · 100 %</text>
+  <!-- Pipeline -->
+  <!-- 1. Gate -->
+  <g class="interactive" data-card="gate" tabindex="0" role="button" aria-label="Routeur — cliquez pour les détails">
+    <rect x="70" y="220" width="150" height="130" rx="4" fill="#1F5560" fill-opacity="0.10" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="145" y="270" text-anchor="middle" class="display" font-size="17" font-weight="600" fill="#1F5560">Routeur</text>
+    <text x="145" y="294" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">gate · top-k</text>
+    <text x="145" y="322" text-anchor="middle" class="mono" font-size="11" fill="#5A5A5A">local au GPU</text>
   </g>
 
-  <!-- BAND 3 — Fonderie (interactive) -->
-  <g class="interactive" data-card="etage-fonderie" tabindex="0" role="button" aria-label="Étage fonderie de pointe — TSMC">
-    <rect x="330" y="327" width="540" height="62" rx="3" fill="#1F5560" fill-opacity="0.08" stroke="#1F5560" stroke-width="1.5"/>
-    <text x="600" y="355" class="body" font-size="14" font-weight="500" fill="#1A1A1A" text-anchor="middle">Fonderie de pointe (&lt; 7 nm)</text>
-    <text x="600" y="375" class="mono" font-size="11" font-weight="600" fill="#1F5560" text-anchor="middle">TSMC · ~90 %</text>
+  <!-- 2. Dispatch all-to-all -->
+  <g class="interactive" data-card="dispatch-a2a" tabindex="0" role="button" aria-label="Dispatch all-to-all — cliquez pour les détails">
+    <rect x="300" y="200" width="180" height="170" rx="4" fill="#B7332C" fill-opacity="0.10" stroke="#B7332C" stroke-width="2"/>
+    <text x="390" y="248" text-anchor="middle" class="display" font-size="17" font-weight="600" fill="#B7332C">Dispatch</text>
+    <text x="390" y="270" text-anchor="middle" class="mono" font-size="12" fill="#B7332C">all-to-all #1</text>
+    <!-- crossing lines motif -->
+    <line x1="320" y1="300" x2="460" y2="345" stroke="#B7332C" stroke-width="1" stroke-opacity="0.55"/>
+    <line x1="320" y1="322" x2="460" y2="300" stroke="#B7332C" stroke-width="1" stroke-opacity="0.55"/>
+    <line x1="320" y1="345" x2="460" y2="322" stroke="#B7332C" stroke-width="1" stroke-opacity="0.55"/>
+    <text x="390" y="360" text-anchor="middle" class="body" font-size="11" fill="#5A5A5A">tokens → experts</text>
   </g>
 
-  <!-- BAND 4 — Packaging (interactive, carmine = tightest) -->
-  <g class="interactive" data-card="etage-packaging" tabindex="0" role="button" aria-label="Étage packaging avancé — CoWoS">
-    <rect x="390" y="403" width="420" height="62" rx="3" fill="#B7332C" fill-opacity="0.09" stroke="#B7332C" stroke-width="2"/>
-    <text x="600" y="431" class="body" font-size="14" font-weight="500" fill="#1A1A1A" text-anchor="middle">Packaging avancé (CoWoS)</text>
-    <text x="600" y="451" class="mono" font-size="11" font-weight="600" fill="#B7332C" text-anchor="middle">TSMC · 85 % — le maillon le plus tendu</text>
+  <!-- 3. Experts FFN -->
+  <g class="interactive" data-card="expert-ffn" tabindex="0" role="button" aria-label="Calcul des experts — cliquez pour les détails">
+    <rect x="560" y="196" width="180" height="178" rx="4" fill="#B58A2C" fill-opacity="0.10" stroke="#B58A2C" stroke-width="1.5"/>
+    <text x="650" y="230" text-anchor="middle" class="display" font-size="16" font-weight="600" fill="#B58A2C">Experts FFN</text>
+    <rect x="580" y="246" width="140" height="30" rx="3" fill="#FAF8F3" stroke="#B58A2C" stroke-width="1"/>
+    <text x="650" y="266" text-anchor="middle" class="mono" font-size="11" fill="#5A5A5A">expert 3</text>
+    <rect x="580" y="284" width="140" height="30" rx="3" fill="#FAF8F3" stroke="#B58A2C" stroke-width="1"/>
+    <text x="650" y="304" text-anchor="middle" class="mono" font-size="11" fill="#5A5A5A">expert 17</text>
+    <rect x="580" y="322" width="140" height="30" rx="3" fill="#FAF8F3" stroke="#B58A2C" stroke-width="1"/>
+    <text x="650" y="342" text-anchor="middle" class="mono" font-size="11" fill="#5A5A5A">expert 128</text>
   </g>
 
-  <!-- BAND 5 — HBM (interactive) -->
-  <g class="interactive" data-card="etage-hbm" tabindex="0" role="button" aria-label="Étage mémoire HBM">
-    <rect x="440" y="479" width="320" height="62" rx="3" fill="#B58A2C" fill-opacity="0.12" stroke="#B58A2C" stroke-width="1.5"/>
-    <text x="600" y="507" class="body" font-size="14" font-weight="500" fill="#1A1A1A" text-anchor="middle">Mémoire HBM</text>
-    <text x="600" y="527" class="mono" font-size="11" font-weight="600" fill="#B58A2C" text-anchor="middle">3 acteurs · SK hynix ~63 %</text>
+  <!-- 4. Combine all-to-all -->
+  <g class="interactive" data-card="combine-a2a" tabindex="0" role="button" aria-label="Combine all-to-all — cliquez pour les détails">
+    <rect x="820" y="200" width="180" height="170" rx="4" fill="#B7332C" fill-opacity="0.10" stroke="#B7332C" stroke-width="2"/>
+    <text x="910" y="248" text-anchor="middle" class="display" font-size="17" font-weight="600" fill="#B7332C">Combine</text>
+    <text x="910" y="270" text-anchor="middle" class="mono" font-size="12" fill="#B7332C">all-to-all #2</text>
+    <line x1="840" y1="300" x2="980" y2="345" stroke="#B7332C" stroke-width="1" stroke-opacity="0.55"/>
+    <line x1="840" y1="322" x2="980" y2="300" stroke="#B7332C" stroke-width="1" stroke-opacity="0.55"/>
+    <line x1="840" y1="345" x2="980" y2="322" stroke="#B7332C" stroke-width="1" stroke-opacity="0.55"/>
+    <text x="910" y="360" text-anchor="middle" class="body" font-size="11" fill="#5A5A5A">sorties → origine</text>
   </g>
 
-  <!-- BAND 6 — Accélérateur (non interactive) -->
-  <rect x="485" y="555" width="230" height="62" rx="3" fill="#1A1A1A"/>
-  <text x="600" y="583" class="body" font-size="14" font-weight="600" fill="#FAF8F3" text-anchor="middle">Accélérateur IA</text>
-  <text x="600" y="603" class="mono" font-size="10.5" fill="#FAF8F3" fill-opacity="0.8" text-anchor="middle">Nvidia · AMD → datacenter</text>
+  <!-- Output -->
+  <rect x="1040" y="250" width="100" height="70" rx="4" fill="#E5E1D8" stroke="#B8B5AE" stroke-width="1"/>
+  <text x="1090" y="282" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">sortie</text>
+  <text x="1090" y="300" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">couche</text>
 
-  <!-- right annotation -->
-  <text x="1005" y="285" class="body" font-size="11.5" fill="#5A5A5A">Un seul</text>
-  <text x="1005" y="302" class="body" font-size="11.5" fill="#5A5A5A">fournisseur</text>
-  <text x="1005" y="437" class="body" font-size="11.5" font-weight="600" fill="#B7332C">Rare</text>
-  <text x="1005" y="454" class="body" font-size="11.5" fill="#5A5A5A">et accaparé</text>
+  <!-- arrows between stages (white gap before target) -->
+  <line x1="222" y1="285" x2="292" y2="285" stroke="#1A1A1A" stroke-width="1.5" marker-end="url(#arrow01)"/>
+  <line x1="482" y1="285" x2="552" y2="285" stroke="#1A1A1A" stroke-width="1.5" marker-end="url(#arrow01)"/>
+  <line x1="742" y1="285" x2="812" y2="285" stroke="#1A1A1A" stroke-width="1.5" marker-end="url(#arrow01)"/>
+  <line x1="1002" y1="285" x2="1032" y2="285" stroke="#1A1A1A" stroke-width="1.5" marker-end="url(#arrow01)"/>
 
-  <!-- FOOTER -->
-  <line x1="60" y1="700" x2="1140" y2="700" stroke="#E5E1D8" stroke-width="0.5"/>
-  <text x="60" y="726" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Source : SIA/BCG 2021 ; CSET Georgetown 2021 ; TrendForce 2025-2026. Parts de marché = ordres de grandeur publics.</text>
-  <text x="60" y="745" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Chaque étage rétréci = moins d'acteurs, moins de substituts. La largeur figure la substituabilité, pas le volume.</text>
+  <!-- Time bar -->
+  <text x="60" y="470" class="display" font-size="16" font-style="italic" fill="#1A1A1A">Répartition du temps sur le chemin critique · décodage (illustratif)</text>
+  <rect x="60" y="492" width="1080" height="44" rx="3" fill="#FAF8F3" stroke="#E5E1D8" stroke-width="1"/>
+  <!-- attention -->
+  <rect x="60" y="492" width="200" height="44" fill="#B8B5AE" fill-opacity="0.5"/>
+  <text x="160" y="519" text-anchor="middle" class="body" font-size="11" fill="#1A1A1A">attention</text>
+  <!-- gate -->
+  <rect x="260" y="492" width="70" height="44" fill="#1F5560" fill-opacity="0.35"/>
+  <text x="295" y="519" text-anchor="middle" class="body" font-size="10" fill="#1A1A1A">gate</text>
+  <!-- all-to-all (dominant) -->
+  <rect x="330" y="492" width="620" height="44" fill="#B7332C" fill-opacity="0.35"/>
+  <text x="640" y="514" text-anchor="middle" class="body" font-size="12" font-weight="600" fill="#B7332C">dispatch + combine (all-to-all)</text>
+  <text x="640" y="530" text-anchor="middle" class="body" font-size="10" fill="#5A5A5A">le poste dominant</text>
+  <!-- expert gemm -->
+  <rect x="950" y="492" width="190" height="44" fill="#B58A2C" fill-opacity="0.35"/>
+  <text x="1045" y="519" text-anchor="middle" class="body" font-size="10" fill="#1A1A1A">calcul experts</text>
+
+  <!-- Annotation -->
+  <circle cx="76" cy="600" r="9" fill="#B7332C"/>
+  <text x="76" y="604" text-anchor="middle" class="mono" font-size="11" font-weight="600" fill="#FAF8F3">1</text>
+  <text x="96" y="604" class="body" font-size="13" fill="#1A1A1A">En décodage (limité par la mémoire), le calcul des experts est presque gratuit ; les deux collectifs synchrones portent le coût.</text>
+  <circle cx="76" cy="632" r="9" fill="#1F5560"/>
+  <text x="76" y="636" text-anchor="middle" class="mono" font-size="11" font-weight="600" fill="#FAF8F3">2</text>
+  <text x="96" y="636" class="body" font-size="13" fill="#1A1A1A">Un modèle de 60 couches aligne 120 tout-à-tout sur le chemin critique de chaque token généré.</text>
+
+  <!-- Footer -->
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="60" y="766" class="body" font-size="11" font-style="italic" fill="#5A5A5A">Source : GShard (Lepikhin et al. 2020) ; DeepSeek-V3 Technical Report, 2024. Décomposition du temps illustrative.</text>
 </svg>
 
-        <figcaption class="figure-caption"><a class="anchor" href="#fig-01" title="Lien direct vers ce schéma">¶</a> <em>Schéma 1 — L'entonnoir du compute. De la matière première au datacenter, chaque étage rétréci concentre le marché sur un ou deux acteurs. La largeur figure la substituabilité, pas le volume.</em></figcaption>
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-01" title="Lien direct vers ce schéma">¶</a> <em>Schéma 1 — Anatomie d'une couche MoE en service. Routeur, dispatch (all-to-all #1), experts, combine (all-to-all #2) ; en décodage, ce sont les deux collectifs synchrones qui dominent le temps.</em></figcaption>
       </figure>
 
-      <p>La thèse est simple à énoncer, dérangeante à admettre : la contrainte porteuse de l'IA en 2026 n'est pas algorithmique, elle est <strong>physique et géographique</strong>. Et le maillon le plus tendu n'est même pas celui qu'on croit — pas la gravure du silicium, mais le <span class="term" data-tooltip="Packaging avancé : l'ensemble des techniques qui assemblent plusieurs puces (calcul, mémoire) dans un même boîtier haute densité, au-delà de la simple mise en boîtier d'une puce unique.">packaging avancé</span> qui assemble le processeur et sa mémoire.</p>
-
-      <h2 id="sc-2">2. Anatomie d'un accélérateur IA</h2>
-      <p>Pour comprendre l'entonnoir, il faut ouvrir le module. Un accélérateur d'IA moderne — un superchip GB200 de Nvidia, un MI400 d'AMD — n'est pas <em>une</em> puce. C'est un <strong>assemblage hétérogène</strong> de composants venus de fournisseurs distincts, tenus ensemble par une prouesse d'ingénierie qui, elle-même, n'existe qu'à un seul endroit (schéma 2).</p>
+      <section>
+        <h2 id="moe-1">1. Le retournement : de l'algèbre linéaire au réseau</h2>
+        <p>Rappelons l'anatomie d'une couche MoE : un routeur attribue à chaque token un score sur <em>N</em> experts, sélectionne les <em>k</em> meilleurs (<span class="term" data-tooltip="top-k : sélection des k experts les mieux notés pour chaque token — typiquement 8 sur 256 pour DeepSeek-V3.">top-k</span>, typiquement 8 sur 256 pour DeepSeek-V3), envoie le token à ces experts, puis recombine leurs sorties pondérées. Le nombre de paramètres croît avec <em>N</em> ; le calcul, lui, ne croît qu'avec <em>k</em>. <mark>C'est ce découplage capacité/calcul qui fait tout l'intérêt du MoE — et c'est lui qui crée le problème de service.</mark></p>
+        <p>Car les experts ne tiennent pas sur un seul GPU. DeepSeek-V3 (671 milliards de paramètres, 37 milliards actifs par token<a class="cite" data-cite="1" href="#source-1">1</a>) répartit ses 256 experts par couche sur des dizaines d'accélérateurs. Dès lors, le token et l'expert qui doit le traiter ne sont presque jamais sur le même GPU. Il faut les faire se rencontrer sur le réseau.</p>
+        <p>Le poste de coût bascule à cause d'un fait bien documenté : la phase de génération token par token est <span class="term" data-tooltip="memory-bound : le GPU passe l'essentiel de son temps à charger des poids depuis la mémoire, ses unités de calcul largement sous-employées.">limitée par la mémoire</span>, pas par le calcul (voir <a href="../kv-cache/">kv-cache</a> et <a href="../economie-inference/">economie-inference</a>). Dans ce régime, le calcul des experts est presque gratuit ; ce qui coûte, c'est le double all-to-all — deux barrières où <em>tous</em> les GPU s'échangent <em>tous</em> leurs tokens, et où le plus lent impose son rythme.</p>
+        <p>Le retournement est là. Sur un dense, optimiser l'inférence, c'est optimiser la lecture des poids et la gestion du cache. Sur un MoE à grande échelle, <mark>optimiser l'inférence, c'est d'abord optimiser un motif de communication collective</mark> — sa topologie, son recouvrement avec le calcul, et l'équilibre de charge. Le modèle est le même ; le problème d'ingénierie a changé de nature.</p>
+      </section>
 
       <figure class="figure" id="fig-02">
-        <svg data-schema-id="schema-02" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+        <svg data-schema-id="schema-02" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" font-family="Inter, sans-serif">
   <defs>
-    <style>
-      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
-      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
-      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
-    </style>
-  </defs>
-
-  <rect width="1200" height="800" fill="#FAF8F3"/>
-
-  <!-- HEADER -->
-  <text x="60" y="55" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 02</text>
-  <text x="60" y="92" class="display" font-size="26" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Anatomie d'un module accélérateur</text>
-  <text x="60" y="118" class="display" font-size="16" font-style="italic" fill="#5A5A5A">Coupe d'un superchip type (GB200 / MI400) : quatre briques, quatre fournisseurs, aucun aux États-Unis</text>
-  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
-
-  <!-- CROSS SECTION -->
-  <!-- board -->
-  <rect x="230" y="560" width="640" height="34" rx="2" fill="#5A5A5A" fill-opacity="0.18" stroke="#B8B5AE" stroke-width="1"/>
-  <text x="550" y="581" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">Carte système (PCB)</text>
-
-  <!-- ABF substrate (interactive) -->
-  <g class="interactive" data-card="substrat-abf" tabindex="0" role="button" aria-label="Substrat ABF">
-    <rect x="270" y="505" width="560" height="50" rx="2" fill="#2F5D3F" fill-opacity="0.12" stroke="#2F5D3F" stroke-width="1.5"/>
-    <text x="550" y="535" class="body" font-size="13" font-weight="500" fill="#1A1A1A" text-anchor="middle">Substrat — film ABF</text>
-  </g>
-
-  <!-- CoWoS interposer (interactive, carmine) -->
-  <g class="interactive" data-card="interposeur-cowos" tabindex="0" role="button" aria-label="Interposeur CoWoS">
-    <rect x="320" y="456" width="460" height="44" rx="2" fill="#B7332C" fill-opacity="0.10" stroke="#B7332C" stroke-width="2"/>
-    <text x="550" y="483" class="body" font-size="13" font-weight="500" fill="#1A1A1A" text-anchor="middle">Interposeur silicium — CoWoS (TSV)</text>
-  </g>
-
-  <!-- HBM stacks (interactive) -->
-  <g class="interactive" data-card="stack-hbm" tabindex="0" role="button" aria-label="Stacks de mémoire HBM">
-    <!-- left towers -->
-    <g>
-      <rect x="336" y="376" width="40" height="80" rx="2" fill="#B58A2C" fill-opacity="0.16" stroke="#B58A2C" stroke-width="1.5"/>
-      <line x1="336" y1="392" x2="376" y2="392" stroke="#B58A2C" stroke-width="0.5"/>
-      <line x1="336" y1="408" x2="376" y2="408" stroke="#B58A2C" stroke-width="0.5"/>
-      <line x1="336" y1="424" x2="376" y2="424" stroke="#B58A2C" stroke-width="0.5"/>
-      <line x1="336" y1="440" x2="376" y2="440" stroke="#B58A2C" stroke-width="0.5"/>
-    </g>
-    <g>
-      <rect x="384" y="376" width="40" height="80" rx="2" fill="#B58A2C" fill-opacity="0.16" stroke="#B58A2C" stroke-width="1.5"/>
-      <line x1="384" y1="392" x2="424" y2="392" stroke="#B58A2C" stroke-width="0.5"/>
-      <line x1="384" y1="408" x2="424" y2="408" stroke="#B58A2C" stroke-width="0.5"/>
-      <line x1="384" y1="424" x2="424" y2="424" stroke="#B58A2C" stroke-width="0.5"/>
-      <line x1="384" y1="440" x2="424" y2="440" stroke="#B58A2C" stroke-width="0.5"/>
-    </g>
-    <!-- right towers -->
-    <g>
-      <rect x="676" y="376" width="40" height="80" rx="2" fill="#B58A2C" fill-opacity="0.16" stroke="#B58A2C" stroke-width="1.5"/>
-      <line x1="676" y1="392" x2="716" y2="392" stroke="#B58A2C" stroke-width="0.5"/>
-      <line x1="676" y1="408" x2="716" y2="408" stroke="#B58A2C" stroke-width="0.5"/>
-      <line x1="676" y1="424" x2="716" y2="424" stroke="#B58A2C" stroke-width="0.5"/>
-      <line x1="676" y1="440" x2="716" y2="440" stroke="#B58A2C" stroke-width="0.5"/>
-    </g>
-    <g>
-      <rect x="724" y="376" width="40" height="80" rx="2" fill="#B58A2C" fill-opacity="0.16" stroke="#B58A2C" stroke-width="1.5"/>
-      <line x1="724" y1="392" x2="764" y2="392" stroke="#B58A2C" stroke-width="0.5"/>
-      <line x1="724" y1="408" x2="764" y2="408" stroke="#B58A2C" stroke-width="0.5"/>
-      <line x1="724" y1="424" x2="764" y2="424" stroke="#B58A2C" stroke-width="0.5"/>
-      <line x1="724" y1="440" x2="764" y2="440" stroke="#B58A2C" stroke-width="0.5"/>
-    </g>
-    <text x="404" y="368" class="mono" font-size="10" fill="#B58A2C" text-anchor="middle">HBM</text>
-    <text x="744" y="368" class="mono" font-size="10" fill="#B58A2C" text-anchor="middle">HBM</text>
-  </g>
-
-  <!-- logic dies (interactive) -->
-  <g class="interactive" data-card="die-logique" tabindex="0" role="button" aria-label="Dies logiques de calcul">
-    <rect x="448" y="398" width="98" height="58" rx="2" fill="#1F5560" fill-opacity="0.14" stroke="#1F5560" stroke-width="1.5"/>
-    <rect x="558" y="398" width="98" height="58" rx="2" fill="#1F5560" fill-opacity="0.14" stroke="#1F5560" stroke-width="1.5"/>
-    <text x="497" y="432" class="body" font-size="11" font-weight="500" fill="#1F5560" text-anchor="middle">Die GPU</text>
-    <text x="607" y="432" class="body" font-size="11" font-weight="500" fill="#1F5560" text-anchor="middle">Die GPU</text>
-  </g>
-
-  <!-- SUPPLIER LEGEND -->
-  <text x="930" y="200" class="mono" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#5A5A5A">FOURNISSEUR PAR BRIQUE</text>
-  <line x1="930" y1="212" x2="1140" y2="212" stroke="#E5E1D8" stroke-width="0.5"/>
-
-  <circle cx="936" cy="248" r="5" fill="#1F5560"/>
-  <text x="950" y="245" class="body" font-size="12" font-weight="600" fill="#1A1A1A">Dies GPU</text>
-  <text x="950" y="262" class="body" font-size="11" fill="#5A5A5A">TSMC · N4 / N3 / N2</text>
-
-  <circle cx="936" cy="300" r="5" fill="#B58A2C"/>
-  <text x="950" y="297" class="body" font-size="12" font-weight="600" fill="#1A1A1A">HBM</text>
-  <text x="950" y="314" class="body" font-size="11" fill="#5A5A5A">SK hynix · Samsung · Micron</text>
-
-  <circle cx="936" cy="352" r="5" fill="#B7332C"/>
-  <text x="950" y="349" class="body" font-size="12" font-weight="600" fill="#1A1A1A">Interposeur CoWoS</text>
-  <text x="950" y="366" class="body" font-size="11" fill="#5A5A5A">TSMC (packaging avancé)</text>
-
-  <circle cx="936" cy="404" r="5" fill="#2F5D3F"/>
-  <text x="950" y="401" class="body" font-size="12" font-weight="600" fill="#1A1A1A">Substrat ABF</text>
-  <text x="950" y="418" class="body" font-size="11" fill="#5A5A5A">Ajinomoto (film) · Ibiden</text>
-
-  <rect x="930" y="452" width="210" height="66" rx="3" fill="#1A1A1A" fill-opacity="0.04" stroke="#B8B5AE" stroke-width="1"/>
-  <text x="944" y="476" class="body" font-size="11.5" fill="#1A1A1A">Le concepteur (Nvidia, AMD)</text>
-  <text x="944" y="494" class="body" font-size="11.5" fill="#1A1A1A">est américain. La <tspan font-weight="600">fabrication</tspan></text>
-  <text x="944" y="512" class="body" font-size="11.5" fill="#1A1A1A">est entièrement est-asiatique.</text>
-
-  <!-- FOOTER -->
-  <line x1="60" y1="700" x2="1140" y2="700" stroke="#E5E1D8" stroke-width="0.5"/>
-  <text x="60" y="726" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Source : documentation Nvidia / AMD ; SIA/BCG 2021. Coupe schématique — un GB200 embarque 2 dies logiques et 8 stacks HBM.</text>
-</svg>
-
-        <figcaption class="figure-caption"><a class="anchor" href="#fig-02" title="Lien direct vers ce schéma">¶</a> <em>Schéma 2 — Anatomie d'un module accélérateur. Quatre briques (dies logiques, HBM, interposeur CoWoS, substrat ABF), quatre fournisseurs, aucun aux États-Unis. Le concepteur dessine ; l'Asie de l'Est fabrique.</em></figcaption>
-      </figure>
-
-      <p>Décomposons de haut en bas. Les <strong>dies logiques</strong> — le cœur de calcul, gravé par TSMC en nœud avancé (N4 pour Hopper, N4P pour Blackwell, bientôt N2). C'est la partie « célèbre » de la chaîne, celle dont on parle quand on dit « puce 3 nanomètres ». Les <strong>stacks de HBM</strong> — la mémoire à haute bande passante, empilée en tours de 8, 12 ou 16 puces DRAM ; un GB200 en embarque huit, le MI400 d'AMD en vise 432 gigaoctets par module<a class="cite" data-cite="9" href="#source-9">9</a>. Cette mémoire vient de SK hynix, Samsung ou Micron — jamais de TSMC. L'<span class="term" data-tooltip="Interposeur : galette de silicium (ou substrat) intercalaire sur laquelle plusieurs puces sont posées côte à côte et reliées par des micro-connexions très denses ; le cœur du packaging 2,5D.">interposeur</span> <span class="term" data-tooltip="CoWoS (Chip-on-Wafer-on-Substrate) : la technique de packaging avancé de TSMC qui pose dies logiques et stacks HBM sur un interposeur de silicium commun.">CoWoS</span> — la galette de silicium sur laquelle dies logiques et stacks HBM sont posés côte à côte, reliés par des dizaines de milliers de micro-connexions ; c'est le packaging avancé, fabriqué par TSMC. Le <span class="term" data-tooltip="ABF (Ajinomoto Build-up Film) : film isolant qui structure les substrats haut de gamme des processeurs ; produit à plus de 95 % par le chimiste japonais Ajinomoto.">substrat ABF</span> — la plaque de résine qui porte l'ensemble, dont le film isolant vient à plus de 95 % d'un seul chimiste japonais, le même qui fabrique votre exhausteur de goût.</p>
-      <p><mark>Chacune de ces quatre briques a son propre goulot d'étranglement, et aucun n'est situé aux États-Unis, siège des concepteurs Nvidia et AMD.</mark> Le concepteur dessine ; l'Asie de l'Est fabrique, empile, assemble. La suite remonte chaque maillon, du plus amont — la lumière qui grave — au plus aval — le droit qui interdit.</p>
-
-      <h2 id="sc-3">3. Le lithographe unique — ASML</h2>
-      <p>Tout commence par la lumière. Graver un transistor de quelques nanomètres suppose de projeter un motif d'une finesse extrême sur une plaquette de silicium. La seule technologie capable de le faire au nœud de pointe est la <span class="term" data-tooltip="EUV (Extreme Ultraviolet) : lithographie par ultraviolets extrêmes à 13,5 nm de longueur d'onde, indispensable pour graver les nœuds les plus fins ; ASML en a le monopole.">lithographie EUV</span> (longueur d'onde 13,5 nm), et un seul fabricant au monde vend ces machines : le néerlandais <strong>ASML</strong>.</p>
-      <p>Le mot « monopole » est ici littéral. <mark>ASML détient 100 % du marché de la lithographie EUV et environ 94 % de la lithographie tous types confondus<a class="cite" data-cite="4" href="#source-4">4</a> ; aucun concurrent, ni japonais (Nikon, Canon) ni chinois (SMEE), n'a jamais livré une seule machine EUV de production.</mark> Ce monopole a coûté trente ans de recherche et plus de dix milliards de dollars à construire — et il repose lui-même sur une sous-chaîne de dépendances en poupées russes (schéma 3).</p>
-
-      <figure class="figure" id="fig-03">
-        <svg data-schema-id="schema-03" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
-  <defs>
-    <style>
-      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
-      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
-      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
-    </style>
-  </defs>
-
-  <rect width="1200" height="800" fill="#FAF8F3"/>
-
-  <!-- HEADER -->
-  <text x="60" y="55" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 03</text>
-  <text x="60" y="92" class="display" font-size="26" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">La sous-chaîne EUV en poupées russes</text>
-  <text x="60" y="118" class="display" font-size="16" font-style="italic" fill="#5A5A5A">Le monopole d'ASML repose lui-même sur des fournisseurs uniques : une chaîne emboîtée, sans substitut</text>
-  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
-
-  <!-- OUTER — ASML system (interactive) -->
-  <g class="interactive" data-card="assemblage-asml" tabindex="0" role="button" aria-label="Assemblage ASML">
-    <rect x="80" y="180" width="620" height="435" rx="4" fill="#1F5560" fill-opacity="0.04" stroke="#1F5560" stroke-width="2"/>
-    <text x="104" y="210" class="mono" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#1F5560">ASSEMBLAGE FINAL · VELDHOVEN (NL)</text>
-    <text x="104" y="234" class="body" font-size="15" font-weight="600" fill="#1A1A1A">Système de lithographie EUV — ASML</text>
-    <text x="560" y="234" class="mono" font-size="11" font-weight="600" fill="#1F5560" text-anchor="end">100 % du marché EUV</text>
-  </g>
-
-  <!-- source (interactive, nested) -->
-  <g class="interactive" data-card="source-lumiere" tabindex="0" role="button" aria-label="Source de lumière EUV">
-    <rect x="108" y="252" width="564" height="104" rx="3" fill="#B7332C" fill-opacity="0.06" stroke="#B7332C" stroke-width="1.5"/>
-    <text x="128" y="278" class="body" font-size="13" font-weight="600" fill="#1A1A1A">Source de lumière (13,5 nm)</text>
-    <text x="652" y="278" class="mono" font-size="10.5" font-weight="600" fill="#B7332C" text-anchor="end">fournisseur unique</text>
-    <text x="128" y="300" class="body" font-size="11.5" fill="#5A5A5A">Laser CO₂ de forte puissance — <tspan font-weight="600" fill="#1A1A1A">TRUMPF</tspan> (100 %)</text>
-    <text x="128" y="320" class="body" font-size="11.5" fill="#5A5A5A">Technologie de source — <tspan font-weight="600" fill="#1A1A1A">Cymer</tspan> (racheté par ASML)</text>
-    <text x="128" y="340" class="body" font-size="11.5" fill="#5A5A5A">~50 000 gouttelettes d'étain vaporisées par seconde</text>
-  </g>
-
-  <!-- optics (interactive, nested) -->
-  <g class="interactive" data-card="optiques-zeiss" tabindex="0" role="button" aria-label="Optiques Zeiss">
-    <rect x="108" y="368" width="564" height="92" rx="3" fill="#B7332C" fill-opacity="0.06" stroke="#B7332C" stroke-width="1.5"/>
-    <text x="128" y="394" class="body" font-size="13" font-weight="600" fill="#1A1A1A">Optiques — miroirs, pas de lentilles</text>
-    <text x="652" y="394" class="mono" font-size="10.5" font-weight="600" fill="#B7332C" text-anchor="end">fournisseur unique</text>
-    <text x="128" y="416" class="body" font-size="11.5" fill="#5A5A5A"><tspan font-weight="600" fill="#1A1A1A">Carl Zeiss SMT</tspan> (100 %) — partenaire exclusif</text>
-    <text x="128" y="436" class="body" font-size="11.5" fill="#5A5A5A">Polissage à la précision atomique ; l'EUV est absorbé par le verre</text>
-  </g>
-
-  <!-- integration note (non interactive) -->
-  <rect x="108" y="472" width="564" height="122" rx="3" fill="#5A5A5A" fill-opacity="0.05" stroke="#B8B5AE" stroke-width="1"/>
-  <text x="128" y="498" class="body" font-size="13" font-weight="600" fill="#1A1A1A">Intégration &amp; étalonnage</text>
-  <text x="128" y="522" class="body" font-size="11.5" fill="#5A5A5A">~<tspan class="mono" font-weight="600" fill="#1A1A1A">100 000</tspan> pièces par machine · transport par plusieurs avions-cargo</text>
-  <text x="128" y="544" class="body" font-size="11.5" fill="#5A5A5A">Le savoir-faire d'intégration est aussi rare que les composants eux-mêmes :</text>
-  <text x="128" y="564" class="body" font-size="11.5" fill="#5A5A5A">aligner source, optiques et plateau au picomètre est un actif tacite non copiable.</text>
-  <text x="128" y="584" class="body" font-size="11.5" font-style="italic" fill="#B7332C">Reconstruire ASML = reconstruire toute la chaîne emboîtée.</text>
-
-  <!-- RIGHT — High-NA (interactive) -->
-  <g class="interactive" data-card="high-na" tabindex="0" role="button" aria-label="High-NA EUV">
-    <rect x="740" y="252" width="400" height="176" rx="4" fill="#B58A2C" fill-opacity="0.08" stroke="#B58A2C" stroke-width="1.5"/>
-    <text x="762" y="280" class="mono" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#B58A2C">LA RELÈVE</text>
-    <text x="762" y="306" class="body" font-size="15" font-weight="600" fill="#1A1A1A">High-NA EUV — EXE:5200</text>
-    <text x="762" y="332" class="body" font-size="11.5" fill="#5A5A5A">Ouverture numérique 0,55 → gravure sous 2 nm</text>
-    <text x="762" y="356" class="body" font-size="11.5" fill="#5A5A5A">Prix estimé : <tspan class="mono" font-weight="600" fill="#1A1A1A">350–400 M$</tspan> l'unité</text>
-    <text x="762" y="380" class="body" font-size="11.5" fill="#5A5A5A">1ʳᵉ livraison production : Intel, Q4 2025</text>
-    <text x="762" y="404" class="body" font-size="11.5" font-style="italic" fill="#1A1A1A">Un seul outil = le prix d'une petite usine.</text>
-  </g>
-
-  <!-- RIGHT — moat -->
-  <rect x="740" y="444" width="400" height="150" rx="4" fill="#1A1A1A" fill-opacity="0.04" stroke="#B8B5AE" stroke-width="1"/>
-  <text x="762" y="472" class="body" font-size="13" font-weight="600" fill="#1A1A1A">Pourquoi personne ne rattrape</text>
-  <text x="762" y="498" class="body" font-size="11.5" fill="#5A5A5A">· Monopole bâti en <tspan font-weight="600" fill="#1A1A1A">~30 ans</tspan> et <tspan font-weight="600" fill="#1A1A1A">&gt;10 Md$</tspan></text>
-  <text x="762" y="520" class="body" font-size="11.5" fill="#5A5A5A">· Aucune machine EUV livrée par Nikon,</text>
-  <text x="778" y="540" class="body" font-size="11.5" fill="#5A5A5A">Canon ni le chinois SMEE</text>
-  <text x="762" y="562" class="body" font-size="11.5" fill="#5A5A5A">· Point de contrôle à l'export le plus</text>
-  <text x="778" y="582" class="body" font-size="11.5" fill="#5A5A5A">tranchant de toute la chaîne (§8)</text>
-
-  <!-- FOOTER -->
-  <line x1="60" y1="700" x2="1140" y2="700" stroke="#E5E1D8" stroke-width="0.5"/>
-  <text x="60" y="726" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Source : ASML Annual Report / Form 20-F 2024-2025 ; SIA/BCG 2021. Emboîtement = dépendance : chaque cadre contient son fournisseur unique.</text>
-</svg>
-
-        <figcaption class="figure-caption"><a class="anchor" href="#fig-03" title="Lien direct vers ce schéma">¶</a> <em>Schéma 3 — La sous-chaîne EUV en poupées russes. Le monopole d'ASML dépend lui-même de fournisseurs uniques : laser TRUMPF, optiques Zeiss, source Cymer. On ne rattrape pas cette chaîne emboîtée en quelques milliards.</em></figcaption>
-      </figure>
-
-      <p>La machine EUV n'est pas un produit ASML « pur ». C'est un intégrateur. La <strong>source de lumière</strong> projette 50 000 gouttelettes d'étain par seconde, vaporisées deux fois par un laser CO₂ de forte puissance fourni par l'allemand <strong>TRUMPF</strong> — encore un fournisseur unique ; la technologie de source vient de Cymer, racheté par ASML en 2013. Les <strong>optiques</strong> — des miroirs polis à une précision atomique, car aucune lentille ne transmet l'EUV — sont fabriquées à 100 % par l'allemand <strong>Carl Zeiss SMT</strong><a class="cite" data-cite="2" href="#source-2">2</a>. L'<strong>assemblage</strong> final, quelque <strong>100 000 pièces</strong> par machine, se fait à Veldhoven ; une machine se transporte par plusieurs avions-cargo.</p>
-      <p>La relève, la <span class="term" data-tooltip="High-NA EUV : nouvelle génération d'EUV à ouverture numérique 0,55 (contre 0,33), qui grave des motifs plus fins pour les nœuds sous 2 nm ; premières machines EXE:5200 en 2025.">High-NA EUV</span>, a franchi une étape en 2025 : le premier système de production EXE:5200B a été livré à Intel au quatrième trimestre, à un prix estimé entre 350 et 400 millions de dollars l'unité<a class="cite" data-cite="4" href="#source-4">4</a>. Un seul outil, le prix d'une petite usine. Ce que ce maillon révèle : la profondeur du fossé. On ne « rattrape » pas ASML en investissant quelques milliards ; il faudrait reconstruire Zeiss, TRUMPF, Cymer et trente ans d'apprentissage tacite. C'est cette <strong>irremplaçabilité</strong> qui en fait l'arme géopolitique la plus tranchante de la chaîne (§8).</p>
-
-      <h2 id="sc-4">4. Le fondeur de pointe — TSMC</h2>
-      <p>La machine EUV grave, mais elle grave <em>chez quelqu'un</em>. Ce quelqu'un, au nœud de pointe, est presque toujours le taïwanais <strong>TSMC</strong>. <mark>Le fondeur contrôle environ 90 % de la production mondiale de logique avancée sous 7 nm<a class="cite" data-cite="2" href="#source-2">2</a>, et l'île de Taïwan concentre à elle seule 67 % de la production de fonderie et 85 % du packaging avancé.</mark></p>
-      <p>Cette concentration n'est pas un accident, c'est le résultat d'une boucle de rétroaction : la fabrication de pointe exige un capital colossal (une usine N2 dépasse les 20 milliards de dollars), un savoir-faire de rendement qui ne s'acquiert qu'en produisant à grande échelle, et une densité d'ingénieurs et de sous-traitants qui n'existe qu'à Hsinchu et Tainan. Chaque génération renforce le leader. TSMC produit aujourd'hui en N3, monte le N2 (transistors <span class="term" data-tooltip="Gate-all-around (GAA) : architecture de transistor où la grille enveloppe complètement le canal, successeur du FinFET ; adoptée aux nœuds N2 / 2 nm.">gate-all-around</span>) en 2025-2026, et reste le seul fondeur dont Apple, Nvidia, AMD et bientôt tout le monde dépendent au même moment.</p>
-      <p>La conséquence stratégique porte un nom : le <span class="term" data-tooltip="Silicon shield (bouclier de silicium) : thèse selon laquelle l'indispensabilité industrielle de Taïwan la protégerait d'une agression, une interruption de TSMC coûtant des centaines de milliards à l'économie mondiale.">bouclier de silicium</span>. L'idée que l'indispensabilité industrielle de Taïwan la protégerait d'une agression, parce qu'une interruption de TSMC coûterait des centaines de milliards à l'économie mondiale — Chine comprise. C'est une thèse rassurante et fragile : elle fait d'un détroit de 180 km le point de défaillance unique le plus coûteux de l'économie numérique. Les projets de diversification — Fab 21 en Arizona, Kumamoto au Japon, Dresde en Allemagne — desserrent l'étau à la marge, mais <mark>le nœud de pointe et le packaging avancé restent, en 2026, massivement taïwanais.</mark></p>
-
-      <h2 id="sc-5">5. Le vrai goulot 2024-2026 : le packaging avancé</h2>
-      <p>Voici le retournement contre-intuitif de tout ce dossier. Pendant deux ans, ce qui a limité la livraison des accélérateurs Nvidia n'a été <strong>ni la gravure des dies logiques, ni la HBM prise isolément, mais l'opération qui les réunit</strong> : le packaging avancé de type CoWoS (<em>Chip-on-Wafer-on-Substrate</em>) — schéma 4.</p>
-
-      <figure class="figure" id="fig-04">
-        <svg data-schema-id="schema-04" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
-  <defs>
-    <style>
-      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
-      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
-      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
-    </style>
-    <marker id="arrow04" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+    <marker id="arrow02" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
       <path d="M0 0 L10 5 L0 10 z" fill="#B7332C"/>
     </marker>
+    <style>
+      .display{font-family:'Fraunces','Spectral',Georgia,serif;}
+      .mono{font-family:'JetBrains Mono','IBM Plex Mono',monospace;}
+      .interactive{cursor:pointer;}
+    </style>
   </defs>
+  <rect x="0" y="0" width="1200" height="800" fill="#FAF8F3"/>
 
-  <rect width="1200" height="800" fill="#FAF8F3"/>
+  <!-- Header -->
+  <text x="60" y="52" class="mono" font-size="13" letter-spacing="0.08em" fill="#B7332C">SCHÉMA 02</text>
+  <text x="60" y="90" class="display" font-size="30" font-weight="600" fill="#1A1A1A">Le tout-à-tout, anatomie d'un goulot</text>
+  <text x="60" y="118" class="display" font-size="17" font-style="italic" fill="#5A5A5A">Deux domaines de communication séparés par un ordre de grandeur — d'où le routage borné aux nœuds.</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="1"/>
 
-  <!-- HEADER -->
-  <text x="60" y="55" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 04</text>
-  <text x="60" y="92" class="display" font-size="26" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">La falaise du packaging</text>
-  <text x="60" y="118" class="display" font-size="16" font-style="italic" fill="#5A5A5A">Le vrai goulot 2024-2026 n'est pas la gravure du silicium, mais l'assemblage CoWoS qui réunit calcul et mémoire</text>
-  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
-
-  <!-- LEFT — capacity ramp chart (interactive) -->
-  <text x="90" y="178" class="body" font-size="13" font-weight="600" fill="#1A1A1A">Capacité CoWoS de TSMC — plaquettes / mois</text>
-  <g class="interactive" data-card="rampe-capacite" tabindex="0" role="button" aria-label="Rampe de capacité CoWoS">
-    <rect x="82" y="190" width="486" height="392" rx="3" fill="#1F5560" fill-opacity="0.03" stroke="#1F5560" stroke-width="1.25"/>
-    <!-- axis -->
-    <line x1="100" y1="560" x2="556" y2="560" stroke="#5A5A5A" stroke-width="1"/>
-    <!-- bars -->
-    <rect x="110" y="476" width="76" height="84" fill="#1F5560" fill-opacity="0.5"/>
-    <text x="148" y="466" class="mono" font-size="12" font-weight="600" fill="#1F5560" text-anchor="middle">35k</text>
-    <rect x="222" y="404" width="76" height="156" fill="#1F5560" fill-opacity="0.6"/>
-    <text x="260" y="394" class="mono" font-size="12" font-weight="600" fill="#1F5560" text-anchor="middle">~65k</text>
-    <rect x="334" y="344" width="76" height="216" fill="#1F5560" fill-opacity="0.7"/>
-    <text x="372" y="334" class="mono" font-size="12" font-weight="600" fill="#1F5560" text-anchor="middle">~90k</text>
-    <rect x="446" y="248" width="76" height="312" fill="#1F5560" fill-opacity="0.85"/>
-    <text x="484" y="238" class="mono" font-size="12" font-weight="600" fill="#1F5560" text-anchor="middle">~130k</text>
-    <!-- x labels -->
-    <text x="148" y="578" class="body" font-size="10.5" fill="#5A5A5A" text-anchor="middle">fin 2024</text>
-    <text x="260" y="578" class="body" font-size="10.5" fill="#5A5A5A" text-anchor="middle">mi 2025</text>
-    <text x="372" y="578" class="body" font-size="10.5" fill="#5A5A5A" text-anchor="middle">fin 2025</text>
-    <text x="484" y="578" class="body" font-size="10.5" fill="#5A5A5A" text-anchor="middle">fin 2026</text>
-    <!-- demand curve above -->
-    <path d="M120 236 C 240 214, 380 206, 520 200" fill="none" stroke="#B7332C" stroke-width="2" stroke-dasharray="5 4"/>
-    <text x="300" y="222" class="body" font-size="11" font-style="italic" fill="#B7332C" text-anchor="middle">demande — reste au-dessus de l'offre</text>
-  </g>
-  <text x="90" y="606" class="body" font-size="11" fill="#5A5A5A">Quadruplement en 2 ans — et pourtant <tspan font-weight="600" fill="#B7332C">guichet fermé, délais 52–78 semaines</tspan>.</text>
-
-  <!-- RIGHT TOP — CoWoS-S (interactive) -->
-  <g class="interactive" data-card="cowos-s" tabindex="0" role="button" aria-label="CoWoS-S">
-    <rect x="600" y="178" width="258" height="150" rx="3" fill="#5A5A5A" fill-opacity="0.05" stroke="#B8B5AE" stroke-width="1.25"/>
-    <text x="620" y="204" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#5A5A5A">CoWoS-S</text>
-    <text x="620" y="228" class="body" font-size="12.5" font-weight="600" fill="#1A1A1A">Interposeur silicium</text>
-    <text x="620" y="250" class="body" font-size="11" fill="#5A5A5A">Galette de silicium pleine</text>
-    <text x="620" y="270" class="body" font-size="11" fill="#5A5A5A">gravée de pistes fines + TSV.</text>
-    <text x="620" y="292" class="body" font-size="11" fill="#5A5A5A">Bridé par la limite du réticule</text>
-    <text x="620" y="312" class="body" font-size="11" fill="#5A5A5A">(~858 mm²).</text>
+  <!-- Node A (NVLink domain) -->
+  <g class="interactive" data-card="nvlink-domain" tabindex="0" role="button" aria-label="Domaine NVLink intra-nœud — cliquez pour les détails">
+    <rect x="80" y="180" width="380" height="300" rx="6" fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="100" y="208" class="mono" font-size="12" fill="#1F5560">NŒUD A · 8 GPU · NVLink</text>
+    <rect x="110" y="230" width="150" height="95" rx="4" fill="#FAF8F3" stroke="#1F5560" stroke-width="1"/>
+    <text x="185" y="282" text-anchor="middle" class="mono" font-size="12" fill="#1A1A1A">GPU 0</text>
+    <rect x="290" y="230" width="150" height="95" rx="4" fill="#FAF8F3" stroke="#1F5560" stroke-width="1"/>
+    <text x="365" y="282" text-anchor="middle" class="mono" font-size="12" fill="#1A1A1A">GPU 1</text>
+    <rect x="110" y="345" width="150" height="95" rx="4" fill="#FAF8F3" stroke="#1F5560" stroke-width="1"/>
+    <text x="185" y="397" text-anchor="middle" class="mono" font-size="12" fill="#1A1A1A">GPU 2</text>
+    <rect x="290" y="345" width="150" height="95" rx="4" fill="#FAF8F3" stroke="#1F5560" stroke-width="1"/>
+    <text x="365" y="397" text-anchor="middle" class="mono" font-size="12" fill="#1A1A1A">GPU 3</text>
+    <!-- NVLink mesh -->
+    <line x1="260" y1="277" x2="290" y2="277" stroke="#1F5560" stroke-width="1.25"/>
+    <line x1="185" y1="325" x2="185" y2="345" stroke="#1F5560" stroke-width="1.25"/>
+    <line x1="365" y1="325" x2="365" y2="345" stroke="#1F5560" stroke-width="1.25"/>
+    <line x1="260" y1="392" x2="290" y2="392" stroke="#1F5560" stroke-width="1.25"/>
+    <line x1="260" y1="325" x2="290" y2="345" stroke="#1F5560" stroke-width="1" stroke-opacity="0.6"/>
+    <line x1="290" y1="325" x2="260" y2="345" stroke="#1F5560" stroke-width="1" stroke-opacity="0.6"/>
   </g>
 
-  <!-- RIGHT TOP — CoWoS-L (interactive, carmine) -->
-  <g class="interactive" data-card="cowos-l" tabindex="0" role="button" aria-label="CoWoS-L">
-    <rect x="882" y="178" width="258" height="150" rx="3" fill="#B7332C" fill-opacity="0.06" stroke="#B7332C" stroke-width="1.5"/>
-    <text x="902" y="204" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#B7332C">CoWoS-L</text>
-    <text x="902" y="228" class="body" font-size="12.5" font-weight="600" fill="#1A1A1A">Ponts LSI</text>
-    <text x="902" y="250" class="body" font-size="11" fill="#5A5A5A">Petits ponts de silicium qui</text>
-    <text x="902" y="270" class="body" font-size="11" fill="#5A5A5A">« cousent » les chiplets sur</text>
-    <text x="902" y="290" class="body" font-size="11" fill="#5A5A5A">substrat organique → boîtiers</text>
-    <text x="902" y="310" class="body" font-size="11" fill="#5A5A5A">plusieurs × le réticule (Blackwell).</text>
+  <!-- Node B -->
+  <g class="interactive" data-card="all-to-all-matrix" tabindex="0" role="button" aria-label="Le motif all-to-all — cliquez pour les détails">
+    <rect x="740" y="180" width="380" height="300" rx="6" fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="760" y="208" class="mono" font-size="12" fill="#1F5560">NŒUD B · 8 GPU · NVLink</text>
+    <rect x="770" y="230" width="150" height="95" rx="4" fill="#FAF8F3" stroke="#1F5560" stroke-width="1"/>
+    <text x="845" y="282" text-anchor="middle" class="mono" font-size="12" fill="#1A1A1A">GPU 4</text>
+    <rect x="950" y="230" width="150" height="95" rx="4" fill="#FAF8F3" stroke="#1F5560" stroke-width="1"/>
+    <text x="1025" y="282" text-anchor="middle" class="mono" font-size="12" fill="#1A1A1A">GPU 5</text>
+    <rect x="770" y="345" width="150" height="95" rx="4" fill="#FAF8F3" stroke="#1F5560" stroke-width="1"/>
+    <text x="845" y="397" text-anchor="middle" class="mono" font-size="12" fill="#1A1A1A">GPU 6</text>
+    <rect x="950" y="345" width="150" height="95" rx="4" fill="#FAF8F3" stroke="#1F5560" stroke-width="1"/>
+    <text x="1025" y="397" text-anchor="middle" class="mono" font-size="12" fill="#1A1A1A">GPU 7</text>
+    <line x1="920" y1="277" x2="950" y2="277" stroke="#1F5560" stroke-width="1.25"/>
+    <line x1="845" y1="325" x2="845" y2="345" stroke="#1F5560" stroke-width="1.25"/>
+    <line x1="1025" y1="325" x2="1025" y2="345" stroke="#1F5560" stroke-width="1.25"/>
+    <line x1="920" y1="392" x2="950" y2="392" stroke="#1F5560" stroke-width="1.25"/>
   </g>
 
-  <!-- RIGHT BOTTOM — Nvidia allocation (interactive) -->
-  <g class="interactive" data-card="allocation-nvidia" tabindex="0" role="button" aria-label="Allocation Nvidia de la capacité CoWoS-L">
-    <rect x="600" y="352" width="540" height="230" rx="3" fill="#B58A2C" fill-opacity="0.06" stroke="#B58A2C" stroke-width="1.25"/>
-    <text x="620" y="380" class="body" font-size="13" font-weight="600" fill="#1A1A1A">Un goulot rare… et accaparé</text>
-    <text x="620" y="402" class="body" font-size="11.5" fill="#5A5A5A">Répartition estimée de la capacité CoWoS-L 2026 :</text>
-    <!-- stacked bar -->
-    <rect x="620" y="418" width="357" height="34" fill="#B7332C" fill-opacity="0.85"/>
-    <rect x="977" y="418" width="77" height="34" fill="#B58A2C" fill-opacity="0.7"/>
-    <rect x="1054" y="418" width="66" height="34" fill="#5A5A5A" fill-opacity="0.35"/>
-    <text x="798" y="440" class="mono" font-size="12" font-weight="600" fill="#FAF8F3" text-anchor="middle">Nvidia ~70 %</text>
-    <text x="1015" y="440" class="mono" font-size="10" font-weight="600" fill="#1A1A1A" text-anchor="middle">+15 %</text>
-    <text x="1087" y="440" class="mono" font-size="10" fill="#5A5A5A" text-anchor="middle">reste</text>
-    <text x="620" y="482" class="body" font-size="11.5" fill="#5A5A5A">Les 3 premiers clients absorbent <tspan font-weight="600" fill="#1A1A1A">&gt; 85 %</tspan> de la capacité verrouillée.</text>
-    <line x1="620" y1="500" x2="1120" y2="500" stroke="#B58A2C" stroke-width="0.5" stroke-dasharray="2 3"/>
-    <text x="620" y="524" class="body" font-size="11.5" fill="#1A1A1A">Couplage critique : le nombre de stacks HBM qu'on parvient à</text>
-    <text x="620" y="544" class="body" font-size="11.5" fill="#1A1A1A">poser sur l'interposeur définit la mémoire du module (Schéma 5).</text>
-    <text x="620" y="566" class="body" font-size="11" font-style="italic" fill="#B58A2C">Packaging et HBM se serrent la main — deux goulots noués.</text>
+  <!-- Inter-node RDMA link -->
+  <g class="interactive" data-card="rdma-domain" tabindex="0" role="button" aria-label="Domaine RDMA inter-nœud — cliquez pour les détails">
+    <rect x="470" y="300" width="260" height="60" rx="6" fill="#B7332C" fill-opacity="0.06" stroke="#B7332C" stroke-width="1" stroke-dasharray="4 3"/>
+    <line x1="465" y1="330" x2="595" y2="330" stroke="#B7332C" stroke-width="2.5" stroke-dasharray="8 5" marker-start="url(#arrow02)"/>
+    <line x1="605" y1="330" x2="735" y2="330" stroke="#B7332C" stroke-width="2.5" stroke-dasharray="8 5" marker-end="url(#arrow02)"/>
+    <text x="600" y="326" text-anchor="middle" class="mono" font-size="12" fill="#B7332C">RDMA</text>
+    <text x="600" y="348" text-anchor="middle" class="body" font-size="11" fill="#5A5A5A">InfiniBand</text>
   </g>
 
-  <!-- FOOTER -->
-  <line x1="60" y1="700" x2="1140" y2="700" stroke="#E5E1D8" stroke-width="0.5"/>
-  <text x="60" y="726" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Source : TSMC (communications investisseurs 2025) ; TrendForce 2025-2026. Chiffres de capacité = ordres de grandeur ; la demande est illustrative.</text>
+  <!-- Bandwidth comparison -->
+  <text x="60" y="540" class="display" font-size="16" font-style="italic" fill="#1A1A1A">L'asymétrie de bande passante (mesures DeepEP)</text>
+  <text x="60" y="580" class="body" font-size="13" fill="#1F5560">NVLink intra-nœud</text>
+  <rect x="260" y="566" width="600" height="22" rx="3" fill="#1F5560" fill-opacity="0.6"/>
+  <text x="872" y="583" class="mono" font-size="13" fill="#1F5560">~150 Go/s</text>
+  <text x="60" y="618" class="body" font-size="13" fill="#B7332C">RDMA inter-nœud</text>
+  <rect x="260" y="604" width="210" height="22" rx="3" fill="#B7332C" fill-opacity="0.6"/>
+  <text x="482" y="621" class="mono" font-size="13" fill="#B7332C">~45–90 Go/s</text>
+
+  <!-- Node-limited routing annotation -->
+  <g class="interactive" data-card="node-limited-routing" tabindex="0" role="button" aria-label="Routage borné aux nœuds — cliquez pour les détails">
+    <rect x="60" y="656" width="1080" height="52" rx="4" fill="#B58A2C" fill-opacity="0.08" stroke="#B58A2C" stroke-width="1"/>
+    <text x="80" y="678" class="mono" font-size="12" font-weight="600" fill="#B58A2C">PARADE — routage borné aux nœuds</text>
+    <text x="80" y="698" class="body" font-size="12.5" fill="#1A1A1A">Chaque token ne choisit ses experts que dans 4 nœuds au plus (DeepSeek-V3) : le nombre de sauts RDMA coûteux est plafonné, la communication se recouvre par le calcul.</text>
+  </g>
+
+  <!-- Footer -->
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="60" y="766" class="body" font-size="11" font-style="italic" fill="#5A5A5A">Source : DeepEP (DeepSeek, 2025) ; DeepSeek-V3 Technical Report, 2024. Débits selon configuration matérielle.</text>
 </svg>
 
-        <figcaption class="figure-caption"><a class="anchor" href="#fig-04" title="Lien direct vers ce schéma">¶</a> <em>Schéma 4 — La falaise du packaging. La capacité CoWoS de TSMC quadruple en deux ans, et reste pourtant sous la demande — guichet fermé, délais 52-78 semaines. Nvidia en accapare ~70 %.</em></figcaption>
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-02" title="Lien direct vers ce schéma">¶</a> <em>Schéma 2 — Le tout-à-tout, anatomie d'un goulot. Deux domaines de communication (NVLink intra-nœud rapide, RDMA inter-nœud lent) séparés par un ordre de grandeur — d'où le routage borné aux nœuds.</em></figcaption>
       </figure>
 
-      <p>Pourquoi le packaging et pas le wafer ? Parce qu'un accélérateur moderne a dépassé la limite de taille d'une puce monolithique (le <span class="term" data-tooltip="Reticle limit : surface maximale qu'une machine de lithographie peut exposer en une passe, ~858 mm² ; au-delà, il faut assembler plusieurs puces (chiplets).">reticle limit</span>, ~858 mm²). Pour aller plus loin, il faut poser plusieurs <span class="term" data-tooltip="Chiplet : petite puce spécialisée assemblée avec d'autres dans un même boîtier, au lieu d'une grande puce monolithique.">chiplets</span> logiques et plusieurs tours de HBM côte à côte sur un interposeur — une galette de silicium percée de milliers de <span class="term" data-tooltip="TSV (Through-Silicon Via) : connexion verticale traversant une puce de silicium, qui permet d'empiler ou de relier des dies en 3D (HBM, interposeurs).">vias traversants</span> et gravée de pistes ultra-fines. C'est cet interposeur, et l'assemblage qu'il permet, qui est rare.</p>
-      <p>Les chiffres racontent une pénurie planifiée. TSMC fait passer sa capacité CoWoS d'environ <strong>35 000 plaquettes par mois fin 2024 à ~130 000 fin 2026</strong>, un quadruplement en deux ans<a class="cite" data-cite="11" href="#source-11">11</a> — et malgré cela, <mark>les deux familles CoWoS-S et CoWoS-L sont réservées à guichets fermés, avec des délais de 52 à 78 semaines fin 2025.</mark> La demande court plus vite que l'offre. Le glissement technologique CoWoS-S → <strong>CoWoS-L</strong> (avec ponts de silicium LSI pour « coudre » les chiplets) autorise des boîtiers plusieurs fois plus grands que le réticule, indispensables à Blackwell. Et la concentration client est extrême : Nvidia aurait sécurisé à lui seul <strong>près de 70 % de la capacité CoWoS-L 2026</strong><a class="cite" data-cite="9" href="#source-9">9</a>, les trois premiers clients absorbant plus de 85 % de la capacité verrouillée. Le packaging avancé est donc un double goulot : rare <em>et</em> accaparé.</p>
+      <section>
+        <h2 id="moe-2">2. Anatomie du tout-à-tout</h2>
+        <p>Le motif a été fixé par GShard en 2020, la première mise à l'échelle sérieuse d'un MoE<a class="cite" data-cite="3" href="#source-3">3</a>. Une couche MoE distribuée par parallélisme d'experts enchaîne quatre étapes : <strong>routage</strong> (local, le routeur décide des experts cibles) ; <strong>dispatch</strong> (all-to-all #1, chaque GPU envoie ses tokens vers les GPU qui hébergent les experts) ; <strong>calcul des experts</strong> (local) ; <strong>combine</strong> (all-to-all #2, les sorties repartent vers les GPU d'origine).</p>
+        <p>Deux collectifs all-to-all par couche, donc, et un modèle de 60 couches en aligne cent-vingt sur le chemin critique. Le all-to-all est le pire motif de communication qui soit : contrairement à un all-reduce dont le volume est fixe et le motif régulier, ici <em>chaque</em> GPU parle à <em>tous</em> les autres, avec des volumes qui dépendent des décisions dynamiques du routeur — impossibles à connaître avant l'exécution.</p>
+        <p>Le coût dépend crucialement de <strong>où</strong> se trouvent les experts. Deux domaines coexistent, séparés par un facteur d'un ordre de grandeur :</p>
+        <ul>
+          <li><strong>Intra-nœud (<span class="term" data-tooltip="Interconnexion haut débit reliant les GPU d'un même serveur — bande passante bien supérieure au réseau inter-nœud.">NVLink</span>)</strong> — les 8 GPU d'un même serveur communiquent par un maillage NVLink : DeepEP y mesure des débits de dispatch de l'ordre de 150 Go/s<a class="cite" data-cite="2" href="#source-2">2</a>.</li>
+          <li><strong>Inter-nœud (<span class="term" data-tooltip="Remote Direct Memory Access : accès mémoire direct entre serveurs via InfiniBand, sans passer par le CPU — mais bien plus lent que le NVLink intra-nœud.">RDMA</span>/InfiniBand)</strong> — dès que le token franchit la frontière du serveur, on tombe à 45-90 Go/s<a class="cite" data-cite="2" href="#source-2">2</a>. Un facteur 3 à 10.</li>
+        </ul>
+        <p>Cette asymétrie commande une parade inscrite jusque dans l'entraînement : le <span class="term" data-tooltip="node-limited routing : chaque token ne peut choisir ses experts que dans un petit nombre de nœuds, pour plafonner les sauts réseau coûteux.">routage borné aux nœuds</span> (<em>node-limited routing</em>). Chaque token ne choisit ses experts que dans 4 nœuds au plus (DeepSeek-V3), ce qui plafonne les sauts RDMA et permet de recouvrir presque intégralement la communication par le calcul<a class="cite" data-cite="1" href="#source-1">1</a>. <mark>Le motif de routage n'est pas seulement une affaire de qualité de modèle : c'est une variable d'architecture réseau décidée à l'entraînement.</mark></p>
+      </section>
 
-      <h2 id="sc-6">6. La mémoire empilée — HBM</h2>
-      <p>Un accélérateur passe l'essentiel de son temps non pas à calculer mais à <strong>attendre la mémoire</strong>. Le décodage d'un LLM est plafonné par la bande passante mémoire, pas par les FLOPs — c'est le « mur mémoire » déjà décrit dans les dossiers <em>kv-cache</em> et <em>ia-embarquee</em>. La réponse matérielle à ce mur est la <span class="term" data-tooltip="HBM (High Bandwidth Memory) : mémoire à haute bande passante faite de puces DRAM empilées verticalement et reliées par des TSV ; offre ~1 ordre de grandeur de bande passante de plus que la DDR.">HBM</span> : des puces DRAM empilées verticalement, reliées par des TSV, offrant une bande passante d'un ordre de grandeur supérieure à la DDR classique (schéma 5).</p>
+      <figure class="figure" id="fig-03">
+        <svg data-schema-id="schema-03" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 900" font-family="Inter, sans-serif">
+  <defs>
+    <style>
+      .display{font-family:'Fraunces','Spectral',Georgia,serif;}
+      .mono{font-family:'JetBrains Mono','IBM Plex Mono',monospace;}
+      .interactive{cursor:pointer;}
+    </style>
+  </defs>
+  <rect x="0" y="0" width="900" height="900" fill="#FAF8F3"/>
+
+  <!-- Header -->
+  <text x="50" y="52" class="mono" font-size="13" letter-spacing="0.08em" fill="#B7332C">SCHÉMA 03</text>
+  <text x="50" y="90" class="display" font-size="28" font-weight="600" fill="#1A1A1A">EP · TP · DP : la grammaire du parallélisme</text>
+  <text x="50" y="117" class="display" font-size="16" font-style="italic" fill="#5A5A5A">Trois façons de répartir une couche MoE — et la combinaison canonique de 2026.</text>
+  <line x1="50" y1="138" x2="850" y2="138" stroke="#E5E1D8" stroke-width="1"/>
+
+  <!-- TP panel -->
+  <g class="interactive" data-card="tp" tabindex="0" role="button" aria-label="Parallélisme de tenseurs — cliquez pour les détails">
+    <rect x="50" y="165" width="380" height="255" rx="5" fill="#FAF8F3" stroke="#B8B5AE" stroke-width="1"/>
+    <text x="70" y="196" class="display" font-size="18" font-weight="600" fill="#1F5560">Parallélisme de tenseurs (TP)</text>
+    <text x="70" y="218" class="body" font-size="12" fill="#5A5A5A">chaque expert découpé en tranches</text>
+    <rect x="70" y="238" width="340" height="90" rx="3" fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1"/>
+    <text x="240" y="256" text-anchor="middle" class="mono" font-size="11" fill="#1F5560">un expert</text>
+    <rect x="90" y="266" width="70" height="50" rx="2" fill="#1F5560" fill-opacity="0.25" stroke="#1F5560" stroke-width="0.75"/>
+    <rect x="170" y="266" width="70" height="50" rx="2" fill="#1F5560" fill-opacity="0.25" stroke="#1F5560" stroke-width="0.75"/>
+    <rect x="250" y="266" width="70" height="50" rx="2" fill="#1F5560" fill-opacity="0.25" stroke="#1F5560" stroke-width="0.75"/>
+    <rect x="330" y="266" width="60" height="50" rx="2" fill="#1F5560" fill-opacity="0.25" stroke="#1F5560" stroke-width="0.75"/>
+    <text x="125" y="296" text-anchor="middle" class="mono" font-size="10" fill="#1A1A1A">GPU0</text>
+    <text x="205" y="296" text-anchor="middle" class="mono" font-size="10" fill="#1A1A1A">GPU1</text>
+    <text x="285" y="296" text-anchor="middle" class="mono" font-size="10" fill="#1A1A1A">GPU2</text>
+    <text x="360" y="296" text-anchor="middle" class="mono" font-size="10" fill="#1A1A1A">GPU3</text>
+    <text x="70" y="356" class="body" font-size="12" fill="#B7332C">− all-reduce à chaque couche · ne passe pas l'échelle</text>
+    <text x="70" y="378" class="body" font-size="12" fill="#2F5D3F">+ charge équilibrée par construction · simple</text>
+  </g>
+
+  <!-- EP panel -->
+  <g class="interactive" data-card="ep" tabindex="0" role="button" aria-label="Parallélisme d'experts — cliquez pour les détails">
+    <rect x="470" y="165" width="380" height="255" rx="5" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="490" y="196" class="display" font-size="18" font-weight="600" fill="#B7332C">Parallélisme d'experts (EP)</text>
+    <text x="490" y="218" class="body" font-size="12" fill="#5A5A5A">des experts entiers sur des GPU distincts</text>
+    <rect x="490" y="238" width="80" height="80" rx="3" fill="#B7332C" fill-opacity="0.12" stroke="#B7332C" stroke-width="1"/>
+    <text x="530" y="274" text-anchor="middle" class="mono" font-size="10" fill="#1A1A1A">GPU0</text>
+    <text x="530" y="290" text-anchor="middle" class="mono" font-size="9" fill="#5A5A5A">exp 0-3</text>
+    <rect x="585" y="238" width="80" height="80" rx="3" fill="#B7332C" fill-opacity="0.12" stroke="#B7332C" stroke-width="1"/>
+    <text x="625" y="274" text-anchor="middle" class="mono" font-size="10" fill="#1A1A1A">GPU1</text>
+    <text x="625" y="290" text-anchor="middle" class="mono" font-size="9" fill="#5A5A5A">exp 4-7</text>
+    <rect x="680" y="238" width="80" height="80" rx="3" fill="#B7332C" fill-opacity="0.12" stroke="#B7332C" stroke-width="1"/>
+    <text x="720" y="274" text-anchor="middle" class="mono" font-size="10" fill="#1A1A1A">GPU2</text>
+    <text x="720" y="290" text-anchor="middle" class="mono" font-size="9" fill="#5A5A5A">exp 8-11</text>
+    <rect x="770" y="238" width="60" height="80" rx="3" fill="#B7332C" fill-opacity="0.12" stroke="#B7332C" stroke-width="1"/>
+    <text x="800" y="274" text-anchor="middle" class="mono" font-size="9" fill="#5A5A5A">…</text>
+    <text x="490" y="356" class="body" font-size="12" fill="#B7332C">− introduit le double all-to-all · déséquilibre</text>
+    <text x="490" y="378" class="body" font-size="12" fill="#2F5D3F">+ experts locaux intacts · passe l'échelle</text>
+  </g>
+
+  <!-- DP-attention panel -->
+  <g class="interactive" data-card="dp-attention" tabindex="0" role="button" aria-label="Parallélisme de données sur l'attention — cliquez pour les détails">
+    <rect x="50" y="440" width="380" height="255" rx="5" fill="#FAF8F3" stroke="#B58A2C" stroke-width="1"/>
+    <text x="70" y="471" class="display" font-size="18" font-weight="600" fill="#B58A2C">DP sur l'attention</text>
+    <text x="70" y="493" class="body" font-size="12" fill="#5A5A5A">attention répliquée · chaque GPU son lot</text>
+    <rect x="70" y="513" width="160" height="80" rx="3" fill="#B58A2C" fill-opacity="0.10" stroke="#B58A2C" stroke-width="1"/>
+    <text x="150" y="545" text-anchor="middle" class="mono" font-size="10" fill="#1A1A1A">GPU0 · attn</text>
+    <text x="150" y="563" text-anchor="middle" class="body" font-size="10" fill="#5A5A5A">cache KV · lot A</text>
+    <rect x="250" y="513" width="160" height="80" rx="3" fill="#B58A2C" fill-opacity="0.10" stroke="#B58A2C" stroke-width="1"/>
+    <text x="330" y="545" text-anchor="middle" class="mono" font-size="10" fill="#1A1A1A">GPU1 · attn</text>
+    <text x="330" y="563" text-anchor="middle" class="body" font-size="10" fill="#5A5A5A">cache KV · lot B</text>
+    <text x="70" y="628" class="body" font-size="12" fill="#2F5D3F">+ pas de duplication du cache KV sur tout le TP</text>
+    <text x="70" y="650" class="body" font-size="12" fill="#5A5A5A">découple l'attention du MoE</text>
+  </g>
+
+  <!-- Hybrid panel -->
+  <g class="interactive" data-card="hybrid" tabindex="0" role="button" aria-label="Combinaison DP-attention + EP-MoE — cliquez pour les détails">
+    <rect x="470" y="440" width="380" height="255" rx="5" fill="#1A1A1A" fill-opacity="0.04" stroke="#1A1A1A" stroke-width="1.5"/>
+    <text x="490" y="471" class="display" font-size="18" font-weight="600" fill="#1A1A1A">Patron canonique 2026</text>
+    <text x="490" y="493" class="body" font-size="12" fill="#5A5A5A">DP-attention + EP-MoE</text>
+    <rect x="490" y="513" width="340" height="55" rx="3" fill="#B58A2C" fill-opacity="0.10" stroke="#B58A2C" stroke-width="1"/>
+    <text x="660" y="546" text-anchor="middle" class="mono" font-size="11" fill="#B58A2C">Attention → DP (répliquée)</text>
+    <rect x="490" y="576" width="340" height="55" rx="3" fill="#B7332C" fill-opacity="0.10" stroke="#B7332C" stroke-width="1"/>
+    <text x="660" y="609" text-anchor="middle" class="mono" font-size="11" fill="#B7332C">MoE → EP (à grande échelle)</text>
+    <text x="490" y="662" class="body" font-size="12" fill="#2F5D3F">le meilleur des deux · standard SGLang / vLLM</text>
+  </g>
+
+  <!-- Memory tradeoff strip -->
+  <g class="interactive" data-card="memory-tradeoff" tabindex="0" role="button" aria-label="Le compromis mémoire — cliquez pour les détails">
+    <rect x="50" y="715" width="800" height="95" rx="5" fill="#FAF8F3" stroke="#E5E1D8" stroke-width="1"/>
+    <text x="70" y="744" class="mono" font-size="12" font-weight="600" fill="#1A1A1A">LE COMPROMIS SE LIT EN MÉMOIRE</text>
+    <text x="70" y="768" class="body" font-size="13" fill="#1A1A1A">TP : réplique les activations, sature la bande passante — robuste dans le nœud.</text>
+    <text x="70" y="790" class="body" font-size="13" fill="#1A1A1A">EP : disperse les experts (peu de mémoire de poids par GPU), paie l'all-to-all et exige un équilibrage dynamique.</text>
+  </g>
+
+  <!-- Footer -->
+  <line x1="50" y1="838" x2="850" y2="838" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="50" y="862" class="body" font-size="11" font-style="italic" fill="#5A5A5A">Source : SGLang large-scale EP (2025) ; DeepSeek-V3, 2024.</text>
+</svg>
+
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-03" title="Lien direct vers ce schéma">¶</a> <em>Schéma 3 — EP · TP · DP. Le parallélisme de tenseurs découpe chaque expert ; le parallélisme d'experts place des experts entiers ; la combinaison DP-attention + EP-MoE est le patron canonique de 2026.</em></figcaption>
+      </figure>
+
+      <section>
+        <h2 id="moe-3">3. EP contre TP contre DP : la grammaire du parallélisme</h2>
+        <p>Comment répartit-on une couche MoE sur <em>G</em> GPU ? Trois grammaires, qu'on combine en pratique.</p>
+        <p><strong>Parallélisme de tenseurs (TP).</strong> On découpe <em>chaque</em> expert en tranches réparties sur les GPU du groupe. L'avantage : pas de all-to-all, charge parfaitement équilibrée. L'inconvénient, décisif : le TP exige un all-reduce à chaque couche, réplique les activations, et sa bande passante requise explose avec la taille du groupe — il ne passe pas l'échelle au-delà d'un nœud. C'est la solution simple et robuste des petits déploiements.</p>
+        <p><strong>Parallélisme d'experts (EP).</strong> On place des experts <em>entiers</em> sur des GPU distincts. C'est ceci qui introduit le double all-to-all — mais c'est aussi ce qui permet de faire tenir un modèle de 671 milliards de paramètres en gardant chaque expert local et calculé efficacement. <mark>L'EP échange le coût du all-reduce du TP contre le coût du all-to-all — et à grande échelle, bien optimisé, le second gagne.</mark> La taille du groupe EP (<em>EP size</em>) est le paramètre porteur : EP32 signifie que les experts d'une couche sont étalés sur 32 GPU.</p>
+        <p><strong>Parallélisme de données sur l'attention (<span class="term" data-tooltip="DP-attention : l'attention (et son cache KV) est répliquée par parallélisme de données, chaque GPU traitant son propre lot, pendant que le MoE tourne en EP.">DP-attention</span>).</strong> Innovation clé des déploiements DeepSeek de 2025 : découpler la stratégie de l'attention de celle du MoE. L'attention, très gourmande en cache KV (voir <a href="../attention-latente/">attention-latente</a>), est répliquée en parallélisme de données ; le MoE tourne en EP à grande échelle. Cette combinaison <strong>DP-attention + EP-MoE</strong> est devenue le patron canonique<a class="cite" data-cite="8" href="#source-8">8</a>.</p>
+        <p>Le compromis se lit en mémoire. Le TP réplique les activations et sature la bande passante ; l'EP disperse les experts mais paie la latence du all-to-all et exige un équilibrage dynamique. À grande échelle, tous les déploiements sérieux de 2026 convergent vers l'EP pour le MoE, réservant le TP à l'intérieur du nœud.</p>
+      </section>
+
+      <figure class="figure" id="fig-04">
+        <svg data-schema-id="schema-04" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" font-family="Inter, sans-serif">
+  <defs>
+    <style>
+      .display{font-family:'Fraunces','Spectral',Georgia,serif;}
+      .mono{font-family:'JetBrains Mono','IBM Plex Mono',monospace;}
+      .interactive{cursor:pointer;}
+    </style>
+  </defs>
+  <rect x="0" y="0" width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- Header -->
+  <text x="60" y="52" class="mono" font-size="13" letter-spacing="0.08em" fill="#B7332C">SCHÉMA 04</text>
+  <text x="60" y="90" class="display" font-size="30" font-weight="600" fill="#1A1A1A">DeepEP lu serré</text>
+  <text x="60" y="118" class="display" font-size="17" font-style="italic" fill="#5A5A5A">La bibliothèque de communication qui a fait basculer le parallélisme d'experts en production.</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="1"/>
+
+  <!-- Normal mode -->
+  <g class="interactive" data-card="normal-mode" tabindex="0" role="button" aria-label="Mode normal haut débit — cliquez pour les détails">
+    <rect x="60" y="175" width="510" height="215" rx="6" fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="84" y="210" class="display" font-size="19" font-weight="600" fill="#1F5560">Mode normal · haut débit</text>
+    <text x="84" y="234" class="mono" font-size="12" fill="#5A5A5A">PREFILL · ENTRAÎNEMENT</text>
+    <text x="84" y="268" class="body" font-size="13" fill="#1A1A1A">Gros lots de tokens · exploite NVLink + RDMA</text>
+    <text x="84" y="304" class="mono" font-size="14" fill="#1F5560">NVLink ~150 Go/s</text>
+    <text x="330" y="304" class="mono" font-size="14" fill="#1F5560">RDMA ~45–90 Go/s</text>
+    <text x="84" y="344" class="body" font-size="12.5" fill="#5A5A5A">Objectif : maximiser le débit sur le chemin</text>
+    <text x="84" y="364" class="body" font-size="12.5" fill="#5A5A5A">compute-bound du prefill.</text>
+  </g>
+
+  <!-- Low-latency mode -->
+  <g class="interactive" data-card="low-latency-mode" tabindex="0" role="button" aria-label="Mode faible latence — cliquez pour les détails">
+    <rect x="630" y="175" width="510" height="215" rx="6" fill="#B7332C" fill-opacity="0.06" stroke="#B7332C" stroke-width="2"/>
+    <text x="654" y="210" class="display" font-size="19" font-weight="600" fill="#B7332C">Mode faible latence · pur-RDMA</text>
+    <text x="654" y="234" class="mono" font-size="12" fill="#5A5A5A">DECODE INTERACTIF</text>
+    <text x="654" y="268" class="body" font-size="13" fill="#1A1A1A">Petits lots · contourne les chemins lents</text>
+    <text x="654" y="304" class="mono" font-size="14" fill="#B7332C">optimise le time-per-output-token</text>
+    <text x="654" y="344" class="body" font-size="12.5" fill="#5A5A5A">Objectif : le délai d'un aller-retour, pas</text>
+    <text x="654" y="364" class="body" font-size="12.5" fill="#5A5A5A">le débit. Rend le decode MoE distribué viable.</text>
+  </g>
+
+  <!-- Hook overlap -->
+  <g class="interactive" data-card="hook-overlap" tabindex="0" role="button" aria-label="Recouvrement communication-calcul — cliquez pour les détails">
+    <rect x="60" y="420" width="1080" height="180" rx="6" fill="#FAF8F3" stroke="#B58A2C" stroke-width="1.5"/>
+    <text x="84" y="454" class="display" font-size="18" font-weight="600" fill="#B58A2C">Recouvrement communication-calcul (hook)</text>
+    <text x="84" y="476" class="body" font-size="12.5" fill="#5A5A5A">Le all-to-all progresse en arrière-plan (RDMA / Copy Engine) sans consommer de SM — les cœurs restent sur le modèle.</text>
+    <!-- compute lane -->
+    <text x="84" y="516" class="mono" font-size="11" fill="#1A1A1A">calcul</text>
+    <rect x="180" y="500" width="220" height="26" rx="3" fill="#B58A2C" fill-opacity="0.35" stroke="#B58A2C" stroke-width="0.75"/>
+    <text x="290" y="518" text-anchor="middle" class="body" font-size="11" fill="#1A1A1A">experts (micro-lot A)</text>
+    <rect x="410" y="500" width="220" height="26" rx="3" fill="#B58A2C" fill-opacity="0.35" stroke="#B58A2C" stroke-width="0.75"/>
+    <text x="520" y="518" text-anchor="middle" class="body" font-size="11" fill="#1A1A1A">experts (micro-lot B)</text>
+    <!-- comm lane -->
+    <text x="84" y="562" class="mono" font-size="11" fill="#B7332C">all-to-all</text>
+    <rect x="180" y="546" width="220" height="26" rx="3" fill="#B7332C" fill-opacity="0.30" stroke="#B7332C" stroke-width="0.75"/>
+    <text x="290" y="564" text-anchor="middle" class="body" font-size="11" fill="#B7332C">dispatch B (masqué)</text>
+    <rect x="410" y="546" width="220" height="26" rx="3" fill="#B7332C" fill-opacity="0.30" stroke="#B7332C" stroke-width="0.75"/>
+    <text x="520" y="564" text-anchor="middle" class="body" font-size="11" fill="#B7332C">combine A (masqué)</text>
+    <text x="660" y="540" class="body" font-size="12.5" fill="#2F5D3F">La communication de l'un se déroule</text>
+    <text x="660" y="560" class="body" font-size="12.5" fill="#2F5D3F">pendant le calcul de l'autre :</text>
+    <text x="660" y="580" class="body" font-size="12.5" fill="#2F5D3F">le barrier quitte le chemin critique.</text>
+  </g>
+
+  <!-- FP8 dispatch + ecosystem -->
+  <g class="interactive" data-card="fp8-dispatch" tabindex="0" role="button" aria-label="Dispatch FP8 et socle DeepGEMM — cliquez pour les détails">
+    <rect x="60" y="626" width="1080" height="82" rx="6" fill="#1A1A1A" fill-opacity="0.04" stroke="#1A1A1A" stroke-width="1"/>
+    <text x="84" y="656" class="mono" font-size="12" font-weight="600" fill="#1A1A1A">DISPATCH FP8 + SOCLE DEEPGEMM</text>
+    <text x="84" y="680" class="body" font-size="13" fill="#1A1A1A">Les tokens sont expédiés en 8 bits (recombinaison BF16) : moitié moins de volume réseau. DeepGEMM fournit les GEMM groupés FP8</text>
+    <text x="84" y="700" class="body" font-size="13" fill="#1A1A1A">des experts (layouts contiguous / masked). DeepEP (comm) + DeepGEMM (calcul) = la moitié basse de la pile MoE ouverte.</text>
+  </g>
+
+  <!-- Footer -->
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="60" y="766" class="body" font-size="11" font-style="italic" fill="#5A5A5A">Source : DeepEP et DeepGEMM (DeepSeek, github, février 2025). Débits selon la configuration matérielle.</text>
+</svg>
+
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-04" title="Lien direct vers ce schéma">¶</a> <em>Schéma 4 — DeepEP lu serré. Deux modes de kernels (haut débit / faible latence), recouvrement communication-calcul par hook, dispatch FP8, et le socle DeepGEMM.</em></figcaption>
+      </figure>
+
+      <section>
+        <h2 id="moe-4">4. DeepEP lu serré</h2>
+        <p>Si l'EP a basculé du prototype au standard de production en 2025, c'est en grande partie grâce à un objet précis : <strong>DeepEP</strong>, la bibliothèque de communication <em>expert-parallel</em> que DeepSeek a mise en open source en février 2025<a class="cite" data-cite="2" href="#source-2">2</a>. Elle fournit les kernels GPU du double all-to-all — précisément le morceau que chaque équipe réécrivait mal dans son coin.</p>
+        <p>DeepEP expose deux modes de kernels, taillés pour les deux phases :</p>
+        <ul>
+          <li><strong>Mode normal (haut débit).</strong> Pour le <span class="term" data-tooltip="prefill : traitement du prompt entier d'un coup, en gros lots — phase limitée par le calcul.">prefill</span> et l'entraînement. Il exploite à fond NVLink (~150 Go/s) et RDMA (~45-90 Go/s)<a class="cite" data-cite="2" href="#source-2">2</a>.</li>
+          <li><strong>Mode faible latence.</strong> Pour le <span class="term" data-tooltip="decode : génération token par token, en petits lots — phase limitée par la mémoire, sensible à la latence d'un aller-retour.">decode</span>, où compte le délai d'un aller-retour. Ce mode utilise du <span class="term" data-tooltip="RDMA pur : le mode faible latence contourne les chemins à forte latence pour minimiser le time-per-output-token.">RDMA pur</span> et vise le time-per-output-token le plus court sur de petits lots. C'est lui qui rend le décodage MoE distribué viable en interactif.</li>
+        </ul>
+        <p>Trois raffinements font la différence. D'abord, le <strong>recouvrement communication-calcul par <em>hook</em></strong> : DeepEP laisse le all-to-all progresser <em>pendant</em> que le GPU calcule autre chose, sans consommer de <span class="term" data-tooltip="Streaming Multiprocessors : les unités de calcul du GPU. DeepEP libère la communication du réseau sans les mobiliser.">SM</span> pour la communication<a class="cite" data-cite="2" href="#source-2">2</a>. Ensuite, le <span class="term" data-tooltip="FP8 : format flottant 8 bits. Expédier les tokens en 8 bits divise par deux le volume réseau.">dispatch en FP8</span> (recombinaison en BF16) : moitié moins de volume sur le réseau — la quantification (voir <a href="../quantification-llm/">quantification-llm</a>) au service de la bande passante. Enfin, le <strong>cache des handles</strong> : en décodage, les métadonnées de routage sont réutilisées d'une itération à l'autre.</p>
+        <p>Autour de DeepEP, DeepSeek a livré <strong>DeepGEMM</strong><a class="cite" data-cite="10" href="#source-10">10</a>, des kernels de <span class="term" data-tooltip="grouped GEMM : multiplication matricielle groupée où chaque expert traite un nombre variable de tokens — d'où des layouts contiguous / masked dédiés.">multiplication matricielle groupée</span> FP8 pour le calcul des experts. Ensemble, DeepEP (communication) et DeepGEMM (calcul) forment la moitié basse de la pile d'inférence MoE ouverte de 2026.</p>
+      </section>
 
       <figure class="figure" id="fig-05">
-        <svg data-schema-id="schema-05" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+        <svg data-schema-id="schema-05" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" font-family="Inter, sans-serif">
   <defs>
     <style>
-      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
-      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
-      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+      .display{font-family:'Fraunces','Spectral',Georgia,serif;}
+      .mono{font-family:'JetBrains Mono','IBM Plex Mono',monospace;}
+      .interactive{cursor:pointer;}
     </style>
   </defs>
+  <rect x="0" y="0" width="1200" height="800" fill="#FAF8F3"/>
 
-  <rect width="1200" height="800" fill="#FAF8F3"/>
+  <!-- Header -->
+  <text x="60" y="52" class="mono" font-size="13" letter-spacing="0.08em" fill="#B7332C">SCHÉMA 05</text>
+  <text x="60" y="90" class="display" font-size="30" font-weight="600" fill="#1A1A1A">Le déséquilibre des experts</text>
+  <text x="60" y="118" class="display" font-size="17" font-style="italic" fill="#5A5A5A">Le tout-à-tout est synchrone : le GPU le plus chargé impose sa cadence à tout le groupe.</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="1"/>
 
-  <!-- HEADER -->
-  <text x="60" y="55" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 05</text>
-  <text x="60" y="92" class="display" font-size="26" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">La mémoire empilée</text>
-  <text x="60" y="118" class="display" font-size="16" font-style="italic" fill="#5A5A5A">La HBM répond au mur mémoire de l'inférence — et n'est produite que par trois acteurs est-asiatiques</text>
-  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
-
-  <!-- LEFT — stack anatomy (interactive) -->
-  <text x="90" y="178" class="body" font-size="13" font-weight="600" fill="#1A1A1A">Anatomie d'une pile HBM</text>
-  <g class="interactive" data-card="anatomie-pile" tabindex="0" role="button" aria-label="Anatomie d'une pile HBM">
-    <rect x="82" y="190" width="400" height="300" rx="3" fill="#B58A2C" fill-opacity="0.05" stroke="#B58A2C" stroke-width="1.25"/>
-    <!-- DRAM dies -->
-    <rect x="150" y="242" width="170" height="22" rx="1" fill="#B58A2C" fill-opacity="0.22" stroke="#B58A2C" stroke-width="1"/>
-    <rect x="150" y="268" width="170" height="22" rx="1" fill="#B58A2C" fill-opacity="0.22" stroke="#B58A2C" stroke-width="1"/>
-    <rect x="150" y="294" width="170" height="22" rx="1" fill="#B58A2C" fill-opacity="0.22" stroke="#B58A2C" stroke-width="1"/>
-    <rect x="150" y="320" width="170" height="22" rx="1" fill="#B58A2C" fill-opacity="0.22" stroke="#B58A2C" stroke-width="1"/>
-    <rect x="150" y="346" width="170" height="22" rx="1" fill="#B58A2C" fill-opacity="0.22" stroke="#B58A2C" stroke-width="1"/>
-    <rect x="150" y="372" width="170" height="22" rx="1" fill="#B58A2C" fill-opacity="0.22" stroke="#B58A2C" stroke-width="1"/>
-    <rect x="150" y="398" width="170" height="22" rx="1" fill="#B58A2C" fill-opacity="0.22" stroke="#B58A2C" stroke-width="1"/>
-    <rect x="150" y="424" width="170" height="22" rx="1" fill="#B58A2C" fill-opacity="0.22" stroke="#B58A2C" stroke-width="1"/>
-    <!-- base die -->
-    <rect x="150" y="452" width="170" height="26" rx="1" fill="#1F5560" fill-opacity="0.3" stroke="#1F5560" stroke-width="1.25"/>
-    <!-- TSV lines -->
-    <line x1="182" y1="242" x2="182" y2="478" stroke="#1A1A1A" stroke-width="0.75" stroke-opacity="0.5"/>
-    <line x1="235" y1="242" x2="235" y2="478" stroke="#1A1A1A" stroke-width="0.75" stroke-opacity="0.5"/>
-    <line x1="288" y1="242" x2="288" y2="478" stroke="#1A1A1A" stroke-width="0.75" stroke-opacity="0.5"/>
-    <!-- annotations -->
-    <line x1="320" y1="300" x2="392" y2="300" stroke="#5A5A5A" stroke-width="0.75"/>
-    <text x="398" y="298" class="body" font-size="11" fill="#1A1A1A">8 à 16 dies</text>
-    <text x="398" y="313" class="body" font-size="11" fill="#5A5A5A">DRAM amincis</text>
-    <line x1="290" y1="465" x2="392" y2="465" stroke="#5A5A5A" stroke-width="0.75"/>
-    <text x="398" y="462" class="body" font-size="11" fill="#1A1A1A">base die</text>
-    <text x="398" y="477" class="body" font-size="11" fill="#5A5A5A">(logique)</text>
-    <text x="150" y="232" class="mono" font-size="10" fill="#5A5A5A">TSV ↕ traversants</text>
+  <!-- Histogram: expert load -->
+  <g class="interactive" data-card="hot-expert" tabindex="0" role="button" aria-label="Experts populaires — cliquez pour les détails">
+    <rect x="60" y="170" width="520" height="290" rx="6" fill="#FAF8F3" stroke="#E5E1D8" stroke-width="1"/>
+    <text x="84" y="200" class="display" font-size="17" font-weight="600" fill="#1A1A1A">Charge par expert (au service)</text>
+    <line x1="90" y1="420" x2="560" y2="420" stroke="#B8B5AE" stroke-width="1"/>
+    <rect x="100" y="370" width="34" height="50" fill="#5A5A5A" fill-opacity="0.4"/>
+    <rect x="144" y="345" width="34" height="75" fill="#5A5A5A" fill-opacity="0.4"/>
+    <rect x="188" y="300" width="34" height="120" fill="#B7332C" fill-opacity="0.75"/>
+    <text x="205" y="290" text-anchor="middle" class="mono" font-size="10" fill="#B7332C">hot</text>
+    <rect x="232" y="360" width="34" height="60" fill="#5A5A5A" fill-opacity="0.4"/>
+    <rect x="276" y="390" width="34" height="30" fill="#5A5A5A" fill-opacity="0.4"/>
+    <rect x="320" y="330" width="34" height="90" fill="#5A5A5A" fill-opacity="0.4"/>
+    <rect x="364" y="400" width="34" height="20" fill="#5A5A5A" fill-opacity="0.4"/>
+    <rect x="408" y="315" width="34" height="105" fill="#B7332C" fill-opacity="0.6"/>
+    <rect x="452" y="395" width="34" height="25" fill="#5A5A5A" fill-opacity="0.4"/>
+    <rect x="496" y="380" width="34" height="40" fill="#5A5A5A" fill-opacity="0.4"/>
+    <text x="325" y="446" text-anchor="middle" class="body" font-size="11" fill="#5A5A5A">experts (routés inégalement)</text>
   </g>
 
-  <!-- LEFT — bandwidth note (interactive) -->
-  <g class="interactive" data-card="bande-passante" tabindex="0" role="button" aria-label="Pourquoi la bande passante">
-    <rect x="82" y="502" width="400" height="118" rx="3" fill="#B7332C" fill-opacity="0.05" stroke="#B7332C" stroke-width="1.25"/>
-    <text x="102" y="528" class="body" font-size="13" font-weight="600" fill="#1A1A1A">Pourquoi la HBM : le mur mémoire</text>
-    <text x="102" y="550" class="body" font-size="11.5" fill="#5A5A5A">Le décodage d'un LLM est plafonné par la bande</text>
-    <text x="102" y="570" class="body" font-size="11.5" fill="#5A5A5A">passante, pas par les FLOPs. La HBM offre ~1 ordre</text>
-    <text x="102" y="590" class="body" font-size="11.5" fill="#5A5A5A">de grandeur de plus que la DDR classique.</text>
-    <text x="102" y="611" class="body" font-size="11" font-style="italic" fill="#B7332C">Renvoi : dossiers kv-cache &amp; ia-embarquee.</text>
+  <!-- Straggler barrier -->
+  <g class="interactive" data-card="straggler-barrier" tabindex="0" role="button" aria-label="Le straggler et le barrier synchrone — cliquez pour les détails">
+    <rect x="620" y="170" width="520" height="290" rx="6" fill="#FAF8F3" stroke="#E5E1D8" stroke-width="1"/>
+    <text x="644" y="200" class="display" font-size="17" font-weight="600" fill="#1A1A1A">Le straggler commande le barrier</text>
+    <!-- lanes -->
+    <text x="644" y="245" class="mono" font-size="11" fill="#1A1A1A">GPU0</text>
+    <rect x="700" y="232" width="180" height="20" rx="2" fill="#2F5D3F" fill-opacity="0.4"/>
+    <text x="644" y="285" class="mono" font-size="11" fill="#1A1A1A">GPU1</text>
+    <rect x="700" y="272" width="150" height="20" rx="2" fill="#2F5D3F" fill-opacity="0.4"/>
+    <text x="644" y="325" class="mono" font-size="11" fill="#B7332C">GPU2</text>
+    <rect x="700" y="312" width="380" height="20" rx="2" fill="#B7332C" fill-opacity="0.55"/>
+    <text x="1088" y="327" class="mono" font-size="10" fill="#B7332C">hot</text>
+    <text x="644" y="365" class="mono" font-size="11" fill="#1A1A1A">GPU3</text>
+    <rect x="700" y="352" width="200" height="20" rx="2" fill="#2F5D3F" fill-opacity="0.4"/>
+    <!-- barrier line -->
+    <line x1="1080" y1="220" x2="1080" y2="390" stroke="#B7332C" stroke-width="1.5" stroke-dasharray="4 3"/>
+    <text x="1072" y="410" text-anchor="end" class="body" font-size="11" fill="#B7332C">tous attendent le plus lent</text>
+    <text x="644" y="440" class="body" font-size="12" fill="#5A5A5A">Un déséquilibre de 2× = latence de 2× sur la couche.</text>
   </g>
 
-  <!-- RIGHT — market share (interactive) -->
-  <g class="interactive" data-card="parts-marche" tabindex="0" role="button" aria-label="Parts de marché HBM 2025">
-    <rect x="540" y="190" width="600" height="228" rx="3" fill="#1F5560" fill-opacity="0.03" stroke="#1F5560" stroke-width="1.25"/>
-    <text x="562" y="218" class="body" font-size="13" font-weight="600" fill="#1A1A1A">Parts de marché HBM — 2025</text>
-    <!-- SK hynix -->
-    <text x="562" y="258" class="body" font-size="12" fill="#1A1A1A">SK hynix</text>
-    <rect x="680" y="246" width="378" height="20" fill="#1F5560" fill-opacity="0.8"/>
-    <text x="1066" y="261" class="mono" font-size="12" font-weight="600" fill="#1F5560">~63 %</text>
-    <!-- Samsung -->
-    <text x="562" y="304" class="body" font-size="12" fill="#1A1A1A">Samsung</text>
-    <rect x="680" y="292" width="144" height="20" fill="#1F5560" fill-opacity="0.5"/>
-    <text x="832" y="307" class="mono" font-size="12" font-weight="600" fill="#1F5560">~24 %</text>
-    <!-- Micron -->
-    <text x="562" y="350" class="body" font-size="12" fill="#1A1A1A">Micron</text>
-    <rect x="680" y="338" width="78" height="20" fill="#1F5560" fill-opacity="0.35"/>
-    <text x="766" y="353" class="mono" font-size="12" font-weight="600" fill="#1F5560">~13 %</text>
-    <text x="562" y="394" class="body" font-size="11.5" fill="#5A5A5A">Trois acteurs = 100 % du marché mondial. Aucun autre</text>
-    <text x="562" y="410" class="body" font-size="11.5" fill="#5A5A5A">fabricant n'a de HBM en production de volume.</text>
+  <!-- EPLB redundant experts -->
+  <g class="interactive" data-card="redundant-replica" tabindex="0" role="button" aria-label="EPLB et experts redondants — cliquez pour les détails">
+    <rect x="60" y="486" width="760" height="222" rx="6" fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="84" y="518" class="display" font-size="18" font-weight="600" fill="#1F5560">EPLB — la redondance d'experts</text>
+    <text x="84" y="542" class="body" font-size="12.5" fill="#5A5A5A">On réplique les experts populaires sur plusieurs GPU et on répartit leurs tokens entre les copies.</text>
+    <!-- before -->
+    <text x="84" y="578" class="mono" font-size="11" fill="#5A5A5A">AVANT</text>
+    <rect x="150" y="565" width="90" height="40" rx="3" fill="#B7332C" fill-opacity="0.6"/>
+    <text x="195" y="590" text-anchor="middle" class="mono" font-size="10" fill="#FAF8F3">hot → GPU2</text>
+    <!-- arrow -->
+    <line x1="252" y1="585" x2="292" y2="585" stroke="#1A1A1A" stroke-width="1.25" marker-end="url(#arrow05)"/>
+    <!-- after -->
+    <text x="84" y="648" class="mono" font-size="11" fill="#5A5A5A">APRÈS</text>
+    <rect x="310" y="565" width="90" height="40" rx="3" fill="#1F5560" fill-opacity="0.3" stroke="#1F5560" stroke-width="0.75"/>
+    <text x="355" y="590" text-anchor="middle" class="mono" font-size="10" fill="#1F5560">copie · GPU2</text>
+    <rect x="410" y="565" width="90" height="40" rx="3" fill="#1F5560" fill-opacity="0.3" stroke="#1F5560" stroke-width="0.75"/>
+    <text x="455" y="590" text-anchor="middle" class="mono" font-size="10" fill="#1F5560">copie · GPU5</text>
+    <rect x="510" y="565" width="90" height="40" rx="3" fill="#1F5560" fill-opacity="0.3" stroke="#1F5560" stroke-width="0.75"/>
+    <text x="555" y="590" text-anchor="middle" class="mono" font-size="10" fill="#1F5560">copie · GPU9</text>
+    <text x="84" y="672" class="body" font-size="12.5" fill="#1A1A1A">Placement hiérarchique (respecte les nœuds) ou global (lissage maximal) · recalculé quand la charge dérive.</text>
+    <text x="84" y="694" class="body" font-size="12.5" fill="#B7332C">Coût : la VRAM des copies n'accueille plus de cache KV. DeepSeek-V3 decode : 32 experts redondants.</text>
+    <defs>
+      <marker id="arrow05" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0 0 L10 5 L0 10 z" fill="#1A1A1A"/>
+      </marker>
+    </defs>
   </g>
 
-  <!-- RIGHT — HBM4 (interactive) -->
-  <g class="interactive" data-card="hbm4" tabindex="0" role="button" aria-label="Allocation HBM4">
-    <rect x="540" y="432" width="600" height="188" rx="3" fill="#B58A2C" fill-opacity="0.06" stroke="#B58A2C" stroke-width="1.25"/>
-    <text x="562" y="460" class="body" font-size="13" font-weight="600" fill="#1A1A1A">HBM4 — la génération qui rebat les cartes</text>
-    <text x="562" y="482" class="body" font-size="11.5" fill="#5A5A5A">Bus élargi ; base die logique parfois gravé par TSMC → couplage fonderie.</text>
-    <text x="562" y="506" class="body" font-size="11.5" fill="#5A5A5A">Allocation provisoire Nvidia (fin 2025) :</text>
-    <!-- stacked bar -->
-    <rect x="562" y="520" width="305" height="26" fill="#B58A2C" fill-opacity="0.8"/>
-    <rect x="867" y="520" width="140" height="26" fill="#B58A2C" fill-opacity="0.5"/>
-    <rect x="1007" y="520" width="111" height="26" fill="#B58A2C" fill-opacity="0.3"/>
-    <text x="714" y="537" class="mono" font-size="10.5" font-weight="600" fill="#1A1A1A" text-anchor="middle">SK hynix ~55 %</text>
-    <text x="937" y="537" class="mono" font-size="10" fill="#1A1A1A" text-anchor="middle">Sams. ~25 %</text>
-    <text x="1062" y="537" class="mono" font-size="10" fill="#1A1A1A" text-anchor="middle">Micr. ~20 %</text>
-    <text x="562" y="576" class="body" font-size="11.5" fill="#1A1A1A">AMD conçoit le MI400 autour de <tspan font-weight="600">432 Go</tspan> de HBM4 :</text>
-    <text x="562" y="596" class="body" font-size="11.5" fill="#5A5A5A">un retard de volume HBM4 pèserait sur toute la génération 2026.</text>
-    <text x="562" y="614" class="body" font-size="11" font-style="italic" fill="#B58A2C">Deux pays, trois entreprises — dont l'une sous menace balistique permanente.</text>
+  <!-- bias term -->
+  <g class="interactive" data-card="bias-term" tabindex="0" role="button" aria-label="Biais sans-loss et limite du service — cliquez pour les détails">
+    <rect x="840" y="486" width="300" height="222" rx="6" fill="#B58A2C" fill-opacity="0.08" stroke="#B58A2C" stroke-width="1"/>
+    <text x="864" y="518" class="mono" font-size="12" font-weight="600" fill="#B58A2C">POURQUOI L'ENTRAÎNEMENT NE SUFFIT PAS</text>
+    <text x="864" y="548" class="body" font-size="12.5" fill="#1A1A1A">Le biais sans-loss (auxiliary-</text>
+    <text x="864" y="568" class="body" font-size="12.5" fill="#1A1A1A">loss-free) équilibre à</text>
+    <text x="864" y="588" class="body" font-size="12.5" fill="#1A1A1A">l'entraînement…</text>
+    <text x="864" y="624" class="body" font-size="12.5" fill="#1A1A1A">…mais la distribution des</text>
+    <text x="864" y="644" class="body" font-size="12.5" fill="#1A1A1A">requêtes réelles diffère.</text>
+    <text x="864" y="680" class="body" font-size="12.5" fill="#B58A2C">D'où un équilibrage au moment</text>
+    <text x="864" y="700" class="body" font-size="12.5" fill="#B58A2C">du service, pas seulement avant.</text>
   </g>
 
-  <!-- FOOTER -->
-  <line x1="60" y1="700" x2="1140" y2="700" stroke="#E5E1D8" stroke-width="0.5"/>
-  <text x="60" y="726" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Source : TrendForce / IDC 2025-2026 ; documentation AMD. Parts = ordres de grandeur publics, appelés à bouger trimestre par trimestre.</text>
+  <!-- Footer -->
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="60" y="766" class="body" font-size="11" font-style="italic" fill="#5A5A5A">Source : EPLB (DeepSeek, github, 2025) ; DeepSeek-V3 Technical Report, 2024. Histogramme illustratif.</text>
 </svg>
 
-        <figcaption class="figure-caption"><a class="anchor" href="#fig-05" title="Lien direct vers ce schéma">¶</a> <em>Schéma 5 — La mémoire empilée. Anatomie d'une pile HBM (dies DRAM + base die + TSV) et l'oligopole à trois — SK hynix ~63 %, Samsung, Micron. HBM4 rebat provisoirement les cartes.</em></figcaption>
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-05" title="Lien direct vers ce schéma">¶</a> <em>Schéma 5 — Le déséquilibre des experts. Un expert populaire fait du GPU qui l'héberge un straggler qui bloque le barrier synchrone ; la redondance d'experts de l'EPLB est la parade.</em></figcaption>
       </figure>
 
-      <p>Fabriquer de la HBM est brutalement difficile : empiler douze à seize dies amincis sans casser les connexions, évacuer la chaleur, garantir le rendement d'une tour entière. Résultat, un <strong>oligopole</strong> à trois acteurs, tous est-asiatiques. <mark>SK hynix domine avec environ 63 % du marché HBM en 2025<a class="cite" data-cite="9" href="#source-9">9</a>, devant Samsung et Micron ; les trois se partagent la totalité du marché mondial.</mark> Aucun autre fabricant n'a de HBM en production de volume.</p>
-      <p>La HBM est aussi le lieu d'un couplage devenu critique avec le packaging : c'est le nombre de stacks HBM que l'on parvient à intégrer sur l'interposeur CoWoS qui définit la mémoire d'un module. Les deux goulots — packaging et HBM — se serrent la main. La génération <strong>HBM4</strong> (bus mémoire élargi, <em>base die</em> logique parfois gravé par TSMC) redistribue provisoirement les cartes : dans l'allocation provisoire de Nvidia fin 2025, SK hynix a capté une part du milieu de la cinquantaine de pour cent, Samsung le milieu de la vingtaine, Micron autour de 20 %<a class="cite" data-cite="9" href="#source-9">9</a>. Là encore, <mark>la mémoire de l'IA est produite par trois entreprises situées dans deux pays, dont l'un — la Corée du Sud — vit sous la menace balistique permanente de son voisin.</mark></p>
-
-      <h2 id="sc-7">7. Les matériaux invisibles — le verrou japonais</h2>
-      <p>Sous le lithographe, le fondeur, le packaging et la mémoire, il existe une couche que personne ne voit jamais dans les présentations d'entreprise : les <strong>consommables et matériaux</strong> sans lesquels rien ne fonctionne. Et cette couche a une nationalité dominante : le <strong>Japon</strong> (schéma 6).</p>
+      <section>
+        <h2 id="moe-5">5. Le déséquilibre des experts : le straggler qui commande le barrier</h2>
+        <p>Le talon d'Achille de l'EP est un phénomène simple. Le routeur, en production, ne distribue <em>pas</em> les tokens uniformément : certains experts sont populaires (<em>hot</em>), d'autres presque jamais choisis. Or le double all-to-all est <strong>synchrone</strong> : la couche ne peut avancer tant que le GPU le plus chargé n'a pas fini. <mark>Le GPU le plus lent (<span class="term" data-tooltip="straggler : le nœud le plus lent d'un collectif synchrone, qui impose sa cadence à tous les autres.">straggler</span>) impose sa cadence à tout le groupe : un déséquilibre de 2× se paie en latence de 2× sur toute la couche.</mark></p>
+        <p>L'équilibrage vu à l'entraînement (biais <em>auxiliary-loss-free</em> de DeepSeek-V3, détaillé dans <a href="../melange-experts/">melange-experts</a>) atténue le problème mais ne le supprime pas au service, où la distribution des requêtes réelles diffère de celle de l'entraînement. Il faut donc un équilibrage <em>au moment du service</em>.</p>
+        <p>C'est le rôle de l'<strong>EPLB</strong> (<em>Expert Parallelism Load Balancer</em>)<a class="cite" data-cite="9" href="#source-9">9</a>. Son idée maîtresse : la <strong>redondance d'experts</strong>. Plutôt que de placer chaque expert sur un seul GPU, on <strong>réplique les experts populaires</strong> sur plusieurs GPU et on répartit leurs tokens entre les copies. DeepSeek-V3 en décodage ajoute ainsi des experts redondants<a class="cite" data-cite="1" href="#source-1">1</a>. L'EPLB calcule un <strong>placement</strong> selon deux régimes : hiérarchique (respecte les groupes de nœuds) ou global (lissage maximal), recalculable à mesure que la charge dérive.</p>
+        <p>Le coût de la redondance est mémoire : répliquer des experts consomme de la VRAM qui n'accueille plus de cache KV. L'équilibrage de l'EP est donc un problème d'optimisation à part entière. <mark>La charge des experts est une donnée d'exploitation vivante, pas une propriété du modèle.</mark></p>
+      </section>
 
       <figure class="figure" id="fig-06">
-        <svg data-schema-id="schema-06" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+        <svg data-schema-id="schema-06" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" font-family="Inter, sans-serif">
   <defs>
+    <marker id="arrow06" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#1A1A1A"/>
+    </marker>
     <style>
-      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
-      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
-      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+      .display{font-family:'Fraunces','Spectral',Georgia,serif;}
+      .mono{font-family:'JetBrains Mono','IBM Plex Mono',monospace;}
+      .interactive{cursor:pointer;}
     </style>
   </defs>
+  <rect x="0" y="0" width="1200" height="800" fill="#FAF8F3"/>
 
-  <rect width="1200" height="800" fill="#FAF8F3"/>
+  <!-- Header -->
+  <text x="60" y="52" class="mono" font-size="13" letter-spacing="0.08em" fill="#B7332C">SCHÉMA 06</text>
+  <text x="60" y="90" class="display" font-size="30" font-weight="600" fill="#1A1A1A">Deux régimes EP : prefill contre decode</text>
+  <text x="60" y="118" class="display" font-size="17" font-style="italic" fill="#5A5A5A">Deux phases, deux profils — donc deux tailles de groupe d'experts, sur des pools désagrégés.</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="1"/>
 
-  <!-- HEADER -->
-  <text x="60" y="55" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 06</text>
-  <text x="60" y="92" class="display" font-size="26" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">La carte des points de passage</text>
-  <text x="60" y="118" class="display" font-size="16" font-style="italic" fill="#5A5A5A">Qui tient quoi : à chaque maillon, une nation dominante — et l'Asie de l'Est concentre presque tout</text>
-  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
-
-  <!-- Pays-Bas (interactive) -->
-  <g class="interactive" data-card="pays-bas-euv" tabindex="0" role="button" aria-label="Pays-Bas — lithographie EUV">
-    <rect x="80" y="182" width="250" height="322" rx="4" fill="#1F5560" fill-opacity="0.05" stroke="#1F5560" stroke-width="1.5"/>
-    <text x="102" y="214" class="display" font-size="18" font-weight="600" fill="#1A1A1A">Pays-Bas</text>
-    <text x="102" y="234" class="body" font-size="11" font-style="italic" fill="#5A5A5A">ASML · Veldhoven</text>
-    <line x1="102" y1="248" x2="308" y2="248" stroke="#1F5560" stroke-width="0.5" stroke-dasharray="2 3"/>
-    <text x="102" y="278" class="body" font-size="12.5" fill="#1A1A1A">Lithographie EUV</text>
-    <text x="102" y="300" class="mono" font-size="20" font-weight="600" fill="#1F5560">100 %</text>
-    <text x="102" y="330" class="body" font-size="11.5" fill="#5A5A5A">Une machine, zéro alternative</text>
-    <text x="102" y="348" class="body" font-size="11.5" fill="#5A5A5A">de production sur Terre.</text>
-    <text x="102" y="384" class="body" font-size="11.5" fill="#5A5A5A">Le point le plus tranchant</text>
-    <text x="102" y="402" class="body" font-size="11.5" fill="#5A5A5A">pour le contrôle à l'export.</text>
+  <!-- Prefill pool -->
+  <g class="interactive" data-card="prefill-pool" tabindex="0" role="button" aria-label="Pool prefill EP32 — cliquez pour les détails">
+    <rect x="60" y="175" width="440" height="270" rx="6" fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="84" y="210" class="display" font-size="20" font-weight="600" fill="#1F5560">Pool prefill</text>
+    <text x="84" y="236" class="mono" font-size="12" fill="#5A5A5A">LIMITÉ PAR LE CALCUL</text>
+    <rect x="84" y="256" width="392" height="70" rx="4" fill="#FAF8F3" stroke="#1F5560" stroke-width="1"/>
+    <text x="280" y="288" text-anchor="middle" class="mono" font-size="22" fill="#1F5560">EP32</text>
+    <text x="280" y="312" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">experts étalés sur 4 nœuds</text>
+    <text x="84" y="360" class="body" font-size="13" fill="#1A1A1A">Gros lots · on veut le débit maximal.</text>
+    <text x="84" y="384" class="body" font-size="13" fill="#1A1A1A">Groupe EP modéré · mode normal de DeepEP.</text>
+    <text x="84" y="420" class="mono" font-size="12" fill="#1F5560">DeepSeek-V3 : prefill EP32 · 4 nœuds</text>
   </g>
 
-  <!-- Taïwan (interactive, carmine) -->
-  <g class="interactive" data-card="taiwan-fonderie" tabindex="0" role="button" aria-label="Taïwan — fonderie et packaging">
-    <rect x="345" y="182" width="250" height="322" rx="4" fill="#B7332C" fill-opacity="0.06" stroke="#B7332C" stroke-width="1.5"/>
-    <text x="367" y="214" class="display" font-size="18" font-weight="600" fill="#1A1A1A">Taïwan</text>
-    <text x="367" y="234" class="body" font-size="11" font-style="italic" fill="#5A5A5A">TSMC · Hsinchu / Tainan</text>
-    <line x1="367" y1="248" x2="573" y2="248" stroke="#B7332C" stroke-width="0.5" stroke-dasharray="2 3"/>
-    <text x="367" y="276" class="body" font-size="12" fill="#1A1A1A">Fonderie &lt; 7 nm</text>
-    <text x="367" y="296" class="mono" font-size="17" font-weight="600" fill="#B7332C">~90 %</text>
-    <text x="367" y="330" class="body" font-size="12" fill="#1A1A1A">Packaging avancé</text>
-    <text x="367" y="350" class="mono" font-size="17" font-weight="600" fill="#B7332C">85 %</text>
-    <text x="367" y="384" class="body" font-size="12" fill="#1A1A1A">Fonderie (tous nœuds)</text>
-    <text x="367" y="404" class="mono" font-size="17" font-weight="600" fill="#B7332C">67 %</text>
-    <text x="367" y="440" class="body" font-size="11.5" font-style="italic" fill="#5A5A5A">Un détroit = le point de</text>
-    <text x="367" y="458" class="body" font-size="11.5" font-style="italic" fill="#5A5A5A">défaillance le plus coûteux.</text>
+  <!-- KV transfer -->
+  <line x1="505" y1="310" x2="655" y2="310" stroke="#1A1A1A" stroke-width="1.5" marker-end="url(#arrow06)"/>
+  <text x="580" y="298" text-anchor="middle" class="body" font-size="11" fill="#5A5A5A">transfert</text>
+  <text x="580" y="332" text-anchor="middle" class="mono" font-size="11" fill="#5A5A5A">cache KV</text>
+
+  <!-- Decode pool -->
+  <g class="interactive" data-card="decode-pool" tabindex="0" role="button" aria-label="Pool decode EP144 — cliquez pour les détails">
+    <rect x="700" y="175" width="440" height="270" rx="6" fill="#B7332C" fill-opacity="0.06" stroke="#B7332C" stroke-width="2"/>
+    <text x="724" y="210" class="display" font-size="20" font-weight="600" fill="#B7332C">Pool decode</text>
+    <text x="724" y="236" class="mono" font-size="12" fill="#5A5A5A">LIMITÉ PAR LA MÉMOIRE</text>
+    <rect x="724" y="256" width="392" height="70" rx="4" fill="#FAF8F3" stroke="#B7332C" stroke-width="1"/>
+    <text x="920" y="288" text-anchor="middle" class="mono" font-size="22" fill="#B7332C">EP144</text>
+    <text x="920" y="312" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">experts étalés sur 18 nœuds</text>
+    <text x="724" y="360" class="body" font-size="13" fill="#1A1A1A">Petits lots · l'all-to-all pèse le plus lourd.</text>
+    <text x="724" y="384" class="body" font-size="13" fill="#1A1A1A">On étale au maximum · mode faible latence.</text>
+    <text x="724" y="420" class="mono" font-size="12" fill="#B7332C">DeepSeek-V3 : decode EP144 · 18 nœuds</text>
   </g>
 
-  <!-- Corée (interactive, mustard) -->
-  <g class="interactive" data-card="coree-hbm" tabindex="0" role="button" aria-label="Corée du Sud — HBM">
-    <rect x="610" y="182" width="250" height="322" rx="4" fill="#B58A2C" fill-opacity="0.08" stroke="#B58A2C" stroke-width="1.5"/>
-    <text x="632" y="214" class="display" font-size="18" font-weight="600" fill="#1A1A1A">Corée du Sud</text>
-    <text x="632" y="234" class="body" font-size="11" font-style="italic" fill="#5A5A5A">SK hynix · Samsung</text>
-    <line x1="632" y1="248" x2="838" y2="248" stroke="#B58A2C" stroke-width="0.5" stroke-dasharray="2 3"/>
-    <text x="632" y="278" class="body" font-size="12.5" fill="#1A1A1A">HBM (SK hynix)</text>
-    <text x="632" y="300" class="mono" font-size="20" font-weight="600" fill="#B58A2C">~63 %</text>
-    <text x="632" y="332" class="body" font-size="11.5" fill="#5A5A5A">+ Samsung, n°2 mondial.</text>
-    <text x="632" y="368" class="body" font-size="11.5" fill="#5A5A5A">Deux des trois seuls</text>
-    <text x="632" y="386" class="body" font-size="11.5" fill="#5A5A5A">fabricants de HBM au monde.</text>
-    <text x="632" y="440" class="body" font-size="11.5" font-style="italic" fill="#5A5A5A">Sous menace balistique</text>
-    <text x="632" y="458" class="body" font-size="11.5" font-style="italic" fill="#5A5A5A">permanente du voisin.</text>
+  <!-- Redundancy -->
+  <g class="interactive" data-card="redundancy" tabindex="0" role="button" aria-label="Experts redondants au decode — cliquez pour les détails">
+    <rect x="700" y="465" width="440" height="110" rx="6" fill="#B58A2C" fill-opacity="0.08" stroke="#B58A2C" stroke-width="1"/>
+    <text x="724" y="495" class="mono" font-size="12" font-weight="600" fill="#B58A2C">+ 32 EXPERTS REDONDANTS (EPLB)</text>
+    <text x="724" y="522" class="body" font-size="13" fill="#1A1A1A">Le decode large exige un lissage de charge :</text>
+    <text x="724" y="544" class="body" font-size="13" fill="#1A1A1A">les experts populaires sont répliqués pour</text>
+    <text x="724" y="566" class="body" font-size="13" fill="#1A1A1A">éviter le straggler (schéma 5).</text>
   </g>
 
-  <!-- Japon (interactive, forest) -->
-  <g class="interactive" data-card="japon-materiaux" tabindex="0" role="button" aria-label="Japon — matériaux et consommables">
-    <rect x="875" y="182" width="250" height="322" rx="4" fill="#2F5D3F" fill-opacity="0.07" stroke="#2F5D3F" stroke-width="1.5"/>
-    <text x="897" y="214" class="display" font-size="18" font-weight="600" fill="#1A1A1A">Japon</text>
-    <text x="897" y="234" class="body" font-size="11" font-style="italic" fill="#5A5A5A">JSR · Shin-Etsu · Ajinomoto…</text>
-    <line x1="897" y1="248" x2="1103" y2="248" stroke="#2F5D3F" stroke-width="0.5" stroke-dasharray="2 3"/>
-    <text x="897" y="272" class="body" font-size="11.5" fill="#1A1A1A">Photoresist EUV <tspan class="mono" font-weight="600" fill="#2F5D3F">&gt;90 %</tspan></text>
-    <text x="897" y="298" class="body" font-size="11.5" fill="#1A1A1A">Film ABF <tspan class="mono" font-weight="600" fill="#2F5D3F">&gt;95 %</tspan></text>
-    <text x="897" y="324" class="body" font-size="11.5" fill="#1A1A1A">Tracks (revêtement) <tspan class="mono" font-weight="600" fill="#2F5D3F">96 %</tspan></text>
-    <text x="897" y="350" class="body" font-size="11.5" fill="#1A1A1A">Mask blanks EUV <tspan class="mono" font-weight="600" fill="#2F5D3F">93 %</tspan></text>
-    <text x="897" y="376" class="body" font-size="11.5" fill="#1A1A1A">Plaquettes silicium <tspan class="mono" font-weight="600" fill="#2F5D3F">~51 %</tspan></text>
-    <text x="897" y="418" class="body" font-size="11.5" font-style="italic" fill="#5A5A5A">Presque plus de puces,</text>
-    <text x="897" y="436" class="body" font-size="11.5" font-style="italic" fill="#5A5A5A">mais la couche matériaux</text>
-    <text x="897" y="454" class="body" font-size="11.5" font-style="italic" fill="#5A5A5A">tenue si serré que rien</text>
-    <text x="897" y="472" class="body" font-size="11.5" font-style="italic" fill="#5A5A5A">ne tourne sans elle.</text>
+  <!-- Two-batch overlap -->
+  <g class="interactive" data-card="two-batch-overlap" tabindex="0" role="button" aria-label="Recouvrement à deux lots et chiffres — cliquez pour les détails">
+    <rect x="60" y="465" width="600" height="110" rx="6" fill="#1A1A1A" fill-opacity="0.04" stroke="#1A1A1A" stroke-width="1"/>
+    <text x="84" y="495" class="mono" font-size="12" font-weight="600" fill="#1A1A1A">RECOUVREMENT À DEUX LOTS (two-batch overlap)</text>
+    <text x="84" y="522" class="body" font-size="13" fill="#1A1A1A">Le lot est coupé en deux micro-lots entrelacés :</text>
+    <text x="84" y="544" class="body" font-size="13" fill="#1A1A1A">le all-to-all de l'un se déroule pendant le calcul</text>
+    <text x="84" y="566" class="body" font-size="13" fill="#1A1A1A">de l'autre. Combiné au hook DeepEP et à l'EPLB.</text>
   </g>
 
-  <!-- CONTEXT STRIP -->
-  <text x="80" y="540" class="mono" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#5A5A5A">EN CONTEXTE — LES DEUX BOUTS DE LA CHAÎNE</text>
-  <line x1="80" y1="552" x2="1125" y2="552" stroke="#E5E1D8" stroke-width="0.5"/>
+  <!-- Numbers strip -->
+  <rect x="60" y="596" width="1080" height="112" rx="6" fill="#FAF8F3" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="84" y="626" class="display" font-size="16" font-style="italic" fill="#1A1A1A">Ce que ça donne, mesuré (SGLang, réplication open source du déploiement DeepSeek)</text>
+  <text x="84" y="664" class="mono" font-size="24" fill="#B7332C">52,3k</text>
+  <text x="200" y="664" class="body" font-size="13" fill="#1A1A1A">tokens d'entrée/s · nœud</text>
+  <text x="440" y="664" class="mono" font-size="24" fill="#B7332C">22,3k</text>
+  <text x="556" y="664" class="body" font-size="13" fill="#1A1A1A">tokens de sortie/s · nœud</text>
+  <text x="800" y="664" class="mono" font-size="24" fill="#2F5D3F">×5</text>
+  <text x="860" y="664" class="body" font-size="13" fill="#1A1A1A">débit de sortie vs TP simple</text>
+  <text x="84" y="694" class="body" font-size="12.5" fill="#5A5A5A">96 GPU H100 (12 nœuds), séquences de 2 000 tokens. Sur GB200 NVL72 : ×3,8 en prefill, ×4,8 en decode — la fabric scale-up ramène le tout-à-tout dans le domaine rapide.</text>
 
-  <rect x="80" y="566" width="335" height="96" rx="3" fill="#5A5A5A" fill-opacity="0.04" stroke="#B8B5AE" stroke-width="1"/>
-  <text x="100" y="590" class="body" font-size="12.5" font-weight="600" fill="#1A1A1A">Allemagne</text>
-  <text x="100" y="612" class="body" font-size="11.5" fill="#5A5A5A">Optiques Zeiss 100 % · Lasers TRUMPF 100 %.</text>
-  <text x="100" y="632" class="body" font-size="11.5" fill="#5A5A5A">Fournisseurs uniques dans la machine ASML.</text>
-
-  <rect x="425" y="566" width="335" height="96" rx="3" fill="#5A5A5A" fill-opacity="0.04" stroke="#B8B5AE" stroke-width="1"/>
-  <text x="445" y="590" class="body" font-size="12.5" font-weight="600" fill="#1A1A1A">États-Unis</text>
-  <text x="445" y="612" class="body" font-size="11.5" fill="#5A5A5A">Conception (Nvidia, AMD) · EDA (Synopsys,</text>
-  <text x="445" y="632" class="body" font-size="11.5" fill="#5A5A5A">Cadence). Leur force est en amont, pas la fab.</text>
-
-  <rect x="770" y="566" width="355" height="96" rx="3" fill="#5A5A5A" fill-opacity="0.04" stroke="#B8B5AE" stroke-width="1"/>
-  <text x="790" y="590" class="body" font-size="12.5" font-weight="600" fill="#1A1A1A">Chine</text>
-  <text x="790" y="612" class="body" font-size="11.5" fill="#5A5A5A">Chaîne parallèle « suffisamment bonne » —</text>
-  <text x="790" y="632" class="body" font-size="11.5" fill="#5A5A5A">SMIC 7 nm par DUV, hors nœud de pointe.</text>
-
-  <!-- FOOTER -->
-  <line x1="60" y1="700" x2="1140" y2="700" stroke="#E5E1D8" stroke-width="0.5"/>
-  <text x="60" y="726" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Source : CSET Georgetown 2021 ; SIA/BCG 2021 ; TrendForce 2025-2026. Parts de marché mondiales, ordres de grandeur.</text>
+  <!-- Footer -->
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="60" y="766" class="body" font-size="11" font-style="italic" fill="#5A5A5A">Source : SGLang large-scale EP (lmsys.org, mai 2025) ; GB200 NVL72 Part II (sept. 2025) ; DeepSeek-V3, 2024.</text>
 </svg>
 
-        <figcaption class="figure-caption"><a class="anchor" href="#fig-06" title="Lien direct vers ce schéma">¶</a> <em>Schéma 6 — La carte des points de passage. Pays par pays, qui tient quel maillon : Pays-Bas (EUV), Taïwan (fonderie, packaging), Corée (HBM), Japon (matériaux) — l'Asie de l'Est concentre presque tout.</em></figcaption>
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-06" title="Lien direct vers ce schéma">¶</a> <em>Schéma 6 — Deux régimes EP. Pool prefill EP32 (4 nœuds) contre pool decode EP144 (18 nœuds) avec 32 experts redondants ; recouvrement à deux lots et chiffres SGLang.</em></figcaption>
       </figure>
 
-      <p>Le cartographe le plus rigoureux de cette couche est le CSET de Georgetown, qui a documenté maillon par maillon des concentrations qui donnent le vertige<a class="cite" data-cite="3" href="#source-3">3</a>. Le <span class="term" data-tooltip="Photoresist (résist) : résine photosensible étalée sur la plaquette, dans laquelle la lumière grave le motif du circuit ; les résists EUV sont un savoir-faire quasi exclusivement japonais.">photoresist EUV</span> : les trois japonais JSR, Tokyo Ohka Kogyo (TOK) et Shin-Etsu détiennent <strong>plus de 90 %</strong> du segment EUV ; au nœud sous-7 nm, le Japon est de fait le seul fournisseur au monde. Les <strong>plaquettes de silicium</strong> : Shin-Etsu et SUMCO en fournissent à eux seuls environ la moitié. Le <strong>film ABF</strong> : Ajinomoto, plus de 95 %<a class="cite" data-cite="2" href="#source-2">2</a>. Les <span class="term" data-tooltip="Mask blank : ébauche vierge du masque (photomasque) sur lequel sera gravé le motif à projeter ; les mask blanks EUV sont dominés par AGC et Hoya.">mask blanks EUV</span> : AGC et Hoya, 93 %. Les <em>tracks</em> (machines de revêtement des résists) : Tokyo Electron et Screen, 96 %.</p>
-      <p><mark>Le Japon ne fabrique presque plus de puces de pointe, mais il tient la couche des matériaux si serré qu'aucune usine avancée au monde ne peut tourner sans lui.</mark> C'est le point de passage le plus discret et le plus total de toute la chaîne — celui qui, en 2019, a servi d'arme dans le conflit commercial Japon-Corée quand Tokyo a restreint l'export de trois résists vers Séoul. La leçon a été retenue : les matériaux sont un levier. On peut maintenant relire l'entonnoir du schéma 1 d'un seul trait, de la lumière au consommable : à chaque étage, un ou deux acteurs, une ou deux nations. Ce n'était pas une métaphore.</p>
-
-      <h2 id="sc-8">8. Le compute comme arme</h2>
-      <p>Une chaîne aussi concentrée est, par construction, une <strong>surface géopolitique</strong>. Si tout <em>advanced compute</em> doit franchir une poignée de points de passage, alors contrôler ces points, c'est contrôler qui accède à l'IA. C'est exactement la logique qu'ont adoptée les États-Unis à partir de 2022 (schéma 7).</p>
+      <section>
+        <h2 id="moe-6">6. Deux régimes EP : prefill contre decode</h2>
+        <p>La séparation prefill/decode (traitée dans <a href="../desagregation-prefill-decode/">desagregation-prefill-decode</a>) prend, sous l'angle EP, une forme spécifique. Les deux phases n'ont pas le même profil, donc pas la même taille de groupe EP optimale :</p>
+        <ul>
+          <li><strong>Prefill</strong> — gros lots, phase limitée par le calcul. On veut un débit maximal ; un groupe EP modéré suffit. DeepSeek-V3 sert le prefill en <strong>EP32, sur 4 nœuds</strong><a class="cite" data-cite="1" href="#source-1">1</a>.</li>
+          <li><strong>Decode</strong> — petits lots, phase limitée par la mémoire. Le all-to-all pèse le plus lourd ; on étale les experts sur beaucoup plus de GPU. DeepSeek-V3 sert le decode en <strong>EP144, sur 18 nœuds</strong>, avec 32 experts redondants<a class="cite" data-cite="1" href="#source-1">1</a>.</li>
+        </ul>
+        <p>Comme les deux phases veulent des tailles EP différentes, il est naturel de les <strong>désagréger</strong> sur des pools distincts, reliés par un transfert de cache KV. C'est ce que SGLang a industrialisé : sur <strong>96 GPU H100</strong> (12 nœuds de 8), en désagrégation prefill/decode et EP à grande échelle, il atteint <strong>52,3k tokens d'entrée/s et 22,3k tokens de sortie/s par nœud</strong> (séquences de 2 000 tokens), soit <strong>jusqu'à 5× le débit de sortie</strong> d'un simple parallélisme de tenseurs à ressources égales<a class="cite" data-cite="8" href="#source-8">8</a>.</p>
+        <p>L'autre levier est le <span class="term" data-tooltip="two-batch overlap : le lot est coupé en deux micro-lots entrelacés, de sorte que le all-to-all de l'un se déroule pendant le calcul de l'autre.">recouvrement à deux lots</span> (<em>two-batch overlap</em>) : combiné au <em>hook</em> de DeepEP et à l'EPLB, il transforme une communication qui bloquait le chemin critique en une communication masquée. Sur GB200 NVL72, la même équipe rapporte <strong>3,8× en prefill et 4,8× en decode</strong><a class="cite" data-cite="11" href="#source-11">11</a> — le gain vient largement de ce que la fabric NVLink du NVL72 fait <em>rentrer le tout-à-tout dans le domaine intra-nœud rapide</em>.</p>
+      </section>
 
       <figure class="figure" id="fig-07">
-        <svg data-schema-id="schema-07" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+        <svg data-schema-id="schema-07" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" font-family="Inter, sans-serif">
   <defs>
     <style>
-      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
-      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
-      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+      .display{font-family:'Fraunces','Spectral',Georgia,serif;}
+      .mono{font-family:'JetBrains Mono','IBM Plex Mono',monospace;}
+      .interactive{cursor:pointer;}
     </style>
   </defs>
+  <rect x="0" y="0" width="1200" height="800" fill="#FAF8F3"/>
 
-  <rect width="1200" height="800" fill="#FAF8F3"/>
+  <!-- Header -->
+  <text x="60" y="52" class="mono" font-size="13" letter-spacing="0.08em" fill="#B7332C">SCHÉMA 07</text>
+  <text x="60" y="90" class="display" font-size="30" font-weight="600" fill="#1A1A1A">Le paysage outillage 2026</text>
+  <text x="60" y="118" class="display" font-size="17" font-style="italic" fill="#5A5A5A">Une pile ouverte convergente — le socle DeepSeek sous des serveurs qui savent tous faire de l'EP.</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="1"/>
 
-  <!-- HEADER -->
-  <text x="60" y="55" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 07</text>
-  <text x="60" y="92" class="display" font-size="26" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Le compute sous contrôle</text>
-  <text x="60" y="118" class="display" font-size="16" font-style="italic" fill="#5A5A5A">Trois mouvements en miroir : verrouiller les points de passage, les relocaliser, ou en bâtir des parallèles</text>
-  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
+  <!-- Column headers -->
+  <text x="350" y="188" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">EP grande</text>
+  <text x="350" y="204" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">échelle</text>
+  <text x="520" y="188" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">DP-</text>
+  <text x="520" y="204" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">attention</text>
+  <text x="690" y="188" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">Désagrég.</text>
+  <text x="690" y="204" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">P/D</text>
+  <text x="860" y="188" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">Kernels</text>
+  <text x="860" y="204" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">faible lat.</text>
+  <text x="1030" y="188" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">Fabric</text>
+  <text x="1030" y="204" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">NVL72</text>
+  <line x1="60" y1="218" x2="1120" y2="218" stroke="#E5E1D8" stroke-width="1"/>
 
-  <!-- year gridlines + labels -->
-  <g>
-    <line x1="200" y1="178" x2="200" y2="512" stroke="#E5E1D8" stroke-width="0.5"/>
-    <line x1="370" y1="178" x2="370" y2="512" stroke="#E5E1D8" stroke-width="0.5"/>
-    <line x1="540" y1="178" x2="540" y2="512" stroke="#E5E1D8" stroke-width="0.5"/>
-    <line x1="710" y1="178" x2="710" y2="512" stroke="#E5E1D8" stroke-width="0.5"/>
-    <line x1="880" y1="178" x2="880" y2="512" stroke="#E5E1D8" stroke-width="0.5"/>
-    <line x1="1050" y1="178" x2="1050" y2="512" stroke="#E5E1D8" stroke-width="0.5"/>
-    <text x="200" y="172" class="mono" font-size="11" font-weight="600" fill="#5A5A5A" text-anchor="middle">2022</text>
-    <text x="370" y="172" class="mono" font-size="11" font-weight="600" fill="#5A5A5A" text-anchor="middle">2023</text>
-    <text x="540" y="172" class="mono" font-size="11" font-weight="600" fill="#5A5A5A" text-anchor="middle">2024</text>
-    <text x="710" y="172" class="mono" font-size="11" font-weight="600" fill="#5A5A5A" text-anchor="middle">2025</text>
-    <text x="880" y="172" class="mono" font-size="11" font-weight="600" fill="#5A5A5A" text-anchor="middle">2026</text>
-    <text x="1050" y="172" class="mono" font-size="11" font-weight="600" fill="#5A5A5A" text-anchor="middle">2027-28</text>
+  <!-- SGLang row -->
+  <g class="interactive" data-card="sglang" tabindex="0" role="button" aria-label="SGLang — cliquez pour les détails">
+    <rect x="60" y="228" width="1060" height="64" rx="4" fill="#B7332C" fill-opacity="0.05"/>
+    <text x="80" y="266" class="display" font-size="17" font-weight="600" fill="#1A1A1A">SGLang</text>
+    <text x="80" y="284" class="body" font-size="11" fill="#5A5A5A">1ʳᵉ implémentation ouverte P/D + EP</text>
+    <circle cx="350" cy="260" r="10" fill="#1F5560"/>
+    <circle cx="520" cy="260" r="10" fill="#1F5560"/>
+    <circle cx="690" cy="260" r="10" fill="#1F5560"/>
+    <circle cx="860" cy="260" r="10" fill="#1F5560"/>
+    <circle cx="1030" cy="260" r="10" fill="#1F5560"/>
   </g>
 
-  <!-- TRACK 1 — BIS controls (interactive) -->
-  <g class="interactive" data-card="controles-bis" tabindex="0" role="button" aria-label="Contrôles à l'export BIS">
-    <rect x="96" y="186" width="1048" height="96" rx="3" fill="#B7332C" fill-opacity="0.05" stroke="#B7332C" stroke-width="1.5"/>
-    <text x="112" y="208" class="body" font-size="12.5" font-weight="600" fill="#1A1A1A">Verrouiller — contrôles à l'export (BIS · États-Unis)</text>
-    <line x1="150" y1="240" x2="760" y2="240" stroke="#B7332C" stroke-width="1.5"/>
-    <circle cx="200" cy="240" r="5" fill="#B7332C"/>
-    <text x="200" y="262" class="body" font-size="10" fill="#1A1A1A" text-anchor="middle">Oct 2022</text>
-    <text x="200" y="276" class="body" font-size="9.5" fill="#5A5A5A" text-anchor="middle">GPU+SME · FDPR</text>
-    <circle cx="370" cy="240" r="5" fill="#B7332C"/>
-    <text x="370" y="262" class="body" font-size="10" fill="#1A1A1A" text-anchor="middle">Oct 2023</text>
-    <text x="370" y="276" class="body" font-size="9.5" fill="#5A5A5A" text-anchor="middle">seuils révisés</text>
-    <circle cx="540" cy="240" r="6" fill="#B7332C" stroke="#FAF8F3" stroke-width="1.5"/>
-    <text x="540" y="262" class="body" font-size="10" font-weight="600" fill="#B7332C" text-anchor="middle">Déc 2024 ✦</text>
-    <text x="540" y="276" class="body" font-size="9.5" fill="#5A5A5A" text-anchor="middle">HBM sous licence</text>
-    <circle cx="710" cy="240" r="5" fill="#B7332C"/>
-    <text x="710" y="262" class="body" font-size="10" fill="#1A1A1A" text-anchor="middle">Jan 2025</text>
-    <text x="710" y="276" class="body" font-size="9.5" fill="#5A5A5A" text-anchor="middle">AI Diffusion</text>
+  <!-- vLLM row -->
+  <g class="interactive" data-card="vllm" tabindex="0" role="button" aria-label="vLLM — cliquez pour les détails">
+    <rect x="60" y="300" width="1060" height="64" rx="4" fill="#FAF8F3"/>
+    <text x="80" y="338" class="display" font-size="17" font-weight="600" fill="#1A1A1A">vLLM</text>
+    <text x="80" y="356" class="body" font-size="11" fill="#5A5A5A">DP-attention + EP · intégration DeepEP</text>
+    <circle cx="350" cy="332" r="10" fill="#1F5560"/>
+    <circle cx="520" cy="332" r="10" fill="#1F5560"/>
+    <circle cx="690" cy="332" r="10" fill="#1F5560"/>
+    <circle cx="860" cy="332" r="10" fill="#1F5560"/>
+    <path d="M1030 322 A10 10 0 0 1 1030 342 Z" fill="#B58A2C"/>
+    <circle cx="1030" cy="332" r="10" fill="none" stroke="#B58A2C" stroke-width="1"/>
   </g>
 
-  <!-- TRACK 2 — reshoring (interactive) -->
-  <g class="interactive" data-card="chips-acts" tabindex="0" role="button" aria-label="Relocalisation occidentale">
-    <rect x="96" y="293" width="1048" height="96" rx="3" fill="#1F5560" fill-opacity="0.05" stroke="#1F5560" stroke-width="1.5"/>
-    <text x="112" y="315" class="body" font-size="12.5" font-weight="600" fill="#1A1A1A">Relocaliser — CHIPS Act &amp; EU Chips Act</text>
-    <line x1="200" y1="347" x2="1050" y2="347" stroke="#1F5560" stroke-width="1.5"/>
-    <circle cx="200" cy="347" r="5" fill="#1F5560"/>
-    <text x="200" y="369" class="body" font-size="10" fill="#1A1A1A" text-anchor="middle">CHIPS Act</text>
-    <text x="200" y="383" class="body" font-size="9.5" fill="#5A5A5A" text-anchor="middle">52 Md$ (2022)</text>
-    <circle cx="370" cy="347" r="5" fill="#1F5560"/>
-    <text x="370" y="369" class="body" font-size="10" fill="#1A1A1A" text-anchor="middle">EU Chips Act</text>
-    <text x="370" y="383" class="body" font-size="9.5" fill="#5A5A5A" text-anchor="middle">43 Md€</text>
-    <circle cx="710" cy="347" r="5" fill="#1F5560"/>
-    <text x="710" y="369" class="body" font-size="10" fill="#1A1A1A" text-anchor="middle">Arizona · Dresde</text>
-    <text x="710" y="383" class="body" font-size="9.5" fill="#5A5A5A" text-anchor="middle">Kumamoto montent</text>
-    <circle cx="1050" cy="347" r="5" fill="#1F5560"/>
-    <text x="1050" y="369" class="body" font-size="10" fill="#1A1A1A" text-anchor="middle">Rapidus 2 nm</text>
-    <text x="1050" y="383" class="body" font-size="9.5" fill="#5A5A5A" text-anchor="middle">Japon ~2027</text>
+  <!-- Dynamo row -->
+  <g class="interactive" data-card="dynamo" tabindex="0" role="button" aria-label="NVIDIA Dynamo / TensorRT-LLM — cliquez pour les détails">
+    <rect x="60" y="372" width="1060" height="64" rx="4" fill="#B7332C" fill-opacity="0.05"/>
+    <text x="80" y="410" class="display" font-size="17" font-weight="600" fill="#1A1A1A">NVIDIA Dynamo · TensorRT-LLM</text>
+    <text x="80" y="428" class="body" font-size="11" fill="#5A5A5A">désagrégation + EP jusqu'au NVL72</text>
+    <circle cx="350" cy="404" r="10" fill="#1F5560"/>
+    <circle cx="520" cy="404" r="10" fill="#1F5560"/>
+    <circle cx="690" cy="404" r="10" fill="#1F5560"/>
+    <circle cx="860" cy="404" r="10" fill="#1F5560"/>
+    <circle cx="1030" cy="404" r="10" fill="#B7332C"/>
   </g>
 
-  <!-- TRACK 3 — China (interactive) -->
-  <g class="interactive" data-card="reponse-chine" tabindex="0" role="button" aria-label="Substitution chinoise">
-    <rect x="96" y="400" width="1048" height="96" rx="3" fill="#B58A2C" fill-opacity="0.07" stroke="#B58A2C" stroke-width="1.5"/>
-    <text x="112" y="422" class="body" font-size="12.5" font-weight="600" fill="#1A1A1A">Contourner — substitution chinoise (chaîne parallèle)</text>
-    <line x1="540" y1="454" x2="1050" y2="454" stroke="#B58A2C" stroke-width="1.5"/>
-    <circle cx="540" cy="454" r="5" fill="#B58A2C"/>
-    <text x="540" y="476" class="body" font-size="10" fill="#1A1A1A" text-anchor="middle">SMIC 7 nm</text>
-    <text x="540" y="490" class="body" font-size="9.5" fill="#5A5A5A" text-anchor="middle">par DUV multi-patterning</text>
-    <circle cx="710" cy="454" r="5" fill="#B58A2C"/>
-    <text x="710" y="476" class="body" font-size="10" fill="#1A1A1A" text-anchor="middle">Huawei Ascend</text>
-    <text x="710" y="490" class="body" font-size="9.5" fill="#5A5A5A" text-anchor="middle">accélérateurs maison</text>
-    <circle cx="880" cy="454" r="5" fill="#B58A2C"/>
-    <text x="880" y="476" class="body" font-size="10" fill="#1A1A1A" text-anchor="middle">SMEE</text>
-    <text x="880" y="490" class="body" font-size="9.5" fill="#5A5A5A" text-anchor="middle">litho indigène</text>
-    <circle cx="1050" cy="454" r="5" fill="#B58A2C"/>
-    <text x="1050" y="476" class="body" font-size="10" fill="#1A1A1A" text-anchor="middle">« assez bon »</text>
-    <text x="1050" y="490" class="body" font-size="9.5" fill="#5A5A5A" text-anchor="middle">hors nœud de pointe</text>
+  <text x="80" y="462" class="body" font-size="11" fill="#5A5A5A">● présent   ◐ partiel — la ligne de fracture n'est plus « qui sait faire de l'EP » mais la maturité de l'équilibrage et du recouvrement.</text>
+
+  <!-- Socle -->
+  <g class="interactive" data-card="socle" tabindex="0" role="button" aria-label="Le socle DeepSeek — cliquez pour les détails">
+    <rect x="60" y="486" width="700" height="222" rx="6" fill="#1A1A1A" fill-opacity="0.04" stroke="#1A1A1A" stroke-width="1.5"/>
+    <text x="84" y="518" class="display" font-size="18" font-weight="600" fill="#1A1A1A">Le socle ouvert (DeepSeek)</text>
+    <text x="84" y="540" class="body" font-size="12.5" fill="#5A5A5A">Intégré plutôt que réimplémenté par la plupart des serveurs.</text>
+    <rect x="84" y="558" width="210" height="120" rx="4" fill="#B7332C" fill-opacity="0.08" stroke="#B7332C" stroke-width="1"/>
+    <text x="189" y="600" text-anchor="middle" class="mono" font-size="15" fill="#B7332C">DeepEP</text>
+    <text x="189" y="624" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">communication</text>
+    <text x="189" y="642" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">(all-to-all)</text>
+    <rect x="309" y="558" width="210" height="120" rx="4" fill="#B58A2C" fill-opacity="0.08" stroke="#B58A2C" stroke-width="1"/>
+    <text x="414" y="600" text-anchor="middle" class="mono" font-size="15" fill="#B58A2C">DeepGEMM</text>
+    <text x="414" y="624" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">calcul FP8</text>
+    <text x="414" y="642" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">(experts)</text>
+    <rect x="534" y="558" width="210" height="120" rx="4" fill="#1F5560" fill-opacity="0.08" stroke="#1F5560" stroke-width="1"/>
+    <text x="639" y="600" text-anchor="middle" class="mono" font-size="15" fill="#1F5560">EPLB</text>
+    <text x="639" y="624" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">équilibrage</text>
+    <text x="639" y="642" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">de charge</text>
   </g>
 
-  <!-- HBM spotlight (interactive) -->
-  <g class="interactive" data-card="controle-hbm" tabindex="0" role="button" aria-label="Zoom sur le contrôle HBM de décembre 2024">
-    <rect x="96" y="524" width="1048" height="86" rx="3" fill="#B7332C" fill-opacity="0.08" stroke="#B7332C" stroke-width="2"/>
-    <text x="118" y="550" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#B7332C">✦ ZOOM — 2 DÉCEMBRE 2024</text>
-    <text x="118" y="574" class="body" font-size="13.5" font-weight="600" fill="#1A1A1A">La HBM entre dans le champ : toute mémoire &gt; 2 Go/s/mm² passe sous licence (ECCN 3A090.c)</text>
-    <text x="118" y="596" class="body" font-size="11.5" fill="#5A5A5A">Le contrôle vise désormais un <tspan font-style="italic">composant</tspan>, pas un produit fini — et le BIS note que toute HBM en production dépasse ce seuil.</text>
+  <!-- NVL72 card -->
+  <g class="interactive" data-card="nvl72" tabindex="0" role="button" aria-label="La fabric scale-up NVL72 — cliquez pour les détails">
+    <rect x="780" y="486" width="360" height="222" rx="6" fill="#2F5D3F" fill-opacity="0.07" stroke="#2F5D3F" stroke-width="1.5"/>
+    <text x="804" y="518" class="display" font-size="18" font-weight="600" fill="#2F5D3F">Fabric scale-up NVL72</text>
+    <text x="804" y="548" class="body" font-size="13" fill="#1A1A1A">72 GPU dans un seul domaine de</text>
+    <text x="804" y="568" class="body" font-size="13" fill="#1A1A1A">cohérence NVLink.</text>
+    <text x="804" y="604" class="body" font-size="13" fill="#1A1A1A">Le tout-à-tout redevient</text>
+    <text x="804" y="624" class="body" font-size="13" fill="#1A1A1A">intra-domaine rapide —</text>
+    <text x="804" y="644" class="body" font-size="13" fill="#1A1A1A">l'asymétrie du schéma 2 se dissout.</text>
+    <text x="804" y="680" class="mono" font-size="13" fill="#2F5D3F">×3,8 prefill · ×4,8 decode</text>
   </g>
 
-  <!-- FOOTER -->
-  <line x1="60" y1="700" x2="1140" y2="700" stroke="#E5E1D8" stroke-width="0.5"/>
-  <text x="60" y="726" class="body" font-size="10" font-style="italic" fill="#5A5A5A">Source : BIS / Federal Register 2024-2025 ; CRS R48642 ; CSIS ; BCG/SIA 2024. Jalons datés à titre indicatif ; le cadre AI Diffusion a été révisé en 2025.</text>
+  <!-- Footer -->
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="60" y="766" class="body" font-size="11" font-style="italic" fill="#5A5A5A">Source : SGLang (lmsys.org, 2025) ; DeepEP / DeepGEMM / EPLB (DeepSeek, 2025) ; NVIDIA Dynamo. Matrice indicative.</text>
 </svg>
 
-        <figcaption class="figure-caption"><a class="anchor" href="#fig-07" title="Lien direct vers ce schéma">¶</a> <em>Schéma 7 — Le compute sous contrôle. Trois mouvements en miroir : verrouiller les points de passage (contrôles BIS), les relocaliser (CHIPS / EU Chips Act), ou en bâtir des parallèles (substitution chinoise).</em></figcaption>
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-07" title="Lien direct vers ce schéma">¶</a> <em>Schéma 7 — Le paysage outillage 2026. SGLang, vLLM, NVIDIA Dynamo sur cinq capacités ; le socle ouvert DeepEP/DeepGEMM/EPLB ; la fabric scale-up NVL72.</em></figcaption>
       </figure>
 
-      <p>Le <em>Bureau of Industry and Security</em> (BIS) du Département du Commerce a construit, par vagues successives, un régime de contrôle à l'export ciblé sur les chokepoints. <strong>Octobre 2022</strong> — première salve : restriction des GPU de calcul avancés et des équipements de fabrication vers la Chine, avec la <span class="term" data-tooltip="Foreign Direct Product Rule (FDPR) : règle qui étend la juridiction américaine à tout produit fabriqué à l'étranger avec de la technologie ou des logiciels d'origine US.">Foreign Direct Product Rule</span> qui étend la portée américaine à tout produit fabriqué avec de la technologie US. <strong>Octobre 2023</strong> — resserrement : les seuils de performance sont révisés pour rattraper les puces conçues pour les contourner (les fameux A800/H800). <strong>2 décembre 2024</strong> — la HBM entre dans le champ : <mark>toute mémoire HBM d'une densité de bande passante supérieure à 2 Go/s/mm² passe sous licence (<span class="term" data-tooltip="ECCN (Export Control Classification Number) : code qui classe un produit dans la liste de contrôle des exportations américaine ; 3A090.c cible désormais la HBM.">ECCN 3A090.c</span>), et le BIS précise que <em>toute</em> HBM en production dépasse ce seuil.</mark><a class="cite" data-cite="6" href="#source-6">6</a> Le contrôle vise désormais un composant, pas seulement un produit fini. <strong>15 janvier 2025</strong> — le <em>Framework for Artificial Intelligence Diffusion</em> propose une architecture à trois cercles (alliés, intermédiaires sous quota, adversaires) régissant jusqu'aux poids de modèles<a class="cite" data-cite="5" href="#source-5">5</a>. Contesté par l'industrie et les alliés, il sera révisé en cours d'année : le principe d'un contrôle mondialisé du compute est posé, ses modalités restent instables<a class="cite" data-cite="7" href="#source-7">7</a>.</p>
-      <p>En miroir, deux mouvements. Côté occidental, un effort de <strong>relocalisation</strong> massif : le <em>CHIPS and Science Act</em> américain (52 Md$) et l'<em>EU Chips Act</em> (43 Md€) financent des fabs sur le sol national — Arizona, Dresde, Kumamoto — et un bilan d'étape note une résilience <em>émergente</em> mais partielle<a class="cite" data-cite="12" href="#source-12">12</a>. Côté chinois, une <strong>substitution</strong> forcée : SMIC produit du 7 nm par <span class="term" data-tooltip="DUV (Deep Ultraviolet) : lithographie à 193 nm, génération précédant l'EUV ; par multi-patterning, elle atteint le 7 nm au prix de plusieurs passes, ce que fait SMIC faute d'EUV.">DUV</span> multi-patterning malgré l'absence d'EUV, Huawei conçoit ses Ascend, SMEE tente une machine de lithographie indigène. La Chine ne rattrape pas le nœud de pointe, mais elle bâtit une chaîne parallèle « suffisamment bonne » pour ses besoins domestiques.</p>
-      <p>Le cadre théorique de tout cela est celui de Chris Miller dans <em>Chip War</em><a class="cite" data-cite="10" href="#source-10">10</a> : le compute est devenu le pétrole du XXI<sup>e</sup> siècle, à ceci près que sa production est <strong>encore plus concentrée</strong> que celle des hydrocarbures. Le détroit de Taïwan y joue le rôle du détroit d'Ormuz — sauf qu'aucune réserve stratégique ne se constitue en accélérateurs.</p>
+      <section>
+        <h2 id="moe-7">7. Le paysage outillage 2026</h2>
+        <p>Le marché de l'inférence MoE s'est structuré en 2025-2026 autour d'une pile ouverte étonnamment convergente. Le <strong>socle</strong> est le trio DeepSeek — DeepEP (communication), DeepGEMM (calcul FP8), EPLB (équilibrage) — que la plupart des serveurs intègrent plutôt que de le réimplémenter.</p>
+        <p>Au-dessus, deux serveurs open source mènent la course. <strong>SGLang</strong> a livré la première implémentation ouverte de la désagrégation P/D + EP à grande échelle reproduisant le déploiement DeepSeek<a class="cite" data-cite="8" href="#source-8">8</a>, et l'a depuis couplée à la prédiction multi-tokens (+60 % de débit de sortie). <strong>vLLM</strong> a suivi avec son propre support DP-attention + EP et l'intégration DeepEP. Côté propriétaire, <strong>NVIDIA Dynamo</strong> (avec TensorRT-LLM) pousse la désagrégation et l'EP jusqu'au <strong>GB200 NVL72</strong>, dont la fabric scale-up est taillée pour absorber le all-to-all.</p>
+        <p>La ligne de fracture entre ces offres n'est plus « qui sait faire de l'EP » — tout le monde sait — mais <strong>la maturité de l'équilibrage dynamique, la finesse du recouvrement, et l'exploitation des fabrics scale-up</strong>. C'est là que se gagnent les derniers x2 de débit, et c'est un terrain d'ingénierie système, pas de modélisation.</p>
+      </section>
 
-      <h2 id="sc-9">9. Trajectoires 2026-2028</h2>
-      <p>Trois vecteurs à surveiller. <strong>La diversification lente.</strong> Le reshoring produit ses premiers volumes — Arizona monte, Rapidus vise un 2 nm japonais souverain à l'horizon 2027 — mais reconstruit surtout le <em>milieu</em> de la chaîne (fonderie logique). Les points les plus durs (EUV, matériaux japonais, packaging) restent quasi inchangés. La géographie de l'entonnoir bougera à la marge, pas dans sa forme.</p>
-      <p><strong>Le déplacement du goulot.</strong> Le packaging avance vers le <em>panel-level</em> (substrats rectangulaires plus grands que les plaquettes rondes) et la HBM vers des <em>base dies</em> logiques personnalisés gravés en fonderie — ce qui <strong>couple encore davantage</strong> mémoire, packaging et fonderie chez le même acteur, TSMC. Le goulot ne disparaît pas, il se concentre.</p>
-      <p><strong>L'instabilité réglementaire.</strong> Le régime de contrôle à l'export restera un chantier permanent : chaque seuil de performance appelle une puce conçue pour le contourner, chaque contournement appelle un nouveau seuil. <mark>Pour l'acheteur de compute — l'entreprise qui déploie des agents, entraîne des modèles, ou loue des GPU — la leçon est que la disponibilité et le prix du calcul dépendront de plus en plus de décisions prises à Veldhoven, Hsinchu, Washington et Pékin, pas seulement du marché.</mark></p>
-      <p>Le compute n'est pas une commodité fongible. C'est le produit d'une chaîne étroite, profonde et politiquement exposée. Les dossiers sur les modèles supposent le GPU donné ; celui-ci rappelle qu'il ne l'est jamais tout à fait.</p>
-
-      <p class="ia-disclosure" style="margin-top:2.4rem;color:var(--graphite);font-size:0.82rem;font-style:italic;border-top:1px solid var(--rule);padding-top:1.2rem;">Format co-écrit avec l'aide d'une IA. Les chiffres cités proviennent des sources listées ; les schémas sont des reconstructions illustratives des motifs décrits, non des mesures.</p>
+      <section>
+        <h2 id="moe-8">8. Trajectoires</h2>
+        <p>Quatre directions se dessinent pour 2026-2028.</p>
+        <p><strong>L'EP élastique.</strong> Aujourd'hui la taille du groupe EP est fixée au déploiement. Demain, on ajustera dynamiquement le nombre de GPU d'un pool decode selon la charge — un autoscaling au niveau des experts, qui suppose de recalculer placement et redondance à chaud (extension de l'EPLB).</p>
+        <p><strong>Le tout-à-tout intra-domaine.</strong> La montée des fabrics scale-up (NVL72 et ses successeurs) déplace la frontière : plus le domaine de cohérence NVLink est grand, plus le all-to-all reste dans le régime rapide. À terme, un modèle entier pourrait tenir son EP dans un seul domaine, dissolvant le goulot inter-nœud qui a façonné toute l'ingénierie décrite ici.</p>
+        <p><strong>La co-conception réseau × modèle.</strong> Le node-limited routing a montré la voie : le motif de routage se décide en fonction de la topologie réseau. On verra des modèles dont l'architecture MoE est explicitement co-conçue avec le matériel de service — comme la parcimonie native l'a été pour le calcul (voir <a href="../attention-parcimonieuse/">attention-parcimonieuse</a>).</p>
+        <p><strong>L'EP-as-a-service.</strong> Enfin, comme le cache KV avant lui (voir <a href="../desagregation-prefill-decode/">desagregation-prefill-decode</a>), l'infrastructure EP pourrait se mutualiser : des pools d'experts partagés entre modèles et locataires, posant les mêmes questions d'isolation et de sécurité que le prompt caching partagé (voir <a href="../mcp-securite/">mcp-securite</a>).</p>
+        <p>Le fil rouge est constant. Le MoE n'a pas rendu l'inférence plus simple ; il a déplacé la difficulté de l'algèbre linéaire vers le réseau. <mark>Servir un modèle creux, en 2026, c'est d'abord savoir faire circuler des tokens — et le savoir-faire porteur n'est plus dans le modèle, il est dans la bibliothèque de communication.</mark></p>
+      </section>
     </main>
 
     <aside id="sources" aria-label="Sources">
@@ -1404,64 +1424,64 @@
       <h2>Sources</h2>
       <ol id="sources-list">
 <li id="source-1">
-          <span class="cite-num">[1]</span> Mathieu Guglielmino, dossiers <em>L'économie de l'inférence</em>, <em>L'économie du KV-cache</em>, <em>Le mélange d'experts</em> et <em>L'IA embarquée</em>. La couche modèles/systèmes que ce dossier prend par le bas.<br>
-          <a href="https://mathieugug.github.io/#series" target="_blank" rel="noopener">mathieugug.github.io ↗</a>
-          <span class="accessed">consulté le 10 juillet 2026</span>
+          <span class="cite-num">[1]</span> DeepSeek-AI. <em>DeepSeek-V3 Technical Report</em>. arXiv:2412.19437, décembre 2024. Placement EP32 (prefill, 4 nœuds) / EP144 (decode, 18 nœuds), experts redondants, routage borné aux nœuds, entraînement FP8.<br>
+          <a href="https://arxiv.org/abs/2412.19437" target="_blank" rel="noopener">arxiv.org/2412.19437 ↗</a>
+          <span class="accessed">consulté le 29 juillet 2026</span>
         </li>
         <li id="source-2">
-          <span class="cite-num">[2]</span> Semiconductor Industry Association &amp; Boston Consulting Group, <em>Strengthening the Global Semiconductor Supply Chain in an Uncertain Era</em>, 2021. Concentration géographique, 50+ points &gt;65 % de part régionale, Taïwan ~90 % du logique avancé et 85 % du packaging, chokepoints matériaux (Zeiss, TRUMPF, Ajinomoto).<br>
-          <a href="https://www.semiconductors.org/strengthening-the-global-semiconductor-supply-chain-in-an-uncertain-era/" target="_blank" rel="noopener">semiconductors.org ↗</a>
-          <span class="accessed">consulté le 10 juillet 2026</span>
+          <span class="cite-num">[2]</span> DeepSeek-AI. <em>DeepEP : an efficient expert-parallel communication library</em>. GitHub, février 2025. Kernels normal / faible latence, débits NVLink et RDMA, dispatch FP8, recouvrement par hook.<br>
+          <a href="https://github.com/deepseek-ai/DeepEP" target="_blank" rel="noopener">github.com/deepseek-ai/DeepEP ↗</a>
+          <span class="accessed">consulté le 29 juillet 2026</span>
         </li>
         <li id="source-3">
-          <span class="cite-num">[3]</span> Center for Security and Emerging Technology (Georgetown), <em>The Semiconductor Supply Chain: Assessing National Competitiveness</em>, S. Khan, A. Mann, D. Peterson, 2021. Cartographie maillon par maillon : photoresist EUV Japon &gt;90 %, plaquettes, mask blanks, tracks.<br>
-          <a href="https://cset.georgetown.edu/publication/the-semiconductor-supply-chain/" target="_blank" rel="noopener">cset.georgetown.edu ↗</a>
-          <span class="accessed">consulté le 10 juillet 2026</span>
+          <span class="cite-num">[3]</span> Lepikhin, Dmitry et al. <em>GShard : Scaling Giant Models with Conditional Computation and Automatic Sharding</em>. arXiv:2006.16668, 2020. Origine du parallélisme d'experts et du double all-to-all dispatch/combine.<br>
+          <a href="https://arxiv.org/abs/2006.16668" target="_blank" rel="noopener">arxiv.org/2006.16668 ↗</a>
+          <span class="accessed">consulté le 29 juillet 2026</span>
         </li>
         <li id="source-4">
-          <span class="cite-num">[4]</span> ASML Holding NV, <em>Annual Report / Form 20-F</em>, 2024-2025. Monopole EUV (100 %), part lithographie ~94 %, High-NA EXE:5200 (~350-400 M$, première livraison production Intel Q4 2025), exposition Chine.<br>
-          <a href="https://www.asml.com/en/investors/annual-report" target="_blank" rel="noopener">asml.com ↗</a>
-          <span class="accessed">consulté le 10 juillet 2026</span>
+          <span class="cite-num">[4]</span> Fedus, William, Barret Zoph et Noam Shazeer. <em>Switch Transformers : Scaling to Trillion Parameter Models with Simple and Efficient Sparsity</em>. JMLR 23, 2022. Facteur de capacité, token dropping, loss d'équilibrage de charge.<br>
+          <a href="https://arxiv.org/abs/2101.03961" target="_blank" rel="noopener">arxiv.org/2101.03961 ↗</a>
+          <span class="accessed">consulté le 29 juillet 2026</span>
         </li>
         <li id="source-5">
-          <span class="cite-num">[5]</span> Bureau of Industry and Security (US Dept. of Commerce), <em>Framework for Artificial Intelligence Diffusion</em>, Federal Register, 15 janvier 2025. Architecture à paliers du contrôle du compute et des poids de modèles.<br>
-          <a href="https://www.federalregister.gov/documents/2025/01/15/2025-00636/framework-for-artificial-intelligence-diffusion" target="_blank" rel="noopener">federalregister.gov ↗</a>
-          <span class="accessed">consulté le 10 juillet 2026</span>
+          <span class="cite-num">[5]</span> DeepSeek-AI. <em>DeepSeekMoE : Towards Ultimate Expert Specialization in Mixture-of-Experts Language Models</em>. arXiv:2401.06066, 2024. Experts fins + expert partagé isolé.<br>
+          <a href="https://arxiv.org/abs/2401.06066" target="_blank" rel="noopener">arxiv.org/2401.06066 ↗</a>
+          <span class="accessed">consulté le 29 juillet 2026</span>
         </li>
         <li id="source-6">
-          <span class="cite-num">[6]</span> Holland &amp; Knight / BIS, <em>U.S. Strengthens Export Controls on Advanced Computing Items, Semiconductor Manufacturing Items</em>, décembre 2024. Contrôle HBM ECCN 3A090.c (seuil 2 Go/s/mm²).<br>
-          <a href="https://www.hklaw.com/en/insights/publications/2024/12/us-strengthens-export-controls-on-advanced-computing-items" target="_blank" rel="noopener">hklaw.com ↗</a>
-          <span class="accessed">consulté le 10 juillet 2026</span>
+          <span class="cite-num">[6]</span> Hwang, Changho et al. <em>Tutel : Adaptive Mixture-of-Experts at Scale</em>. MLSys 2023 / arXiv:2206.03382. Parallélisme adaptatif, optimisation du all-to-all, bascule dynamique de stratégie.<br>
+          <a href="https://arxiv.org/abs/2206.03382" target="_blank" rel="noopener">arxiv.org/2206.03382 ↗</a>
+          <span class="accessed">consulté le 29 juillet 2026</span>
         </li>
         <li id="source-7">
-          <span class="cite-num">[7]</span> Congressional Research Service, <em>U.S. Export Controls and China: Advanced Semiconductors</em>, R48642. Synthèse législative des vagues de contrôle 2022-2025.<br>
-          <a href="https://www.congress.gov/crs-product/R48642" target="_blank" rel="noopener">congress.gov ↗</a>
-          <span class="accessed">consulté le 10 juillet 2026</span>
+          <span class="cite-num">[7]</span> Li, Jiamin et al. <em>Accelerating Distributed MoE Training and Inference with Lina</em>. USENIX ATC 2023. Priorisation du all-to-all et partition tensorielle pour dompter le goulot de communication.<br>
+          <a href="https://www.usenix.org/conference/atc23/presentation/li-jiamin" target="_blank" rel="noopener">usenix.org/atc23 ↗</a>
+          <span class="accessed">consulté le 29 juillet 2026</span>
         </li>
         <li id="source-8">
-          <span class="cite-num">[8]</span> Center for Strategic and International Studies, <em>Understanding the Biden Administration's Updated Export Controls</em>. Logique « chokepoint » des contrôles à l'export.<br>
-          <a href="https://www.csis.org/analysis/understanding-biden-administrations-updated-export-controls" target="_blank" rel="noopener">csis.org ↗</a>
-          <span class="accessed">consulté le 10 juillet 2026</span>
+          <span class="cite-num">[8]</span> SGLang Team. <em>Deploying DeepSeek with PD Disaggregation and Large-Scale Expert Parallelism on 96 H100 GPUs</em>. lmsys.org, 5 mai 2025. 52,3k tokens d'entrée/s et 22,3k tokens de sortie/s par nœud, jusqu'à 5× vs TP, DP-attention + EP, EPLB, two-batch overlap.<br>
+          <a href="https://lmsys.org/blog/2025-05-05-large-scale-ep/" target="_blank" rel="noopener">lmsys.org/blog ↗</a>
+          <span class="accessed">consulté le 29 juillet 2026</span>
         </li>
         <li id="source-9">
-          <span class="cite-num">[9]</span> TrendForce, analyses <em>HBM Industry</em> et allocations CoWoS-L / HBM4, 2025-2026. Parts SK hynix ~63 % (2025), Samsung, Micron ; allocation provisoire HBM4 Nvidia ; Nvidia ~60 % de la HBM et ~70 % de la capacité CoWoS-L ; MI400 ~432 Go HBM4.<br>
-          <a href="https://www.trendforce.com/insights/asml-euv" target="_blank" rel="noopener">trendforce.com ↗</a>
-          <span class="accessed">consulté le 10 juillet 2026</span>
+          <span class="cite-num">[9]</span> DeepSeek-AI. <em>EPLB : Expert Parallelism Load Balancer</em>. GitHub, février 2025. Experts redondants, équilibrage hiérarchique et global.<br>
+          <a href="https://github.com/deepseek-ai/EPLB" target="_blank" rel="noopener">github.com/deepseek-ai/EPLB ↗</a>
+          <span class="accessed">consulté le 29 juillet 2026</span>
         </li>
         <li id="source-10">
-          <span class="cite-num">[10]</span> Chris Miller, <em>Chip War: The Fight for the World's Most Critical Technology</em>, Scribner, 2022. Le cadre géopolitique de référence sur la concentration de la chaîne et le rôle de Taïwan.<br>
-          <a href="https://www.simonandschuster.com/books/Chip-War/Chris-Miller/9781982172008" target="_blank" rel="noopener">simonandschuster.com ↗</a>
-          <span class="accessed">consulté le 10 juillet 2026</span>
+          <span class="cite-num">[10]</span> DeepSeek-AI. <em>DeepGEMM : clean and efficient FP8 GEMM kernels</em>. GitHub, février 2025. GEMM groupé FP8 pour le calcul des experts (layouts contiguous / masked).<br>
+          <a href="https://github.com/deepseek-ai/DeepGEMM" target="_blank" rel="noopener">github.com/deepseek-ai/DeepGEMM ↗</a>
+          <span class="accessed">consulté le 29 juillet 2026</span>
         </li>
         <li id="source-11">
-          <span class="cite-num">[11]</span> TSMC, communications investisseurs 2025 (capacité CoWoS ~35k→130k plaquettes/mois, nœud N2) ; recoupé par SIA (packaging avancé 85 % Taïwan) et analyses de capacité de fonderie 2025-2026.<br>
-          <a href="https://investor.tsmc.com/english" target="_blank" rel="noopener">investor.tsmc.com ↗</a>
-          <span class="accessed">consulté le 10 juillet 2026</span>
+          <span class="cite-num">[11]</span> SGLang Team. <em>Deploying DeepSeek on GB200 NVL72 with PD and Large Scale EP (Part II) : 3.8x Prefill, 4.8x Decode Throughput</em>. lmsys.org, 25 septembre 2025. Exploitation de la fabric scale-up NVL72.<br>
+          <a href="https://lmsys.org/blog/2025-09-25-gb200-part-2/" target="_blank" rel="noopener">lmsys.org/blog ↗</a>
+          <span class="accessed">consulté le 29 juillet 2026</span>
         </li>
         <li id="source-12">
-          <span class="cite-num">[12]</span> Boston Consulting Group &amp; SIA, <em>Emerging Resilience in the Semiconductor Supply Chain</em>, 2024. Bilan d'étape du reshoring (CHIPS Act 52 Md$, EU Chips Act 43 Md€) : résilience émergente mais partielle.<br>
-          <a href="https://www.bcg.com/publications/2024/emerging-resilience-in-semiconductor-supply-chain" target="_blank" rel="noopener">bcg.com ↗</a>
-          <span class="accessed">consulté le 10 juillet 2026</span>
+          <span class="cite-num">[12]</span> Clark, Aidan et al. <em>Unified Scaling Laws for Routed Language Models</em>. arXiv:2202.01169, 2022. Un modèle routé bat un dense à budget de calcul fixé.<br>
+          <a href="https://arxiv.org/abs/2202.01169" target="_blank" rel="noopener">arxiv.org/2202.01169 ↗</a>
+          <span class="accessed">consulté le 29 juillet 2026</span>
         </li>
         </ol>
       </div>
@@ -1510,157 +1530,167 @@
 
     const SCHEMAS = {
   "schema-01": {
-    "etage-euv": {
-      title: "Lithographie EUV — le premier goulot",
-      eyebrow: "ASML · 100 %",
-      body: "<p>La lithographie par ultraviolets extrêmes (13,5 nm) est la seule technologie capable de graver le nœud de pointe. Un seul fabricant la vend au monde : le néerlandais <strong>ASML</strong>, avec 100 % du marché EUV<a class='cite' data-cite='4' href='#source-4'>4</a>.</p><p>C'est le sommet de l'entonnoir : sans EUV, pas de die logique avancé. Et ce maillon repose lui-même sur des fournisseurs uniques (Zeiss, TRUMPF) — voir le schéma 3.</p>"
+    "gate": {
+      title: "Le routeur (gate)",
+      eyebrow: "local au GPU",
+      body: "<p>Pour chaque token, le routeur calcule un score sur les <em>N</em> experts et sélectionne les <em>k</em> meilleurs (top-k, 8 sur 256 pour DeepSeek-V3). C'est une opération <strong>locale</strong> : pas de communication, juste un petit produit matriciel et un tri.</p><p>Mais sa décision commande tout le reste : quels tokens vont où, et donc le volume de chaque flux du all-to-all qui suit. Un routeur déséquilibré fabrique des straggler (schéma 5).</p>"
     },
-    "etage-fonderie": {
-      title: "Fonderie de pointe — TSMC",
-      eyebrow: "~90 % du logique < 7 nm",
-      body: "<p>La machine EUV grave <em>chez quelqu'un</em> : au nœud de pointe, presque toujours TSMC, qui contrôle ~90 % de la production mondiale de logique avancée sous 7 nm<a class='cite' data-cite='2' href='#source-2'>2</a>.</p><p>Une usine N2 dépasse 20 Md$ ; le savoir-faire de rendement ne s'acquiert qu'en produisant à l'échelle. Chaque génération renforce le leader, et concentre le risque à Taïwan.</p>"
+    "dispatch-a2a": {
+      title: "Dispatch — all-to-all #1",
+      eyebrow: "collectif · tokens vers experts",
+      body: "<p>Premier collectif de la couche : chaque GPU envoie ses tokens vers les GPU qui hébergent les experts cibles. Le motif est <strong>tout-à-tout</strong> — chacun parle à tous — avec des volumes dictés par les décisions du routeur, donc impossibles à connaître avant l'exécution<a class='cite' data-cite='3' href='#source-3'>3</a>.</p><p>C'est ici que se paie l'asymétrie NVLink / RDMA (schéma 2) : un token qui reste dans le nœud coûte 3 à 10× moins qu'un token qui en sort.</p>"
     },
-    "etage-packaging": {
-      title: "Packaging avancé — le maillon le plus tendu",
-      eyebrow: "TSMC · 85 % — CoWoS",
-      body: "<p>Le retournement du dossier : le vrai goulot 2024-2026 n'est pas la gravure du silicium mais l'<strong>assemblage</strong> qui réunit dies logiques et HBM sur un interposeur — le packaging CoWoS, dont Taïwan tient 85 %<a class='cite' data-cite='2' href='#source-2'>2</a>.</p><p>Rare <em>et</em> accaparé : Nvidia en réserve ~70 % (schéma 4). C'est lui qui plafonne le nombre d'accélérateurs produits chaque année.</p>"
+    "expert-ffn": {
+      title: "Le calcul des experts",
+      eyebrow: "local · presque gratuit en decode",
+      body: "<p>Chaque expert applique son réseau feed-forward aux tokens reçus. En décodage (limité par la mémoire), ce calcul est <strong>presque gratuit</strong> : le GPU est de toute façon en attente de la mémoire.</p><p>D'où le retournement : sur un MoE à grande échelle, ce n'est pas ce bloc qui coûte, mais les deux collectifs qui l'encadrent. DeepGEMM fournit les GEMM groupés FP8 dédiés (schéma 4).</p>"
     },
-    "etage-hbm": {
-      title: "Mémoire HBM — l'oligopole",
-      eyebrow: "3 acteurs · SK hynix ~63 %",
-      body: "<p>La mémoire à haute bande passante répond au « mur mémoire » de l'inférence. Trois fabricants seulement la produisent en volume : SK hynix (~63 %), Samsung et Micron<a class='cite' data-cite='9' href='#source-9'>9</a>.</p><p>Deux pays (Corée, États-Unis pour Micron), et un couplage critique avec le packaging : le nombre de stacks intégrables sur l'interposeur définit la mémoire du module (schéma 5).</p>"
+    "combine-a2a": {
+      title: "Combine — all-to-all #2",
+      eyebrow: "collectif · sorties vers origine",
+      body: "<p>Second collectif : les sorties des experts repartent vers les GPU d'origine des tokens, où elles sont recombinées de façon pondérée. Même motif tout-à-tout que le dispatch, même coût.</p><p>Deux all-to-all par couche, synchrones : un modèle de 60 couches en aligne <strong>120</strong> sur le chemin critique de chaque token généré. C'est le poste que toute l'ingénierie de ce dossier cherche à masquer.</p>"
     }
   },
   "schema-02": {
-    "die-logique": {
-      title: "Les dies logiques",
-      eyebrow: "TSMC · N4 / N3 / N2",
-      body: "<p>Le cœur de calcul, gravé par TSMC en nœud avancé (N4 pour Hopper, N4P pour Blackwell, bientôt N2). C'est la partie « célèbre » de la chaîne — celle dont on parle quand on dit « puce 3 nanomètres ».</p><p>Un accélérateur moderne dépasse la limite d'une puce monolithique : on assemble donc plusieurs <em>chiplets</em> côte à côte, ce qui déplace la difficulté vers le packaging.</p>"
+    "nvlink-domain": {
+      title: "Le domaine NVLink intra-nœud",
+      eyebrow: "~150 Go/s",
+      body: "<p>Les 8 GPU d'un même serveur communiquent par un maillage <span class='term' data-tooltip='Interconnexion haut débit reliant les GPU d’un même serveur.'>NVLink</span> à très haute bande passante. DeepEP y mesure des débits de dispatch de l'ordre de 150 Go/s<a class='cite' data-cite='2' href='#source-2'>2</a>.</p><p>C'est le régime rapide : tant que le all-to-all reste dans le nœud, il se recouvre facilement par le calcul. Les fabrics scale-up (NVL72, schéma 7) cherchent précisément à agrandir ce domaine.</p>"
     },
-    "stack-hbm": {
-      title: "Les stacks de HBM",
-      eyebrow: "SK hynix · Samsung · Micron",
-      body: "<p>La mémoire à haute bande passante, empilée en tours de 8, 12 ou 16 puces DRAM reliées par des TSV. Un GB200 en embarque huit ; le MI400 d'AMD vise 432 Go par module<a class='cite' data-cite='9' href='#source-9'>9</a>.</p><p>Elle ne vient jamais de TSMC, mais de l'oligopole coréen + Micron. C'est le deuxième composant le plus tendu de la chaîne.</p>"
+    "all-to-all-matrix": {
+      title: "Le motif all-to-all",
+      eyebrow: "chacun parle à tous",
+      body: "<p>Contrairement à un all-reduce (volume fixe, motif régulier), le all-to-all fait dialoguer <em>chaque</em> GPU avec <em>tous</em> les autres, avec des volumes qui dépendent du routeur.</p><p>C'est le pire motif de communication : impossible à planifier statiquement, sensible au moindre déséquilibre. Les bibliothèques comme Tutel<a class='cite' data-cite='6' href='#source-6'>6</a> et Lina<a class='cite' data-cite='7' href='#source-7'>7</a> ont passé des années à l'optimiser avant DeepEP.</p>"
     },
-    "interposeur-cowos": {
-      title: "L'interposeur CoWoS",
-      eyebrow: "TSMC · packaging avancé",
-      body: "<p>La galette de silicium sur laquelle dies logiques et stacks HBM sont posés côte à côte, reliés par des dizaines de milliers de micro-connexions et des vias traversants (TSV).</p><p>C'est le <em>packaging avancé</em> — l'opération rare qui, plus que la gravure, a limité la livraison des GPU pendant deux ans (schéma 4).</p>"
+    "rdma-domain": {
+      title: "Le domaine RDMA inter-nœud",
+      eyebrow: "~45–90 Go/s",
+      body: "<p>Dès qu'un token franchit la frontière du serveur, on tombe sur le réseau <span class='term' data-tooltip='Remote Direct Memory Access via InfiniBand : accès mémoire direct entre serveurs.'>RDMA</span>/InfiniBand, où DeepEP mesure 45 à 90 Go/s<a class='cite' data-cite='2' href='#source-2'>2</a> — un facteur 3 à 10 sous le NVLink.</p><p>Cette marche d'un ordre de grandeur est le fait central qui a façonné toute l'ingénierie de l'inférence MoE distribuée.</p>"
     },
-    "substrat-abf": {
-      title: "Le substrat ABF",
-      eyebrow: "Ajinomoto · > 95 %",
-      body: "<p>La plaque qui porte l'ensemble et l'interface avec la carte. Son film isolant, l'<em>Ajinomoto Build-up Film</em>, vient à plus de 95 % d'un seul chimiste japonais<a class='cite' data-cite='2' href='#source-2'>2</a> — le même qui fabrique l'exhausteur de goût.</p><p>Un maillon invisible, sans alternative, et pourtant sans lui aucun processeur haut de gamme ne s'assemble.</p>"
+    "node-limited-routing": {
+      title: "Le routage borné aux nœuds",
+      eyebrow: "la parade, inscrite à l'entraînement",
+      body: "<p>Parade de DeepSeek : chaque token n'est autorisé à choisir des experts que dans un petit nombre de nœuds (4 pour DeepSeek-V3), ce qui <strong>plafonne le nombre de sauts RDMA</strong> coûteux et permet de recouvrir presque intégralement la communication par le calcul<a class='cite' data-cite='1' href='#source-1'>1</a>.</p><p>La leçon : le motif de routage n'est pas qu'une affaire de qualité de modèle, c'est une variable d'architecture réseau décidée dès l'entraînement.</p>"
     }
   },
   "schema-03": {
-    "source-lumiere": {
-      title: "La source de lumière",
-      eyebrow: "TRUMPF · Cymer",
-      body: "<p>La source EUV projette ~50 000 gouttelettes d'étain par seconde, vaporisées deux fois par un laser CO₂ de forte puissance fourni par l'allemand <strong>TRUMPF</strong> (fournisseur unique). La technologie de source vient de Cymer, racheté par ASML en 2013.</p><p>Générer 13,5 nm de lumière stable est en soi une prouesse que personne d'autre ne maîtrise en production.</p>"
+    "tp": {
+      title: "Parallélisme de tenseurs (TP)",
+      eyebrow: "chaque expert découpé",
+      body: "<p>On découpe <em>chaque</em> expert en tranches réparties sur les GPU. Avantage : pas de all-to-all, charge parfaitement équilibrée. Inconvénient décisif : un <strong>all-reduce à chaque couche</strong>, activations répliquées, bande passante qui explose avec la taille du groupe.</p><p>Le TP ne passe pas l'échelle au-delà d'un nœud. C'est la solution simple et robuste des petits déploiements, ou l'étage intra-nœud quand un expert est trop gros pour un seul GPU.</p>"
     },
-    "optiques-zeiss": {
-      title: "Les optiques",
-      eyebrow: "Carl Zeiss SMT · 100 %",
-      body: "<p>Aucune lentille ne transmet l'EUV : il faut des miroirs polis à la précision atomique. Ils sont fabriqués à 100 % par l'allemand <strong>Carl Zeiss SMT</strong>, partenaire exclusif d'ASML<a class='cite' data-cite='2' href='#source-2'>2</a>.</p><p>Encore un fournisseur unique emboîté dans le monopole : la dépendance est récursive.</p>"
+    "ep": {
+      title: "Parallélisme d'experts (EP)",
+      eyebrow: "des experts entiers par GPU",
+      body: "<p>On place des experts <em>entiers</em> sur des GPU distincts. C'est ceci qui introduit le double all-to-all — mais aussi ce qui permet de faire tenir un modèle de 671 milliards de paramètres en gardant chaque expert local et calculé efficacement.</p><p>L'EP échange le coût du all-reduce du TP contre celui du all-to-all — et à grande échelle, bien optimisé, le second gagne. La taille du groupe (EP32, EP144) est le paramètre porteur du déploiement.</p>"
     },
-    "assemblage-asml": {
-      title: "L'assemblage ASML",
-      eyebrow: "~100 000 pièces · Veldhoven",
-      body: "<p>ASML est un intégrateur : ~100 000 pièces par machine, transportées par plusieurs avions-cargo. Le savoir-faire d'intégration — aligner source, optiques et plateau au picomètre — est un actif tacite aussi rare que les composants.</p><p>Reconstruire ASML, ce serait reconstruire Zeiss, TRUMPF, Cymer <em>et</em> trente ans d'apprentissage. D'où l'irremplaçabilité.</p>"
+    "dp-attention": {
+      title: "DP sur l'attention",
+      eyebrow: "découpler l'attention du MoE",
+      body: "<p>Innovation clé des déploiements DeepSeek 2025 : l'attention (et son cache KV, très gourmand — voir <a href='../attention-latente/'>attention-latente</a>) est répliquée par <strong>parallélisme de données</strong>, chaque GPU traitant son propre lot.</p><p>On évite ainsi de dupliquer le cache KV sur tout le groupe TP, tout en laissant le MoE s'étaler en EP. C'est la moitié attention du patron canonique.</p>"
     },
-    "high-na": {
-      title: "High-NA EUV — la relève",
-      eyebrow: "EXE:5200 · 350-400 M$",
-      body: "<p>L'ouverture numérique portée à 0,55 permet de descendre sous 2 nm. Le premier système de production EXE:5200B a été livré à Intel au Q4 2025, à un prix estimé de 350 à 400 M$ l'unité<a class='cite' data-cite='4' href='#source-4'>4</a>.</p><p>Un seul outil coûte le prix d'une petite usine — et prolonge le monopole d'une génération de plus.</p>"
+    "hybrid": {
+      title: "Le patron canonique 2026",
+      eyebrow: "DP-attention + EP-MoE",
+      body: "<p>La combinaison gagnante : <strong>attention en DP</strong> (répliquée, chacun son lot) + <strong>MoE en EP</strong> à grande échelle. Elle réconcilie deux exigences contradictoires — ne pas dupliquer le cache KV, et étaler les experts<a class='cite' data-cite='8' href='#source-8'>8</a>.</p><p>C'est le standard des déploiements SGLang et vLLM de 2026, et la base des chiffres du schéma 6.</p>"
+    },
+    "memory-tradeoff": {
+      title: "Le compromis se lit en mémoire",
+      eyebrow: "activations vs poids vs équilibrage",
+      body: "<p>Le TP réplique les activations et sature la bande passante — robuste dans le nœud, ingérable au-delà. L'EP disperse les experts (peu de mémoire de poids par GPU) mais paie la latence du all-to-all et exige un <strong>équilibrage dynamique</strong> (schéma 5).</p><p>À grande échelle, tous les déploiements sérieux de 2026 convergent vers l'EP pour le MoE, réservant le TP à l'intérieur du nœud.</p>"
     }
   },
   "schema-04": {
-    "cowos-s": {
-      title: "CoWoS-S — l'interposeur silicium",
-      eyebrow: "bridé par le réticule",
-      body: "<p>La forme classique : une galette de silicium pleine, gravée de pistes fines et de TSV, sur laquelle reposent dies et HBM. Elle est bridée par la <em>limite du réticule</em> (~858 mm²) : au-delà, impossible de graver l'interposeur d'un seul tenant.</p><p>Cette limite a poussé l'industrie vers CoWoS-L pour les boîtiers géants comme Blackwell.</p>"
+    "normal-mode": {
+      title: "Mode normal — haut débit",
+      eyebrow: "prefill · entraînement",
+      body: "<p>Pour les phases à gros lots de tokens (prefill, entraînement), où l'on veut maximiser le débit. Ce mode exploite à fond NVLink (~150 Go/s) et RDMA (~45–90 Go/s)<a class='cite' data-cite='2' href='#source-2'>2</a>.</p><p>Objectif : saturer les liens pour la phase compute-bound du prefill, où le all-to-all a de la matière à transporter.</p>"
     },
-    "cowos-l": {
-      title: "CoWoS-L — les ponts LSI",
-      eyebrow: "boîtiers > réticule",
-      body: "<p>De petits ponts de silicium (<em>LSI bridges</em>) « cousent » les chiplets sur un substrat organique, sans interposeur silicium plein. Résultat : des boîtiers plusieurs fois plus grands que le réticule, indispensables aux superchips actuels.</p><p>C'est la famille la plus tendue — et celle que Nvidia accapare le plus (schéma, à droite).</p>"
+    "low-latency-mode": {
+      title: "Mode faible latence — pur-RDMA",
+      eyebrow: "decode interactif",
+      body: "<p>Pour le decode, où compte non le débit mais le <strong>délai d'un aller-retour</strong>. Ce mode utilise du RDMA pur, contourne les chemins à forte latence, et vise le time-per-output-token le plus court sur de petits lots.</p><p>C'est lui qui rend le décodage MoE distribué viable en interactif : sans mode faible latence, chaque token payerait le coût plein d'un collectif à grande échelle.</p>"
     },
-    "rampe-capacite": {
-      title: "La rampe de capacité",
-      eyebrow: "35k → 130k plaquettes/mois",
-      body: "<p>TSMC quadruple sa capacité CoWoS d'environ 35 000 plaquettes/mois fin 2024 à ~130 000 fin 2026<a class='cite' data-cite='11' href='#source-11'>11</a>. Un effort industriel colossal — et pourtant insuffisant.</p><p>La demande reste au-dessus de l'offre : les deux familles sont à guichets fermés, avec des délais de 52 à 78 semaines fin 2025.</p>"
+    "hook-overlap": {
+      title: "Recouvrement par hook",
+      eyebrow: "communication masquée",
+      body: "<p>DeepEP fournit un mécanisme (hook-based) qui laisse le all-to-all progresser <em>pendant</em> que le GPU calcule autre chose, <strong>sans consommer de SM</strong> pour la communication : le réseau travaille en arrière-plan pendant que les cœurs restent sur le modèle<a class='cite' data-cite='2' href='#source-2'>2</a>.</p><p>Combiné au recouvrement à deux lots (schéma 6), il fait quitter au barrier le chemin critique — le levier de performance décisif.</p>"
     },
-    "allocation-nvidia": {
-      title: "Un goulot accaparé",
-      eyebrow: "Nvidia ~70 % de CoWoS-L 2026",
-      body: "<p>Le packaging est rare <em>et</em> concentré côté client : Nvidia aurait sécurisé près de 70 % de la capacité CoWoS-L 2026, les trois premiers clients absorbant plus de 85 %<a class='cite' data-cite='9' href='#source-9'>9</a>.</p><p>Couplage critique : le nombre de stacks HBM qu'on parvient à poser sur l'interposeur définit la mémoire du module. Packaging et HBM se serrent la main.</p>"
+    "fp8-dispatch": {
+      title: "Dispatch FP8 + socle DeepGEMM",
+      eyebrow: "moitié moins de volume réseau",
+      body: "<p>Les tokens sont expédiés en <span class='term' data-tooltip='Format flottant 8 bits.'>FP8</span> (recombinaison en BF16), divisant par deux le volume sur le réseau — la quantification (voir <a href='../quantification-llm/'>quantification-llm</a>) au service de la bande passante, pas seulement de la mémoire.</p><p>DeepGEMM<a class='cite' data-cite='10' href='#source-10'>10</a> complète le socle avec des GEMM groupés FP8 (layouts contiguous / masked) pour le calcul des experts. DeepEP + DeepGEMM = la moitié basse de la pile MoE ouverte.</p>"
     }
   },
   "schema-05": {
-    "anatomie-pile": {
-      title: "Anatomie d'une pile HBM",
-      eyebrow: "8-16 dies + base die + TSV",
-      body: "<p>Une pile HBM empile 8 à 16 puces DRAM amincies sur un <em>base die</em> logique, le tout traversé de vias verticaux (TSV). Empiler sans casser les connexions, évacuer la chaleur, garantir le rendement de toute la tour : c'est brutalement difficile.</p><p>D'où un oligopole à trois acteurs — la barrière technologique fait la rareté.</p>"
+    "hot-expert": {
+      title: "Les experts populaires (hot)",
+      eyebrow: "le routeur ne distribue pas uniformément",
+      body: "<p>En production, le routeur envoie beaucoup plus de tokens à certains experts qu'à d'autres. La distribution réelle des requêtes diffère de celle de l'entraînement, donc même un modèle bien équilibré à l'entraînement se déséquilibre au service.</p><p>Le GPU qui héberge un expert populaire reçoit une charge disproportionnée — et comme le all-to-all est synchrone, il devient le straggler.</p>"
     },
-    "bande-passante": {
-      title: "Pourquoi la HBM : le mur mémoire",
-      eyebrow: "~1 ordre de grandeur > DDR",
-      body: "<p>Le décodage d'un LLM est plafonné par la bande passante mémoire, pas par les FLOPs. La HBM offre environ un ordre de grandeur de bande passante de plus que la DDR classique — d'où son caractère incontournable pour l'IA.</p><p>Renvoi aux dossiers <em>kv-cache</em> et <em>ia-embarquee</em> : le mur mémoire, vu depuis la couche logicielle.</p>"
+    "straggler-barrier": {
+      title: "Le straggler commande le barrier",
+      eyebrow: "un déséquilibre de 2× = latence de 2×",
+      body: "<p>Le double all-to-all est <strong>synchrone</strong> : la couche ne peut avancer tant que le GPU le plus chargé n'a pas fini. Le plus lent (<span class='term' data-tooltip='Le nœud le plus lent d’un collectif synchrone, qui impose sa cadence à tous.'>straggler</span>) impose sa cadence à tout le groupe.</p><p>Conséquence directe et impitoyable : un déséquilibre de charge de 2× se paie en latence de 2× sur toute la couche. D'où l'enjeu de l'équilibrage au moment du service.</p>"
     },
-    "parts-marche": {
-      title: "Parts de marché HBM (2025)",
-      eyebrow: "SK hynix ~63 %",
-      body: "<p>SK hynix domine avec ~63 % du marché HBM en 2025, devant Samsung (~24 %) et Micron (~13 %)<a class='cite' data-cite='9' href='#source-9'>9</a>. Trois entreprises se partagent 100 % du marché mondial.</p><p>Aucun autre fabricant n'a de HBM en production de volume : le maillon mémoire est aussi étroit que le maillon lithographie.</p>"
+    "redundant-replica": {
+      title: "EPLB — la redondance d'experts",
+      eyebrow: "répliquer les experts populaires",
+      body: "<p>Idée maîtresse de l'<strong>EPLB</strong><a class='cite' data-cite='9' href='#source-9'>9</a> : plutôt que de placer chaque expert sur un seul GPU, on réplique les experts populaires sur plusieurs GPU et on répartit leurs tokens entre les copies. DeepSeek-V3 en décodage ajoute 32 experts redondants<a class='cite' data-cite='1' href='#source-1'>1</a>.</p><p>Le placement est calculé en mode hiérarchique (respecte les nœuds) ou global (lissage maximal), recalculable quand la charge dérive. Coût : la VRAM des copies n'accueille plus de cache KV.</p>"
     },
-    "hbm4": {
-      title: "HBM4 — la génération qui rebat les cartes",
-      eyebrow: "base die logique gravé en fonderie",
-      body: "<p>Bus mémoire élargi, <em>base die</em> logique parfois gravé par TSMC → couplage avec la fonderie. Dans l'allocation provisoire de Nvidia (fin 2025) : SK hynix ~55 %, Samsung ~25 %, Micron ~20 %<a class='cite' data-cite='9' href='#source-9'>9</a>.</p><p>AMD conçoit le MI400 autour de 432 Go de HBM4 : un retard de volume pèserait sur toute la génération 2026.</p>"
+    "bias-term": {
+      title: "Pourquoi l'entraînement ne suffit pas",
+      eyebrow: "biais sans-loss vs charge réelle",
+      body: "<p>Le biais <em>auxiliary-loss-free</em> de DeepSeek-V3 (détaillé dans <a href='../melange-experts/'>melange-experts</a>) équilibre remarquablement bien la charge à l'entraînement — sans la taxe qualité d'une loss auxiliaire.</p><p>Mais il équilibre pour la distribution d'entraînement, pas pour celle des requêtes réelles. D'où la nécessité d'un équilibrage <strong>au moment du service</strong>, vivant, recalculé — pas fixé une fois pour toutes.</p>"
     }
   },
   "schema-06": {
-    "pays-bas-euv": {
-      title: "Pays-Bas — la lithographie",
-      eyebrow: "ASML · EUV 100 %",
-      body: "<p>Un pays, une entreprise (ASML), un maillon (EUV) : 100 % du marché, zéro alternative de production sur Terre<a class='cite' data-cite='4' href='#source-4'>4</a>.</p><p>C'est le point le plus tranchant pour le contrôle à l'export : interdire une machine ASML, c'est fermer l'accès au nœud de pointe (schéma 7).</p>"
+    "prefill-pool": {
+      title: "Pool prefill — EP32",
+      eyebrow: "limité par le calcul · 4 nœuds",
+      body: "<p>Le prefill traite le prompt entier d'un coup, en gros lots : phase <strong>limitée par le calcul</strong>. On veut un débit maximal ; un groupe EP modéré suffit et le mode normal de DeepEP domine.</p><p>DeepSeek-V3 sert le prefill en EP32, sur 4 nœuds<a class='cite' data-cite='1' href='#source-1'>1</a>. C'est le régime où le all-to-all a le moins de poids relatif.</p>"
     },
-    "taiwan-fonderie": {
-      title: "Taïwan — fonderie & packaging",
-      eyebrow: "TSMC · ~90 % / 85 % / 67 %",
-      body: "<p>TSMC : ~90 % de la fonderie sous 7 nm, 85 % du packaging avancé, 67 % de la fonderie tous nœuds<a class='cite' data-cite='2' href='#source-2'>2</a>. Deux maillons décisifs concentrés sur une seule île.</p><p>Un détroit de 180 km devient ainsi le point de défaillance unique le plus coûteux de l'économie numérique — le « bouclier de silicium ».</p>"
+    "decode-pool": {
+      title: "Pool decode — EP144",
+      eyebrow: "limité par la mémoire · 18 nœuds",
+      body: "<p>Le decode génère token par token, en petits lots : phase <strong>limitée par la mémoire</strong>, où le all-to-all pèse le plus lourd relativement au calcul. On étale donc les experts sur beaucoup plus de GPU pour minimiser la mémoire de poids par accélérateur.</p><p>DeepSeek-V3 sert le decode en EP144, sur 18 nœuds<a class='cite' data-cite='1' href='#source-1'>1</a> — un groupe EP bien plus large que le prefill.</p>"
     },
-    "coree-hbm": {
-      title: "Corée du Sud — la mémoire",
-      eyebrow: "SK hynix ~63 % · Samsung",
-      body: "<p>Deux des trois seuls fabricants de HBM au monde sont coréens : SK hynix (~63 %) et Samsung<a class='cite' data-cite='9' href='#source-9'>9</a>. La mémoire de l'IA a une nationalité dominante.</p><p>Et une exposition : la péninsule vit sous la menace balistique permanente de son voisin du Nord.</p>"
+    "redundancy": {
+      title: "+ 32 experts redondants",
+      eyebrow: "lissage de charge au decode",
+      body: "<p>Le decode large est le régime le plus exposé au straggler (schéma 5) : plus le groupe EP est grand, plus un expert populaire mal placé plombe le barrier. DeepSeek-V3 ajoute donc 32 experts redondants au pool decode<a class='cite' data-cite='1' href='#source-1'>1</a>, via l'EPLB.</p><p>Illustration concrète que la redondance n'est pas un luxe mais une condition de la latence à grande échelle.</p>"
     },
-    "japon-materiaux": {
-      title: "Japon — les matériaux invisibles",
-      eyebrow: "> 90 % sur plusieurs consommables",
-      body: "<p>Le Japon ne fabrique presque plus de puces de pointe, mais tient la couche des matériaux : photoresist EUV &gt;90 %, film ABF &gt;95 %, tracks 96 %, mask blanks 93 %, plaquettes ~51 %<a class='cite' data-cite='3' href='#source-3'>3</a>.</p><p>Le point de passage le plus discret et le plus total — utilisé comme arme dès 2019 dans le conflit Japon-Corée.</p>"
+    "two-batch-overlap": {
+      title: "Recouvrement à deux lots",
+      eyebrow: "52,3k / 22,3k tokens·s·nœud",
+      body: "<p>Le lot est coupé en deux micro-lots entrelacés : le all-to-all de l'un se déroule pendant le calcul de l'autre. Combiné au hook de DeepEP et à l'EPLB, il masque la communication.</p><p>Résultat mesuré par SGLang sur 96 GPU H100 : 52,3k tokens d'entrée/s et 22,3k tokens de sortie/s par nœud, jusqu'à 5× le débit d'un TP simple<a class='cite' data-cite='8' href='#source-8'>8</a>. Sur GB200 NVL72 : ×3,8 prefill, ×4,8 decode<a class='cite' data-cite='11' href='#source-11'>11</a>.</p>"
     }
   },
   "schema-07": {
-    "controles-bis": {
-      title: "Verrouiller — les contrôles BIS",
-      eyebrow: "2022 → 2025",
-      body: "<p>Le Bureau of Industry and Security a construit par vagues un régime ciblé sur les chokepoints : octobre 2022 (GPU + équipements, <em>Foreign Direct Product Rule</em>), octobre 2023 (seuils révisés contre les A800/H800), puis les contrôles HBM et le cadre AI Diffusion<a class='cite' data-cite='7' href='#source-7'>7</a>.</p><p>Contrôler les points de passage, c'est contrôler qui accède à l'IA.</p>"
+    "sglang": {
+      title: "SGLang",
+      eyebrow: "1ʳᵉ implémentation ouverte P/D + EP",
+      body: "<p>SGLang a livré la première implémentation open source de la désagrégation prefill/decode + EP à grande échelle reproduisant le déploiement DeepSeek<a class='cite' data-cite='8' href='#source-8'>8</a>, avec la pile complète DeepEP + DeepGEMM + EPLB.</p><p>Depuis couplé à la prédiction multi-tokens (+60 % de débit de sortie). C'est la référence de facto pour servir un gros MoE ouvert en 2026.</p>"
     },
-    "controle-hbm": {
-      title: "Zoom — le contrôle HBM (déc. 2024)",
-      eyebrow: "ECCN 3A090.c · 2 Go/s/mm²",
-      body: "<p>Le 2 décembre 2024, toute mémoire HBM d'une densité de bande passante &gt; 2 Go/s/mm² passe sous licence (ECCN 3A090.c), et le BIS note que <em>toute</em> HBM en production dépasse ce seuil<a class='cite' data-cite='6' href='#source-6'>6</a>.</p><p>Nouveauté majeure : le contrôle vise désormais un <em>composant</em> de la chaîne, pas seulement un produit fini.</p>"
+    "vllm": {
+      title: "vLLM",
+      eyebrow: "DP-attention + EP · DeepEP",
+      body: "<p>vLLM a suivi avec son propre support DP-attention + EP et l'intégration de DeepEP. Le serveur le plus déployé de l'écosystème ouvert applique désormais le même patron canonique.</p><p>Sur la fabric NVL72, son support est encore en cours de maturation (partiel) — d'où le point ◐ du schéma.</p>"
     },
-    "chips-acts": {
-      title: "Relocaliser — CHIPS & EU Chips Act",
-      eyebrow: "52 Md$ + 43 Md€",
-      body: "<p>Le CHIPS and Science Act (52 Md$) et l'EU Chips Act (43 Md€) financent des fabs sur le sol national : Arizona, Dresde, Kumamoto, et un 2 nm japonais souverain (Rapidus) visé ~2027<a class='cite' data-cite='12' href='#source-12'>12</a>.</p><p>Le bilan d'étape note une résilience émergente mais partielle : le reshoring reconstruit le milieu de la chaîne, pas les points les plus durs (EUV, matériaux, packaging).</p>"
+    "dynamo": {
+      title: "NVIDIA Dynamo · TensorRT-LLM",
+      eyebrow: "désagrégation + EP jusqu'au NVL72",
+      body: "<p>Côté propriétaire, NVIDIA Dynamo (avec TensorRT-LLM) pousse la désagrégation et l'EP jusqu'au GB200 NVL72, dont la fabric scale-up est taillée pour absorber le all-to-all.</p><p>C'est l'offre la mieux intégrée au matériel du fabricant — au prix de l'ouverture.</p>"
     },
-    "reponse-chine": {
-      title: "Contourner — la substitution chinoise",
-      eyebrow: "SMIC · Huawei · SMEE",
-      body: "<p>Privée d'EUV, la Chine bâtit une chaîne parallèle « suffisamment bonne » : SMIC produit du 7 nm par DUV multi-patterning, Huawei conçoit ses accélérateurs Ascend, SMEE tente une lithographie indigène.</p><p>Elle ne rattrape pas le nœud de pointe, mais couvre ses besoins domestiques — et rend les contrôles moins étanches avec le temps.</p>"
+    "socle": {
+      title: "Le socle ouvert (DeepSeek)",
+      eyebrow: "DeepEP · DeepGEMM · EPLB",
+      body: "<p>Le trio open source de DeepSeek — <strong>DeepEP</strong> (communication)<a class='cite' data-cite='2' href='#source-2'>2</a>, <strong>DeepGEMM</strong> (calcul FP8)<a class='cite' data-cite='10' href='#source-10'>10</a>, <strong>EPLB</strong> (équilibrage)<a class='cite' data-cite='9' href='#source-9'>9</a> — que la plupart des serveurs intègrent plutôt que de le réimplémenter.</p><p>Fait marquant : un laboratoire de modèles a fourni la couche système de référence de tout un marché. La moitié basse de la pile est un bien commun.</p>"
+    },
+    "nvl72": {
+      title: "La fabric scale-up NVL72",
+      eyebrow: "×3,8 prefill · ×4,8 decode",
+      body: "<p>Le GB200 NVL72 réunit 72 GPU dans un seul domaine de cohérence NVLink. Conséquence directe : le all-to-all <strong>redevient intra-domaine rapide</strong>, et l'asymétrie NVLink/RDMA du schéma 2 se dissout largement.</p><p>SGLang y mesure ×3,8 en prefill et ×4,8 en decode<a class='cite' data-cite='11' href='#source-11'>11</a>. C'est la trajectoire matérielle qui pourrait, à terme, faire disparaître le goulot inter-nœud qui a façonné toute cette ingénierie.</p>"
     }
   }
 };
