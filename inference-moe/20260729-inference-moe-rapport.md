@@ -8,7 +8,7 @@ La réponse tient en un mot : le **tout-à-tout**. Là où un modèle dense fait
 
 Ce dossier prend la suite de [`melange-experts`](../melange-experts/), qui traitait le MoE comme architecture (routage, équilibrage, collapse) et [`desagregation-prefill-decode`](../desagregation-prefill-decode/), qui traitait la séparation des phases. Ici on descend d'un cran, dans la **couche de service** : comment on place les experts sur le matériel, comment on route les tokens entre eux, et pourquoi la bibliothèque de communication est devenue aussi structurante que le modèle lui-même.
 
-[SCHEMA-01]
+![Anatomie d'une couche MoE en service : routeur, dispatch all-to-all, experts, combine all-to-all, et la barre de temps du décodage où le tout-à-tout domine.|1200](images/20260729-01-anatomie-couche-moe.svg)
 
 ## 1. Le retournement : de l'algèbre linéaire au réseau
 
