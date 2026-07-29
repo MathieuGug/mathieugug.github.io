@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" font-family="Inter, sans-serif">
+  <defs>
+    <style>
+      .display{font-family:'Fraunces','Spectral',Georgia,serif;}
+      .mono{font-family:'JetBrains Mono','IBM Plex Mono',monospace;}
+      .interactive{cursor:pointer;}
+    </style>
+  </defs>
+  <rect x="0" y="0" width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- Header -->
+  <text x="60" y="52" class="mono" font-size="13" letter-spacing="0.08em" fill="#B7332C">SCHÉMA 04</text>
+  <text x="60" y="90" class="display" font-size="30" font-weight="600" fill="#1A1A1A">DeepEP lu serré</text>
+  <text x="60" y="118" class="display" font-size="17" font-style="italic" fill="#5A5A5A">La bibliothèque de communication qui a fait basculer le parallélisme d'experts en production.</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="1"/>
+
+  <!-- Normal mode -->
+  <g class="interactive" data-card="normal-mode" tabindex="0" role="button" aria-label="Mode normal haut débit — cliquez pour les détails">
+    <rect x="60" y="175" width="510" height="215" rx="6" fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="84" y="210" class="display" font-size="19" font-weight="600" fill="#1F5560">Mode normal · haut débit</text>
+    <text x="84" y="234" class="mono" font-size="12" fill="#5A5A5A">PREFILL · ENTRAÎNEMENT</text>
+    <text x="84" y="268" class="body" font-size="13" fill="#1A1A1A">Gros lots de tokens · exploite NVLink + RDMA</text>
+    <text x="84" y="304" class="mono" font-size="14" fill="#1F5560">NVLink ~150 Go/s</text>
+    <text x="330" y="304" class="mono" font-size="14" fill="#1F5560">RDMA ~45–90 Go/s</text>
+    <text x="84" y="344" class="body" font-size="12.5" fill="#5A5A5A">Objectif : maximiser le débit sur le chemin</text>
+    <text x="84" y="364" class="body" font-size="12.5" fill="#5A5A5A">compute-bound du prefill.</text>
+  </g>
+
+  <!-- Low-latency mode -->
+  <g class="interactive" data-card="low-latency-mode" tabindex="0" role="button" aria-label="Mode faible latence — cliquez pour les détails">
+    <rect x="630" y="175" width="510" height="215" rx="6" fill="#B7332C" fill-opacity="0.06" stroke="#B7332C" stroke-width="2"/>
+    <text x="654" y="210" class="display" font-size="19" font-weight="600" fill="#B7332C">Mode faible latence · pur-RDMA</text>
+    <text x="654" y="234" class="mono" font-size="12" fill="#5A5A5A">DECODE INTERACTIF</text>
+    <text x="654" y="268" class="body" font-size="13" fill="#1A1A1A">Petits lots · contourne les chemins lents</text>
+    <text x="654" y="304" class="mono" font-size="14" fill="#B7332C">optimise le time-per-output-token</text>
+    <text x="654" y="344" class="body" font-size="12.5" fill="#5A5A5A">Objectif : le délai d'un aller-retour, pas</text>
+    <text x="654" y="364" class="body" font-size="12.5" fill="#5A5A5A">le débit. Rend le decode MoE distribué viable.</text>
+  </g>
+
+  <!-- Hook overlap -->
+  <g class="interactive" data-card="hook-overlap" tabindex="0" role="button" aria-label="Recouvrement communication-calcul — cliquez pour les détails">
+    <rect x="60" y="420" width="1080" height="180" rx="6" fill="#FAF8F3" stroke="#B58A2C" stroke-width="1.5"/>
+    <text x="84" y="454" class="display" font-size="18" font-weight="600" fill="#B58A2C">Recouvrement communication-calcul (hook)</text>
+    <text x="84" y="476" class="body" font-size="12.5" fill="#5A5A5A">Le all-to-all progresse en arrière-plan (RDMA / Copy Engine) sans consommer de SM — les cœurs restent sur le modèle.</text>
+    <!-- compute lane -->
+    <text x="84" y="516" class="mono" font-size="11" fill="#1A1A1A">calcul</text>
+    <rect x="180" y="500" width="220" height="26" rx="3" fill="#B58A2C" fill-opacity="0.35" stroke="#B58A2C" stroke-width="0.75"/>
+    <text x="290" y="518" text-anchor="middle" class="body" font-size="11" fill="#1A1A1A">experts (micro-lot A)</text>
+    <rect x="410" y="500" width="220" height="26" rx="3" fill="#B58A2C" fill-opacity="0.35" stroke="#B58A2C" stroke-width="0.75"/>
+    <text x="520" y="518" text-anchor="middle" class="body" font-size="11" fill="#1A1A1A">experts (micro-lot B)</text>
+    <!-- comm lane -->
+    <text x="84" y="562" class="mono" font-size="11" fill="#B7332C">all-to-all</text>
+    <rect x="180" y="546" width="220" height="26" rx="3" fill="#B7332C" fill-opacity="0.30" stroke="#B7332C" stroke-width="0.75"/>
+    <text x="290" y="564" text-anchor="middle" class="body" font-size="11" fill="#B7332C">dispatch B (masqué)</text>
+    <rect x="410" y="546" width="220" height="26" rx="3" fill="#B7332C" fill-opacity="0.30" stroke="#B7332C" stroke-width="0.75"/>
+    <text x="520" y="564" text-anchor="middle" class="body" font-size="11" fill="#B7332C">combine A (masqué)</text>
+    <text x="660" y="540" class="body" font-size="12.5" fill="#2F5D3F">La communication de l'un se déroule</text>
+    <text x="660" y="560" class="body" font-size="12.5" fill="#2F5D3F">pendant le calcul de l'autre :</text>
+    <text x="660" y="580" class="body" font-size="12.5" fill="#2F5D3F">le barrier quitte le chemin critique.</text>
+  </g>
+
+  <!-- FP8 dispatch + ecosystem -->
+  <g class="interactive" data-card="fp8-dispatch" tabindex="0" role="button" aria-label="Dispatch FP8 et socle DeepGEMM — cliquez pour les détails">
+    <rect x="60" y="626" width="1080" height="82" rx="6" fill="#1A1A1A" fill-opacity="0.04" stroke="#1A1A1A" stroke-width="1"/>
+    <text x="84" y="656" class="mono" font-size="12" font-weight="600" fill="#1A1A1A">DISPATCH FP8 + SOCLE DEEPGEMM</text>
+    <text x="84" y="680" class="body" font-size="13" fill="#1A1A1A">Les tokens sont expédiés en 8 bits (recombinaison BF16) : moitié moins de volume réseau. DeepGEMM fournit les GEMM groupés FP8</text>
+    <text x="84" y="700" class="body" font-size="13" fill="#1A1A1A">des experts (layouts contiguous / masked). DeepEP (comm) + DeepGEMM (calcul) = la moitié basse de la pile MoE ouverte.</text>
+  </g>
+
+  <!-- Footer -->
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="60" y="766" class="body" font-size="11" font-style="italic" fill="#5A5A5A">Source : DeepEP et DeepGEMM (DeepSeek, github, février 2025). Débits selon la configuration matérielle.</text>
+</svg>

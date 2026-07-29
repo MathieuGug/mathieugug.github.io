@@ -1,0 +1,1857 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Servir un mélange d'experts</title>
+  <meta name="description" content="Servir un mélange d'experts · en production, le MoE n'est plus un problème d'architecture mais de réseau : le tout-à-tout domine le décodage, l'arbitrage porteur est parallélisme d'experts (EP) contre parallélisme de tenseurs (TP), et le socle est DeepEP / EPLB. Deep dive par Mathieu Guglielmino, 29 juillet 2026.">
+  <!-- og:start -->
+<meta name="author" content="Mathieu Guglielmino">
+<link rel="canonical" href="https://mathieugug.github.io/inference-moe/20260729-inference-moe-app.html">
+<meta name="keywords" content="IA agentique, Mathieu Guglielmino, mélange d'experts, MoE, inférence, parallélisme d'experts, all-to-all, DeepEP, EPLB, DeepSeek">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Mathieu Guglielmino">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:url" content="https://mathieugug.github.io/inference-moe/20260729-inference-moe-app.html">
+<meta property="og:title" content="Servir un mélange d'experts">
+<meta property="og:description" content="En production, le MoE n'est plus un problème d'architecture mais de réseau : le tout-à-tout domine le décodage, l'arbitrage porteur est parallélisme d'experts (EP) contre parallélisme de tenseurs (TP), et le socle est DeepEP / EPLB. Deep dive par Mathieu Guglielmino, 29 juillet 2026.">
+<meta property="og:image" content="https://mathieugug.github.io/inference-moe/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Servir un mélange d'experts — couverture social">
+<meta property="article:published_time" content="2026-07-29">
+<meta property="article:author" content="Mathieu Guglielmino">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Servir un mélange d'experts">
+<meta name="twitter:description" content="En production, le MoE n'est plus un problème d'architecture mais de réseau : le tout-à-tout domine le décodage, l'arbitrage porteur est EP contre TP, et le socle est DeepEP / EPLB. Deep dive par Mathieu Guglielmino, 29 juillet 2026.">
+<meta name="twitter:image" content="https://mathieugug.github.io/inference-moe/og.png">
+<script type="application/ld+json">
+{"@context": "https://schema.org","@type": "Article","headline": "Servir un mélange d'experts","description": "En production, le MoE n'est plus un problème d'architecture mais de réseau : le tout-à-tout domine le décodage, l'arbitrage porteur est parallélisme d'experts (EP) contre parallélisme de tenseurs (TP), et le socle est DeepEP / EPLB. Deep dive par Mathieu Guglielmino, 29 juillet 2026.","image": "https://mathieugug.github.io/inference-moe/og.png","url": "https://mathieugug.github.io/inference-moe/20260729-inference-moe-app.html","datePublished": "2026-07-29","inLanguage": "fr-FR","author": {"@type": "Person","name": "Mathieu Guglielmino","url": "https://mathieugug.github.io/"},"publisher": {"@type": "Person","name": "Mathieu Guglielmino","url": "https://mathieugug.github.io/"}}
+</script>
+<!-- og:end -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/dossier-app.css">
+  <style>
+    /* ───────── Tokens ───────── */
+    :root {
+      --paper:    #FAF8F3;
+      --paper-2:  #F2EFE7;
+      --ink:      #1A1A1A;
+      --graphite: #5A5A5A;
+      --mist:     #B8B5AE;
+      --rule:     #E5E1D8;
+      --carmine:  #B7332C;
+      --teal:     #1F5560;
+      --mustard:  #B58A2C;
+
+      --serif: 'Spectral', 'Playfair Display', Georgia, serif;
+      --sans:  'Inter', system-ui, sans-serif;
+      --mono:  'JetBrains Mono', 'IBM Plex Mono', monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; max-width: 100vw; }
+    body {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    header.site {
+      grid-column: 1 / -1;
+      padding: 24px 32px;
+      border-bottom: 1px solid var(--rule);
+      display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap;
+    }
+    header.site .marker {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--carmine);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    header.site h1 {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 1.4rem;
+      margin: 0;
+      letter-spacing: -0.01em;
+    }
+    header.site .meta {
+      margin-left: auto;
+      font-size: 0.85rem;
+      color: var(--graphite);
+    }
+    header.site .meta a { color: var(--carmine); text-decoration: none; }
+    header.site .meta a:hover { text-decoration: underline; }
+    header.site .back {
+      font-family: var(--mono); font-size: 0.72rem;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--graphite); text-decoration: none;
+      white-space: nowrap;
+    }
+    header.site .back:hover { color: var(--carmine); }
+    .menu-toggle {
+      display: none;
+      background: none; border: 1px solid var(--rule);
+      padding: 6px 12px; border-radius: 4px; cursor: pointer;
+      font-family: var(--mono); font-size: 0.8rem;
+    }
+    @media (max-width: 1024px) { .menu-toggle { display: inline-block; } }
+
+    /* ───────── TOC (left) ───────── */
+    #toc {
+      padding: 32px 24px;
+      border-right: 1px solid var(--rule);
+      position: sticky; top: 56px; align-self: start;
+      height: calc(100vh - 56px); overflow-y: auto;
+    }
+    #toc h2 {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--graphite);
+      margin: 0 0 16px;
+    }
+    #toc ol {
+      list-style: none; padding: 0; margin: 0;
+      counter-reset: toc-counter;
+    }
+    #toc li {
+      counter-increment: toc-counter;
+      margin: 0 0 12px;
+      font-size: 0.92rem;
+      line-height: 1.4;
+    }
+    #toc li::before {
+      content: counter(toc-counter, decimal-leading-zero) ".";
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--mist);
+      margin-right: 8px;
+    }
+    #toc a {
+      color: var(--ink);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+    }
+    #toc a:hover, #toc a.active {
+      color: var(--carmine);
+      border-bottom-color: currentColor;
+    }
+
+    /* ───────── Main report ───────── */
+    main#report {
+      padding: 56px 48px 96px;
+      min-width: 0;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+    main#report > .lead {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 1.2rem;
+      color: var(--graphite);
+      line-height: 1.5;
+      margin: 0 0 48px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--rule);
+    }
+    main h1.report-title {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 2.6rem;
+      line-height: 1.1;
+      letter-spacing: -0.025em;
+      margin: 0 0 16px;
+    }
+    main h2 {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 1.55rem;
+      letter-spacing: -0.01em;
+      margin: 3.5rem 0 1rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--rule);
+    }
+    main h3 {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 1.18rem;
+      margin: 2rem 0 0.6rem;
+    }
+    main p { margin: 0 0 1.1rem; }
+    main ul, main ol { margin: 0 0 1.1rem; padding-left: 1.4rem; }
+    main li { margin-bottom: 0.4rem; }
+    main blockquote {
+      margin: 1.5rem 0;
+      padding: 12px 20px;
+      border-left: 3px solid var(--carmine);
+      background: var(--paper-2);
+      font-style: italic;
+      color: var(--graphite);
+    }
+    main code {
+      font-family: var(--mono);
+      font-size: 0.88em;
+      background: var(--paper-2);
+      padding: 2px 5px; border-radius: 3px;
+      overflow-wrap: anywhere;
+    }
+    main pre {
+      margin: 1.5rem 0;
+      padding: 14px 16px;
+      background: var(--paper-2);
+      border-radius: 4px;
+      overflow-x: auto;
+      max-width: 100%;
+      font-size: 0.85em;
+      line-height: 1.5;
+      -webkit-overflow-scrolling: touch;
+    }
+    main pre code {
+      background: transparent;
+      padding: 0;
+      border-radius: 0;
+      font-size: 1em;
+      overflow-wrap: normal;
+    }
+    main mark {
+      background: linear-gradient(transparent 58%, rgba(178, 59, 27, 0.14) 58%);
+      color: inherit;
+      padding: 0 2px;
+    }
+
+    /* ───────── Figures ───────── */
+    .figure {
+      margin: 3rem 0;
+      padding: 24px 0;
+      border-top: 1px solid var(--rule);
+      border-bottom: 1px solid var(--rule);
+      position: relative;
+    }
+    .figure svg {
+      width: 100%; height: auto;
+      display: block;
+      margin: 0 auto;
+    }
+    /* State-aware figure breakout on desktop — figure adapts to sources panel state,
+       capped at 80% of the available width so wide schémas keep some air:
+       - Default (sources expanded): 80% of the main-cell (between TOC and sources)
+       - .layout.sources-collapsed: 80% of the TOC-right → viewport-right span
+       Neither state overlaps a visible sidebar. Smooth 280ms transition.
+       M = max(48px, (0.8 × main-cell width - 664px) / 2), where 664px is the text
+       column (760px border-box - 2×48px padding). The 48px floor keeps a schema
+       from ever rendering narrower than the prose column on ~1440px laptops.
+       Full math + derivation: skill illustrated-deep-research, companion-app.md § 5. */
+    @media (min-width: 1025px) {
+      .figure {
+        margin-left: calc(-1 * max(48px, 40vw - 556px));
+        margin-right: calc(-1 * max(48px, 40vw - 556px));
+        transition: margin-left 280ms ease, margin-right 280ms ease;
+        padding-left: clamp(16px, 3vw, 48px);
+        padding-right: clamp(16px, 3vw, 48px);
+        border-radius: 0;
+      }
+      .layout.sources-collapsed .figure {
+        margin-left: calc(-1 * max(48px, 40vw - 428px));
+        margin-right: calc(-1 * max(48px, 40vw - 428px));
+      }
+      .figure-caption {
+        max-width: 760px;
+        margin-left: auto;
+        margin-right: auto;
+        padding: 0 48px;
+      }
+    }
+    .figure-caption {
+      font-size: 0.88rem;
+      color: var(--graphite);
+      font-style: italic;
+      margin-top: 12px;
+      padding: 0 8px;
+    }
+    .figure svg .interactive { cursor: pointer; transition: filter 140ms; }
+    .figure svg .interactive:hover,
+    .figure svg .interactive:focus-visible { outline: none; }
+    .figure svg .interactive:hover rect,
+    .figure svg .interactive:focus-visible rect,
+    .figure svg .interactive:hover path:not([fill="none"]),
+    .figure svg .interactive:focus-visible path:not([fill="none"]),
+    .figure svg .interactive:hover circle,
+    .figure svg .interactive:focus-visible circle {
+      stroke: var(--carmine);
+      stroke-width: 2.5;
+    }
+    .figure svg .interactive:focus-visible {
+      filter: drop-shadow(0 0 0 var(--carmine));
+    }
+
+    /* ───────── Sources sidebar (right) ───────── */
+    #sources {
+      padding: 32px 24px;
+      border-left: 1px solid var(--rule);
+      background: var(--paper-2);
+      position: sticky; top: 56px; align-self: start;
+      height: calc(100vh - 56px); overflow-y: auto;
+      transition: transform 280ms ease, opacity 200ms ease;
+    }
+    #sources .sources-inner { display: block; }
+
+    @media (max-width: 1024px) {
+      .menu-toggle { display: inline-block !important; }
+      header.site { padding: 14px 16px; gap: 10px; flex-wrap: wrap; }
+      header.site h1 { font-size: 1.05rem; min-width: 0; overflow-wrap: break-word; word-break: break-word; }
+      header.site .meta { font-size: 0.75rem; }
+      header.site .back { font-size: 0.7rem; letter-spacing: 0.08em; }
+      main#report { padding: 28px 18px 56px; max-width: 100%; min-width: 0; }
+      main h1.report-title { font-size: 1.8rem; overflow-wrap: break-word; word-break: break-word; }
+      main#report > .lead { font-size: 1.02rem; margin-bottom: 32px; padding-bottom: 18px; }
+      main h2 { font-size: 1.25rem; margin: 2.4rem 0 0.8rem; overflow-wrap: break-word; word-break: break-word; }
+      main h3 { font-size: 1.05rem; overflow-wrap: break-word; }
+      main p, main ul, main ol { overflow-wrap: break-word; word-break: break-word; }
+      .figure { margin: 2rem 0; padding: 16px 0; max-width: 100%; overflow: hidden; }
+      .figure svg { width: 100%; max-width: 100%; height: auto; }
+      main table {
+        display: block; max-width: 100%;
+        overflow-x: auto; -webkit-overflow-scrolling: touch;
+      }
+      main th, main td { white-space: normal; }
+    }
+    #sources h2 {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--graphite);
+      margin: 0 0 16px;
+    }
+    #sources ol { list-style: none; padding: 0; margin: 0; }
+    #sources li {
+      font-size: 0.82rem;
+      line-height: 1.5;
+      margin: 0 0 16px;
+      padding: 12px 14px;
+      border-radius: 4px;
+      border: 1px solid transparent;
+      transition: border-color 220ms, background 220ms;
+    }
+    #sources li .cite-num {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--carmine);
+      margin-right: 6px;
+    }
+    #sources li a {
+      display: inline-block;
+      margin-top: 4px;
+      color: var(--teal);
+      text-decoration: none;
+      font-size: 0.78rem;
+    }
+    #sources li a:hover { text-decoration: underline; }
+    #sources li .accessed {
+      display: block;
+      margin-top: 4px;
+      color: var(--mist);
+      font-style: italic;
+      font-size: 0.74rem;
+    }
+    #sources li.highlight {
+      background: var(--paper);
+      border-color: var(--carmine);
+    }
+
+    /* ───────── Print ───────── */
+    @media print {
+      .layout { grid-template-columns: 1fr; }
+      #toc, #sources, #modal-root, #zoom-overlay, .menu-toggle, .zoom-btn { display: none; }
+      main#report { max-width: none; padding: 0; }
+      .figure { page-break-inside: avoid; }
+    }
+
+    /* === infographie A4 portrait (exec sum visuelle) — pattern partagé === */
+    main .figure.figure--portrait,
+    .layout main .figure.figure--portrait,
+    .layout.sources-collapsed main .figure.figure--portrait {
+      margin-top: 3rem; margin-bottom: 3rem;
+      padding: 0 !important; border: none !important;
+      border-top: none !important; border-bottom: none !important;
+      width: auto;
+    }
+    @media (max-width: 1024px) {
+      main .figure.figure--portrait {
+        margin-left: auto !important; margin-right: auto !important;
+        max-width: 100%;
+      }
+    }
+    @media (min-width: 1025px) {
+      main .figure.figure--portrait,
+      .layout main .figure.figure--portrait,
+      .layout.sources-collapsed main .figure.figure--portrait {
+        margin-left: -60px !important; margin-right: -60px !important;
+        max-width: calc(100% + 120px);
+      }
+    }
+    @media (min-width: 1440px) {
+      main .figure.figure--portrait,
+      .layout main .figure.figure--portrait,
+      .layout.sources-collapsed main .figure.figure--portrait {
+        margin-left: -100px !important; margin-right: -100px !important;
+        max-width: calc(100% + 200px);
+      }
+    }
+    main .figure--portrait .figure-portrait-link { display: block; width: 100%; border: 1px solid var(--rule); background: var(--paper); border-radius: 2px; cursor: zoom-in; transition: box-shadow 220ms ease, border-color 220ms ease; overflow: hidden; }
+    main .figure--portrait .figure-portrait-link:hover { box-shadow: 0 8px 28px rgba(30,30,42,0.14); border-color: var(--accent); }
+    main .figure--portrait img { display: block; width: 100%; height: auto; }
+    main .figure--portrait .figure-caption { max-width: 100%; margin: 14px auto 0; padding: 0 8px; text-align: center; }
+    /* Sigil MG remonté sur les A4 portrait (au-dessus du header SVG, pas sur le titre) */
+    main .figure--portrait .schema-sigil {
+      top: 10px !important;
+      right: 14px !important;
+      width: 30px !important; height: 30px !important;
+      opacity: 0.60 !important;
+    }
+    @media (max-width: 640px) {
+      main .figure--portrait .schema-sigil { top: 8px !important; right: 10px !important; width: 24px !important; height: 24px !important; }
+    }
+
+    /* === quiz cards (vérification de compréhension) — pattern partagé avec evaluation-agentique === */
+    .quiz-card {
+      margin: 2rem 0 2.4rem;
+      padding: 18px 22px;
+      background: var(--paper-2);
+      border-left: 3px solid var(--carmine);
+      border-radius: 2px;
+    }
+    .quiz-card__head {
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .quiz-card__eyebrow {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--graphite);
+      flex-basis: 100%;
+      margin: 0 0 0.25rem;
+    }
+    .quiz-card__title {
+      font-family: var(--serif);
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin: 0;
+      flex: 1 1 auto;
+      color: var(--ink);
+    }
+    .quiz-card__toggle {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.06em;
+      background: transparent;
+      border: 1px solid var(--mist);
+      color: var(--ink);
+      padding: 6px 14px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: color .15s, border-color .15s;
+    }
+    .quiz-card__toggle:hover, .quiz-card__toggle:focus-visible {
+      color: var(--carmine);
+      border-color: var(--carmine);
+      outline: none;
+    }
+    .quiz-card__body {
+      margin-top: 1.2rem;
+      padding-top: 1rem;
+      border-top: 1px dashed var(--rule);
+    }
+    .quiz-card__body[hidden] { display: none; }
+
+    .quiz-q { margin: 0; padding: 0; }
+    .quiz-q + .quiz-q { margin-top: 1.6rem; padding-top: 1.6rem; border-top: 1px dashed var(--rule); }
+    .quiz-q fieldset { border: 0; padding: 0; margin: 0; }
+    .quiz-q__stem {
+      font-family: var(--serif);
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--ink);
+      padding: 0;
+      margin: 0 0 0.9rem;
+    }
+    .quiz-q__options { list-style: none; padding: 0; margin: 0 0 1rem; }
+    .quiz-q__options li {
+      margin: 0;
+      padding: 8px 0;
+      border-top: 1px solid var(--rule);
+    }
+    .quiz-q__options li:last-child { border-bottom: 1px solid var(--rule); }
+    .quiz-q__options label {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      cursor: pointer;
+      padding: 4px 0;
+    }
+    .quiz-q__options input { margin: 0.3em 0 0; flex: 0 0 auto; accent-color: var(--carmine); }
+    .quiz-q__options label > span { flex: 1; line-height: 1.5; }
+
+    .quiz-q__explain {
+      font-size: 0.92rem;
+      margin: 0.5rem 0 0 1.7rem;
+      padding: 8px 12px;
+      background: var(--paper);
+      border-left: 2px solid var(--mist);
+      color: var(--graphite);
+    }
+    .quiz-q__explain[hidden] { display: none; }
+    .quiz-q__options li.is-correct .quiz-q__explain,
+    .quiz-q__options li.expected .quiz-q__explain { border-left-color: var(--teal); }
+    .quiz-q__options li.is-wrong .quiz-q__explain { border-left-color: var(--carmine); }
+    .quiz-q__options li.is-correct > label > span,
+    .quiz-q__options li.expected > label > span {
+      background-image: linear-gradient(transparent 60%, rgba(31, 85, 96, 0.14) 60%);
+      background-size: 100% 1.5em;
+      background-repeat: repeat-y;
+    }
+    .quiz-q__options li.is-wrong > label > span {
+      background-image: linear-gradient(transparent 60%, rgba(183, 51, 44, 0.14) 60%);
+      background-size: 100% 1.5em;
+      background-repeat: repeat-y;
+    }
+
+    .quiz-q__check {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      background: var(--ink);
+      color: var(--paper);
+      border: 0;
+      padding: 8px 16px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .quiz-q__check:hover, .quiz-q__check:focus-visible { background: var(--carmine); outline: none; }
+    .quiz-q__check:disabled { background: var(--mist); cursor: not-allowed; }
+
+    .quiz-q__verdict {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      margin: 1rem 0 0;
+      padding: 8px 12px;
+      border-left: 2px solid var(--graphite);
+    }
+    .quiz-q__verdict[hidden] { display: none; }
+    .quiz-q__verdict.is-correct { border-left-color: var(--teal); color: var(--teal); }
+    .quiz-q__verdict.is-wrong { border-left-color: var(--carmine); color: var(--carmine); }
+
+    .quiz-q__retry {
+      font-family: var(--mono);
+      font-size: 0.74rem;
+      letter-spacing: 0.06em;
+      background: transparent;
+      border: 0;
+      color: var(--graphite);
+      padding: 6px 0;
+      margin: 0.6rem 0 0;
+      cursor: pointer;
+      text-decoration: underline;
+      text-decoration-color: var(--mist);
+      text-underline-offset: 3px;
+    }
+    .quiz-q__retry:hover, .quiz-q__retry:focus-visible { color: var(--ink); text-decoration-color: var(--carmine); outline: none; }
+    .quiz-q__retry[hidden] { display: none; }
+
+    /* === callouts de renvoi vers d'autres dossiers (pattern partagé avec agent-sdk) === */
+    main .callout { display: grid; grid-template-columns: 280px 1fr; gap: 0; align-items: stretch; margin: 2.4rem 0; padding: 0; background: var(--paper); border-left: 3px solid var(--teal); border-radius: 2px; transition: grid-template-columns 320ms cubic-bezier(.2,.7,.2,1); }
+    main .callout:hover { grid-template-columns: 440px 1fr; }
+    main .callout > .callout-thumb-link { position: relative; display: block; width: 100%; height: 100%; min-height: 200px; overflow: hidden; border-radius: 0; background: transparent; border: 0; border-right: 1px solid var(--rule); cursor: zoom-in; padding: 0; -webkit-appearance: none; appearance: none; font: inherit; color: inherit; text-align: left; transition: filter 200ms ease; }
+    main .callout > .callout-thumb-link:hover { filter: drop-shadow(0 4px 14px rgba(183,51,44,0.18)); border-right-color: var(--carmine); }
+    main .callout > .callout-thumb-link:focus-visible { outline: 2px solid var(--carmine); outline-offset: -2px; }
+    main .callout > .callout-thumb-link img.callout-thumb { width: 100%; height: 100%; object-fit: contain; object-position: center center; display: block; padding: 0; }
+    main .callout > .callout-thumb-link::after { content: '⛶ AGRANDIR'; position: absolute; top: 10px; right: 10px; padding: 4px 9px; font-family: var(--mono); font-size: 9.5px; font-weight: 600; letter-spacing: 0.10em; background: rgba(250,248,243,0.94); border: 1px solid var(--rule); border-radius: 2px; color: var(--graphite); opacity: 0; transition: opacity 180ms ease, color 180ms ease, border-color 180ms ease; pointer-events: none; }
+    main .callout > .callout-thumb-link:hover::after, main .callout > .callout-thumb-link:focus-visible::after { opacity: 1; color: var(--carmine); border-color: var(--carmine); }
+    main .callout > .callout-body { min-width: 0; padding: 22px 26px 22px 26px; align-self: center; }
+    main .callout .callout-eyebrow { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--teal); margin: 0 0 0.45rem; font-weight: 600; }
+    main .callout > .callout-body p { margin: 0; font-size: 0.95rem; line-height: 1.55; color: var(--ink); }
+    main .callout > .callout-body p a { color: var(--carmine); text-decoration: none; border-bottom: 1px dotted var(--carmine); }
+    main .callout > .callout-body p a:hover { color: var(--teal); border-bottom-color: var(--teal); }
+
+    @media (max-width: 1024px) {
+      /* === quiz cards : variantes mobile === */
+      .quiz-card { padding: 14px 16px; margin: 1.6rem 0 2rem; }
+      .quiz-card__head { gap: 0.6rem; }
+      .quiz-card__title { flex-basis: 100%; overflow-wrap: break-word; }
+      .quiz-card__toggle { width: 100%; padding: 12px; min-height: 44px; font-size: 0.82rem; }
+      .quiz-q__check { width: 100%; padding: 12px; min-height: 44px; font-size: 0.82rem; }
+      .quiz-q__options li { padding: 10px 0; }
+      .quiz-q__options label { padding: 8px 0; min-height: 44px; align-items: center; }
+      .quiz-q__explain { margin: 0.5rem 0 0 0; padding: 10px 12px; }
+      .quiz-q__retry { padding: 10px 0; min-height: 44px; }
+    }
+    @media (max-width: 640px) {
+      main .callout, main .callout:hover { grid-template-columns: 1fr; gap: 0; padding: 0; }
+      main .callout > .callout-thumb-link { min-height: 180px; border-right: 0; border-bottom: 1px solid var(--rule); }
+      main .callout > .callout-body { padding: 18px 20px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar" id="topbar">
+    <a href="../index.html">Mathieu <em>Guglielmino</em></a>
+    <span class="dossier-context">Servir un mélange d'experts</span>
+    <div class="topbar-tools">
+      <button class="menu-toggle" id="toggle-toc">Sommaire</button>
+      <button class="menu-toggle" id="toggle-sources">Sources</button>
+    </div>
+    <nav class="back-nav" aria-label="Navigation retour">
+      <a href="index.html" class="back" title="Revenir au hub du dossier">← Hub</a>
+      <span class="back-sep" aria-hidden="true">·</span>
+      <a href="../index.html#series" class="back" title="Revenir à l'accueil">Accueil</a>
+    </nav>
+  </header>
+  <div class="layout">
+
+    <header class="site">
+      <span class="marker">Deep dive · Inférence MoE</span>
+      <h1>Servir un mélange d'experts</h1>
+      <span class="meta">
+        Mathieu Guglielmino · 29 juillet 2026
+      </span>
+    </header>
+
+    <nav id="toc" aria-label="Sommaire">
+      <button class="panel-close" type="button" aria-label="Fermer le sommaire">Fermer ✕</button>
+      <h2>Sommaire</h2>
+      <ol>
+        <li><a href="#moe-1">1. Le retournement : de l'algèbre au réseau</a></li>
+        <li><a href="#moe-2">2. Anatomie du tout-à-tout</a></li>
+        <li><a href="#moe-3">3. EP contre TP contre DP</a></li>
+        <li><a href="#moe-4">4. DeepEP lu serré</a></li>
+        <li><a href="#moe-5">5. Le déséquilibre des experts</a></li>
+        <li><a href="#moe-6">6. Deux régimes EP : prefill / decode</a></li>
+        <li><a href="#moe-7">7. Le paysage outillage 2026</a></li>
+        <li><a href="#moe-8">8. Trajectoires</a></li>
+      </ol>
+    </nav>
+
+    <main id="report">
+<h1 class="report-title">Servir un mélange d'experts</h1>
+      <p class="lead">Le mélange d'experts a gagné la bataille de l'architecture. Ce qu'on raconte moins, c'est ce que ce choix coûte <em>une fois le modèle mis en service</em> : à chaque couche, le modèle doit expédier chaque token vers les experts que son routeur a choisis — répartis sur des dizaines de GPU — puis rapatrier les résultats. En production, <mark>le mélange d'experts ne se paie plus en calcul mais en communication</mark>, et l'arbitrage porteur de 2026 est parallélisme d'experts contre parallélisme de tenseurs.</p>
+
+      <section>
+        <p>Le mélange d'experts (<span class="term" data-tooltip="Mixture-of-Experts : architecture où seule une fraction des paramètres — quelques « experts » sur des centaines — est activée pour chaque token.">MoE</span>) est presque partout dans les modèles frontières ouverts de 2025-2026 : DeepSeek-V3, Llama 4, Qwen3, Mixtral portent des centaines de milliards de paramètres mais n'en activent qu'une fraction par token. La promesse est démontrée — à budget de calcul fixé, un modèle routé bat un modèle dense<a class="cite" data-cite="12" href="#source-12">12</a>.</p>
+        <p>La contrepartie tient en un mot : le <strong>tout-à-tout</strong>. Là où un modèle dense fait circuler ses activations le long d'un chemin prévisible, un MoE doit, à chaque couche, faire se rencontrer chaque token et ses experts — physiquement, sur le réseau. Deux communications collectives <span class="term" data-tooltip="Collectif où chaque GPU échange des données avec tous les autres, avec des volumes qui dépendent des décisions dynamiques du routeur.">all-to-all</span> par couche, synchrones, sur le chemin critique du décodage. À grande échelle, ce n'est plus l'algèbre linéaire des experts qui domine le temps de réponse, c'est le déplacement des tokens.</p>
+        <p>Ce dossier prend la suite de <a href="../melange-experts/">melange-experts</a>, qui traitait le MoE comme architecture, et de <a href="../desagregation-prefill-decode/">desagregation-prefill-decode</a>, qui traitait la séparation des phases. Ici on descend dans la <strong>couche de service</strong> : comment on place les experts sur le matériel, comment on route les tokens entre eux, et pourquoi la bibliothèque de communication est devenue aussi structurante que le modèle.</p>
+      </section>
+
+      <figure class="figure" id="fig-01">
+        <svg data-schema-id="schema-01" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" font-family="Inter, sans-serif">
+  <defs>
+    <marker id="arrow01" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#1A1A1A"/>
+    </marker>
+    <style>
+      .display{font-family:'Fraunces','Spectral',Georgia,serif;}
+      .mono{font-family:'JetBrains Mono','IBM Plex Mono',monospace;}
+      .interactive{cursor:pointer;}
+    </style>
+  </defs>
+  <rect x="0" y="0" width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- Header -->
+  <text x="60" y="52" class="mono" font-size="13" letter-spacing="0.08em" fill="#B7332C">SCHÉMA 01</text>
+  <text x="60" y="90" class="display" font-size="30" font-weight="600" fill="#1A1A1A">Anatomie d'une couche MoE en service</text>
+  <text x="60" y="118" class="display" font-size="17" font-style="italic" fill="#5A5A5A">Deux tout-à-tout synchrones par couche — et en décodage, ce sont eux qui dominent le temps.</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="1"/>
+
+  <!-- Pipeline -->
+  <!-- 1. Gate -->
+  <g class="interactive" data-card="gate" tabindex="0" role="button" aria-label="Routeur — cliquez pour les détails">
+    <rect x="70" y="220" width="150" height="130" rx="4" fill="#1F5560" fill-opacity="0.10" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="145" y="270" text-anchor="middle" class="display" font-size="17" font-weight="600" fill="#1F5560">Routeur</text>
+    <text x="145" y="294" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">gate · top-k</text>
+    <text x="145" y="322" text-anchor="middle" class="mono" font-size="11" fill="#5A5A5A">local au GPU</text>
+  </g>
+
+  <!-- 2. Dispatch all-to-all -->
+  <g class="interactive" data-card="dispatch-a2a" tabindex="0" role="button" aria-label="Dispatch all-to-all — cliquez pour les détails">
+    <rect x="300" y="200" width="180" height="170" rx="4" fill="#B7332C" fill-opacity="0.10" stroke="#B7332C" stroke-width="2"/>
+    <text x="390" y="248" text-anchor="middle" class="display" font-size="17" font-weight="600" fill="#B7332C">Dispatch</text>
+    <text x="390" y="270" text-anchor="middle" class="mono" font-size="12" fill="#B7332C">all-to-all #1</text>
+    <!-- crossing lines motif -->
+    <line x1="320" y1="300" x2="460" y2="345" stroke="#B7332C" stroke-width="1" stroke-opacity="0.55"/>
+    <line x1="320" y1="322" x2="460" y2="300" stroke="#B7332C" stroke-width="1" stroke-opacity="0.55"/>
+    <line x1="320" y1="345" x2="460" y2="322" stroke="#B7332C" stroke-width="1" stroke-opacity="0.55"/>
+    <text x="390" y="360" text-anchor="middle" class="body" font-size="11" fill="#5A5A5A">tokens → experts</text>
+  </g>
+
+  <!-- 3. Experts FFN -->
+  <g class="interactive" data-card="expert-ffn" tabindex="0" role="button" aria-label="Calcul des experts — cliquez pour les détails">
+    <rect x="560" y="196" width="180" height="178" rx="4" fill="#B58A2C" fill-opacity="0.10" stroke="#B58A2C" stroke-width="1.5"/>
+    <text x="650" y="230" text-anchor="middle" class="display" font-size="16" font-weight="600" fill="#B58A2C">Experts FFN</text>
+    <rect x="580" y="246" width="140" height="30" rx="3" fill="#FAF8F3" stroke="#B58A2C" stroke-width="1"/>
+    <text x="650" y="266" text-anchor="middle" class="mono" font-size="11" fill="#5A5A5A">expert 3</text>
+    <rect x="580" y="284" width="140" height="30" rx="3" fill="#FAF8F3" stroke="#B58A2C" stroke-width="1"/>
+    <text x="650" y="304" text-anchor="middle" class="mono" font-size="11" fill="#5A5A5A">expert 17</text>
+    <rect x="580" y="322" width="140" height="30" rx="3" fill="#FAF8F3" stroke="#B58A2C" stroke-width="1"/>
+    <text x="650" y="342" text-anchor="middle" class="mono" font-size="11" fill="#5A5A5A">expert 128</text>
+  </g>
+
+  <!-- 4. Combine all-to-all -->
+  <g class="interactive" data-card="combine-a2a" tabindex="0" role="button" aria-label="Combine all-to-all — cliquez pour les détails">
+    <rect x="820" y="200" width="180" height="170" rx="4" fill="#B7332C" fill-opacity="0.10" stroke="#B7332C" stroke-width="2"/>
+    <text x="910" y="248" text-anchor="middle" class="display" font-size="17" font-weight="600" fill="#B7332C">Combine</text>
+    <text x="910" y="270" text-anchor="middle" class="mono" font-size="12" fill="#B7332C">all-to-all #2</text>
+    <line x1="840" y1="300" x2="980" y2="345" stroke="#B7332C" stroke-width="1" stroke-opacity="0.55"/>
+    <line x1="840" y1="322" x2="980" y2="300" stroke="#B7332C" stroke-width="1" stroke-opacity="0.55"/>
+    <line x1="840" y1="345" x2="980" y2="322" stroke="#B7332C" stroke-width="1" stroke-opacity="0.55"/>
+    <text x="910" y="360" text-anchor="middle" class="body" font-size="11" fill="#5A5A5A">sorties → origine</text>
+  </g>
+
+  <!-- Output -->
+  <rect x="1040" y="250" width="100" height="70" rx="4" fill="#E5E1D8" stroke="#B8B5AE" stroke-width="1"/>
+  <text x="1090" y="282" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">sortie</text>
+  <text x="1090" y="300" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">couche</text>
+
+  <!-- arrows between stages (white gap before target) -->
+  <line x1="222" y1="285" x2="292" y2="285" stroke="#1A1A1A" stroke-width="1.5" marker-end="url(#arrow01)"/>
+  <line x1="482" y1="285" x2="552" y2="285" stroke="#1A1A1A" stroke-width="1.5" marker-end="url(#arrow01)"/>
+  <line x1="742" y1="285" x2="812" y2="285" stroke="#1A1A1A" stroke-width="1.5" marker-end="url(#arrow01)"/>
+  <line x1="1002" y1="285" x2="1032" y2="285" stroke="#1A1A1A" stroke-width="1.5" marker-end="url(#arrow01)"/>
+
+  <!-- Time bar -->
+  <text x="60" y="470" class="display" font-size="16" font-style="italic" fill="#1A1A1A">Répartition du temps sur le chemin critique · décodage (illustratif)</text>
+  <rect x="60" y="492" width="1080" height="44" rx="3" fill="#FAF8F3" stroke="#E5E1D8" stroke-width="1"/>
+  <!-- attention -->
+  <rect x="60" y="492" width="200" height="44" fill="#B8B5AE" fill-opacity="0.5"/>
+  <text x="160" y="519" text-anchor="middle" class="body" font-size="11" fill="#1A1A1A">attention</text>
+  <!-- gate -->
+  <rect x="260" y="492" width="70" height="44" fill="#1F5560" fill-opacity="0.35"/>
+  <text x="295" y="519" text-anchor="middle" class="body" font-size="10" fill="#1A1A1A">gate</text>
+  <!-- all-to-all (dominant) -->
+  <rect x="330" y="492" width="620" height="44" fill="#B7332C" fill-opacity="0.35"/>
+  <text x="640" y="514" text-anchor="middle" class="body" font-size="12" font-weight="600" fill="#B7332C">dispatch + combine (all-to-all)</text>
+  <text x="640" y="530" text-anchor="middle" class="body" font-size="10" fill="#5A5A5A">le poste dominant</text>
+  <!-- expert gemm -->
+  <rect x="950" y="492" width="190" height="44" fill="#B58A2C" fill-opacity="0.35"/>
+  <text x="1045" y="519" text-anchor="middle" class="body" font-size="10" fill="#1A1A1A">calcul experts</text>
+
+  <!-- Annotation -->
+  <circle cx="76" cy="600" r="9" fill="#B7332C"/>
+  <text x="76" y="604" text-anchor="middle" class="mono" font-size="11" font-weight="600" fill="#FAF8F3">1</text>
+  <text x="96" y="604" class="body" font-size="13" fill="#1A1A1A">En décodage (limité par la mémoire), le calcul des experts est presque gratuit ; les deux collectifs synchrones portent le coût.</text>
+  <circle cx="76" cy="632" r="9" fill="#1F5560"/>
+  <text x="76" y="636" text-anchor="middle" class="mono" font-size="11" font-weight="600" fill="#FAF8F3">2</text>
+  <text x="96" y="636" class="body" font-size="13" fill="#1A1A1A">Un modèle de 60 couches aligne 120 tout-à-tout sur le chemin critique de chaque token généré.</text>
+
+  <!-- Footer -->
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="60" y="766" class="body" font-size="11" font-style="italic" fill="#5A5A5A">Source : GShard (Lepikhin et al. 2020) ; DeepSeek-V3 Technical Report, 2024. Décomposition du temps illustrative.</text>
+</svg>
+
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-01" title="Lien direct vers ce schéma">¶</a> <em>Schéma 1 — Anatomie d'une couche MoE en service. Routeur, dispatch (all-to-all #1), experts, combine (all-to-all #2) ; en décodage, ce sont les deux collectifs synchrones qui dominent le temps.</em></figcaption>
+      </figure>
+
+      <section>
+        <h2 id="moe-1">1. Le retournement : de l'algèbre linéaire au réseau</h2>
+        <p>Rappelons l'anatomie d'une couche MoE : un routeur attribue à chaque token un score sur <em>N</em> experts, sélectionne les <em>k</em> meilleurs (<span class="term" data-tooltip="top-k : sélection des k experts les mieux notés pour chaque token — typiquement 8 sur 256 pour DeepSeek-V3.">top-k</span>, typiquement 8 sur 256 pour DeepSeek-V3), envoie le token à ces experts, puis recombine leurs sorties pondérées. Le nombre de paramètres croît avec <em>N</em> ; le calcul, lui, ne croît qu'avec <em>k</em>. <mark>C'est ce découplage capacité/calcul qui fait tout l'intérêt du MoE — et c'est lui qui crée le problème de service.</mark></p>
+        <p>Car les experts ne tiennent pas sur un seul GPU. DeepSeek-V3 (671 milliards de paramètres, 37 milliards actifs par token<a class="cite" data-cite="1" href="#source-1">1</a>) répartit ses 256 experts par couche sur des dizaines d'accélérateurs. Dès lors, le token et l'expert qui doit le traiter ne sont presque jamais sur le même GPU. Il faut les faire se rencontrer sur le réseau.</p>
+        <p>Le poste de coût bascule à cause d'un fait bien documenté : la phase de génération token par token est <span class="term" data-tooltip="memory-bound : le GPU passe l'essentiel de son temps à charger des poids depuis la mémoire, ses unités de calcul largement sous-employées.">limitée par la mémoire</span>, pas par le calcul (voir <a href="../kv-cache/">kv-cache</a> et <a href="../economie-inference/">economie-inference</a>). Dans ce régime, le calcul des experts est presque gratuit ; ce qui coûte, c'est le double all-to-all — deux barrières où <em>tous</em> les GPU s'échangent <em>tous</em> leurs tokens, et où le plus lent impose son rythme.</p>
+        <p>Le retournement est là. Sur un dense, optimiser l'inférence, c'est optimiser la lecture des poids et la gestion du cache. Sur un MoE à grande échelle, <mark>optimiser l'inférence, c'est d'abord optimiser un motif de communication collective</mark> — sa topologie, son recouvrement avec le calcul, et l'équilibre de charge. Le modèle est le même ; le problème d'ingénierie a changé de nature.</p>
+      </section>
+
+      <figure class="figure" id="fig-02">
+        <svg data-schema-id="schema-02" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" font-family="Inter, sans-serif">
+  <defs>
+    <marker id="arrow02" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#B7332C"/>
+    </marker>
+    <style>
+      .display{font-family:'Fraunces','Spectral',Georgia,serif;}
+      .mono{font-family:'JetBrains Mono','IBM Plex Mono',monospace;}
+      .interactive{cursor:pointer;}
+    </style>
+  </defs>
+  <rect x="0" y="0" width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- Header -->
+  <text x="60" y="52" class="mono" font-size="13" letter-spacing="0.08em" fill="#B7332C">SCHÉMA 02</text>
+  <text x="60" y="90" class="display" font-size="30" font-weight="600" fill="#1A1A1A">Le tout-à-tout, anatomie d'un goulot</text>
+  <text x="60" y="118" class="display" font-size="17" font-style="italic" fill="#5A5A5A">Deux domaines de communication séparés par un ordre de grandeur — d'où le routage borné aux nœuds.</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="1"/>
+
+  <!-- Node A (NVLink domain) -->
+  <g class="interactive" data-card="nvlink-domain" tabindex="0" role="button" aria-label="Domaine NVLink intra-nœud — cliquez pour les détails">
+    <rect x="80" y="180" width="380" height="300" rx="6" fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="100" y="208" class="mono" font-size="12" fill="#1F5560">NŒUD A · 8 GPU · NVLink</text>
+    <rect x="110" y="230" width="150" height="95" rx="4" fill="#FAF8F3" stroke="#1F5560" stroke-width="1"/>
+    <text x="185" y="282" text-anchor="middle" class="mono" font-size="12" fill="#1A1A1A">GPU 0</text>
+    <rect x="290" y="230" width="150" height="95" rx="4" fill="#FAF8F3" stroke="#1F5560" stroke-width="1"/>
+    <text x="365" y="282" text-anchor="middle" class="mono" font-size="12" fill="#1A1A1A">GPU 1</text>
+    <rect x="110" y="345" width="150" height="95" rx="4" fill="#FAF8F3" stroke="#1F5560" stroke-width="1"/>
+    <text x="185" y="397" text-anchor="middle" class="mono" font-size="12" fill="#1A1A1A">GPU 2</text>
+    <rect x="290" y="345" width="150" height="95" rx="4" fill="#FAF8F3" stroke="#1F5560" stroke-width="1"/>
+    <text x="365" y="397" text-anchor="middle" class="mono" font-size="12" fill="#1A1A1A">GPU 3</text>
+    <!-- NVLink mesh -->
+    <line x1="260" y1="277" x2="290" y2="277" stroke="#1F5560" stroke-width="1.25"/>
+    <line x1="185" y1="325" x2="185" y2="345" stroke="#1F5560" stroke-width="1.25"/>
+    <line x1="365" y1="325" x2="365" y2="345" stroke="#1F5560" stroke-width="1.25"/>
+    <line x1="260" y1="392" x2="290" y2="392" stroke="#1F5560" stroke-width="1.25"/>
+    <line x1="260" y1="325" x2="290" y2="345" stroke="#1F5560" stroke-width="1" stroke-opacity="0.6"/>
+    <line x1="290" y1="325" x2="260" y2="345" stroke="#1F5560" stroke-width="1" stroke-opacity="0.6"/>
+  </g>
+
+  <!-- Node B -->
+  <g class="interactive" data-card="all-to-all-matrix" tabindex="0" role="button" aria-label="Le motif all-to-all — cliquez pour les détails">
+    <rect x="740" y="180" width="380" height="300" rx="6" fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="760" y="208" class="mono" font-size="12" fill="#1F5560">NŒUD B · 8 GPU · NVLink</text>
+    <rect x="770" y="230" width="150" height="95" rx="4" fill="#FAF8F3" stroke="#1F5560" stroke-width="1"/>
+    <text x="845" y="282" text-anchor="middle" class="mono" font-size="12" fill="#1A1A1A">GPU 4</text>
+    <rect x="950" y="230" width="150" height="95" rx="4" fill="#FAF8F3" stroke="#1F5560" stroke-width="1"/>
+    <text x="1025" y="282" text-anchor="middle" class="mono" font-size="12" fill="#1A1A1A">GPU 5</text>
+    <rect x="770" y="345" width="150" height="95" rx="4" fill="#FAF8F3" stroke="#1F5560" stroke-width="1"/>
+    <text x="845" y="397" text-anchor="middle" class="mono" font-size="12" fill="#1A1A1A">GPU 6</text>
+    <rect x="950" y="345" width="150" height="95" rx="4" fill="#FAF8F3" stroke="#1F5560" stroke-width="1"/>
+    <text x="1025" y="397" text-anchor="middle" class="mono" font-size="12" fill="#1A1A1A">GPU 7</text>
+    <line x1="920" y1="277" x2="950" y2="277" stroke="#1F5560" stroke-width="1.25"/>
+    <line x1="845" y1="325" x2="845" y2="345" stroke="#1F5560" stroke-width="1.25"/>
+    <line x1="1025" y1="325" x2="1025" y2="345" stroke="#1F5560" stroke-width="1.25"/>
+    <line x1="920" y1="392" x2="950" y2="392" stroke="#1F5560" stroke-width="1.25"/>
+  </g>
+
+  <!-- Inter-node RDMA link -->
+  <g class="interactive" data-card="rdma-domain" tabindex="0" role="button" aria-label="Domaine RDMA inter-nœud — cliquez pour les détails">
+    <rect x="470" y="300" width="260" height="60" rx="6" fill="#B7332C" fill-opacity="0.06" stroke="#B7332C" stroke-width="1" stroke-dasharray="4 3"/>
+    <line x1="465" y1="330" x2="595" y2="330" stroke="#B7332C" stroke-width="2.5" stroke-dasharray="8 5" marker-start="url(#arrow02)"/>
+    <line x1="605" y1="330" x2="735" y2="330" stroke="#B7332C" stroke-width="2.5" stroke-dasharray="8 5" marker-end="url(#arrow02)"/>
+    <text x="600" y="326" text-anchor="middle" class="mono" font-size="12" fill="#B7332C">RDMA</text>
+    <text x="600" y="348" text-anchor="middle" class="body" font-size="11" fill="#5A5A5A">InfiniBand</text>
+  </g>
+
+  <!-- Bandwidth comparison -->
+  <text x="60" y="540" class="display" font-size="16" font-style="italic" fill="#1A1A1A">L'asymétrie de bande passante (mesures DeepEP)</text>
+  <text x="60" y="580" class="body" font-size="13" fill="#1F5560">NVLink intra-nœud</text>
+  <rect x="260" y="566" width="600" height="22" rx="3" fill="#1F5560" fill-opacity="0.6"/>
+  <text x="872" y="583" class="mono" font-size="13" fill="#1F5560">~150 Go/s</text>
+  <text x="60" y="618" class="body" font-size="13" fill="#B7332C">RDMA inter-nœud</text>
+  <rect x="260" y="604" width="210" height="22" rx="3" fill="#B7332C" fill-opacity="0.6"/>
+  <text x="482" y="621" class="mono" font-size="13" fill="#B7332C">~45–90 Go/s</text>
+
+  <!-- Node-limited routing annotation -->
+  <g class="interactive" data-card="node-limited-routing" tabindex="0" role="button" aria-label="Routage borné aux nœuds — cliquez pour les détails">
+    <rect x="60" y="656" width="1080" height="52" rx="4" fill="#B58A2C" fill-opacity="0.08" stroke="#B58A2C" stroke-width="1"/>
+    <text x="80" y="678" class="mono" font-size="12" font-weight="600" fill="#B58A2C">PARADE — routage borné aux nœuds</text>
+    <text x="80" y="698" class="body" font-size="12.5" fill="#1A1A1A">Chaque token ne choisit ses experts que dans 4 nœuds au plus (DeepSeek-V3) : le nombre de sauts RDMA coûteux est plafonné, la communication se recouvre par le calcul.</text>
+  </g>
+
+  <!-- Footer -->
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="60" y="766" class="body" font-size="11" font-style="italic" fill="#5A5A5A">Source : DeepEP (DeepSeek, 2025) ; DeepSeek-V3 Technical Report, 2024. Débits selon configuration matérielle.</text>
+</svg>
+
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-02" title="Lien direct vers ce schéma">¶</a> <em>Schéma 2 — Le tout-à-tout, anatomie d'un goulot. Deux domaines de communication (NVLink intra-nœud rapide, RDMA inter-nœud lent) séparés par un ordre de grandeur — d'où le routage borné aux nœuds.</em></figcaption>
+      </figure>
+
+      <section>
+        <h2 id="moe-2">2. Anatomie du tout-à-tout</h2>
+        <p>Le motif a été fixé par GShard en 2020, la première mise à l'échelle sérieuse d'un MoE<a class="cite" data-cite="3" href="#source-3">3</a>. Une couche MoE distribuée par parallélisme d'experts enchaîne quatre étapes : <strong>routage</strong> (local, le routeur décide des experts cibles) ; <strong>dispatch</strong> (all-to-all #1, chaque GPU envoie ses tokens vers les GPU qui hébergent les experts) ; <strong>calcul des experts</strong> (local) ; <strong>combine</strong> (all-to-all #2, les sorties repartent vers les GPU d'origine).</p>
+        <p>Deux collectifs all-to-all par couche, donc, et un modèle de 60 couches en aligne cent-vingt sur le chemin critique. Le all-to-all est le pire motif de communication qui soit : contrairement à un all-reduce dont le volume est fixe et le motif régulier, ici <em>chaque</em> GPU parle à <em>tous</em> les autres, avec des volumes qui dépendent des décisions dynamiques du routeur — impossibles à connaître avant l'exécution.</p>
+        <p>Le coût dépend crucialement de <strong>où</strong> se trouvent les experts. Deux domaines coexistent, séparés par un facteur d'un ordre de grandeur :</p>
+        <ul>
+          <li><strong>Intra-nœud (<span class="term" data-tooltip="Interconnexion haut débit reliant les GPU d'un même serveur — bande passante bien supérieure au réseau inter-nœud.">NVLink</span>)</strong> — les 8 GPU d'un même serveur communiquent par un maillage NVLink : DeepEP y mesure des débits de dispatch de l'ordre de 150 Go/s<a class="cite" data-cite="2" href="#source-2">2</a>.</li>
+          <li><strong>Inter-nœud (<span class="term" data-tooltip="Remote Direct Memory Access : accès mémoire direct entre serveurs via InfiniBand, sans passer par le CPU — mais bien plus lent que le NVLink intra-nœud.">RDMA</span>/InfiniBand)</strong> — dès que le token franchit la frontière du serveur, on tombe à 45-90 Go/s<a class="cite" data-cite="2" href="#source-2">2</a>. Un facteur 3 à 10.</li>
+        </ul>
+        <p>Cette asymétrie commande une parade inscrite jusque dans l'entraînement : le <span class="term" data-tooltip="node-limited routing : chaque token ne peut choisir ses experts que dans un petit nombre de nœuds, pour plafonner les sauts réseau coûteux.">routage borné aux nœuds</span> (<em>node-limited routing</em>). Chaque token ne choisit ses experts que dans 4 nœuds au plus (DeepSeek-V3), ce qui plafonne les sauts RDMA et permet de recouvrir presque intégralement la communication par le calcul<a class="cite" data-cite="1" href="#source-1">1</a>. <mark>Le motif de routage n'est pas seulement une affaire de qualité de modèle : c'est une variable d'architecture réseau décidée à l'entraînement.</mark></p>
+      </section>
+
+      <figure class="figure" id="fig-03">
+        <svg data-schema-id="schema-03" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 900" font-family="Inter, sans-serif">
+  <defs>
+    <style>
+      .display{font-family:'Fraunces','Spectral',Georgia,serif;}
+      .mono{font-family:'JetBrains Mono','IBM Plex Mono',monospace;}
+      .interactive{cursor:pointer;}
+    </style>
+  </defs>
+  <rect x="0" y="0" width="900" height="900" fill="#FAF8F3"/>
+
+  <!-- Header -->
+  <text x="50" y="52" class="mono" font-size="13" letter-spacing="0.08em" fill="#B7332C">SCHÉMA 03</text>
+  <text x="50" y="90" class="display" font-size="28" font-weight="600" fill="#1A1A1A">EP · TP · DP : la grammaire du parallélisme</text>
+  <text x="50" y="117" class="display" font-size="16" font-style="italic" fill="#5A5A5A">Trois façons de répartir une couche MoE — et la combinaison canonique de 2026.</text>
+  <line x1="50" y1="138" x2="850" y2="138" stroke="#E5E1D8" stroke-width="1"/>
+
+  <!-- TP panel -->
+  <g class="interactive" data-card="tp" tabindex="0" role="button" aria-label="Parallélisme de tenseurs — cliquez pour les détails">
+    <rect x="50" y="165" width="380" height="255" rx="5" fill="#FAF8F3" stroke="#B8B5AE" stroke-width="1"/>
+    <text x="70" y="196" class="display" font-size="18" font-weight="600" fill="#1F5560">Parallélisme de tenseurs (TP)</text>
+    <text x="70" y="218" class="body" font-size="12" fill="#5A5A5A">chaque expert découpé en tranches</text>
+    <rect x="70" y="238" width="340" height="90" rx="3" fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1"/>
+    <text x="240" y="256" text-anchor="middle" class="mono" font-size="11" fill="#1F5560">un expert</text>
+    <rect x="90" y="266" width="70" height="50" rx="2" fill="#1F5560" fill-opacity="0.25" stroke="#1F5560" stroke-width="0.75"/>
+    <rect x="170" y="266" width="70" height="50" rx="2" fill="#1F5560" fill-opacity="0.25" stroke="#1F5560" stroke-width="0.75"/>
+    <rect x="250" y="266" width="70" height="50" rx="2" fill="#1F5560" fill-opacity="0.25" stroke="#1F5560" stroke-width="0.75"/>
+    <rect x="330" y="266" width="60" height="50" rx="2" fill="#1F5560" fill-opacity="0.25" stroke="#1F5560" stroke-width="0.75"/>
+    <text x="125" y="296" text-anchor="middle" class="mono" font-size="10" fill="#1A1A1A">GPU0</text>
+    <text x="205" y="296" text-anchor="middle" class="mono" font-size="10" fill="#1A1A1A">GPU1</text>
+    <text x="285" y="296" text-anchor="middle" class="mono" font-size="10" fill="#1A1A1A">GPU2</text>
+    <text x="360" y="296" text-anchor="middle" class="mono" font-size="10" fill="#1A1A1A">GPU3</text>
+    <text x="70" y="356" class="body" font-size="12" fill="#B7332C">− all-reduce à chaque couche · ne passe pas l'échelle</text>
+    <text x="70" y="378" class="body" font-size="12" fill="#2F5D3F">+ charge équilibrée par construction · simple</text>
+  </g>
+
+  <!-- EP panel -->
+  <g class="interactive" data-card="ep" tabindex="0" role="button" aria-label="Parallélisme d'experts — cliquez pour les détails">
+    <rect x="470" y="165" width="380" height="255" rx="5" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="490" y="196" class="display" font-size="18" font-weight="600" fill="#B7332C">Parallélisme d'experts (EP)</text>
+    <text x="490" y="218" class="body" font-size="12" fill="#5A5A5A">des experts entiers sur des GPU distincts</text>
+    <rect x="490" y="238" width="80" height="80" rx="3" fill="#B7332C" fill-opacity="0.12" stroke="#B7332C" stroke-width="1"/>
+    <text x="530" y="274" text-anchor="middle" class="mono" font-size="10" fill="#1A1A1A">GPU0</text>
+    <text x="530" y="290" text-anchor="middle" class="mono" font-size="9" fill="#5A5A5A">exp 0-3</text>
+    <rect x="585" y="238" width="80" height="80" rx="3" fill="#B7332C" fill-opacity="0.12" stroke="#B7332C" stroke-width="1"/>
+    <text x="625" y="274" text-anchor="middle" class="mono" font-size="10" fill="#1A1A1A">GPU1</text>
+    <text x="625" y="290" text-anchor="middle" class="mono" font-size="9" fill="#5A5A5A">exp 4-7</text>
+    <rect x="680" y="238" width="80" height="80" rx="3" fill="#B7332C" fill-opacity="0.12" stroke="#B7332C" stroke-width="1"/>
+    <text x="720" y="274" text-anchor="middle" class="mono" font-size="10" fill="#1A1A1A">GPU2</text>
+    <text x="720" y="290" text-anchor="middle" class="mono" font-size="9" fill="#5A5A5A">exp 8-11</text>
+    <rect x="770" y="238" width="60" height="80" rx="3" fill="#B7332C" fill-opacity="0.12" stroke="#B7332C" stroke-width="1"/>
+    <text x="800" y="274" text-anchor="middle" class="mono" font-size="9" fill="#5A5A5A">…</text>
+    <text x="490" y="356" class="body" font-size="12" fill="#B7332C">− introduit le double all-to-all · déséquilibre</text>
+    <text x="490" y="378" class="body" font-size="12" fill="#2F5D3F">+ experts locaux intacts · passe l'échelle</text>
+  </g>
+
+  <!-- DP-attention panel -->
+  <g class="interactive" data-card="dp-attention" tabindex="0" role="button" aria-label="Parallélisme de données sur l'attention — cliquez pour les détails">
+    <rect x="50" y="440" width="380" height="255" rx="5" fill="#FAF8F3" stroke="#B58A2C" stroke-width="1"/>
+    <text x="70" y="471" class="display" font-size="18" font-weight="600" fill="#B58A2C">DP sur l'attention</text>
+    <text x="70" y="493" class="body" font-size="12" fill="#5A5A5A">attention répliquée · chaque GPU son lot</text>
+    <rect x="70" y="513" width="160" height="80" rx="3" fill="#B58A2C" fill-opacity="0.10" stroke="#B58A2C" stroke-width="1"/>
+    <text x="150" y="545" text-anchor="middle" class="mono" font-size="10" fill="#1A1A1A">GPU0 · attn</text>
+    <text x="150" y="563" text-anchor="middle" class="body" font-size="10" fill="#5A5A5A">cache KV · lot A</text>
+    <rect x="250" y="513" width="160" height="80" rx="3" fill="#B58A2C" fill-opacity="0.10" stroke="#B58A2C" stroke-width="1"/>
+    <text x="330" y="545" text-anchor="middle" class="mono" font-size="10" fill="#1A1A1A">GPU1 · attn</text>
+    <text x="330" y="563" text-anchor="middle" class="body" font-size="10" fill="#5A5A5A">cache KV · lot B</text>
+    <text x="70" y="628" class="body" font-size="12" fill="#2F5D3F">+ pas de duplication du cache KV sur tout le TP</text>
+    <text x="70" y="650" class="body" font-size="12" fill="#5A5A5A">découple l'attention du MoE</text>
+  </g>
+
+  <!-- Hybrid panel -->
+  <g class="interactive" data-card="hybrid" tabindex="0" role="button" aria-label="Combinaison DP-attention + EP-MoE — cliquez pour les détails">
+    <rect x="470" y="440" width="380" height="255" rx="5" fill="#1A1A1A" fill-opacity="0.04" stroke="#1A1A1A" stroke-width="1.5"/>
+    <text x="490" y="471" class="display" font-size="18" font-weight="600" fill="#1A1A1A">Patron canonique 2026</text>
+    <text x="490" y="493" class="body" font-size="12" fill="#5A5A5A">DP-attention + EP-MoE</text>
+    <rect x="490" y="513" width="340" height="55" rx="3" fill="#B58A2C" fill-opacity="0.10" stroke="#B58A2C" stroke-width="1"/>
+    <text x="660" y="546" text-anchor="middle" class="mono" font-size="11" fill="#B58A2C">Attention → DP (répliquée)</text>
+    <rect x="490" y="576" width="340" height="55" rx="3" fill="#B7332C" fill-opacity="0.10" stroke="#B7332C" stroke-width="1"/>
+    <text x="660" y="609" text-anchor="middle" class="mono" font-size="11" fill="#B7332C">MoE → EP (à grande échelle)</text>
+    <text x="490" y="662" class="body" font-size="12" fill="#2F5D3F">le meilleur des deux · standard SGLang / vLLM</text>
+  </g>
+
+  <!-- Memory tradeoff strip -->
+  <g class="interactive" data-card="memory-tradeoff" tabindex="0" role="button" aria-label="Le compromis mémoire — cliquez pour les détails">
+    <rect x="50" y="715" width="800" height="95" rx="5" fill="#FAF8F3" stroke="#E5E1D8" stroke-width="1"/>
+    <text x="70" y="744" class="mono" font-size="12" font-weight="600" fill="#1A1A1A">LE COMPROMIS SE LIT EN MÉMOIRE</text>
+    <text x="70" y="768" class="body" font-size="13" fill="#1A1A1A">TP : réplique les activations, sature la bande passante — robuste dans le nœud.</text>
+    <text x="70" y="790" class="body" font-size="13" fill="#1A1A1A">EP : disperse les experts (peu de mémoire de poids par GPU), paie l'all-to-all et exige un équilibrage dynamique.</text>
+  </g>
+
+  <!-- Footer -->
+  <line x1="50" y1="838" x2="850" y2="838" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="50" y="862" class="body" font-size="11" font-style="italic" fill="#5A5A5A">Source : SGLang large-scale EP (2025) ; DeepSeek-V3, 2024.</text>
+</svg>
+
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-03" title="Lien direct vers ce schéma">¶</a> <em>Schéma 3 — EP · TP · DP. Le parallélisme de tenseurs découpe chaque expert ; le parallélisme d'experts place des experts entiers ; la combinaison DP-attention + EP-MoE est le patron canonique de 2026.</em></figcaption>
+      </figure>
+
+      <section>
+        <h2 id="moe-3">3. EP contre TP contre DP : la grammaire du parallélisme</h2>
+        <p>Comment répartit-on une couche MoE sur <em>G</em> GPU ? Trois grammaires, qu'on combine en pratique.</p>
+        <p><strong>Parallélisme de tenseurs (TP).</strong> On découpe <em>chaque</em> expert en tranches réparties sur les GPU du groupe. L'avantage : pas de all-to-all, charge parfaitement équilibrée. L'inconvénient, décisif : le TP exige un all-reduce à chaque couche, réplique les activations, et sa bande passante requise explose avec la taille du groupe — il ne passe pas l'échelle au-delà d'un nœud. C'est la solution simple et robuste des petits déploiements.</p>
+        <p><strong>Parallélisme d'experts (EP).</strong> On place des experts <em>entiers</em> sur des GPU distincts. C'est ceci qui introduit le double all-to-all — mais c'est aussi ce qui permet de faire tenir un modèle de 671 milliards de paramètres en gardant chaque expert local et calculé efficacement. <mark>L'EP échange le coût du all-reduce du TP contre le coût du all-to-all — et à grande échelle, bien optimisé, le second gagne.</mark> La taille du groupe EP (<em>EP size</em>) est le paramètre porteur : EP32 signifie que les experts d'une couche sont étalés sur 32 GPU.</p>
+        <p><strong>Parallélisme de données sur l'attention (<span class="term" data-tooltip="DP-attention : l'attention (et son cache KV) est répliquée par parallélisme de données, chaque GPU traitant son propre lot, pendant que le MoE tourne en EP.">DP-attention</span>).</strong> Innovation clé des déploiements DeepSeek de 2025 : découpler la stratégie de l'attention de celle du MoE. L'attention, très gourmande en cache KV (voir <a href="../attention-latente/">attention-latente</a>), est répliquée en parallélisme de données ; le MoE tourne en EP à grande échelle. Cette combinaison <strong>DP-attention + EP-MoE</strong> est devenue le patron canonique<a class="cite" data-cite="8" href="#source-8">8</a>.</p>
+        <p>Le compromis se lit en mémoire. Le TP réplique les activations et sature la bande passante ; l'EP disperse les experts mais paie la latence du all-to-all et exige un équilibrage dynamique. À grande échelle, tous les déploiements sérieux de 2026 convergent vers l'EP pour le MoE, réservant le TP à l'intérieur du nœud.</p>
+      </section>
+
+      <figure class="figure" id="fig-04">
+        <svg data-schema-id="schema-04" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" font-family="Inter, sans-serif">
+  <defs>
+    <style>
+      .display{font-family:'Fraunces','Spectral',Georgia,serif;}
+      .mono{font-family:'JetBrains Mono','IBM Plex Mono',monospace;}
+      .interactive{cursor:pointer;}
+    </style>
+  </defs>
+  <rect x="0" y="0" width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- Header -->
+  <text x="60" y="52" class="mono" font-size="13" letter-spacing="0.08em" fill="#B7332C">SCHÉMA 04</text>
+  <text x="60" y="90" class="display" font-size="30" font-weight="600" fill="#1A1A1A">DeepEP lu serré</text>
+  <text x="60" y="118" class="display" font-size="17" font-style="italic" fill="#5A5A5A">La bibliothèque de communication qui a fait basculer le parallélisme d'experts en production.</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="1"/>
+
+  <!-- Normal mode -->
+  <g class="interactive" data-card="normal-mode" tabindex="0" role="button" aria-label="Mode normal haut débit — cliquez pour les détails">
+    <rect x="60" y="175" width="510" height="215" rx="6" fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="84" y="210" class="display" font-size="19" font-weight="600" fill="#1F5560">Mode normal · haut débit</text>
+    <text x="84" y="234" class="mono" font-size="12" fill="#5A5A5A">PREFILL · ENTRAÎNEMENT</text>
+    <text x="84" y="268" class="body" font-size="13" fill="#1A1A1A">Gros lots de tokens · exploite NVLink + RDMA</text>
+    <text x="84" y="304" class="mono" font-size="14" fill="#1F5560">NVLink ~150 Go/s</text>
+    <text x="330" y="304" class="mono" font-size="14" fill="#1F5560">RDMA ~45–90 Go/s</text>
+    <text x="84" y="344" class="body" font-size="12.5" fill="#5A5A5A">Objectif : maximiser le débit sur le chemin</text>
+    <text x="84" y="364" class="body" font-size="12.5" fill="#5A5A5A">compute-bound du prefill.</text>
+  </g>
+
+  <!-- Low-latency mode -->
+  <g class="interactive" data-card="low-latency-mode" tabindex="0" role="button" aria-label="Mode faible latence — cliquez pour les détails">
+    <rect x="630" y="175" width="510" height="215" rx="6" fill="#B7332C" fill-opacity="0.06" stroke="#B7332C" stroke-width="2"/>
+    <text x="654" y="210" class="display" font-size="19" font-weight="600" fill="#B7332C">Mode faible latence · pur-RDMA</text>
+    <text x="654" y="234" class="mono" font-size="12" fill="#5A5A5A">DECODE INTERACTIF</text>
+    <text x="654" y="268" class="body" font-size="13" fill="#1A1A1A">Petits lots · contourne les chemins lents</text>
+    <text x="654" y="304" class="mono" font-size="14" fill="#B7332C">optimise le time-per-output-token</text>
+    <text x="654" y="344" class="body" font-size="12.5" fill="#5A5A5A">Objectif : le délai d'un aller-retour, pas</text>
+    <text x="654" y="364" class="body" font-size="12.5" fill="#5A5A5A">le débit. Rend le decode MoE distribué viable.</text>
+  </g>
+
+  <!-- Hook overlap -->
+  <g class="interactive" data-card="hook-overlap" tabindex="0" role="button" aria-label="Recouvrement communication-calcul — cliquez pour les détails">
+    <rect x="60" y="420" width="1080" height="180" rx="6" fill="#FAF8F3" stroke="#B58A2C" stroke-width="1.5"/>
+    <text x="84" y="454" class="display" font-size="18" font-weight="600" fill="#B58A2C">Recouvrement communication-calcul (hook)</text>
+    <text x="84" y="476" class="body" font-size="12.5" fill="#5A5A5A">Le all-to-all progresse en arrière-plan (RDMA / Copy Engine) sans consommer de SM — les cœurs restent sur le modèle.</text>
+    <!-- compute lane -->
+    <text x="84" y="516" class="mono" font-size="11" fill="#1A1A1A">calcul</text>
+    <rect x="180" y="500" width="220" height="26" rx="3" fill="#B58A2C" fill-opacity="0.35" stroke="#B58A2C" stroke-width="0.75"/>
+    <text x="290" y="518" text-anchor="middle" class="body" font-size="11" fill="#1A1A1A">experts (micro-lot A)</text>
+    <rect x="410" y="500" width="220" height="26" rx="3" fill="#B58A2C" fill-opacity="0.35" stroke="#B58A2C" stroke-width="0.75"/>
+    <text x="520" y="518" text-anchor="middle" class="body" font-size="11" fill="#1A1A1A">experts (micro-lot B)</text>
+    <!-- comm lane -->
+    <text x="84" y="562" class="mono" font-size="11" fill="#B7332C">all-to-all</text>
+    <rect x="180" y="546" width="220" height="26" rx="3" fill="#B7332C" fill-opacity="0.30" stroke="#B7332C" stroke-width="0.75"/>
+    <text x="290" y="564" text-anchor="middle" class="body" font-size="11" fill="#B7332C">dispatch B (masqué)</text>
+    <rect x="410" y="546" width="220" height="26" rx="3" fill="#B7332C" fill-opacity="0.30" stroke="#B7332C" stroke-width="0.75"/>
+    <text x="520" y="564" text-anchor="middle" class="body" font-size="11" fill="#B7332C">combine A (masqué)</text>
+    <text x="660" y="540" class="body" font-size="12.5" fill="#2F5D3F">La communication de l'un se déroule</text>
+    <text x="660" y="560" class="body" font-size="12.5" fill="#2F5D3F">pendant le calcul de l'autre :</text>
+    <text x="660" y="580" class="body" font-size="12.5" fill="#2F5D3F">le barrier quitte le chemin critique.</text>
+  </g>
+
+  <!-- FP8 dispatch + ecosystem -->
+  <g class="interactive" data-card="fp8-dispatch" tabindex="0" role="button" aria-label="Dispatch FP8 et socle DeepGEMM — cliquez pour les détails">
+    <rect x="60" y="626" width="1080" height="82" rx="6" fill="#1A1A1A" fill-opacity="0.04" stroke="#1A1A1A" stroke-width="1"/>
+    <text x="84" y="656" class="mono" font-size="12" font-weight="600" fill="#1A1A1A">DISPATCH FP8 + SOCLE DEEPGEMM</text>
+    <text x="84" y="680" class="body" font-size="13" fill="#1A1A1A">Les tokens sont expédiés en 8 bits (recombinaison BF16) : moitié moins de volume réseau. DeepGEMM fournit les GEMM groupés FP8</text>
+    <text x="84" y="700" class="body" font-size="13" fill="#1A1A1A">des experts (layouts contiguous / masked). DeepEP (comm) + DeepGEMM (calcul) = la moitié basse de la pile MoE ouverte.</text>
+  </g>
+
+  <!-- Footer -->
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="60" y="766" class="body" font-size="11" font-style="italic" fill="#5A5A5A">Source : DeepEP et DeepGEMM (DeepSeek, github, février 2025). Débits selon la configuration matérielle.</text>
+</svg>
+
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-04" title="Lien direct vers ce schéma">¶</a> <em>Schéma 4 — DeepEP lu serré. Deux modes de kernels (haut débit / faible latence), recouvrement communication-calcul par hook, dispatch FP8, et le socle DeepGEMM.</em></figcaption>
+      </figure>
+
+      <section>
+        <h2 id="moe-4">4. DeepEP lu serré</h2>
+        <p>Si l'EP a basculé du prototype au standard de production en 2025, c'est en grande partie grâce à un objet précis : <strong>DeepEP</strong>, la bibliothèque de communication <em>expert-parallel</em> que DeepSeek a mise en open source en février 2025<a class="cite" data-cite="2" href="#source-2">2</a>. Elle fournit les kernels GPU du double all-to-all — précisément le morceau que chaque équipe réécrivait mal dans son coin.</p>
+        <p>DeepEP expose deux modes de kernels, taillés pour les deux phases :</p>
+        <ul>
+          <li><strong>Mode normal (haut débit).</strong> Pour le <span class="term" data-tooltip="prefill : traitement du prompt entier d'un coup, en gros lots — phase limitée par le calcul.">prefill</span> et l'entraînement. Il exploite à fond NVLink (~150 Go/s) et RDMA (~45-90 Go/s)<a class="cite" data-cite="2" href="#source-2">2</a>.</li>
+          <li><strong>Mode faible latence.</strong> Pour le <span class="term" data-tooltip="decode : génération token par token, en petits lots — phase limitée par la mémoire, sensible à la latence d'un aller-retour.">decode</span>, où compte le délai d'un aller-retour. Ce mode utilise du <span class="term" data-tooltip="RDMA pur : le mode faible latence contourne les chemins à forte latence pour minimiser le time-per-output-token.">RDMA pur</span> et vise le time-per-output-token le plus court sur de petits lots. C'est lui qui rend le décodage MoE distribué viable en interactif.</li>
+        </ul>
+        <p>Trois raffinements font la différence. D'abord, le <strong>recouvrement communication-calcul par <em>hook</em></strong> : DeepEP laisse le all-to-all progresser <em>pendant</em> que le GPU calcule autre chose, sans consommer de <span class="term" data-tooltip="Streaming Multiprocessors : les unités de calcul du GPU. DeepEP libère la communication du réseau sans les mobiliser.">SM</span> pour la communication<a class="cite" data-cite="2" href="#source-2">2</a>. Ensuite, le <span class="term" data-tooltip="FP8 : format flottant 8 bits. Expédier les tokens en 8 bits divise par deux le volume réseau.">dispatch en FP8</span> (recombinaison en BF16) : moitié moins de volume sur le réseau — la quantification (voir <a href="../quantification-llm/">quantification-llm</a>) au service de la bande passante. Enfin, le <strong>cache des handles</strong> : en décodage, les métadonnées de routage sont réutilisées d'une itération à l'autre.</p>
+        <p>Autour de DeepEP, DeepSeek a livré <strong>DeepGEMM</strong><a class="cite" data-cite="10" href="#source-10">10</a>, des kernels de <span class="term" data-tooltip="grouped GEMM : multiplication matricielle groupée où chaque expert traite un nombre variable de tokens — d'où des layouts contiguous / masked dédiés.">multiplication matricielle groupée</span> FP8 pour le calcul des experts. Ensemble, DeepEP (communication) et DeepGEMM (calcul) forment la moitié basse de la pile d'inférence MoE ouverte de 2026.</p>
+      </section>
+
+      <figure class="figure" id="fig-05">
+        <svg data-schema-id="schema-05" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" font-family="Inter, sans-serif">
+  <defs>
+    <style>
+      .display{font-family:'Fraunces','Spectral',Georgia,serif;}
+      .mono{font-family:'JetBrains Mono','IBM Plex Mono',monospace;}
+      .interactive{cursor:pointer;}
+    </style>
+  </defs>
+  <rect x="0" y="0" width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- Header -->
+  <text x="60" y="52" class="mono" font-size="13" letter-spacing="0.08em" fill="#B7332C">SCHÉMA 05</text>
+  <text x="60" y="90" class="display" font-size="30" font-weight="600" fill="#1A1A1A">Le déséquilibre des experts</text>
+  <text x="60" y="118" class="display" font-size="17" font-style="italic" fill="#5A5A5A">Le tout-à-tout est synchrone : le GPU le plus chargé impose sa cadence à tout le groupe.</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="1"/>
+
+  <!-- Histogram: expert load -->
+  <g class="interactive" data-card="hot-expert" tabindex="0" role="button" aria-label="Experts populaires — cliquez pour les détails">
+    <rect x="60" y="170" width="520" height="290" rx="6" fill="#FAF8F3" stroke="#E5E1D8" stroke-width="1"/>
+    <text x="84" y="200" class="display" font-size="17" font-weight="600" fill="#1A1A1A">Charge par expert (au service)</text>
+    <line x1="90" y1="420" x2="560" y2="420" stroke="#B8B5AE" stroke-width="1"/>
+    <rect x="100" y="370" width="34" height="50" fill="#5A5A5A" fill-opacity="0.4"/>
+    <rect x="144" y="345" width="34" height="75" fill="#5A5A5A" fill-opacity="0.4"/>
+    <rect x="188" y="300" width="34" height="120" fill="#B7332C" fill-opacity="0.75"/>
+    <text x="205" y="290" text-anchor="middle" class="mono" font-size="10" fill="#B7332C">hot</text>
+    <rect x="232" y="360" width="34" height="60" fill="#5A5A5A" fill-opacity="0.4"/>
+    <rect x="276" y="390" width="34" height="30" fill="#5A5A5A" fill-opacity="0.4"/>
+    <rect x="320" y="330" width="34" height="90" fill="#5A5A5A" fill-opacity="0.4"/>
+    <rect x="364" y="400" width="34" height="20" fill="#5A5A5A" fill-opacity="0.4"/>
+    <rect x="408" y="315" width="34" height="105" fill="#B7332C" fill-opacity="0.6"/>
+    <rect x="452" y="395" width="34" height="25" fill="#5A5A5A" fill-opacity="0.4"/>
+    <rect x="496" y="380" width="34" height="40" fill="#5A5A5A" fill-opacity="0.4"/>
+    <text x="325" y="446" text-anchor="middle" class="body" font-size="11" fill="#5A5A5A">experts (routés inégalement)</text>
+  </g>
+
+  <!-- Straggler barrier -->
+  <g class="interactive" data-card="straggler-barrier" tabindex="0" role="button" aria-label="Le straggler et le barrier synchrone — cliquez pour les détails">
+    <rect x="620" y="170" width="520" height="290" rx="6" fill="#FAF8F3" stroke="#E5E1D8" stroke-width="1"/>
+    <text x="644" y="200" class="display" font-size="17" font-weight="600" fill="#1A1A1A">Le straggler commande le barrier</text>
+    <!-- lanes -->
+    <text x="644" y="245" class="mono" font-size="11" fill="#1A1A1A">GPU0</text>
+    <rect x="700" y="232" width="180" height="20" rx="2" fill="#2F5D3F" fill-opacity="0.4"/>
+    <text x="644" y="285" class="mono" font-size="11" fill="#1A1A1A">GPU1</text>
+    <rect x="700" y="272" width="150" height="20" rx="2" fill="#2F5D3F" fill-opacity="0.4"/>
+    <text x="644" y="325" class="mono" font-size="11" fill="#B7332C">GPU2</text>
+    <rect x="700" y="312" width="380" height="20" rx="2" fill="#B7332C" fill-opacity="0.55"/>
+    <text x="1088" y="327" class="mono" font-size="10" fill="#B7332C">hot</text>
+    <text x="644" y="365" class="mono" font-size="11" fill="#1A1A1A">GPU3</text>
+    <rect x="700" y="352" width="200" height="20" rx="2" fill="#2F5D3F" fill-opacity="0.4"/>
+    <!-- barrier line -->
+    <line x1="1080" y1="220" x2="1080" y2="390" stroke="#B7332C" stroke-width="1.5" stroke-dasharray="4 3"/>
+    <text x="1072" y="410" text-anchor="end" class="body" font-size="11" fill="#B7332C">tous attendent le plus lent</text>
+    <text x="644" y="440" class="body" font-size="12" fill="#5A5A5A">Un déséquilibre de 2× = latence de 2× sur la couche.</text>
+  </g>
+
+  <!-- EPLB redundant experts -->
+  <g class="interactive" data-card="redundant-replica" tabindex="0" role="button" aria-label="EPLB et experts redondants — cliquez pour les détails">
+    <rect x="60" y="486" width="760" height="222" rx="6" fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="84" y="518" class="display" font-size="18" font-weight="600" fill="#1F5560">EPLB — la redondance d'experts</text>
+    <text x="84" y="542" class="body" font-size="12.5" fill="#5A5A5A">On réplique les experts populaires sur plusieurs GPU et on répartit leurs tokens entre les copies.</text>
+    <!-- before -->
+    <text x="84" y="578" class="mono" font-size="11" fill="#5A5A5A">AVANT</text>
+    <rect x="150" y="565" width="90" height="40" rx="3" fill="#B7332C" fill-opacity="0.6"/>
+    <text x="195" y="590" text-anchor="middle" class="mono" font-size="10" fill="#FAF8F3">hot → GPU2</text>
+    <!-- arrow -->
+    <line x1="252" y1="585" x2="292" y2="585" stroke="#1A1A1A" stroke-width="1.25" marker-end="url(#arrow05)"/>
+    <!-- after -->
+    <text x="84" y="648" class="mono" font-size="11" fill="#5A5A5A">APRÈS</text>
+    <rect x="310" y="565" width="90" height="40" rx="3" fill="#1F5560" fill-opacity="0.3" stroke="#1F5560" stroke-width="0.75"/>
+    <text x="355" y="590" text-anchor="middle" class="mono" font-size="10" fill="#1F5560">copie · GPU2</text>
+    <rect x="410" y="565" width="90" height="40" rx="3" fill="#1F5560" fill-opacity="0.3" stroke="#1F5560" stroke-width="0.75"/>
+    <text x="455" y="590" text-anchor="middle" class="mono" font-size="10" fill="#1F5560">copie · GPU5</text>
+    <rect x="510" y="565" width="90" height="40" rx="3" fill="#1F5560" fill-opacity="0.3" stroke="#1F5560" stroke-width="0.75"/>
+    <text x="555" y="590" text-anchor="middle" class="mono" font-size="10" fill="#1F5560">copie · GPU9</text>
+    <text x="84" y="672" class="body" font-size="12.5" fill="#1A1A1A">Placement hiérarchique (respecte les nœuds) ou global (lissage maximal) · recalculé quand la charge dérive.</text>
+    <text x="84" y="694" class="body" font-size="12.5" fill="#B7332C">Coût : la VRAM des copies n'accueille plus de cache KV. DeepSeek-V3 decode : 32 experts redondants.</text>
+    <defs>
+      <marker id="arrow05" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0 0 L10 5 L0 10 z" fill="#1A1A1A"/>
+      </marker>
+    </defs>
+  </g>
+
+  <!-- bias term -->
+  <g class="interactive" data-card="bias-term" tabindex="0" role="button" aria-label="Biais sans-loss et limite du service — cliquez pour les détails">
+    <rect x="840" y="486" width="300" height="222" rx="6" fill="#B58A2C" fill-opacity="0.08" stroke="#B58A2C" stroke-width="1"/>
+    <text x="864" y="518" class="mono" font-size="12" font-weight="600" fill="#B58A2C">POURQUOI L'ENTRAÎNEMENT NE SUFFIT PAS</text>
+    <text x="864" y="548" class="body" font-size="12.5" fill="#1A1A1A">Le biais sans-loss (auxiliary-</text>
+    <text x="864" y="568" class="body" font-size="12.5" fill="#1A1A1A">loss-free) équilibre à</text>
+    <text x="864" y="588" class="body" font-size="12.5" fill="#1A1A1A">l'entraînement…</text>
+    <text x="864" y="624" class="body" font-size="12.5" fill="#1A1A1A">…mais la distribution des</text>
+    <text x="864" y="644" class="body" font-size="12.5" fill="#1A1A1A">requêtes réelles diffère.</text>
+    <text x="864" y="680" class="body" font-size="12.5" fill="#B58A2C">D'où un équilibrage au moment</text>
+    <text x="864" y="700" class="body" font-size="12.5" fill="#B58A2C">du service, pas seulement avant.</text>
+  </g>
+
+  <!-- Footer -->
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="60" y="766" class="body" font-size="11" font-style="italic" fill="#5A5A5A">Source : EPLB (DeepSeek, github, 2025) ; DeepSeek-V3 Technical Report, 2024. Histogramme illustratif.</text>
+</svg>
+
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-05" title="Lien direct vers ce schéma">¶</a> <em>Schéma 5 — Le déséquilibre des experts. Un expert populaire fait du GPU qui l'héberge un straggler qui bloque le barrier synchrone ; la redondance d'experts de l'EPLB est la parade.</em></figcaption>
+      </figure>
+
+      <section>
+        <h2 id="moe-5">5. Le déséquilibre des experts : le straggler qui commande le barrier</h2>
+        <p>Le talon d'Achille de l'EP est un phénomène simple. Le routeur, en production, ne distribue <em>pas</em> les tokens uniformément : certains experts sont populaires (<em>hot</em>), d'autres presque jamais choisis. Or le double all-to-all est <strong>synchrone</strong> : la couche ne peut avancer tant que le GPU le plus chargé n'a pas fini. <mark>Le GPU le plus lent (<span class="term" data-tooltip="straggler : le nœud le plus lent d'un collectif synchrone, qui impose sa cadence à tous les autres.">straggler</span>) impose sa cadence à tout le groupe : un déséquilibre de 2× se paie en latence de 2× sur toute la couche.</mark></p>
+        <p>L'équilibrage vu à l'entraînement (biais <em>auxiliary-loss-free</em> de DeepSeek-V3, détaillé dans <a href="../melange-experts/">melange-experts</a>) atténue le problème mais ne le supprime pas au service, où la distribution des requêtes réelles diffère de celle de l'entraînement. Il faut donc un équilibrage <em>au moment du service</em>.</p>
+        <p>C'est le rôle de l'<strong>EPLB</strong> (<em>Expert Parallelism Load Balancer</em>)<a class="cite" data-cite="9" href="#source-9">9</a>. Son idée maîtresse : la <strong>redondance d'experts</strong>. Plutôt que de placer chaque expert sur un seul GPU, on <strong>réplique les experts populaires</strong> sur plusieurs GPU et on répartit leurs tokens entre les copies. DeepSeek-V3 en décodage ajoute ainsi des experts redondants<a class="cite" data-cite="1" href="#source-1">1</a>. L'EPLB calcule un <strong>placement</strong> selon deux régimes : hiérarchique (respecte les groupes de nœuds) ou global (lissage maximal), recalculable à mesure que la charge dérive.</p>
+        <p>Le coût de la redondance est mémoire : répliquer des experts consomme de la VRAM qui n'accueille plus de cache KV. L'équilibrage de l'EP est donc un problème d'optimisation à part entière. <mark>La charge des experts est une donnée d'exploitation vivante, pas une propriété du modèle.</mark></p>
+      </section>
+
+      <figure class="figure" id="fig-06">
+        <svg data-schema-id="schema-06" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" font-family="Inter, sans-serif">
+  <defs>
+    <marker id="arrow06" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#1A1A1A"/>
+    </marker>
+    <style>
+      .display{font-family:'Fraunces','Spectral',Georgia,serif;}
+      .mono{font-family:'JetBrains Mono','IBM Plex Mono',monospace;}
+      .interactive{cursor:pointer;}
+    </style>
+  </defs>
+  <rect x="0" y="0" width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- Header -->
+  <text x="60" y="52" class="mono" font-size="13" letter-spacing="0.08em" fill="#B7332C">SCHÉMA 06</text>
+  <text x="60" y="90" class="display" font-size="30" font-weight="600" fill="#1A1A1A">Deux régimes EP : prefill contre decode</text>
+  <text x="60" y="118" class="display" font-size="17" font-style="italic" fill="#5A5A5A">Deux phases, deux profils — donc deux tailles de groupe d'experts, sur des pools désagrégés.</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="1"/>
+
+  <!-- Prefill pool -->
+  <g class="interactive" data-card="prefill-pool" tabindex="0" role="button" aria-label="Pool prefill EP32 — cliquez pour les détails">
+    <rect x="60" y="175" width="440" height="270" rx="6" fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="84" y="210" class="display" font-size="20" font-weight="600" fill="#1F5560">Pool prefill</text>
+    <text x="84" y="236" class="mono" font-size="12" fill="#5A5A5A">LIMITÉ PAR LE CALCUL</text>
+    <rect x="84" y="256" width="392" height="70" rx="4" fill="#FAF8F3" stroke="#1F5560" stroke-width="1"/>
+    <text x="280" y="288" text-anchor="middle" class="mono" font-size="22" fill="#1F5560">EP32</text>
+    <text x="280" y="312" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">experts étalés sur 4 nœuds</text>
+    <text x="84" y="360" class="body" font-size="13" fill="#1A1A1A">Gros lots · on veut le débit maximal.</text>
+    <text x="84" y="384" class="body" font-size="13" fill="#1A1A1A">Groupe EP modéré · mode normal de DeepEP.</text>
+    <text x="84" y="420" class="mono" font-size="12" fill="#1F5560">DeepSeek-V3 : prefill EP32 · 4 nœuds</text>
+  </g>
+
+  <!-- KV transfer -->
+  <line x1="505" y1="310" x2="655" y2="310" stroke="#1A1A1A" stroke-width="1.5" marker-end="url(#arrow06)"/>
+  <text x="580" y="298" text-anchor="middle" class="body" font-size="11" fill="#5A5A5A">transfert</text>
+  <text x="580" y="332" text-anchor="middle" class="mono" font-size="11" fill="#5A5A5A">cache KV</text>
+
+  <!-- Decode pool -->
+  <g class="interactive" data-card="decode-pool" tabindex="0" role="button" aria-label="Pool decode EP144 — cliquez pour les détails">
+    <rect x="700" y="175" width="440" height="270" rx="6" fill="#B7332C" fill-opacity="0.06" stroke="#B7332C" stroke-width="2"/>
+    <text x="724" y="210" class="display" font-size="20" font-weight="600" fill="#B7332C">Pool decode</text>
+    <text x="724" y="236" class="mono" font-size="12" fill="#5A5A5A">LIMITÉ PAR LA MÉMOIRE</text>
+    <rect x="724" y="256" width="392" height="70" rx="4" fill="#FAF8F3" stroke="#B7332C" stroke-width="1"/>
+    <text x="920" y="288" text-anchor="middle" class="mono" font-size="22" fill="#B7332C">EP144</text>
+    <text x="920" y="312" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">experts étalés sur 18 nœuds</text>
+    <text x="724" y="360" class="body" font-size="13" fill="#1A1A1A">Petits lots · l'all-to-all pèse le plus lourd.</text>
+    <text x="724" y="384" class="body" font-size="13" fill="#1A1A1A">On étale au maximum · mode faible latence.</text>
+    <text x="724" y="420" class="mono" font-size="12" fill="#B7332C">DeepSeek-V3 : decode EP144 · 18 nœuds</text>
+  </g>
+
+  <!-- Redundancy -->
+  <g class="interactive" data-card="redundancy" tabindex="0" role="button" aria-label="Experts redondants au decode — cliquez pour les détails">
+    <rect x="700" y="465" width="440" height="110" rx="6" fill="#B58A2C" fill-opacity="0.08" stroke="#B58A2C" stroke-width="1"/>
+    <text x="724" y="495" class="mono" font-size="12" font-weight="600" fill="#B58A2C">+ 32 EXPERTS REDONDANTS (EPLB)</text>
+    <text x="724" y="522" class="body" font-size="13" fill="#1A1A1A">Le decode large exige un lissage de charge :</text>
+    <text x="724" y="544" class="body" font-size="13" fill="#1A1A1A">les experts populaires sont répliqués pour</text>
+    <text x="724" y="566" class="body" font-size="13" fill="#1A1A1A">éviter le straggler (schéma 5).</text>
+  </g>
+
+  <!-- Two-batch overlap -->
+  <g class="interactive" data-card="two-batch-overlap" tabindex="0" role="button" aria-label="Recouvrement à deux lots et chiffres — cliquez pour les détails">
+    <rect x="60" y="465" width="600" height="110" rx="6" fill="#1A1A1A" fill-opacity="0.04" stroke="#1A1A1A" stroke-width="1"/>
+    <text x="84" y="495" class="mono" font-size="12" font-weight="600" fill="#1A1A1A">RECOUVREMENT À DEUX LOTS (two-batch overlap)</text>
+    <text x="84" y="522" class="body" font-size="13" fill="#1A1A1A">Le lot est coupé en deux micro-lots entrelacés :</text>
+    <text x="84" y="544" class="body" font-size="13" fill="#1A1A1A">le all-to-all de l'un se déroule pendant le calcul</text>
+    <text x="84" y="566" class="body" font-size="13" fill="#1A1A1A">de l'autre. Combiné au hook DeepEP et à l'EPLB.</text>
+  </g>
+
+  <!-- Numbers strip -->
+  <rect x="60" y="596" width="1080" height="112" rx="6" fill="#FAF8F3" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="84" y="626" class="display" font-size="16" font-style="italic" fill="#1A1A1A">Ce que ça donne, mesuré (SGLang, réplication open source du déploiement DeepSeek)</text>
+  <text x="84" y="664" class="mono" font-size="24" fill="#B7332C">52,3k</text>
+  <text x="200" y="664" class="body" font-size="13" fill="#1A1A1A">tokens d'entrée/s · nœud</text>
+  <text x="440" y="664" class="mono" font-size="24" fill="#B7332C">22,3k</text>
+  <text x="556" y="664" class="body" font-size="13" fill="#1A1A1A">tokens de sortie/s · nœud</text>
+  <text x="800" y="664" class="mono" font-size="24" fill="#2F5D3F">×5</text>
+  <text x="860" y="664" class="body" font-size="13" fill="#1A1A1A">débit de sortie vs TP simple</text>
+  <text x="84" y="694" class="body" font-size="12.5" fill="#5A5A5A">96 GPU H100 (12 nœuds), séquences de 2 000 tokens. Sur GB200 NVL72 : ×3,8 en prefill, ×4,8 en decode — la fabric scale-up ramène le tout-à-tout dans le domaine rapide.</text>
+
+  <!-- Footer -->
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="60" y="766" class="body" font-size="11" font-style="italic" fill="#5A5A5A">Source : SGLang large-scale EP (lmsys.org, mai 2025) ; GB200 NVL72 Part II (sept. 2025) ; DeepSeek-V3, 2024.</text>
+</svg>
+
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-06" title="Lien direct vers ce schéma">¶</a> <em>Schéma 6 — Deux régimes EP. Pool prefill EP32 (4 nœuds) contre pool decode EP144 (18 nœuds) avec 32 experts redondants ; recouvrement à deux lots et chiffres SGLang.</em></figcaption>
+      </figure>
+
+      <section>
+        <h2 id="moe-6">6. Deux régimes EP : prefill contre decode</h2>
+        <p>La séparation prefill/decode (traitée dans <a href="../desagregation-prefill-decode/">desagregation-prefill-decode</a>) prend, sous l'angle EP, une forme spécifique. Les deux phases n'ont pas le même profil, donc pas la même taille de groupe EP optimale :</p>
+        <ul>
+          <li><strong>Prefill</strong> — gros lots, phase limitée par le calcul. On veut un débit maximal ; un groupe EP modéré suffit. DeepSeek-V3 sert le prefill en <strong>EP32, sur 4 nœuds</strong><a class="cite" data-cite="1" href="#source-1">1</a>.</li>
+          <li><strong>Decode</strong> — petits lots, phase limitée par la mémoire. Le all-to-all pèse le plus lourd ; on étale les experts sur beaucoup plus de GPU. DeepSeek-V3 sert le decode en <strong>EP144, sur 18 nœuds</strong>, avec 32 experts redondants<a class="cite" data-cite="1" href="#source-1">1</a>.</li>
+        </ul>
+        <p>Comme les deux phases veulent des tailles EP différentes, il est naturel de les <strong>désagréger</strong> sur des pools distincts, reliés par un transfert de cache KV. C'est ce que SGLang a industrialisé : sur <strong>96 GPU H100</strong> (12 nœuds de 8), en désagrégation prefill/decode et EP à grande échelle, il atteint <strong>52,3k tokens d'entrée/s et 22,3k tokens de sortie/s par nœud</strong> (séquences de 2 000 tokens), soit <strong>jusqu'à 5× le débit de sortie</strong> d'un simple parallélisme de tenseurs à ressources égales<a class="cite" data-cite="8" href="#source-8">8</a>.</p>
+        <p>L'autre levier est le <span class="term" data-tooltip="two-batch overlap : le lot est coupé en deux micro-lots entrelacés, de sorte que le all-to-all de l'un se déroule pendant le calcul de l'autre.">recouvrement à deux lots</span> (<em>two-batch overlap</em>) : combiné au <em>hook</em> de DeepEP et à l'EPLB, il transforme une communication qui bloquait le chemin critique en une communication masquée. Sur GB200 NVL72, la même équipe rapporte <strong>3,8× en prefill et 4,8× en decode</strong><a class="cite" data-cite="11" href="#source-11">11</a> — le gain vient largement de ce que la fabric NVLink du NVL72 fait <em>rentrer le tout-à-tout dans le domaine intra-nœud rapide</em>.</p>
+      </section>
+
+      <figure class="figure" id="fig-07">
+        <svg data-schema-id="schema-07" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" font-family="Inter, sans-serif">
+  <defs>
+    <style>
+      .display{font-family:'Fraunces','Spectral',Georgia,serif;}
+      .mono{font-family:'JetBrains Mono','IBM Plex Mono',monospace;}
+      .interactive{cursor:pointer;}
+    </style>
+  </defs>
+  <rect x="0" y="0" width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- Header -->
+  <text x="60" y="52" class="mono" font-size="13" letter-spacing="0.08em" fill="#B7332C">SCHÉMA 07</text>
+  <text x="60" y="90" class="display" font-size="30" font-weight="600" fill="#1A1A1A">Le paysage outillage 2026</text>
+  <text x="60" y="118" class="display" font-size="17" font-style="italic" fill="#5A5A5A">Une pile ouverte convergente — le socle DeepSeek sous des serveurs qui savent tous faire de l'EP.</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="1"/>
+
+  <!-- Column headers -->
+  <text x="350" y="188" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">EP grande</text>
+  <text x="350" y="204" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">échelle</text>
+  <text x="520" y="188" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">DP-</text>
+  <text x="520" y="204" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">attention</text>
+  <text x="690" y="188" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">Désagrég.</text>
+  <text x="690" y="204" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">P/D</text>
+  <text x="860" y="188" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">Kernels</text>
+  <text x="860" y="204" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">faible lat.</text>
+  <text x="1030" y="188" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">Fabric</text>
+  <text x="1030" y="204" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">NVL72</text>
+  <line x1="60" y1="218" x2="1120" y2="218" stroke="#E5E1D8" stroke-width="1"/>
+
+  <!-- SGLang row -->
+  <g class="interactive" data-card="sglang" tabindex="0" role="button" aria-label="SGLang — cliquez pour les détails">
+    <rect x="60" y="228" width="1060" height="64" rx="4" fill="#B7332C" fill-opacity="0.05"/>
+    <text x="80" y="266" class="display" font-size="17" font-weight="600" fill="#1A1A1A">SGLang</text>
+    <text x="80" y="284" class="body" font-size="11" fill="#5A5A5A">1ʳᵉ implémentation ouverte P/D + EP</text>
+    <circle cx="350" cy="260" r="10" fill="#1F5560"/>
+    <circle cx="520" cy="260" r="10" fill="#1F5560"/>
+    <circle cx="690" cy="260" r="10" fill="#1F5560"/>
+    <circle cx="860" cy="260" r="10" fill="#1F5560"/>
+    <circle cx="1030" cy="260" r="10" fill="#1F5560"/>
+  </g>
+
+  <!-- vLLM row -->
+  <g class="interactive" data-card="vllm" tabindex="0" role="button" aria-label="vLLM — cliquez pour les détails">
+    <rect x="60" y="300" width="1060" height="64" rx="4" fill="#FAF8F3"/>
+    <text x="80" y="338" class="display" font-size="17" font-weight="600" fill="#1A1A1A">vLLM</text>
+    <text x="80" y="356" class="body" font-size="11" fill="#5A5A5A">DP-attention + EP · intégration DeepEP</text>
+    <circle cx="350" cy="332" r="10" fill="#1F5560"/>
+    <circle cx="520" cy="332" r="10" fill="#1F5560"/>
+    <circle cx="690" cy="332" r="10" fill="#1F5560"/>
+    <circle cx="860" cy="332" r="10" fill="#1F5560"/>
+    <path d="M1030 322 A10 10 0 0 1 1030 342 Z" fill="#B58A2C"/>
+    <circle cx="1030" cy="332" r="10" fill="none" stroke="#B58A2C" stroke-width="1"/>
+  </g>
+
+  <!-- Dynamo row -->
+  <g class="interactive" data-card="dynamo" tabindex="0" role="button" aria-label="NVIDIA Dynamo / TensorRT-LLM — cliquez pour les détails">
+    <rect x="60" y="372" width="1060" height="64" rx="4" fill="#B7332C" fill-opacity="0.05"/>
+    <text x="80" y="410" class="display" font-size="17" font-weight="600" fill="#1A1A1A">NVIDIA Dynamo · TensorRT-LLM</text>
+    <text x="80" y="428" class="body" font-size="11" fill="#5A5A5A">désagrégation + EP jusqu'au NVL72</text>
+    <circle cx="350" cy="404" r="10" fill="#1F5560"/>
+    <circle cx="520" cy="404" r="10" fill="#1F5560"/>
+    <circle cx="690" cy="404" r="10" fill="#1F5560"/>
+    <circle cx="860" cy="404" r="10" fill="#1F5560"/>
+    <circle cx="1030" cy="404" r="10" fill="#B7332C"/>
+  </g>
+
+  <text x="80" y="462" class="body" font-size="11" fill="#5A5A5A">● présent   ◐ partiel — la ligne de fracture n'est plus « qui sait faire de l'EP » mais la maturité de l'équilibrage et du recouvrement.</text>
+
+  <!-- Socle -->
+  <g class="interactive" data-card="socle" tabindex="0" role="button" aria-label="Le socle DeepSeek — cliquez pour les détails">
+    <rect x="60" y="486" width="700" height="222" rx="6" fill="#1A1A1A" fill-opacity="0.04" stroke="#1A1A1A" stroke-width="1.5"/>
+    <text x="84" y="518" class="display" font-size="18" font-weight="600" fill="#1A1A1A">Le socle ouvert (DeepSeek)</text>
+    <text x="84" y="540" class="body" font-size="12.5" fill="#5A5A5A">Intégré plutôt que réimplémenté par la plupart des serveurs.</text>
+    <rect x="84" y="558" width="210" height="120" rx="4" fill="#B7332C" fill-opacity="0.08" stroke="#B7332C" stroke-width="1"/>
+    <text x="189" y="600" text-anchor="middle" class="mono" font-size="15" fill="#B7332C">DeepEP</text>
+    <text x="189" y="624" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">communication</text>
+    <text x="189" y="642" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">(all-to-all)</text>
+    <rect x="309" y="558" width="210" height="120" rx="4" fill="#B58A2C" fill-opacity="0.08" stroke="#B58A2C" stroke-width="1"/>
+    <text x="414" y="600" text-anchor="middle" class="mono" font-size="15" fill="#B58A2C">DeepGEMM</text>
+    <text x="414" y="624" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">calcul FP8</text>
+    <text x="414" y="642" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">(experts)</text>
+    <rect x="534" y="558" width="210" height="120" rx="4" fill="#1F5560" fill-opacity="0.08" stroke="#1F5560" stroke-width="1"/>
+    <text x="639" y="600" text-anchor="middle" class="mono" font-size="15" fill="#1F5560">EPLB</text>
+    <text x="639" y="624" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">équilibrage</text>
+    <text x="639" y="642" text-anchor="middle" class="body" font-size="12" fill="#5A5A5A">de charge</text>
+  </g>
+
+  <!-- NVL72 card -->
+  <g class="interactive" data-card="nvl72" tabindex="0" role="button" aria-label="La fabric scale-up NVL72 — cliquez pour les détails">
+    <rect x="780" y="486" width="360" height="222" rx="6" fill="#2F5D3F" fill-opacity="0.07" stroke="#2F5D3F" stroke-width="1.5"/>
+    <text x="804" y="518" class="display" font-size="18" font-weight="600" fill="#2F5D3F">Fabric scale-up NVL72</text>
+    <text x="804" y="548" class="body" font-size="13" fill="#1A1A1A">72 GPU dans un seul domaine de</text>
+    <text x="804" y="568" class="body" font-size="13" fill="#1A1A1A">cohérence NVLink.</text>
+    <text x="804" y="604" class="body" font-size="13" fill="#1A1A1A">Le tout-à-tout redevient</text>
+    <text x="804" y="624" class="body" font-size="13" fill="#1A1A1A">intra-domaine rapide —</text>
+    <text x="804" y="644" class="body" font-size="13" fill="#1A1A1A">l'asymétrie du schéma 2 se dissout.</text>
+    <text x="804" y="680" class="mono" font-size="13" fill="#2F5D3F">×3,8 prefill · ×4,8 decode</text>
+  </g>
+
+  <!-- Footer -->
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="1"/>
+  <text x="60" y="766" class="body" font-size="11" font-style="italic" fill="#5A5A5A">Source : SGLang (lmsys.org, 2025) ; DeepEP / DeepGEMM / EPLB (DeepSeek, 2025) ; NVIDIA Dynamo. Matrice indicative.</text>
+</svg>
+
+        <figcaption class="figure-caption"><a class="anchor" href="#fig-07" title="Lien direct vers ce schéma">¶</a> <em>Schéma 7 — Le paysage outillage 2026. SGLang, vLLM, NVIDIA Dynamo sur cinq capacités ; le socle ouvert DeepEP/DeepGEMM/EPLB ; la fabric scale-up NVL72.</em></figcaption>
+      </figure>
+
+      <section>
+        <h2 id="moe-7">7. Le paysage outillage 2026</h2>
+        <p>Le marché de l'inférence MoE s'est structuré en 2025-2026 autour d'une pile ouverte étonnamment convergente. Le <strong>socle</strong> est le trio DeepSeek — DeepEP (communication), DeepGEMM (calcul FP8), EPLB (équilibrage) — que la plupart des serveurs intègrent plutôt que de le réimplémenter.</p>
+        <p>Au-dessus, deux serveurs open source mènent la course. <strong>SGLang</strong> a livré la première implémentation ouverte de la désagrégation P/D + EP à grande échelle reproduisant le déploiement DeepSeek<a class="cite" data-cite="8" href="#source-8">8</a>, et l'a depuis couplée à la prédiction multi-tokens (+60 % de débit de sortie). <strong>vLLM</strong> a suivi avec son propre support DP-attention + EP et l'intégration DeepEP. Côté propriétaire, <strong>NVIDIA Dynamo</strong> (avec TensorRT-LLM) pousse la désagrégation et l'EP jusqu'au <strong>GB200 NVL72</strong>, dont la fabric scale-up est taillée pour absorber le all-to-all.</p>
+        <p>La ligne de fracture entre ces offres n'est plus « qui sait faire de l'EP » — tout le monde sait — mais <strong>la maturité de l'équilibrage dynamique, la finesse du recouvrement, et l'exploitation des fabrics scale-up</strong>. C'est là que se gagnent les derniers x2 de débit, et c'est un terrain d'ingénierie système, pas de modélisation.</p>
+      </section>
+
+      <section>
+        <h2 id="moe-8">8. Trajectoires</h2>
+        <p>Quatre directions se dessinent pour 2026-2028.</p>
+        <p><strong>L'EP élastique.</strong> Aujourd'hui la taille du groupe EP est fixée au déploiement. Demain, on ajustera dynamiquement le nombre de GPU d'un pool decode selon la charge — un autoscaling au niveau des experts, qui suppose de recalculer placement et redondance à chaud (extension de l'EPLB).</p>
+        <p><strong>Le tout-à-tout intra-domaine.</strong> La montée des fabrics scale-up (NVL72 et ses successeurs) déplace la frontière : plus le domaine de cohérence NVLink est grand, plus le all-to-all reste dans le régime rapide. À terme, un modèle entier pourrait tenir son EP dans un seul domaine, dissolvant le goulot inter-nœud qui a façonné toute l'ingénierie décrite ici.</p>
+        <p><strong>La co-conception réseau × modèle.</strong> Le node-limited routing a montré la voie : le motif de routage se décide en fonction de la topologie réseau. On verra des modèles dont l'architecture MoE est explicitement co-conçue avec le matériel de service — comme la parcimonie native l'a été pour le calcul (voir <a href="../attention-parcimonieuse/">attention-parcimonieuse</a>).</p>
+        <p><strong>L'EP-as-a-service.</strong> Enfin, comme le cache KV avant lui (voir <a href="../desagregation-prefill-decode/">desagregation-prefill-decode</a>), l'infrastructure EP pourrait se mutualiser : des pools d'experts partagés entre modèles et locataires, posant les mêmes questions d'isolation et de sécurité que le prompt caching partagé (voir <a href="../mcp-securite/">mcp-securite</a>).</p>
+        <p>Le fil rouge est constant. Le MoE n'a pas rendu l'inférence plus simple ; il a déplacé la difficulté de l'algèbre linéaire vers le réseau. <mark>Servir un modèle creux, en 2026, c'est d'abord savoir faire circuler des tokens — et le savoir-faire porteur n'est plus dans le modèle, il est dans la bibliothèque de communication.</mark></p>
+      </section>
+    </main>
+
+    <aside id="sources" aria-label="Sources">
+      <button class="panel-close" type="button" aria-label="Fermer les sources">Fermer ✕</button>
+      <div class="sources-inner">
+      <h2>Sources</h2>
+      <ol id="sources-list">
+<li id="source-1">
+          <span class="cite-num">[1]</span> DeepSeek-AI. <em>DeepSeek-V3 Technical Report</em>. arXiv:2412.19437, décembre 2024. Placement EP32 (prefill, 4 nœuds) / EP144 (decode, 18 nœuds), experts redondants, routage borné aux nœuds, entraînement FP8.<br>
+          <a href="https://arxiv.org/abs/2412.19437" target="_blank" rel="noopener">arxiv.org/2412.19437 ↗</a>
+          <span class="accessed">consulté le 29 juillet 2026</span>
+        </li>
+        <li id="source-2">
+          <span class="cite-num">[2]</span> DeepSeek-AI. <em>DeepEP : an efficient expert-parallel communication library</em>. GitHub, février 2025. Kernels normal / faible latence, débits NVLink et RDMA, dispatch FP8, recouvrement par hook.<br>
+          <a href="https://github.com/deepseek-ai/DeepEP" target="_blank" rel="noopener">github.com/deepseek-ai/DeepEP ↗</a>
+          <span class="accessed">consulté le 29 juillet 2026</span>
+        </li>
+        <li id="source-3">
+          <span class="cite-num">[3]</span> Lepikhin, Dmitry et al. <em>GShard : Scaling Giant Models with Conditional Computation and Automatic Sharding</em>. arXiv:2006.16668, 2020. Origine du parallélisme d'experts et du double all-to-all dispatch/combine.<br>
+          <a href="https://arxiv.org/abs/2006.16668" target="_blank" rel="noopener">arxiv.org/2006.16668 ↗</a>
+          <span class="accessed">consulté le 29 juillet 2026</span>
+        </li>
+        <li id="source-4">
+          <span class="cite-num">[4]</span> Fedus, William, Barret Zoph et Noam Shazeer. <em>Switch Transformers : Scaling to Trillion Parameter Models with Simple and Efficient Sparsity</em>. JMLR 23, 2022. Facteur de capacité, token dropping, loss d'équilibrage de charge.<br>
+          <a href="https://arxiv.org/abs/2101.03961" target="_blank" rel="noopener">arxiv.org/2101.03961 ↗</a>
+          <span class="accessed">consulté le 29 juillet 2026</span>
+        </li>
+        <li id="source-5">
+          <span class="cite-num">[5]</span> DeepSeek-AI. <em>DeepSeekMoE : Towards Ultimate Expert Specialization in Mixture-of-Experts Language Models</em>. arXiv:2401.06066, 2024. Experts fins + expert partagé isolé.<br>
+          <a href="https://arxiv.org/abs/2401.06066" target="_blank" rel="noopener">arxiv.org/2401.06066 ↗</a>
+          <span class="accessed">consulté le 29 juillet 2026</span>
+        </li>
+        <li id="source-6">
+          <span class="cite-num">[6]</span> Hwang, Changho et al. <em>Tutel : Adaptive Mixture-of-Experts at Scale</em>. MLSys 2023 / arXiv:2206.03382. Parallélisme adaptatif, optimisation du all-to-all, bascule dynamique de stratégie.<br>
+          <a href="https://arxiv.org/abs/2206.03382" target="_blank" rel="noopener">arxiv.org/2206.03382 ↗</a>
+          <span class="accessed">consulté le 29 juillet 2026</span>
+        </li>
+        <li id="source-7">
+          <span class="cite-num">[7]</span> Li, Jiamin et al. <em>Accelerating Distributed MoE Training and Inference with Lina</em>. USENIX ATC 2023. Priorisation du all-to-all et partition tensorielle pour dompter le goulot de communication.<br>
+          <a href="https://www.usenix.org/conference/atc23/presentation/li-jiamin" target="_blank" rel="noopener">usenix.org/atc23 ↗</a>
+          <span class="accessed">consulté le 29 juillet 2026</span>
+        </li>
+        <li id="source-8">
+          <span class="cite-num">[8]</span> SGLang Team. <em>Deploying DeepSeek with PD Disaggregation and Large-Scale Expert Parallelism on 96 H100 GPUs</em>. lmsys.org, 5 mai 2025. 52,3k tokens d'entrée/s et 22,3k tokens de sortie/s par nœud, jusqu'à 5× vs TP, DP-attention + EP, EPLB, two-batch overlap.<br>
+          <a href="https://lmsys.org/blog/2025-05-05-large-scale-ep/" target="_blank" rel="noopener">lmsys.org/blog ↗</a>
+          <span class="accessed">consulté le 29 juillet 2026</span>
+        </li>
+        <li id="source-9">
+          <span class="cite-num">[9]</span> DeepSeek-AI. <em>EPLB : Expert Parallelism Load Balancer</em>. GitHub, février 2025. Experts redondants, équilibrage hiérarchique et global.<br>
+          <a href="https://github.com/deepseek-ai/EPLB" target="_blank" rel="noopener">github.com/deepseek-ai/EPLB ↗</a>
+          <span class="accessed">consulté le 29 juillet 2026</span>
+        </li>
+        <li id="source-10">
+          <span class="cite-num">[10]</span> DeepSeek-AI. <em>DeepGEMM : clean and efficient FP8 GEMM kernels</em>. GitHub, février 2025. GEMM groupé FP8 pour le calcul des experts (layouts contiguous / masked).<br>
+          <a href="https://github.com/deepseek-ai/DeepGEMM" target="_blank" rel="noopener">github.com/deepseek-ai/DeepGEMM ↗</a>
+          <span class="accessed">consulté le 29 juillet 2026</span>
+        </li>
+        <li id="source-11">
+          <span class="cite-num">[11]</span> SGLang Team. <em>Deploying DeepSeek on GB200 NVL72 with PD and Large Scale EP (Part II) : 3.8x Prefill, 4.8x Decode Throughput</em>. lmsys.org, 25 septembre 2025. Exploitation de la fabric scale-up NVL72.<br>
+          <a href="https://lmsys.org/blog/2025-09-25-gb200-part-2/" target="_blank" rel="noopener">lmsys.org/blog ↗</a>
+          <span class="accessed">consulté le 29 juillet 2026</span>
+        </li>
+        <li id="source-12">
+          <span class="cite-num">[12]</span> Clark, Aidan et al. <em>Unified Scaling Laws for Routed Language Models</em>. arXiv:2202.01169, 2022. Un modèle routé bat un dense à budget de calcul fixé.<br>
+          <a href="https://arxiv.org/abs/2202.01169" target="_blank" rel="noopener">arxiv.org/2202.01169 ↗</a>
+          <span class="accessed">consulté le 29 juillet 2026</span>
+        </li>
+        </ol>
+      </div>
+    </aside>
+
+  </div>
+
+
+  <div id="zoom-overlay" hidden role="dialog" aria-modal="true" aria-label="Schéma agrandi">
+    <header id="zoom-header">
+      <span id="zoom-caption"></span>
+      <div class="zoom-controls">
+        <button type="button" class="zoom-out" aria-label="Dézoomer" title="Dézoomer (−)">−</button>
+        <button type="button" class="zoom-reset" aria-label="Ajuster à l'écran" title="Ajuster à l'écran">Reset</button>
+        <button type="button" class="zoom-in" aria-label="Zoomer" title="Zoomer (+)">+</button>
+        <button type="button" class="zoom-close" aria-label="Fermer (Échap)" title="Fermer (Échap)">×</button>
+      </div>
+    </header>
+    <div id="zoom-stage" tabindex="-1">
+      <div id="zoom-content"></div>
+      <div id="zoom-hint">Molette pour zoomer · glisser pour déplacer · Échap pour fermer</div>
+      <a class="schema-sigil zoom-sigil" href="https://mathieugug.github.io/" target="_blank" rel="noopener" aria-label="Mathieu Guglielmino — visiter mathieugug.github.io" title="Mathieu Guglielmino · mathieugug.github.io">
+        <svg class="sigil-mark" viewBox="0 0 44 44" aria-hidden="true" focusable="false">
+          <circle class="sigil-bg" cx="22" cy="22" r="20.5"/>
+          <circle class="sigil-ring" cx="22" cy="22" r="17.5"/>
+          <g class="sigil-letters"><text x="7.5" y="29">M</text><text x="22" y="29">G</text></g>
+        </svg>
+      </a>
+    </div>
+  </div>
+
+  <div id="modal-root" hidden role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card">
+      <button class="modal-close" data-close aria-label="Fermer">×</button>
+      <p class="modal-eyebrow" id="modal-eyebrow"></p>
+      <h3 class="modal-title" id="modal-title"></h3>
+      <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <script>
+    // ─────────────────────────────────────────────────
+    // DATA — replace these placeholders with real content
+    // ─────────────────────────────────────────────────
+
+    const SCHEMAS = {
+  "schema-01": {
+    "gate": {
+      title: "Le routeur (gate)",
+      eyebrow: "local au GPU",
+      body: "<p>Pour chaque token, le routeur calcule un score sur les <em>N</em> experts et sélectionne les <em>k</em> meilleurs (top-k, 8 sur 256 pour DeepSeek-V3). C'est une opération <strong>locale</strong> : pas de communication, juste un petit produit matriciel et un tri.</p><p>Mais sa décision commande tout le reste : quels tokens vont où, et donc le volume de chaque flux du all-to-all qui suit. Un routeur déséquilibré fabrique des straggler (schéma 5).</p>"
+    },
+    "dispatch-a2a": {
+      title: "Dispatch — all-to-all #1",
+      eyebrow: "collectif · tokens vers experts",
+      body: "<p>Premier collectif de la couche : chaque GPU envoie ses tokens vers les GPU qui hébergent les experts cibles. Le motif est <strong>tout-à-tout</strong> — chacun parle à tous — avec des volumes dictés par les décisions du routeur, donc impossibles à connaître avant l'exécution<a class='cite' data-cite='3' href='#source-3'>3</a>.</p><p>C'est ici que se paie l'asymétrie NVLink / RDMA (schéma 2) : un token qui reste dans le nœud coûte 3 à 10× moins qu'un token qui en sort.</p>"
+    },
+    "expert-ffn": {
+      title: "Le calcul des experts",
+      eyebrow: "local · presque gratuit en decode",
+      body: "<p>Chaque expert applique son réseau feed-forward aux tokens reçus. En décodage (limité par la mémoire), ce calcul est <strong>presque gratuit</strong> : le GPU est de toute façon en attente de la mémoire.</p><p>D'où le retournement : sur un MoE à grande échelle, ce n'est pas ce bloc qui coûte, mais les deux collectifs qui l'encadrent. DeepGEMM fournit les GEMM groupés FP8 dédiés (schéma 4).</p>"
+    },
+    "combine-a2a": {
+      title: "Combine — all-to-all #2",
+      eyebrow: "collectif · sorties vers origine",
+      body: "<p>Second collectif : les sorties des experts repartent vers les GPU d'origine des tokens, où elles sont recombinées de façon pondérée. Même motif tout-à-tout que le dispatch, même coût.</p><p>Deux all-to-all par couche, synchrones : un modèle de 60 couches en aligne <strong>120</strong> sur le chemin critique de chaque token généré. C'est le poste que toute l'ingénierie de ce dossier cherche à masquer.</p>"
+    }
+  },
+  "schema-02": {
+    "nvlink-domain": {
+      title: "Le domaine NVLink intra-nœud",
+      eyebrow: "~150 Go/s",
+      body: "<p>Les 8 GPU d'un même serveur communiquent par un maillage <span class='term' data-tooltip='Interconnexion haut débit reliant les GPU d’un même serveur.'>NVLink</span> à très haute bande passante. DeepEP y mesure des débits de dispatch de l'ordre de 150 Go/s<a class='cite' data-cite='2' href='#source-2'>2</a>.</p><p>C'est le régime rapide : tant que le all-to-all reste dans le nœud, il se recouvre facilement par le calcul. Les fabrics scale-up (NVL72, schéma 7) cherchent précisément à agrandir ce domaine.</p>"
+    },
+    "all-to-all-matrix": {
+      title: "Le motif all-to-all",
+      eyebrow: "chacun parle à tous",
+      body: "<p>Contrairement à un all-reduce (volume fixe, motif régulier), le all-to-all fait dialoguer <em>chaque</em> GPU avec <em>tous</em> les autres, avec des volumes qui dépendent du routeur.</p><p>C'est le pire motif de communication : impossible à planifier statiquement, sensible au moindre déséquilibre. Les bibliothèques comme Tutel<a class='cite' data-cite='6' href='#source-6'>6</a> et Lina<a class='cite' data-cite='7' href='#source-7'>7</a> ont passé des années à l'optimiser avant DeepEP.</p>"
+    },
+    "rdma-domain": {
+      title: "Le domaine RDMA inter-nœud",
+      eyebrow: "~45–90 Go/s",
+      body: "<p>Dès qu'un token franchit la frontière du serveur, on tombe sur le réseau <span class='term' data-tooltip='Remote Direct Memory Access via InfiniBand : accès mémoire direct entre serveurs.'>RDMA</span>/InfiniBand, où DeepEP mesure 45 à 90 Go/s<a class='cite' data-cite='2' href='#source-2'>2</a> — un facteur 3 à 10 sous le NVLink.</p><p>Cette marche d'un ordre de grandeur est le fait central qui a façonné toute l'ingénierie de l'inférence MoE distribuée.</p>"
+    },
+    "node-limited-routing": {
+      title: "Le routage borné aux nœuds",
+      eyebrow: "la parade, inscrite à l'entraînement",
+      body: "<p>Parade de DeepSeek : chaque token n'est autorisé à choisir des experts que dans un petit nombre de nœuds (4 pour DeepSeek-V3), ce qui <strong>plafonne le nombre de sauts RDMA</strong> coûteux et permet de recouvrir presque intégralement la communication par le calcul<a class='cite' data-cite='1' href='#source-1'>1</a>.</p><p>La leçon : le motif de routage n'est pas qu'une affaire de qualité de modèle, c'est une variable d'architecture réseau décidée dès l'entraînement.</p>"
+    }
+  },
+  "schema-03": {
+    "tp": {
+      title: "Parallélisme de tenseurs (TP)",
+      eyebrow: "chaque expert découpé",
+      body: "<p>On découpe <em>chaque</em> expert en tranches réparties sur les GPU. Avantage : pas de all-to-all, charge parfaitement équilibrée. Inconvénient décisif : un <strong>all-reduce à chaque couche</strong>, activations répliquées, bande passante qui explose avec la taille du groupe.</p><p>Le TP ne passe pas l'échelle au-delà d'un nœud. C'est la solution simple et robuste des petits déploiements, ou l'étage intra-nœud quand un expert est trop gros pour un seul GPU.</p>"
+    },
+    "ep": {
+      title: "Parallélisme d'experts (EP)",
+      eyebrow: "des experts entiers par GPU",
+      body: "<p>On place des experts <em>entiers</em> sur des GPU distincts. C'est ceci qui introduit le double all-to-all — mais aussi ce qui permet de faire tenir un modèle de 671 milliards de paramètres en gardant chaque expert local et calculé efficacement.</p><p>L'EP échange le coût du all-reduce du TP contre celui du all-to-all — et à grande échelle, bien optimisé, le second gagne. La taille du groupe (EP32, EP144) est le paramètre porteur du déploiement.</p>"
+    },
+    "dp-attention": {
+      title: "DP sur l'attention",
+      eyebrow: "découpler l'attention du MoE",
+      body: "<p>Innovation clé des déploiements DeepSeek 2025 : l'attention (et son cache KV, très gourmand — voir <a href='../attention-latente/'>attention-latente</a>) est répliquée par <strong>parallélisme de données</strong>, chaque GPU traitant son propre lot.</p><p>On évite ainsi de dupliquer le cache KV sur tout le groupe TP, tout en laissant le MoE s'étaler en EP. C'est la moitié attention du patron canonique.</p>"
+    },
+    "hybrid": {
+      title: "Le patron canonique 2026",
+      eyebrow: "DP-attention + EP-MoE",
+      body: "<p>La combinaison gagnante : <strong>attention en DP</strong> (répliquée, chacun son lot) + <strong>MoE en EP</strong> à grande échelle. Elle réconcilie deux exigences contradictoires — ne pas dupliquer le cache KV, et étaler les experts<a class='cite' data-cite='8' href='#source-8'>8</a>.</p><p>C'est le standard des déploiements SGLang et vLLM de 2026, et la base des chiffres du schéma 6.</p>"
+    },
+    "memory-tradeoff": {
+      title: "Le compromis se lit en mémoire",
+      eyebrow: "activations vs poids vs équilibrage",
+      body: "<p>Le TP réplique les activations et sature la bande passante — robuste dans le nœud, ingérable au-delà. L'EP disperse les experts (peu de mémoire de poids par GPU) mais paie la latence du all-to-all et exige un <strong>équilibrage dynamique</strong> (schéma 5).</p><p>À grande échelle, tous les déploiements sérieux de 2026 convergent vers l'EP pour le MoE, réservant le TP à l'intérieur du nœud.</p>"
+    }
+  },
+  "schema-04": {
+    "normal-mode": {
+      title: "Mode normal — haut débit",
+      eyebrow: "prefill · entraînement",
+      body: "<p>Pour les phases à gros lots de tokens (prefill, entraînement), où l'on veut maximiser le débit. Ce mode exploite à fond NVLink (~150 Go/s) et RDMA (~45–90 Go/s)<a class='cite' data-cite='2' href='#source-2'>2</a>.</p><p>Objectif : saturer les liens pour la phase compute-bound du prefill, où le all-to-all a de la matière à transporter.</p>"
+    },
+    "low-latency-mode": {
+      title: "Mode faible latence — pur-RDMA",
+      eyebrow: "decode interactif",
+      body: "<p>Pour le decode, où compte non le débit mais le <strong>délai d'un aller-retour</strong>. Ce mode utilise du RDMA pur, contourne les chemins à forte latence, et vise le time-per-output-token le plus court sur de petits lots.</p><p>C'est lui qui rend le décodage MoE distribué viable en interactif : sans mode faible latence, chaque token payerait le coût plein d'un collectif à grande échelle.</p>"
+    },
+    "hook-overlap": {
+      title: "Recouvrement par hook",
+      eyebrow: "communication masquée",
+      body: "<p>DeepEP fournit un mécanisme (hook-based) qui laisse le all-to-all progresser <em>pendant</em> que le GPU calcule autre chose, <strong>sans consommer de SM</strong> pour la communication : le réseau travaille en arrière-plan pendant que les cœurs restent sur le modèle<a class='cite' data-cite='2' href='#source-2'>2</a>.</p><p>Combiné au recouvrement à deux lots (schéma 6), il fait quitter au barrier le chemin critique — le levier de performance décisif.</p>"
+    },
+    "fp8-dispatch": {
+      title: "Dispatch FP8 + socle DeepGEMM",
+      eyebrow: "moitié moins de volume réseau",
+      body: "<p>Les tokens sont expédiés en <span class='term' data-tooltip='Format flottant 8 bits.'>FP8</span> (recombinaison en BF16), divisant par deux le volume sur le réseau — la quantification (voir <a href='../quantification-llm/'>quantification-llm</a>) au service de la bande passante, pas seulement de la mémoire.</p><p>DeepGEMM<a class='cite' data-cite='10' href='#source-10'>10</a> complète le socle avec des GEMM groupés FP8 (layouts contiguous / masked) pour le calcul des experts. DeepEP + DeepGEMM = la moitié basse de la pile MoE ouverte.</p>"
+    }
+  },
+  "schema-05": {
+    "hot-expert": {
+      title: "Les experts populaires (hot)",
+      eyebrow: "le routeur ne distribue pas uniformément",
+      body: "<p>En production, le routeur envoie beaucoup plus de tokens à certains experts qu'à d'autres. La distribution réelle des requêtes diffère de celle de l'entraînement, donc même un modèle bien équilibré à l'entraînement se déséquilibre au service.</p><p>Le GPU qui héberge un expert populaire reçoit une charge disproportionnée — et comme le all-to-all est synchrone, il devient le straggler.</p>"
+    },
+    "straggler-barrier": {
+      title: "Le straggler commande le barrier",
+      eyebrow: "un déséquilibre de 2× = latence de 2×",
+      body: "<p>Le double all-to-all est <strong>synchrone</strong> : la couche ne peut avancer tant que le GPU le plus chargé n'a pas fini. Le plus lent (<span class='term' data-tooltip='Le nœud le plus lent d’un collectif synchrone, qui impose sa cadence à tous.'>straggler</span>) impose sa cadence à tout le groupe.</p><p>Conséquence directe et impitoyable : un déséquilibre de charge de 2× se paie en latence de 2× sur toute la couche. D'où l'enjeu de l'équilibrage au moment du service.</p>"
+    },
+    "redundant-replica": {
+      title: "EPLB — la redondance d'experts",
+      eyebrow: "répliquer les experts populaires",
+      body: "<p>Idée maîtresse de l'<strong>EPLB</strong><a class='cite' data-cite='9' href='#source-9'>9</a> : plutôt que de placer chaque expert sur un seul GPU, on réplique les experts populaires sur plusieurs GPU et on répartit leurs tokens entre les copies. DeepSeek-V3 en décodage ajoute 32 experts redondants<a class='cite' data-cite='1' href='#source-1'>1</a>.</p><p>Le placement est calculé en mode hiérarchique (respecte les nœuds) ou global (lissage maximal), recalculable quand la charge dérive. Coût : la VRAM des copies n'accueille plus de cache KV.</p>"
+    },
+    "bias-term": {
+      title: "Pourquoi l'entraînement ne suffit pas",
+      eyebrow: "biais sans-loss vs charge réelle",
+      body: "<p>Le biais <em>auxiliary-loss-free</em> de DeepSeek-V3 (détaillé dans <a href='../melange-experts/'>melange-experts</a>) équilibre remarquablement bien la charge à l'entraînement — sans la taxe qualité d'une loss auxiliaire.</p><p>Mais il équilibre pour la distribution d'entraînement, pas pour celle des requêtes réelles. D'où la nécessité d'un équilibrage <strong>au moment du service</strong>, vivant, recalculé — pas fixé une fois pour toutes.</p>"
+    }
+  },
+  "schema-06": {
+    "prefill-pool": {
+      title: "Pool prefill — EP32",
+      eyebrow: "limité par le calcul · 4 nœuds",
+      body: "<p>Le prefill traite le prompt entier d'un coup, en gros lots : phase <strong>limitée par le calcul</strong>. On veut un débit maximal ; un groupe EP modéré suffit et le mode normal de DeepEP domine.</p><p>DeepSeek-V3 sert le prefill en EP32, sur 4 nœuds<a class='cite' data-cite='1' href='#source-1'>1</a>. C'est le régime où le all-to-all a le moins de poids relatif.</p>"
+    },
+    "decode-pool": {
+      title: "Pool decode — EP144",
+      eyebrow: "limité par la mémoire · 18 nœuds",
+      body: "<p>Le decode génère token par token, en petits lots : phase <strong>limitée par la mémoire</strong>, où le all-to-all pèse le plus lourd relativement au calcul. On étale donc les experts sur beaucoup plus de GPU pour minimiser la mémoire de poids par accélérateur.</p><p>DeepSeek-V3 sert le decode en EP144, sur 18 nœuds<a class='cite' data-cite='1' href='#source-1'>1</a> — un groupe EP bien plus large que le prefill.</p>"
+    },
+    "redundancy": {
+      title: "+ 32 experts redondants",
+      eyebrow: "lissage de charge au decode",
+      body: "<p>Le decode large est le régime le plus exposé au straggler (schéma 5) : plus le groupe EP est grand, plus un expert populaire mal placé plombe le barrier. DeepSeek-V3 ajoute donc 32 experts redondants au pool decode<a class='cite' data-cite='1' href='#source-1'>1</a>, via l'EPLB.</p><p>Illustration concrète que la redondance n'est pas un luxe mais une condition de la latence à grande échelle.</p>"
+    },
+    "two-batch-overlap": {
+      title: "Recouvrement à deux lots",
+      eyebrow: "52,3k / 22,3k tokens·s·nœud",
+      body: "<p>Le lot est coupé en deux micro-lots entrelacés : le all-to-all de l'un se déroule pendant le calcul de l'autre. Combiné au hook de DeepEP et à l'EPLB, il masque la communication.</p><p>Résultat mesuré par SGLang sur 96 GPU H100 : 52,3k tokens d'entrée/s et 22,3k tokens de sortie/s par nœud, jusqu'à 5× le débit d'un TP simple<a class='cite' data-cite='8' href='#source-8'>8</a>. Sur GB200 NVL72 : ×3,8 prefill, ×4,8 decode<a class='cite' data-cite='11' href='#source-11'>11</a>.</p>"
+    }
+  },
+  "schema-07": {
+    "sglang": {
+      title: "SGLang",
+      eyebrow: "1ʳᵉ implémentation ouverte P/D + EP",
+      body: "<p>SGLang a livré la première implémentation open source de la désagrégation prefill/decode + EP à grande échelle reproduisant le déploiement DeepSeek<a class='cite' data-cite='8' href='#source-8'>8</a>, avec la pile complète DeepEP + DeepGEMM + EPLB.</p><p>Depuis couplé à la prédiction multi-tokens (+60 % de débit de sortie). C'est la référence de facto pour servir un gros MoE ouvert en 2026.</p>"
+    },
+    "vllm": {
+      title: "vLLM",
+      eyebrow: "DP-attention + EP · DeepEP",
+      body: "<p>vLLM a suivi avec son propre support DP-attention + EP et l'intégration de DeepEP. Le serveur le plus déployé de l'écosystème ouvert applique désormais le même patron canonique.</p><p>Sur la fabric NVL72, son support est encore en cours de maturation (partiel) — d'où le point ◐ du schéma.</p>"
+    },
+    "dynamo": {
+      title: "NVIDIA Dynamo · TensorRT-LLM",
+      eyebrow: "désagrégation + EP jusqu'au NVL72",
+      body: "<p>Côté propriétaire, NVIDIA Dynamo (avec TensorRT-LLM) pousse la désagrégation et l'EP jusqu'au GB200 NVL72, dont la fabric scale-up est taillée pour absorber le all-to-all.</p><p>C'est l'offre la mieux intégrée au matériel du fabricant — au prix de l'ouverture.</p>"
+    },
+    "socle": {
+      title: "Le socle ouvert (DeepSeek)",
+      eyebrow: "DeepEP · DeepGEMM · EPLB",
+      body: "<p>Le trio open source de DeepSeek — <strong>DeepEP</strong> (communication)<a class='cite' data-cite='2' href='#source-2'>2</a>, <strong>DeepGEMM</strong> (calcul FP8)<a class='cite' data-cite='10' href='#source-10'>10</a>, <strong>EPLB</strong> (équilibrage)<a class='cite' data-cite='9' href='#source-9'>9</a> — que la plupart des serveurs intègrent plutôt que de le réimplémenter.</p><p>Fait marquant : un laboratoire de modèles a fourni la couche système de référence de tout un marché. La moitié basse de la pile est un bien commun.</p>"
+    },
+    "nvl72": {
+      title: "La fabric scale-up NVL72",
+      eyebrow: "×3,8 prefill · ×4,8 decode",
+      body: "<p>Le GB200 NVL72 réunit 72 GPU dans un seul domaine de cohérence NVLink. Conséquence directe : le all-to-all <strong>redevient intra-domaine rapide</strong>, et l'asymétrie NVLink/RDMA du schéma 2 se dissout largement.</p><p>SGLang y mesure ×3,8 en prefill et ×4,8 en decode<a class='cite' data-cite='11' href='#source-11'>11</a>. C'est la trajectoire matérielle qui pourrait, à terme, faire disparaître le goulot inter-nœud qui a façonné toute cette ingénierie.</p>"
+    }
+  }
+};
+    /* shape:
+      {
+        'schema-01': {
+          'region-id': { title: '...', body: '<p>...</p>', eyebrow: 'Schéma 1' },
+          ...
+        },
+        ...
+      }
+    */
+
+    const TOOLTIPS = {
+  "ttft": "Time to first token : délai entre l'envoi de la requête et l'arrivée du premier token de la réponse. Métrique critique pour l'expérience utilisateur en streaming.",
+  "llm-judge": "LLM-as-judge : utilisation d'un LLM pour scorer la qualité d'une autre sortie LLM (factualité, pertinence, ton). Permet l'évaluation à l'échelle, mais introduit ses propres biais.",
+  "mcp": "Model Context Protocol : standard ouvert de communication entre LLMs et outils externes, lancé par Anthropic en novembre 2024. Adopté par OpenAI, Google, Microsoft en 2025.",
+  "otlp": "OpenTelemetry Protocol : protocole standardisé (gRPC ou HTTP) pour transporter les signaux d'observabilité (traces, metrics, logs) vers un backend.",
+  "melt": "Metrics, Events, Logs, Traces : les quatre signaux fondamentaux de l'observabilité moderne, popularisés par l'écosystème cloud-native.",
+  "rag": "Retrieval-Augmented Generation : technique qui enrichit le contexte d'un LLM avec des documents récupérés dynamiquement depuis une base vectorielle.",
+  "slo": "Service Level Objective : cible mesurable de qualité de service (ex. 99,9 % des réponses sous 2 secondes). Base contractuelle de l'observabilité opérationnelle."
+};
+    /* shape: { 'CoT': 'Chain-of-Thought : ...', ... } */
+
+    const SOURCES = [
+  {
+    "n": 1,
+    "citation": "OpenTelemetry, <em>AI Agent Observability Standards</em>, OpenTelemetry Blog, mars 2025.",
+    "url": "https://opentelemetry.io/blog/2025/ai-agent-observability/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 2,
+    "citation": "InsightFinder, <em>AI Observability vs Traditional Monitoring</em>, décembre 2025.",
+    "url": "https://insightfinder.com/blog/ai-observability-vs-traditional-monitoring/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 3,
+    "citation": "IBM Think, <em>Observability Trends 2026</em>, IBM Institute for Business Value, mars 2026.",
+    "url": "https://www.ibm.com/think/insights/observability-trends",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 4,
+    "citation": "Dynatrace, <em>Six Observability Predictions for 2026</em>, décembre 2025.",
+    "url": "https://www.dynatrace.com/news/blog/six-observability-predictions-for-2026/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 5,
+    "citation": "Kore.ai, <em>AI Observability: Monitoring &amp; Governing AI Agents</em>, mars 2026.",
+    "url": "https://www.kore.ai/blog/what-is-ai-observability",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 6,
+    "citation": "Voiceflow, <em>What Is AI Agent Observability? A 2026 Guide</em>, mars 2026.",
+    "url": "https://www.voiceflow.com/blog/what-is-ai-agent-observability",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 7,
+    "citation": "Anthropic, <em>Building Effective Agents</em>, whitepaper, décembre 2024.",
+    "url": "https://www.anthropic.com/research/building-effective-agents",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 8,
+    "citation": "Groundcover, <em>AI Agent Observability Guide: Telemetry, Traces, Metrics</em>, février 2026.",
+    "url": "https://www.groundcover.com/learn/observability/ai-agent-observability",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 9,
+    "citation": "N-iX, <em>AI Agent Observability: Practical Framework</em>, décembre 2025.",
+    "url": "https://www.n-ix.com/ai-agent-observability/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 10,
+    "citation": "Langfuse, <em>AI Agent Observability, Tracing &amp; Evaluation</em>, février 2026.",
+    "url": "https://langfuse.com/blog/2024-07-ai-agent-observability-with-langfuse",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 11,
+    "citation": "OpenTelemetry, <em>GenAI Semantic Conventions (specification)</em>, version 1.37, 2026.",
+    "url": "https://opentelemetry.io/docs/specs/semconv/gen-ai/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 12,
+    "citation": "OpenTelemetry, <em>GenAI Agent Spans, Model Spans, Tool Spans, Events</em>, 2026.",
+    "url": "https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-agent-spans/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 13,
+    "citation": "Datadog, <em>LLM Observability + OTel GenAI Semantic Convention support</em>, décembre 2025.",
+    "url": "https://www.datadoghq.com/blog/llm-otel-semantic-convention/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 14,
+    "citation": "Braintrust, <em>AI Observability Tools: Buyer's Guide 2026</em>, janvier 2026.",
+    "url": "https://www.braintrust.dev/articles/best-ai-observability-tools-2026",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 15,
+    "citation": "GetMaxim, <em>Top 5 AI Agent Observability Platforms 2026</em>, décembre 2025.",
+    "url": "https://www.getmaxim.ai/articles/top-5-ai-agent-observability-platforms-in-2026/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 16,
+    "citation": "Traceloop, <em>OpenLLMetry — auto-instrumentation OTel pour 44+ providers LLM</em>, GitHub, 2026.",
+    "url": "https://github.com/traceloop/openllmetry",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 17,
+    "citation": "OpenLIT, <em>OpenLIT SDK — auto-instrumentation 1 ligne LLMs/vector DBs/GPUs</em>, GitHub, 2026.",
+    "url": "https://github.com/openlit/openlit",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 18,
+    "citation": "Gartner, <em>Magic Quadrant for Observability Platforms 2025</em>, juillet 2025.",
+    "url": "https://www.gartner.com/en/documents/6688834",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 19,
+    "citation": "OneUptime, <em>AI Workloads Observability: Cost Crisis</em>, avril 2026.",
+    "url": "https://oneuptime.com/blog/ai-workloads-observability-cost-crisis",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 20,
+    "citation": "Dynatrace, <em>Dynatrace Intelligence — Agentic OS announcement at Perform 2026</em>, février 2026.",
+    "url": "https://www.dynatrace.com/news/blog/dynatrace-intelligence-platform/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 21,
+    "citation": "Splunk, <em>Q1 2026 Observability Update — AI Agent Monitoring</em>, février 2026.",
+    "url": "https://www.splunk.com/en_us/blog/observability/splunk-observability-ai-agent-monitoring-innovations.html",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 22,
+    "citation": "Grafana Labs, <em>Leader Gartner Magic Quadrant Observability 2025 — #1 Completeness of Vision</em>, 2025.",
+    "url": "https://grafana.com/about/press/2025/07/",
+    "accessed": "2026-04-30"
+  }
+];
+    window.SCHEMAS = SCHEMAS;
+
+  </script>
+  <script src="/assets/dossier-app.js" defer></script>
+</body>
+</html>
