@@ -56,7 +56,7 @@ Le compromis se lit finalement en mémoire. Le TP réplique les activations et s
 
 ## 4. DeepEP lu serré
 
-[SCHEMA-04]
+![DeepEP lu serré : mode normal haut débit contre mode faible latence pur-RDMA, recouvrement communication-calcul par hook, et dispatch FP8 avec le socle DeepGEMM.|1200](images/20260729-04-deepep.svg)
 
 Si l'EP a basculé du prototype au standard de production en 2025, c'est en grande partie grâce à un objet précis : **DeepEP**, la bibliothèque de communication *expert-parallel* que DeepSeek a mise en open source en février 2025[^2]. Elle fournit les kernels GPU du double *all-to-all* — précisément le morceau que chaque équipe réécrivait mal dans son coin. La lire de près, c'est comprendre où se joue la performance.
 
