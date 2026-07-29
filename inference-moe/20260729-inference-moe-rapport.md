@@ -71,7 +71,7 @@ Autour de DeepEP, DeepSeek a livré un socle cohérent : **DeepGEMM**[^10], des 
 
 ## 5. Le déséquilibre des experts : le straggler qui commande le barrier
 
-[SCHEMA-05]
+![Le déséquilibre des experts : histogramme de charge avec un expert populaire, le straggler qui bloque le barrier synchrone, et la redondance d'experts de l'EPLB comme parade.|1200](images/20260729-05-desequilibre-experts.svg)
 
 Le talon d'Achille de l'EP est un phénomène simple et impitoyable. Le routeur, en production, ne distribue *pas* les tokens uniformément sur les experts : certains experts sont populaires (*hot*), d'autres presque jamais choisis. Or le double *all-to-all* est **synchrone** : la couche ne peut pas avancer tant que le GPU le plus chargé — celui qui héberge les experts populaires — n'a pas fini. ==Le GPU le plus lent (*straggler*) impose sa cadence à tout le groupe : un déséquilibre de charge de 2× se paie en latence de 2× sur toute la couche.==
 
