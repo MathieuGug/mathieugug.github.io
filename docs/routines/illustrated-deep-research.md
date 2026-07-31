@@ -43,25 +43,18 @@ Lis (Read), dans cet ordre :
 7. **Liste les apps récentes du site** : `ls -lt */*-app.html | head -3`. La plus récente sert de host scaffold préféré — sa CSS/JS framework est déjà battle-tested.
 8. `proces-musk-altman/index.html` (pattern hub par dossier)
 
-Lis aussi `BACKLOG.md` racine. Crée-le s'il n'existe pas avec :
+Lis aussi `BACKLOG.md` racine — il est organisé **par piste éditoriale** depuis le 2026-07-31. Structure attendue (ne la réorganise pas, ne recrée pas l'ancienne) :
 ```markdown
 # Backlog éditorial — illustrated deep research
-_Mis à jour par la routine `Illustrated deep research · mer + ven`._
 
-## En cours / prio haute
-- [ ] (vide)
-
-## Deep dives candidats sur dossiers existants
-- (par dossier)
-
-## Sujets evergreen — backlog
-- (sujets structurels)
-
+## En cours (réservé — ne pas doubler)
+## Piste A — Gouvernance & organisation data/IA
+## Piste B — Cas d'usage métier & ROI mesurable
+## Piste C — Plateformes, outillage & pièges de déploiement
+## Piste D — Data marketing & mesure
 ## Watchlist actu
-- (sorties modèles, audiences, papiers, M&A)
-
+## Filon technique — gelé (ne pas prolonger sans demande explicite de Mathieu)
 ## Déjà couverts (date · slug · angle)
-- (historique anti-répétition)
 ```
 
 ## Phase 1 — Choix du sujet + branche
@@ -121,7 +114,7 @@ Sources tier-1 uniquement. 8-12 sources clés, web_fetch les plus importantes.
 - Liste numérotée des 8-12 sources (URL + 1 ligne pertinence)
 - Liste des 5-7 schémas (brief 1 ligne) AVEC pour chaque schéma 2-4 zones cliquables (modals)
 
-Mets `[ ] <slug>` sous "En cours / prio haute" dans `BACKLOG.md`.
+Mets `[ ] <slug>` sous « En cours (réservé — ne pas doubler) » dans `BACKLOG.md`.
 
 ```
 git add <slug>/.outline.md BACKLOG.md
