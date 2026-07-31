@@ -2,7 +2,7 @@
 _Mis à jour par la routine `Illustrated deep research · mer + ven`._
 
 ## En cours / prio haute
-- [ ] (vide)
+- [ ] pagination-kv-cache (deep dive `kv-cache` suite c) — PagedAttention/RadixAttention lus serré : le KV-cache comme mémoire virtuelle (pagination + partage de préfixes + copy-on-write) et l'économie du prompt caching.
 
 ## Deep dives candidats sur dossiers existants
 - donnees-synthetiques (déjà couvert 2026-05-29) : suites naturelles = (a) deep dive sur les corpus de référence humain-vérifié (FineWeb-Edu, DCLM, RedPajama-V3 — état de l'art curation collective) ; (b) instrumentation pratique de la biodiversité statistique en production (quels prompts adversaires, quelles métriques d'entropie, quel cadencier d'audit) ; (c) ~~machine unlearning au niveau des poids~~ ✓ couvert 2026-06-03.
