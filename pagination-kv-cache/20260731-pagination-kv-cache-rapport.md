@@ -56,7 +56,7 @@ Un arbre radix est une version compacte de l'arbre préfixe (*trie*) où les ar�
 
 L'éviction est le point délicat, et le choix fait est une **politique LRU sur les feuilles** : on évince d'abord la feuille la moins récemment utilisée (une génération ancienne, en bout de branche), ce qui libère de la mémoire tout en préservant les ancêtres — c'est-à-dire les préfixes partagés, les plus précieux, tant qu'ils restent utiles à d'autres branches. Un ancêtre ne devient candidat à l'éviction que lorsque toutes ses feuilles ont disparu et qu'il est lui-même devenu une feuille[^3]. À cette structure s'ajoute un **ordonnancement conscient du cache** (*cache-aware scheduling*) : le *scheduler* traite en priorité les requêtes qui partagent le plus de préfixe avec le contenu déjà en cache, maximisant le taux de réutilisation.
 
-[SCHEMA-04]
+![L'arbre radix du KV-cache : racine = prompt système partagé par tous, branches = contextes et few-shot communs, feuilles = générations récentes évincées en LRU ; ordonnancement conscient du cache.|width=900](images/20260731-04-arbre-radix.svg)
 
 Les gains dépendent entièrement de la structure du trafic, mais sur les charges où le partage de préfixe est massif — dialogues multi-tours, invites *few-shot* répétées, arbres de pensée, agents qui rejouent un long prompt système — SGLang mesurait un débit **jusqu'à 5× supérieur**, atteignant 6,4× sur certains programmes structurés, par rapport aux meilleurs systèmes de l'époque[^3][^4]. Point crucial pour l'adoption : RadixAttention est **compatible** avec la pagination, le *batching* continu et le parallélisme de tenseurs[^4]. Elle ne remplace pas PagedAttention ; elle s'empile dessus. La pagination fournit les blocs partageables ; l'arbre radix décide *quoi* partager entre requêtes et *quand* l'oublier.
 
@@ -70,7 +70,7 @@ Les *extra keys* méritent l'attention, car elles encodent une contrainte de cor
 
 L'éviction, enfin, obéit à une heuristique fine : **le dernier bloc d'une requête est évincé en premier**. Pourquoi ? Parce qu'il hache le plus de tokens (tout le préfixe jusqu'à lui) et se trouve donc le moins susceptible d'être partagé par une autre requête — un préfixe court et générique (le prompt système) est réutilisé par tous, un suffixe long et spécifique par presque personne[^5]. La logique est exactement inverse de l'intuition « dernier entré, premier sorti » : on protège les préfixes courts et populaires, on sacrifie les suffixes longs et rares.
 
-[SCHEMA-05]
+![Le hachage chaîné de l'Automatic Prefix Caching : chaque bloc hache le hash du parent, ses token_ids et des extra_keys (LoRA, multimodal, cache_salt) ; le dernier bloc, le moins partageable, est évincé en premier.|width=1200](images/20260731-05-hash-chaine.svg)
 
 Arbre radix ou hash chaîné, la sémantique est la même — réutiliser les blocs d'un préfixe partagé — et les deux approches coexistent dans l'écosystème (SGLang penche pour l'arbre, vLLM pour le hash ; NVIDIA TensorRT-LLM propose sa propre réutilisation de blocs avec éviction par priorité[^11]). Ce qui compte, c'est que ce substrat technique est devenu, en 2024, un **produit**.
 
