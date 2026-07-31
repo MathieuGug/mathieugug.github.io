@@ -1,0 +1,1698 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Le KV-cache comme mémoire virtuelle</title>
+  <meta name="description" content="La gestion du KV-cache est devenue de la mémoire virtuelle : PagedAttention importe la pagination de l'OS (blocs, table de blocs, copie-sur-écriture), RadixAttention y ajoute le partage automatique de préfixes, et ce substrat a rendu possible le prompt caching facturé −90 %. Deep dive par Mathieu Guglielmino, 31 juillet 2026.">
+  <!-- og:start -->
+<meta name="author" content="Mathieu Guglielmino">
+<link rel="canonical" href="https://mathieugug.github.io/pagination-kv-cache/20260731-pagination-kv-cache-app.html">
+<meta name="keywords" content="IA agentique, Mathieu Guglielmino, agents IA, dossier, pagination, kv, cache">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Mathieu Guglielmino">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:url" content="https://mathieugug.github.io/pagination-kv-cache/20260731-pagination-kv-cache-app.html">
+<meta property="og:title" content="Le KV-cache comme mémoire virtuelle">
+<meta property="og:description" content="La gestion du KV-cache est devenue de la mémoire virtuelle : PagedAttention importe la pagination de l'OS (blocs, table de blocs, copie-sur-écriture), RadixAttention y ajoute le partage automatique de préfixes, et ce substrat a rendu possible le prompt caching facturé −90 %. Deep dive par Mathieu Guglielmino, 31 juillet 2026.">
+<meta property="og:image" content="https://mathieugug.github.io/pagination-kv-cache/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Le KV-cache comme mémoire virtuelle — couverture social">
+<meta property="article:published_time" content="2026-07-31">
+<meta property="article:author" content="Mathieu Guglielmino">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Le KV-cache comme mémoire virtuelle">
+<meta name="twitter:description" content="La gestion du KV-cache est devenue de la mémoire virtuelle : PagedAttention importe la pagination de l'OS (blocs, table de blocs, copie-sur-écriture), RadixAttention y ajoute le partage automatique de préfixes, et ce substrat a rendu possible le prompt caching facturé −90 %. Deep dive par Mathieu Guglielmino, 31 juillet 2026.">
+<meta name="twitter:image" content="https://mathieugug.github.io/pagination-kv-cache/og.png">
+<script type="application/ld+json">
+{"@context": "https://schema.org","@type": "Article","headline": "Le KV-cache comme mémoire virtuelle","description": "La gestion du KV-cache est devenue de la mémoire virtuelle : PagedAttention importe la pagination de l'OS (blocs, table de blocs, copie-sur-écriture), RadixAttention y ajoute le partage automatique de préfixes, et ce substrat a rendu possible le prompt caching facturé −90 %. Deep dive par Mathieu Guglielmino, 31 juillet 2026.","image": "https://mathieugug.github.io/pagination-kv-cache/og.png","url": "https://mathieugug.github.io/pagination-kv-cache/20260731-pagination-kv-cache-app.html","datePublished": "2026-07-31","inLanguage": "fr-FR","author": {"@type": "Person","name": "Mathieu Guglielmino","url": "https://mathieugug.github.io/"},"publisher": {"@type": "Person","name": "Mathieu Guglielmino","url": "https://mathieugug.github.io/"}}
+</script>
+<!-- og:end -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/dossier-app.css">
+  <style>
+    /* ───────── Tokens ───────── */
+    :root {
+      --paper:    #FAF8F3;
+      --paper-2:  #F2EFE7;
+      --ink:      #1A1A1A;
+      --graphite: #5A5A5A;
+      --mist:     #B8B5AE;
+      --rule:     #E5E1D8;
+      --carmine:  #B7332C;
+      --teal:     #1F5560;
+      --mustard:  #B58A2C;
+
+      --serif: 'Spectral', 'Playfair Display', Georgia, serif;
+      --sans:  'Inter', system-ui, sans-serif;
+      --mono:  'JetBrains Mono', 'IBM Plex Mono', monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; max-width: 100vw; }
+    body {
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    header.site {
+      grid-column: 1 / -1;
+      padding: 24px 32px;
+      border-bottom: 1px solid var(--rule);
+      display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap;
+    }
+    header.site .marker {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--carmine);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    header.site h1 {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 1.4rem;
+      margin: 0;
+      letter-spacing: -0.01em;
+    }
+    header.site .meta {
+      margin-left: auto;
+      font-size: 0.85rem;
+      color: var(--graphite);
+    }
+    header.site .meta a { color: var(--carmine); text-decoration: none; }
+    header.site .meta a:hover { text-decoration: underline; }
+    header.site .back {
+      font-family: var(--mono); font-size: 0.72rem;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--graphite); text-decoration: none;
+      white-space: nowrap;
+    }
+    header.site .back:hover { color: var(--carmine); }
+    .menu-toggle {
+      display: none;
+      background: none; border: 1px solid var(--rule);
+      padding: 6px 12px; border-radius: 4px; cursor: pointer;
+      font-family: var(--mono); font-size: 0.8rem;
+    }
+    @media (max-width: 1024px) { .menu-toggle { display: inline-block; } }
+
+    /* ───────── TOC (left) ───────── */
+    #toc {
+      padding: 32px 24px;
+      border-right: 1px solid var(--rule);
+      position: sticky; top: 56px; align-self: start;
+      height: calc(100vh - 56px); overflow-y: auto;
+    }
+    #toc h2 {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--graphite);
+      margin: 0 0 16px;
+    }
+    #toc ol {
+      list-style: none; padding: 0; margin: 0;
+      counter-reset: toc-counter;
+    }
+    #toc li {
+      counter-increment: toc-counter;
+      margin: 0 0 12px;
+      font-size: 0.92rem;
+      line-height: 1.4;
+    }
+    #toc li::before {
+      content: counter(toc-counter, decimal-leading-zero) ".";
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--mist);
+      margin-right: 8px;
+    }
+    #toc a {
+      color: var(--ink);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+    }
+    #toc a:hover, #toc a.active {
+      color: var(--carmine);
+      border-bottom-color: currentColor;
+    }
+
+    /* ───────── Main report ───────── */
+    main#report {
+      padding: 56px 48px 96px;
+      min-width: 0;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+    main#report > .lead {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 1.2rem;
+      color: var(--graphite);
+      line-height: 1.5;
+      margin: 0 0 48px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--rule);
+    }
+    main h1.report-title {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 2.6rem;
+      line-height: 1.1;
+      letter-spacing: -0.025em;
+      margin: 0 0 16px;
+    }
+    main h2 {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 1.55rem;
+      letter-spacing: -0.01em;
+      margin: 3.5rem 0 1rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--rule);
+    }
+    main h3 {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: 1.18rem;
+      margin: 2rem 0 0.6rem;
+    }
+    main p { margin: 0 0 1.1rem; }
+    main ul, main ol { margin: 0 0 1.1rem; padding-left: 1.4rem; }
+    main li { margin-bottom: 0.4rem; }
+    main blockquote {
+      margin: 1.5rem 0;
+      padding: 12px 20px;
+      border-left: 3px solid var(--carmine);
+      background: var(--paper-2);
+      font-style: italic;
+      color: var(--graphite);
+    }
+    main code {
+      font-family: var(--mono);
+      font-size: 0.88em;
+      background: var(--paper-2);
+      padding: 2px 5px; border-radius: 3px;
+      overflow-wrap: anywhere;
+    }
+    main pre {
+      margin: 1.5rem 0;
+      padding: 14px 16px;
+      background: var(--paper-2);
+      border-radius: 4px;
+      overflow-x: auto;
+      max-width: 100%;
+      font-size: 0.85em;
+      line-height: 1.5;
+      -webkit-overflow-scrolling: touch;
+    }
+    main pre code {
+      background: transparent;
+      padding: 0;
+      border-radius: 0;
+      font-size: 1em;
+      overflow-wrap: normal;
+    }
+    main mark {
+      background: linear-gradient(transparent 58%, rgba(178, 59, 27, 0.14) 58%);
+      color: inherit;
+      padding: 0 2px;
+    }
+
+    /* ───────── Figures ───────── */
+    .figure {
+      margin: 3rem 0;
+      padding: 24px 0;
+      border-top: 1px solid var(--rule);
+      border-bottom: 1px solid var(--rule);
+      position: relative;
+    }
+    .figure svg {
+      width: 100%; height: auto;
+      display: block;
+      margin: 0 auto;
+    }
+    /* State-aware figure breakout on desktop — figure adapts to sources panel state,
+       capped at 80% of the available width so wide schémas keep some air:
+       - Default (sources expanded): 80% of the main-cell (between TOC and sources)
+       - .layout.sources-collapsed: 80% of the TOC-right → viewport-right span
+       Neither state overlaps a visible sidebar. Smooth 280ms transition.
+       M = max(48px, (0.8 × main-cell width - 664px) / 2), where 664px is the text
+       column (760px border-box - 2×48px padding). The 48px floor keeps a schema
+       from ever rendering narrower than the prose column on ~1440px laptops.
+       Full math + derivation: skill illustrated-deep-research, companion-app.md § 5. */
+    @media (min-width: 1025px) {
+      .figure {
+        margin-left: calc(-1 * max(48px, 40vw - 556px));
+        margin-right: calc(-1 * max(48px, 40vw - 556px));
+        transition: margin-left 280ms ease, margin-right 280ms ease;
+        padding-left: clamp(16px, 3vw, 48px);
+        padding-right: clamp(16px, 3vw, 48px);
+        border-radius: 0;
+      }
+      .layout.sources-collapsed .figure {
+        margin-left: calc(-1 * max(48px, 40vw - 428px));
+        margin-right: calc(-1 * max(48px, 40vw - 428px));
+      }
+      .figure-caption {
+        max-width: 760px;
+        margin-left: auto;
+        margin-right: auto;
+        padding: 0 48px;
+      }
+    }
+    .figure-caption {
+      font-size: 0.88rem;
+      color: var(--graphite);
+      font-style: italic;
+      margin-top: 12px;
+      padding: 0 8px;
+    }
+    .figure svg .interactive { cursor: pointer; transition: filter 140ms; }
+    .figure svg .interactive:hover,
+    .figure svg .interactive:focus-visible { outline: none; }
+    .figure svg .interactive:hover rect,
+    .figure svg .interactive:focus-visible rect,
+    .figure svg .interactive:hover path:not([fill="none"]),
+    .figure svg .interactive:focus-visible path:not([fill="none"]),
+    .figure svg .interactive:hover circle,
+    .figure svg .interactive:focus-visible circle {
+      stroke: var(--carmine);
+      stroke-width: 2.5;
+    }
+    .figure svg .interactive:focus-visible {
+      filter: drop-shadow(0 0 0 var(--carmine));
+    }
+
+    /* ───────── Sources sidebar (right) ───────── */
+    #sources {
+      padding: 32px 24px;
+      border-left: 1px solid var(--rule);
+      background: var(--paper-2);
+      position: sticky; top: 56px; align-self: start;
+      height: calc(100vh - 56px); overflow-y: auto;
+      transition: transform 280ms ease, opacity 200ms ease;
+    }
+    #sources .sources-inner { display: block; }
+
+    @media (max-width: 1024px) {
+      .menu-toggle { display: inline-block !important; }
+      header.site { padding: 14px 16px; gap: 10px; flex-wrap: wrap; }
+      header.site h1 { font-size: 1.05rem; min-width: 0; overflow-wrap: break-word; word-break: break-word; }
+      header.site .meta { font-size: 0.75rem; }
+      header.site .back { font-size: 0.7rem; letter-spacing: 0.08em; }
+      main#report { padding: 28px 18px 56px; max-width: 100%; min-width: 0; }
+      main h1.report-title { font-size: 1.8rem; overflow-wrap: break-word; word-break: break-word; }
+      main#report > .lead { font-size: 1.02rem; margin-bottom: 32px; padding-bottom: 18px; }
+      main h2 { font-size: 1.25rem; margin: 2.4rem 0 0.8rem; overflow-wrap: break-word; word-break: break-word; }
+      main h3 { font-size: 1.05rem; overflow-wrap: break-word; }
+      main p, main ul, main ol { overflow-wrap: break-word; word-break: break-word; }
+      .figure { margin: 2rem 0; padding: 16px 0; max-width: 100%; overflow: hidden; }
+      .figure svg { width: 100%; max-width: 100%; height: auto; }
+      main table {
+        display: block; max-width: 100%;
+        overflow-x: auto; -webkit-overflow-scrolling: touch;
+      }
+      main th, main td { white-space: normal; }
+    }
+    #sources h2 {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--graphite);
+      margin: 0 0 16px;
+    }
+    #sources ol { list-style: none; padding: 0; margin: 0; }
+    #sources li {
+      font-size: 0.82rem;
+      line-height: 1.5;
+      margin: 0 0 16px;
+      padding: 12px 14px;
+      border-radius: 4px;
+      border: 1px solid transparent;
+      transition: border-color 220ms, background 220ms;
+    }
+    #sources li .cite-num {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--carmine);
+      margin-right: 6px;
+    }
+    #sources li a {
+      display: inline-block;
+      margin-top: 4px;
+      color: var(--teal);
+      text-decoration: none;
+      font-size: 0.78rem;
+    }
+    #sources li a:hover { text-decoration: underline; }
+    #sources li .accessed {
+      display: block;
+      margin-top: 4px;
+      color: var(--mist);
+      font-style: italic;
+      font-size: 0.74rem;
+    }
+    #sources li.highlight {
+      background: var(--paper);
+      border-color: var(--carmine);
+    }
+
+    /* ───────── Print ───────── */
+    @media print {
+      .layout { grid-template-columns: 1fr; }
+      #toc, #sources, #modal-root, #zoom-overlay, .menu-toggle, .zoom-btn { display: none; }
+      main#report { max-width: none; padding: 0; }
+      .figure { page-break-inside: avoid; }
+    }
+
+    /* === infographie A4 portrait (exec sum visuelle) — pattern partagé === */
+    main .figure.figure--portrait,
+    .layout main .figure.figure--portrait,
+    .layout.sources-collapsed main .figure.figure--portrait {
+      margin-top: 3rem; margin-bottom: 3rem;
+      padding: 0 !important; border: none !important;
+      border-top: none !important; border-bottom: none !important;
+      width: auto;
+    }
+    @media (max-width: 1024px) {
+      main .figure.figure--portrait {
+        margin-left: auto !important; margin-right: auto !important;
+        max-width: 100%;
+      }
+    }
+    @media (min-width: 1025px) {
+      main .figure.figure--portrait,
+      .layout main .figure.figure--portrait,
+      .layout.sources-collapsed main .figure.figure--portrait {
+        margin-left: -60px !important; margin-right: -60px !important;
+        max-width: calc(100% + 120px);
+      }
+    }
+    @media (min-width: 1440px) {
+      main .figure.figure--portrait,
+      .layout main .figure.figure--portrait,
+      .layout.sources-collapsed main .figure.figure--portrait {
+        margin-left: -100px !important; margin-right: -100px !important;
+        max-width: calc(100% + 200px);
+      }
+    }
+    main .figure--portrait .figure-portrait-link { display: block; width: 100%; border: 1px solid var(--rule); background: var(--paper); border-radius: 2px; cursor: zoom-in; transition: box-shadow 220ms ease, border-color 220ms ease; overflow: hidden; }
+    main .figure--portrait .figure-portrait-link:hover { box-shadow: 0 8px 28px rgba(30,30,42,0.14); border-color: var(--accent); }
+    main .figure--portrait img { display: block; width: 100%; height: auto; }
+    main .figure--portrait .figure-caption { max-width: 100%; margin: 14px auto 0; padding: 0 8px; text-align: center; }
+    /* Sigil MG remonté sur les A4 portrait (au-dessus du header SVG, pas sur le titre) */
+    main .figure--portrait .schema-sigil {
+      top: 10px !important;
+      right: 14px !important;
+      width: 30px !important; height: 30px !important;
+      opacity: 0.60 !important;
+    }
+    @media (max-width: 640px) {
+      main .figure--portrait .schema-sigil { top: 8px !important; right: 10px !important; width: 24px !important; height: 24px !important; }
+    }
+
+    /* === quiz cards (vérification de compréhension) — pattern partagé avec evaluation-agentique === */
+    .quiz-card {
+      margin: 2rem 0 2.4rem;
+      padding: 18px 22px;
+      background: var(--paper-2);
+      border-left: 3px solid var(--carmine);
+      border-radius: 2px;
+    }
+    .quiz-card__head {
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .quiz-card__eyebrow {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--graphite);
+      flex-basis: 100%;
+      margin: 0 0 0.25rem;
+    }
+    .quiz-card__title {
+      font-family: var(--serif);
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin: 0;
+      flex: 1 1 auto;
+      color: var(--ink);
+    }
+    .quiz-card__toggle {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.06em;
+      background: transparent;
+      border: 1px solid var(--mist);
+      color: var(--ink);
+      padding: 6px 14px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: color .15s, border-color .15s;
+    }
+    .quiz-card__toggle:hover, .quiz-card__toggle:focus-visible {
+      color: var(--carmine);
+      border-color: var(--carmine);
+      outline: none;
+    }
+    .quiz-card__body {
+      margin-top: 1.2rem;
+      padding-top: 1rem;
+      border-top: 1px dashed var(--rule);
+    }
+    .quiz-card__body[hidden] { display: none; }
+
+    .quiz-q { margin: 0; padding: 0; }
+    .quiz-q + .quiz-q { margin-top: 1.6rem; padding-top: 1.6rem; border-top: 1px dashed var(--rule); }
+    .quiz-q fieldset { border: 0; padding: 0; margin: 0; }
+    .quiz-q__stem {
+      font-family: var(--serif);
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--ink);
+      padding: 0;
+      margin: 0 0 0.9rem;
+    }
+    .quiz-q__options { list-style: none; padding: 0; margin: 0 0 1rem; }
+    .quiz-q__options li {
+      margin: 0;
+      padding: 8px 0;
+      border-top: 1px solid var(--rule);
+    }
+    .quiz-q__options li:last-child { border-bottom: 1px solid var(--rule); }
+    .quiz-q__options label {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      cursor: pointer;
+      padding: 4px 0;
+    }
+    .quiz-q__options input { margin: 0.3em 0 0; flex: 0 0 auto; accent-color: var(--carmine); }
+    .quiz-q__options label > span { flex: 1; line-height: 1.5; }
+
+    .quiz-q__explain {
+      font-size: 0.92rem;
+      margin: 0.5rem 0 0 1.7rem;
+      padding: 8px 12px;
+      background: var(--paper);
+      border-left: 2px solid var(--mist);
+      color: var(--graphite);
+    }
+    .quiz-q__explain[hidden] { display: none; }
+    .quiz-q__options li.is-correct .quiz-q__explain,
+    .quiz-q__options li.expected .quiz-q__explain { border-left-color: var(--teal); }
+    .quiz-q__options li.is-wrong .quiz-q__explain { border-left-color: var(--carmine); }
+    .quiz-q__options li.is-correct > label > span,
+    .quiz-q__options li.expected > label > span {
+      background-image: linear-gradient(transparent 60%, rgba(31, 85, 96, 0.14) 60%);
+      background-size: 100% 1.5em;
+      background-repeat: repeat-y;
+    }
+    .quiz-q__options li.is-wrong > label > span {
+      background-image: linear-gradient(transparent 60%, rgba(183, 51, 44, 0.14) 60%);
+      background-size: 100% 1.5em;
+      background-repeat: repeat-y;
+    }
+
+    .quiz-q__check {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      background: var(--ink);
+      color: var(--paper);
+      border: 0;
+      padding: 8px 16px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .quiz-q__check:hover, .quiz-q__check:focus-visible { background: var(--carmine); outline: none; }
+    .quiz-q__check:disabled { background: var(--mist); cursor: not-allowed; }
+
+    .quiz-q__verdict {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      margin: 1rem 0 0;
+      padding: 8px 12px;
+      border-left: 2px solid var(--graphite);
+    }
+    .quiz-q__verdict[hidden] { display: none; }
+    .quiz-q__verdict.is-correct { border-left-color: var(--teal); color: var(--teal); }
+    .quiz-q__verdict.is-wrong { border-left-color: var(--carmine); color: var(--carmine); }
+
+    .quiz-q__retry {
+      font-family: var(--mono);
+      font-size: 0.74rem;
+      letter-spacing: 0.06em;
+      background: transparent;
+      border: 0;
+      color: var(--graphite);
+      padding: 6px 0;
+      margin: 0.6rem 0 0;
+      cursor: pointer;
+      text-decoration: underline;
+      text-decoration-color: var(--mist);
+      text-underline-offset: 3px;
+    }
+    .quiz-q__retry:hover, .quiz-q__retry:focus-visible { color: var(--ink); text-decoration-color: var(--carmine); outline: none; }
+    .quiz-q__retry[hidden] { display: none; }
+
+    /* === callouts de renvoi vers d'autres dossiers (pattern partagé avec agent-sdk) === */
+    main .callout { display: grid; grid-template-columns: 280px 1fr; gap: 0; align-items: stretch; margin: 2.4rem 0; padding: 0; background: var(--paper); border-left: 3px solid var(--teal); border-radius: 2px; transition: grid-template-columns 320ms cubic-bezier(.2,.7,.2,1); }
+    main .callout:hover { grid-template-columns: 440px 1fr; }
+    main .callout > .callout-thumb-link { position: relative; display: block; width: 100%; height: 100%; min-height: 200px; overflow: hidden; border-radius: 0; background: transparent; border: 0; border-right: 1px solid var(--rule); cursor: zoom-in; padding: 0; -webkit-appearance: none; appearance: none; font: inherit; color: inherit; text-align: left; transition: filter 200ms ease; }
+    main .callout > .callout-thumb-link:hover { filter: drop-shadow(0 4px 14px rgba(183,51,44,0.18)); border-right-color: var(--carmine); }
+    main .callout > .callout-thumb-link:focus-visible { outline: 2px solid var(--carmine); outline-offset: -2px; }
+    main .callout > .callout-thumb-link img.callout-thumb { width: 100%; height: 100%; object-fit: contain; object-position: center center; display: block; padding: 0; }
+    main .callout > .callout-thumb-link::after { content: '⛶ AGRANDIR'; position: absolute; top: 10px; right: 10px; padding: 4px 9px; font-family: var(--mono); font-size: 9.5px; font-weight: 600; letter-spacing: 0.10em; background: rgba(250,248,243,0.94); border: 1px solid var(--rule); border-radius: 2px; color: var(--graphite); opacity: 0; transition: opacity 180ms ease, color 180ms ease, border-color 180ms ease; pointer-events: none; }
+    main .callout > .callout-thumb-link:hover::after, main .callout > .callout-thumb-link:focus-visible::after { opacity: 1; color: var(--carmine); border-color: var(--carmine); }
+    main .callout > .callout-body { min-width: 0; padding: 22px 26px 22px 26px; align-self: center; }
+    main .callout .callout-eyebrow { font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--teal); margin: 0 0 0.45rem; font-weight: 600; }
+    main .callout > .callout-body p { margin: 0; font-size: 0.95rem; line-height: 1.55; color: var(--ink); }
+    main .callout > .callout-body p a { color: var(--carmine); text-decoration: none; border-bottom: 1px dotted var(--carmine); }
+    main .callout > .callout-body p a:hover { color: var(--teal); border-bottom-color: var(--teal); }
+
+    @media (max-width: 1024px) {
+      /* === quiz cards : variantes mobile === */
+      .quiz-card { padding: 14px 16px; margin: 1.6rem 0 2rem; }
+      .quiz-card__head { gap: 0.6rem; }
+      .quiz-card__title { flex-basis: 100%; overflow-wrap: break-word; }
+      .quiz-card__toggle { width: 100%; padding: 12px; min-height: 44px; font-size: 0.82rem; }
+      .quiz-q__check { width: 100%; padding: 12px; min-height: 44px; font-size: 0.82rem; }
+      .quiz-q__options li { padding: 10px 0; }
+      .quiz-q__options label { padding: 8px 0; min-height: 44px; align-items: center; }
+      .quiz-q__explain { margin: 0.5rem 0 0 0; padding: 10px 12px; }
+      .quiz-q__retry { padding: 10px 0; min-height: 44px; }
+    }
+    @media (max-width: 640px) {
+      main .callout, main .callout:hover { grid-template-columns: 1fr; gap: 0; padding: 0; }
+      main .callout > .callout-thumb-link { min-height: 180px; border-right: 0; border-bottom: 1px solid var(--rule); }
+      main .callout > .callout-body { padding: 18px 20px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar" id="topbar">
+    <a href="../index.html">Mathieu <em>Guglielmino</em></a>
+    <span class="dossier-context">KV-cache &amp; mémoire virtuelle</span>
+    <div class="topbar-tools">
+      <button class="menu-toggle" id="toggle-toc">Sommaire</button>
+      <button class="menu-toggle" id="toggle-sources">Sources</button>
+    </div>
+    <nav class="back-nav" aria-label="Navigation retour">
+      <a href="index.html" class="back" title="Revenir au hub du dossier">← Hub</a>
+      <span class="back-sep" aria-hidden="true">·</span>
+      <a href="../index.html#series" class="back" title="Revenir à l'accueil">Accueil</a>
+    </nav>
+  </header>
+  <div class="layout">
+
+    <header class="site">
+      <span class="marker">Deep dive · Systèmes d'inférence</span>
+      <h1>Le KV-cache comme mémoire virtuelle</h1>
+      <span class="meta">
+        Mathieu Guglielmino · 31 juillet 2026
+      </span>
+    </header>
+
+    <nav id="toc" aria-label="Sommaire">
+      <button class="panel-close" type="button" aria-label="Fermer le sommaire">Fermer ✕</button>
+      <h2>Sommaire</h2>
+      <ol>
+        <li><a href="#s-1">1. Un tableau contigu qui gaspille</a></li>
+        <li><a href="#s-2">2. PagedAttention : la mémoire virtuelle</a></li>
+        <li><a href="#s-3">3. Copie-sur-écriture</a></li>
+        <li><a href="#s-4">4. RadixAttention : partager entre requêtes</a></li>
+        <li><a href="#s-5">5. APC : le hash chaîné</a></li>
+        <li><a href="#s-6">6. L'économie du prompt caching</a></li>
+        <li><a href="#s-7">7. Le mur du préfixe</a></li>
+      </ol>
+    </nav>
+
+    <main id="report">
+<h1 class="report-title">Le KV-cache comme mémoire virtuelle</h1>
+      <p class="lead">La gestion du <span class="term" data-tooltip="KV-cache : les clés (K) et valeurs (V) calculées par l'attention pour chaque token passé, mémorisées pour éviter de les recalculer à chaque nouveau token généré.">KV-cache</span> a cessé d'être de l'allocation mémoire pour devenir de la <strong>mémoire virtuelle</strong> : <span class="term" data-tooltip="Algorithme de gestion mémoire du KV-cache introduit par vLLM (SOSP 2023), inspiré de la pagination des systèmes d'exploitation.">PagedAttention</span> importe la pagination des systèmes d'exploitation, <span class="term" data-tooltip="Mécanisme de SGLang (NeurIPS 2024) qui conserve et indexe le KV-cache dans un arbre radix pour réutiliser automatiquement les préfixes partagés entre requêtes.">RadixAttention</span> y ajoute le partage automatique de préfixes, <mark>et c'est ce substrat — pas une optimisation greffée après coup — qui a rendu possible le <em>prompt caching</em> facturé −90 % et qui bute aujourd'hui sur le mur du préfixe.</mark></p>
+      <p class="lead-note"><em>Deep dive prolongeant le dossier <a href="../kv-cache/">L'économie du KV-cache</a>. Là où <code>kv-cache</code> citait PagedAttention et RadixAttention parmi une dizaine de mécanismes, celui-ci les lit ligne à ligne — parce qu'ils partagent une idée sous-estimée : on a cessé de gérer le cache comme un tableau que l'on réserve, pour le gérer comme une mémoire virtuelle que l'on <strong>pagine, partage et duplique à la demande</strong>.</em></p>
+
+      <section>
+      <h2 id="s-1">1. Un tableau contigu qui gaspille 60 à 80 %</h2>
+      <p>Rappelons le coût. Pour un modèle de type <span class="term" data-tooltip="Architecture de réseau de neurones fondée sur le mécanisme d'attention, base des grands modèles de langage actuels.">transformer</span>, chaque token déjà vu laisse dans le cache un vecteur de clés et un vecteur de valeurs par couche et par tête d'attention. Générer le token suivant exige de relire tout ce cache. La taille du cache croît linéairement avec la longueur de séquence et le nombre de requêtes simultanées, et à contexte long elle domine largement la mémoire des poids du modèle. L'inférence en phase de génération est donc <em>bornée par la mémoire</em> : le goulot d'étranglement n'est pas le nombre d'opérations flottantes mais la bande passante et la capacité de la <span class="term" data-tooltip="High Bandwidth Memory : la mémoire embarquée haute vitesse des accélérateurs (GPU/TPU), rare et coûteuse.">mémoire haute vitesse (HBM)</span>.</p>
+      <p>Le problème, jusqu'en 2023, était que cette mémoire précieuse était massivement gaspillée. Les systèmes de service de première génération réservaient pour chaque requête un bloc <strong>contigu</strong> de mémoire dimensionné sur la longueur maximale possible (<code>max_seq_len</code>, souvent 2 048 ou 4 096 tokens), avant même de savoir combien de tokens la requête allait réellement produire. <mark>Un tableau contigu réservé au pire cas, c'est la garantie de gaspiller la mémoire du cas moyen.</mark> Trois formes de gaspillage se cumulaient :</p>
+      <ul>
+        <li><strong>la sur-réservation</strong> — l'écart entre les tokens réservés (<code>max_seq_len</code>) et les tokens effectivement générés, de loin le poste dominant ;</li>
+        <li><strong>la fragmentation interne</strong> — le dernier bloc partiellement rempli d'une séquence ;</li>
+        <li><strong>la fragmentation externe</strong> — les trous inutilisables entre deux réservations contiguës de tailles différentes.</li>
+      </ul>
+      <p>Le diagnostic mesuré par l'équipe vLLM est sévère : les systèmes existants gaspillaient <strong>60 à 80 % de la mémoire du KV-cache</strong><a class="cite" data-cite="1" href="#source-1">1</a>. Or chaque octet gaspillé est une requête de moins servie simultanément, donc un débit plus faible. Le gaspillage mémoire <em>était</em> le plafond de débit.</p>
+      <figure class="figure" id="fig-01"><svg data-schema-id="schema-01" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+    <pattern id="hatch01" width="8" height="8" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+      <line x1="0" y1="0" x2="0" y2="8" stroke="#B7332C" stroke-width="1.4" stroke-opacity="0.35"/>
+    </pattern>
+    <marker id="arrow01" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#5A5A5A"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- HEADER -->
+  <text x="60" y="55" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 01</text>
+  <text x="60" y="92" class="display" font-size="26" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Le tableau contigu qui gaspille 60 à 80 %</text>
+  <text x="60" y="118" class="display" font-size="16" font-style="italic" fill="#5A5A5A">Réserver au pire cas (max_seq_len) fragmente la mémoire du cas moyen — trois gaspillages cumulés</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- axis label -->
+  <text x="60" y="180" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#5A5A5A">MÉMOIRE GPU RÉSERVÉE — trois séquences en réservation contiguë</text>
+
+  <!-- three sequence bars, each reserving max_seq_len -->
+  <!-- Bar A -->
+  <g class="interactive" data-card="used" tabindex="0" role="button" aria-label="KV réellement utilisé">
+    <rect x="60" y="210" width="150" height="60" rx="2" fill="#1F5560" fill-opacity="0.9"/>
+    <text x="135" y="245" class="mono" font-size="11" fill="#FAF8F3" text-anchor="middle">utilisé</text>
+  </g>
+  <g class="interactive" data-card="internal-waste" tabindex="0" role="button" aria-label="Fragmentation interne">
+    <rect x="210" y="210" width="46" height="60" rx="2" fill="#B58A2C" fill-opacity="0.6"/>
+  </g>
+  <g class="interactive" data-card="reserve-slot" tabindex="0" role="button" aria-label="Sur-réservation">
+    <rect x="256" y="210" width="620" height="60" rx="2" fill="url(#hatch01)" stroke="#B7332C" stroke-width="1" stroke-opacity="0.5"/>
+    <text x="566" y="245" class="body" font-size="12" font-style="italic" fill="#B7332C" text-anchor="middle">réservé mais jamais généré (sur-réservation)</text>
+  </g>
+  <text x="895" y="238" class="mono" font-size="10" fill="#5A5A5A">req. A — max_seq_len</text>
+
+  <!-- Bar B -->
+  <g class="interactive" data-card="used" tabindex="0" role="button" aria-label="KV réellement utilisé">
+    <rect x="60" y="284" width="300" height="60" rx="2" fill="#1F5560" fill-opacity="0.9"/>
+    <text x="210" y="319" class="mono" font-size="11" fill="#FAF8F3" text-anchor="middle">utilisé</text>
+  </g>
+  <g class="interactive" data-card="internal-waste" tabindex="0" role="button" aria-label="Fragmentation interne">
+    <rect x="360" y="284" width="30" height="60" rx="2" fill="#B58A2C" fill-opacity="0.6"/>
+  </g>
+  <g class="interactive" data-card="reserve-slot" tabindex="0" role="button" aria-label="Sur-réservation">
+    <rect x="390" y="284" width="486" height="60" rx="2" fill="url(#hatch01)" stroke="#B7332C" stroke-width="1" stroke-opacity="0.5"/>
+  </g>
+  <text x="895" y="312" class="mono" font-size="10" fill="#5A5A5A">req. B — max_seq_len</text>
+
+  <!-- Bar C -->
+  <g class="interactive" data-card="used" tabindex="0" role="button" aria-label="KV réellement utilisé">
+    <rect x="60" y="358" width="110" height="60" rx="2" fill="#1F5560" fill-opacity="0.9"/>
+    <text x="115" y="393" class="mono" font-size="11" fill="#FAF8F3" text-anchor="middle">util.</text>
+  </g>
+  <g class="interactive" data-card="internal-waste" tabindex="0" role="button" aria-label="Fragmentation interne">
+    <rect x="170" y="358" width="52" height="60" rx="2" fill="#B58A2C" fill-opacity="0.6"/>
+  </g>
+  <g class="interactive" data-card="reserve-slot" tabindex="0" role="button" aria-label="Sur-réservation">
+    <rect x="222" y="358" width="654" height="60" rx="2" fill="url(#hatch01)" stroke="#B7332C" stroke-width="1" stroke-opacity="0.5"/>
+  </g>
+  <text x="895" y="386" class="mono" font-size="10" fill="#5A5A5A">req. C — max_seq_len</text>
+
+  <!-- external fragmentation zone -->
+  <g class="interactive" data-card="external-waste" tabindex="0" role="button" aria-label="Fragmentation externe">
+    <rect x="60" y="440" width="816" height="54" rx="3" fill="#1A1A1A" fill-opacity="0.04" stroke="#5A5A5A" stroke-width="1" stroke-dasharray="2 3"/>
+    <text x="80" y="463" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#5A5A5A">FRAGMENTATION EXTERNE</text>
+    <text x="80" y="482" class="body" font-size="11.5" fill="#1A1A1A">Les trous entre réservations contiguës de tailles différentes : inutilisables même s'ils totalisent de la place</text>
+  </g>
+
+  <!-- legend -->
+  <rect x="60" y="524" width="16" height="16" rx="2" fill="#1F5560" fill-opacity="0.9"/>
+  <text x="84" y="537" class="body" font-size="11.5" fill="#1A1A1A">KV réellement utilisé</text>
+  <rect x="260" y="524" width="16" height="16" rx="2" fill="#B58A2C" fill-opacity="0.6"/>
+  <text x="284" y="537" class="body" font-size="11.5" fill="#1A1A1A">fragmentation interne (dernier bloc)</text>
+  <rect x="560" y="524" width="16" height="16" rx="2" fill="url(#hatch01)" stroke="#B7332C" stroke-width="1" stroke-opacity="0.5"/>
+  <text x="584" y="537" class="body" font-size="11.5" fill="#1A1A1A">sur-réservation (poste dominant)</text>
+
+  <!-- verdict callout -->
+  <rect x="60" y="576" width="1080" height="150" rx="3" fill="#B7332C" fill-opacity="0.05" stroke="#B7332C" stroke-width="1.5"/>
+  <text x="88" y="622" class="mono" font-size="46" font-weight="600" fill="#B7332C">60–80 %</text>
+  <text x="300" y="608" class="body" font-size="14" fill="#1A1A1A">de la mémoire du KV-cache gaspillée par les systèmes de service de première génération.</text>
+  <text x="300" y="632" class="body" font-size="14" fill="#1A1A1A">Chaque octet perdu est une requête de moins servie en parallèle — donc un plafond de débit.</text>
+  <text x="300" y="668" class="display" font-size="15" font-style="italic" fill="#1F5560">Le gaspillage mémoire était le plafond de débit. La pagination va le lever.</text>
+  <text x="300" y="700" class="body" font-size="11.5" font-style="italic" fill="#5A5A5A">Diagnostic mesuré par l'équipe vLLM (Kwon et al., SOSP 2023).</text>
+
+  <!-- FOOTER -->
+  <text x="60" y="772" class="body" font-size="10" font-style="italic" letter-spacing="0.02em" fill="#5A5A5A">Source : Kwon et al., PagedAttention (SOSP 2023). Barres illustratives, proportions schématiques.</text>
+</svg>
+<figcaption class="figure-caption"><a class="anchor" href="#fig-01" title="Lien direct vers ce schéma">¶</a> Schéma 1 — Anatomie du gaspillage : réservation contiguë au pire cas, sur-réservation dominante, fragmentations interne et externe. 60 à 80 % perdus.</figcaption></figure>
+      <p>L'analogie qui va tout débloquer est déjà là, en creux : ce problème — allouer efficacement une ressource dont on ignore la taille finale, sans fragmenter, sans réserver au pire cas — les systèmes d'exploitation l'ont résolu il y a un demi-siècle. C'est la mémoire virtuelle.</p>
+      </section>
+
+      <section>
+      <h2 id="s-2">2. PagedAttention : importer la mémoire virtuelle</h2>
+      <p>PagedAttention, présenté par Woosuk Kwon et ses coauteurs à SOSP 2023<a class="cite" data-cite="1" href="#source-1">1</a>, part exactement de cette analogie. En mémoire virtuelle, un processus voit un espace d'adressage contigu (des <em>pages</em>) que le système d'exploitation projette, via une <em>table des pages</em>, sur des cadres physiques (<em>frames</em>) dispersés n'importe où dans la RAM. Le processus n'a jamais besoin que la mémoire physique soit contiguë ; l'indirection de la table des pages le lui fait croire.</p>
+      <p>PagedAttention applique cette mécanique au KV-cache. Le cache d'une séquence est découpé en <strong>blocs de taille fixe</strong> — 16 tokens par défaut chez vLLM, paramétrable via <code>--block-size</code><a class="cite" data-cite="1" href="#source-1">1</a><a class="cite" data-cite="2" href="#source-2">2</a>. Chaque bloc contient les clés et valeurs de ces 16 tokens contigus <em>logiquement</em>. Mais physiquement, ces blocs sont dispersés dans un pool global de mémoire GPU, à des emplacements quelconques. Une <span class="term" data-tooltip="Table de blocs (block table) : la structure d'indirection qui associe à chaque bloc logique d'une séquence l'adresse de son bloc physique — l'équivalent d'une table des pages.">table de blocs</span> associe à chaque bloc logique de la séquence l'adresse de son bloc physique. <mark>Le cache d'attention n'est plus un tableau contigu réservé par requête : c'est un espace paginé, indexé par indirection.</mark></p>
+      <p>Le tour de force est que le noyau de calcul de l'attention est réécrit pour lire des clés et valeurs stockées dans un espace <strong>non contigu</strong>. C'est là toute la subtilité de « PagedAttention » : l'attention classique suppose des clés/valeurs contiguës en mémoire ; le noyau paginé, lui, suit la table de blocs pour aller chercher chaque bloc où qu'il soit. On récupère ainsi la flexibilité de la pagination sans renoncer à l'efficacité du noyau d'attention.</p>
+      <figure class="figure" id="fig-02"><svg data-schema-id="schema-02" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+    <marker id="arrow02" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#5A5A5A"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- HEADER -->
+  <text x="60" y="55" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 02</text>
+  <text x="60" y="92" class="display" font-size="26" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">La table de blocs : une table des pages pour le cache d'attention</text>
+  <text x="60" y="118" class="display" font-size="16" font-style="italic" fill="#5A5A5A">Même mécanique que la mémoire virtuelle de l'OS — l'indirection projette une vue logique contiguë sur des blocs physiques épars</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- OS analogy band (top) -->
+  <g class="interactive" data-card="os-analogy" tabindex="0" role="button" aria-label="Analogie mémoire virtuelle de l'OS">
+    <rect x="60" y="164" width="1080" height="200" rx="3" fill="#5A5A5A" fill-opacity="0.05" stroke="#B8B5AE" stroke-width="1" stroke-dasharray="2 3"/>
+    <text x="80" y="190" class="mono" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#5A5A5A">LE MODÈLE OS — mémoire virtuelle (rappel)</text>
+
+    <!-- virtual pages -->
+    <text x="150" y="216" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">pages virtuelles</text>
+    <rect x="95" y="226" width="110" height="30" rx="2" fill="#B8B5AE" fill-opacity="0.35"/><text x="150" y="246" class="mono" font-size="10" fill="#1A1A1A" text-anchor="middle">page 0</text>
+    <rect x="95" y="260" width="110" height="30" rx="2" fill="#B8B5AE" fill-opacity="0.35"/><text x="150" y="280" class="mono" font-size="10" fill="#1A1A1A" text-anchor="middle">page 1</text>
+    <rect x="95" y="294" width="110" height="30" rx="2" fill="#B8B5AE" fill-opacity="0.35"/><text x="150" y="314" class="mono" font-size="10" fill="#1A1A1A" text-anchor="middle">page 2</text>
+
+    <!-- page table -->
+    <text x="370" y="216" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">table des pages</text>
+    <rect x="300" y="226" width="140" height="98" rx="2" fill="#FAF8F3" stroke="#B8B5AE" stroke-width="0.75"/>
+    <text x="316" y="248" class="mono" font-size="10" fill="#1A1A1A">page 0 → cadre 12</text>
+    <text x="316" y="272" class="mono" font-size="10" fill="#1A1A1A">page 1 → cadre 03</text>
+    <text x="316" y="296" class="mono" font-size="10" fill="#1A1A1A">page 2 → cadre 20</text>
+
+    <!-- frames -->
+    <text x="720" y="216" class="body" font-size="11" fill="#5A5A5A" text-anchor="middle">cadres physiques (RAM) — dispersés</text>
+    <rect x="540" y="226" width="70" height="30" rx="2" fill="#E5E1D8"/><text x="575" y="246" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">c03</text>
+    <rect x="620" y="226" width="70" height="30" rx="2" fill="#E5E1D8"/><text x="655" y="246" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">c12</text>
+    <rect x="700" y="226" width="70" height="30" rx="2" fill="#E5E1D8"/><text x="735" y="246" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">c20</text>
+    <rect x="780" y="226" width="70" height="30" rx="2" fill="#E5E1D8"/><text x="815" y="246" class="mono" font-size="9" fill="#5A5A5A" text-anchor="middle">c21</text>
+    <text x="540" y="300" class="body" font-size="12" font-style="italic" fill="#5A5A5A">Un problème vieux d'un demi-siècle,</text>
+    <text x="540" y="318" class="body" font-size="12" font-style="italic" fill="#5A5A5A">déjà résolu.</text>
+    <line x1="205" y1="241" x2="298" y2="241" stroke="#5A5A5A" stroke-width="0.9" marker-end="url(#arrow02)"/>
+    <line x1="440" y1="270" x2="533" y2="241" stroke="#5A5A5A" stroke-width="0.9" marker-end="url(#arrow02)"/>
+  </g>
+
+  <!-- KV-cache instance band (bottom) -->
+  <text x="60" y="404" class="mono" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#B7332C">L'INSTANCE KV-CACHE — PagedAttention, blocs de 16 tokens</text>
+
+  <!-- logical blocks -->
+  <g class="interactive" data-card="logical-blocks" tabindex="0" role="button" aria-label="Vue logique contiguë de la séquence">
+    <rect x="60" y="420" width="220" height="300" rx="3" fill="#1F5560" fill-opacity="0.05" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="80" y="446" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#1F5560">VUE LOGIQUE</text>
+    <text x="80" y="464" class="body" font-size="11" fill="#5A5A5A">contiguë — 16 tokens / bloc</text>
+    <rect x="80" y="478" width="180" height="52" rx="2" fill="#1F5560" fill-opacity="0.85"/><text x="170" y="500" class="mono" font-size="10" fill="#FAF8F3" text-anchor="middle">bloc logique 0</text><text x="170" y="516" class="mono" font-size="9" fill="#FAF8F3" text-anchor="middle">tokens 0–15</text>
+    <rect x="80" y="536" width="180" height="52" rx="2" fill="#1F5560" fill-opacity="0.85"/><text x="170" y="558" class="mono" font-size="10" fill="#FAF8F3" text-anchor="middle">bloc logique 1</text><text x="170" y="574" class="mono" font-size="9" fill="#FAF8F3" text-anchor="middle">tokens 16–31</text>
+    <rect x="80" y="594" width="180" height="52" rx="2" fill="#1F5560" fill-opacity="0.85"/><text x="170" y="616" class="mono" font-size="10" fill="#FAF8F3" text-anchor="middle">bloc logique 2</text><text x="170" y="632" class="mono" font-size="9" fill="#FAF8F3" text-anchor="middle">tokens 32–47</text>
+    <rect x="80" y="652" width="180" height="52" rx="2" fill="#1F5560" fill-opacity="0.5"/><text x="170" y="674" class="mono" font-size="10" fill="#FAF8F3" text-anchor="middle">bloc logique 3</text><text x="170" y="690" class="mono" font-size="9" fill="#FAF8F3" text-anchor="middle">en cours…</text>
+  </g>
+
+  <!-- block table -->
+  <g class="interactive" data-card="block-table" tabindex="0" role="button" aria-label="La table de blocs, indirection logique vers physique">
+    <rect x="360" y="420" width="240" height="300" rx="3" fill="#B7332C" fill-opacity="0.05" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="380" y="446" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#B7332C">TABLE DE BLOCS</text>
+    <text x="380" y="464" class="body" font-size="11" fill="#5A5A5A">logique → physique</text>
+    <g class="mono" font-size="12" fill="#1A1A1A">
+      <rect x="380" y="478" width="200" height="52" rx="2" fill="#FAF8F3" stroke="#B8B5AE" stroke-width="0.75"/><text x="398" y="510">L0 → <tspan font-weight="600" fill="#B7332C">P07</tspan></text>
+      <rect x="380" y="536" width="200" height="52" rx="2" fill="#FAF8F3" stroke="#B8B5AE" stroke-width="0.75"/><text x="398" y="568">L1 → <tspan font-weight="600" fill="#B7332C">P02</tspan></text>
+      <rect x="380" y="594" width="200" height="52" rx="2" fill="#FAF8F3" stroke="#B8B5AE" stroke-width="0.75"/><text x="398" y="626">L2 → <tspan font-weight="600" fill="#B7332C">P09</tspan></text>
+      <rect x="380" y="652" width="200" height="52" rx="2" fill="#FAF8F3" stroke="#B8B5AE" stroke-width="0.75"/><text x="398" y="684">L3 → <tspan font-weight="600" fill="#B7332C">P04</tspan></text>
+    </g>
+  </g>
+
+  <line x1="262" y1="504" x2="358" y2="504" stroke="#5A5A5A" stroke-width="1" marker-end="url(#arrow02)"/>
+  <line x1="262" y1="562" x2="358" y2="562" stroke="#5A5A5A" stroke-width="1" marker-end="url(#arrow02)"/>
+  <line x1="262" y1="620" x2="358" y2="620" stroke="#5A5A5A" stroke-width="1" marker-end="url(#arrow02)"/>
+  <line x1="262" y1="678" x2="358" y2="678" stroke="#5A5A5A" stroke-width="1" marker-end="url(#arrow02)"/>
+
+  <line x1="600" y1="562" x2="700" y2="562" stroke="#B7332C" stroke-width="1.25" marker-end="url(#arrow02)"/>
+  <text x="650" y="554" class="body" font-size="10" fill="#B7332C" text-anchor="middle">indirection</text>
+
+  <!-- physical pool -->
+  <g class="interactive" data-card="physical-pool" tabindex="0" role="button" aria-label="Pool de blocs physiques et noyau paginé">
+    <rect x="700" y="420" width="440" height="300" rx="3" fill="#1A1A1A" fill-opacity="0.04" stroke="#5A5A5A" stroke-width="1.25"/>
+    <text x="720" y="446" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#1A1A1A">POOL PHYSIQUE — blocs épars</text>
+    <text x="720" y="464" class="body" font-size="10.5" fill="#5A5A5A">teal = requête courante · gris = autres / libre</text>
+    <rect x="720" y="478" width="96" height="46" rx="2" fill="#E5E1D8"/><text x="768" y="506" class="mono" font-size="10" fill="#5A5A5A" text-anchor="middle">P00</text>
+    <rect x="826" y="478" width="96" height="46" rx="2" fill="#E5E1D8"/><text x="874" y="506" class="mono" font-size="10" fill="#5A5A5A" text-anchor="middle">P01</text>
+    <rect x="932" y="478" width="96" height="46" rx="2" fill="#1F5560" fill-opacity="0.85"/><text x="980" y="506" class="mono" font-size="10" fill="#FAF8F3" text-anchor="middle">P02·L1</text>
+    <rect x="1038" y="478" width="96" height="46" rx="2" fill="#E5E1D8"/><text x="1086" y="506" class="mono" font-size="10" fill="#5A5A5A" text-anchor="middle">P03</text>
+    <rect x="720" y="530" width="96" height="46" rx="2" fill="#1F5560" fill-opacity="0.5"/><text x="768" y="558" class="mono" font-size="10" fill="#FAF8F3" text-anchor="middle">P04·L3</text>
+    <rect x="826" y="530" width="96" height="46" rx="2" fill="#E5E1D8"/><text x="874" y="558" class="mono" font-size="10" fill="#5A5A5A" text-anchor="middle">P05</text>
+    <rect x="932" y="530" width="96" height="46" rx="2" fill="#E5E1D8"/><text x="980" y="558" class="mono" font-size="10" fill="#5A5A5A" text-anchor="middle">P06</text>
+    <rect x="1038" y="530" width="96" height="46" rx="2" fill="#1F5560" fill-opacity="0.85"/><text x="1086" y="558" class="mono" font-size="10" fill="#FAF8F3" text-anchor="middle">P07·L0</text>
+    <rect x="720" y="582" width="96" height="46" rx="2" fill="#E5E1D8"/><text x="768" y="610" class="mono" font-size="10" fill="#5A5A5A" text-anchor="middle">P08</text>
+    <rect x="826" y="582" width="96" height="46" rx="2" fill="#1F5560" fill-opacity="0.85"/><text x="874" y="610" class="mono" font-size="10" fill="#FAF8F3" text-anchor="middle">P09·L2</text>
+    <rect x="932" y="582" width="96" height="46" rx="2" fill="#E5E1D8"/><text x="980" y="610" class="mono" font-size="10" fill="#5A5A5A" text-anchor="middle">P10</text>
+    <rect x="1038" y="582" width="96" height="46" rx="2" fill="#E5E1D8"/><text x="1086" y="610" class="mono" font-size="10" fill="#5A5A5A" text-anchor="middle">P11</text>
+    <text x="720" y="662" class="body" font-size="11.5" fill="#1A1A1A">Aucune contiguïté requise : le noyau paginé suit la table pour lire</text>
+    <text x="720" y="680" class="body" font-size="11.5" fill="#1A1A1A">chaque bloc où qu'il soit. <tspan font-weight="600" fill="#1F5560">Gaspillage &lt; 4 %.</tspan></text>
+    <text x="720" y="702" class="body" font-size="11.5" fill="#1A1A1A"><tspan font-weight="600" fill="#B7332C">Débit ×24 vs HuggingFace</tspan>, sans toucher au modèle.</text>
+  </g>
+
+  <!-- FOOTER -->
+  <text x="60" y="772" class="body" font-size="10" font-style="italic" letter-spacing="0.02em" fill="#5A5A5A">Source : Kwon et al., PagedAttention (SOSP 2023) ; blog vLLM (2023). Identifiants de blocs illustratifs.</text>
+</svg>
+<figcaption class="figure-caption"><a class="anchor" href="#fig-02" title="Lien direct vers ce schéma">¶</a> Schéma 2 — La table de blocs : une table des pages appliquée au cache d'attention. La vue logique contiguë se projette sur des blocs physiques épars.</figcaption></figure>
+      <p>Les conséquences sont immédiates. Comme les blocs sont alloués à la demande, un bloc à la fois, il n'y a plus de sur-réservation : une requête qui génère 50 tokens occupe 4 blocs, pas 128. Le seul gaspillage résiduel est la fragmentation interne du dernier bloc — au pire 15 tokens sur 16 — soit <strong>moins de 4 % de gaspillage</strong><a class="cite" data-cite="1" href="#source-1">1</a>, contre 60 à 80 % auparavant. Cette mémoire récupérée se traduit directement en requêtes simultanées supplémentaires, donc en débit. vLLM, le système qui a introduit et popularisé PagedAttention, revendiquait un débit <strong>jusqu'à 24× supérieur à HuggingFace Transformers</strong> et <strong>2 à 4× supérieur</strong> aux meilleurs systèmes de l'époque comme Orca, sans aucune modification de l'architecture du modèle<a class="cite" data-cite="1" href="#source-1">1</a><a class="cite" data-cite="2" href="#source-2">2</a>.</p>
+      <p>Il faut mesurer ce que veut dire « sans modification de l'architecture ». À la différence de la quantification, du mélange d'experts ou de l'attention latente — traités dans <a href="../quantification-llm/">quantification-llm</a>, <a href="../melange-experts/">melange-experts</a> et <a href="../attention-latente/">attention-latente</a>, qui touchent tous aux poids ou au graphe de calcul — la pagination est une pure innovation de <strong>systèmes</strong>. Elle ne change pas le modèle d'un octet ; elle change la manière dont on lui alloue de la mémoire. C'est ce qui explique son adoption fulgurante : n'importe quel modèle existant en bénéficie du jour au lendemain.</p>
+      </section>
+
+      <section>
+      <h2 id="s-3">3. Copie-sur-écriture : partager puis diverger</h2>
+      <p>La pagination ouvre une seconde possibilité, plus fine encore, que le tableau contigu interdisait : le <strong>partage de blocs entre séquences</strong>. Considérons un cas très courant — l'échantillonnage parallèle. On envoie un prompt unique et on demande <em>n</em> complétions différentes (pour en choisir la meilleure, pour du vote majoritaire, pour de la recherche arborescente). Les <em>n</em> séquences partagent exactement le même prompt : leurs clés et valeurs pour la partie prompt sont identiques.</p>
+      <p>Avec une réservation contiguë, on dupliquait <em>n</em> fois la mémoire du prompt — une aberration quand le prompt fait plusieurs milliers de tokens et la complétion quelques dizaines. Avec des blocs paginés, il suffit que les <em>n</em> séquences <strong>pointent vers les mêmes blocs physiques</strong> pour la partie partagée. On tient là exactement la <span class="term" data-tooltip="Copy-on-write : plusieurs séquences partagent un même bloc en lecture ; le bloc n'est copié qu'au moment où l'une d'elles y écrit et diverge des autres.">copie-sur-écriture</span> des systèmes d'exploitation, celle qui rend le <code>fork()</code> d'un processus quasi gratuit.</p>
+      <p>Le mécanisme repose sur un <strong>compteur de références</strong> par bloc physique. Tant que plusieurs séquences lisent le même bloc de prompt, le compteur est supérieur à 1 et le bloc reste partagé, en lecture seule. Au moment où une séquence doit <strong>écrire</strong> dans un bloc partagé — c'est-à-dire dès qu'elle génère son propre token et diverge des autres — le système détecte le compteur &gt; 1, <strong>copie</strong> le bloc dans un nouvel emplacement, décrémente le compteur de l'original, et laisse la séquence écrire dans sa copie privée<a class="cite" data-cite="1" href="#source-1">1</a><a class="cite" data-cite="2" href="#source-2">2</a>. <mark>Les séquences partagent la mémoire du prompt jusqu'à l'instant précis où elles divergent, et pas une écriture plus tôt.</mark></p>
+      <figure class="figure" id="fig-03"><svg data-schema-id="schema-03" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+    <marker id="arrow03b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#5A5A5A"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- HEADER -->
+  <text x="60" y="55" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 03</text>
+  <text x="60" y="92" class="display" font-size="26" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Copie-sur-écriture : partager le prompt jusqu'à la divergence</text>
+  <text x="60" y="118" class="display" font-size="16" font-style="italic" fill="#5A5A5A">Un prompt, k sorties échantillonnées — un compteur de références duplique le bloc au moment précis d'une écriture</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- three time columns -->
+  <text x="230" y="176" class="mono" font-size="11" font-weight="600" letter-spacing="0.1em" fill="#5A5A5A" text-anchor="middle">t₀ — lecture partagée</text>
+  <text x="600" y="176" class="mono" font-size="11" font-weight="600" letter-spacing="0.1em" fill="#B7332C" text-anchor="middle">t₁ — une branche écrit</text>
+  <text x="970" y="176" class="mono" font-size="11" font-weight="600" letter-spacing="0.1em" fill="#5A5A5A" text-anchor="middle">t₂ — copie privée</text>
+  <line x1="415" y1="190" x2="415" y2="600" stroke="#E5E1D8" stroke-width="1" stroke-dasharray="3 4"/>
+  <line x1="785" y1="190" x2="785" y2="600" stroke="#E5E1D8" stroke-width="1" stroke-dasharray="3 4"/>
+
+  <!-- t0: shared -->
+  <g class="interactive" data-card="shared-prompt" tabindex="0" role="button" aria-label="Prompt partagé par k branches">
+    <rect x="70" y="210" width="140" height="40" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/><text x="140" y="235" class="mono" font-size="10.5" fill="#1F5560" text-anchor="middle">branche A · L0→P7</text>
+    <rect x="70" y="272" width="140" height="40" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/><text x="140" y="297" class="mono" font-size="10.5" fill="#1F5560" text-anchor="middle">branche B · L0→P7</text>
+    <rect x="70" y="334" width="140" height="40" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.25"/><text x="140" y="359" class="mono" font-size="10.5" fill="#1F5560" text-anchor="middle">branche C · L0→P7</text>
+  </g>
+  <g class="interactive" data-card="ref-count" tabindex="0" role="button" aria-label="Compteur de références">
+    <rect x="270" y="262" width="120" height="60" rx="3" fill="#1F5560"/><text x="330" y="288" class="mono" font-size="11" fill="#FAF8F3" text-anchor="middle">P7 · prompt</text><text x="330" y="308" class="mono" font-size="12" font-weight="600" fill="#FAF8F3" text-anchor="middle">refcount = 3</text>
+  </g>
+  <line x1="210" y1="230" x2="268" y2="282" stroke="#1F5560" stroke-width="1.1" marker-end="url(#arrow03b)"/>
+  <line x1="210" y1="292" x2="268" y2="292" stroke="#1F5560" stroke-width="1.1" marker-end="url(#arrow03b)"/>
+  <line x1="210" y1="354" x2="268" y2="302" stroke="#1F5560" stroke-width="1.1" marker-end="url(#arrow03b)"/>
+  <text x="230" y="410" class="body" font-size="11.5" font-style="italic" fill="#5A5A5A" text-anchor="middle">un seul exemplaire du prompt</text>
+  <text x="230" y="428" class="body" font-size="11.5" font-style="italic" fill="#5A5A5A" text-anchor="middle">pour les k branches</text>
+
+  <!-- t1: write event -->
+  <g class="interactive" data-card="fork-point" tabindex="0" role="button" aria-label="Point de divergence, détection refcount supérieur à 1">
+    <rect x="460" y="262" width="120" height="60" rx="3" fill="#1F5560"/><text x="520" y="288" class="mono" font-size="11" fill="#FAF8F3" text-anchor="middle">P7 · prompt</text><text x="520" y="308" class="mono" font-size="12" font-weight="600" fill="#FAF8F3" text-anchor="middle">refcount = 3</text>
+    <rect x="620" y="272" width="130" height="40" rx="3" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.5"/><text x="685" y="297" class="mono" font-size="10.5" fill="#B7332C" text-anchor="middle">B veut écrire</text>
+    <line x1="618" y1="292" x2="582" y2="292" stroke="#B7332C" stroke-width="1.5" marker-end="url(#arrow03b)"/>
+  </g>
+  <text x="600" y="372" class="body" font-size="12" fill="#1A1A1A" text-anchor="middle">refcount &gt; 1 détecté</text>
+  <text x="600" y="392" class="body" font-size="12" font-weight="600" fill="#B7332C" text-anchor="middle">→ ne pas écrire en place</text>
+  <text x="600" y="426" class="body" font-size="11.5" font-style="italic" fill="#5A5A5A" text-anchor="middle">l'écriture déclenche la copie,</text>
+  <text x="600" y="444" class="body" font-size="11.5" font-style="italic" fill="#5A5A5A" text-anchor="middle">jamais la lecture</text>
+
+  <!-- t2: forked -->
+  <g class="interactive" data-card="cow-copy" tabindex="0" role="button" aria-label="Bloc copié, tables mises à jour">
+    <rect x="830" y="222" width="120" height="52" rx="3" fill="#1F5560"/><text x="890" y="244" class="mono" font-size="10.5" fill="#FAF8F3" text-anchor="middle">P7 · A & C</text><text x="890" y="262" class="mono" font-size="11" font-weight="600" fill="#FAF8F3" text-anchor="middle">refcount = 2</text>
+    <rect x="830" y="308" width="120" height="52" rx="3" fill="#B7332C"/><text x="890" y="330" class="mono" font-size="10.5" fill="#FAF8F3" text-anchor="middle">P11 copié · B</text><text x="890" y="348" class="mono" font-size="11" font-weight="600" fill="#FAF8F3" text-anchor="middle">refcount = 1</text>
+    <rect x="990" y="210" width="150" height="36" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.1"/><text x="1065" y="233" class="mono" font-size="10" fill="#1F5560" text-anchor="middle">A · L0→P7</text>
+    <rect x="990" y="286" width="150" height="36" rx="3" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.25"/><text x="1065" y="309" class="mono" font-size="10" fill="#B7332C" text-anchor="middle">B · L0→P11</text>
+    <rect x="990" y="330" width="150" height="36" rx="3" fill="#FAF8F3" stroke="#1F5560" stroke-width="1.1"/><text x="1065" y="353" class="mono" font-size="10" fill="#1F5560" text-anchor="middle">C · L0→P7</text>
+    <line x1="950" y1="240" x2="988" y2="228" stroke="#1F5560" stroke-width="1" marker-end="url(#arrow03b)"/>
+    <line x1="950" y1="334" x2="988" y2="304" stroke="#B7332C" stroke-width="1" marker-end="url(#arrow03b)"/>
+    <line x1="950" y1="340" x2="988" y2="348" stroke="#1F5560" stroke-width="1" marker-end="url(#arrow03b)"/>
+  </g>
+  <text x="970" y="410" class="body" font-size="11.5" font-style="italic" fill="#5A5A5A" text-anchor="middle">seule B a sa copie privée ;</text>
+  <text x="970" y="428" class="body" font-size="11.5" font-style="italic" fill="#5A5A5A" text-anchor="middle">A et C partagent toujours P7</text>
+
+  <!-- verdict -->
+  <rect x="60" y="490" width="1080" height="118" rx="3" fill="#B58A2C" fill-opacity="0.07" stroke="#B58A2C" stroke-width="1.5"/>
+  <text x="88" y="534" class="mono" font-size="40" font-weight="600" fill="#B58A2C">−55 %</text>
+  <text x="280" y="522" class="body" font-size="14" fill="#1A1A1A">d'économie de mémoire mesurée en échantillonnage parallèle et beam search : de nombreuses</text>
+  <text x="280" y="544" class="body" font-size="14" fill="#1A1A1A">branches partagent de longs préfixes communs avant de bifurquer.</text>
+  <text x="280" y="580" class="display" font-size="15" font-style="italic" fill="#1F5560">Le partage reste intra-requête : il vit et meurt avec les k complétions d'un même appel.</text>
+
+  <!-- FOOTER -->
+  <text x="60" y="640" class="body" font-size="11.5" fill="#1A1A1A">RadixAttention (schéma 04) fera déborder ce partage au-delà des frontières d'une requête, entre requêtes séparées dans le temps.</text>
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="772" class="body" font-size="10" font-style="italic" letter-spacing="0.02em" fill="#5A5A5A">Source : Kwon et al., PagedAttention (SOSP 2023) ; blog vLLM (2023). Identifiants et refcounts illustratifs.</text>
+</svg>
+<figcaption class="figure-caption"><a class="anchor" href="#fig-03" title="Lien direct vers ce schéma">¶</a> Schéma 3 — Copie-sur-écriture : k branches partagent le prompt via un compteur de références ; le bloc n'est dupliqué qu'à l'écriture, au point de divergence.</figcaption></figure>
+      <p>Pour l'échantillonnage parallèle et la recherche en faisceau (<em>beam search</em>), où de nombreuses branches partagent de longs préfixes communs avant de bifurquer, l'économie de mémoire mesurée atteint <strong>jusqu'à 55 %</strong><a class="cite" data-cite="1" href="#source-1">1</a>, ce qui se retraduit en débit. À ce stade, notons bien le périmètre : ce partage-là reste <strong>intra-requête</strong>. Il vit et meurt avec les <em>n</em> complétions d'un même appel. Ce que RadixAttention va apporter, c'est de faire déborder ce partage au-delà des frontières d'une requête.</p>
+      </section>
+
+      <section>
+      <h2 id="s-4">4. RadixAttention : du partage intra-requête au partage inter-requêtes</h2>
+      <p>Le partage par copie-sur-écriture de PagedAttention est éphémère : les blocs partagés existent le temps d'une requête, puis sont libérés. Mais dans la réalité d'un service, des requêtes <strong>différentes, séparées dans le temps</strong>, partagent elles aussi d'immenses préfixes communs : le même long prompt système en tête de chaque conversation, les mêmes exemples <em>few-shot</em>, le même document de contexte interrogé par dix utilisateurs, les tours successifs d'un même dialogue. Recalculer ces préfixes identiques à chaque requête, c'est refaire un travail déjà fait — et le jeter.</p>
+      <p>RadixAttention, introduit avec le système SGLang par Lianmin Zheng et ses coauteurs (blog LMSYS de janvier 2024<a class="cite" data-cite="4" href="#source-4">4</a>, papier NeurIPS 2024<a class="cite" data-cite="3" href="#source-3">3</a>), rend ce partage <strong>persistant et automatique</strong>. L'idée : au lieu de libérer le KV-cache d'une requête à la fin de sa génération, on le <strong>conserve</strong> et on l'indexe dans un <span class="term" data-tooltip="Radix tree : version compacte d'un arbre préfixe (trie) où les arêtes portent des séquences de tokens de longueur variable — un préfixe partagé n'y est stocké qu'une fois.">arbre radix</span>.</p>
+      <p>Un arbre radix est une version compacte de l'arbre préfixe (<em>trie</em>) où les arêtes portent des séquences de tokens de longueur variable plutôt qu'un token unique. Chaque chemin de la racine à un nœud représente une suite de tokens, et le KV-cache correspondant est attaché le long de ce chemin. Un préfixe partagé n'est donc stocké <strong>qu'une seule fois</strong> : toutes les requêtes dont le début coïncide empruntent le même chemin dans l'arbre et réutilisent les mêmes blocs de cache<a class="cite" data-cite="3" href="#source-3">3</a><a class="cite" data-cite="4" href="#source-4">4</a>. Quatre opérations suffisent à tout gérer : <strong>recherche</strong> du plus long préfixe déjà en cache pour une requête entrante, <strong>insertion</strong> du nouveau suffixe qu'elle génère, <strong>réutilisation</strong> des blocs trouvés, et <strong>éviction</strong> quand la mémoire manque.</p>
+      <p>L'éviction est le point délicat, et le choix fait est une <strong>politique LRU sur les feuilles</strong> : on évince d'abord la feuille la moins récemment utilisée (une génération ancienne, en bout de branche), ce qui libère de la mémoire tout en préservant les ancêtres — c'est-à-dire les préfixes partagés, les plus précieux, tant qu'ils restent utiles à d'autres branches. Un ancêtre ne devient candidat à l'éviction que lorsque toutes ses feuilles ont disparu et qu'il est lui-même devenu une feuille<a class="cite" data-cite="3" href="#source-3">3</a>. À cette structure s'ajoute un <strong>ordonnancement conscient du cache</strong> (<em>cache-aware scheduling</em>) : le <em>scheduler</em> traite en priorité les requêtes qui partagent le plus de préfixe avec le contenu déjà en cache, maximisant le taux de réutilisation.</p>
+      <figure class="figure" id="fig-04"><svg data-schema-id="schema-04" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 900">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+    <marker id="arrow04" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#5A5A5A"/>
+    </marker>
+  </defs>
+
+  <rect width="900" height="900" fill="#FAF8F3"/>
+
+  <!-- HEADER -->
+  <text x="56" y="52" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 04</text>
+  <text x="56" y="88" class="display" font-size="25" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">L'arbre radix : partager entre toutes les requêtes</text>
+  <text x="56" y="114" class="display" font-size="15" font-style="italic" fill="#5A5A5A">Le KV-cache conservé et indexé — un préfixe partagé n'est stocké qu'une fois, l'éviction LRU frappe les feuilles</text>
+  <line x1="56" y1="136" x2="844" y2="136" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- edges first (behind nodes) -->
+  <line x1="450" y1="210" x2="270" y2="330" stroke="#1F5560" stroke-width="2.5"/>
+  <line x1="450" y1="210" x2="630" y2="330" stroke="#1F5560" stroke-width="2.5"/>
+  <line x1="270" y1="380" x2="180" y2="500" stroke="#5A5A5A" stroke-width="1.5"/>
+  <line x1="270" y1="380" x2="360" y2="500" stroke="#5A5A5A" stroke-width="1.5"/>
+  <line x1="630" y1="380" x2="630" y2="500" stroke="#5A5A5A" stroke-width="1.5"/>
+  <line x1="180" y1="548" x2="140" y2="650" stroke="#B8B5AE" stroke-width="1.25"/>
+  <line x1="180" y1="548" x2="240" y2="650" stroke="#B8B5AE" stroke-width="1.25"/>
+  <line x1="360" y1="548" x2="360" y2="650" stroke="#B8B5AE" stroke-width="1.25"/>
+  <line x1="630" y1="548" x2="630" y2="650" stroke="#B8B5AE" stroke-width="1.25"/>
+
+  <!-- ROOT -->
+  <g class="interactive" data-card="root-prefix" tabindex="0" role="button" aria-label="Racine, préfixe système partagé">
+    <rect x="330" y="170" width="240" height="44" rx="4" fill="#1F5560"/>
+    <text x="450" y="190" class="mono" font-size="11" fill="#FAF8F3" text-anchor="middle">RACINE · prompt système</text>
+    <text x="450" y="206" class="mono" font-size="9.5" fill="#FAF8F3" text-anchor="middle">« Tu es un assistant… » — partagé par tous</text>
+  </g>
+
+  <!-- level 1 : shared branches -->
+  <g class="interactive" data-card="shared-branch" tabindex="0" role="button" aria-label="Branche partagée, contexte commun">
+    <rect x="160" y="336" width="220" height="44" rx="4" fill="#1F5560" fill-opacity="0.55"/>
+    <text x="270" y="356" class="mono" font-size="10.5" fill="#FAF8F3" text-anchor="middle">contexte A — document X</text>
+    <text x="270" y="372" class="mono" font-size="9.5" fill="#FAF8F3" text-anchor="middle">interrogé par 5 utilisateurs</text>
+    <rect x="520" y="336" width="220" height="44" rx="4" fill="#1F5560" fill-opacity="0.55"/>
+    <text x="630" y="356" class="mono" font-size="10.5" fill="#FAF8F3" text-anchor="middle">exemples few-shot</text>
+    <text x="630" y="372" class="mono" font-size="9.5" fill="#FAF8F3" text-anchor="middle">réutilisés à chaque appel</text>
+  </g>
+
+  <!-- level 2 : intermediate -->
+  <rect x="90" y="502" width="180" height="42" rx="4" fill="#B8B5AE" fill-opacity="0.3" stroke="#5A5A5A" stroke-width="1"/>
+  <text x="180" y="528" class="mono" font-size="10" fill="#1A1A1A" text-anchor="middle">tour 1 · question U1</text>
+  <rect x="280" y="502" width="160" height="42" rx="4" fill="#B8B5AE" fill-opacity="0.3" stroke="#5A5A5A" stroke-width="1"/>
+  <text x="360" y="528" class="mono" font-size="10" fill="#1A1A1A" text-anchor="middle">tour 1 · question U2</text>
+  <rect x="540" y="502" width="180" height="42" rx="4" fill="#B8B5AE" fill-opacity="0.3" stroke="#5A5A5A" stroke-width="1"/>
+  <text x="630" y="528" class="mono" font-size="10" fill="#1A1A1A" text-anchor="middle">requête few-shot n</text>
+
+  <!-- level 3 : leaves -->
+  <g class="interactive" data-card="leaf-eviction" tabindex="0" role="button" aria-label="Feuilles, éviction LRU">
+    <rect x="90" y="652" width="100" height="40" rx="4" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.5" stroke-dasharray="3 3"/>
+    <text x="140" y="676" class="mono" font-size="9.5" fill="#B7332C" text-anchor="middle">feuille · LRU</text>
+    <rect x="200" y="652" width="90" height="40" rx="4" fill="#FAF8F3" stroke="#B8B5AE" stroke-width="1"/>
+    <text x="245" y="676" class="mono" font-size="9.5" fill="#5A5A5A" text-anchor="middle">génér.</text>
+    <rect x="315" y="652" width="90" height="40" rx="4" fill="#FAF8F3" stroke="#B8B5AE" stroke-width="1"/>
+    <text x="360" y="676" class="mono" font-size="9.5" fill="#5A5A5A" text-anchor="middle">génér.</text>
+    <rect x="585" y="652" width="90" height="40" rx="4" fill="#FAF8F3" stroke="#B8B5AE" stroke-width="1"/>
+    <text x="630" y="676" class="mono" font-size="9.5" fill="#5A5A5A" text-anchor="middle">génér.</text>
+  </g>
+
+  <!-- LRU eviction annotation -->
+  <circle cx="140" cy="730" r="9" fill="#B7332C"/><text x="140" y="734" class="mono" font-size="11" font-weight="600" fill="#FAF8F3" text-anchor="middle">1</text>
+  <line x1="140" y1="694" x2="140" y2="721" stroke="#B7332C" stroke-width="0.9" marker-end="url(#arrow04)"/>
+  <text x="160" y="734" class="body" font-size="11.5" fill="#1A1A1A">On évince d'abord la feuille la moins récemment utilisée — jamais un ancêtre encore partagé.</text>
+  <text x="160" y="752" class="body" font-size="11.5" fill="#5A5A5A">Un ancêtre ne devient évinçable que lorsqu'il est lui-même devenu une feuille.</text>
+
+  <!-- cache-aware scheduling -->
+  <g class="interactive" data-card="cache-aware-sched" tabindex="0" role="button" aria-label="Ordonnancement conscient du cache">
+    <rect x="640" y="404" width="204" height="86" rx="3" fill="#B58A2C" fill-opacity="0.08" stroke="#B58A2C" stroke-width="1.25"/>
+    <text x="656" y="428" class="mono" font-size="9.5" font-weight="600" letter-spacing="0.08em" fill="#B58A2C">CACHE-AWARE SCHEDULING</text>
+    <text x="656" y="450" class="body" font-size="10.5" fill="#1A1A1A">Le scheduler priorise les requêtes</text>
+    <text x="656" y="466" class="body" font-size="10.5" fill="#1A1A1A">qui partagent le plus de préfixe</text>
+    <text x="656" y="482" class="body" font-size="10.5" fill="#1A1A1A">avec le cache — max. de réutilisation.</text>
+  </g>
+
+  <!-- verdict -->
+  <rect x="56" y="784" width="788" height="60" rx="3" fill="#B7332C" fill-opacity="0.05" stroke="#B7332C" stroke-width="1.5"/>
+  <text x="80" y="822" class="mono" font-size="26" font-weight="600" fill="#B7332C">×5</text>
+  <text x="150" y="810" class="body" font-size="12.5" fill="#1A1A1A">jusqu'à ×5 (voire 6,4 sur programmes structurés) de débit sur les charges à fort partage :</text>
+  <text x="150" y="830" class="body" font-size="12.5" fill="#1A1A1A">dialogues multi-tours, few-shot répétés, arbres de pensée. Compatible pagination + batching continu.</text>
+
+  <!-- FOOTER -->
+  <text x="56" y="872" class="body" font-size="10" font-style="italic" letter-spacing="0.02em" fill="#5A5A5A">Source : Zheng et al., SGLang / RadixAttention (NeurIPS 2024) ; blog LMSYS (janv. 2024).</text>
+</svg>
+<figcaption class="figure-caption"><a class="anchor" href="#fig-04" title="Lien direct vers ce schéma">¶</a> Schéma 4 — L'arbre radix du cache : racine = prompt système partagé par tous, feuilles = générations récentes évincées en LRU. Ordonnancement conscient du cache.</figcaption></figure>
+      <p>Les gains dépendent entièrement de la structure du trafic, mais sur les charges où le partage de préfixe est massif — dialogues multi-tours, invites <em>few-shot</em> répétées, arbres de pensée, agents qui rejouent un long prompt système — SGLang mesurait un débit <strong>jusqu'à 5× supérieur</strong>, atteignant 6,4× sur certains programmes structurés, par rapport aux meilleurs systèmes de l'époque<a class="cite" data-cite="3" href="#source-3">3</a><a class="cite" data-cite="4" href="#source-4">4</a>. Point crucial pour l'adoption : RadixAttention est <strong>compatible</strong> avec la pagination, le <em>batching</em> continu et le parallélisme de tenseurs<a class="cite" data-cite="4" href="#source-4">4</a>. Elle ne remplace pas PagedAttention ; elle s'empile dessus. La pagination fournit les blocs partageables ; l'arbre radix décide <em>quoi</em> partager entre requêtes et <em>quand</em> l'oublier.</p>
+      </section>
+
+      <section>
+      <h2 id="s-5">5. APC en production : le hash chaîné</h2>
+      <p>L'arbre radix est élégant, mais tous les systèmes de production ne parcourent pas un arbre à chaque requête. vLLM a popularisé une variante plus légère, l'<span class="term" data-tooltip="Automatic Prefix Caching (APC) : le mécanisme de vLLM qui réutilise les blocs d'un préfixe déjà calculé, identifié par un hachage chaîné plutôt que par un arbre.">Automatic Prefix Caching</span> (APC), qui atteint le même but — réutiliser les blocs d'un préfixe déjà calculé — par un simple mécanisme de <strong>hachage chaîné</strong><a class="cite" data-cite="5" href="#source-5">5</a>.</p>
+      <p>Le principe : chaque bloc du KV-cache reçoit un <em>hash</em> qui l'identifie de façon unique, et ce hash <strong>chaîne</strong> celui du bloc précédent. Concrètement, le hash d'un bloc est calculé à partir de trois ingrédients : le <strong>hash du bloc parent</strong> (le préfixe qui le précède), les <strong>identifiants des tokens</strong> du bloc lui-même, et un ensemble de <strong>clés supplémentaires</strong> (<em>extra keys</em>)<a class="cite" data-cite="5" href="#source-5">5</a>. Comme le hash de chaque bloc dépend récursivement de tout ce qui le précède, deux requêtes obtiennent le même hash pour un bloc <strong>si et seulement si</strong> elles partagent exactement la même suite de tokens depuis le tout début. <mark>Un cache hit exige une correspondance token par token de tout le préfixe, jusqu'au bloc candidat inclus.</mark> Retrouver le préfixe réutilisable devient une simple consultation de table de hachage, sans parcours d'arbre.</p>
+      <p>Les <em>extra keys</em> méritent l'attention, car elles encodent une contrainte de correction souvent négligée : deux prompts textuellement identiques peuvent produire des activations <strong>différentes</strong> si le contexte de calcul diffère. vLLM y range l'identifiant de l'adaptateur <span class="term" data-tooltip="Low-Rank Adaptation : petite matrice d'adaptation greffée sur un modèle de base ; deux LoRA différents produisent des activations différentes à partir du même texte.">LoRA</span> actif, le hash des <strong>entrées multimodales</strong> (une image change les activations même si le texte est identique), et un <strong><code>cache_salt</code></strong> par requête qui permet d'isoler délibérément le cache d'un client — parade minimale contre le partage de cache entre locataires<a class="cite" data-cite="5" href="#source-5">5</a>. Sans ces clés, on servirait à une requête le cache d'une autre qui n'a de commun que les tokens visibles.</p>
+      <p>L'éviction, enfin, obéit à une heuristique fine : <strong>le dernier bloc d'une requête est évincé en premier</strong>. Pourquoi ? Parce qu'il hache le plus de tokens (tout le préfixe jusqu'à lui) et se trouve donc le moins susceptible d'être partagé par une autre requête — un préfixe court et générique (le prompt système) est réutilisé par tous, un suffixe long et spécifique par presque personne<a class="cite" data-cite="5" href="#source-5">5</a>. La logique est exactement inverse de l'intuition « dernier entré, premier sorti » : on protège les préfixes courts et populaires, on sacrifie les suffixes longs et rares.</p>
+      <figure class="figure" id="fig-05"><svg data-schema-id="schema-05" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+    <marker id="arrow05" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#5A5A5A"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- HEADER -->
+  <text x="60" y="55" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 05</text>
+  <text x="60" y="92" class="display" font-size="26" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Le hash chaîné : identifier un préfixe sans parcourir d'arbre</text>
+  <text x="60" y="118" class="display" font-size="16" font-style="italic" fill="#5A5A5A">vLLM Automatic Prefix Caching — le hash d'un bloc dérive de celui du parent, imposant une correspondance exacte du préfixe</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- chained hash formula -->
+  <g class="interactive" data-card="chained-hash" tabindex="0" role="button" aria-label="Le hash chaîné bloc par bloc">
+    <text x="60" y="182" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#B7332C">CHAÎNE DE HACHAGE — chaque bloc hache tout ce qui le précède</text>
+
+    <rect x="60" y="200" width="200" height="72" rx="3" fill="#1F5560" fill-opacity="0.85"/>
+    <text x="160" y="226" class="mono" font-size="10.5" fill="#FAF8F3" text-anchor="middle">bloc 0</text>
+    <text x="160" y="244" class="mono" font-size="9" fill="#FAF8F3" text-anchor="middle">h0 = H(∅, tok₀…₁₅)</text>
+    <text x="160" y="261" class="mono" font-size="9" fill="#FAF8F3" text-anchor="middle">= a3f1</text>
+
+    <rect x="320" y="200" width="200" height="72" rx="3" fill="#1F5560" fill-opacity="0.85"/>
+    <text x="420" y="226" class="mono" font-size="10.5" fill="#FAF8F3" text-anchor="middle">bloc 1</text>
+    <text x="420" y="244" class="mono" font-size="9" fill="#FAF8F3" text-anchor="middle">h1 = H(h0, tok₁₆…₃₁)</text>
+    <text x="420" y="261" class="mono" font-size="9" fill="#FAF8F3" text-anchor="middle">= c7b2</text>
+
+    <rect x="580" y="200" width="200" height="72" rx="3" fill="#1F5560" fill-opacity="0.85"/>
+    <text x="680" y="226" class="mono" font-size="10.5" fill="#FAF8F3" text-anchor="middle">bloc 2</text>
+    <text x="680" y="244" class="mono" font-size="9" fill="#FAF8F3" text-anchor="middle">h2 = H(h1, tok₃₂…₄₇)</text>
+    <text x="680" y="261" class="mono" font-size="9" fill="#FAF8F3" text-anchor="middle">= 9e05</text>
+
+    <line x1="262" y1="236" x2="318" y2="236" stroke="#5A5A5A" stroke-width="1.1" marker-end="url(#arrow05)"/>
+    <line x1="522" y1="236" x2="578" y2="236" stroke="#5A5A5A" stroke-width="1.1" marker-end="url(#arrow05)"/>
+  </g>
+
+  <!-- exact match -->
+  <g class="interactive" data-card="exact-match" tabindex="0" role="button" aria-label="Correspondance exacte du préfixe">
+    <rect x="840" y="200" width="300" height="72" rx="3" fill="#B7332C" fill-opacity="0.06" stroke="#B7332C" stroke-width="1.25"/>
+    <text x="860" y="224" class="body" font-size="11.5" fill="#1A1A1A">Même hash ⇔ même suite de tokens</text>
+    <text x="860" y="242" class="body" font-size="11.5" fill="#1A1A1A">depuis le tout début.</text>
+    <text x="860" y="262" class="body" font-size="11.5" font-weight="600" fill="#B7332C">Un cache hit = match token par token.</text>
+  </g>
+
+  <!-- two requests comparison -->
+  <text x="60" y="322" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#5A5A5A">DEUX REQUÊTES — le partage s'arrête au premier token qui diffère</text>
+  <rect x="60" y="338" width="150" height="40" rx="3" fill="#1F5560" fill-opacity="0.85"/><text x="135" y="363" class="mono" font-size="10" fill="#FAF8F3" text-anchor="middle">a3f1</text>
+  <rect x="220" y="338" width="150" height="40" rx="3" fill="#1F5560" fill-opacity="0.85"/><text x="295" y="363" class="mono" font-size="10" fill="#FAF8F3" text-anchor="middle">c7b2</text>
+  <rect x="380" y="338" width="150" height="40" rx="3" fill="#B58A2C" fill-opacity="0.75"/><text x="455" y="363" class="mono" font-size="10" fill="#FAF8F3" text-anchor="middle">req. X : 9e05</text>
+  <text x="545" y="363" class="body" font-size="11.5" fill="#1F5560">◄ préfixe partagé (hit)</text>
+
+  <rect x="60" y="386" width="150" height="40" rx="3" fill="#1F5560" fill-opacity="0.85"/><text x="135" y="411" class="mono" font-size="10" fill="#FAF8F3" text-anchor="middle">a3f1</text>
+  <rect x="220" y="386" width="150" height="40" rx="3" fill="#1F5560" fill-opacity="0.85"/><text x="295" y="411" class="mono" font-size="10" fill="#FAF8F3" text-anchor="middle">c7b2</text>
+  <rect x="380" y="386" width="150" height="40" rx="3" fill="#B7332C" fill-opacity="0.8"/><text x="455" y="411" class="mono" font-size="10" fill="#FAF8F3" text-anchor="middle">req. Y : 4d1a</text>
+  <text x="545" y="411" class="body" font-size="11.5" fill="#B7332C">◄ diverge ici (miss à partir du bloc 2)</text>
+
+  <!-- extra keys -->
+  <g class="interactive" data-card="extra-keys" tabindex="0" role="button" aria-label="Les clés supplémentaires">
+    <rect x="60" y="454" width="520" height="220" rx="3" fill="#B58A2C" fill-opacity="0.07" stroke="#B58A2C" stroke-width="1.5"/>
+    <text x="80" y="480" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#B58A2C">EXTRA KEYS — au-delà des tokens visibles</text>
+    <text x="80" y="504" class="body" font-size="12" fill="#1A1A1A">Deux prompts textuellement identiques peuvent produire des</text>
+    <text x="80" y="522" class="body" font-size="12" fill="#1A1A1A">activations différentes. Le hash intègre donc aussi :</text>
+    <circle cx="92" cy="548" r="3" fill="#B58A2C"/><text x="106" y="552" class="body" font-size="12" fill="#1A1A1A"><tspan class="mono" font-size="11" fill="#B7332C">LoRA id</tspan> — l'adaptateur actif change les activations</text>
+    <circle cx="92" cy="576" r="3" fill="#B58A2C"/><text x="106" y="580" class="body" font-size="12" fill="#1A1A1A"><tspan class="mono" font-size="11" fill="#B7332C">hash multimodal</tspan> — une image modifie le calcul</text>
+    <circle cx="92" cy="604" r="3" fill="#B58A2C"/><text x="106" y="608" class="body" font-size="12" fill="#1A1A1A"><tspan class="mono" font-size="11" fill="#B7332C">cache_salt</tspan> — isole délibérément un client (parade cross-tenant)</text>
+    <text x="80" y="648" class="body" font-size="11.5" font-style="italic" fill="#5A5A5A">Sans ces clés, on servirait à une requête le cache d'une autre</text>
+    <text x="80" y="666" class="body" font-size="11.5" font-style="italic" fill="#5A5A5A">qui n'a de commun que les tokens visibles.</text>
+  </g>
+
+  <!-- last block eviction -->
+  <g class="interactive" data-card="last-block-evict" tabindex="0" role="button" aria-label="Éviction du dernier bloc en premier">
+    <rect x="620" y="454" width="520" height="220" rx="3" fill="#B7332C" fill-opacity="0.05" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="640" y="480" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#B7332C">ÉVICTION — le dernier bloc part en premier</text>
+    <!-- gradient of reusability -->
+    <rect x="640" y="500" width="120" height="46" rx="2" fill="#1F5560" fill-opacity="0.85"/><text x="700" y="522" class="mono" font-size="9.5" fill="#FAF8F3" text-anchor="middle">bloc système</text><text x="700" y="537" class="mono" font-size="8.5" fill="#FAF8F3" text-anchor="middle">réutilisé par tous</text>
+    <rect x="770" y="500" width="120" height="46" rx="2" fill="#1F5560" fill-opacity="0.55"/><text x="830" y="522" class="mono" font-size="9.5" fill="#FAF8F3" text-anchor="middle">bloc contexte</text><text x="830" y="537" class="mono" font-size="8.5" fill="#FAF8F3" text-anchor="middle">réutilisé souvent</text>
+    <rect x="900" y="500" width="120" height="46" rx="2" fill="#1F5560" fill-opacity="0.3"/><text x="960" y="522" class="mono" font-size="9.5" fill="#1A1A1A" text-anchor="middle">bloc question</text><text x="960" y="537" class="mono" font-size="8.5" fill="#1A1A1A" text-anchor="middle">rarement</text>
+    <rect x="1030" y="500" width="90" height="46" rx="2" fill="#FAF8F3" stroke="#B7332C" stroke-width="1.5" stroke-dasharray="3 3"/><text x="1075" y="522" class="mono" font-size="9.5" fill="#B7332C" text-anchor="middle">dernier</text><text x="1075" y="537" class="mono" font-size="8.5" fill="#B7332C" text-anchor="middle">évincé 1ᵉʳ</text>
+    <text x="640" y="580" class="body" font-size="12" fill="#1A1A1A">Le dernier bloc hache le plus de tokens : c'est le</text>
+    <text x="640" y="598" class="body" font-size="12" fill="#1A1A1A">moins susceptible d'être partagé par une autre requête.</text>
+    <text x="640" y="628" class="display" font-size="13.5" font-style="italic" fill="#1F5560">On protège les préfixes courts et populaires,</text>
+    <text x="640" y="648" class="display" font-size="13.5" font-style="italic" fill="#1F5560">on sacrifie les suffixes longs et rares.</text>
+    <text x="640" y="668" class="body" font-size="11" fill="#5A5A5A">Logique inverse d'un « dernier entré, premier sorti ».</text>
+  </g>
+
+  <!-- FOOTER -->
+  <line x1="60" y1="740" x2="1140" y2="740" stroke="#E5E1D8" stroke-width="0.5"/>
+  <text x="60" y="772" class="body" font-size="10" font-style="italic" letter-spacing="0.02em" fill="#5A5A5A">Source : documentation vLLM, Automatic Prefix Caching (design v1). Valeurs de hash illustratives.</text>
+</svg>
+<figcaption class="figure-caption"><a class="anchor" href="#fig-05" title="Lien direct vers ce schéma">¶</a> Schéma 5 — Le hachage chaîné : chaque bloc hache le hash du parent, ses token_ids et des extra_keys (LoRA, multimodal, cache_salt) ; le dernier bloc est évincé en premier.</figcaption></figure>
+      <p>Arbre radix ou hash chaîné, la sémantique est la même — réutiliser les blocs d'un préfixe partagé — et les deux approches coexistent dans l'écosystème (SGLang penche pour l'arbre, vLLM pour le hash ; NVIDIA TensorRT-LLM propose sa propre réutilisation de blocs avec éviction par priorité<a class="cite" data-cite="11" href="#source-11">11</a>). Ce qui compte, c'est que ce substrat technique est devenu, en 2024, un <strong>produit</strong>.</p>
+      </section>
+
+      <section>
+      <h2 id="s-6">6. L'économie du <em>prompt caching</em></h2>
+      <p>Quand une optimisation de mémoire fait économiser un travail de calcul réel et répétable, elle finit tôt ou tard sur une facture. Le <em>prompt caching</em> est la monétisation directe de RadixAttention et de l'APC.</p>
+      <p>Anthropic l'a lancé en bêta publique le <strong>14 août 2024</strong> et rendu généralement disponible le <strong>17 décembre 2024</strong><a class="cite" data-cite="6" href="#source-6">6</a>. Le modèle de tarification est instructif parce qu'il expose la mécanique sous-jacente. Écrire un préfixe dans le cache coûte <strong>plus cher</strong> qu'un token normal : <strong>1,25× le prix d'entrée</strong> pour une durée de vie (<span class="term" data-tooltip="Time To Live : la durée pendant laquelle une entrée de cache reste valide avant expiration.">TTL</span>) de 5 minutes, <strong>2,0×</strong> pour un <em>TTL</em> d'une heure — c'est le coût de calculer et de stocker le KV-cache. Mais <strong>lire</strong> ce préfixe depuis le cache, à toute requête ultérieure dans la fenêtre de validité, ne coûte que <strong>0,1× le prix d'entrée</strong> : <mark>une réduction de 90 % sur la portion mise en cache, qui est précisément le KV-cache qu'on n'a pas à recalculer.</mark><a class="cite" data-cite="6" href="#source-6">6</a> OpenAI propose une mécanique voisine, entièrement automatique, avec une décote de l'ordre de 50 % sur les tokens d'entrée mis en cache<a class="cite" data-cite="7" href="#source-7">7</a>.</p>
+      <p>Deux détails de conception révèlent la nature du dispositif. D'abord, le minimum de contenu cacheable est de <strong>1 024 tokens</strong> chez Anthropic : en dessous, le jeu n'en vaut pas la chandelle, l'écriture coûterait plus que l'économie<a class="cite" data-cite="6" href="#source-6">6</a> — on retrouve le seuil de rentabilité d'un cache. Ensuite, <strong>toute lecture réinitialise le <em>TTL</em></strong> : un préfixe fréquemment sollicité reste chaud indéfiniment et ne repaie jamais son écriture après le préchauffage initial<a class="cite" data-cite="6" href="#source-6">6</a>. C'est le comportement d'un cache LRU, exposé tel quel au client.</p>
+      <figure class="figure" id="fig-06"><svg data-schema-id="schema-06" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+    <marker id="arrow06" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#5A5A5A"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- HEADER -->
+  <text x="60" y="55" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 06</text>
+  <text x="60" y="92" class="display" font-size="26" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">La mémoire devient une ligne de facturation</text>
+  <text x="60" y="118" class="display" font-size="16" font-style="italic" fill="#5A5A5A">Le prompt caching monétise RadixAttention/APC : écriture chère une fois, lectures amorties à −90 %</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- pricing table left -->
+  <g class="interactive" data-card="cache-write" tabindex="0" role="button" aria-label="Coût d'écriture du cache">
+    <rect x="60" y="170" width="360" height="120" rx="3" fill="#B7332C" fill-opacity="0.05" stroke="#B7332C" stroke-width="1.5"/>
+    <text x="80" y="196" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#B7332C">ÉCRITURE (cache write)</text>
+    <text x="80" y="226" class="mono" font-size="22" font-weight="600" fill="#B7332C">×1,25</text>
+    <text x="200" y="226" class="body" font-size="12" fill="#1A1A1A">du prix d'entrée · TTL 5 min</text>
+    <text x="80" y="258" class="mono" font-size="22" font-weight="600" fill="#B7332C">×2,0</text>
+    <text x="200" y="258" class="body" font-size="12" fill="#1A1A1A">du prix d'entrée · TTL 1 h</text>
+    <text x="80" y="282" class="body" font-size="11" font-style="italic" fill="#5A5A5A">coût de calculer + stocker le KV-cache</text>
+  </g>
+  <g class="interactive" data-card="cache-read" tabindex="0" role="button" aria-label="Coût de lecture du cache">
+    <rect x="60" y="304" width="360" height="120" rx="3" fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="80" y="330" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#1F5560">LECTURE (cache read)</text>
+    <text x="80" y="366" class="mono" font-size="30" font-weight="600" fill="#1F5560">×0,1</text>
+    <text x="210" y="360" class="body" font-size="13" font-weight="600" fill="#1F5560">−90 %</text>
+    <text x="210" y="380" class="body" font-size="12" fill="#1A1A1A">sur la portion mise en cache</text>
+    <text x="80" y="410" class="body" font-size="11" font-style="italic" fill="#5A5A5A">le KV qu'on n'a pas à recalculer · OpenAI : −50 % auto</text>
+  </g>
+
+  <!-- cumulative cost chart right -->
+  <text x="470" y="182" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#5A5A5A">COÛT CUMULÉ — conversation multi-tours, préfixe stable réutilisé</text>
+  <!-- axes -->
+  <line x1="500" y1="200" x2="500" y2="420" stroke="#5A5A5A" stroke-width="1"/>
+  <line x1="500" y1="420" x2="1120" y2="420" stroke="#5A5A5A" stroke-width="1"/>
+  <text x="486" y="206" class="body" font-size="10" fill="#5A5A5A" text-anchor="end">coût</text>
+  <text x="1120" y="440" class="body" font-size="10" fill="#5A5A5A" text-anchor="end">tours →</text>
+  <!-- no-cache line (steep) -->
+  <polyline points="500,410 620,360 740,310 860,260 980,210 1100,160" fill="none" stroke="#B7332C" stroke-width="2.5"/>
+  <text x="1030" y="150" class="body" font-size="11" fill="#B7332C">sans cache</text>
+  <!-- cache line: high first step then shallow -->
+  <polyline points="500,410 560,330 620,318 740,300 860,282 980,264 1100,246" fill="none" stroke="#1F5560" stroke-width="2.5"/>
+  <text x="1040" y="262" class="body" font-size="11" fill="#1F5560">avec cache</text>
+  <!-- break-even marker -->
+  <g class="interactive" data-card="break-even" tabindex="0" role="button" aria-label="Seuil de rentabilité du cache">
+    <circle cx="560" cy="330" r="6" fill="#B58A2C"/>
+    <line x1="560" y1="330" x2="560" y2="200" stroke="#B58A2C" stroke-width="0.75" stroke-dasharray="2 3"/>
+    <text x="572" y="214" class="body" font-size="10.5" fill="#B58A2C">écriture initiale (le pic)</text>
+    <text x="572" y="230" class="body" font-size="10.5" fill="#5A5A5A">min. 1 024 tokens cacheables</text>
+  </g>
+  <text x="640" y="392" class="body" font-size="11" font-style="italic" fill="#5A5A5A">après le préchauffage, chaque tour ne repaie que la lecture à 0,1×</text>
+
+  <!-- TTL reset -->
+  <g class="interactive" data-card="ttl-reset" tabindex="0" role="button" aria-label="Réinitialisation du TTL à chaque lecture">
+    <rect x="60" y="452" width="1080" height="96" rx="3" fill="#B58A2C" fill-opacity="0.07" stroke="#B58A2C" stroke-width="1.5"/>
+    <text x="80" y="478" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#B58A2C">TTL — toute lecture réinitialise le compteur</text>
+    <text x="80" y="504" class="body" font-size="13" fill="#1A1A1A">Un préfixe fréquemment sollicité reste chaud indéfiniment et ne repaie jamais son écriture après le préchauffage.</text>
+    <text x="80" y="528" class="body" font-size="12.5" font-style="italic" fill="#5A5A5A">C'est le comportement d'un cache LRU, exposé tel quel au client. Anthropic : bêta publique août 2024, disponibilité générale déc. 2024.</text>
+  </g>
+
+  <!-- strategic verdict -->
+  <rect x="60" y="576" width="1080" height="150" rx="3" fill="#1F5560" fill-opacity="0.05" stroke="#1F5560" stroke-width="1.5"/>
+  <text x="80" y="606" class="mono" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#1F5560">CONSÉQUENCE STRATÉGIQUE</text>
+  <text x="80" y="638" class="display" font-size="19" font-style="italic" fill="#1A1A1A">L'architecture du service devient l'architecture du prompt.</text>
+  <text x="80" y="668" class="body" font-size="13" fill="#1A1A1A">Seul un préfixe stable se partage → intérêt économique direct à ordonner du plus stable au plus variable :</text>
+  <rect x="80" y="684" width="270" height="30" rx="3" fill="#1F5560" fill-opacity="0.85"/><text x="215" y="704" class="mono" font-size="10.5" fill="#FAF8F3" text-anchor="middle">système + outils (écrit 1×, lu 1000×)</text>
+  <rect x="360" y="684" width="230" height="30" rx="3" fill="#1F5560" fill-opacity="0.5"/><text x="475" y="704" class="mono" font-size="10.5" fill="#FAF8F3" text-anchor="middle">contexte / documents</text>
+  <rect x="600" y="684" width="200" height="30" rx="3" fill="#B7332C" fill-opacity="0.75"/><text x="700" y="704" class="mono" font-size="10.5" fill="#FAF8F3" text-anchor="middle">question utilisateur</text>
+  <text x="820" y="704" class="body" font-size="11.5" font-style="italic" fill="#5A5A5A">mettre la question en tête annule tout.</text>
+
+  <!-- FOOTER -->
+  <text x="60" y="772" class="body" font-size="10" font-style="italic" letter-spacing="0.02em" fill="#5A5A5A">Source : documentation Anthropic (prompt caching) ; documentation OpenAI. Courbes de coût illustratives.</text>
+</svg>
+<figcaption class="figure-caption"><a class="anchor" href="#fig-06" title="Lien direct vers ce schéma">¶</a> Schéma 6 — La structure tarifaire : écriture ×1,25/×2,0, lecture ×0,1 (−90 %), réinitialisation du TTL. L'ordre stable→variable du prompt devient un choix de coût.</figcaption></figure>
+      <p>La conséquence stratégique est que <strong>l'architecture du service devient l'architecture du prompt</strong>. Parce que seul un <em>préfixe</em> stable se partage, l'ingénieur a désormais un intérêt économique direct à structurer ses requêtes du plus stable au plus variable : prompt système et définitions d'outils en tête (écrits une fois, lus des milliers de fois), documents de contexte au milieu, question spécifique de l'utilisateur en fin de prompt. Un ordre différent — mettre la question variable en tête — annule tout le bénéfice du cache. La discipline de <em>prompt engineering</em> n'est plus seulement affaire de qualité de réponse : elle est devenue affaire de coût d'inférence, et cette contrainte descend directement du mécanisme de partage de préfixe. On rejoint ici les préoccupations d'observabilité de <a href="../observabilite-agents-ia/">observabilite-agents-ia</a> : le taux de succès du cache est devenu une métrique de coût à instrumenter au même titre que la latence.</p>
+      </section>
+
+      <section>
+      <h2 id="s-7">7. Le mur du préfixe et la hiérarchie mémoire</h2>
+      <p>Tout ce qui précède repose sur un mot : <strong>préfixe</strong>. On ne partage un bloc de KV-cache que si tout ce qui le précède est identique, token pour token. Cette contrainte n'est pas un détail d'implémentation ; elle est intrinsèque à la causalité de l'attention — la représentation d'un token dépend de tous les tokens qui le précèdent. Et elle crée une limite structurelle que l'on peut appeler le <strong>mur du préfixe</strong>.</p>
+      <p>Le cas où ce mur fait le plus mal est la génération augmentée par récupération (<span class="term" data-tooltip="Retrieval-Augmented Generation : on récupère des documents pertinents et on les concatène au prompt pour ancrer la réponse du modèle sur des sources.">RAG</span>). Une requête RAG concatène typiquement : un prompt système, puis plusieurs <em>chunks</em> de documents récupérés dynamiquement, puis la question. Le prompt système, en tête, se partage — mais les <em>chunks</em>, choisis à la volée et dans un ordre variable, ne sont <strong>jamais un préfixe partagé</strong> : dès le deuxième <em>chunk</em>, la suite diffère d'une requête à l'autre. Résultat mesuré sans détour par l'équipe de CacheBlend : dans un contexte RAG, <mark>la mise en cache de préfixe classique peut être presque aussi lente que l'absence totale de cache</mark>, parce que tout sauf le premier <em>chunk</em> rate le cache<a class="cite" data-cite="8" href="#source-8">8</a>.</p>
+      <p>Deux familles de réponses émergent. La première recompute intelligemment. <strong>CacheBlend</strong> (Best Paper à ACM EuroSys 2025<a class="cite" data-cite="8" href="#source-8">8</a>) part du KV-cache pré-calculé de chaque <em>chunk</em> pris isolément — donc réutilisable même hors préfixe — et ne <strong>recalcule qu'un petit sous-ensemble de tokens critiques</strong> (ceux dont les activations dépendent le plus fortement du contexte croisé entre <em>chunks</em>), environ 15 % des tokens. Il obtient un taux de succès de cache proche de <strong>100 %</strong> en RAG, réduit le temps jusqu'au premier token de <strong>2,2 à 3,3×</strong> et augmente le débit de <strong>2,8 à 5×</strong> par rapport au recalcul complet, sans dégrader la qualité<a class="cite" data-cite="8" href="#source-8">8</a>. <strong>Prompt Cache</strong> (MLSys 2024<a class="cite" data-cite="12" href="#source-12">12</a>) prend un autre angle : précalculer des <em>modules</em> d'invite réutilisables (des segments de texte fréquents) et les réassembler à des positions variables. La seconde famille déplace le cache dans une <strong>hiérarchie mémoire</strong> : <strong>LMCache</strong> transforme le KV-cache en une couche persistante, stockée au-delà de la seule HBM (DRAM, SSD, stockage distant), partagée entre plusieurs moteurs de service, et accélère le RAG d'un facteur <strong>4,5×</strong> en réutilisant les caches hors préfixe<a class="cite" data-cite="9" href="#source-9">9</a>. <strong>Mooncake</strong>, le système derrière Kimi (Best Paper à FAST 2025<a class="cite" data-cite="10" href="#source-10">10</a>), pousse la même logique à l'échelle d'un pool de KV-cache réparti sur DRAM et SSD, traité en détail dans <a href="../desagregation-prefill-decode/">desagregation-prefill-decode</a>.</p>
+      <figure class="figure" id="fig-07"><svg data-schema-id="schema-07" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800">
+  <defs>
+    <style>
+      .display { font-family: 'Spectral', 'Playfair Display', Georgia, serif; }
+      .body    { font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif; }
+      .mono    { font-family: 'JetBrains Mono', 'IBM Plex Mono', monospace; }
+    </style>
+    <marker id="arrow07" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#5A5A5A"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="800" fill="#FAF8F3"/>
+
+  <!-- HEADER -->
+  <text x="60" y="55" class="mono" font-size="11" font-weight="600" letter-spacing="0.12em" fill="#B7332C">SCHÉMA 07</text>
+  <text x="60" y="92" class="display" font-size="26" font-weight="600" letter-spacing="-0.01em" fill="#1A1A1A">Le mur du préfixe et la hiérarchie mémoire</text>
+  <text x="60" y="118" class="display" font-size="16" font-style="italic" fill="#5A5A5A">On ne partage qu'un préfixe. En RAG, tout sauf le premier chunk rate le cache — deux familles de réponses</text>
+  <line x1="60" y1="140" x2="1140" y2="140" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- RAG concatenation -->
+  <text x="60" y="180" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#5A5A5A">UNE REQUÊTE RAG — concaténation système + chunks dynamiques + question</text>
+  <g class="interactive" data-card="prefix-hit" tabindex="0" role="button" aria-label="Le préfixe système, seul segment partagé">
+    <rect x="60" y="196" width="200" height="56" rx="3" fill="#1F5560" fill-opacity="0.85"/>
+    <text x="160" y="220" class="mono" font-size="10.5" fill="#FAF8F3" text-anchor="middle">prompt système</text>
+    <text x="160" y="238" class="mono" font-size="9.5" fill="#FAF8F3" text-anchor="middle">HIT ✓ (préfixe)</text>
+  </g>
+  <g class="interactive" data-card="non-prefix-miss" tabindex="0" role="button" aria-label="Les chunks non-préfixes ratent le cache">
+    <rect x="268" y="196" width="180" height="56" rx="3" fill="#B7332C" fill-opacity="0.15" stroke="#B7332C" stroke-width="1.25" stroke-dasharray="3 3"/>
+    <text x="358" y="220" class="mono" font-size="10.5" fill="#B7332C" text-anchor="middle">chunk A</text>
+    <text x="358" y="238" class="mono" font-size="9.5" fill="#B7332C" text-anchor="middle">MISS ✕</text>
+    <rect x="456" y="196" width="180" height="56" rx="3" fill="#B7332C" fill-opacity="0.15" stroke="#B7332C" stroke-width="1.25" stroke-dasharray="3 3"/>
+    <text x="546" y="220" class="mono" font-size="10.5" fill="#B7332C" text-anchor="middle">chunk B</text>
+    <text x="546" y="238" class="mono" font-size="9.5" fill="#B7332C" text-anchor="middle">MISS ✕</text>
+    <rect x="644" y="196" width="160" height="56" rx="3" fill="#B7332C" fill-opacity="0.15" stroke="#B7332C" stroke-width="1.25" stroke-dasharray="3 3"/>
+    <text x="724" y="220" class="mono" font-size="10.5" fill="#B7332C" text-anchor="middle">question</text>
+    <text x="724" y="238" class="mono" font-size="9.5" fill="#B7332C" text-anchor="middle">MISS ✕</text>
+  </g>
+  <text x="830" y="220" class="body" font-size="12" fill="#1A1A1A">Dès le 2ᵉ chunk, la suite diffère</text>
+  <text x="830" y="238" class="body" font-size="12" fill="#1A1A1A">d'une requête à l'autre → pas un préfixe.</text>
+  <text x="60" y="280" class="display" font-size="14" font-style="italic" fill="#B7332C">La mise en cache de préfixe classique peut être presque aussi lente que l'absence totale de cache.</text>
+
+  <line x1="60" y1="300" x2="1140" y2="300" stroke="#E5E1D8" stroke-width="0.5"/>
+
+  <!-- Family 1: recompute -->
+  <g class="interactive" data-card="cacheblend-recompute" tabindex="0" role="button" aria-label="CacheBlend, recalcul sélectif des tokens critiques">
+    <rect x="60" y="320" width="540" height="240" rx="3" fill="#B58A2C" fill-opacity="0.07" stroke="#B58A2C" stroke-width="1.5"/>
+    <text x="80" y="346" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#B58A2C">FAMILLE 1 — recomputer intelligemment</text>
+    <text x="80" y="372" class="display" font-size="16" fill="#1A1A1A">CacheBlend</text>
+    <text x="180" y="372" class="body" font-size="11" font-style="italic" fill="#5A5A5A">Best Paper, EuroSys 2025</text>
+    <text x="80" y="396" class="body" font-size="12" fill="#1A1A1A">Part du KV pré-calculé de chaque chunk isolé (réutilisable</text>
+    <text x="80" y="414" class="body" font-size="12" fill="#1A1A1A">hors préfixe) et ne recalcule que les tokens critiques.</text>
+    <!-- chunk with 15% recompute -->
+    <rect x="80" y="430" width="240" height="30" rx="2" fill="#1F5560" fill-opacity="0.35"/>
+    <rect x="80" y="430" width="36" height="30" rx="2" fill="#B7332C" fill-opacity="0.8"/>
+    <rect x="180" y="430" width="24" height="30" rx="2" fill="#B7332C" fill-opacity="0.8"/>
+    <text x="330" y="450" class="mono" font-size="10.5" fill="#B7332C">≈ 15 % recalculé</text>
+    <text x="80" y="490" class="mono" font-size="13" font-weight="600" fill="#1F5560">TTFT −2,2 à −3,3×</text>
+    <text x="290" y="490" class="mono" font-size="13" font-weight="600" fill="#1F5560">débit ×2,8 à ×5</text>
+    <text x="80" y="514" class="body" font-size="11.5" fill="#1A1A1A">Taux de succès ~100 % en RAG, sans dégrader la qualité.</text>
+    <text x="80" y="540" class="body" font-size="11" font-style="italic" fill="#5A5A5A">Prompt Cache (MLSys 2024) : précalcul de modules réutilisables hors préfixe.</text>
+  </g>
+
+  <!-- Family 2: hierarchy -->
+  <g class="interactive" data-card="memory-hierarchy" tabindex="0" role="button" aria-label="Hiérarchie mémoire et cache-as-a-service">
+    <rect x="620" y="320" width="520" height="240" rx="3" fill="#1F5560" fill-opacity="0.06" stroke="#1F5560" stroke-width="1.5"/>
+    <text x="640" y="346" class="mono" font-size="10" font-weight="600" letter-spacing="0.1em" fill="#1F5560">FAMILLE 2 — descendre la hiérarchie mémoire</text>
+    <!-- tiers -->
+    <rect x="640" y="362" width="480" height="26" rx="2" fill="#1F5560" fill-opacity="0.85"/><text x="654" y="380" class="mono" font-size="10" fill="#FAF8F3">HBM — rapide, rare</text>
+    <rect x="640" y="392" width="480" height="26" rx="2" fill="#1F5560" fill-opacity="0.6"/><text x="654" y="410" class="mono" font-size="10" fill="#FAF8F3">DRAM</text>
+    <rect x="640" y="422" width="480" height="26" rx="2" fill="#1F5560" fill-opacity="0.38"/><text x="654" y="440" class="mono" font-size="10" fill="#1A1A1A">SSD</text>
+    <rect x="640" y="452" width="480" height="26" rx="2" fill="#1F5560" fill-opacity="0.2"/><text x="654" y="470" class="mono" font-size="10" fill="#1A1A1A">stockage distant — lent, vaste</text>
+    <text x="640" y="500" class="body" font-size="12" fill="#1A1A1A"><tspan class="mono" font-size="11" font-weight="600" fill="#1F5560">LMCache</tspan> : couche persistante, cross-moteur → RAG ×4,5</text>
+    <text x="640" y="520" class="body" font-size="12" fill="#1A1A1A"><tspan class="mono" font-size="11" font-weight="600" fill="#1F5560">Mooncake</tspan> (FAST 2025) : pool KV DRAM/SSD à l'échelle</text>
+    <text x="640" y="540" class="body" font-size="12" fill="#1A1A1A"><tspan class="mono" font-size="11" font-weight="600" fill="#1F5560">llm-d</tspan> (CNCF) : ordonnancement cache-aware distribué</text>
+  </g>
+
+  <!-- security frontier -->
+  <rect x="60" y="584" width="1080" height="142" rx="3" fill="#B7332C" fill-opacity="0.05" stroke="#B7332C" stroke-width="1.5"/>
+  <text x="80" y="612" class="mono" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#B7332C">LA FRONTIÈRE DE SÉCURITÉ — la mutualisation qui donne l'efficacité crée la surface d'attaque</text>
+  <text x="80" y="642" class="body" font-size="13" fill="#1A1A1A">Dès que des blocs de KV-cache sont partagés entre requêtes, utilisateurs, voire locataires, le cache devient attaquable :</text>
+  <circle cx="92" cy="664" r="3" fill="#B7332C"/><text x="106" y="668" class="body" font-size="12.5" fill="#1A1A1A">fuite par canal temporel — la latence révèle qu'un préfixe est déjà en cache, donc déjà soumis par un autre ;</text>
+  <circle cx="92" cy="688" r="3" fill="#B7332C"/><text x="106" y="692" class="body" font-size="12.5" fill="#1A1A1A">un bloc partagé corrompu empoisonne toutes les requêtes qui le réutilisent.</text>
+  <text x="80" y="716" class="body" font-size="12" font-style="italic" fill="#5A5A5A">L'isolation par cache_salt est la parade minimale — mais elle sacrifie le partage qui faisait tout l'intérêt du cache.</text>
+
+  <!-- FOOTER -->
+  <text x="60" y="772" class="body" font-size="10" font-style="italic" letter-spacing="0.02em" fill="#5A5A5A">Sources : Yao et al., CacheBlend (EuroSys 2025) ; LMCache (2024) ; Qin et al., Mooncake (FAST 2025) ; llm-d (CNCF).</text>
+</svg>
+<figcaption class="figure-caption"><a class="anchor" href="#fig-07" title="Lien direct vers ce schéma">¶</a> Schéma 7 — Le mur du préfixe : en RAG seul le préfixe système fait un hit. Deux familles de réponses — recalcul sélectif (CacheBlend) et hiérarchie mémoire — plus la frontière de sécurité du partage.</figcaption></figure>
+      <p>Cette hiérarchie mémoire ouvre deux frontières. La première est industrielle : le KV-cache comme <strong>service</strong> (<em>KV-cache-as-a-service</em>), une couche mutualisée entre applications et entre moteurs, ordonnancée de manière distribuée et consciente du cache — c'est la direction que prend le projet <strong>llm-d</strong> (CNCF), qui étend l'ordonnancement cache-aware de RadixAttention à une flotte de serveurs<a class="cite" data-cite="13" href="#source-13">13</a>. La seconde est une frontière de <strong>sécurité</strong>, encore mal cartographiée : dès lors que des blocs de KV-cache sont partagés entre requêtes, entre utilisateurs, voire entre locataires (<em>tenants</em>), le cache devient une surface d'attaque. Le partage de préfixe peut fuir de l'information par canal temporel (une requête devine, à la latence, qu'un préfixe est déjà en cache donc déjà soumis par un autre) ; et des travaux récents montrent qu'un bloc de KV-cache partagé et corrompu (par exemple par une inversion de bit) peut empoisonner toutes les requêtes qui le réutilisent. L'isolation par <code>cache_salt</code> évoquée plus haut est la parade minimale, mais elle sacrifie précisément le partage qui faisait tout l'intérêt du cache. On retrouve la tension familière de <a href="../mcp-securite/">mcp-securite</a> : la mutualisation qui donne l'efficacité est exactement ce qui crée la surface d'attaque.</p>
+      </section>
+
+      <section>
+      <h2 id="s-conclusion">Conclusion</h2>
+      <p>La trajectoire est nette. En 2023, PagedAttention règle la fragmentation en important la pagination des systèmes d'exploitation : le KV-cache devient un espace paginé, et la copie-sur-écriture fait du partage de prompt intra-requête un acquis. En 2024, RadixAttention et l'APC font déborder ce partage au-delà des requêtes, via un arbre radix ou un hash chaîné, et transforment le cache en un produit facturé — le <em>prompt caching</em> à −90 % qui a rendu économiquement viables les agents à long contexte. En 2025-2026, la recherche attaque le mur du préfixe (CacheBlend, Prompt Cache) et déploie le cache dans une hiérarchie mémoire distribuée (LMCache, Mooncake, llm-d), tout en découvrant que le partage est aussi une surface d'attaque.</p>
+      <p>Le fil conducteur ne varie pas : <mark>gérer le KV-cache, c'est faire de la mémoire virtuelle — pagination, indirection, partage, copie-sur-écriture, éviction, hiérarchie —, un demi-siècle d'informatique des systèmes rejoué sur le cache d'attention.</mark> Ce qui a changé, ce n'est pas l'invention de ces idées, c'est de comprendre que le cache d'attention était le bon endroit pour les appliquer. C'est probablement la leçon la plus utile pour les optimisations à venir : la prochaine avancée de service ne sortira sans doute pas d'une nouvelle architecture de modèle, mais d'un vieux mécanisme de systèmes que personne n'avait encore pensé à porter jusqu'ici.</p>
+      </section>
+
+      <p class="report-outro"><em>Format co-écrit avec l'aide d'une IA · 31 juillet 2026 — Mathieu Guglielmino</em></p>
+    </main>
+
+    <aside id="sources" aria-label="Sources">
+      <button class="panel-close" type="button" aria-label="Fermer les sources">Fermer ✕</button>
+      <div class="sources-inner">
+      <h2>Sources</h2>
+      <ol id="sources-list">
+<li id="source-1">
+  <span class="cite-num">[1]</span> Kwon, Woosuk, Zhuohan Li, Siyuan Zhuang et al., <em>Efficient Memory Management for Large Language Model Serving with PagedAttention</em>. ACM SOSP 2023. Le papier fondateur : découpage en blocs, table de blocs, gaspillage &lt; 4 %, débit ×24, copie-sur-écriture et partage de préfixe.<br>
+  <a href="https://arxiv.org/abs/2309.06180" target="_blank" rel="noopener">arxiv.org/2309.06180 ↗</a>
+  <span class="accessed">consulté le 31 juillet 2026</span>
+</li>
+<li id="source-2">
+  <span class="cite-num">[2]</span> vLLM Team, <em>vLLM: Easy, Fast, and Cheap LLM Serving with PagedAttention</em>. Blog vLLM, 20 juin 2023. Vulgarisation officielle du mécanisme de pagination et de la copie-sur-écriture.<br>
+  <a href="https://blog.vllm.ai/2023/06/20/vllm.html" target="_blank" rel="noopener">blog.vllm.ai ↗</a>
+  <span class="accessed">consulté le 31 juillet 2026</span>
+</li>
+<li id="source-3">
+  <span class="cite-num">[3]</span> Zheng, Lianmin, Liangsheng Yin, Zhiqiang Xie et al., <em>SGLang: Efficient Execution of Structured Language Model Programs</em>. NeurIPS 2024. RadixAttention : arbre radix, éviction LRU des feuilles, ordonnancement conscient du cache.<br>
+  <a href="https://arxiv.org/abs/2312.07104" target="_blank" rel="noopener">arxiv.org/2312.07104 ↗</a>
+  <span class="accessed">consulté le 31 juillet 2026</span>
+</li>
+<li id="source-4">
+  <span class="cite-num">[4]</span> LMSYS Org, <em>Fast and Expressive LLM Inference with RadixAttention and SGLang</em>. Blog LMSYS, 17 janvier 2024. Chiffres de débit (jusqu'à 5×), charges bénéficiaires, compatibilité pagination / batching continu / parallélisme de tenseurs.<br>
+  <a href="https://lmsys.org/blog/2024-01-17-sglang/" target="_blank" rel="noopener">lmsys.org ↗</a>
+  <span class="accessed">consulté le 31 juillet 2026</span>
+</li>
+<li id="source-5">
+  <span class="cite-num">[5]</span> vLLM Documentation, <em>Automatic Prefix Caching</em> (design v1). Hachage chaîné (hash parent + token_ids + extra_keys : LoRA, multimodal, cache_salt), correspondance exacte du préfixe, éviction du dernier bloc en premier.<br>
+  <a href="https://docs.vllm.ai/en/stable/design/prefix_caching/" target="_blank" rel="noopener">docs.vllm.ai ↗</a>
+  <span class="accessed">consulté le 31 juillet 2026</span>
+</li>
+<li id="source-6">
+  <span class="cite-num">[6]</span> Anthropic, <em>Prompt caching</em>. Documentation développeur (bêta publique 14 août 2024, disponibilité générale 17 décembre 2024). Lecture 0,1× (−90 %), écriture 1,25× (TTL 5 min) / 2,0× (TTL 1 h), minimum 1 024 tokens, réinitialisation du TTL à la lecture.<br>
+  <a href="https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching" target="_blank" rel="noopener">docs.anthropic.com ↗</a>
+  <span class="accessed">consulté le 31 juillet 2026</span>
+</li>
+<li id="source-7">
+  <span class="cite-num">[7]</span> OpenAI, <em>Prompt caching</em>. Documentation plateforme. Mise en cache automatique des préfixes, décote de l'ordre de 50 % sur les tokens d'entrée mis en cache.<br>
+  <a href="https://platform.openai.com/docs/guides/prompt-caching" target="_blank" rel="noopener">platform.openai.com ↗</a>
+  <span class="accessed">consulté le 31 juillet 2026</span>
+</li>
+<li id="source-8">
+  <span class="cite-num">[8]</span> Yao, Jiayi, Hanchen Li, Yuhan Liu et al., <em>CacheBlend: Fast Large Language Model Serving for RAG with Cached Knowledge Fusion</em>. ACM EuroSys 2025 (Best Paper). Réutilisation du KV-cache hors préfixe par recalcul sélectif (~15 %) ; TTFT −2,2-3,3×, débit ×2,8-5, taux de succès ~100 % en RAG.<br>
+  <a href="https://dl.acm.org/doi/10.1145/3790254" target="_blank" rel="noopener">dl.acm.org/10.1145/3790254 ↗</a>
+  <span class="accessed">consulté le 31 juillet 2026</span>
+</li>
+<li id="source-9">
+  <span class="cite-num">[9]</span> LMCache Team, <em>Beyond Prefix Caching: How LMCache Speeds Up RAG by 4.5×</em>. Blog LMCache, 9 octobre 2024. Couche de KV-cache persistante (DRAM / SSD / distant), partagée entre moteurs, réutilisation hors préfixe.<br>
+  <a href="https://blog.lmcache.ai/en/2024/10/09/beyond-prefix-caching-how-lmcache-speeds-up-rag-by-4-5x-by-one-line-of-change/" target="_blank" rel="noopener">blog.lmcache.ai ↗</a>
+  <span class="accessed">consulté le 31 juillet 2026</span>
+</li>
+<li id="source-10">
+  <span class="cite-num">[10]</span> Qin, Ruoyu, Zheming Li, Weiran He et al., <em>Mooncake: A KVCache-centric Disaggregated Architecture for LLM Serving</em>. USENIX FAST 2025 (Best Paper). Pool de KV-cache réparti DRAM/SSD à l'échelle du service (Kimi).<br>
+  <a href="https://www.usenix.org/conference/fast25/presentation/qin" target="_blank" rel="noopener">usenix.org/fast25 ↗</a>
+  <span class="accessed">consulté le 31 juillet 2026</span>
+</li>
+<li id="source-11">
+  <span class="cite-num">[11]</span> NVIDIA, <em>KV Cache Reuse</em> (TensorRT-LLM). Documentation NVIDIA. Réutilisation de blocs de KV-cache avec éviction par priorité.<br>
+  <a href="https://docs.nvidia.com/tensorrt-llm/" target="_blank" rel="noopener">docs.nvidia.com/tensorrt-llm ↗</a>
+  <span class="accessed">consulté le 31 juillet 2026</span>
+</li>
+<li id="source-12">
+  <span class="cite-num">[12]</span> Gim, In, Guojun Chen, Seung-seob Lee et al., <em>Prompt Cache: Modular Attention Reuse for Low-Latency Inference</em>. MLSys 2024. Précalcul et réassemblage de modules d'invite réutilisables hors préfixe.<br>
+  <a href="https://arxiv.org/abs/2311.04934" target="_blank" rel="noopener">arxiv.org/2311.04934 ↗</a>
+  <span class="accessed">consulté le 31 juillet 2026</span>
+</li>
+<li id="source-13">
+  <span class="cite-num">[13]</span> llm-d Project, <em>KV-Cache Wins You Can See: From Prefix Caching in vLLM to Distributed Scheduling with llm-d</em>. Blog llm-d (CNCF), 2026. Extension de l'ordonnancement conscient du cache à une flotte de serveurs.<br>
+  <a href="https://llm-d.ai/blog/kvcache-wins-you-can-see" target="_blank" rel="noopener">llm-d.ai ↗</a>
+  <span class="accessed">consulté le 31 juillet 2026</span>
+</li>
+        </ol>
+      </div>
+    </aside>
+
+  </div>
+
+
+  <div id="zoom-overlay" hidden role="dialog" aria-modal="true" aria-label="Schéma agrandi">
+    <header id="zoom-header">
+      <span id="zoom-caption"></span>
+      <div class="zoom-controls">
+        <button type="button" class="zoom-out" aria-label="Dézoomer" title="Dézoomer (−)">−</button>
+        <button type="button" class="zoom-reset" aria-label="Ajuster à l'écran" title="Ajuster à l'écran">Reset</button>
+        <button type="button" class="zoom-in" aria-label="Zoomer" title="Zoomer (+)">+</button>
+        <button type="button" class="zoom-close" aria-label="Fermer (Échap)" title="Fermer (Échap)">×</button>
+      </div>
+    </header>
+    <div id="zoom-stage" tabindex="-1">
+      <div id="zoom-content"></div>
+      <div id="zoom-hint">Molette pour zoomer · glisser pour déplacer · Échap pour fermer</div>
+      <a class="schema-sigil zoom-sigil" href="https://mathieugug.github.io/" target="_blank" rel="noopener" aria-label="Mathieu Guglielmino — visiter mathieugug.github.io" title="Mathieu Guglielmino · mathieugug.github.io">
+        <svg class="sigil-mark" viewBox="0 0 44 44" aria-hidden="true" focusable="false">
+          <circle class="sigil-bg" cx="22" cy="22" r="20.5"/>
+          <circle class="sigil-ring" cx="22" cy="22" r="17.5"/>
+          <g class="sigil-letters"><text x="7.5" y="29">M</text><text x="22" y="29">G</text></g>
+        </svg>
+      </a>
+    </div>
+  </div>
+
+  <div id="modal-root" hidden role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card">
+      <button class="modal-close" data-close aria-label="Fermer">×</button>
+      <p class="modal-eyebrow" id="modal-eyebrow"></p>
+      <h3 class="modal-title" id="modal-title"></h3>
+      <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <script>
+    // ─────────────────────────────────────────────────
+    // DATA — replace these placeholders with real content
+    // ─────────────────────────────────────────────────
+
+    const SCHEMAS = {
+  "schema-01": {
+    "reserve-slot": { title: "Sur-réservation", body: `<p>Le poste de gaspillage <strong>dominant</strong>. Les systèmes de première génération réservaient un bloc contigu dimensionné sur <code>max_seq_len</code> (2 048 ou 4 096 tokens) avant de savoir combien de tokens la requête produirait réellement.</p><p>Une requête qui ne génère que 50 tokens immobilisait la place de 4 096 : l'écart entre le réservé et l'utilisé est de la mémoire morte, indisponible pour d'autres requêtes.</p>` },
+    "internal-waste": { title: "Fragmentation interne", body: `<p>Le dernier bloc d'une séquence est presque toujours partiellement rempli. Sur une allocation par blocs de 16 tokens, une séquence de 50 tokens laisse 14 emplacements vides dans son 4ᵉ bloc.</p><p>C'est le gaspillage résiduel <em>incompressible</em> — mais borné à moins de 4 % avec la pagination, contre les 60-80 % de la réservation contiguë.</p>` },
+    "external-waste": { title: "Fragmentation externe", body: `<p>Les trous inutilisables <strong>entre</strong> deux réservations contiguës de tailles différentes. Même si ces trous totalisent une place considérable, aucun n'est assez grand pour accueillir une nouvelle réservation contiguë.</p><p>C'est le mal classique de l'allocation contiguë, que la pagination supprime en dispersant les blocs.</p>` },
+    "used": { title: "KV réellement utilisé", body: `<p>La seule fraction productive : les clés et valeurs des tokens effectivement générés. Sur les systèmes de première génération, elle ne représentait souvent que 20 à 40 % de la mémoire réservée.<a class="cite" data-cite="1" href="#source-1">1</a></p><p>Tout l'enjeu de PagedAttention est de faire tendre cette fraction vers 100 %.</p>` }
+  },
+  "schema-02": {
+    "os-analogy": { title: "L'analogie mémoire virtuelle", body: `<p>En mémoire virtuelle, un processus voit un espace d'adressage contigu (des <em>pages</em>) que l'OS projette, via une <em>table des pages</em>, sur des cadres physiques (<em>frames</em>) dispersés dans la RAM.</p><p>Le processus n'a jamais besoin que la mémoire physique soit contiguë : l'indirection le lui fait croire. PagedAttention rejoue exactement cette mécanique sur le cache d'attention — un problème vieux d'un demi-siècle, déjà résolu.</p>` },
+    "logical-blocks": { title: "Vue logique contiguë", body: `<p>La séquence est découpée en blocs de <strong>16 tokens</strong> (défaut vLLM, paramétrable via <code>--block-size</code>).<a class="cite" data-cite="1" href="#source-1">1</a> Logiquement, ces blocs se suivent : bloc 0 = tokens 0-15, bloc 1 = tokens 16-31, etc.</p><p>C'est la vue « propre » qu'a le modèle. Elle ne dit rien de l'emplacement physique réel des blocs.</p>` },
+    "block-table": { title: "La table de blocs", body: `<p>L'équivalent de la table des pages. Elle associe à chaque bloc <em>logique</em> l'adresse de son bloc <em>physique</em> : L0→P07, L1→P02, L2→P09…</p><p>Cette indirection est le cœur du mécanisme : c'est elle qui autorise un stockage physique arbitraire tout en présentant au noyau d'attention une séquence apparemment contiguë.</p>` },
+    "physical-pool": { title: "Le pool physique", body: `<p>Un pool global de blocs GPU où les blocs d'une même séquence sont <strong>dispersés</strong> à des emplacements quelconques, entrelacés avec ceux d'autres requêtes.</p><p>Le noyau paginé suit la table de blocs pour lire chaque bloc où qu'il soit. Résultat : gaspillage &lt; 4 %, débit jusqu'à ×24 vs HuggingFace, sans toucher au modèle.<a class="cite" data-cite="1" href="#source-1">1</a><a class="cite" data-cite="2" href="#source-2">2</a></p>` }
+  },
+  "schema-03": {
+    "shared-prompt": { title: "Le prompt partagé", body: `<p>En échantillonnage parallèle, k branches sont générées à partir du <strong>même prompt</strong>. Leurs clés/valeurs pour la partie prompt sont identiques.</p><p>Avec une réservation contiguë, on dupliquait k fois cette mémoire. Avec des blocs paginés, les k tables de blocs pointent toutes vers le même bloc physique — un seul exemplaire du prompt.</p>` },
+    "ref-count": { title: "Le compteur de références", body: `<p>Chaque bloc physique porte un <strong>refcount</strong> : le nombre de séquences qui le partagent. Tant que refcount &gt; 1, le bloc est en lecture seule, partagé.</p><p>C'est ce compteur qui permet de savoir, au moment d'une écriture, s'il faut copier le bloc (partagé) ou écrire en place (privé). Exactement le mécanisme du <code>fork()</code> d'un processus.</p>` },
+    "fork-point": { title: "Le point de divergence", body: `<p>Dès qu'une branche génère son propre token, elle doit <strong>écrire</strong> dans le bloc — et diverge des autres. Le système détecte refcount &gt; 1 et refuse d'écrire en place, ce qui corromprait les autres branches.</p><p>Point clé : c'est <em>l'écriture</em> qui déclenche la copie, jamais la lecture. Le partage dure aussi longtemps que possible.</p>` },
+    "cow-copy": { title: "La copie privée", body: `<p>Le bloc est copié dans un nouvel emplacement, le refcount de l'original est décrémenté, et la branche qui écrit reçoit sa copie privée. Les autres branches continuent de partager l'original.</p><p>Économie mesurée jusqu'à <strong>55 %</strong> en échantillonnage parallèle et beam search.<a class="cite" data-cite="1" href="#source-1">1</a> Ce partage reste toutefois <em>intra-requête</em> : RadixAttention le fera déborder entre requêtes.</p>` }
+  },
+  "schema-04": {
+    "root-prefix": { title: "La racine — préfixe système", body: `<p>Au lieu de libérer le KV-cache à la fin d'une génération, RadixAttention le <strong>conserve</strong> et l'indexe dans un arbre radix. La racine porte le préfixe le plus universellement partagé : le prompt système.</p><p>Stocké une seule fois, il est réutilisé par toutes les requêtes dont le début coïncide — au lieu d'être recalculé à chaque appel.<a class="cite" data-cite="3" href="#source-3">3</a></p>` },
+    "shared-branch": { title: "Les branches partagées", body: `<p>Sous la racine, chaque branche est un contexte commun : un document interrogé par plusieurs utilisateurs, un jeu d'exemples <em>few-shot</em> réutilisé, l'historique d'une conversation multi-tours.</p><p>Un préfixe partagé n'est stocké qu'une fois : les requêtes qui le partagent empruntent le même chemin dans l'arbre et réutilisent les mêmes blocs.</p>` },
+    "leaf-eviction": { title: "L'éviction LRU des feuilles", body: `<p>Quand la mémoire manque, on évince d'abord la <strong>feuille la moins récemment utilisée</strong> — une génération ancienne en bout de branche.</p><p>Cela préserve les ancêtres, c'est-à-dire les préfixes partagés, les plus précieux. Un ancêtre ne devient évinçable que lorsque toutes ses feuilles ont disparu et qu'il est lui-même devenu une feuille.<a class="cite" data-cite="3" href="#source-3">3</a></p>` },
+    "cache-aware-sched": { title: "Ordonnancement conscient du cache", body: `<p>Le <em>scheduler</em> ne traite pas les requêtes dans l'ordre d'arrivée : il priorise celles qui partagent le plus de préfixe avec le contenu déjà en cache.</p><p>En regroupant les requêtes au préfixe commun, il maximise le taux de réutilisation — d'où des gains de débit jusqu'à ×5, voire 6,4× sur des programmes structurés.<a class="cite" data-cite="3" href="#source-3">3</a><a class="cite" data-cite="4" href="#source-4">4</a></p>` }
+  },
+  "schema-05": {
+    "chained-hash": { title: "La chaîne de hachage", body: `<p>Chaque bloc reçoit un hash qui <strong>chaîne</strong> celui du bloc précédent : <code>h(bloc) = H(hash_parent, token_ids, extra_keys)</code>.</p><p>Comme le hash dépend récursivement de tout le préfixe, deux requêtes obtiennent le même hash pour un bloc si et seulement si elles partagent la même suite de tokens depuis le début. Identifier un préfixe réutilisable devient une simple consultation de table, sans parcourir d'arbre.<a class="cite" data-cite="5" href="#source-5">5</a></p>` },
+    "exact-match": { title: "Correspondance exacte", body: `<p>Un <em>cache hit</em> exige une correspondance <strong>token par token</strong> de tout le préfixe, jusqu'au bloc candidat inclus. Le premier token qui diffère fait diverger les hash, et tout ce qui suit rate le cache.</p><p>C'est à la fois la force (aucune fausse réutilisation) et la limite (le mur du préfixe) de cette approche.</p>` },
+    "extra-keys": { title: "Les extra keys", body: `<p>Deux prompts textuellement identiques peuvent produire des activations différentes. Le hash intègre donc aussi : l'identifiant <strong>LoRA</strong> actif, le hash des <strong>entrées multimodales</strong> (une image change le calcul), et un <strong><code>cache_salt</code></strong> par requête.</p><p>Le <code>cache_salt</code> permet d'isoler délibérément le cache d'un client — parade minimale contre le partage entre locataires. Sans ces clés, on servirait à une requête le cache d'une autre.<a class="cite" data-cite="5" href="#source-5">5</a></p>` },
+    "last-block-evict": { title: "Le dernier bloc part en premier", body: `<p>Heuristique d'éviction contre-intuitive : le dernier bloc d'une requête est évincé <strong>en premier</strong>. Il hache le plus de tokens (tout le préfixe jusqu'à lui), donc il est le moins susceptible d'être partagé.</p><p>On protège les préfixes courts et populaires (le prompt système, réutilisé par tous), on sacrifie les suffixes longs et rares. Logique inverse d'un « dernier entré, premier sorti ».<a class="cite" data-cite="5" href="#source-5">5</a></p>` }
+  },
+  "schema-06": {
+    "cache-write": { title: "L'écriture du cache", body: `<p>Écrire un préfixe dans le cache coûte <strong>plus cher</strong> qu'un token normal : ×1,25 le prix d'entrée pour un TTL de 5 minutes, ×2,0 pour un TTL d'une heure chez Anthropic.<a class="cite" data-cite="6" href="#source-6">6</a></p><p>Ce surcoût paie le calcul et le stockage du KV-cache. Il n'est amorti que si le préfixe est ensuite lu plusieurs fois.</p>` },
+    "cache-read": { title: "La lecture du cache", body: `<p>Lire un préfixe déjà en cache ne coûte que <strong>×0,1</strong> le prix d'entrée — une réduction de 90 % sur la portion mise en cache, qui est précisément le KV-cache qu'on ne recalcule pas.<a class="cite" data-cite="6" href="#source-6">6</a></p><p>OpenAI propose une mécanique voisine, entièrement automatique, avec une décote de l'ordre de 50 %.<a class="cite" data-cite="7" href="#source-7">7</a></p>` },
+    "break-even": { title: "Le seuil de rentabilité", body: `<p>Le minimum cacheable est de <strong>1 024 tokens</strong> chez Anthropic : en dessous, l'écriture coûterait plus que l'économie.<a class="cite" data-cite="6" href="#source-6">6</a></p><p>Au-delà, il faut au moins deux lectures pour amortir l'écriture. C'est le seuil de rentabilité classique d'un cache, exposé directement au client.</p>` },
+    "ttl-reset": { title: "La réinitialisation du TTL", body: `<p>Toute lecture <strong>réinitialise</strong> le TTL. Un préfixe fréquemment sollicité reste chaud indéfiniment et ne repaie jamais son écriture après le préchauffage initial.<a class="cite" data-cite="6" href="#source-6">6</a></p><p>C'est exactement le comportement d'un cache LRU — la politique d'éviction de RadixAttention, transformée en règle de facturation.</p>` }
+  },
+  "schema-07": {
+    "prefix-hit": { title: "Le préfixe qui fait un hit", body: `<p>Dans une requête RAG, seul le <strong>prompt système en tête</strong> est un préfixe stable, partagé entre requêtes. C'est le seul segment qui fait un <em>cache hit</em>.</p><p>Tout ce qui le suit dépend des documents récupérés, qui varient d'une requête à l'autre.</p>` },
+    "non-prefix-miss": { title: "Les chunks qui ratent", body: `<p>Les <em>chunks</em> de documents sont récupérés dynamiquement et concaténés dans un ordre variable. Dès le deuxième, la suite diffère d'une requête à l'autre : ce ne sont <strong>jamais des préfixes partagés</strong>.</p><p>Résultat : la mise en cache de préfixe classique peut être presque aussi lente que l'absence totale de cache en RAG.<a class="cite" data-cite="8" href="#source-8">8</a></p>` },
+    "cacheblend-recompute": { title: "CacheBlend — recalcul sélectif", body: `<p>CacheBlend (Best Paper EuroSys 2025) part du KV pré-calculé de chaque <em>chunk</em> isolé — réutilisable hors préfixe — et ne recalcule que les <strong>~15 % de tokens critiques</strong> dont les activations dépendent du contexte croisé.</p><p>Taux de succès ~100 % en RAG, TTFT −2,2 à −3,3×, débit ×2,8 à ×5, sans dégrader la qualité.<a class="cite" data-cite="8" href="#source-8">8</a> Prompt Cache (MLSys 2024) précalcule des modules réutilisables.<a class="cite" data-cite="12" href="#source-12">12</a></p>` },
+    "memory-hierarchy": { title: "La hiérarchie mémoire", body: `<p>Seconde famille de réponses : déplacer le cache au-delà de la seule HBM, vers DRAM, SSD et stockage distant. LMCache en fait une couche persistante cross-moteur (RAG ×4,5)<a class="cite" data-cite="9" href="#source-9">9</a> ; Mooncake un pool DRAM/SSD à l'échelle<a class="cite" data-cite="10" href="#source-10">10</a> ; llm-d un ordonnancement cache-aware distribué.<a class="cite" data-cite="13" href="#source-13">13</a></p><p>Cette mutualisation ouvre une frontière de sécurité : le partage entre locataires devient une surface d'attaque.</p>` }
+  }
+};
+    /* shape:
+      {
+        'schema-01': {
+          'region-id': { title: '...', body: '<p>...</p>', eyebrow: 'Schéma 1' },
+          ...
+        },
+        ...
+      }
+    */
+
+    const TOOLTIPS = {
+  "ttft": "Time to first token : délai entre l'envoi de la requête et l'arrivée du premier token de la réponse. Métrique critique pour l'expérience utilisateur en streaming.",
+  "llm-judge": "LLM-as-judge : utilisation d'un LLM pour scorer la qualité d'une autre sortie LLM (factualité, pertinence, ton). Permet l'évaluation à l'échelle, mais introduit ses propres biais.",
+  "mcp": "Model Context Protocol : standard ouvert de communication entre LLMs et outils externes, lancé par Anthropic en novembre 2024. Adopté par OpenAI, Google, Microsoft en 2025.",
+  "otlp": "OpenTelemetry Protocol : protocole standardisé (gRPC ou HTTP) pour transporter les signaux d'observabilité (traces, metrics, logs) vers un backend.",
+  "melt": "Metrics, Events, Logs, Traces : les quatre signaux fondamentaux de l'observabilité moderne, popularisés par l'écosystème cloud-native.",
+  "rag": "Retrieval-Augmented Generation : technique qui enrichit le contexte d'un LLM avec des documents récupérés dynamiquement depuis une base vectorielle.",
+  "slo": "Service Level Objective : cible mesurable de qualité de service (ex. 99,9 % des réponses sous 2 secondes). Base contractuelle de l'observabilité opérationnelle."
+};
+    /* shape: { 'CoT': 'Chain-of-Thought : ...', ... } */
+
+    const SOURCES = [
+  {
+    "n": 1,
+    "citation": "OpenTelemetry, <em>AI Agent Observability Standards</em>, OpenTelemetry Blog, mars 2025.",
+    "url": "https://opentelemetry.io/blog/2025/ai-agent-observability/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 2,
+    "citation": "InsightFinder, <em>AI Observability vs Traditional Monitoring</em>, décembre 2025.",
+    "url": "https://insightfinder.com/blog/ai-observability-vs-traditional-monitoring/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 3,
+    "citation": "IBM Think, <em>Observability Trends 2026</em>, IBM Institute for Business Value, mars 2026.",
+    "url": "https://www.ibm.com/think/insights/observability-trends",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 4,
+    "citation": "Dynatrace, <em>Six Observability Predictions for 2026</em>, décembre 2025.",
+    "url": "https://www.dynatrace.com/news/blog/six-observability-predictions-for-2026/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 5,
+    "citation": "Kore.ai, <em>AI Observability: Monitoring &amp; Governing AI Agents</em>, mars 2026.",
+    "url": "https://www.kore.ai/blog/what-is-ai-observability",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 6,
+    "citation": "Voiceflow, <em>What Is AI Agent Observability? A 2026 Guide</em>, mars 2026.",
+    "url": "https://www.voiceflow.com/blog/what-is-ai-agent-observability",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 7,
+    "citation": "Anthropic, <em>Building Effective Agents</em>, whitepaper, décembre 2024.",
+    "url": "https://www.anthropic.com/research/building-effective-agents",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 8,
+    "citation": "Groundcover, <em>AI Agent Observability Guide: Telemetry, Traces, Metrics</em>, février 2026.",
+    "url": "https://www.groundcover.com/learn/observability/ai-agent-observability",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 9,
+    "citation": "N-iX, <em>AI Agent Observability: Practical Framework</em>, décembre 2025.",
+    "url": "https://www.n-ix.com/ai-agent-observability/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 10,
+    "citation": "Langfuse, <em>AI Agent Observability, Tracing &amp; Evaluation</em>, février 2026.",
+    "url": "https://langfuse.com/blog/2024-07-ai-agent-observability-with-langfuse",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 11,
+    "citation": "OpenTelemetry, <em>GenAI Semantic Conventions (specification)</em>, version 1.37, 2026.",
+    "url": "https://opentelemetry.io/docs/specs/semconv/gen-ai/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 12,
+    "citation": "OpenTelemetry, <em>GenAI Agent Spans, Model Spans, Tool Spans, Events</em>, 2026.",
+    "url": "https://opentelemetry.io/docs/specs/semconv/gen-ai/gen-ai-agent-spans/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 13,
+    "citation": "Datadog, <em>LLM Observability + OTel GenAI Semantic Convention support</em>, décembre 2025.",
+    "url": "https://www.datadoghq.com/blog/llm-otel-semantic-convention/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 14,
+    "citation": "Braintrust, <em>AI Observability Tools: Buyer's Guide 2026</em>, janvier 2026.",
+    "url": "https://www.braintrust.dev/articles/best-ai-observability-tools-2026",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 15,
+    "citation": "GetMaxim, <em>Top 5 AI Agent Observability Platforms 2026</em>, décembre 2025.",
+    "url": "https://www.getmaxim.ai/articles/top-5-ai-agent-observability-platforms-in-2026/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 16,
+    "citation": "Traceloop, <em>OpenLLMetry — auto-instrumentation OTel pour 44+ providers LLM</em>, GitHub, 2026.",
+    "url": "https://github.com/traceloop/openllmetry",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 17,
+    "citation": "OpenLIT, <em>OpenLIT SDK — auto-instrumentation 1 ligne LLMs/vector DBs/GPUs</em>, GitHub, 2026.",
+    "url": "https://github.com/openlit/openlit",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 18,
+    "citation": "Gartner, <em>Magic Quadrant for Observability Platforms 2025</em>, juillet 2025.",
+    "url": "https://www.gartner.com/en/documents/6688834",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 19,
+    "citation": "OneUptime, <em>AI Workloads Observability: Cost Crisis</em>, avril 2026.",
+    "url": "https://oneuptime.com/blog/ai-workloads-observability-cost-crisis",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 20,
+    "citation": "Dynatrace, <em>Dynatrace Intelligence — Agentic OS announcement at Perform 2026</em>, février 2026.",
+    "url": "https://www.dynatrace.com/news/blog/dynatrace-intelligence-platform/",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 21,
+    "citation": "Splunk, <em>Q1 2026 Observability Update — AI Agent Monitoring</em>, février 2026.",
+    "url": "https://www.splunk.com/en_us/blog/observability/splunk-observability-ai-agent-monitoring-innovations.html",
+    "accessed": "2026-04-30"
+  },
+  {
+    "n": 22,
+    "citation": "Grafana Labs, <em>Leader Gartner Magic Quadrant Observability 2025 — #1 Completeness of Vision</em>, 2025.",
+    "url": "https://grafana.com/about/press/2025/07/",
+    "accessed": "2026-04-30"
+  }
+];
+    window.SCHEMAS = SCHEMAS;
+
+  </script>
+  <script src="/assets/dossier-app.js" defer></script>
+</body>
+</html>
