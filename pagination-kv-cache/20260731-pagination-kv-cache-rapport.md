@@ -16,7 +16,7 @@ Le problème, jusqu'en 2023, était que cette mémoire précieuse était massive
 
 Le diagnostic mesuré par l'équipe vLLM est sévère : les systèmes existants gaspillaient **60 à 80 % de la mémoire du KV-cache**[^1]. Or chaque octet gaspillé est une requête de moins servie simultanément, donc un débit plus faible. Le gaspillage mémoire *était* le plafond de débit.
 
-[SCHEMA-01]
+![Anatomie du gaspillage mémoire : réservation contiguë au pire cas, sur-réservation dominante, fragmentations interne et externe, 60 à 80 % perdus.|width=1200](images/20260731-01-anatomie-gaspillage.svg)
 
 L'analogie qui va tout débloquer est déjà là, en creux : ce problème — allouer efficacement une ressource dont on ignore la taille finale, sans fragmenter, sans réserver au pire cas — les systèmes d'exploitation l'ont résolu il y a un demi-siècle. C'est la mémoire virtuelle.
 
@@ -28,7 +28,7 @@ PagedAttention applique cette mécanique au KV-cache. Le cache d'une séquence e
 
 Le tour de force est que le noyau de calcul de l'attention est réécrit pour lire des clés et valeurs stockées dans un espace **non contigu**. C'est là toute la subtilité de « PagedAttention » : l'attention classique suppose des clés/valeurs contiguës en mémoire ; le noyau paginé, lui, suit la table de blocs pour aller chercher chaque bloc où qu'il soit. On récupère ainsi la flexibilité de la pagination sans renoncer à l'efficacité du noyau d'attention.
 
-[SCHEMA-02]
+![La table de blocs : une table des pages appliquée au cache d'attention. Vue logique contiguë projetée sur des blocs physiques épars, en parallèle de la mémoire virtuelle de l'OS.|width=1200](images/20260731-02-table-de-blocs.svg)
 
 Les conséquences sont immédiates. Comme les blocs sont alloués à la demande, un bloc à la fois, il n'y a plus de sur-réservation : une requête qui génère 50 tokens occupe 4 blocs, pas 128. Le seul gaspillage résiduel est la fragmentation interne du dernier bloc — au pire 15 tokens sur 16 — soit **moins de 4 % de gaspillage**[^1], contre 60 à 80 % auparavant. Cette mémoire récupérée se traduit directement en requêtes simultanées supplémentaires, donc en débit. vLLM, le système qui a introduit et popularisé PagedAttention, revendiquait un débit **jusqu'à 24× supérieur à HuggingFace Transformers** et **2 à 4× supérieur** aux meilleurs systèmes de l'époque comme Orca, sans aucune modification de l'architecture du modèle[^1][^2].
 
@@ -42,7 +42,7 @@ Avec une réservation contiguë, on dupliquait *n* fois la mémoire du prompt �
 
 Le mécanisme repose sur un **compteur de références** par bloc physique. Tant que plusieurs séquences lisent le même bloc de prompt, le compteur est supérieur à 1 et le bloc reste partagé, en lecture seule. Au moment où une séquence doit **écrire** dans un bloc partagé — c'est-à-dire dès qu'elle génère son propre token et diverge des autres — le système détecte le compteur > 1, **copie** le bloc dans un nouvel emplacement, décrémente le compteur de l'original, et laisse la séquence écrire dans sa copie privée[^1][^2]. ==Les séquences partagent la mémoire du prompt jusqu'à l'instant précis où elles divergent, et pas une écriture plus tôt.==
 
-[SCHEMA-03]
+![Copie-sur-écriture : k branches échantillonnées partagent le prompt via un compteur de références ; le bloc n'est dupliqué qu'au moment où une branche écrit et diverge.|width=1200](images/20260731-03-copie-sur-ecriture.svg)
 
 Pour l'échantillonnage parallèle et la recherche en faisceau (*beam search*), où de nombreuses branches partagent de longs préfixes communs avant de bifurquer, l'économie de mémoire mesurée atteint **jusqu'à 55 %**[^1], ce qui se retraduit en débit. À ce stade, notons bien le périmètre : ce partage-là reste **intra-requête**. Il vit et meurt avec les *n* complétions d'un même appel. Ce que RadixAttention va apporter, c'est de faire déborder ce partage au-delà des frontières d'une requête.
 
