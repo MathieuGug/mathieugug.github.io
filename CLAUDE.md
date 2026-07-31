@@ -27,6 +27,35 @@ Site personnel de Mathieu Guglielmino, hébergé sur GitHub Pages. Il publie des
 - **Disclosure IA** : chaque artefact porte une mention discrète `Format co-écrit avec l'aide d'une IA` (ou équivalent contextuel).
 - **Pas d'anglicismes en prose française.** Les textes publiés (rapports, hubs, hero, prose des apps, légendes de schémas) sont en français. Bannis en particulier : `load-bearing` (préférer **porteur · pivot · structurant · décisif · critique**), `bottleneck` (→ goulot d'étranglement), `deep dive` en prose (réservé au format/badge), `fail-fast` (→ échec immédiat), `downgrade` (→ rétrogradation), `pricing` (→ tarification), `hard fail` (→ échec terminal). Les termes techniques sans équivalent stable (DAG, SLO, MCP, RC, batch, scheduler, harness, agent, span, queue, back-pressure, anytime au sens « anytime algorithm », EventStream comme nom propre, time-to-first-token) restent en anglais, idéalement en italique au premier usage avec une glose courte. La règle s'applique aux titres, sous-titres et légendes de schémas SVG comme à la prose.
 
+## Ligne éditoriale — altitude et pistes (recadrage 2026-07-31)
+
+**Constat.** La série a dérivé vers l'intérieur des modèles : KV-cache, compression du cache, attention latente, attention parcimonieuse, mélange d'experts, quantification, désagrégation prefill/decode, packaging avancé. Ces dossiers restent publiés et restent bons — mais ils s'enchaînent en cascade (chaque « suite naturelle » descend d'un cran) et ils ont fini par parler à un ingénieur d'inférence plutôt qu'au lecteur de ce site. **La série ne continue plus dans cette direction.**
+
+**Le lecteur cible.** Un décideur data & IA : CDO, CAIO, directeur data, responsable de practice, sponsor métier, consultant qui prépare un cadrage. Il arbitre un portefeuille de cas d'usage, une organisation, un budget, une obligation réglementaire. Il n'implémente pas de noyau d'attention.
+
+**Test d'altitude — trois questions avant d'ouvrir un sujet.** Si la réponse est non à l'une des trois, le sujet n'est pas pour ce site :
+
+1. **Décision** — un CDO / CAIO / directeur métier pourrait-il arbitrer différemment après lecture ?
+2. **Objet** — le sujet se rattache-t-il à une organisation, un budget, un cas d'usage, un contrat, une obligation ? (et non à une architecture interne)
+3. **Explicabilité** — peut-on poser la thèse sans schéma d'architecture de transformeur ?
+
+**Les quatre pistes.** Tout nouveau dossier se rattache explicitement à l'une d'elles (à noter dans le backlog et dans la PR) :
+
+| Piste | Périmètre | Thèmes d'index |
+|---|---|---|
+| **A · Gouvernance & organisation data/IA** | Cadres de gouvernance agentique, rôles CDO / CAIO, topologies d'organisation (CoE, fédéré, produit), comités et instances d'arbitrage, registre des cas d'usage, niveaux d'autonomie, AI Act côté déployeur, conformité opérationnelle | `gouvernance` |
+| **B · Cas d'usage métier & ROI mesurable** | Portefeuille et scoring de cas d'usage, mortalité pilote → production, coût total de possession d'un agent, ROI attribuable vs déclaré, faire ou acheter, retex sectoriels | `economie` |
+| **C · Plateformes, outillage & pièges de déploiement** | Cartographie des plateformes agentiques d'entreprise, catalogue d'outils MCP interne, socle data prêt pour l'agentique, observabilité et évaluation *comme dispositif de pilotage*, anti-patrons de déploiement | `production` `agentique` |
+| **D · Data marketing & mesure** | Mesure d'incrémentalité, MMM, expérimentation géographique, uplift et ciblage, résolution d'identité, salles blanches et collaboration de données, retail media, perte de signal et consentement, activation | `data-marketing` |
+
+La piste **D est nouvelle** (ouverte le 2026-07-31, en lien avec le rôle de Mathieu chez Epsilon). Son dossier fondateur est `ia-causale-retail` — « Ce que la promotion a vraiment causé ». Le thème `data-marketing` existe comme filtre sur l'index racine.
+
+**La technique entre par la conséquence.** Rien n'interdit un passage technique dense — mais il doit être *appelé* par une décision, pas l'inverse. On explique le KV-cache parce qu'il détermine une facture ; on n'ouvre pas un dossier *sur* le KV-cache. Formulation courte : **le sujet est la décision, la technique est l'argument.**
+
+**Sujets gelés** (couverts, non prolongés — voir `BACKLOG.md` § « Filon technique — gelé ») : internes de l'attention et du cache, architectures MoE, quantification, systèmes d'inférence distribuée, chaîne d'approvisionnement du silicium. Leurs « suites naturelles » ne sont plus des invitations : ne pas les piocher sans demande explicite de Mathieu.
+
+**Cascade.** Ce cadrage est appliqué dans `BACKLOG.md` (sections réorganisées par piste) et dans `docs/routines/illustrated-deep-research.md` (Phase 1 — stratégie de choix du sujet). Les trois fichiers doivent rester cohérents : modifier l'un impose de vérifier les deux autres.
+
 ## Stack et conventions
 
 - HTML/CSS/JS vanille. Chaque page est autonome (un dossier = un artefact).

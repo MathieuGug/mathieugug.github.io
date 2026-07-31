@@ -5,6 +5,10 @@
 
 ## Changelog
 
+- **2026-07-31 — recadrage éditorial : fin de la descente technique.** La routine a produit une cascade de dossiers de plus en plus internes aux modèles (`kv-cache` → `compression-kv-cache` → `attention-latente` / `attention-parcimonieuse`, plus `melange-experts`, `quantification-llm`, `desagregation-prefill-decode`, `souverainete-compute`). Aucun de ces dossiers n'est raté — mais empilés, ils ont déplacé la série vers un lecteur ingénieur d'inférence, loin du décideur data & IA visé.
+  **Cause racine** : la stratégie n° 1 de la Phase 1 était « deep dive sur un dossier existant », et chaque dossier livré terminait sur des « suites naturelles » plus profondes que lui. La routine les traitait comme une file à vider — mécanique d'approfondissement à sens unique, sans force de rappel vers le haut. Le filtre anti-doublon fonctionnait très bien : il empêchait de refaire deux fois le même sujet, pas de descendre indéfiniment.
+  **Fix** : la Phase 1 impose désormais (a) un **test d'altitude** en trois questions avant tout choix, (b) un choix **dans l'une des quatre pistes éditoriales** du `BACKLOG.md` (gouvernance & organisation / ROI & cas d'usage / plateformes & déploiement / data marketing), et (c) une **interdiction explicite** de piocher dans la section « Filon technique — gelé ». Le « deep dive sur un dossier existant » n'est plus une stratégie en soi : il n'est légitime que si le nouvel angle tient debout dans une piste. Référence : `CLAUDE.md` § « Ligne éditoriale — altitude et pistes ».
+
 - **2026-06-23 — fix boucle « désagrégation prefill/decode ».** La routine a reproduit quatre fois le même sujet (branches `claude/research-desagregation-prefill-decode-2026-06-{12,15,22}` + `claude/research-desagregation-inference-2026-06-17`), aucune mergée.
   **Cause racine** : le filtre anti-doublon (Phase 1) ne lisait que la section « Déjà couverts » du `BACKLOG.md`. Or cette section n'avance qu'**au merge** : la routine la met à jour *sur sa branche*, mais comme Mathieu ne merge pas automatiquement, `main` ne reçoit jamais la mise à jour. Résultat : un WIP poussé-mais-non-mergé est **invisible** au run suivant, et le backlog `main` continue d'**inviter** le sujet (ligne « Suite naturelle (b) désagrégation prefill/decode »). Boucle garantie. Le run du 17 a même utilisé un slug différent (`desagregation-inference`), donc un simple check par nom de dossier l'aurait raté.
   **Fix** : la Phase 1 lit désormais **deux** sources d'historique — « Déjà couverts » **ET** les branches `claude/research-*` poussées sur le remote (mergées ou non). Un sujet présent dans l'une OU l'autre est exclu. Voir Phase 1 ci-dessous.
@@ -30,7 +34,7 @@ git checkout origin/dev -- .claude/skills/illustrated-deep-research/
 NE COMMIT PAS `.claude/skills/...`.
 
 Lis (Read), dans cet ordre :
-1. `CLAUDE.md` racine (éditorial, palette, mobile 7 points, sidebars, SVG, surlignage stabilo)
+1. `CLAUDE.md` racine (éditorial, palette, mobile 7 points, sidebars, SVG, surlignage stabilo) — **lis intégralement la section « Ligne éditoriale — altitude et pistes »**, c'est elle qui commande le choix du sujet en Phase 1
 2. `.claude/skills/illustrated-deep-research/SKILL.md` (lis ENTIÈREMENT, en particulier la section `## Avoid token-heavy app rewrites — use \`assets/build-app.py\``)
 3. `.claude/skills/illustrated-deep-research/references/companion-app.md` (architecture app HTML)
 4. `.claude/skills/illustrated-deep-research/references/svg-editorial-style.md`
@@ -62,11 +66,27 @@ _Mis à jour par la routine `Illustrated deep research · mer + ven`._
 
 ## Phase 1 — Choix du sujet + branche
 
-Stratégies (ordre de préférence) :
-1. Deep dive sur un dossier existant (`agents-computer-use`, `anatomie`, `evaluation-agentique`, `gouvernance`, `harness-agentique`, `ia-et-travail`, `llm-jailbreaking`, `memoire-agentique`, `narrative-experiences`, `observabilite-agents-ia`, `proces-musk-altman`, `world-models`)
-2. Actu IA majeure de la semaine (avec densité analytique)
-3. Evergreen prio du backlog
-4. Nouveau sujet structurel
+### Test d'altitude — préalable non négociable (ajouté 2026-07-31)
+
+Avant toute autre considération, le candidat doit répondre **oui aux trois** questions de `CLAUDE.md` § « Ligne éditoriale » :
+
+1. **Décision** — un CDO / CAIO / directeur métier pourrait-il arbitrer différemment après lecture ?
+2. **Objet** — le sujet se rattache-t-il à une organisation, un budget, un cas d'usage, un contrat, une obligation ? (et non à une architecture interne de modèle)
+3. **Explicabilité** — la thèse tient-elle sans schéma d'architecture de transformeur ?
+
+Un « non » = sujet écarté, on passe au suivant. La profondeur technique reste bienvenue **à l'intérieur** d'un dossier, appelée par une décision — jamais comme sujet.
+
+### Stratégies (ordre de préférence)
+
+1. **Un sujet d'une des quatre pistes du `BACKLOG.md`** — A · gouvernance & organisation data/IA, B · cas d'usage métier & ROI mesurable, C · plateformes, outillage & pièges de déploiement, D · data marketing & mesure. **Priorité à la piste D** tant qu'elle ne compte qu'un dossier (`ia-causale-retail`).
+2. **Un sujet de la watchlist actu**, à condition que l'angle soit la conséquence pour une direction data — pas l'annonce elle-même.
+3. **Un nouveau sujet structurel** rattachable à l'une des quatre pistes. Dans ce cas, l'ajouter au backlog dans la bonne section en Phase 6.
+
+> ⛔ **Interdit sans demande explicite de Mathieu** : tout sujet de la section « Filon technique — gelé » du `BACKLOG.md` (internes de l'attention et du cache, MoE, quantification, systèmes d'inférence, silicium, raisonnement formel, couche basse d'observabilité). Les « suites naturelles » qui y figurent sont archivées pour mémoire, elles ne valent **pas** invitation.
+
+> Un **approfondissement d'un dossier existant** n'est plus une stratégie autonome : il est légitime seulement si le nouvel angle tient debout dans une piste et passe le test d'altitude. « Descendre d'un cran » dans le dossier précédent est précisément la boucle corrigée le 2026-07-31.
+
+Note dans l'outline (Phase 2) et dans la PR (Phase 7) **la piste retenue (A/B/C/D)**.
 
 ### Filtre anti-doublon — DEUX sources d'historique, pas une (corrigé 2026-06-23)
 
@@ -95,6 +115,7 @@ git push -u origin claude/research-<slug>-YYYY-MM-DD
 Sources tier-1 uniquement. 8-12 sources clés, web_fetch les plus importantes.
 
 Écris `<slug>/.outline.md` :
+- **Piste éditoriale (A/B/C/D)** + trois lignes justifiant le passage du test d'altitude (décision · objet · explicabilité)
 - Thèse centrale (1-2 phrases)
 - Plan 6-9 sections avec leads
 - Liste numérotée des 8-12 sources (URL + 1 ligne pertinence)
@@ -264,7 +285,7 @@ git push origin <branche>
 
 1. `<slug>/index.html` : hub calqué sur `proces-musk-altman/index.html` (eyebrow + titre + lede + cartes des formats : rapport, app). Bouton retour vers `../index.html#series`. Favicon. Footer Lincoln + IA.
 2. `<slug>/README.md` : court (cf. SKILL.md).
-3. `index.html` racine : ajoute la carte du nouvel artefact EN HAUT de la grille `#series` (date décroissante). NN = max + 1. Badge `Dossier` (ou `Veille` accent si veille).
+3. `index.html` racine : ajoute la carte du nouvel artefact EN HAUT de la grille `#series` (date décroissante). NN = max + 1. Badge `Dossier` (ou `Veille` accent si veille). Renseigne `data-themes` selon la piste : **A** → `gouvernance`, **B** → `economie`, **C** → `production` (+ `agentique` si l'agent est central), **D** → `data-marketing` (+ `production` si le dossier porte aussi sur l'outillage). Plusieurs thèmes sont permis, séparés par des espaces.
 4. Supprime `<slug>/.outline.md` ET le dossier `<slug>/.build/` (éphémères) :
 ```bash
 rm -rf <slug>/.build <slug>/.outline.md
@@ -285,14 +306,14 @@ git push origin <branche>
 ```
 gh pr create \
   --title "Research · <slug> — <titre court>" \
-  --body "<résumé 6-10 lignes : sujet + thèse + stratégie 1/2/3/4 + fichiers + 3 sources clés + état backlog>"
+  --body "<résumé 6-10 lignes : sujet + thèse + PISTE ÉDITORIALE (A/B/C/D) + stratégie 1/2/3 + fichiers + 3 sources clés + état backlog>"
 ```
 NE MERGE PAS. Si échec, abandonne — la branche est poussée, Mathieu peut ouvrir la PR.
 
 ## Output final
 
 Résumé court :
-- Stratégie (1/2/3/4) + pourquoi
+- Piste éditoriale (A/B/C/D) + stratégie (1/2/3) + pourquoi
 - Slug + thèse
 - Phases atteintes (jusqu'où tu es allé)
 - Host scaffold utilisé (lequel)
