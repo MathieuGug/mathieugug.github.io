@@ -10,7 +10,7 @@ const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
 const VALID_TYPES = ['veille', 'etude', 'dossier'];
 const VALID_THEMES = [
   'agentique', 'production', 'modeles',
-  'gouvernance', 'economie', 'societe', 'storytelling'
+  'gouvernance', 'economie', 'data-marketing', 'societe', 'storytelling'
 ];
 
 const cardRe = /<a[^>]+class="serie[^"]*"[^>]*>/g;
