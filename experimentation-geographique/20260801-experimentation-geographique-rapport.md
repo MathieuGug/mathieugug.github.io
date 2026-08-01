@@ -50,7 +50,7 @@ Reste la particularité qui rend le design difficile, et qu'aucun manuel de test
 
 ## 3. Quatre familles de méthodes, un seul arbitrage
 
-[SCHEMA-02]
+![Cinq familles de méthodes d'expérimentation géographique, ordonnées par nombre d'unités disponibles|1200](images/20260801-02-familles-methodes.svg)
 
 La littérature applicable tient en quatre familles, plus une cinquième qui n'est pas géographique mais qui répond à la même question quand la géographie ne suffit pas. Ce qui les sépare n'est pas la sophistication statistique mais le régime d'application : combien d'unités on a, à quel point elles sont hétérogènes, et ce que le résultat doit permettre de décider.
 
@@ -70,7 +70,7 @@ L'arbitrage se résume donc ainsi. Beaucoup de zones homogènes et un besoin d'i
 
 ## 4. Le mur de la puissance
 
-[SCHEMA-03]
+![Le mur de la puissance : effet minimal détectable, zone aveugle, taux de faux positifs et effets manqués|1200](images/20260801-03-mur-puissance.svg)
 
 C'est ici que le sujet cesse d'être technique et devient budgétaire.
 
