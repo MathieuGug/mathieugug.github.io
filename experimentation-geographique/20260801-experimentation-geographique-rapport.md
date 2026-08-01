@@ -26,7 +26,7 @@ Le dossier `ia-causale-retail` s'arrêtait sur ce constat : le graphe causal est
 
 ## 2. Anatomie d'une expérience géographique
 
-[SCHEMA-01]
+![Anatomie d'une expérience géographique : trois périodes, assignation des zones, estimand en sortie|1200](images/20260801-01-anatomie-geo-test.svg)
 
 Une expérience géographique est une expérience aléatoire dont l'unité n'est pas la personne mais la **zone ciblable par la publicité** : un *designated market area* (DMA) aux États-Unis, une région ou un département en France, une ville, un code postal selon la granularité que les régies acceptent. On assigne ces zones à un groupe traité et à un groupe témoin, on modifie la pression publicitaire dans le groupe traité — en l'ajoutant, en la coupant, en la déplaçant — et on compare les ventes observées à ce qu'elles auraient été sans l'intervention.
 
