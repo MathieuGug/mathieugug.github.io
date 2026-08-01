@@ -288,40 +288,40 @@
       padding: 0 8px;
     }
 
-    /* ───────── 80%-cell schemas (desktop only) ─────────
-       On desktop, .figure breaks out of main#report's 760px column to span 80% of
-       the main GRID CELL (between TOC and sources), centered. Neither sidebar is
-       overlapped, and the 20% left over splits evenly on both sides — full-width
-       schemas read as oversized on 1600+ screens. Text body keeps its 760px max.
+    /* ───────── Full-cell schemas (desktop only) ─────────
+       On desktop, .figure breaks out of main#report's 760px column to span the
+       full main GRID CELL (between TOC and sources). Neither sidebar is overlapped.
+       Text body keeps 760px max for readability; schemas grab the whole main-cell
+       width — viewport-pleine puisque .layout n'est plus capée à 1440 px.
 
        Math (assumes layout: full-width grid, TOC 240, sources 320, main#report
-       max-width 760 with margin: 0 auto, padding 48 horizontal → 664px of content).
-       On utilise `width: auto` + margins négatifs symétriques : la figure calculée
-       vaut 664 + 2 × |margin|, donc viser une largeur W revient à poser
-       margin = (W - 664) / 2, avec W = 0,8 × largeur du main-cell.
+       max-width 760 with margin: 0 auto, padding 48 horizontal). On utilise
+       `width: auto` + margins négatifs symétriques : la marge négative absorbe
+       à la fois le centrage de main dans le main-cell et son padding interne 48 px.
 
        - Default state (Sources panel expanded), grille `240 | 1fr | 320` :
-         main-cell = 100vw - 560 → W = 80vw - 448
-         → margin-inline = -((80vw - 448 - 664) / 2) = -(40vw - 556)
-         À 1600 px : marges -84 (figure = 832). À 1920 px : marges -212 (figure = 1088).
+         main-cell = 100vw - 560. main centré dans cette cellule.
+         Distance main_content_edge → main-cell_edge = (100vw - 1320) / 2 + 48
+         → margin-inline = -((100vw - 1320) / 2 + 48), clampée à 0.
+         À 1320 px : marges 0 (figure = main = 760).
+         À 1440 px : marges -108 (figure = 880, comme avant).
+         À 1920 px : marges -348 (figure = 1360).
        - .layout.sources-collapsed (Sources rétractée), grille `240 | 1fr | 0` :
-         main-cell = 100vw - 240 → W = 80vw - 192
-         → margin-inline = -(40vw - 428). Comme main est centré DANS la cellule,
-         les marges symétriques s'équilibrent et la figure reste centrée sur la
-         bande [TOC-right, viewport-right] sans en toucher les bords.
-         À 1920 px : marges -340 (figure = 1344).
-       - Plancher `max(48px, …)` : à 48 px de débord, la figure vaut exactement la
-         boîte de main#report (664 + 96). En dessous d'environ 1510 px (état par
-         défaut), 80 % du main-cell passerait sous la largeur de la colonne de
-         texte — le plancher l'en empêche, et ne peut jamais recouvrir une sidebar.
+         main-cell = 100vw - 240. main centré dans une cellule asymétrique
+         (par rapport à la viewport). Distance main_content_edge → cell_edge
+         = (100vw - 904) / 2 (formule simplifiée : 760 + 96 padding + 48 margin).
+         Comme main est centré DANS la cellule, les marges symétriques s'équilibrent
+         et la figure couvre [TOC-right, viewport-right] :
+         → margin-inline = -((100vw - 904) / 2), clampée à 0.
+         À 1920 px : marges -508 (figure = 1680).
 
        Mobile (<1025px): layout already collapses to single column, no override needed.
        body { overflow-x: hidden } (above) is defensive against any inadvertent overflow. */
     @media (min-width: 1025px) {
-      /* Default state (sources panel expanded): figure spans 80% of the main-cell. */
+      /* Default state (sources panel expanded): figure spans the main-cell. */
       .figure {
-        margin-left: calc(-1 * max(48px, 40vw - 556px));
-        margin-right: calc(-1 * max(48px, 40vw - 556px));
+        margin-left: calc(-1 * max(0px, (100vw - 1320px) / 2 + 48px));
+        margin-right: calc(-1 * max(0px, (100vw - 1320px) / 2 + 48px));
         /* Smooth transition when the user toggles the sources panel — matches the
            layout's grid-template-columns transition (280ms). */
         transition: margin-left 280ms ease, margin-right 280ms ease;
@@ -330,10 +330,10 @@
         padding-right: clamp(16px, 3vw, 48px);
         border-radius: 0;
       }
-      /* Sources panel collapsed: figure spans 80% of [TOC-right, viewport-right]. */
+      /* Sources panel collapsed: figure extends from TOC-right to viewport-right. */
       .layout.sources-collapsed .figure {
-        margin-left: calc(-1 * max(48px, 40vw - 428px));
-        margin-right: calc(-1 * max(48px, 40vw - 428px));
+        margin-left: calc(-1 * max(0px, (100vw - 904px) / 2));
+        margin-right: calc(-1 * max(0px, (100vw - 904px) / 2));
       }
       /* Caption re-anchored to the prose column so its typography stays readable */
       .figure-caption {
