@@ -98,7 +98,7 @@ D'où la seule discipline qui tienne : **l'effet minimal détectable (MDE) se ca
 
 ## 5. Le budget délibérément sacrifié
 
-[SCHEMA-04]
+![L'économie du budget témoin : coût d'opportunité croissant contre précision, zone de compromis et seuil d'adoption|1200](images/20260801-04-economie-temoin.svg)
 
 Voici le poste que je ne vois presque jamais chiffré dans un plan de mesure, et qui est pourtant le seul qui compte.
 
@@ -126,7 +126,7 @@ Reste le seuil d'entrée. Les retours de terrain convergent sur une observation 
 
 ## 6. Cinq façons de rater un geo-test
 
-[SCHEMA-05]
+![Cinq façons de rater une expérience géographique : symptôme, mécanisme, parade|1200](images/20260801-05-anti-patrons.svg)
 
 Les échecs se répètent avec une régularité qui permet de les cataloguer. Aucun n'est exotique ; tous sont détectables au moment du design.
 
