@@ -144,7 +144,7 @@ Les échecs se répètent avec une régularité qui permet de les cataloguer. Au
 
 ## 7. La boucle : du test au prior, du prior au budget
 
-[SCHEMA-06]
+![La boucle expérience, prior calibré, modèle de mix, réallocation, et la cadence annuelle|1200](images/20260801-06-boucle-test-prior-budget.svg)
 
 Ce qui transforme une dépense de mesure en actif, c'est le mécanisme par lequel un résultat d'expérience se propage dans les décisions ultérieures, y compris celles qui ne font l'objet d'aucun test.
 
@@ -166,7 +166,7 @@ Cette feuille de route a une conséquence budgétaire qu'il faut assumer : le bu
 
 ## 8. Gouvernance des résultats
 
-[SCHEMA-07]
+![Gouvernance de la mesure : pré-enregistrement, registre, conflit du juge et partie, et matrice faire ou acheter|1200](images/20260801-07-gouvernance-mesure.svg)
 
 Il reste la partie que la littérature technique ne traite pas et qui décide de tout : qui a le droit de dire qu'un test est concluant.
 
