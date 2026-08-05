@@ -48,7 +48,7 @@ Google formule explicitement l'objectif : cette séquence « crée une piste d'a
 
 **Couche 3 — transaction et règlement.** C'est ACP. La spécification, maintenue par OpenAI et Stripe sous un modèle de décision par consensus avec l'intention affichée de passer à terme sous l'égide d'une fondation neutre, comprend une API de commande, une API de délégation de paiement et un flux produit[^2]. Le versionnement est daté ; la version stable au moment de la rédaction est celle du 17 avril 2026[^2]. Le principe de conception qui compte pour une direction commerciale est écrit noir sur blanc : les agents « intègrent la transaction sans devenir le marchand de référence », l'architecture « préserve la relation entre le marchand et son client »[^2]. Le jeton de paiement partagé transmis au marchand ou à son prestataire est borné par un montant maximal et une expiration[^4].
 
-[SCHEMA-02]
+![La pile du commerce agentique en quatre couches — identité, mandat, transaction, et la case mesure laissée vide|1300](images/20260805-02-pile-agentique.svg)
 
 Une fois cette pile dessinée, l'observation qui commande le reste du dossier saute aux yeux : **il n'y a personne sur la quatrième case.** Aucune des six spécifications ne définit ce qu'est une exposition, ce qu'est une attribution, ni ce qu'un annonceur est en droit de mesurer ou de vérifier dans une transaction agentique. AAMP travaille sur la couche publicitaire, mais par le haut — en étendant OpenRTB, AdCOM et OpenDirect vers un monde d'agents acheteurs de média[^12] — et non sur la question de savoir ce qui reste observable quand l'acheteur *final* est un agent.
 
