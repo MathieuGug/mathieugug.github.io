@@ -143,7 +143,7 @@ Ce que les protocoles agentiques installent est d'une autre nature : un **mandat
 
 Le déplacement de gouvernance qui en découle est concret. La question « cette personne a-t-elle consenti au traitement ? » se double d'une question nouvelle : « **pour le compte de qui cet agent a-t-il agi, et sur quelle autorité ?** » — question de chaîne de délégation, pas de finalité de traitement. Elle appelle des réponses que le registre des traitements ne contient pas.
 
-[SCHEMA-06]
+![Du consentement au mandat : la chaîne intention – panier – paiement, la comparaison des deux objets de gouvernance, et le trou de l'authentification forte du client|1300](images/20260805-06-consentement-mandat.svg)
 
 Côté paiement, le droit européen n'a pas encore de case pour cet objet. Les modèles de paiement par agent restent soumis à la DSP2 et à ses normes techniques sur l'authentification forte du client, sans régime spécifique ; or ce régime suppose une **autorisation humaine claire de l'ordre de paiement**, et il n'existe pas de mécanisme permettant de traiter un agent comme l'équivalent d'un payeur humain[^13][^14]. La parade employée en pratique — le mandat de dépense pré-approuvé, avec plafonds et cas d'usage définis à l'avance[^14] — est exactement ce que décrit le jeton borné en montant et en durée d'ACP[^4] et la chaîne de mandats d'AP2[^1]. Ce sont des solutions d'ingénierie construites en anticipation d'un cadre que la DSP3 et le règlement sur les services de paiement devront trancher[^13][^14].
 
