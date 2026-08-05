@@ -68,7 +68,7 @@ Il faut le dire clairement, parce que le discours ambiant sur le sujet est anxio
 
 Tout ce bloc — c'est-à-dire **l'intégralité de la phase de considération** — se déroule à l'intérieur du système du fournisseur d'agent. Le marchand ne le voit pas, et rien dans les protocoles ne l'y oblige. Le mandat d'intention d'AP2 contient bien la demande initiale de l'utilisateur[^1], mais il circule dans la chaîne d'autorisation de paiement, pas dans la chaîne d'analyse marketing — et il n'existe aucune obligation de le rendre exploitable à des fins de mesure.
 
-[SCHEMA-03]
+![Anatomie d'une transaction agentique : la frontière d'observation entre le fournisseur d'agent et le marchand|1300](images/20260805-03-anatomie-transaction.svg)
 
 Le déplacement est donc net et il est asymétrique : **la donnée comportementale du marchand commence désormais au moment de la mise au panier.** Découverte, comparaison, considération, formation de la préférence : ce qui constituait le matériau de l'analyse marketing est passé chez un tiers, qui n'a aucune raison contractuelle de le restituer et de bonnes raisons commerciales de le garder.
 
