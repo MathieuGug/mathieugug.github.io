@@ -121,7 +121,7 @@ L'agentique aggrave ce vice de deux façons.
 
 **Ensuite, elle déplace l'objet vendu vers quelque chose qui ressemble beaucoup à du référencement payant à l'intérieur du catalogue** — avec une différence : le classement est consommé par une machine, à un rythme et dans des volumes qui rendent la notion d'enchère au coût par mille difficile à défendre. Que vaut une impression servie à un agent qui interroge quarante références en deux cents millisecondes et n'en retient qu'une ? La question n'est pas rhétorique : c'est la question de tarification que tout contrat de régie devra trancher dans les dix-huit mois.
 
-[SCHEMA-05]
+![Le déplacement de l'inventaire retail media : placement visuel, influence du classement, flux produit — et l'état de la certification à chaque étage|1300](images/20260805-05-retail-media-sans-spectateur.svg)
 
 L'état des standards ne comble pas ce vide, et il faut regarder le calendrier de près pour comprendre pourquoi. IAB Europe a publié en janvier 2026 la version 2 de ses standards de mesure du commerce media, avec transition close fin juillet 2026 et fenêtre d'attribution par défaut de trente jours, « empiriquement justifiée » et alignée sur le cycle de vente de la catégorie[^10]. Le texte est solide — pour un monde à impressions. IAB Tech Lab, de son côté, construit AAMP sur OpenRTB, AdCOM et OpenDirect en y greffant MCP, A2A et gRPC[^12] : c'est la standardisation de l'**achat média par des agents**, pas celle de la **mesure d'un achat produit par un agent**. Les deux sujets portent le même adjectif et ne sont pas le même problème.
 
