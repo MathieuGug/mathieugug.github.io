@@ -99,7 +99,7 @@ C'est aussi la ligne qui rend le standard de mesure en vigueur inapplicable : le
 
 **Pilier 3 — l'incrémentalité mesurée par l'expérience, et le modèle de mix : structurellement indemnes.** Et pour une raison qui n'a rien d'accidentel : ces méthodes n'ont **jamais** eu besoin d'observer l'individu. Une expérimentation géographique compare l'évolution des ventes agrégées d'un ensemble de zones traitées à celle de zones témoins ; elle n'a besoin de connaître ni le parcours, ni la session, ni l'identité de qui que ce soit. Un modèle de mix travaille sur des séries temporelles agrégées de dépense et de ventes. **Que l'acheteur final soit un humain ou un agent est, pour ces deux méthodes, rigoureusement indifférent** — tant que les ventes, elles, restent comptées.
 
-[SCHEMA-04]
+![Le tri des familles de mesure : attribution multi-touch, retail media, incrémentalité expérimentale et modèle de mix face aux briques d'observation retirées|1300](images/20260805-04-tri-des-piliers.svg)
 
 Ce dernier point mérite d'être formulé sans ambiguïté, parce qu'il constitue la conséquence pratique principale de ce dossier. Le débat « modèle de mix contre expérimentation contre attribution », qui occupe les directions marketing depuis cinq ans, vient d'être tranché par l'infrastructure plutôt que par l'argumentation. ==L'agentique ne dégrade pas l'attribution multi-touch : elle la prive d'objet, et promeut par élimination la seule famille de méthodes qui ne dépendait pas de l'observation individuelle.==
 
