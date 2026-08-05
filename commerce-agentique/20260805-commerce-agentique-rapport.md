@@ -24,7 +24,7 @@ Le volume, lui, n'a pas attendu les standards. Adobe mesure sur les sites de dis
 
 Ces chiffres appellent une précaution immédiate, et elle est structurante pour la suite du dossier : **ils sont annoncés par des acteurs qui vendent l'outillage correspondant, et aucun n'est audité par un tiers.** Ils indiquent un ordre de grandeur et une direction — pas un niveau. Le verbe « influencer » chez Salesforce, en particulier, n'a pas de définition publique opposable ; il recouvre une famille de situations très large. On les utilise ici pour établir que le phénomène a cessé d'être marginal, pas pour dimensionner un budget.
 
-[SCHEMA-01]
+![Chronologie du commerce agentique, septembre 2025 – juillet 2026, en trois pistes : protocoles, standards de mesure, marché et régulation|1300](images/20260805-01-chronologie.svg)
 
 Ce qu'il faut retenir de cette chronologie n'est pas la liste. C'est que **la normalisation est arrivée par le paiement et par la sécurité, jamais par la mesure.** Les acteurs qui se sont précipités pour normaliser sont ceux qui avaient un risque de fraude ou de responsabilité à couvrir. Personne n'a de risque symétrique sur la mesure — donc personne ne l'a normalisée. C'est exactement pour cette raison que la charge retombe sur l'annonceur et sur le distributeur.
 
