@@ -184,7 +184,7 @@ Voici, en synthèse, ce qu'une direction data ou marketing a réellement à déc
 
 **5. Ne pas standardiser prématurément sur un protocole.** *La décision la plus rentable est ici de ne pas décider.* Les couches identité, mandat et transaction sont occupées par des acteurs différents, sans concurrence frontale, et la couche identité converge techniquement — TAP et Web Bot Auth reposent tous deux sur les signatures de message HTTP de la RFC 9421[^5][^7]. Implémenter ce qui est nécessaire, couche par couche, coûte moins cher qu'un pari d'architecture sur un gagnant, et n'engage pas.
 
-[SCHEMA-07]
+![Cinq arbitrages datés, classés par réversibilité et par ce qui les date|1300](images/20260805-07-cinq-arbitrages.svg)
 
 ---
 
