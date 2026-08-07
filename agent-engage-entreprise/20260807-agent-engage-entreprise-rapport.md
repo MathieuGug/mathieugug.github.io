@@ -11,7 +11,7 @@
 - **L'assureur s'est retiré au même moment.** Des avenants d'exclusion visant explicitement les productions d'IA générative ont été diffusés sur le marché américain au 1ᵉʳ janvier 2026, et leur formulation ne demande qu'un lien causal indirect pour s'appliquer. Le poste de coût qui n'était pas provisionné n'est pas le litige : c'est la part du litige qui a cessé d'être transférable.
 - **Et l'AI Act ne comble pas ce trou-là.** Au 7 août 2026, la seule obligation qui mord sur un agent en contact client est celle de dire qu'il en est un (article 50). L'obligation de conserver les journaux relève de l'article 26, reporté au 2 décembre 2027 pour l'annexe III. **La pression probatoire ne vient pas du régulateur : elle vient du juge civil et de l'assureur, et elle est déjà là.**
 
-[SCHEMA-01]
+![Chronologie 2023-2027 en trois pistes : incidents documentés, décisions et sanctions, cadre applicable daté|1300](images/20260807-01-chronologie.svg)
 
 ## L'affaire qui a tranché la question
 
@@ -25,7 +25,7 @@ La décision — *Moffatt v. Air Canada*, 2024 BCCRT 149, rendue le 14 février 
 
 **Troisième argument : la diligence.** Le tribunal a appliqué le test classique de la déclaration inexacte par négligence — devoir de vigilance né de la relation commerciale, déclaration inexacte, négligence dans sa production, confiance raisonnable du destinataire, dommage — et a jugé qu'Air Canada n'avait pas pris de mesures raisonnables pour s'assurer de l'exactitude de son agent. Rien dans la décision n'indique qu'Air Canada ait produit un dispositif de contrôle, un jeu de tests, un journal de conversation ou une politique interne encadrant ce que l'agent pouvait affirmer. **Elle n'a pas perdu parce que son agent s'était trompé. Elle a perdu parce qu'elle n'a rien pu opposer à cette erreur.** C'est déjà, en février 2024, tout le sujet de ce dossier.
 
-[SCHEMA-02]
+![Anatomie de la décision Moffatt contre Air Canada : la chaîne des faits et les trois arguments de défense rejetés|1300](images/20260807-02-anatomie-air-canada.svg)
 
 Une précision de portée, parce qu'elle est régulièrement escamotée dans les commentaires : il s'agit d'un tribunal administratif de petites créances canadien, dont les décisions ne lient aucune juridiction, pas même en Colombie-Britannique. Sa valeur n'est pas jurisprudentielle au sens strict — elle est **démonstrative**. Elle établit qu'un défendeur bien conseillé a essayé l'argument de l'exonération par l'agent, et qu'il n'a pas tenu trente secondes face au droit commun. Depuis, aucune entreprise ne l'a retenté publiquement.
 
