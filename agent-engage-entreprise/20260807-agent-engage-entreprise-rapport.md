@@ -45,7 +45,7 @@ Cinq familles se dégagent, et chacune mobilise un régime juridique distinct.
 
 **Famille 5 — l'agent qui devient vecteur.** L'agent est détourné par ce qu'on lui donne à lire, et exécute ce qu'un tiers y a écrit. C'est la famille la plus documentée techniquement et la moins documentée judiciairement : les démonstrations d'injection d'instruction sont innombrables, les condamnations quasi inexistantes, parce que le préjudice y est rarement individualisable. Elle n'en est pas moins la seule des cinq où la faute peut être qualifiée de manquement à la sécurité au sens du RGPD, avec l'échelle de sanctions correspondante.
 
-[SCHEMA-03]
+![Cinq familles d'engagement : ce qui bascule, le régime juridique mobilisé et l'incident emblématique de chacune|1300](images/20260807-03-cinq-familles.svg)
 
 Reste un treizième cas, qui n'appartient à aucune de ces familles et vaut à lui seul une section.
 
@@ -81,7 +81,7 @@ Il faut en tirer la conséquence exacte, parce qu'elle est contre-intuitive. ==A
 
 **La théorie de l'agent**, enfin, mérite un mot pour ce qu'elle ouvre. En admettant qu'un fournisseur d'outil de tri de candidatures puisse être tenu directement responsable comme *agent* de l'employeur, le tribunal californien n'a pas déchargé l'employeur : il a ajouté un défendeur[^5]. Pour une direction, la lecture utile est celle-ci — externaliser l'agent n'externalise pas la responsabilité, cela crée un second responsable auprès duquel on pourra se retourner, si et seulement si le contrat l'a prévu.
 
-[SCHEMA-04]
+![Carte des régimes de responsabilité applicables en 2026 : cinq fondements cumulatifs et la case laissée ouverte par le retrait de la directive responsabilité IA|1300](images/20260807-04-carte-des-regimes.svg)
 
 Et le retrait de la directive sur la responsabilité en matière d'IA ? Annoncé dans le programme de travail de la Commission le 11 février 2025, faute d'accord prévisible entre États membres, il a été formellement acté en octobre 2025[^13]. Une partie des commentaires l'a lu comme un allègement. C'est un contresens. Ce texte avait pour objet d'**harmoniser** les règles nationales de responsabilité applicables à l'IA et d'y introduire des présomptions communes. Son abandon ne supprime aucune responsabilité : il laisse chaque droit national gouverner, avec des régimes qui divergent fortement d'un État à l'autre. Pour un déployeur présent dans plusieurs pays européens, le retrait ne réduit pas le risque, il en **augmente la variance** — et il rend le droit national français, dont le régime de responsabilité du fait des choses est particulièrement large, à nouveau déterminant.
 
