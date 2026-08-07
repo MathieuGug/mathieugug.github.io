@@ -99,7 +99,7 @@ Le texte comporte deux mécanismes qui, combinés, retournent la charge de la pr
 
 Un raffinement défensif est déjà apparu, et il en dit long. En mai 2026, dans l'affaire *Mobley*, un juge fédéral a admis que les données de test de biais produites dans le cadre d'un audit interne pouvaient être protégées de la communication par le secret des correspondances entre avocat et client[^15]. La conséquence est prévisible : les tests seront désormais commandités par la direction juridique. C'est rationnel, et c'est coûteux — un jeu d'évaluation protégé par le secret professionnel ne peut plus servir librement à piloter le produit, à alimenter un tableau de bord, ni à justifier un déploiement auprès d'un métier. **L'entreprise gagne une protection en litige et perd un instrument de pilotage.** Une direction data doit savoir qu'elle aura cet arbitrage à faire, et qu'il ne sera pas fait par elle.
 
-[SCHEMA-05]
+![Le renversement probatoire : ce que le demandeur devait établir avant décembre 2026 et ce que le défendeur doit produire après|1300](images/20260807-05-renversement-probatoire.svg)
 
 De cette section découle la seule liste vraiment opérationnelle de ce dossier : le dossier de preuve d'un agent. Sept postes, dont trois seulement existent par défaut dans un déploiement ordinaire.
 
@@ -111,7 +111,7 @@ De cette section découle la seule liste vraiment opérationnelle de ce dossier 
 6. **Le journal des escalades** : les cas où l'agent a passé la main, et ceux où il aurait dû.
 7. **La politique de conservation** elle-même, opposable et respectée. Six mois est le plancher retenu par l'AI Act ; les délais de prescription civile, eux, se comptent en années.
 
-[SCHEMA-06]
+![Le dossier de preuve d'un agent : sept postes, qui les produit, s'ils existent par défaut et combien de temps les conserver|1300](images/20260807-06-dossier-de-preuve.svg)
 
 ## L'assureur s'est retiré
 
@@ -145,7 +145,7 @@ En sens inverse, deux clauses **acquièrent** de la valeur. Côté client, la d�
 
 Sur une échelle en quatre paliers — proposer, exécuter sous validation, exécuter et notifier, exécuter — l'analyse probatoire donne un résultat net. Aux deux premiers paliers, un humain s'interpose : sa validation est datée, imputable, et constitue à elle seule un élément de preuve. Au troisième palier, la notification crée une trace mais aucune décision humaine ; c'est le palier où le dossier de preuve doit être complet, faute de quoi il n'existe plus rien entre l'incident et la présomption. Au quatrième, en contact client et sans journalisation intégrale, **il n'existe aucune pièce que l'entreprise puisse opposer à un demandeur.** La conclusion n'est pas qu'il faut interdire le quatrième palier ; c'est qu'il est conditionné au dossier de preuve, et qu'un déploiement qui n'a pas payé ce dossier n'a pas le droit de l'atteindre — quelle que soit la performance du modèle.
 
-[SCHEMA-07]
+![Les quatre paliers d'autonomie relus selon ce que l'entreprise pourra prouver après un incident|1300](images/20260807-07-paliers-defendabilite.svg)
 
 ## Cinq décisions datées
 
