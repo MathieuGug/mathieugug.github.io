@@ -82,7 +82,9 @@ Les **Guidelines for Incremental Measurement in Commerce Media**, publiées en n
 
 C'est un progrès substantiel, et il faut en mesurer la portée exacte. Un guide de méthodologie normalise le vocabulaire et fixe les conditions d'un bon usage. Il ne crée ni obligation de recours à un tiers, ni droit d'accès aux données sous-jacentes, ni mécanisme de contestation. Un annonceur peut désormais exiger de sa régie qu'elle *déclare* dans quelle famille tombe sa mesure, ce qui est utile. Il ne peut toujours pas la vérifier.
 
-[SCHEMA-04]
+*Voir Schéma 4 : les quatre familles, avec pour chacune qui peut l'exécuter et ce que l'annonceur peut en réfuter.*
+
+![Les quatre familles de méthodes d'incrémentalité du guide IAB de novembre 2025, lues par qui peut les exécuter et par leur falsifiabilité|1300](images/20260812-04-quatre-familles.svg)
 
 La déclaration a néanmoins une vertu opérationnelle immédiate, et c'est la première recommandation actionnable de ce dossier : la famille déclarée détermine le degré de confiance qu'on peut accorder au chiffre. Un lift issu d'une expérience avec publicités fantômes documentées, avec taille d'échantillon et intervalle de confiance publiés, se discute. Un lift issu d'un « contrefactuel modélisé » sans publication du modèle est une opinion de vendeur. Les deux arrivent aujourd'hui dans le même tableau de bord, dans la même colonne, sans distinction visuelle.
 
