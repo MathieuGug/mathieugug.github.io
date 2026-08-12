@@ -32,7 +32,9 @@ Le débat sur la mesure publicitaire n'est pas nouveau et il n'est pas ouvert. L
 
 **La borne haute de ce qu'on peut savoir.** Randall Lewis et Justin Rao ont posé, dans le *Quarterly Journal of Economics*, la limite statistique de l'exercice[^1]. Sur vingt-cinq grandes expériences de terrain totalisant 2,8 millions de dollars d'investissement publicitaire, l'intervalle de confiance médian sur le retour sur investissement dépasse cent points de pourcentage. La variance individuelle des achats est telle qu'une expérience informative exige couramment plus de dix millions de personnes-semaines. Ce résultat vaut avertissement dans les deux sens : il disqualifie les estimations non expérimentales, et il disqualifie aussi les tests sous-dimensionnés qu'un annonceur monterait pour se rassurer.
 
-[SCHEMA-02]
+*Voir Schéma 2 : les quatre travaux mis en vis-à-vis, avec l'ampleur de l'écart mesuré dans chacun.*
+
+![Ce que la littérature a déjà tranché : quatre travaux académiques mesurant l'écart entre estimation observationnelle et estimation expérimentale|1300](images/20260812-02-ecart-litterature.svg)
 
 Ces quatre travaux dessinent la même figure. La mesure corrélationnelle surestime, l'ampleur de la surestimation n'est pas prévisible, et la seule correction connue est expérimentale. La question devient alors : qui peut exécuter l'expérience.
 
