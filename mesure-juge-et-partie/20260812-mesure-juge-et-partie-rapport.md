@@ -66,7 +66,9 @@ Aucune ne porte sur l'incrémentalité.
 
 Il n'existe pas, à ce jour, d'accréditation indépendante attestant que le lift publié par une régie estime correctement l'effet causal de sa campagne. ==Le périmètre de l'audit s'arrête exactement au point où l'intérêt du mesureur commence à peser sur le résultat.== Un annonceur qui lit « accrédité MRC » sur un tableau de bord d'incrémentalité lit une garantie qui porte sur autre chose.
 
-[SCHEMA-03]
+*Voir Schéma 3 : ce que couvre le noyau accrédité, et ce qui reste dans la couronne jamais auditée.*
+
+![Le périmètre de l'accréditation : le noyau audité couvre le comptage de la diffusion, la couronne non auditée couvre l'incrémentalité, l'attribution et le halo hors ligne|1300](images/20260812-03-perimetre-accreditation.svg)
 
 La raison n'est pas conspirative, elle est méthodologique. Auditer un comptage, c'est vérifier une procédure déterministe contre une définition écrite. Auditer une estimation causale, c'est se prononcer sur le choix d'un contrefactuel, d'un modèle, d'une fenêtre, d'un traitement des valeurs manquantes, et sur la question de savoir si la population témoin était bien comparable. Un cabinet comptable ne fait pas cela. Une revue académique le fait, sur un article, en dix-huit mois. La cadence d'une campagne n'a rien à voir.
 
