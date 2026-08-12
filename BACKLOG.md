@@ -4,7 +4,7 @@ _Mis à jour par la routine `Illustrated deep research · mer + ven`. Ligne édi
 > **Recadrage du 2026-07-31.** La série avait dérivé vers l'intérieur des modèles (KV-cache, attention latente et parcimonieuse, mélange d'experts, quantification, désagrégation prefill/decode, silicium). Le mécanisme est identifié : chaque dossier laissait des « suites naturelles » plus profondes que lui, et la routine les traitait comme une file à vider — la série descendait d'un cran à chaque publication. Ce backlog est désormais organisé par **piste éditoriale**, et le filon technique est **gelé** (section dédiée en bas). Un sujet ne s'ouvre que s'il passe le **test d'altitude** en trois questions de `CLAUDE.md` : décision · objet · explicabilité.
 
 ## En cours (réservé — ne pas doubler)
-- [ ] (vide)
+- [ ] mesure-juge-et-partie — piste D, « Qui mesure, et pour le compte de qui » (réservé le 2026-08-12)
 
 ---
 
