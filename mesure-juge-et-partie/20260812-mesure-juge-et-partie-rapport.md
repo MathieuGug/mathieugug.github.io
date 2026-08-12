@@ -16,7 +16,9 @@ L'état de la pratique côté annonceurs est documenté. Les enquêtes sectoriel
 
 Il faut nommer le mécanisme sans le dramatiser. La régie ne fabrique pas un chiffre. Elle applique une méthodologie qu'elle a choisie, sur un périmètre qu'elle a défini, avec une fenêtre d'attribution qu'elle a fixée, et elle publie le résultat. Chacun de ces choix est défendable isolément. ==Leur accumulation produit un chiffre dont l'annonceur ne peut réfuter aucune composante.==
 
-[SCHEMA-01]
+*Voir Schéma 1 : les quatre niveaux de preuve, et le détenteur du contrefactuel à chaque marche.*
+
+![L'escalier du contrefactuel : quatre niveaux de preuve de l'effet publicitaire, du dernier clic au test randomisé possédé par l'annonceur|1300](images/20260812-01-escalier-contrefactuel.svg)
 
 ## 2. Ce que trente ans d'économétrie savent déjà
 
