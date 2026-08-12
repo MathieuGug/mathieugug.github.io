@@ -142,7 +142,9 @@ Une capacité de test et un modèle calibré ne suffisent pas si les règles de 
 
 Ce dernier indicateur est le plus utile et le moins pratiqué. Un dispositif de mesure dont tous les tests concluent positivement est un dispositif sous-dimensionné ou lu avec complaisance. Le taux de tests non concluants est une donnée de pilotage, au même titre que le taux de projets arrêtés dans un portefeuille de cas d'usage.
 
-[SCHEMA-06]
+*Voir Schéma 6 : les trois lignes de défense, et la clause contractuelle qui rend chacune possible.*
+
+![Le dispositif de vérification : trois lignes de défense et les six clauses contractuelles qui les rendent possibles|1300](images/20260812-06-dispositif-verification.svg)
 
 ### Ce qu'on écrit au contrat
 
