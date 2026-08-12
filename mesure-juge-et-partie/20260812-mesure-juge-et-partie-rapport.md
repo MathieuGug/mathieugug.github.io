@@ -116,7 +116,9 @@ Trois précisions déterminent la portée pratique de cet article.
 
 **Le précédent ISBA.** En 2020, l'étude de la chaîne d'approvisionnement programmatique menée par l'ISBA avec PwC laissait 15 % de la dépense publicitaire non attribuable, avec un taux d'appariement des impressions de 12 %. La deuxième édition, publiée en janvier 2023, ramène le delta inconnu à 3 % et le taux d'appariement à 58 %, et la durée de l'étude passe de dix-huit à neuf mois[^9]. Rien dans ce progrès ne relève d'une innovation technique. Il vient de ce qu'un collectif d'annonceurs a exigé les journaux, standardisé le format de la demande par une boîte à outils d'audit financier, et recommencé. ==La transparence n'est pas arrivée par la réglementation ni par la vertu des vendeurs : elle est arrivée parce qu'un acheteur organisé l'a réclamée dans un format que le vendeur pouvait produire.==
 
-[SCHEMA-05]
+*Voir Schéma 5 : les six ressources dont dépend une mesure causale, leur détenteur, et la portée exacte du levier européen.*
+
+![Qui détient quoi : matrice des ressources de la mesure publicitaire par acteur, et périmètre du droit d'accès ouvert par l'article 6(8) du règlement sur les marchés numériques|1300](images/20260812-05-qui-detient-quoi.svg)
 
 ## 8. Le dispositif d'un annonceur qui refuse d'arbitrer à l'aveugle
 
