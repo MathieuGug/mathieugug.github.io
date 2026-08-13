@@ -221,6 +221,8 @@ Becomes:
 
 Read `references/companion-app.md` for the full architecture. Start from `assets/app-template.html`.
 
+**Le host de `build-app.py`, c'est `assets/app-template.html`.** Reprendre une app déjà publiée comme `--host` fonctionne aussi, mais recopie son CSS de framework tel quel — bugs compris. C'est par là que la régression de pleine largeur mobile s'est propagée sur six dossiers (2026-07-26 → 2026-08-12) : une app est partie avec une grille `.layout` cassée, cinq suivantes l'ont prise comme host. Si tu pars quand même d'une app existante, prends la plus récente **qui vient d'être vérifiée sur mobile**, pas simplement la plus récente. `build-app.py` refuse désormais un host qui porte un bug connu.
+
 Key tasks:
 1. Inline every SVG into the HTML (replace `<!-- SCHEMA-NN -->` markers)
 2. Wire up the schemas data object: `SCHEMAS[schemaId][regionId] = {title, body}`
@@ -248,6 +250,7 @@ End the response with a 3–5 sentence summary: section count, schema count, sou
 
 ## Common failure modes
 
+- **Framework bug inherited from the host.** `build-app.py --host <une app publiée>` recopie le CSS de framework de cette app verbatim. Un bug de layout dans le host devient un bug dans le nouveau dossier, invisible au diff (le diff ne montre que le contenu). Vérifie la checklist mobile sur le résultat, pas seulement sur le host.
 - **Cosmetic schemas.** If a schema has 3 boxes and 2 arrows and adds no information, kill it.
 - **Source list inflation.** 25 mediocre sources < 12 premium sources.
 - **Tooltip overuse.** Tooltip the genuinely obscure (technical jargon, named frameworks). Don't tooltip ordinary words.

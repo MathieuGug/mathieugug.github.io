@@ -101,4 +101,18 @@ for (const app of apps) {
     assert.equal(leaks.length, 0,
       `${app} has inline lib CSS rules: ${leaks.map(r => r.source).join(', ')}. They should live in /assets/dossier-app.css only.`);
   });
+
+  test(`${app}: inline .layout grid is reset to one column on mobile`, () => {
+    // La lib pose `.layout{grid-template-columns:1fr}` dans son @media (max-width:1024px).
+    // Une app qui redéfinit `.layout` en inline écrase cette règle (même spécificité,
+    // ordre du document) : main#report reste alors coincé dans la colonne 240px du TOC
+    // et la page fait ~60 % de la largeur du viewport sur mobile.
+    // Si l'app redéfinit la grille en inline, elle doit aussi la remettre à 1fr.
+    const definesGrid = /\.layout\s*\{[^}]*grid-template-columns\s*:\s*240px/.test(html);
+    if (!definesGrid) return;
+    const mobileBlocks = html.match(/@media\s*\(max-width:\s*1024px\)\s*\{[\s\S]*?\n\}/g) || [];
+    const resets = mobileBlocks.some(b => /\.layout\s*\{[^}]*grid-template-columns\s*:\s*1fr/.test(b));
+    assert.ok(resets,
+      `${app} redéfinit .layout{grid-template-columns:240px …} en inline sans le remettre à 1fr dans @media (max-width:1024px). Ajouter \`.layout{grid-template-columns:1fr}\` dans le bloc mobile.`);
+  });
 }
