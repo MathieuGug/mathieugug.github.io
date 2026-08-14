@@ -14,7 +14,7 @@ L'échéance n'est jamais tombée. En avril 2025, Google annonce que Chrome ne b
 
 Pour une direction data, la conséquence pratique est immédiate. Les investissements consentis depuis 2021 au titre du « futur sans cookie » n'ont pas été inutiles, mais ils ont été justifiés par une cause erronée. Ils doivent être réévalués sur leur vraie contribution : non pas remplacer un identifiant qui n'a pas disparu, mais compenser une perte d'observabilité qui, elle, est bien réelle et n'a rien à voir.
 
-[SCHEMA-01]
+![Les quatre robinets de la perte de signal : navigateur, consentement, système mobile, plateforme publicitaire — et ce que la décision Chrome n'a pas changé.|1200](images/20260814-01-quatre-robinets.svg)
 
 ## 2. Où le signal part vraiment
 
@@ -28,11 +28,11 @@ Le taux d'observation d'un parcours numérique se dégrade en cascade. Chaque ro
 
 **La plateforme publicitaire.** Le dernier robinet est le moins discuté et le plus décisif. Même lorsque l'événement a été observé, la plateforme n'en restitue pas nécessairement le détail. Seuils de confidentialité qui suppriment les lignes trop peu peuplées, agrégation par campagne plutôt que par créa, fenêtres d'attribution non modifiables, suppression de paramètres d'URL au clic : la restitution est un choix éditorial du vendeur, pas une conséquence technique.
 
-[SCHEMA-02]
+![La cascade multiplicative du taux d'observation : de 100 parcours réels à 41 directement observables.|1200](images/20260814-02-cascade-observation.svg)
 
 ==La cascade se calcule. Sur un parcours desktop européen typique, avec 56 % d'opt-in explicite, une érosion navigateur de l'ordre de 20 % sur les parcours longs et une perte de restitution de 10 %, le taux d'observation brut tombe sous 41 %.== Ce n'est pas une estimation pessimiste : c'est l'ordre de grandeur qui explique pourquoi les plateformes ont dû inventer un mécanisme de comblement.
 
-## 3. Le régime de déclaration — ce que le consentement a rendu opposable
+## 3. Le régime de déclaration : ce que le consentement a rendu opposable
 
 Le premier changement de régime est juridique, et il est antérieur aux autres. Depuis l'entrée en application du RGPD et l'article 82 de la loi Informatique et Libertés, le dépôt d'un traceur non strictement nécessaire suppose un consentement préalable, libre, spécifique, éclairé et univoque. Ce qui a changé récemment, c'est la précision des critères et donc la difficulté à s'y soustraire.
 
@@ -42,15 +42,15 @@ Pour une direction data, la lecture opérationnelle tient en une phrase : ==la m
 
 **Le taux de consentement a cessé d'être un levier pilotable.** L'avis 08/2024 de l'EDPB, adopté le 17 avril 2024, considère que dans la plupart des cas, une grande plateforme en ligne ne peut pas recueillir un consentement valable si elle confronte l'utilisateur à un choix binaire entre accepter le traitement à des fins de publicité comportementale et payer[^7]. L'avis précise que n'offrir qu'une alternative payante ne devrait pas être la voie par défaut. Meta a introduit un recours en annulation devant le Tribunal de l'Union en juin 2024. Quelle que soit l'issue, la direction est posée : les stratégies d'optimisation du taux de consentement par la contrainte du choix se heurtent désormais à une doctrine explicite.
 
-[SCHEMA-03]
+![La chaîne juridique du signal : quatre textes, ce que chacun exige et ce que le déployeur doit pouvoir produire.|1200](images/20260814-03-chaine-juridique.svg)
 
 La conséquence de gouvernance est simple à formuler et coûteuse à tenir. Un déployeur doit être capable de produire, sur demande, la preuve de ce qu'il a recueilli : version de la bannière servie, horodatage du choix, périmètre des finalités acceptées, chaîne de transmission aux partenaires. C'est un objet de conservation, au même titre qu'un registre de traitement. Peu d'organisations sont capables de le reconstituer six mois en arrière.
 
-## 4. Le régime de reconstitution — l'appariement
+## 4. Le régime de reconstitution : l'appariement
 
 Face à la cascade, la première réponse de l'industrie a été de reconstruire ce qui pouvait l'être légitimement. C'est le régime de l'appariement, et il repose sur une idée simple : lorsqu'un client s'identifie sur le site de l'annonceur, l'annonceur détient une donnée qu'aucun robinet navigateur ne peut lui retirer.
 
-Les conversions améliorées de Google hachent en SHA-256 les identifiants de première partie fournis par l'utilisateur — adresse électronique, numéro de téléphone, nom, adresse postale — et les transmettent avec l'événement de conversion, où ils sont rapprochés des empreintes correspondantes de comptes Google connectés[^8]. L'API de conversions de Meta suit la même logique côté serveur. Depuis avril 2026, Google Ads accepte les données fournies par l'utilisateur indifféremment depuis le marqueur du site, depuis Data Manager ou depuis une connexion applicative, ce qui supprime le choix d'implémentation qui structurait auparavant les projets.
+Les conversions améliorées de Google hachent en SHA-256 les identifiants de première partie fournis par l'utilisateur (adresse électronique, numéro de téléphone, nom, adresse postale) et les transmettent avec l'événement de conversion, où ils sont rapprochés des empreintes correspondantes de comptes Google connectés[^8]. L'API de conversions de Meta suit la même logique côté serveur. Depuis avril 2026, Google Ads accepte les données fournies par l'utilisateur indifféremment depuis le marqueur du site, depuis Data Manager ou depuis une connexion applicative, ce qui supprime le choix d'implémentation qui structurait auparavant les projets.
 
 Les gains annoncés sont substantiels et doivent être lus avec prudence : Google avance un relèvement moyen des conversions de l'ordre de 17 % pour les annonceurs déployant les conversions améliorées, chiffre déclaré par le fournisseur, quand les retours de terrain se situent plus souvent dans le bas de la fourchette. Les architectures de marquage côté serveur revendiquent un recouvrement de 20 à 40 % des conversions perdues.
 
@@ -62,7 +62,7 @@ Ces chiffres méritent trois réserves, et ce sont elles qui intéressent une di
 
 **Troisième réserve : l'appariement transfère de la donnée client à la plateforme.** Chaque conversion améliorée enrichit le graphe d'identité du vendeur d'espace avec la base de l'annonceur. C'est une décision de patrimoine, et elle appartient au comité de direction plutôt qu'à l'équipe d'acquisition.
 
-## 5. Le régime d'estimation — anatomie d'une conversion modélisée
+## 5. Le régime d'estimation : anatomie d'une conversion modélisée
 
 Le troisième régime est celui qui pose la vraie question de direction, parce qu'il produit des chiffres qui ressemblent en tous points à des observations.
 
@@ -109,7 +109,7 @@ Le dossier se referme sur sept décisions. Elles ne demandent aucun outil nouvea
 
 **1. Afficher le taux de modélisation.** Toute restitution de performance média présentée à un comité doit porter la part estimée du total, par canal et par période. Quand la plateforme ne la publie pas au niveau requis, la mention devient « part modélisée non communiquée par le fournisseur », ce qui est une information en soi.
 
-**2. Fixer un plancher d'observation.** En dessous d'un seuil d'observation directe — par exemple 50 % des conversions du canal — le chiffre remonte avec une réserve explicite et ne peut plus fonder seul une réallocation. Le seuil se discute, son existence beaucoup moins.
+**2. Fixer un plancher d'observation.** En dessous d'un seuil d'observation directe, par exemple 50 % des conversions du canal, le chiffre remonte avec une réserve explicite et ne peut plus fonder seul une réallocation. Le seuil se discute, son existence beaucoup moins.
 
 **3. Délimiter un périmètre interdit à l'estimation.** Trois zones ne devraient jamais accepter une conversion modélisée : la facturation d'un prestataire à la performance, le calcul d'une part variable de rémunération, et toute donnée reprise dans une communication financière. Une estimation fournie par le vendeur ne peut pas servir de base à ce que l'on doit à ce vendeur.
 
