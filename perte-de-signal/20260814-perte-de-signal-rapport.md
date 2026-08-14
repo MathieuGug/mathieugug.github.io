@@ -70,7 +70,7 @@ Lorsque Consent Mode est déployé, un visiteur qui refuse le suivi publicitaire
 
 L'éligibilité est conditionnée à des seuils de volume. Pour Google Ads, il faut un minimum de 700 clics publicitaires sur sept jours, par pays et par groupement de domaines, et une implémentation correcte de Consent Mode ou du cadre de transparence et de consentement de l'IAB[^10]. Pour Google Analytics, la modélisation comportementale exige au moins 1 000 utilisateurs quotidiens avec `analytics_storage` accordé, pendant au moins 7 des 28 jours précédents. La validation revendiquée repose sur une technique de retenue : une fraction des conversions observées est mise de côté, le modèle prédit cette fraction, et l'écart entre prédiction et observation sert à mesurer l'erreur et à réajuster.
 
-[SCHEMA-04]
+![Anatomie d'une conversion remontée : trois régimes empilés (observé, apparié, estimé) dans une seule ligne de rapport, et les seuils d'éligibilité de la modélisation.|1200](images/20260814-04-anatomie-conversion.svg)
 
 Quatre propriétés structurent ce régime, et il faut les tenir ensemble.
 
@@ -89,7 +89,7 @@ La modélisation des conversions est une réponse techniquement défendable à u
 
 **L'écart entre corrélation et causalité reste entier.** La modélisation reconstitue des conversions attribuées, non des conversions incrémentales. La littérature sur ce point est ancienne et robuste : les méthodes observationnelles surestiment massivement l'effet causal de la publicité, avec des écarts qui atteignent un facteur proche de six par rapport aux estimations expérimentales dans les comparaisons documentées. Combler un trou d'observation avec un modèle attributif améliore la complétude du comptage sans améliorer d'un pouce la validité de la décision budgétaire qui s'appuie dessus.
 
-[SCHEMA-05]
+![Quatre questions de direction croisées avec quatre régimes de mesure : la colonne « estimé » ne contient aucune réponse pleine.|1200](images/20260814-05-ce-que-chaque-regime-repond.svg)
 
 D'où la formulation utile pour un comité. La modélisation **comble** un déficit de comptage : elle rend un tableau de bord moins troué, elle stabilise des séries temporelles, elle évite qu'un basculement de consentement soit lu comme un effondrement de performance. Elle **maquille** trois choses : la part de l'estimation dans le total, l'incertitude autour de cette estimation, et le fait que la question posée — quel budget ai-je intérêt à déplacer — n'appartient de toute façon pas au domaine de validité d'une méthode attributive.
 
@@ -121,7 +121,7 @@ Le dossier se referme sur sept décisions. Elles ne demandent aucun outil nouvea
 
 **7. Publier ce que l'on renonce à mesurer.** La note de cadrage annuelle liste les questions hors d'atteinte au budget de test disponible. C'est la décision la moins spontanée et la plus protectrice : elle empêche qu'une estimation vienne occuper, par défaut, la place laissée vide.
 
-[SCHEMA-06]
+![La grille de décision : zones admissible, sous condition et interdite pour l'estimation, et les sept décisions à écrire.|1200](images/20260814-06-grille-decision.svg)
 
 Le fil de tout le dossier tient dans une distinction que les tableaux de bord ont effacée. Un chiffre observé et un chiffre estimé n'engagent pas la même responsabilité, ne supportent pas les mêmes usages et ne se contestent pas de la même manière. Les rendre visuellement identiques était un choix de conception du fournisseur. Les redistinguer est une décision d'acheteur, et elle ne coûte qu'une colonne de plus.
 
