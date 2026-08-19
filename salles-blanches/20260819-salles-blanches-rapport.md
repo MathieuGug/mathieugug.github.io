@@ -22,7 +22,7 @@ C'est le bon moment pour lire son contrat.
 
 ## 2. Le nom ment, et le régulateur l'a écrit
 
-[SCHEMA-02]
+![Trois familles sous un seul mot : salle du vendeur, salle de l'infrastructure, salle attestée.|1300](images/20260819-02-trois-familles.svg)
 
 Le 13 novembre 2024, les services de l'Office of Technology et de la Division of Privacy and Identity Protection de la *Federal Trade Commission* ont publié une note intitulée *Data Clean Rooms: Separating Fact from Fiction*[^1]. Sa formule la plus citée tient en une ligne : les salles blanches de données ne sont pas des salles, et elles ne nettoient pas les données. Le régulateur américain y avertit qu'un dispositif mal configuré ou mal présenté transforme un outil d'analyse prometteur en engagement de conformité qu'on ne pourra pas tenir.
 
@@ -40,7 +40,7 @@ Le vocabulaire du secteur agrège ces trois situations. Les questions à poser �
 
 ## 3. Le théorème qu'aucun fournisseur ne contourne
 
-[SCHEMA-03]
+![Le triangle qu'aucun fournisseur ne contourne : protection, précision, liberté d'interroger.|1300](images/20260819-03-triangle-impossible.svg)
 
 Voici le cœur du dossier, et il ne vient ni du marketing ni du droit.
 
