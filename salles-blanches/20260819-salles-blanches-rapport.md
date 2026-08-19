@@ -116,7 +116,7 @@ Cette obligation est en vigueur. Elle n'a, à la connaissance des sources consul
 
 ## 7. La facture réelle
 
-[SCHEMA-06]
+![La facture en six postes : les deux derniers n'apparaissent dans aucune grille tarifaire.|1300](images/20260819-06-facture-six-postes.svg)
 
 Le coût d'une salle blanche est presque toujours cadré comme une licence. Il comprend au moins six postes, et le dernier n'apparaît dans aucune grille tarifaire.
 
@@ -131,7 +131,7 @@ Le seul ordre de grandeur agrégé disponible publiquement pour un déploiement 
 
 ## 8. Cinq décisions, classées par réversibilité
 
-[SCHEMA-07]
+![Cinq décisions classées par coût et réversibilité.|1300](images/20260819-07-cinq-decisions.svg)
 
 Aucune de ces décisions ne consiste à renoncer aux salles blanches. Elles servent à les remettre à leur place.
 
