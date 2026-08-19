@@ -8,7 +8,7 @@ L'offre est sincère et le dispositif fonctionne. Il ne fait simplement pas ce q
 
 ## 1. Ce qu'on a acheté, et pourquoi il n'y a plus d'alternative
 
-[SCHEMA-01]
+![L'anatomie réelle d'une salle blanche : trois versements, une couche de règles écrite par un seul, une sortie étroite.|1300](images/20260819-01-anatomie-salle-blanche.svg)
 
 La salle blanche de données est devenue en trois ans l'infrastructure par défaut de la collaboration publicitaire. Le principe est simple : deux parties versent chacune des données dans un environnement contrôlé par un tiers ou par l'une d'elles, une couche de règles limite les requêtes autorisées, et seuls des résultats agrégés en ressortent. Personne ne voit la donnée de l'autre. Tout le monde obtient un chiffre.
 
