@@ -66,7 +66,7 @@ Ce dernier point mérite qu'on s'y arrête, parce qu'il change la nature de l'ob
 
 ## 4. La preuve produit : l'accréditation s'arrête où le bruit commence
 
-[SCHEMA-04]
+![Où s'arrête l'accréditation : le même produit, deux modes, une seule frontière auditée.|1300](images/20260819-04-perimetre-accreditation.svg)
 
 On pourrait considérer que tout ceci reste théorique et qu'en pratique les chiffres qui sortent d'une salle blanche sont assez bons. Un fait documenté par le fournisseur lui-même referme le débat.
 
@@ -84,7 +84,7 @@ Note complémentaire : Google a par ailleurs cessé de rechercher l'accréditati
 
 ## 5. Les quatre choses qui ne sortent jamais
 
-[SCHEMA-05]
+![Les quatre portes fermées : contrefactuel, réplication, audit par un tiers, portabilité.|1300](images/20260819-05-ce-qui-ne-sort-jamais.svg)
 
 Une salle blanche répond très bien à certaines questions. Elle recoupe des populations, calcule des chevauchements d'audience, construit des segments, mesure des fréquences, alimente une activation. Ce sont des opérations, et elle est faite pour ça.
 
