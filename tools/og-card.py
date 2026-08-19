@@ -18,6 +18,7 @@ Design choices:
 
 import argparse
 import os
+import re
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
@@ -41,8 +42,42 @@ FONT_SANS = "segoeui.ttf"
 FONT_SANS_LIGHT = "segoeuil.ttf"
 
 
+# Repli Linux : les constantes ci-dessus nomment les polices Windows de la charte
+# (Cambria italique pour le titre, Consolas pour eyebrow et pied). Sur un poste sans
+# ces fichiers — conteneur CI, session distante — on retombe sur l'équivalent le plus
+# proche disponible plutôt que d'échouer et de laisser le dossier sans og:image.
+# Sur Windows le comportement est inchangé : la police de la charte est trouvée d'abord.
+FALLBACK_FONTS = {
+    "cambria.ttc": ["LiberationSerif-Regular.ttf", "DejaVuSerif.ttf"],
+    "cambriai.ttf": ["LiberationSerif-Italic.ttf", "DejaVuSerif-Italic.ttf"],
+    "consola.ttf": ["LiberationMono-Regular.ttf", "DejaVuSansMono.ttf"],
+    "segoeui.ttf": ["LiberationSans-Regular.ttf", "DejaVuSans.ttf"],
+    "segoeuil.ttf": ["LiberationSans-Regular.ttf", "DejaVuSans.ttf"],
+}
+
+_FONT_DIRS = [
+    Path("/usr/share/fonts/truetype/liberation"),
+    Path("/usr/share/fonts/truetype/dejavu"),
+    Path("/usr/share/fonts/truetype/freefont"),
+    Path("/Library/Fonts"),
+    Path("/System/Library/Fonts/Supplemental"),
+]
+
+
 def font(name, size):
-    return ImageFont.truetype(str(WIN_FONTS / name), size)
+    try:
+        return ImageFont.truetype(str(WIN_FONTS / name), size)
+    except OSError:
+        pass
+    for candidate in FALLBACK_FONTS.get(name, []):
+        for d in _FONT_DIRS:
+            f = d / candidate
+            if f.exists():
+                return ImageFont.truetype(str(f), size)
+    raise SystemExit(
+        f"[og-card] police introuvable : {name!r}. Ni {WIN_FONTS / name} ni aucun repli "
+        f"parmi {FALLBACK_FONTS.get(name, [])} n'existe sur ce poste."
+    )
 
 
 def wrap_text(draw, text, fnt, max_w):
@@ -96,7 +131,10 @@ def render_card(title, eyebrow, output, accent_word=None, kind="dossier"):
         if accent_word:
             low = line.lower()
             target = accent_word.lower()
-            idx = low.find(target)
+            # Frontieres de mot : une recherche en sous-chaine colorait « roi »
+            # au milieu de « droit ».
+            m = re.search(r"(?<!\w)" + re.escape(target) + r"(?!\w)", low)
+            idx = m.start() if m else -1
         else:
             idx = -1
         if idx >= 0:
