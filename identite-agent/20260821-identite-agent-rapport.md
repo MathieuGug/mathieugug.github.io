@@ -18,7 +18,7 @@ Aucun mot de passe n'a été volé. Aucune authentification multifacteur n'a ét
 
 Ce qui a été volé, ce sont des jetons de rafraîchissement OAuth appartenant à l'intégration entre Salesforce et Drift, l'agent conversationnel commercialisé par Salesloft[^4]. Ces jetons autorisaient Drift à interroger les instances Salesforce de ses clients. L'attaquant s'en est servi exactement comme Drift s'en servait : en présentant un jeton valide à une interface qui l'attendait.
 
-[SCHEMA-01]
+![La chaîne de délégation et son point de rupture|1300](images/20260821-01-chaine-qui-casse.svg)
 
 La leçon habituellement tirée de cet incident est une leçon de chaîne d'approvisionnement logicielle. Elle est correcte et elle est insuffisante. La leçon de gouvernance est ailleurs : ==l'intégralité de la pile de contrôle d'identité de sept cents organisations a été non pas franchie, mais **contournée par le côté**, parce qu'aucun de ses éléments ne se trouvait sur le chemin emprunté==. Le contrôle d'accès conditionnel, la revue trimestrielle des habilitations, la politique de mots de passe, la détection de connexion anormale : tous ces dispositifs regardent des humains se connecter. Drift ne se connectait pas. Drift présentait un mandat.
 
