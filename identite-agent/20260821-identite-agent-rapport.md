@@ -124,7 +124,7 @@ Toutes les échelles publiées décrivent des paliers par la **capacité** : ce 
 
 Cette description est nécessaire. Elle ne suffit pas, parce qu'elle ne dit pas **où le palier est refusé**. Un palier qui n'est refusé nulle part est une intention. Un palier refusé par un point de contrôle qui lit un jeton est une politique.
 
-[SCHEMA-06]
+![Les paliers d'autonomie relus par la pièce d'identité qu'ils exigent|1300](images/20260821-06-palier-opposable.svg)
 
 La relecture consiste à attacher à chaque palier la pièce d'identité qu'il exige et le point qui la vérifie.
 
