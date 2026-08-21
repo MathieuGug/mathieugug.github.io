@@ -58,7 +58,7 @@ Quatre choses, et elles se cumulent.
 
 **Il est détournable par son entrée.** C'est la propriété qu'aucun compte de service ne possède. Un agent lit des contenus qu'il n'a pas choisis : une boîte de réception, un ticket, un document récupéré, la sortie d'un outil. Quiconque peut écrire dans l'un de ces canaux peut y placer des instructions que l'agent exécutera avec l'autorité de son commanditaire[^8].
 
-[SCHEMA-03]
+![Ce qu'un agent a de plus qu'un compte de service|1300](images/20260821-03-agent-vs-compte-service.svg)
 
 Le nom de cette figure est ancien : le **député confus**. Un intermédiaire légitimement doté d'une autorité est amené à en faire usage pour le compte de quelqu'un qui ne l'a pas. Ce qui est nouveau en 2026 tient à l'ampleur de l'autorité déléguée, pas à la nature du détournement. Le Cloud Security Alliance en a fait l'objet d'une note de recherche dédiée[^8], et la constatation qui en ressort est décourageante pour qui espérait une parade au niveau du modèle : ==aucune amélioration de la robustesse d'un agent aux instructions injectées ne peut compenser une autorité qu'il n'aurait pas dû détenir==. Le correctif est du côté de l'habilitation, pas du côté de l'intelligence.
 
