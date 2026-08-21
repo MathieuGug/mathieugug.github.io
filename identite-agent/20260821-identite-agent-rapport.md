@@ -74,7 +74,7 @@ Le réflexe, à ce stade, est d'attendre une norme. Il faut résister au réflex
 
 Elle pose enfin la distinction dont dépend tout le reste. Sans jeton d'acteur, l'échange produit une **usurpation** : l'agent devient l'utilisateur, indiscernable de lui dans tous les journaux en aval. Avec jeton d'acteur, il produit une **délégation** : le jeton porte les deux parties. La différence ne se voit pas à l'usage. Elle se voit six mois plus tard, quand il faut expliquer qui a fait quoi.
 
-[SCHEMA-04]
+![La carte des standards et ses deux colonnes vides|1300](images/20260821-04-carte-des-standards.svg)
 
 Autour de cette pièce, le paysage s'est densifié vite, et de façon inégale.
 
