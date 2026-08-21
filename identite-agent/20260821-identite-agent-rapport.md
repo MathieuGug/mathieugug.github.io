@@ -36,7 +36,7 @@ Quand un comité décide qu'un agent aura « une identité », il croit décider
 
 **La troisième est le mandat délégué.** Elle répond à la seule question dont le droit se soucie : *au nom de qui cette action est-elle faite*. Elle n'est pas une propriété de l'agent, elle est une propriété de **chaque appel**. Le même agent, appelé par deux personnes différentes, doit porter deux mandats différents et ne doit jamais pouvoir faire pour l'une ce qu'il ferait pour l'autre.
 
-[SCHEMA-02]
+![Trois identités qu'on croit être une|1300](images/20260821-02-trois-identites.svg)
 
 L'erreur structurante tient en une phrase : ==une organisation qui achète la deuxième croit avoir réglé la troisième==. Elle enregistre l'agent, lui donne un propriétaire, l'inscrit dans la revue d'accès. Puis elle lui attribue un compte de service avec les habilitations nécessaires « pour que ça marche », et ce compte de service est le même pour tous les utilisateurs de l'agent.
 
