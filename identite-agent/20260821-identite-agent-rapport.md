@@ -144,7 +144,7 @@ Reste le temps long, qui est l'angle mort le plus coûteux et le moins spectacul
 
 Une organisation dispose d'un processus éprouvé pour les identités humaines : arrivée, mobilité, départ. Chaque étape a un déclencheur, un responsable et un délai. Aucun de ces trois processus ne s'applique aux agents, pour une raison mécanique : ==l'agent naît en dehors du système qui distribue les identités==. Il naît dans un dépôt de code, dans un atelier métier, dans une plateforme à faible codage, souvent en quelques heures, et il entre en production avant que quiconque ait eu à signer.
 
-[SCHEMA-07]
+![Le cycle de vie d'un agent et les trois portes manquantes|1300](images/20260821-07-naissance-derive-orphelinat.svg)
 
 Trois motifs de défaillance reviennent, et ils s'enchaînent.
 
