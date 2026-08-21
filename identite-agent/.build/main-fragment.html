@@ -1,0 +1,235 @@
+<h1 class="report-title">Au nom de qui</h1>
+<p class="lead"><strong>On ne peut pas graduer l'autonomie d'un agent dont on ne sait pas dire au nom de qui il agit.</strong> — 21 août 2026, Mathieu Guglielmino</p>
+
+<section>
+<p>Les cadres de gouvernance agentique publiés depuis dix-huit mois convergent tous vers la même figure : une échelle d'autonomie. Quatre paliers, cinq paliers, six selon les maisons, du mode observateur jusqu'à l'exécution sans validation. La figure est juste et elle a rendu service : elle donne à un comité un vocabulaire pour dire ce qu'un agent a le droit de faire.</p>
+
+<p>Il lui manque une chose. Un palier d'autonomie ne vaut que par le point de contrôle qui le refuse. Et ce point de contrôle ne lit ni la charte, ni le compte rendu du comité : il lit un jeton. La question de gouvernance qui décide de toutes les autres n'est donc pas « jusqu'où l'agent peut-il aller », mais <mark><strong>au nom de qui agit-il quand il y va</strong></mark>.</p>
+
+<p>Cette question a une réponse technique, et cette réponse est aujourd'hui absente dans la plupart des organisations. Non pas parce que les standards manquent : ils existent, certains depuis 2020. Parce que l'organisation a branché ses agents sur un socle d'identité conçu pour des salariés et des <span class="term" data-tooltip="Compte technique non nominatif utilisé par un traitement automatisé pour accéder à un système. Ses habilitations sont fixes et sa séquence d'appels est écrite dans du code.">comptes de service</span>, et qu'elle a acheté un contrôle d'accès en croyant régler une question de responsabilité.</p>
+</section>
+
+<section>
+<h2 id="sec-1">1. Le trou dans la chaîne</h2>
+
+<p>Entre le 8 et le 18 août 2025, un groupe d'attaquants suivi sous le nom d'UNC6395 a interrogé et exporté méthodiquement des données de plus de sept cents environnements Salesforce<sup><a href="#source-5" class="cite" data-src="5">[5]</a></sup>. La liste des organisations touchées est publique et elle est instructive : Cloudflare, Google, PagerDuty, Palo Alto Networks, Proofpoint, Tanium, Zscaler. Des entreprises dont la sécurité n'est pas un poste de coût mais un produit.</p>
+
+<p>Aucun mot de passe n'a été volé. Aucune authentification multifacteur n'a été contournée. Aucun poste de travail n'a été compromis.</p>
+
+<p>Ce qui a été volé, ce sont des <span class="term" data-tooltip="Jeton de longue durée qui permet d'obtenir de nouveaux jetons d'accès sans réauthentifier l'utilisateur. Sa compromission donne un accès durable et silencieux.">jetons de rafraîchissement</span> OAuth appartenant à l'intégration entre Salesforce et Drift, l'agent conversationnel commercialisé par Salesloft<sup><a href="#source-4" class="cite" data-src="4">[4]</a></sup>. Ces jetons autorisaient Drift à interroger les instances Salesforce de ses clients. L'attaquant s'en est servi exactement comme Drift s'en servait : en présentant un jeton valide à une interface qui l'attendait.</p>
+
+<figure class="figure" id="fig-01">
+<!--INLINE-SVG:01-->
+<figcaption class="figure-caption"><a class="anchor" href="#fig-01" title="Lien direct vers ce schéma">¶</a> Schéma 1 — La chaîne de délégation et son point de rupture. Le mandat de l'humain se perd à la frontière de l'outil, là où l'agent cesse de propager une identité pour présenter un secret. Cliquez sur chaque étape.</figcaption>
+</figure>
+
+<p>La leçon habituellement tirée de cet incident est une leçon de chaîne d'approvisionnement logicielle. Elle est correcte et elle est insuffisante. La leçon de gouvernance est ailleurs : <mark>l'intégralité de la pile de contrôle d'identité de sept cents organisations a été non pas franchie, mais <strong>contournée par le côté</strong>, parce qu'aucun de ses éléments ne se trouvait sur le chemin emprunté</mark>. Le contrôle d'accès conditionnel, la revue trimestrielle des habilitations, la politique de mots de passe, la détection de connexion anormale : tous ces dispositifs regardent des humains se connecter. Drift ne se connectait pas. Drift présentait un mandat.</p>
+
+<p>Et personne, ni chez Salesloft, ni chez Salesforce, ni chez les sept cents déployeurs, ne pouvait répondre en temps réel à la question qui aurait arrêté l'incident : <em>cette requête est-elle faite au nom de quelqu'un, et de qui ?</em></p>
+
+<p>La question n'est pas rhétorique. Elle a une forme technique précise, elle a des réponses normalisées depuis six ans, et l'écart entre ces réponses et ce que les organisations déploient effectivement est le sujet de ce dossier.</p>
+</section>
+
+<section>
+<h2 id="sec-2">2. Trois identités qu'on croit être une</h2>
+
+<p>Quand un comité décide qu'un agent aura « une identité », il croit décider d'une chose. Il en décide de trois, et il n'en obtient généralement qu'une.</p>
+
+<p><strong>La première est l'identité de la charge de travail.</strong> Elle répond à la question <em>qu'est-ce qui s'exécute, et où</em>. Un conteneur, un processus, une fonction déclenchée par événement. C'est le domaine du <span class="term" data-tooltip="Secure Production Identity Framework For Everyone : cadre ouvert d'identité de charge de travail. SPIRE en est l'implémentation de référence.">SPIFFE</span> et de son implémentation SPIRE : l'identité n'est pas un secret qu'on distribue mais une propriété qu'on <span class="term" data-tooltip="Vérification de propriétés observables d'un processus et de la machine qui l'exécute, qui remplace la présentation d'un secret partagé.">atteste</span>. SPIRE procède en deux temps, attestation du nœud puis attestation de la charge, et délivre un document de courte durée de vie renouvelé toutes les heures<sup><a href="#source-13" class="cite" data-src="13">[13]</a></sup>. Aucun appelant n'a besoin de présenter d'identifiant pour obtenir le sien : le fait d'appeler depuis ce processus, sur cette machine, <em>est</em> la preuve.</p>
+
+<p><strong>La deuxième est le principal applicatif de l'agent.</strong> Elle répond à <em>quel agent est-ce, qui l'a créé, qui en répond</em>. C'est le terrain sur lequel les grands fournisseurs d'identité se sont positionnés en 2026. Microsoft Entra Agent ID, désormais en disponibilité générale, fait apparaître les agents dans la même console que les utilisateurs, avec un registre, un propriétaire, des habilitations lisibles et des revues d'accès<sup><a href="#source-12" class="cite" data-src="12">[12]</a></sup>. C'est un progrès réel : sans registre, il n'y a pas de gouvernance possible, seulement des inventaires manuels périmés à la semaine.</p>
+
+<p><strong>La troisième est le mandat délégué.</strong> Elle répond à la seule question dont le droit se soucie : <em>au nom de qui cette action est-elle faite</em>. Elle n'est pas une propriété de l'agent, elle est une propriété de <strong>chaque appel</strong>. Le même agent, appelé par deux personnes différentes, doit porter deux mandats différents et ne doit jamais pouvoir faire pour l'une ce qu'il ferait pour l'autre.</p>
+
+<figure class="figure" id="fig-02">
+<!--INLINE-SVG:02-->
+<figcaption class="figure-caption"><a class="anchor" href="#fig-02" title="Lien direct vers ce schéma">¶</a> Schéma 2 — Trois identités distinctes, une seule généralement tenue. Cliquez sur chaque colonne pour ce qu'elle répond et ce qu'elle laisse ouvert.</figcaption>
+</figure>
+
+<p>L'erreur structurante tient en une phrase : <mark>une organisation qui achète la deuxième croit avoir réglé la troisième</mark>. Elle enregistre l'agent, lui donne un propriétaire, l'inscrit dans la revue d'accès. Puis elle lui attribue un compte de service avec les habilitations nécessaires « pour que ça marche », et ce compte de service est le même pour tous les utilisateurs de l'agent.</p>
+
+<p>À partir de ce moment, le journal ne contient plus qu'un seul nom : celui de l'agent. Le mandat a disparu. Il n'a pas été perdu : il n'a jamais été propagé.</p>
+
+<p>Cette rupture a un coût qui ne se manifeste pas le jour où elle est créée. Elle se manifeste le jour où il faut reconstituer. La directive européenne sur la responsabilité du fait des produits défectueux, dont la transposition arrive en décembre 2026, assortit le refus <strong>ou l'incapacité</strong> de produire des éléments d'une présomption de défectuosité ; l'article 26 du règlement sur l'intelligence artificielle impose au déployeur d'un système à haut risque une conservation des journaux d'au moins six mois<sup><a href="#source-16" class="cite" data-src="16">[16]</a></sup>. Un journal qui dit « l'agent commercial a exporté 14 000 fiches » et rien de plus satisfait la lettre de l'obligation et ne défend personne.</p>
+</section>
+
+<section>
+<h2 id="sec-3">3. Ce qu'un agent a de plus qu'un compte de service</h2>
+
+<p>L'objection est immédiate et elle mérite d'être prise au sérieux : les organisations gèrent des comptes de service depuis trente ans, avec des résultats médiocres mais connus. Qu'est-ce qu'un agent change ?</p>
+
+<p>Quatre choses, et elles se cumulent.</p>
+
+<p><strong>Il choisit ses actions à l'exécution.</strong> Un compte de service exécute un traitement dont la liste d'appels est écrite dans du code relu et versionné. Un agent reçoit un objectif et compose sa séquence. L'habilitation qu'on lui accorde n'est plus la liste de ce qu'il fera, elle est la borne de ce qu'il <em>pourrait</em> faire, et l'écart entre les deux est ce qu'on ne sait pas mesurer avant l'incident.</p>
+
+<p><strong>Il enchaîne des outils.</strong> Chaque appel d'outil est une frontière où le mandat doit être re-présenté, et chaque frontière est une occasion de le perdre.</p>
+
+<p><strong>Il engendre des sous-agents.</strong> Quand un agent A délègue à B et B à C, l'autorité s'élargit à chaque saut : B tourne avec les habilitations de A plus les siennes, C accumule les deux, et une action au fond de la chaîne s'exécute avec un ensemble de permissions qu'aucun humain n'a jamais accordé<sup><a href="#source-11" class="cite" data-src="11">[11]</a></sup>. La littérature récente sur la propagation d'autorisation dans les systèmes multi-agents pose l'invariant qui manque : les permissions effectives d'un agent doivent être l'<strong>intersection</strong> de celles de l'utilisateur et de celles autorisées à l'agent, jamais leur union, et cet invariant doit tenir à chaque saut, pas seulement au premier.</p>
+
+<p><strong>Il est détournable par son entrée.</strong> C'est la propriété qu'aucun compte de service ne possède. Un agent lit des contenus qu'il n'a pas choisis : une boîte de réception, un ticket, un document récupéré, la sortie d'un outil. Quiconque peut écrire dans l'un de ces canaux peut y placer des instructions que l'agent exécutera avec l'autorité de son commanditaire<sup><a href="#source-8" class="cite" data-src="8">[8]</a></sup>.</p>
+
+<figure class="figure" id="fig-03">
+<!--INLINE-SVG:03-->
+<figcaption class="figure-caption"><a class="anchor" href="#fig-03" title="Lien direct vers ce schéma">¶</a> Schéma 3 — Quatre propriétés qui se cumulent, et la figure ancienne qui les réunit. Cliquez sur chaque ligne.</figcaption>
+</figure>
+
+<p>Le nom de cette figure est ancien : le <span class="term" data-tooltip="Confused deputy : un intermédiaire légitimement doté d'une autorité est amené à en faire usage pour le compte d'un tiers qui ne la possède pas. Formulation classique de la sécurité informatique, 1988.">député confus</span>. Un intermédiaire légitimement doté d'une autorité est amené à en faire usage pour le compte de quelqu'un qui ne l'a pas. Ce qui est nouveau en 2026 tient à l'ampleur de l'autorité déléguée, pas à la nature du détournement. Le Cloud Security Alliance en a fait l'objet d'une note de recherche dédiée<sup><a href="#source-8" class="cite" data-src="8">[8]</a></sup>, et la constatation qui en ressort est décourageante pour qui espérait une parade au niveau du modèle : <mark>aucune amélioration de la robustesse d'un agent aux instructions injectées ne peut compenser une autorité qu'il n'aurait pas dû détenir</mark>. Le correctif est du côté de l'habilitation, pas du côté de l'intelligence.</p>
+
+<p>Or l'état de l'habilitation est documenté, et il est mauvais. Une enquête menée en juin 2026 auprès de 107 entreprises rapporte que 69 % d'entre elles font partager des secrets d'accès entre agents quelque part dans leur déploiement, que 49 % seulement appliquent une portée d'habilitation à l'exécution, que 47 % journalisent l'activité des agents, et que 32 % attribuent à chaque agent une identité gérée et cadrée<sup><a href="#source-2" class="cite" data-src="2">[2]</a></sup>. La même enquête rapporte que 54 % des répondants déclarent un incident de sécurité confirmé impliquant un agent (18 %) ou un incident évité de justesse (36 %)<sup><a href="#source-1" class="cite" data-src="1">[1]</a></sup>.</p>
+
+<p>Ces chiffres viennent d'un panel déclaratif, restreint, et il faut les lire comme tels. Leur intérêt n'est pas leur précision, il est leur cohérence interne : les deux tiers des organisations ont créé la condition du détournement, et un peu plus de la moitié en ont déjà vu la manifestation.</p>
+</section>
+
+<section>
+<h2 id="sec-4">4. Ce que les standards savent déjà faire</h2>
+
+<p>Le réflexe, à ce stade, est d'attendre une norme. Il faut résister au réflexe, pour une raison simple : la pièce centrale existe depuis janvier 2020.</p>
+
+<p><strong>RFC 8693</strong>, <em>OAuth 2.0 Token Exchange</em>, définit un mécanisme d'échange de jeton et, avec lui, une revendication nommée <code>act</code> qui exprime qu'un mandataire agit pour le compte d'un mandant<sup><a href="#source-6" class="cite" data-src="6">[6]</a></sup>. La revendication est <strong>imbriquable</strong> : si un service B appelle un service C pour le compte de l'utilisateur X après avoir été appelé par A, le jeton présenté à C porte la chaîne complète, l'acteur courant au niveau extérieur et les acteurs antérieurs imbriqués, le plus ancien étant le plus profond. La spécification pose aussi la règle de lecture qui évite l'accumulation d'autorité : le destinataire ne doit considérer que les revendications de premier niveau et l'acteur courant ; les acteurs antérieurs sont informatifs.</p>
+
+<p>Elle pose enfin la distinction dont dépend tout le reste. Sans jeton d'acteur, l'échange produit une <span class="term" data-tooltip="Impersonation : le jeton délivré ne porte plus que l'utilisateur. L'agent devient indiscernable de lui dans tous les journaux en aval.">usurpation</span> : l'agent devient l'utilisateur, indiscernable de lui dans tous les journaux en aval. Avec jeton d'acteur, il produit une <span class="term" data-tooltip="Delegation : le jeton délivré porte les deux parties, le mandant et le mandataire, et conserve la trace de la chaîne.">délégation</span> : le jeton porte les deux parties. La différence ne se voit pas à l'usage. Elle se voit six mois plus tard, quand il faut expliquer qui a fait quoi.</p>
+
+<figure class="figure" id="fig-04">
+<!--INLINE-SVG:04-->
+<figcaption class="figure-caption"><a class="anchor" href="#fig-04" title="Lien direct vers ce schéma">¶</a> Schéma 4 — Ce que couvrent les standards disponibles, et les deux fonctions qu'aucun ne couvre. Cliquez sur chaque ligne ou sur la bande signalée.</figcaption>
+</figure>
+
+<p>Autour de cette pièce, le paysage s'est densifié vite, et de façon inégale.</p>
+
+<p>Du côté de l'<strong>exécution</strong>, SPIFFE et SPIRE répondent proprement à l'attestation de la charge de travail, avec des documents de courte durée qui expirent quand l'agent éphémère disparaît<sup><a href="#source-13" class="cite" data-src="13">[13]</a></sup>. La difficulté n'est pas conceptuelle, elle est de déploiement : la plupart des équipes utiliseront des jetons d'API à longue durée ce trimestre encore, parce que le socle d'attestation suppose un plan de contrôle qu'elles n'ont pas.</p>
+
+<p>Du côté des <strong>outils</strong>, le <span class="term" data-tooltip="Model Context Protocol : protocole ouvert par lequel un agent découvre et appelle des outils exposés par un serveur.">Model Context Protocol</span> a adossé son autorisation à OAuth 2.1, avec l'enregistrement dynamique de client (RFC 7591) et les métadonnées de serveur d'autorisation (RFC 8414), et il traite explicitement le serveur d'outils comme un serveur de ressource distinct<sup><a href="#source-15" class="cite" data-src="15">[15]</a></sup>. C'est le bon découpage. Il laisse ouverte la question qui compte : rien n'oblige, dans le protocole, à ce que le jeton présenté au serveur d'outils porte le mandat de l'utilisateur plutôt que l'identité de l'agent seul.</p>
+
+<p>Du côté des <strong>agents entre eux</strong>, le protocole <span class="term" data-tooltip="Agent2Agent : protocole de découverte et de coordination entre agents, versé à la Linux Foundation. Les agents s'annoncent par une carte décrivant leurs capacités.">A2A</span>, versé à la Linux Foundation, a livré une version 1.0 stable comportant des cartes d'agent signées pour la vérification cryptographique d'identité, et revendique plus de cent cinquante organisations participantes en un an<sup><a href="#source-14" class="cite" data-src="14">[14]</a></sup>. Le progrès est réel. Il est aussi borné : la proposition de registre d'agents et celle de vérification d'identité des cartes restaient des questions ouvertes à la mi-2026, ce qui signifie que la découverte et l'identité ne sont pas résolues au niveau du protocole et que les pairs se configurent à la main.</p>
+
+<p>Du côté de l'<strong>autorisation</strong>, enfin, le travail normatif est abondant au point d'être illisible : plus de soixante-dix brouillons individuels proposés au seul groupe de travail OAuth de l'IETF<sup><a href="#source-9" class="cite" data-src="9">[9]</a></sup>, un groupe communautaire dédié à l'identité et l'IA à l'OpenID Foundation, et des brouillons de groupe de travail sur l'autorisation à l'ère des agents, dont un profil traitant le cas où une politique ne peut pas encore autoriser une action parce qu'un préalable manque : une approbation, un consentement, une autorité déléguée, une attestation.</p>
+
+<p>Une analyse systématique publiée fin juin 2026 met de l'ordre dans ce paysage, en évaluant cinq protocoles d'interopérabilité (MCP, A2A, ACP, ANP, ERC-8004) contre une taxonomie de six exigences de gouvernance : appartenance, délibération, vote, conservation du désaccord, escalade humaine, audit et rejeu<sup><a href="#source-10" class="cite" data-src="10">[10]</a></sup>. Le résultat mérite d'être cité tel quel : <mark>la gouvernance d'une communauté d'agents constitue <strong>une couche architecturale manquante au-dessus</strong> des standards d'interopérabilité actuels, et non une fonctionnalité manquante à l'intérieur de chacun d'eux</mark>.</p>
+
+<p>Traduction pour une direction : les standards répondent à <em>authentifier</em> et <em>autoriser</em>. Ils répondent partiellement à <em>propager</em>. Ils ne répondent pas à <em>révoquer en chaîne</em> ni à <em>rejouer</em>. Ces deux cases vides ne seront comblées par aucun achat en 2026, et ce sont exactement les deux dont on a besoin le jour d'un incident.</p>
+</section>
+
+<section>
+<h2 id="sec-5">5. Le chiffre qui ne veut rien dire, et ceux qu'il faudrait</h2>
+
+<p>Un chiffre circule dans toutes les présentations sur le sujet : le rapport entre <span class="term" data-tooltip="Identités non humaines : comptes de service, certificats, clés d'API, jetons, identités de charge de travail. Toute identité qui n'appartient pas à une personne physique.">identités non humaines</span> et identités humaines dans l'entreprise. Il vaut la peine de s'y arrêter, parce que sa fortune est un cas d'école.</p>
+
+<p>Les valeurs publiées sur les douze derniers mois s'échelonnent de 40 pour 1 à 109 pour 1. Un rapport d'éditeur titre « plus de 80 pour 1 » et retient 82 ; une compilation ultérieure avance 109, dont 79 attribuées à des agents ; d'autres publications citent 45. Les fourchettes couramment reprises vont de 40 à 80<sup><a href="#source-3" class="cite" data-src="3">[3]</a></sup>.</p>
+
+<figure class="figure" id="fig-05">
+<!--INLINE-SVG:05-->
+<figcaption class="figure-caption"><a class="anchor" href="#fig-05" title="Lien direct vers ce schéma">¶</a> Schéma 5 — La dispersion des ratios publiés, et trois taux que l'organisation produit elle-même. Cliquez sur chaque bloc.</figcaption>
+</figure>
+
+<p>Trois observations, dans l'ordre d'importance.</p>
+
+<p>La première : <strong>toutes ces mesures proviennent d'éditeurs qui vendent le remède</strong>. L'observation porte sur leur position, non sur leur honnêteté : personne d'autre n'a de raison de compter, et aucun organisme indépendant ne s'en est chargé.</p>
+
+<p>La deuxième : <strong>il n'existe pas de dénominateur commun</strong>. Compte-t-on les comptes de service, les certificats, les clés d'API, les jetons éphémères, les instances de conteneurs, les sessions d'agents ? Un écart de facteur deux entre deux publications peut n'être qu'un écart de définition. Le chiffre n'est donc pas faux ; il n'est pas comparable, ce qui est pire, parce qu'il autorise des séries temporelles qui ne mesurent rien.</p>
+
+<p>La troisième, et c'est celle qui intéresse un comité : <strong>le ratio ne se rattache à aucune décision</strong>. Savoir qu'on a quatre-vingts identités machine par salarié ne dit ni lesquelles sont dangereuses, ni lesquelles sont abandonnées, ni sur laquelle commencer. C'est un chiffre d'alerte destiné à ouvrir un budget, pas un indicateur de pilotage.</p>
+
+<p>Trois taux le remplacent avantageusement, et une organisation peut les produire elle-même en quelques jours.</p>
+
+<p><strong>Le taux de propriété.</strong> Quelle proportion des identités non humaines actives porte un propriétaire nommé, vivant, et une date de revue non dépassée. La réponse initiale est généralement basse au point d'être inconfortable à publier, et c'est exactement pourquoi elle est utile : elle borne toute autre ambition de gouvernance.</p>
+
+<p><strong>Le taux de portée.</strong> Quelle proportion des habilitations accordées à un agent a été effectivement exercée sur les quatre-vingt-dix derniers jours. L'écart entre accordé et exercé est la mesure directe du rayon d'un détournement. Contrairement au ratio, il se calcule à partir de journaux que l'organisation possède déjà.</p>
+
+<p><strong>Le taux de reconstitution.</strong> Sur un échantillon d'actions d'agents tirées au sort dans le trimestre écoulé, quelle proportion permet de remonter à un humain commanditaire nommé. C'est le seul des trois qui mesure la chaîne de délégation, et c'est celui qui prédit ce qu'on pourra opposer à un régulateur ou à un juge.</p>
+
+<p>Aucun de ces trois taux ne se compare entre entreprises. C'est un avantage : ils se comparent à eux-mêmes d'un trimestre à l'autre, ce qu'un ratio d'éditeur ne permet pas.</p>
+</section>
+
+<section>
+<h2 id="sec-6">6. Le palier d'autonomie devient opposable ici</h2>
+
+<p>Revenons à l'échelle d'autonomie, avec de quoi la rendre opérante.</p>
+
+<p>Toutes les échelles publiées décrivent des paliers par la <strong>capacité</strong> : ce que l'agent a le droit de faire. Mode observateur, mode supervisé, autonomie guidée, autonomie complète, dans la formulation la plus répandue. Chaque palier est conditionné à une mesure de résultat et à un risque explicitement visé.</p>
+
+<p>Cette description est nécessaire. Elle ne suffit pas, parce qu'elle ne dit pas <strong>où le palier est refusé</strong>. Un palier qui n'est refusé nulle part est une intention. Un palier refusé par un point de contrôle qui lit un jeton est une politique.</p>
+
+<figure class="figure" id="fig-06">
+<!--INLINE-SVG:06-->
+<figcaption class="figure-caption"><a class="anchor" href="#fig-06" title="Lien direct vers ce schéma">¶</a> Schéma 6 — Chaque palier relu par la pièce d'identité qu'il exige et par le point qui la vérifie. Cliquez sur chaque marche.</figcaption>
+</figure>
+
+<p>La relecture consiste à attacher à chaque palier la pièce d'identité qu'il exige et le point qui la vérifie.</p>
+
+<p><strong>Palier 1, l'agent propose.</strong> Il lit, il rédige, un humain valide avant tout effet. Pièce exigée : un principal applicatif enregistré, avec propriétaire nommé. Point de refus : le registre. Un agent absent du registre ne reçoit aucun accès en lecture au-delà du bac à sable.</p>
+
+<p><strong>Palier 2, l'agent exécute sous validation.</strong> Pièce exigée : la propagation du mandat. Chaque appel d'outil porte l'identité de l'humain commanditaire, distincte de celle de l'agent, sous forme de délégation et non d'usurpation. Point de refus : le serveur d'outils, qui rejette un jeton sans mandat. C'est la marche la plus haute de toute l'échelle, et celle qui est presque toujours sautée.</p>
+
+<p><strong>Palier 3, l'agent exécute et notifie.</strong> Pièce exigée, en plus des précédentes : l'attestation de la charge de travail et une habilitation dont la portée est bornée à l'exécution, plus un journal qui conserve la chaîne complète. Point de refus : le serveur d'autorisation, qui n'échange un jeton qu'au bénéfice d'une charge attestée.</p>
+
+<p><strong>Palier 4, l'agent exécute sans notification préalable.</strong> Pièce exigée : tout ce qui précède, plus une capacité de révocation en chaîne éprouvée, c'est-à-dire testée. Point de refus : il n'existe pas encore de mécanisme normalisé. La conséquence à en tirer est directe et un comité peut la voter demain : <mark>tant que la révocation en chaîne n'est pas démontrée par un exercice, le palier 4 reste fermé hors du bac à sable</mark>.</p>
+
+<p>Cette relecture a une propriété que les échelles par capacité n'ont pas : elle est <strong>falsifiable</strong>. On peut demander la preuve. Prenez une action d'agent au hasard dans le trimestre, et remontez au commanditaire. Si vous n'y arrivez pas, l'agent n'est pas au palier que le comité croit lui avoir accordé, quelle que soit la délibération inscrite au compte rendu.</p>
+</section>
+
+<section>
+<h2 id="sec-7">7. Naissance, dérive, orphelinat</h2>
+
+<p>Reste le temps long, qui est l'angle mort le plus coûteux et le moins spectaculaire.</p>
+
+<p>Une organisation dispose d'un processus éprouvé pour les identités humaines : arrivée, mobilité, départ. Chaque étape a un déclencheur, un responsable et un délai. Aucun de ces trois processus ne s'applique aux agents, pour une raison mécanique : <mark>l'agent naît en dehors du système qui distribue les identités</mark>. Il naît dans un dépôt de code, dans un atelier métier, dans une plateforme à faible codage, souvent en quelques heures, et il entre en production avant que quiconque ait eu à signer.</p>
+
+<figure class="figure" id="fig-07">
+<!--INLINE-SVG:07-->
+<figcaption class="figure-caption"><a class="anchor" href="#fig-07" title="Lien direct vers ce schéma">¶</a> Schéma 7 — Le cycle de vie d'un agent, ses trois motifs de défaillance et les trois portes qui manquent. Cliquez sur chaque étape.</figcaption>
+</figure>
+
+<p>Trois motifs de défaillance reviennent, et ils s'enchaînent.</p>
+
+<p><strong>La prolifération.</strong> Un agent se crée en quelques heures, une revue de gouvernance prend des mois. Quand l'instance se prononce, l'agent est en production depuis un trimestre et l'arbitrage porte sur un fait accompli. Le rythme de création n'étant pas la variable sur laquelle une direction souhaite agir, la seule parade est de déplacer le point d'entrée : l'agent ne se crée pas contre le registre, il se crée <strong>par</strong> le registre, qui devient la source de son identité et non son inventaire a posteriori.</p>
+
+<p><strong>L'accumulation de privilèges.</strong> Un agent reçoit des habilitations larges au moment du déploiement, pour que le cas d'usage fonctionne sans allers-retours. Ces habilitations ne sont jamais réduites, parce que personne ne sait lesquelles sont exercées. Le taux de portée de la section précédente est l'instrument qui débloque cette situation, et il ne demande aucun outillage nouveau.</p>
+
+<p><strong>L'orphelinat.</strong> L'agent survit à son cas d'usage, à son commanditaire, parfois à l'équipe qui l'a écrit. Ses identifiants restent valides. Les identifiants inutilisés figurent régulièrement parmi les premiers vecteurs d'accès initial dans les analyses de compromission, et les habilitations résiduelles gonflent artificiellement le périmètre des audits de conformité.</p>
+
+<p>La correction tient en trois portes, et aucune n'est technologiquement difficile.</p>
+
+<p><strong>Une porte à la naissance</strong> : pas d'identité sans propriétaire nommé, sans cas d'usage rattaché au registre, sans date d'expiration. L'expiration est la mesure la plus efficace du lot, parce qu'elle inverse la charge : le maintien devient l'action à justifier.</p>
+
+<p><strong>Une porte à la mobilité</strong> : quand le propriétaire d'un agent change de poste, l'agent apparaît dans sa liste de transfert au même titre qu'un dossier. C'est une ligne à ajouter à un formulaire existant.</p>
+
+<p><strong>Une porte au départ</strong> : la liste de sortie d'un salarié comporte une rubrique « agents dont il est propriétaire ». Sans elle, le départ d'un chef de projet produit mécaniquement une cohorte d'orphelins.</p>
+
+<p>Ce registre se confond avec le registre des cas d'usage que la conformité réclame déjà : la même table, augmentée de trois colonnes, type d'identifiant, propriétaire technique, date de revue. Tenir deux registres séparés garantit qu'au moins l'un des deux ment.</p>
+</section>
+
+<section>
+<h2 id="sec-8">8. Cinq décisions, classées par réversibilité</h2>
+
+<p>Les cinq décisions suivantes sont rangées de la plus réversible à la plus engageante. Cet ordre est aussi celui du rapport entre ce qu'elles coûtent et ce qu'elles apprennent.</p>
+
+<p><strong>1. Faire l'inventaire de rupture.</strong> Coût : quelques jours d'analyste. Prenez cinq agents en production et, pour chacun, suivez un appel d'outil jusqu'au système cible en notant à quel saut le nom de l'humain commanditaire disparaît du journal. Vous obtiendrez une carte des points de rupture, et vous saurez si le sujet est urgent ou théorique chez vous. Aucune décision d'architecture n'est engagée.</p>
+
+<p><strong>2. Publier les trois taux.</strong> Coût : l'accès aux journaux existants. Taux de propriété, taux de portée, taux de reconstitution, mesurés une fois, présentés au comité, puis reconduits chaque trimestre. Le premier relevé est le plus utile parce qu'il est le plus mauvais.</p>
+
+<p><strong>3. Fermer les paliers non tenus.</strong> Coût : un arbitrage politique, pas un budget. Pour chaque agent en production, comparez le palier accordé au palier réellement soutenu par les pièces d'identité en place, et redescendez ceux qui ne tiennent pas. C'est réversible : un agent redescendu remonte dès que la pièce manquante est produite.</p>
+
+<p><strong>4. Faire de la propagation du mandat une exigence de plateforme.</strong> Coût : significatif, parce qu'il touche l'intégration. Aucun serveur d'outils interne n'accepte un jeton dépourvu de mandat délégué. La règle se pose au niveau du socle, jamais projet par projet, sous peine d'être négociée à chaque cadrage. Le mécanisme existe et il est normalisé depuis 2020 ; ce qui manque est la décision de l'exiger.</p>
+
+<p><strong>5. Porter la propagation et la restitution au contrat.</strong> Coût : un cycle de renégociation. Deux clauses, à traiter comme des objets contractuels opposables et non comme des bonnes pratiques. La première oblige le fournisseur à propager l'identité du commanditaire jusqu'à ses propres systèmes en aval, et à la conserver. La seconde lui impose de restituer les journaux correspondants dans un délai et un format exploitables. Sans la seconde, l'incapacité de produire de votre fournisseur devient votre présomption.</p>
+
+<p>Ces cinq décisions ne demandent aucune anticipation sur l'évolution des normes. C'est leur principal intérêt dans une matière où le paysage bouge tous les trimestres : elles portent sur ce que l'organisation sait déjà de ses propres agents, et sur ce qu'elle a déjà le droit d'exiger.</p>
+
+<p>Un dernier point, qui est le plus difficile à faire passer en comité. L'identité de l'agent se présente comme un sujet de sécurité, et elle sera naturellement renvoyée à la direction qui porte ce budget. C'est une erreur d'aiguillage. Le contrôle d'accès dit ce qui est permis ; l'identité dit <strong>qui répond</strong>. La première question se traite dans un budget de sécurité, la seconde dans une politique de délégation, et une organisation qui les confond achètera correctement la mauvaise.</p>
+</section>
+
+<section>
+<h2 id="methode">Note de méthode</h2>
+
+<p>Trois réserves, portées ici plutôt qu'en note de bas de page.</p>
+
+<p><strong>a) Aucune source primaire n'a pu être récupérée en texte intégral.</strong> La politique de sortie réseau de l'environnement de rédaction a bloqué l'accès direct à l'ensemble des domaines sollicités : arxiv.org, rfc-editor.org, datatracker.ietf.org, spiffe.io, openid.net, learn.microsoft.com. Le contenu des sources citées provient de résultats de recherche et de résumés, recoupés sur au moins deux formulations indépendantes lorsque c'était possible. Les citations sont données <strong>en substance et non entre guillemets</strong>, et les points normatifs (revendication <code>act</code> de la RFC 8693, obligations de l'article 26, statut des brouillons) doivent être vérifiés à la source avant toute réutilisation contractuelle ou juridique.</p>
+
+<p><strong>b) Les chiffres d'enquête sont déclaratifs et proviennent de parties intéressées.</strong> Les ratios d'identités non humaines sont publiés par des éditeurs de solutions d'identité ; la section 5 en fait l'analyse plutôt que l'usage. Les taux de l'enquête de juin 2026 (69 %, 54 %, 32 %) portent sur un panel de 107 entreprises auto-déclarantes, sans audit. Ils sont utilisés ici comme ordres de grandeur cohérents entre eux, pas comme mesures.</p>
+
+<p><strong>c) Le cas Salesloft Drift est un point d'appui, pas une preuve générale.</strong> Il illustre une classe de défaillance, il ne la quantifie pas. Sa portée est aussi limitée par sa nature : une compromission de chaîne d'approvisionnement chez un éditeur, dont la leçon d'identité déléguée est déduite ici, et qui a été analysée par ailleurs sous d'autres angles également valides.</p>
+
+<p>Le taux de reconstitution proposé en section 5 et la grille palier × pièce d'identité de la section 6 sont des constructions de l'auteur. Elles n'ont pas d'antécédent publié à ma connaissance, ce qui veut dire qu'elles n'ont pas été éprouvées sur le terrain.</p>
+
+<p class="report-outro"><em>Format co-écrit avec l'aide d'une IA · 21 août 2026 · Mathieu Guglielmino</em></p>
+</section>
