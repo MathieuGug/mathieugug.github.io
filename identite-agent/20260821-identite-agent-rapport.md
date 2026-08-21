@@ -96,7 +96,7 @@ Un chiffre circule dans toutes les présentations sur le sujet : le rapport entr
 
 Les valeurs publiées sur les douze derniers mois s'échelonnent de 40 pour 1 à 109 pour 1. Un rapport d'éditeur titre « plus de 80 pour 1 » et retient 82 ; une compilation ultérieure avance 109, dont 79 attribuées à des agents ; d'autres publications citent 45. Les fourchettes couramment reprises vont de 40 à 80[^3].
 
-[SCHEMA-05]
+![Le ratio contre le taux|1300](images/20260821-05-ratio-contre-taux.svg)
 
 Trois observations, dans l'ordre d'importance.
 
