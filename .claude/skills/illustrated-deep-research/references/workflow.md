@@ -132,8 +132,6 @@ The byline uses the **personal name only** — never an organization, never a pr
 - **Concrete > abstract.** Name the company, the dollar figure, the date, the regulator. Vague benchmarks ("many firms have started…") are red flags.
 - **Citations inline as `[^N]`** at the end of the sentence containing the cited claim. Don't cluster citations at paragraph ends.
 - **Schemas referenced by number** in the prose ("voir Schéma 3") AND with the Obsidian image link below the paragraph that introduces them.
-- **No AI-signature turns of phrase.** The 2026-08-09 corpus audit measured this site's two heaviest tics: the post-dash pivot `… — c'est … / … — pas …` (91 % of documents) and the appositive negation `…, pas …` (88 %). Quota: 2 each per document. Banned outright: `X n'est pas Y, c'est Z` (cut the balance, keep the sourced half), `c'est précisément`, `la vraie question est`, `se joue` (metaphorical), `tient en un mot/chiffre`. Loaded adjectives (`crucial`, `majeur`, `historique` as emphasis, `inédit`, `notable`, `spectaculaire`) need a source carrying them, or they go. Full list with quotas and the relecture pass: `references/red-flags-ia.md` (§ 10).
-- **Punctuation budget.** Em-dashes ≤ 5/1000 words; revelation-colons (`Le verdict : …`) ≤ 4 per document — definition, list and citation colons are fine and don't count. Pre-cleanup medians were 16.3 and 18.3/1000: twice the ZapNews corpus, which already flagged itself.
 
 ### 3.3 Schema placeholders
 
@@ -221,8 +219,6 @@ Becomes:
 
 Read `references/companion-app.md` for the full architecture. Start from `assets/app-template.html`.
 
-**Le host de `build-app.py`, c'est `assets/app-template.html`.** Reprendre une app déjà publiée comme `--host` fonctionne aussi, mais recopie son CSS de framework tel quel — bugs compris. C'est par là que la régression de pleine largeur mobile s'est propagée sur six dossiers (2026-07-26 → 2026-08-12) : une app est partie avec une grille `.layout` cassée, cinq suivantes l'ont prise comme host. Si tu pars quand même d'une app existante, prends la plus récente **qui vient d'être vérifiée sur mobile**, pas simplement la plus récente. `build-app.py` refuse désormais un host qui porte un bug connu.
-
 Key tasks:
 1. Inline every SVG into the HTML (replace `<!-- SCHEMA-NN -->` markers)
 2. Wire up the schemas data object: `SCHEMAS[schemaId][regionId] = {title, body}`
@@ -250,7 +246,6 @@ End the response with a 3–5 sentence summary: section count, schema count, sou
 
 ## Common failure modes
 
-- **Framework bug inherited from the host.** `build-app.py --host <une app publiée>` recopie le CSS de framework de cette app verbatim. Un bug de layout dans le host devient un bug dans le nouveau dossier, invisible au diff (le diff ne montre que le contenu). Vérifie la checklist mobile sur le résultat, pas seulement sur le host.
 - **Cosmetic schemas.** If a schema has 3 boxes and 2 arrows and adds no information, kill it.
 - **Source list inflation.** 25 mediocre sources < 12 premium sources.
 - **Tooltip overuse.** Tooltip the genuinely obscure (technical jargon, named frameworks). Don't tooltip ordinary words.
@@ -258,4 +253,3 @@ End the response with a 3–5 sentence summary: section count, schema count, sou
 - **Forgetting to update the placeholders.** Always do a final grep for `[SCHEMA-`, `{tooltip:`, and `{{` (any double-brace marker) in the deliverables — these markers should NEVER reach the user. A leaked `{{AUTHOR}}` or `{{TITLE}}` in the shipped HTML is a delivery-grade failure.
 - **HTML doc-comments leaking into the shipped app.** The template's instructional `<!-- ... -->` block at the top must be stripped before saving. Run `grep -n '<!--' app.html` — anything more than a one-line trivial comment must go.
 - **Organization name leaking into a personal publication.** The byline, header, and README must use the personal name only. If you find yourself writing "Lincoln", "the practice", "our team" — stop and replace with the personal name.
-- **AI-signature prose.** A `— c'est` pivot every ~780 words, `X, pas Y` slogans, `n'est pas Y, c'est Z` antitheses: the tells a reader senses before naming them. Run the § 10 pass of `references/red-flags-ia.md` before packaging. A sentence that adds rhythm without adding a fact is deleted, not reworded.
