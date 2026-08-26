@@ -92,7 +92,7 @@ Le poste 7, les taxes, n'existe pas encore. À la date de ce dossier, aucune adm
 
 La demande à formuler est donc simple et gratuite : **une étiquette de confiance par poste**. Mesuré, recoupé, déclaré, non mesurable. Quatre mots dans une colonne supplémentaire, et le dossier cesse de mentir.
 
-[SCHEMA-03]
+![Les sept postes rangés par régime de mesure : mesuré nativement, reconstruit, déclaré, provision.|1300](images/20260826-03-quatre-regimes.svg)
 
 ## 4. La queue lourde : pourquoi une moyenne ne budgète rien
 
@@ -118,7 +118,7 @@ Elle tient en une phrase. **On budgète un agent sur le 95ᵉ centile du coût p
 
 Cette lecture donne aussi son sens à la formule la plus utile du corpus des cabinets, celle d'Accenture : un agent peut être **économiquement irrationnel tout en étant techniquement efficace**. Un agent qui réussit huit fois sur dix et dont chaque échec coûte une reprise humaine de trente minutes peut être un excellent système et une mauvaise affaire, et aucun tableau de bord technique ne le dira.
 
-[SCHEMA-04]
+![La distribution à queue lourde du coût par exécution, et la conversion du coût par tentative en coût par résultat.|1300](images/20260826-04-queue-lourde.svg)
 
 ## 5. Le coût que le fournisseur décide pour vous
 
