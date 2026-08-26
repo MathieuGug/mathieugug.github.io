@@ -142,7 +142,7 @@ Le poste devient arbitrable dès lors qu'on le porte au contrat. Les acheteurs l
 
 Ce n'est pas une bonne pratique d'ingénierie. C'est un transfert de coût, et il se négocie au même endroit que le prix au jeton, sauf qu'il ne figure sur aucune grille tarifaire, donc personne ne pense à le demander.
 
-[SCHEMA-05]
+![Le calendrier de péremption imposé par les fournisseurs et la boucle de re-qualification qu'il déclenche.|1300](images/20260826-05-calendrier-peremption.svg)
 
 ## 6. Ce que la tarification vous force à mesurer
 
@@ -164,7 +164,7 @@ Trois exigences contractuelles en découlent, toutes vérifiables :
 2. **Plafond de dépense et coupe-circuit.** Le volet australien du cadre EY est explicite sur ce point : plafonds de dépense, plafonds de volume d'appels, coupure automatique aux trois niveaux : agent, flux, entité[^2]. Un système facturé à l'usage sans plafond n'a pas de budget, il a une estimation.
 3. **Droit de relevé.** L'accès aux données de consommation détaillées, dans un format exploitable, pour reconstituer la facture indépendamment de l'état récapitulatif du fournisseur.
 
-[SCHEMA-06]
+![L'échelle des unités facturées, du siège au résultat, et l'endroit où la variance atterrit à chaque marche.|1300](images/20260826-06-unites-facturees.svg)
 
 ## 7. Les leviers, et ce qu'ils déplacent vraiment
 
