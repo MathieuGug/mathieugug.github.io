@@ -182,7 +182,7 @@ Voilà pour l'inventaire. Vient maintenant le cadrage, et il est sévère.
 
 Il y a pire qu'inefficace : c'est trompeur. Une optimisation du poste 1 produit un indicateur qui s'améliore, un tableau de bord qui verdit et un rapport de comité rassurant, pendant que les postes non instrumentés continuent de courir sans témoin. L'amélioration mesurable du poste mesuré devient la preuve apparente de la maîtrise de l'ensemble.
 
-[SCHEMA-07]
+![Les leviers d'optimisation projetés sur les sept postes : tous sur le premier, aucun sur les quatre derniers.|1300](images/20260826-07-couverture-leviers.svg)
 
 ## 8. Ce qu'une direction décide
 
