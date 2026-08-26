@@ -26,7 +26,7 @@ L'ordre de grandeur le plus cité vient de la série *Total Cost of Agents* d'EY
 
 La conséquence pour une direction est immédiate et rarement tirée. **Toute prévision de budget construite sur la courbe de prix se trompe de variable.** La variable à instrumenter, à plafonner et à faire figurer dans le dossier est le nombre de jetons par tâche, et elle relève d'une décision d'ingénierie interne plutôt que d'une négociation fournisseur.
 
-[SCHEMA-01]
+![Les ciseaux : le prix par jeton baisse, les jetons par tâche montent plus vite, et la facture est le produit des deux.|1300](images/20260826-01-les-ciseaux.svg)
 
 ## 2. Le cadre à sept postes, et où il s'arrête
 
@@ -46,7 +46,7 @@ C'est un bon cadre. Il est descriptif, honnête sur ses limites, et il nomme cor
 
 Ce qu'il ne fait pas, c'est expliquer pourquoi ils émergent plus tard. L'explication tenue par ce dossier n'est pas psychologique. **Quatre de ces sept postes n'ont pas de source de données.** Ils ne sont pas absents du budget parce qu'on les a oubliés ; ils sont absents parce qu'au moment de remplir la case, il n'y a rien à recopier.
 
-[SCHEMA-02]
+![La ligne de flottaison du dossier d'investissement : trois postes de coût au-dessus, quatre en dessous.|1300](images/20260826-02-sept-postes.svg)
 
 ## 3. Quatre régimes de mesure
 
