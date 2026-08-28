@@ -50,7 +50,7 @@ Voici la proposition centrale de ce dossier. Ce que le rattachement indique sans
 
 Ces quatre attributs sont indépendants les uns des autres, et c'est ce qui rend la grille utile. On peut avoir le budget sans le droit d'arrêt, ce qui produit un directeur de plateforme. On peut avoir le droit d'arrêt sans le budget, ce qui produit un contrôleur. On peut avoir l'accès sans les deux autres, ce qui produit un conseiller. ==Le titre ne dit rien de ces quatre cases ; le rattachement en remplit une par accident ; seule la lettre de mission peut les remplir toutes.==
 
-[SCHEMA-03]
+![Grille des quatre attributs opposables — budget propre, droit d'arrêt, accès à l'instance, protection du mandat — appliquée à cinq configurations de mandat, du directeur des données d'entreprise à l'administrateur ministériel français.|1300](images/20260828-03-quatre-attributs.svg)
 
 ## 4. La seule fonction data dont le rattachement est écrit dans la loi
 
