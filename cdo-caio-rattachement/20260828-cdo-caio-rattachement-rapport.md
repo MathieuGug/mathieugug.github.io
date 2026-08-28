@@ -126,7 +126,7 @@ Le livrable de ce dossier tient en un document court. Sept lignes, dont chacune 
 
 **Irréversible à l'échelle d'un mandat.** Nommer sans écrire. Un titulaire installé sans attribut consomme la crédibilité de la fonction, et son successeur héritera d'un poste que l'organisation aura appris à contourner. C'est le seul scénario de cette liste dont on ne revient pas en changeant de personne.
 
-[SCHEMA-07]
+![Arbre de décision en quatre questions menant à cinq issues, de « ne rien créer » à « créer le poste avec la charte en sept lignes », chacune portant son coût de sortie.|1300](images/20260828-07-arbre-decision.svg)
 
 ## Ce qu'il faut retenir
 
