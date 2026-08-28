@@ -100,7 +100,7 @@ L'article 26 est plus direct encore. Le déployeur d'un système à haut risque 
 
 Une organisation a trois manières de répondre. Elle peut loger l'autorité chez le propriétaire métier du système, ce qui est cohérent avec la responsabilité opérationnelle et incohérent avec la neutralité exigée. Elle peut la loger chez une fonction transverse, ce qui suppose que cette fonction dispose d'un droit d'arrêt réel et donc d'une lettre de mission. Elle peut ne rien décider, auquel cas l'autorité échoit par défaut au dernier maillon technique capable d'appuyer sur l'interrupteur, qui n'a ni le grade ni la protection pour le faire contre un directeur métier.
 
-[SCHEMA-06]
+![Trois obligations du règlement européen sur l'IA exigent une compétence, une formation et une autorité sans désigner de titulaire ; en l'absence de décision, l'autorité échoit au dernier maillon technique.|1300](images/20260828-06-obligation-sans-titulaire.svg)
 
 ## 8. La lettre de mission en sept lignes
 
