@@ -34,7 +34,7 @@ L'administration fédérale américaine offre le contre-exemple le plus net, et 
 
 Le contrepoint optimiste existe et il faut le lire pour ce qu'il est. Dans une enquête menée auprès de 100 dirigeants d'entreprises réalisant plus d'un milliard de dollars de chiffre d'affaires, 78 % des directeurs data et analytique déclarent que l'IA leur a donné davantage de pouvoir de décision, 94 % attendent une croissance de leur influence dans les douze mois, et 95 % estiment que leur organisation n'exploite pas pleinement la valeur de ses données[^14]. Ces trois chiffres décrivent une perception de trajectoire, non une capacité constatée. Un titulaire peut simultanément gagner en influence perçue et rester incapable de suspendre un système.
 
-[SCHEMA-02]
+![Les cinq lignes de rattachement possibles pour une direction data ou IA, avec ce que chacune donne et ce qu'elle retire, et la dispersion observée du rattachement du directeur IA.|1300](images/20260828-02-carte-rattachements.svg)
 
 ## 3. Les quatre attributs opposables
 
