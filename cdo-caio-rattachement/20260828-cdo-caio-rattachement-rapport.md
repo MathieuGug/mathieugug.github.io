@@ -64,7 +64,7 @@ Cette décision fait plus que régler un litige social. Elle donne une définiti
 
 La quatrième case reste vide, et volontairement. Le délégué à la protection des données ne dispose pas de budget propre, et son droit d'arrêt est indirect : il alerte, il documente, il saisit l'autorité. Il contrôle sans arbitrer. Ce choix du législateur a une conséquence directe pour une direction data : le modèle du délégué n'est pas transposable à une fonction dont on attend qu'elle **conduise** un portefeuille. Il est transposable, en revanche, à la fonction de contrôle qu'il faudra bien loger quelque part, et qui ne peut pas se loger chez celui qui construit.
 
-[SCHEMA-04]
+![Anatomie d'un mandat écrit : chaque article du RGPD relatif au délégué à la protection des données produit un attribut identifiable, et la case du budget propre reste volontairement vide.|1300](images/20260828-04-mandat-ecrit-dpo.svg)
 
 ## 5. La deuxième charte écrite : le directeur IA fédéral américain
 
