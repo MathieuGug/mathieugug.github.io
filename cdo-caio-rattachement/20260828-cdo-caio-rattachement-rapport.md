@@ -80,7 +80,7 @@ Dans la sixième édition de l'enquête annuelle auprès des directeurs des donn
 
 Ce chiffre est la mesure la plus honnête dont on dispose sur le sujet. Il dit que la charte écrite ne suffit pas : elle laisse subsister un tiers de titulaires qui ne savent pas ce qu'ils ont le droit de faire. Il dit aussi, par contraste avec la trajectoire 37 % → 43 % → 61 %, que la charte fait bouger la ligne dans le bon sens et vite. La conclusion pratique n'est pas que l'écriture est inutile ; elle est que l'écriture doit porter sur les autorités plus que sur les responsabilités, parce que ce sont les autorités qui manquent quand tout le reste est en place.
 
-[SCHEMA-05]
+![La charte fédérale américaine décomposée en cinq organes — titulaire, conseil de gouvernance, conseil interagences, inventaire des cas d'usage, dérogation documentée — et le résultat mesuré auprès des directeurs des données fédéraux.|1300](images/20260828-05-charte-federale.svg)
 
 ## 6. Le cas français : une charte sans attribut
 
