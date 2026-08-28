@@ -18,7 +18,7 @@ Trois différences suffisent à expliquer l'essentiel. La population interrogée
 
 Le corollaire pratique tombe immédiatement. Les comparaisons sectorielles du type « 76 % de nos concurrents en ont un » ne sont pas exploitables pour justifier une création de poste, parce qu'elles ne portent sur rien de défini. Le point de départ d'une décision d'organisation n'est pas le taux d'équipement du marché. Il est la liste des décisions qu'aujourd'hui personne ne tranche.
 
-[SCHEMA-01]
+![Deux enquêtes de 2026 mesurent la diffusion du poste de directeur IA à 38,5 % et 76 % ; l'écart tient à la population interrogée, à la formulation de la question et au niveau du répondant.|1300](images/20260828-01-ecart-de-mesure.svg)
 
 ## 2. Ce que le rattachement prédit, et ce qu'il ne prédit pas
 
