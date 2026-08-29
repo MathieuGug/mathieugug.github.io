@@ -3,10 +3,9 @@
 build-app.py — assemble a companion HTML app from a host scaffold + content fragments.
 
 Why this exists: writing a 1500–2000 line app HTML through repeated Edit() calls is
-expensive and error-prone. The recurring pattern is to start from an existing
-deliverable (or `assets/app-template.html`) — which already has all the CSS, JS,
-modal/tooltip/zoom/sticky-sidebar/mobile-friendliness machinery wired correctly —
-and swap out three blocks:
+expensive and error-prone. The recurring pattern is to start from `assets/app-template.html`
+— which already has all the CSS, JS, modal/tooltip/zoom/sticky-sidebar/mobile-friendliness
+machinery wired correctly — and swap out three blocks:
 
   1. The <main id="report">…</main> body (prose + figures)
   2. The <ol id="sources-list">…</ol> entries inside <aside id="sources">
@@ -31,6 +30,13 @@ The host file is the source of truth for the framework (CSS, JS, sticky-sidebar
 collapse, zoom overlay, panel-close, etc.). Only the three content blocks above
 are swapped. Anything else in the host file is preserved verbatim.
 
+Prefer `assets/app-template.html` as the host. Reusing a previously shipped app as
+the host also works, but it copies that app's framework CSS verbatim — including any
+bug it carries. That is exactly how the mobile full-width regression propagated across
+six dossiers (2026-07-26 → 2026-08-12): one app shipped with a broken `.layout` grid,
+five later apps used it as host and inherited it. `_validate_host` below guards the
+invariants that class of drift breaks; extend it when a new one bites.
+
 Idempotent: running with the same inputs produces the same output.
 """
 
@@ -54,6 +60,67 @@ def _swap_block(haystack: str, start_marker: str, end_marker: str, replacement: 
         raise SystemExit(f"[build-app] end marker not found ({name}) after start: {end_marker!r}")
     e_full = e + len(end_marker)
     return haystack[:s] + replacement + haystack[e_full:]
+
+
+def _atrule_bodies(css: str, prelude_re: re.Pattern[str]) -> list[str]:
+    """Return the bodies of every at-rule whose prelude matches `prelude_re`.
+
+    Brace-matched rather than regexed: a @media body contains nested rule blocks,
+    so a non-greedy `\\{.*?\\}` would stop at the first inner `}`.
+    """
+    bodies = []
+    for m in prelude_re.finditer(css):
+        i = css.find('{', m.end() - 1)
+        if i < 0:
+            continue
+        depth = 0
+        for j in range(i, len(css)):
+            if css[j] == '{':
+                depth += 1
+            elif css[j] == '}':
+                depth -= 1
+                if depth == 0:
+                    bodies.append(css[i + 1:j])
+                    break
+    return bodies
+
+
+# `.layout { … grid-template-columns: 240px … }` — the desktop 3-column grid.
+_GRID_DESKTOP = re.compile(r"\.layout\s*\{[^}]*grid-template-columns\s*:\s*240px", re.I)
+# The same selector reset to a single column (`1fr` or `minmax(0, 1fr)`).
+_GRID_MOBILE = re.compile(r"\.layout\s*\{[^}]*grid-template-columns\s*:\s*(?:1fr|minmax\(\s*0\s*,\s*1fr\s*\))", re.I)
+_MQ_MOBILE = re.compile(r"@media[^{]*max-width\s*:\s*1024px[^{]*", re.I)
+
+
+def _validate_host(host: str, host_path: Path) -> None:
+    """Fail loudly on host scaffolds carrying known framework bugs.
+
+    Only checks invariants that have actually shipped broken — this is a
+    regression net, not a linter. Each check names the fix in its message.
+    """
+    errors = []
+
+    # The 3-column desktop grid must collapse to one column under 1024px.
+    # Otherwise #toc/#sources go display:none but their tracks remain declared,
+    # main#report is auto-placed into the 240px TOC track, and the whole page
+    # renders at ~60% of viewport width on mobile.
+    if _GRID_DESKTOP.search(host) and not any(
+        _GRID_MOBILE.search(b) for b in _atrule_bodies(host, _MQ_MOBILE)
+    ):
+        errors.append(
+            "`.layout` declares the 3-column desktop grid but never resets it to a single "
+            "column under 1024px. On mobile, main#report gets auto-placed into the 240px TOC "
+            "track and the page renders at ~60% of viewport width.\n"
+            "    Fix: add `.layout { grid-template-columns: minmax(0, 1fr); }` inside the "
+            "host's `@media (max-width: 1024px)` block."
+        )
+
+    if errors:
+        joined = "\n\n".join(f"  - {e}" for e in errors)
+        raise SystemExit(
+            f"[build-app] host scaffold {host_path} carries known framework bugs:\n\n{joined}\n\n"
+            "Fix the host before building, or start from assets/app-template.html instead."
+        )
 
 
 def _inject_schema_id(svg_text: str, schema_id: str) -> str:
@@ -111,6 +178,7 @@ def main() -> int:
     args = ap.parse_args()
 
     host = args.host.read_text(encoding="utf-8")
+    _validate_host(host, args.host)
     main_frag = args.main.read_text(encoding="utf-8")
     sources_frag = args.sources.read_text(encoding="utf-8")
     schemas_frag = args.schemas.read_text(encoding="utf-8").strip()

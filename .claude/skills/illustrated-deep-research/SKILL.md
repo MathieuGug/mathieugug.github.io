@@ -37,7 +37,7 @@ The companion app ships with three baseline interactive features and two power-u
 
 1. **Research** — conduct deep, parallel web searches; prioritize premium sources; web_fetch the most valuable for full text.
 2. **Outline** — propose a 6–10 section outline to the user before writing (unless they explicitly say "go ahead and produce it").
-3. **Draft the report** in Markdown with placeholders `[SCHEMA-01]` … `[SCHEMA-N]` where schemas will go.
+3. **Draft the report** in Markdown with placeholders `[SCHEMA-01]` … `[SCHEMA-N]` where schemas will go. Before moving on, run the anti-AI-tics pass from `references/red-flags-ia.md` (§ 10) on the draft.
 4. **Design the schemas** — identify 5–10 conceptual visuals that genuinely add information beyond the prose. List them with one-line briefs and confirm if uncertain.
 5. **Generate each SVG** in editorial style following `references/svg-editorial-style.md`. For each schema, also draft the modal content for every interactive region.
 6. **Build the HTML companion app** following `references/companion-app.md` and `assets/app-template.html`. Inline all SVGs, all modal content, all tooltip definitions, all sources.
@@ -59,6 +59,7 @@ These are baked into every output:
 - **Premium sources only.** Tier-1 institutions, peer-reviewed papers, primary documents, official corporate or governmental publications, recognized industry reports. No content farms, no SEO listicles, no Medium opinion pieces unless the author is a notable expert. See `references/workflow.md` for the source quality rubric.
 - **Language** — match the user's working language. Mathieu typically works in French; default to French unless the topic is clearly English-context (anglophone case study, English-named technology with no French equivalent term).
 - **Citation style** in the Markdown report: numbered footnotes `[^1]` with a `## Sources` section at the end. In the HTML app, every numbered citation in the body is a clickable link that opens/highlights the source in the right sidebar.
+- **Anti-AI-tics prose pass (mandatory).** Before delivering any prose (report, app copy, README), apply `references/red-flags-ia.md` — the red-flag list measured on this site's own corpus (2026-08-09). Hard rules: em-dashes ≤ 5/1000 words; post-dash pivots `… — c'est / — pas …` ≤ 2 per document; appositive negations `…, pas …` ≤ 2; the antithesis `X n'est pas Y, c'est Z` is banned (cut the balance, keep the sourced half); `c'est précisément` never. A sentence that adds rhythm without adding a fact is deleted, not reworded.
 
 ## Cadrage : publication personnelle, pas livrable d'entreprise
 
@@ -84,6 +85,7 @@ The companion app template (`assets/app-template.html`) is a scaffold. Two failu
 | If you need to know about… | Read this file |
 |---|---|
 | Step-by-step execution (research, drafting, packaging) | `references/workflow.md` |
+| The anti-AI-cliché prose pass (measured red flags, quotas, control grep) | `references/red-flags-ia.md` |
 | How to design SVGs in editorial style (palette, type, layout, annotation grammar) | `references/svg-editorial-style.md` |
 | HTML app architecture (layout, modal system, tooltips, sources sidebar, JS) — and the **mobile-friendliness + panel-close + `<pre>`/`<code>` overflow** patterns required by the host site's `CLAUDE.md` | `references/companion-app.md` |
 | Building the **optional 10-min slideshow companion** (3rd format in the ZIP) | `references/slideshow.md` |
@@ -164,6 +166,7 @@ If unsure, ask the user once before drafting. Better one quick clarification tha
 
 Before zipping, verify:
 
+- [ ] **Anti-AI-tics pass done** (`references/red-flags-ia.md` § 10) — em-dashes ≤ 5/1000 words, revelation-colons ≤ 4, no `c'est précisément`, no `X n'est pas Y, c'est Z`, `— c'est / — pas` and `, pas Y` within their quota of 2; run the control grep from § 10 on the report
 - [ ] Every schema is referenced from the prose with a "see Schema N" cue and adds information beyond the text
 - [ ] Every interactive SVG region has authored modal content (no dead clicks)
 - [ ] Every obscure term in the report has a tooltip definition in the HTML app
