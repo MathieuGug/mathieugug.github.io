@@ -52,7 +52,7 @@ Le protocole MCP a résolu un vrai problème. Avant lui, chaque cadre logiciel d
 
 Il faut mesurer précisément ce que cela règle. MCP normalise **l'appel** : la manière dont un agent découvre un outil, lit sa signature, l'invoque et reçoit un résultat. A2A normalise la **conversation entre agents** de fournisseurs différents. Ces deux acquis sont réels et ils ont un an d'existence à peine.
 
-[SCHEMA-03]
+![Ce que MCP et A2A normalisent, et ce qui reste au plan de contrôle de chaque fournisseur.|1300](images/20260902-03-protocoles-perimetre.svg)
 
 Ce qu'aucun des deux ne normalise se laisse énumérer sans ambiguïté :
 
@@ -91,7 +91,7 @@ Il vaut donc la règle la plus rentable du dossier, et elle ne coûte rien : ==l
 
 **Les traces d'exécution sont le cas inverse.** Elles ont une grammaire commune émergente, les conventions sémantiques d'OpenTelemetry pour l'IA générative, mais cette grammaire reste expérimentale sur la partie agent et n'émet aucun attribut de coût en monnaie[^12]. Surtout, les traces sont volumineuses, leur durée de conservation est un paramètre de facturation, et elles sont produites par l'exécution du fournisseur. Une organisation qui change de plateforme perd la continuité de sa série historique au moment exact où elle en aurait le plus besoin, puisque c'est cette série qui permettrait de comparer l'avant et l'après.
 
-[SCHEMA-04]
+![Les cinq surfaces d'état croisées avec la portabilité déclarée par le fournisseur et le coût réel de reconstitution.|1300](images/20260902-04-matrice-portabilite.svg)
 
 La matrice qui en résulte est la vraie grille de lecture d'un comparatif. Elle croise deux axes que les tableaux de fonctionnalités confondent : ce que le fournisseur **déclare** exportable, et ce que la reconstitution **coûte** réellement. Le quadrant dangereux n'est pas celui des objets déclarés non exportables, qu'on aura provisionnés. C'est celui des objets déclarés exportables dont l'export ne restitue pas la fonction.
 
