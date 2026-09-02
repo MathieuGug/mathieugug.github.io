@@ -6,7 +6,7 @@ Les comparatifs de plateformes agentiques d'entreprise se ressemblent tous. Ils 
 
 Ce dossier propose un autre critère de lecture. Une plateforme agentique ne se juge pas sur ce qu'elle sait faire, mais sur ce qu'elle **accumule** pour votre compte et que vous ne pourrez pas emporter. Cette masse a un nom simple : l'**état**. La mémoire longue des agents, le catalogue d'outils gouverné, les identités déléguées, le jeu d'évaluation, les traces d'exécution. Aucune de ces cinq surfaces n'a de format d'échange normalisé en septembre 2026, et la réglementation européenne la plus favorable au changement de fournisseur s'arrête, par construction, juste avant elles.
 
-[SCHEMA-01]
+![La pile agentique rangée par réversibilité : le modèle est la couche la plus interchangeable, l'état accumulé la plus verrouillante.|1300](images/20260902-01-pile-reversibilite.svg)
 
 ## 1. Le mauvais critère
 
@@ -22,7 +22,7 @@ Databricks a donné en juin 2026 le chiffre qui résume ce déséquilibre. Prés
 
 Un agent en production produit cinq objets persistants que son exploitant n'avait pas au démarrage, et qui n'existent que parce qu'il a tourné.
 
-[SCHEMA-02]
+![Les cinq surfaces d'état d'un agent en production, avec l'unité dans laquelle se mesure le coût de leur reconstitution.|1300](images/20260902-02-cinq-surfaces.svg)
 
 **La mémoire longue.** Ce que l'agent retient d'une session à l'autre, distillé à partir de l'historique de conversation. Google le commercialise sous le nom de Memory Bank, adossé à Agent Engine, disponible en version générale et utilisable depuis d'autres cadres logiciels que le sien[^3]. AWS le commercialise dans AgentCore, avec une facturation à l'enregistrement créé et à l'enregistrement récupéré[^4]. Microsoft le rattache aux fils de conversation de Foundry Agent Service.
 
