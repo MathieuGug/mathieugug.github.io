@@ -119,7 +119,7 @@ Cette lecture appelle deux réserves de méthode. La qualification d'un service 
 
 Réunir ce qui précède donne une facture de sortie en cinq postes, dont aucun ne figure sur une grille tarifaire.
 
-[SCHEMA-06]
+![La facture de sortie d'une plateforme agentique en cinq postes, et la réductibilité de chacun.|1300](images/20260902-06-facture-de-sortie.svg)
 
 1. **Re-accumulation de la mémoire.** Mesurée en mois de trafic réel, pas en jours-homme. Le seul poste dont la durée ne dépend pas de vos moyens.
 2. **Ré-habilitation des identités.** Mesurée en nombre d'habilitations × délai moyen de re-signature par un propriétaire métier. Le poste que les plans de migration sous-estiment le plus systématiquement.
@@ -129,7 +129,7 @@ Réunir ce qui précède donne une facture de sortie en cinq postes, dont aucun 
 
 La fenêtre pendant laquelle ces postes sont négociables est étroite, et elle se referme. Gartner anticipe que 40 % des applications d'entreprise embarqueront des agents spécialisés d'ici fin 2026, contre moins de 5 % en 2025[^15]. Une organisation qui n'a pas encore accumulé d'état négocie librement. Une organisation qui en a accumulé dix-huit mois négocie sous contrainte, et son fournisseur le sait.
 
-[SCHEMA-07]
+![Six décisions classées par la fenêtre pendant laquelle elles restent disponibles, du contrat à l'organisation.|1300](images/20260902-07-six-decisions.svg)
 
 Six décisions, classées par la fenêtre où elles restent disponibles.
 
