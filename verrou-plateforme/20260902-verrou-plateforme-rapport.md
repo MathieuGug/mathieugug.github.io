@@ -103,7 +103,7 @@ Le calendrier est le suivant. Depuis le 12 septembre 2025, transparence intégra
 
 Une direction data qui lit ce calendrier peut légitimement conclure que le sujet de l'enfermement se referme de lui-même. C'est là que le texte demande à être lu de près.
 
-[SCHEMA-05]
+![Les deux régimes de l'article 30 du règlement européen sur les données, et le calendrier de suppression des frais de sortie.|1300](images/20260902-05-ligne-de-partage.svg)
 
 L'article 30 distingue deux régimes selon le type de service. Pour les services d'**infrastructure**, le fournisseur d'origine doit prendre les mesures nécessaires pour permettre l'**équivalence fonctionnelle**, définie comme le rétablissement, sur la base des données et actifs numériques exportables du client, d'un niveau minimal de fonctionnalité dans l'environnement du nouveau fournisseur[^13][^14]. C'est une obligation de résultat sur la fonction, pas seulement sur la donnée.
 
