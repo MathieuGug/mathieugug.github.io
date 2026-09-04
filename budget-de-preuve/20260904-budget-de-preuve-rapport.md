@@ -130,7 +130,7 @@ Le classement produit un verdict par ligne : testable, testable au prix d'un exe
 
 Supposons le test lancé sans ce travail préalable, et l'intervalle qui en sort : de −15 % à +45 % sur le retour. Voici ce qui lui arrive.
 
-[SCHEMA-05]
+![Anatomie d'un non-résultat : un intervalle de confiance large et les quatre lectures qu'on en fait en comité|1300](images/20260904-05-anatomie-non-resultat.svg)
 
 **Première lecture fausse : « non significatif, donc ça ne marche pas. »** C'est la confusion entre absence de preuve et preuve d'absence. L'intervalle contient +45 %, un très bon investissement. Le test n'a pas montré que le canal était inefficace, il a montré qu'il ne savait pas. La différence est décisive quand la conclusion sert à couper une ligne budgétaire.
 
