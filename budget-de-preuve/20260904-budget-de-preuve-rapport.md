@@ -14,7 +14,7 @@ La thèse : chaque annonceur possède un **seuil d'indétectabilité** propre, c
 
 Le livrable : la **note de renoncement**, un document annuel de trois pages qui range les questions marketing de l'année en quatre catégories — celles qu'un test peut trancher, celles qu'un modèle peut approcher sous réserve d'être calibré, celles qu'on renonce explicitement à mesurer, et la règle de décision arrêtée à l'avance pour chacune des premières. Elle se signe au même niveau que le plan média, parce qu'elle en est le revers.
 
-[SCHEMA-01]
+![L'échelle du problème : le signal publicitaire recherché comparé au bruit des ventes individuelles|1300](images/20260904-01-echelle-du-probleme.svg)
 
 ## Le chiffre qui devrait ouvrir tout plan de mesure
 
