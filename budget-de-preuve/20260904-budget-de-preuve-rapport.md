@@ -158,7 +158,7 @@ Il n'y a donc pas d'échappatoire par le bas. Les trois voies disponibles sont l
 
 C'est le document qui manque, et il est court.
 
-[SCHEMA-06]
+![Le dispositif de renoncement sur l'année : cadrage, conception, exécution, restitution|1300](images/20260904-06-dispositif-renoncement.svg)
 
 **Rubrique 1 — Décidable par test.** La liste des questions dont l'effet minimum détectable, calculé sur les données de l'entreprise, est inférieur au seuil de rentabilité *r\**. Pour chacune : la conception retenue, la durée, le budget média sacrifié, et la date de restitution. Cette rubrique est courte. Trois à cinq questions par an est un rythme réaliste pour un annonceur de taille intermédiaire.
 
