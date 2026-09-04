@@ -55,7 +55,7 @@ La seule chose à retenir de cette formule est le carré au dénominateur. ==Div
 
 *(CV = 10, puissance 80 %, seuil 5 % bilatéral. Le détail du calcul est en note de méthode.)*
 
-[SCHEMA-02]
+![La loi du carré : diviser par deux l'effet visé quadruple la taille de l'expérience|1300](images/20260904-02-loi-du-carre.svg)
 
 Cette progression a une conséquence budgétaire qui n'est presque jamais tirée. Dans une expérience publicitaire, l'échantillon n'est pas une population qu'on observe : c'est une population qu'on **traite**, ou qu'on prive délibérément de traitement. Le groupe témoin d'un test d'extinction géographique est une région où l'on a coupé la publicité pendant six semaines. Le coût de l'expérience n'est pas le coût de l'analyse. C'est le chiffre d'affaires que la région témoin n'a pas fait, plus le média immobilisé dans un dispositif qui n'optimise pas.
 
