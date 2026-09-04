@@ -110,7 +110,7 @@ C'est exactement le mur que Lewis et Rao ont mesuré empiriquement avec leur int
 
 Si le seuil est une contrainte fixe, alors le plan de mesure est un problème d'allocation sous contrainte, et il se traite comme tel : en rangeant les questions par ce qu'elles coûtent à trancher.
 
-[SCHEMA-04]
+![Six questions marketing rangées par coût de preuve, avec le verdict de chacune|1300](images/20260904-04-cout-de-preuve.svg)
 
 **Un canal entier doit-il continuer d'exister ?** C'est la question la moins chère du portefeuille, parce que l'effet à détecter est l'effet total du canal, la plus grande quantité disponible. Un test d'extinction géographique sur six à huit semaines y répond pour beaucoup d'annonceurs. C'est la question qu'eBay a posée sur ses annonces de marque, et la réponse a été nette[^3].
 
