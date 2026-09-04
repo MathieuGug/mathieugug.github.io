@@ -89,7 +89,7 @@ La formule produit un résultat qui surprend systématiquement en réunion. Le s
 
 ==Plus une entreprise est rentable, plus il lui coûte cher de savoir si sa publicité l'est.== Le même mécanisme joue sur l'intensité publicitaire : celui qui dépense peu en média a un seuil bas, donc une mesure difficile. Les deux annonceurs qui mesurent le plus facilement sont ceux qui dépensent beaucoup avec des marges faibles, c'est-à-dire ceux que la question intéresse le moins.
 
-[SCHEMA-03]
+![Le seuil d'indétectabilité : quatre profils d'annonceur, leur seuil de rentabilité en effet relatif et le coût de mesure qui en découle|1300](images/20260904-03-seuil-indetectabilite.svg)
 
 Quatre profils, calculés avec les mêmes hypothèses que ci-dessus, donnent l'ordre de grandeur.
 
