@@ -86,7 +86,7 @@ Annoncée le 16 juin 2026, CustomerLake prend le problème par l'autre bout : pl
 
 C'est l'architecture la plus proche de ce que ce dossier défend, et elle appelle deux réserves. La première tient au calendrier : le produit a été présenté en avant-première privée, et les avant-premières privées ne sont pas des retours d'expérience. La seconde tient à la nature du gain. Faire descendre la composition sous un catalogue règle la question du contrôle d'accès et de la traçabilité des lectures. Elle ne règle pas, à elle seule, celle de la **forme** de la définition : un segment composé dans une interface reste un segment composé dans une interface, même quand cette interface s'exécute au-dessus d'un catalogue gouverné. Le gain est réel côté habilitations ; il reste à démontrer côté versionnement et portabilité.
 
-[SCHEMA-03]
+![Zéro copie : ce qui bouge et ce qui ne bouge pas, dans trois architectures publiées|1300](images/20260909-03-zero-copie.svg)
 
 ### Ce que les trois ont en commun
 
