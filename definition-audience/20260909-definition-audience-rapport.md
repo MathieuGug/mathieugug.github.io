@@ -18,7 +18,7 @@ Quatre constats structurent ce dossier.
 
 **Quatrième constat.** Le prix de ce trou se paie en aval, sur le seul chiffre que la direction regarde. Entre la population définie, la population résolue, la population activée et la population mesurée, il y a quatre nombres différents et une seule étiquette. L'écart n'est presque jamais affiché, et il contamine le groupe témoin des tests d'incrémentalité.
 
-[SCHEMA-01]
+![La pile d'activation en 2026 : le stockage est descendu dans l'entrepôt, l'écriture de la définition est restée dans la console|1300](images/20260909-01-pile-activation.svg)
 
 ---
 
