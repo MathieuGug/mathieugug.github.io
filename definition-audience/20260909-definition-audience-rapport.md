@@ -220,7 +220,7 @@ Le prédicat est déclaré comme un objet nommé dans le format sémantique de l
 *Ce que ça coûte* : le travail d'extension du format, puisque le standard ne fournit pas l'objet. Et une convention interne à maintenir tant qu'aucune norme ne la reprend.
 *Le risque* : construire seul une extension qu'une norme ultérieure contredira. Il se mitige en restant proche de la grammaire existante et en n'inventant que l'objet manquant.
 
-[SCHEMA-06]
+![Trois montages de propriété de la définition d'audience et ce que chacun coûte|1300](images/20260909-06-trois-montages.svg)
 
 ### Le critère de tri
 
