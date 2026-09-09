@@ -52,7 +52,7 @@ Un segment se présente comme une phrase courte : « clients actifs à haute val
 
 **Le rattachement de finalité.** Au titre de quel traitement cette population est constituée, et sur quelle base. Le règlement européen sur la protection des données impose des finalités déterminées, explicites et légitimes, et l'autorité française a rappelé en 2026 qu'un consentement recueilli pour une finalité ne couvre pas une transmission à une finalité distincte[^2]. Ce composant n'est presque jamais attaché à la définition technique du segment ; il vit dans un registre séparé, tenu par d'autres personnes, à une autre fréquence.
 
-[SCHEMA-02]
+![Anatomie d'une définition d'audience : quatre composants, un seul écrit|1300](images/20260909-02-anatomie-definition.svg)
 
 Trois composants sur quatre sont donc implicites. Et ce sont eux qui font diverger les populations, parce qu'ils sont hérités de l'outil dans lequel la définition a été écrite. ==Changer d'outil d'activation change la population d'un segment dont personne n'a modifié le prédicat.==
 
