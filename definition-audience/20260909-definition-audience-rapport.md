@@ -140,7 +140,7 @@ Suivons une même étiquette à travers la chaîne.
 
 **La population mesurée.** Au moment du bilan, quelqu'un recalcule l'audience pour comparer exposés et non exposés. S'il la recalcule à la date du bilan et non à la date de l'activation, la fenêtre glissante a bougé et la population a changé de composition. On obtient N₃, et l'écart entre N₃ et N₂ est purement temporel.
 
-[SCHEMA-05]
+![Une audience, quatre populations : définie, résolue, activée, mesurée|1300](images/20260909-05-quatre-populations.svg)
 
 ### Ce que cela casse concrètement
 
