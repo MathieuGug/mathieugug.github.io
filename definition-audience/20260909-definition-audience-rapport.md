@@ -112,7 +112,7 @@ Toutes ces briques répondent à la question « combien ». Aucune ne répond à
 
 Une audience n'est ni une mesure ni une dimension. C'est un **prédicat d'appartenance** appliqué à une population à une date donnée, sous une règle d'identité donnée, pour une finalité donnée. On peut la bricoler avec les primitives existantes : un filtre de dimension, un indicateur booléen calculé, une table matérialisée. Bricoler n'est pas normaliser. Un filtre de dimension ne porte ni sa fenêtre, ni sa règle d'identité, ni sa finalité ; il ne se versionne pas comme un objet nommé ; il ne se compare pas d'une exécution à l'autre.
 
-[SCHEMA-04]
+![La normalisation sémantique 2025-2026 et la primitive de population qui n'y figure pas|1300](images/20260909-04-couche-semantique.svg)
 
 ### Pourquoi le trou existe
 
