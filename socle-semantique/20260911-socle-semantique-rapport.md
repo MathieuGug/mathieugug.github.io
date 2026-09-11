@@ -30,7 +30,7 @@ Il faut lire ce désordre correctement. Les cinq mesures ne se contredisent pas 
 
 La conséquence pour une direction data est directe et inconfortable. **Le taux d'exactitude annoncé par un fournisseur mesure la difficulté de son jeu de démonstration, pas la performance que vous obtiendrez.** Un dossier d'investissement qui reprend un chiffre d'éditeur ne prouve rien sur votre entrepôt. La seule mesure qui engage une décision est celle qu'on produit chez soi, sur ses propres tables, avec ses propres questions.
 
-[SCHEMA-01]
+![Cinq mesures du même effet, cinq mondes différents : l'exactitude « avec couche sémantique » court de 22 % à 100 % selon le patrimoine mesuré.|1300](images/20260911-01-dispersion-mesures.svg)
 
 Cette conclusion a un coût très faible et personne ne la tire. Constituer un jeu de questions de référence — trente à cent questions métier réelles, chacune accompagnée de la réponse que l'entreprise tient pour juste — demande quelques jours de travail d'analyste. C'est moins cher qu'une semaine de conseil en cadrage, et c'est le seul livrable qui permette de comparer deux offres autrement que sur leurs plaquettes. On y reviendra en section 8 : c'est la première des six décisions, et la moins chère.
 
@@ -50,7 +50,7 @@ Un analyste humain navigue ce sédiment parce qu'il en connaît l'histoire. Il s
 
 L'agent n'a pas accès aux personnes. Il a accès aux métadonnées. L'asymétrie est là : **tout ce qu'un analyste sait sans l'avoir lu, l'agent doit le lire.** Un socle prêt pour l'agentique est un socle où cette connaissance implicite a été extraite des têtes et déposée dans un objet que la machine peut consulter.
 
-[SCHEMA-02]
+![Le même modèle, trois patrimoines : 86,6 % sur des bases académiques, 57,4 % sur des bases réalistes, 10,1 % sur des patrimoines d'entreprise.|1300](images/20260911-02-deux-patrimoines.svg)
 
 Le chiffre de Gartner souvent cité dans les comités prend ici son sens opérationnel : selon une enquête menée auprès de 248 responsables de la gestion des données, 63 % des organisations ne disposent pas de pratiques de gestion adaptées à l'IA ou ignorent si elles en disposent, et le cabinet anticipe qu'à l'horizon 2026, 60 % des projets d'IA non soutenus par des données prêtes pour l'IA seront abandonnés[^7]. Le chiffre est une prédiction de cabinet et doit être lu comme telle. Sa valeur n'est pas dans la décimale : elle est dans le fait que le facteur limitant identifié est le patrimoine et non l'outil.
 
