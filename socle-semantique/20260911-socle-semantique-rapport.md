@@ -208,7 +208,7 @@ Codes techniques dont la valeur a un sens métier, tables gelées à ne pas inte
 **D6 — Budgéter la maintenance sémantique comme une ligne récurrente.**
 Une définition se périme : nouvelle offre, changement de périmètre, refonte d'un système source. Une couche sémantique non entretenue redevient en dix-huit mois un glossaire faux, c'est-à-dire pire qu'un glossaire absent, puisqu'elle est exécutée. Coût : une ligne budgétaire annuelle. Effet : évite que l'actif le plus structurant du dispositif se dégrade en silence.
 
-[SCHEMA-07]
+![Six décisions de préparation du socle, classées par le volume d'erreurs silencieuses qu'elles rendent visibles rapporté à leur coût.|1300](images/20260911-07-six-decisions.svg)
 
 Une dernière décision, celle du calendrier, se déduit des cinq premières. La question n'est pas de savoir si l'on prépare le socle avant ou après le premier agent, puisque personne n'attendra. Elle est de savoir **quelle classe de décisions a le droit de s'appuyer sur une réponse d'agent non revue**, et de l'écrire avant que l'usage ne le décide par défaut. Sur un système à deux tiers de réponses justes, la réponse raisonnable est : l'exploration, le cadrage, la préparation d'une analyse. Pas le chiffre qui part au comité.
 
