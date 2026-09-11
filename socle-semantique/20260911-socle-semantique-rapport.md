@@ -96,7 +96,7 @@ De ce classement se déduit une règle qui tient en une phrase et qui peut servi
 
 Préparer le socle ne consiste donc pas d'abord à rendre l'agent plus juste. Cela consiste à **déplacer les défauts de la classe 1 vers la classe 2** : rendre impossible qu'une question mal posée, un périmètre mal compris ou une convention ignorée produise un chiffre présentable. Formulé ainsi, le chantier devient arbitrable, parce qu'on peut le mesurer : sur le jeu de questions de référence, quelle proportion des échecs est silencieuse.
 
-[SCHEMA-03]
+![Trois classes d'erreur rangées par le bruit qu'elles font : silencieuse, bruyante, coûteuse. Préparer le socle consiste à déplacer les défauts de la première vers la deuxième.|1300](images/20260911-03-trois-classes-erreur.svg)
 
 ---
 
@@ -116,7 +116,7 @@ C'est un arbitrage, et il faut le nommer comme tel. La couche sémantique échan
 
 Une direction qui achète une couche sémantique en croyant acheter un agent plus intelligent sera déçue. Une direction qui l'achète en sachant qu'elle achète un périmètre déclaré et des refus explicites saura quoi en faire.
 
-[SCHEMA-04]
+![Ce que la couche sémantique déplace dans l'espace des questions : une zone de refus explicite apparaît, prise sur la zone des réponses fausses.|1300](images/20260911-04-espace-des-questions.svg)
 
 Il reste une question de méthode, et elle est ouverte. La construction d'une couche sémantique complète sur un patrimoine de plusieurs milliers de tables est un chantier de plusieurs trimestres. Les éditeurs proposent depuis 2026 des générateurs automatiques : Snowflake a porté en disponibilité générale, en février 2026, un dispositif qui dérive une vue sémantique du schéma existant[^4]. Ces générateurs produisent une structure ; l'arbitrage reste entier. Ils devinent qu'une colonne nommée `revenue` porte un chiffre d'affaires ; ils ne peuvent pas décider si ce chiffre d'affaires est celui du contrôle de gestion ou celui du commerce. La génération automatique traite le coût de saisie. Elle ne traite pas le coût de décision, qui est le vrai.
 
