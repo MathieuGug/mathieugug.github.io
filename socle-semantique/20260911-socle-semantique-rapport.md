@@ -144,7 +144,7 @@ Les objets qui portent l'état 3 existent désormais chez tous les grands fourni
 
 Ce qu'aucun de ces objets ne fournit, c'est le **propriétaire**. Aucun format ne dit qui a le droit de modifier la définition du chiffre d'affaires, ni qui doit être consulté avant, ni ce qui se passe quand la modification casse une série historique. Ces règles se prennent dans une instance et s'écrivent dans une note. C'est le point de contact avec la piste gouvernance, et c'est le chantier que la technique ne fera pas à votre place.
 
-[SCHEMA-05]
+![Les trois états d'une définition métier : implicite, documentée, opposable. Seul le passage à l'état opposable change quelque chose pour un agent.|1300](images/20260911-05-chaine-definition.svg)
 
 Une conséquence pratique mérite d'être posée : **le propriétaire d'une définition doit être un responsable métier, pas un ingénieur data.** L'ingénieur implémente la définition ; il n'a pas l'autorité pour décider si un avoir se déduit du chiffre d'affaires. Confier la propriété à l'équipe technique produit soit un arbitrage illégitime, soit un arbitrage indéfiniment reporté.
 
@@ -166,7 +166,7 @@ L'état du parc est documenté et il n'est pas bon. Une enquête 2026 auprès de
 
 Il y a une articulation directe avec la section précédente, et elle est contre-intuitive. **La couche sémantique est un bon endroit pour compiler les règles d'accès dans la requête**, parce qu'elle est l'objet que l'agent traverse obligatoirement. Une règle exprimée au niveau de la définition d'un indicateur s'applique à toute requête qui utilise cet indicateur, quelle que soit la formulation de la question. Une règle vérifiée après coup ne s'applique qu'aux requêtes qu'on a pensé à vérifier.
 
-[SCHEMA-06]
+![L'étage auquel s'applique l'habilitation : au rapport en décisionnel classique, nulle part sous compte de service, à la requête avec identité propagée.|1300](images/20260911-06-filtre-etage.svg)
 
 La décision qui en découle est simple et elle est rarement prise au bon moment : **l'identité propagée se traite au pilote et non à la mise en production.** Un pilote mené sous compte de service démontre une faisabilité qui n'existe pas, puisqu'il exclut la contrainte qui déterminera l'architecture. Il produit une démonstration réussie et une remise à plat six mois plus tard.
 
