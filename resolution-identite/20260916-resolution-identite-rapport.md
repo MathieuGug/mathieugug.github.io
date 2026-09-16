@@ -86,7 +86,7 @@ Cette conclusion se combine mal avec un fait déjà établi dans un dossier vois
 
 Il faut donc renverser l'ordre habituel des travaux. La qualification du graphe d'identité relève du plan de mesure lui-même, au même titre que le calcul de puissance, et elle le précède.
 
-[SCHEMA-04]
+![Schéma 04 — Le rabotage de la preuve : atténuation par les faux liens, biais de sélection par les faux non-liens, et passage sous le seuil de détectabilité.|1300](images/20260916-04-rabotage-preuve.svg)
 
 ## 5. Ce que la précision vaut vraiment
 
@@ -122,7 +122,7 @@ Trois éléments de cet avis méritent d'être transposés.
 
 La différence entre les deux secteurs ne tient pas à la technique, qui est la même, ni à la gravité, qui est discutable. Elle tient à ce qu'un secteur a un régulateur qui compte les erreurs, et l'autre un marché qui publie un taux de couverture.
 
-[SCHEMA-05]
+![Schéma 05 — Ce que le crédit a tranché avant la publicité : deux régimes de preuve pour la même erreur d'appariement.|1300](images/20260916-05-credit-publicite.svg)
 
 ## 7. Le graphe n'est pas anonyme, et son caractère personnel est relatif
 
