@@ -158,7 +158,7 @@ Reste la question que cette série a déjà posée un étage plus haut, à propo
 
 **Le marché se concentre.** L'annonce du 17 mai 2026 de l'acquisition d'un des principaux fournisseurs indépendants de collaboration de données et d'identité par un groupe de communication, pour environ 2,2 milliards de dollars, illustre le mouvement[^12]. L'acquéreur revendique une infrastructure d'identité comme socle de ses agents et de sa production média. Le fait en lui-même n'établit aucune faute. Il déplace une question contractuelle : la couche qui arbitre l'identité de vos clients appartient désormais, dans plusieurs configurations de marché, à une partie qui a aussi un intérêt à l'achat média réalisé sur la base de cette identité. La parade tient dans le même dispositif que celui du dossier voisin sur la mesure : un droit de vérification écrit, et un jeu de vérité terrain que l'acheteur détient.
 
-[SCHEMA-06]
+![Schéma 06 — La carte des espaces d'identité : quatre familles, ce qu'elles exigent, ce qu'elles garantissent, ce qu'elles ne déclarent pas.|1300](images/20260916-06-espaces-identite.svg)
 
 ## 9. Le cahier des charges
 
@@ -178,7 +178,7 @@ Ce qui précède se résume en une exigence de principe : l'objet de l'achat est
 
 **7. Un titulaire est désigné pour les droits des personnes.** Une personne nommée répond de la capacité à reconstituer, pour une demande d'accès ou d'effacement, l'ensemble des identités que le graphe a rattachées à un individu. L'exigence paraît administrative. Elle est la seule qui oblige à vérifier que l'exigence 5 fonctionne réellement.
 
-[SCHEMA-07]
+![Schéma 07 — Le cahier des charges d'un achat d'identité : sept exigences opposables et leur coût pour l'acheteur.|1300](images/20260916-07-cahier-des-charges.svg)
 
 ### Cinq décisions, classées par réversibilité
 
