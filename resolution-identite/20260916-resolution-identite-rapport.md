@@ -60,11 +60,11 @@ Il faut ajouter une quatrième propriété, plus dérangeante. La fausse fusion 
 
 De l'asymétrie entre ces deux économies sort une règle simple et opposable en négociation. ==Un fournisseur optimise l'erreur que l'acheteur mesure, et l'acheteur ne mesure que celle qu'il voit.== Sans exigence contractuelle explicite sur la fausse fusion, il n'existe aucun mécanisme de marché qui pousse à la réduire, et il en existe un puissant qui pousse à l'accepter, puisqu'elle augmente le seul chiffre publié.
 
-[SCHEMA-02]
+![Schéma 02 — La dissymétrie des deux erreurs : matrice vérité contre décision, et la règle de marché qui en découle.|1300](images/20260916-02-dissymetrie-erreurs.svg)
 
 Le schéma 3 suit une fausse fusion unique à travers les cinq usages qui consomment un graphe d'identité. La lecture utile n'est pas le nombre d'usages touchés, elle est le fait qu'aucun des cinq ne dispose du moyen de détecter l'erreur par lui-même.
 
-[SCHEMA-03]
+![Schéma 03 — La propagation d'une fausse fusion à travers les cinq usages qui consomment un graphe d'identité.|1300](images/20260916-03-propagation-fusion.svg)
 
 ## 4. La fausse fusion rabote la preuve
 
