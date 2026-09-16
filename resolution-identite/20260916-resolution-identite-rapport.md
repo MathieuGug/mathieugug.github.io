@@ -14,7 +14,7 @@ Il y a plus gênant. ==Le taux d'appariement est une grandeur qu'on peut faire m
 
 C'est la structure du problème : on achète une décision statistique qui comporte au moins trois grandeurs, et on l'arbitre sur une seule, dont la particularité est d'être la seule que le fournisseur puisse améliorer sans rien améliorer.
 
-[SCHEMA-01]
+![Schéma 01 — Trois issues, un seul chiffre : la décision d'appariement selon Fellegi et Sunter comparée à ce qu'un acheteur reçoit en 2026.|1300](images/20260916-01-trois-issues.svg)
 
 ## 2. Ce que la théorie imposait
 
