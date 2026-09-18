@@ -156,7 +156,7 @@ L'indicateur manquant se construit simplement. Pour chaque cas d'usage arrêté,
 
 Cette grandeur a trois propriétés utiles.
 
-Elle est **indépendante du taux d'échec**. Deux portefeuilles peuvent afficher le même taux de passage en production et des coûts d'arrêt dans un rapport de un à dix. Le premier ferme en six semaines, le second en dix-huit mois. Le taux d'échec ne distingue pas ces deux organisations, le coût d'arrêt les sépare immédiatement.
+Elle est **indépendante du taux d'échec**. Deux portefeuilles peuvent afficher le même taux de passage en production et des coûts d'arrêt dans un rapport de un à dix. Le premier signe six semaines après le franchissement du critère, le second quatorze mois plus tard. Le taux d'échec ne distingue pas ces deux organisations, le coût d'arrêt les sépare immédiatement.
 
 Elle est **actionnable**. Réduire un taux d'échec suppose de mieux choisir, ce qui est difficile et lent. Réduire un coût d'arrêt suppose d'écrire des clauses et de nommer des signataires, ce qui est rapide et se décide à un seul niveau.
 
@@ -193,6 +193,12 @@ Une conséquence pratique en découle : ==le registre des cas d'usage doit conse
 **D4 — Traiter l'arrêt comme une restitution, et l'inscrire au registre.** Prévoir au cadrage le destinataire de chaque actif produit, conserver la ligne du registre après la fermeture avec son motif, et rendre la reproposition d'un cas d'usage arrêté conditionnelle à l'exposé de ce qui a changé depuis.
 
 Le portefeuille de cas d'usage d'une direction data se juge aujourd'hui sur ce qu'il a mis en production. Il se jugera mieux sur ce qu'il a su fermer, et sur la vitesse à laquelle il l'a fait.
+
+## Note de méthode
+
+La politique d'accès réseau de l'environnement de rédaction a refusé l'accès direct à plusieurs domaines cités, parmi lesquels `gartner.com`, `rand.org`, `isbm.org` et `artificialintelligenceact.eu`. Les éléments qui en proviennent sont cités **en substance**, à partir de résumés indexés et recoupés sur au moins deux formulations indépendantes. Les chiffres, les dates de publication et les libellés d'articles du règlement doivent être revérifiés à la source avant toute réutilisation contractuelle.
+
+Trois réserves supplémentaires. La typologie en trois régimes de fin de vie, le rapprochement entre chaque statistique publiée et le régime qu'elle décrit, et la construction du coût d'arrêt sont des propositions de l'auteur : aucune publication citée ne les revendique. Le profil de distribution des arrêts par porte est qualitatif, Cooper établissant la concentration à la deuxième porte sans publier de répartition chiffrée. Enfin, l'enquête sur les projets que les salariés déclarent ne jamais pouvoir mener à terme est de seconde main et donnée comme ordre de grandeur.
 
 ---
 
