@@ -152,7 +152,7 @@ Un portefeuille se pilote avec des indicateurs. Ceux qui existent aujourd'hui me
 
 L'indicateur manquant se construit simplement. Pour chaque cas d'usage arrêté, on relève deux dates : celle où le critère d'arrêt a été franchi et celle où la décision a été signée. L'écart entre les deux, multiplié par la consommation mensuelle du dispositif, donne le **coût d'arrêt** de ce cas d'usage. Agrégé sur le portefeuille, il donne une grandeur que les directions n'ont pas et que les comités devraient regarder.
 
-[SCHEMA-06]
+![Deux portefeuilles au même taux d'échec et au même rythme de consommation, dont les coûts d'arrêt diffèrent d'un facteur dix selon le délai de signature|1300](images/20260918-06-cout-d-arret.svg)
 
 Cette grandeur a trois propriétés utiles.
 
