@@ -60,7 +60,7 @@ McKinsey énonce la même observation par sa cause financière : dans une porte 
 
 Stage-Gate International formule la même chose du côté du comportement en séance : la question à poser est de savoir si la revue est un rituel d'entérinement qui approuve presque tout avec peu de contradiction, ou une instance où les dirigeants conduisent une discussion franche et prononcent des arrêts difficiles[^8].
 
-[SCHEMA-03]
+![Six artefacts organisent l'ouverture d'un cas d'usage, aucun n'a d'équivalent pour sa fermeture — et les arrêts se concentrent à la deuxième porte|1300](images/20260918-03-asymetrie-des-portes.svg)
 
 Trois sources indépendantes, issues de la gestion de produit, du conseil en opérations et de la pratique des portes d'étape, convergent sur un même diagnostic : la porte d'entrée est instrumentée, la porte de sortie ne l'est pas. Il existe un dossier de cadrage, il n'existe pas de dossier d'arrêt. Il existe un comité d'engagement, il n'existe pas d'instance de désengagement. Il existe une ligne budgétaire pour ouvrir, il n'en existe pas pour fermer.
 
