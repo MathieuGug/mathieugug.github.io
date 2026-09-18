@@ -100,7 +100,7 @@ Le deuxième est l'inertie de la démonstration. Un prototype exposé au comité
 
 Le troisième est l'absence de destinataire. Une décision d'arrêt suppose quelqu'un dont le mandat inclut explicitement le fait d'arrêter. Dans la plupart des organigrammes, aucun titulaire n'a cette attribution écrite. Le comité d'architecture valide des choix techniques, le comité d'investissement engage des budgets, le comité de pilotage suit un avancement. Aucun n'a reçu mandat de mettre fin.
 
-[SCHEMA-04]
+![Sept mécanismes, quatre individuels et trois organisationnels, convergent vers la reconduction par défaut d'un cas d'usage|1300](images/20260918-04-ce-qui-tient-en-vie.svg)
 
 Le rapport de la RAND sur les causes racines de l'échec des projets d'IA place ce point au premier rang, à partir de 65 entretiens auprès d'ingénieurs et de scientifiques des données : 84 % des personnes interrogées citent des causes liées à la direction plutôt qu'à la technique[^5]. Le détail des causes recensées est instructif pour notre propos. Les deux premières concernent la définition du problème : les parties prenantes comprennent mal, ou expliquent mal, le problème à résoudre ; et des modèles sont déployés après avoir été optimisés sur des indicateurs qui ne correspondent pas au fonctionnement réel de l'activité. Ces deux causes ont une propriété commune : elles sont détectables **au cadrage**, pas après dix-huit mois. Une organisation qui ne les détecte pas au cadrage ne les détectera pas davantage ensuite, faute de critère pour les faire remonter.
 
