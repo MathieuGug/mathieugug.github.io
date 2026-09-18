@@ -128,7 +128,7 @@ Tout ce qui précède conduit à un objet unique, dont l'énoncé est plus court
 
 La raison est celle de la section 5. Une fois l'engagement constitué, le décideur se trouve dans la configuration de Staw, et le critère qu'il écrirait à ce moment porterait déjà la marque de son engagement. Le seul moment où l'organisation dispose d'un jugement non contaminé est celui du cadrage, avant que quiconque ait quelque chose à défendre. La clause d'arrêt est donc un objet de cadrage, au même titre que le dossier économique, et elle se signe en même temps que lui.
 
-[SCHEMA-05]
+![Anatomie d'une clause d'arrêt en cinq champs : grandeur observée, seuil, date d'observation, signataire distinct du sponsor, sort des actifs|1300](images/20260918-05-clause-arret.svg)
 
 Cinq champs suffisent, et les cinq sont nécessaires.
 
