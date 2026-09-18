@@ -42,7 +42,7 @@ Les chiffres écrasent une distinction que le pilotage exige. Un cas d'usage peu
 
 Un quatrième régime existe et n'intéresse pas ce dossier : le passage en production, avec les obligations d'exploitation que le dossier [*La facture de l'agent*](../facture-agent/) a détaillées.
 
-[SCHEMA-02]
+![Quatre sorties possibles pour un cas d'usage : production, arrêt décidé, abandon subi, survie sans production — avec pour chacune son signataire, son coût et sa trace|1300](images/20260918-02-trois-regimes.svg)
 
 Le classement n'est pas académique. Les trois régimes appellent des remèdes opposés. Contre l'abandon subi, on renforce la continuité du portage et la reconduction budgétaire. Contre la survie sans production, on impose une date d'observation et un seuil. Contre l'arrêt décidé, on ne fait rien : il fonctionne. Une organisation qui confond les trois régimes traite son problème d'arrêt en renforçant son processus d'entrée, ce qui aggrave exactement la situation qu'elle cherche à corriger.
 
