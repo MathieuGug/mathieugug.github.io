@@ -10,7 +10,7 @@ Ce dossier part d'une observation de portefeuille. Toutes les organisations qui 
 
 La conséquence se lit dans les chiffres, à condition de les lire pour ce qu'ils sont.
 
-[SCHEMA-01]
+![Quatre chiffres, quatre populations : ce que comptent réellement les 95 %, 42 %, 40 % et 60 % qui circulent sur l'échec des projets d'IA|1300](images/20260918-01-trois-chiffres.svg)
 
 ## 1. Trois chiffres, trois objets
 
