@@ -109,7 +109,7 @@ Un dispositif de ciblage évaluable suppose quatre éléments, et chacun a un pr
 
 Une note de cadrage qui tient ces quatre éléments en une page fait plus pour la crédibilité d'un programme de ciblage que le choix entre un X-apprenant et une forêt causale.
 
-[SCHEMA-05]
+![Anatomie d'un dispositif de ciblage évaluable : témoin permanent, trace d'assignation, politiques candidates, évaluation hors politique, et la boucle de révision.|1300](images/20260923-05-dispositif-evaluable.svg)
 
 ## 7. La cible mesurable n'est pas la cible qui compte
 
