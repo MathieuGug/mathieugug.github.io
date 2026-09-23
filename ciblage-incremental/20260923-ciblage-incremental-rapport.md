@@ -58,7 +58,6 @@ Trois raisons distinctes expliquent que la substitution se reproduise, y compris
 
 Cette boucle a une conséquence directe sur la crédibilité des comparaisons hors ligne. Simester, Timoshenko et Zoumpoulis ont évalué sept méthodes d'apprentissage statistique couramment employées pour optimiser le ciblage, en les entraînant sur une première expérience de terrain de grande échelle, puis en validant les politiques obtenues dans une seconde expérience[^4]. Le protocole est instructif en lui-même : la validation des politiques a exigé une nouvelle expérience. Le travail portait explicitement sur la robustesse de ces méthodes aux défauts de données que rencontre une direction en conditions réelles, et il montre que les écarts de performance entre méthodes ne se lisent pas sur les seules données d'entraînement.
 
-[SCHEMA-03]
 
 ## 4. Changer d'estimand, et ce que ça coûte en données
 
@@ -71,6 +70,8 @@ Une fois admis que l'objet à estimer est un effet, trois familles de méthodes 
 **Les forêts causales et l'apprentissage de politique.** Wager et Athey ont adapté les forêts aléatoires à l'estimation d'effets hétérogènes, avec une propriété rare dans ce domaine : des intervalles de confiance valides sur l'effet estimé pour un individu donné[^9]. C'est ce qui permet de passer d'un classement à une décision documentée, puisqu'on peut dire de combien on est sûr. Athey et Wager ont ensuite traité directement l'objet qui intéresse la direction, l'apprentissage de la politique elle-même — la règle qui, pour chaque profil, décide de solliciter ou non — plutôt que l'estimation de l'effet suivie d'un seuil arbitraire[^10]. Kitagawa et Tetenov avaient posé le cadre dans lequel cette question devient un problème d'optimisation sous contrainte, où la contrainte peut être un budget ou une exigence d'interprétabilité de la règle[^13].
 
 Le point commun mérite d'être énoncé en clair, parce qu'il gouverne toute la suite. ==Les trois familles diffèrent par leur variance, leur robustesse et leur interprétabilité ; aucune ne dispense d'une population délibérément non sollicitée.== La randomisation n'est pas une précaution méthodologique ajoutée par prudence, elle est la matière première.
+
+![Trois chemins de la donnée au classement par effet : transformation de la réponse, méta-apprenants, forêts causales, et l'exigence de randomisation commune aux trois.|1300](images/20260923-03-trois-chemins.svg)
 
 L'ordre de grandeur des données nécessaires se laisse deviner sur les jeux de référence publics. Le jeu de données d'incrémentalité publié par Criteo à l'occasion d'un atelier AdKDD compte environ 25 millions de lignes, avec un taux de visite de l'ordre de 4 % et un taux de conversion de l'ordre de 0,2 %, pour un taux de traitement proche de 85 %[^14]. Ces chiffres disent l'essentiel : quand l'événement à expliquer est rare et que l'effet recherché est une différence de quelques points de base entre deux bras, le volume requis n'a rien à voir avec celui d'un modèle de propension.
 
