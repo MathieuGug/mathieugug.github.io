@@ -91,7 +91,7 @@ Reste la question pratique qui bloque le plus souvent : faut-il une expérience 
 
 Le déplacement à retenir pour un comité : ==le témoin cesse d'être le coût d'une campagne pour devenir un actif réutilisable par toutes les politiques candidates suivantes==.
 
-[SCHEMA-04]
+![La courbe de gain incrémental cumulé lue en décision : aire de Qini, point de retournement, descente au-delà du maximum, et le témoin sans lequel la courbe n'existe pas.|1300](images/20260923-04-courbe-qini.svg)
 
 ## 6. Le groupe témoin permanent comme ligne budgétaire
 
