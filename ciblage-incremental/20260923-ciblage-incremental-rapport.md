@@ -139,7 +139,7 @@ Trois observations pour une direction data, dans l'ordre où elles engagent.
 
 La conséquence pratique ne consiste pas à refuser l'option. Elle consiste à ne pas laisser la régie être à la fois le ciblage et la preuve. Le contrepoids existe et il est connu : un dispositif de vérification tenu par l'annonceur, indépendant du canal, cadencé, dont les résultats servent de référence externe. Un test géographique conduit par l'annonceur mesure l'effet total du canal sans dépendre de la comptabilité de la régie ; c'est le seul chiffre qui permette de trancher si l'optimisation incrémentale de la plateforme a produit ce qu'elle annonce.
 
-[SCHEMA-06]
+![Qui détient le groupe témoin : la régie, l'annonceur ou un tiers indépendant, et ce que chaque montage rend vérifiable.|1300](images/20260923-06-qui-detient-le-temoin.svg)
 
 ## 9. Cinq décisions
 
