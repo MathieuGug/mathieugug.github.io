@@ -12,7 +12,7 @@
 - **La ligne budgétaire qui manque est le témoin permanent.** ==Une politique de ciblage sans population témoin maintenue dans la durée n'est pas une politique vérifiable : c'est une hypothèse qui s'auto-confirme.== Son coût est calculable ; son absence l'est beaucoup moins.
 - **La régie a pris l'avantage sur ce terrain.** Depuis 2025, les grandes plateformes proposent d'optimiser directement sur l'incrémental estimé, à partir d'un modèle calibré sur leurs propres tests d'incrémentalité[^12]. Le conflit d'intérêt documenté sur la mesure remonte d'un cran : la plateforme ne se contente plus de mesurer son effet, elle décide à qui parler en fonction de l'effet qu'elle s'attribue.
 
-[SCHEMA-01]
+![Les quatre populations d'une campagne : réfractaires, acquis d'avance, perdus d'avance et persuadables, et ce que chaque type de score voit.|1300](images/20260923-01-quatre-populations.svg)
 
 ## 1. La question qui n'est jamais posée au comité
 
