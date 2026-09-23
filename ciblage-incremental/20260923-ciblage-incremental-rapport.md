@@ -44,7 +44,7 @@ Un score de propension ne distingue pas ces quatre groupes. Il place au sommet d
 
 L'implication opérationnelle est directe et rarement tirée : ==un classement par effet a un bas de liste qu'il faut exclure activement, là où un classement par propension a seulement un bas de liste qu'on n'appelle pas==. Le premier produit une décision de ne pas contacter ; le second produit une décision de priorité.
 
-[SCHEMA-02]
+![La boucle de rétroaction du ciblage : sélection, observation, réapprentissage, resserrement, et le groupe témoin comme seule sortie de boucle.|1300](images/20260923-02-boucle-retroaction.svg)
 
 ## 3. Pourquoi la confusion est structurelle
 
