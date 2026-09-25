@@ -146,13 +146,13 @@ La conclusion opérationnelle tient en une règle de traçabilité, et non en un
 
 La réponse évidente à tout ce qui précède est qu'il faut calibrer par l'expérience. Elle est juste, et elle est plus chère qu'on ne le dit.
 
-[SCHEMA-06]
+![Le cycle annuel de calibration : plan de test, protocole, expérience, a priori, répartition — et le point de rupture d'estimand|1300](images/20260925-06-cycle-calibration.svg)
 
 ### 6.1 Le coût n'est pas celui de l'outil
 
 Les bibliothèques d'analyse d'expérience géographique sont gratuites et ouvertes. Le coût réel d'une expérience calibrante tient dans le budget délibérément mal alloué pendant sa durée : les régions témoins reçoivent moins que ce que le plan optimal leur donnerait, ou les régions traitées reçoivent davantage. Sur un canal significatif, une expérience de huit semaines sacrifie un ou deux points de performance sur la période.
 
-Et la borne de Lewis et Rao s'applique. Une expérience sous-dimensionnée rend un résultat non significatif, que la chaîne de décision interprétera spontanément comme l'absence d'effet. Le dossier `budget-de-preuve` traite cette question sous l'angle du seuil d'indétectabilité. La conséquence pour la calibration est directe : ==un canal dont l'effet se situe sous le seuil d'indétectabilité de l'annonceur n'est pas calibrable, et restera gouverné par son a priori, quel que soit le budget de test==.
+Et la borne de Lewis et Rao s'applique. Une expérience sous-dimensionnée rend un résultat non significatif, que la chaîne de décision interprétera spontanément comme l'absence d'effet. De la borne de Lewis et Rao se déduit, pour chaque annonceur, un seuil d'indétectabilité propre, fonction de son intensité publicitaire, de sa marge sur ventes incrémentales et de la volatilité de ses ventes. La conséquence pour la calibration est directe : ==un canal dont l'effet se situe sous le seuil d'indétectabilité de l'annonceur n'est pas calibrable, et restera gouverné par son a priori, quel que soit le budget de test==.
 
 ### 6.2 Le piège d'estimand
 
