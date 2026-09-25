@@ -112,7 +112,7 @@ L'ordre de grandeur de ce que cela déplace se calcule sans difficulté. Sur un 
 
 La question précédente en appelle une autre, qui est la vraie question de gouvernance. Un a priori vient de quelque part. Il y a exactement trois origines possibles, et elles ne se valent pas.
 
-[SCHEMA-05]
+![Les trois origines d'un a priori — expérience propre, jugement d'expert, étude du vendeur — et ce que chacune rend opposable et refaisable|1300](images/20260925-05-provenance-apriori.svg)
 
 ### 5.1 L'expérience propre
 
