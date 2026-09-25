@@ -14,7 +14,7 @@ Cette déclaration porte un nom technique, la distribution a priori, et une fonc
 
 Le problème de gouvernance tient en une phrase. Cette opinion existe dans tous les modèles de mix en production, elle pèse d'autant plus lourd que les données sont pauvres, et elle n'apparaît dans presque aucun livrable remis à une direction générale. On présente le résultat, l'intervalle, la qualité d'ajustement, parfois les courbes de saturation. On ne présente jamais la ligne qui dirait : voici ce que le modèle croyait en arrivant, voici d'où cette croyance vient, voici qui l'a signée.
 
-[SCHEMA-01]
+![Où la déclaration entre dans la chaîne : les trois points où un humain écrit quelque chose entre la dépense et le retour remonté|1300](images/20260925-01-chaine-injection.svg)
 
 Ce dossier ne compare pas trois bibliothèques pour désigner la meilleure. Il soutient que la mathématique des trois piles ouvertes dominantes converge, que leur différence réelle porte sur la surface de déclaration qu'elles imposent, et que ==la décision qui engage une direction data porte sur l'attribution du droit d'écrire l'a priori==, bien davantage que sur le choix de la bibliothèque. Cette question devient inconfortable quand on observe qui publie ces outils : les deux premiers vendeurs d'espace publicitaire mondiaux.
 
