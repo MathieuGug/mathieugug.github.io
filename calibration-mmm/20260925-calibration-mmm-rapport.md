@@ -60,7 +60,7 @@ La conséquence est brutale pour qui attend d'un modèle qu'il tranche. Si une e
 
 Les trois piles ouvertes disponibles en 2026 partagent la même structure : transformation de rémanence, transformation de saturation, régression sur des séries agrégées, estimation d'une contribution par canal. Elles se distinguent sur la surface de déclaration, c'est-à-dire sur ce que l'utilisateur doit écrire avant que l'estimation commence.
 
-[SCHEMA-03]
+![Trois piles, trois surfaces de déclaration : Meridian déclare sur le retour, Robyn sur les bornes de forme, PyMC-Marketing laisse tout à l'utilisateur|1300](images/20260925-03-surfaces-declaration.svg)
 
 ### 3.1 Meridian — la déclaration porte sur le résultat
 
