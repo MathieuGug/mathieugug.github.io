@@ -100,7 +100,7 @@ Il faut dire immédiatement ce que ce choix n'est pas. Ce n'est ni un défaut ca
 
 Le problème est ailleurs. Il tient à ce qu'un modèle lancé dans cette configuration ==arrive en croyant que la publicité payante cause environ deux cinquièmes de l'indicateur suivi, avant d'avoir regardé une seule semaine de données==. Si les données sont informatives, cette croyance s'efface et le résultat est gouverné par l'observation. Si les données sont pauvres, colinéaires ou endogènes, ce qui décrit la situation ordinaire décrite en section 2, le résultat reste proche de la croyance initiale.
 
-[SCHEMA-04]
+![Ce que l'a priori pèse selon la force du signal : effacé quand les données tranchent, rendu tel quel quand elles ne disent rien|1300](images/20260925-04-poids-apriori.svg)
 
 Et cette information ne remonte pas. Entre l'analyste qui a lancé l'estimation et le directeur qui arbitre la répartition, il y a une note de synthèse, et cette note contient un ROI par canal, un intervalle, une courbe de saturation. Elle ne contient pas la phrase qui dirait qu'en l'absence de calibration sur un indicateur non monétaire, la contribution totale du média a été ancrée à 40 %.
 
