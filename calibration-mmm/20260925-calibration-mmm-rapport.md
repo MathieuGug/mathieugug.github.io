@@ -32,7 +32,7 @@ Face à ces 104 à 156 points, le modèle doit estimer, pour dix à quinze canau
 
 Le compte est vite fait. ==Le nombre de paramètres à estimer se rapproche du nombre d'observations disponibles, et pour certaines configurations il le dépasse.== Aucune méthode fréquentiste ne rend de résultat exploitable dans cette situation. L'approche bayésienne, elle, en rend un : elle le fabrique en partie à partir de ce qu'on lui a déclaré.
 
-[SCHEMA-02]
+![Le budget d'information : 156 observations hebdomadaires pour 57 paramètres à estimer, soit 2,7 observations par paramètre|1300](images/20260925-02-budget-information.svg)
 
 ### 2.2 La colinéarité
 
