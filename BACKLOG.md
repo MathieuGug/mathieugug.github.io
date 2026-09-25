@@ -4,6 +4,7 @@ _Mis à jour par la routine `Illustrated deep research · mer + ven`. Ligne édi
 > **Recadrage du 2026-07-31.** La série avait dérivé vers l'intérieur des modèles (KV-cache, attention latente et parcimonieuse, mélange d'experts, quantification, désagrégation prefill/decode, silicium). Le mécanisme est identifié : chaque dossier laissait des « suites naturelles » plus profondes que lui, et la routine les traitait comme une file à vider — la série descendait d'un cran à chaque publication. Ce backlog est désormais organisé par **piste éditoriale**, et le filon technique est **gelé** (section dédiée en bas). Un sujet ne s'ouvre que s'il passe le **test d'altitude** en trois questions de `CLAUDE.md` : décision · objet · explicabilité.
 
 ## En cours (réservé — ne pas doubler)
+- [ ] **calibration-mmm** — « Ce que le modèle de mix sait avant de voir les données ». Piste D. Meridian / Robyn / PyMC-Marketing comparés non par leur mathématique mais par ce qu'ils obligent à déclarer avant de voir les données ; qui écrit l'a priori, sur quelle preuve, et qui peut le contester. Réservé le 2026-09-25, branche `claude/research-calibration-mmm-2026-09-25`.
 - [x] **memoire-conversationnelle** — « Ce que l'agent a le droit de retenir ». Design patterns de la mémoire d'un agent conversationnel : niveaux d'engagement, autorité par origine, portée et promotion, mécanismes d'oubli, surface de contrôle scrutable. Piste C (débord A). Réservé le 2026-08-19, branche `claude/agent-memory-management-e4wv5k`.
 
 ---
