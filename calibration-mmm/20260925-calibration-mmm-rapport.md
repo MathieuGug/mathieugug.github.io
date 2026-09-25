@@ -174,7 +174,7 @@ La conséquence organisationnelle est qu'un plan de calibration ressemble moins 
 
 Reste le mécanisme qui rend tout ce qui précède difficile à détecter de l'intérieur.
 
-[SCHEMA-07]
+![Qualité d'ajustement et biais d'attribution sont deux axes indépendants ; le quadrant dangereux réunit un bon ajustement et un fort biais|1300](images/20260925-07-ajustement-biais.svg)
 
 Les indicateurs qu'un comité regarde sont ceux de l'ajustement : coefficient de détermination, erreur en pourcentage absolu moyen, qualité de la prédiction hors échantillon. Ils mesurent tous la même chose, la capacité du modèle à reproduire la série de ventes observée. ==Aucun ne mesure le biais d'attribution entre canaux, et rien n'empêche un modèle d'ajuster parfaitement la série totale tout en répartissant l'effet entre les canaux de façon entièrement fausse.==
 
