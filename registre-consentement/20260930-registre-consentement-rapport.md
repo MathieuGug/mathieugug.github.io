@@ -86,7 +86,7 @@ Il faut s'arrêter sur la convergence. Le régulateur français recommande de co
 
 Cette double exigence est l'argument budgétaire qui manquait. Le registre de preuve cesse d'être une dépense de conformité pure dès lors que son absence peut dégrader l'accès aux données de campagne.
 
-[SCHEMA-03]
+![Qui détient quoi dans la chaîne du consentement : l'utilisateur, la plateforme de recueil, l'éditeur et les plateformes en aval, avec ce que chacun conserve, ce qu'il ne conserve pas, et où repose la charge de la preuve.|width=1200](images/20260930-03-qui-detient-quoi.svg)
 
 ---
 
