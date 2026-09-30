@@ -62,7 +62,7 @@ La délibération du 18 décembre 2025, qui encadre le consentement multi-termin
 
 Cette exigence fait passer la preuve du statut de pièce interne à celui de **pièce échangeable**. Dès lors qu'une régie, une place de marché ou un partenaire de mesure s'appuie sur un consentement recueilli par un tiers, il lui faut pouvoir en obtenir la preuve, dans un format qu'il puisse exploiter, sans que cette transmission emporte plus d'information que nécessaire. C'est un objet contractuel, avec un format, un délai et un recours.
 
-[SCHEMA-02]
+![Anatomie d'une pièce de preuve opposable : une version de bannière datée, trois dispositifs d'attestation recommandés, une procédure de restitution, et l'exigence de mise à disposition aux autres parties.|width=1200](images/20260930-02-piece-de-preuve.svg)
 
 Une norme technique existe pour cet objet. La spécification ISO/IEC TS 27560:2023 définit une structure d'enregistrement du consentement lisible par machine, et son échange entre entités sous forme de reçus[^12]. L'existence de ce cadre est une bonne nouvelle, et sa lecture attentive tempère l'enthousiasme : un reçu conforme n'exige qu'une section de métadonnées identifiant le reçu, et la spécification ne pose pas de contrainte sur la structuration de l'information à l'intérieur du reçu ni sur sa correspondance avec les champs de l'enregistrement d'origine. Le choix des informations transmises et de leur forme est laissé à l'entité qui implémente.
 
