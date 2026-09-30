@@ -132,7 +132,7 @@ La série qui permettrait de trancher est peu coûteuse. Trois colonnes suffisen
 
 Sa valeur dépasse le diagnostic rétrospectif. Une série de taux de consentement est aussi la seule base honnête pour estimer ce qu'on ne mesure pas. Un annonceur dont le taux d'acceptation est de 57 % sait que sa vision directe porte sur un peu plus de la moitié de son audience, et il connaît la date à laquelle cette proportion a changé. Sans la série, il dispose d'un chiffre courant et d'aucune histoire.
 
-[SCHEMA-05]
+![Arbre de lecture d'une baisse de conversions : quatre explications concurrentes — le marché, la bannière, la modélisation, le périmètre — et pour chacune la pièce documentaire qu'il faut avoir conservée pour la retenir ou l'écarter.|width=1200](images/20260930-05-origine-variation.svg)
 
 Le lien entre les trois registres se referme ici. La pièce que le régulateur demande, la capture horodatée par version, est la même que celle dont l'analyste a besoin pour annoter sa série. Le registre de preuve et le registre de mesure sont le même objet, regardés depuis deux fonctions qui ne se parlent pas. C'est la raison la plus solide de ne pas traiter le premier comme une dépense de conformité isolée.
 
