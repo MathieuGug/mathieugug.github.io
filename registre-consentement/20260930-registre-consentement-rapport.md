@@ -108,7 +108,7 @@ Un registre de preuve opposable se décompose en six postes. Les cinq premiers s
 
 C'est l'étalon du coût de l'absence. Une reconstitution rétrospective mobilise des compétences rares, produit un résultat partiel, et ne fournit aucun horodatage opposable, puisque la date d'archivage d'un tiers ne vaut pas preuve de la date de mise en production.
 
-[SCHEMA-04]
+![Les six postes d'un registre de preuve opposable : versionner, capturer, journaliser, conserver, restituer, et le sixième poste de reconstitution rétrospective, hors échelle et sans horodatage opposable.|width=1200](images/20260930-04-six-postes.svg)
 
 ---
 
