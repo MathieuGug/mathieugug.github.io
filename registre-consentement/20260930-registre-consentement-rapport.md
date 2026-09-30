@@ -30,7 +30,7 @@ Or c'est exactement sur ces points que porte le contrôle. Les sanctions frança
 
 Le champ concerné s'est par ailleurs élargi. Les lignes directrices du Comité européen de la protection des données sur le périmètre technique de l'article 5(3) de la directive vie privée, dans leur version définitive adoptée en octobre 2024, couvrent explicitement le suivi par pixel et par URL, certains traitements locaux dès lors qu'une information quitte le terminal, le suivi fondé sur la seule adresse IP, et la remontée d'objets connectés[^7]. La conséquence pratique est qu'une organisation qui a documenté ses cookies a documenté une fraction de son périmètre de consentement. Le reste vit dans des pixels de mesure, des liens de suivi et des remontées serveur qui ne sont presque jamais inventoriés dans le même outil.
 
-[SCHEMA-01]
+![Trois registres du consentement comparés : le choix, la preuve, la série. Chacun a son indexation, son propriétaire naturel, sa durée de conservation et son système d'accueil.|width=1200](images/20260930-01-trois-registres.svg)
 
 ---
 
