@@ -148,7 +148,7 @@ Le lien entre les trois registres se referme ici. La pièce que le régulateur d
 
 **D4 · Annoter les séries de conversion par les versions de bannière.** Tout tableau de bord de conversion porte, sur le même axe temporel, les changements de version de la bannière, les taux de consentement par finalité, et l'indication du régime de modélisation. La règle de comité qui en découle : aucune variation de performance n'est commentée sans que ces trois informations soient affichées. *Pièce produite : une table de quatre colonnes, tenue par l'équipe mesure, versionnée et jointe au rapport de performance.*
 
-[SCHEMA-06]
+![Quatre décisions, quatre pièces : nommer un propriétaire unique du registre, écrire deux durées séparément, exiger l'export et le rejeu au contrat, annoter les séries de conversion. Pour chacune, la pièce produite et ce qui casse sans elle.|width=1200](images/20260930-06-quatre-decisions.svg)
 
 ---
 
