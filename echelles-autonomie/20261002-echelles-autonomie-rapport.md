@@ -102,7 +102,7 @@ Audi annonce en 2017 la première fonction de niveau 3 sur l'A8, le pilote d'emb
 
 Neuf ans après l'annonce, le palier intermédiaire existe donc, mais il n'a survécu qu'à une condition : ==on a rétréci le domaine opérationnel jusqu'à ce que la reprise ne serve presque jamais.== Suivre un véhicule, sur autoroute, sous une limite de vitesse. L'industrie n'a pas supprimé le niveau 3 ; elle a réduit son espace d'action jusqu'à rendre la supervision à peu près inutile.
 
-[SCHEMA-03]
+![Schéma 3 — Le palier intermédiaire, neuf ans après : J3016 face aux paliers agentiques|1300](images/20261002-03-palier-intermediaire.svg)
 
 La transposition est directe et elle inverse le geste des cadres de cabinets. Ceux-ci élargissent l'espace d'action quand la justesse progresse. L'automobile a fait le contraire : elle a borné l'espace d'action pour que le palier tienne. Et c'est le geste de la première dimension du cadre singapourien, borner par conception. Deux secteurs, deux époques, une même conclusion : le palier intermédiaire ne se sécurise pas par la vigilance de celui qui surveille, il se sécurise par la réduction de ce qui peut mal tourner.
 
