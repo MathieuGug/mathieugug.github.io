@@ -189,7 +189,7 @@ Une clause de rétrogradation praticable tient en quatre éléments.
 
 **La durée.** Une rétrogradation sans terme est une sanction ; avec un terme et des conditions de retour, c'est un dispositif. Le retour au régime antérieur suppose le rejeu du jeu de tests et non l'écoulement du temps.
 
-[SCHEMA-07]
+![Schéma 7 — Le cycle d'autonomie et la boucle de rétrogradation absente|1300](images/20261002-07-boucle-absente.svg)
 
 ## Six décisions
 
