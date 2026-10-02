@@ -145,7 +145,7 @@ Ces annotations sont déclarées par le **serveur d'outils**, c'est-à-dire par 
 
 La conséquence est la même que celle établie ailleurs dans la série à propos des identités d'agents : un palier d'autonomie qu'on ne peut pas faire respecter techniquement reste une charte. Une classification de réversibilité lue dans la déclaration du fournisseur d'outils a exactement le statut d'une charte. ==La classification doit être tenue par le déployeur, dans son propre catalogue, et opposée à la déclaration du serveur plutôt que recopiée d'elle.==
 
-[SCHEMA-05]
+![Schéma 5 — La chaîne de déclaration de réversibilité, et où elle casse|1300](images/20261002-05-chaine-declaration.svg)
 
 Cela donne une exigence concrète, et peu coûteuse : pour chaque outil exposé à un agent, le catalogue du déployeur porte sa classe R0 à R3, son propriétaire, la date du dernier test d'annulation et le résultat de ce test. Quand la déclaration du serveur et la classification du déployeur divergent, c'est la seconde qui gouverne l'habilitation. Quand un outil arrive sans classification, il est traité en R3 jusqu'à classement, ce qui est le défaut pessimiste du protocole remonté d'un étage.
 
