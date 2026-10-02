@@ -167,7 +167,7 @@ Le croisement de la classe de réversibilité et de la portée donne quatre rég
 
 **Régime 4, acte humain délibéré.** Classe R3. L'agent prépare, un humain pose l'acte. L'agent n'a pas l'habilitation technique de l'acte : non pas parce qu'on ne lui fait pas confiance, mais parce qu'aucune confiance ne borne une perte non reconstituable. Exigences : les précédentes, plus la séparation des habilitations entre celui qui prépare et celui qui pose.
 
-[SCHEMA-06]
+![Schéma 6 — La matrice des quatre régimes d'habilitation|900](images/20261002-06-regimes-habilitation.svg)
 
 Ce que cette matrice change dans une instance de gouvernance est concret. Un comité qui délibère sur une échelle linéaire se demande « ce cas d'usage mérite-t-il le palier 3 ». Il arbitre une réputation. Un comité qui délibère sur cette matrice se demande « quelle est la classe la plus haute parmi les outils que cet agent peut appeler, et quelle est sa portée par exécution ». Il arbitre un inventaire, et la réponse se lit dans le catalogue au lieu de se négocier en séance.
 
