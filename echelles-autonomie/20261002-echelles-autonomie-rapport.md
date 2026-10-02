@@ -18,7 +18,7 @@ Le verdict : les cadres de cabinets font monter un agent d'un palier quand sa ju
 
 La conséquence : une politique d'autonomie ne tient que si sa variable de graduation se **vérifie**. On ne peut pas tester qu'un humain a réellement lu ce qu'il a validé. On peut tester qu'un acte s'annule. La réversibilité est la seule des trois variables qui se mette à l'épreuve, et c'est celle que le cadre singapourien a choisie[^1]. C'est aussi, comme on le verra, celle que le protocole d'outillage des agents encode déjà depuis mars 2025, à l'étage technique, sous une forme que personne n'a remontée au niveau de la politique d'entreprise[^10].
 
-[SCHEMA-01]
+![Schéma 1 — Trois variables sous un seul mot : ce que chaque cadre gradue réellement|1300](images/20261002-01-trois-variables.svg)
 
 ## Ce que chaque cadre gradue réellement
 
