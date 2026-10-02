@@ -82,7 +82,7 @@ Mettons les deux énoncés côte à côte.
 
 Le cadre de graduation dit : plus l'agent est juste, plus on lui accorde d'autonomie. La littérature dit : plus l'agent est juste, moins sa supervision est effective. ==Le critère qui autorise la montée détruit le mécanisme de contrôle qui sécurisait le palier précédent.== Les deux courbes se croisent, et le point de croisement n'est signalé par aucun indicateur : la supervision ne tombe pas en panne, elle se dégrade sans émettre de signal. Un taux d'approbation de 99 % se lit de la même manière qu'un valideur attentif qui approuve des actes justes et qu'un valideur qui ne lit plus rien.
 
-[SCHEMA-02]
+![Schéma 2 — Le paradoxe de la graduation par la fiabilité : les deux pentes qui se croisent|1300](images/20261002-02-paradoxe-fiabilite.svg)
 
 C'est la différence de nature entre les deux variables candidates. Une classe de réversibilité se teste : on déclenche l'annulation et on regarde si l'état revient. Le résultat est binaire, reproductible, et il peut figurer dans un jeu de tests rejoué à chaque version. L'effectivité d'une supervision ne se teste pas de l'extérieur. Les travaux interdisciplinaires sur l'effectivité de la surveillance humaine montrent qu'elle dépend de conditions (temps disponible, information contrefactuelle, autorité réelle de l'intervenant) dont aucune n'est observable dans les journaux d'un système en production[^6].
 
