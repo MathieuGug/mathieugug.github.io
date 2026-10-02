@@ -125,7 +125,7 @@ Ces trois propriétés produisent quatre classes d'actes.
 | **R2 · compensable** | Effet observé hors de l'organisation, l'état antérieur n'est pas restituable | Courriel client, message public, devis transmis | Validation humaine par acte |
 | **R3 · irréversible** | Délai nul ou effet juridique constitué | Signature, paiement exécuté, suppression définitive, déclaration réglementaire | Jamais sans acte humain délibéré |
 
-[SCHEMA-04]
+![Schéma 4 — Quatre classes d'actes et les trois propriétés mesurables de la réversibilité|900](images/20261002-04-classes-reversibilite.svg)
 
 La vertu de cette taxonomie tient à sa **testabilité**. Pour chaque outil du catalogue, on peut écrire un test qui pose l'acte dans un bac à sable, déclenche l'annulation et vérifie l'état. Le test se rejoue à chaque version du modèle, à chaque mise à jour du fournisseur, à chaque ajout d'outil. Il produit une série temporelle. C'est un objet de pilotage, et il n'en existe aucun équivalent pour mesurer la qualité d'une supervision humaine.
 
