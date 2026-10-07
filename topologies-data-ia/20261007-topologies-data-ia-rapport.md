@@ -66,7 +66,7 @@ Les quatre décisions sont indépendantes. Chacune se prend séparément, chacun
 
 **Cadran 4 — le budget.** Qui paie, et surtout à quel point de consommation le coût apparaît. Ligne centrale invisible pour les entités, ou refacturation qui force un arbitrage local.
 
-[SCHEMA-03]
+![Les quatre cadrans de décision, ce que chaque position achète, et le mode d'interaction comme variable cachée du cadran plateforme|1300](images/20261007-03-tableau-quatre-cadrans.svg)
 
 Le vocabulaire qui manque pour relier ces cadrans existe, et il vient du génie logiciel plutôt que du conseil en organisation. Team Topologies, de Matthew Skelton et Manuel Pais, distingue quatre types d'équipes — alignée sur le flux de valeur, de plateforme, d'habilitation, de sous-système complexe — et surtout **trois modes d'interaction** : la collaboration, le mode service, et la facilitation[^5]. L'argument central porte sur la charge cognitive : une équipe alignée sur un flux de valeur et tenue d'en assumer toute la chaîne se retrouve en surcharge, et une plateforme sert à lui en retirer une part.
 
