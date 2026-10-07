@@ -108,7 +108,7 @@ Un centre d'excellence paie pour une raison précise : il mutualise une compéte
 
 Ce gain disparaît quand la demande devient **continue**. Une file d'attente unique alimentée par des arrivées régulières dans plusieurs voies à la fois ne mutualise plus rien : elle ordonne. Le temps d'attente ne dépend plus de la compétence de l'équipe mais du rapport entre le débit de la file et le débit des arrivées, et ce rapport se dégrade de façon non linéaire à l'approche de la saturation. Les deux derniers points de charge coûtent plus d'attente que les quarante premiers.
 
-[SCHEMA-05]
+![Le seuil de bascule entre mutualisation et décentralisation, fonction de la continuité de la demande par entité et non de la maturité|1300](images/20261007-05-seuil-de-bascule.svg)
 
 De là une règle de décision chiffrable, qui remplace la maturité. Pour chaque entité, compter l'**équivalent temps plein de demande permanente** : le volume de travail data/IA que cette entité aurait à confier de façon continue, et non en pics. Au-delà d'environ un équivalent temps plein de demande permanente, la mutualisation cesse de payer **pour cette entité** : ce qu'elle gagne en accès à une compétence rare, elle le reperd en attente, et elle le reperd d'autant plus que l'attente dégrade aussi la qualité de la demande, un métier qui attend deux trimestres reformulant son besoin en fonction de ce qu'il croit obtenable.
 
