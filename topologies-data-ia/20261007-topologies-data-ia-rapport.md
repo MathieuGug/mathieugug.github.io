@@ -40,7 +40,7 @@ Ce sont ces deux-là qui nous intéressent, parce qu'elles sont les seules qu'un
 
 La première est la **profondeur de la propriété** (*depth of master ownership*) : à quelle profondeur, dans la hiérarchie, siège le responsable qui couvre 75 % du travail effectué sur le composant. La seconde est le **facteur d'intersection organisationnelle** (*organization intersection factor*) : le nombre d'organisations distinctes qui contribuent chacune pour plus de 10 % des modifications. La première mesure la distance entre l'objet et la personne qui peut en décider seule. La seconde mesure combien d'entités ont voix au chapitre sur le même objet.
 
-[SCHEMA-02]
+![Les huit métriques organisationnelles rangées par ce qu'une direction peut effectivement régler, avec le résultat nul géographique en contrepoint|1300](images/20261007-02-ce-que-la-recherche-mesure.svg)
 
 Deux travaux ultérieurs permettent de resserrer l'interprétation.
 
