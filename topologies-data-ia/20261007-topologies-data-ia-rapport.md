@@ -126,7 +126,7 @@ Les observations publiées en octobre 2026 par McKinsey sur la réorganisation d
 
 Si la construction s'automatise partiellement et que la supervision ne s'automatise pas, alors la ressource rare se déplace du constructeur vers le propriétaire-réviseur. Un ingénieur data de plus accroît la capacité de construction ; il n'accroît pas la capacité de décider qu'une sortie est acceptable. Cette capacité suppose la connaissance du métier, et elle ne se mutualise pas : personne, dans une équipe centrale, ne peut arbitrer à la place d'une direction des risques ce qui constitue un faux positif acceptable.
 
-[SCHEMA-06]
+![Le déplacement de la ressource rare du constructeur vers le propriétaire-réviseur, et les deux cadrans qui bougent en conséquence|1300](images/20261007-06-ce-que-lagentique-deplace.svg)
 
 Les deux cadrans qui bougent sont la norme et la plateforme, dans la même direction, vers le centre, et pour un motif qui n'était pas le motif habituel de centralisation.
 
