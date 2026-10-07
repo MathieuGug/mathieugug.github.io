@@ -148,7 +148,7 @@ Audris Mockus a mesuré, sur un grand projet logiciel, le lien entre les changem
 
 Traduit dans les quatre cadrans : la copie a reproduit le cadran « propriété » en position locale et a laissé les trois autres indéterminés. Ce qui manquait n'était pas la culture, même si c'est le diagnostic le plus souvent avancé. C'était le mode d'interaction entre les équipes, qui n'était spécifié nulle part.
 
-[SCHEMA-07]
+![Trois interventions sur une topologie, rangées par coût, réversibilité et délai avant effet mesurable|1300](images/20261007-07-trois-interventions.svg)
 
 Trois interventions sont possibles, et leurs coûts n'ont pas le même ordre de grandeur.
 
