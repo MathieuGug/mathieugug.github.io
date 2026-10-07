@@ -96,7 +96,7 @@ Chacune de ces quatre incohérences produit une signature observable, et chacune
 
 **Le réglage cohérent.** Norme et plateforme centrales, la plateforme fournie en mode service ; propriété et budget locaux. Le propriétaire métier décide, paie, et arbitre donc réellement. Le centre fournit un socle qui se consomme sans réunion et une norme opposable qui s'applique sans validation au cas par cas. Facteur d'intersection à un sur la livraison, profondeur de propriété faible. C'est le seul réglage qui mérite le nom de modèle fédéré, et c'est aussi le plus rare, parce qu'il demande au centre de renoncer au droit de regard qu'il considère comme sa raison d'être.
 
-[SCHEMA-04]
+![Quatre réglages incohérents des cadrans, leur signature observable, et le diagnostic erroné qu'on leur applique|1300](images/20261007-04-combinaisons-qui-ne-tiennent-pas.svg)
 
 Une remarque sur la lecture de ces quatre cas. Aucun ne décrit une faute de compétence. Dans chacun, les équipes font correctement ce que leur réglage leur demande de faire : une équipe centrale gratuite accepte les demandes qu'on lui adresse, une équipe de validation valide, une entité sans socle se construit un socle. C'est le propre des problèmes de topologie : ils se présentent comme des problèmes de personnes, et résistent à tous les remèdes adressés aux personnes.
 
