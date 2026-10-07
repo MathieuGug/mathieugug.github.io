@@ -12,7 +12,7 @@ Dix-huit ans plus tard, une direction data ou IA qui arbitre son organisation di
 
 Ce dossier propose de changer l'objet du choix. Les trois topologies vendues sont des préréglages, pas des structures. Derrière elles se trouvent **quatre décisions séparables** : qui possède un cas d'usage, qui tient la plateforme sur laquelle il tourne, qui fixe la norme qu'il doit respecter, qui porte le budget qui le finance. Seize combinaisons existent. Trois portent un nom commercial. Les autres se rencontrent tous les jours sans que personne ne sache les décrire, et c'est dans leurs incohérences que se logent les symptômes qu'on attribue au modèle affiché.
 
-[SCHEMA-01]
+![Les trois topologies déclarées décomposées en quatre cadrans de décision : l'étiquette ne fixe aucun des quatre réglages|1300](images/20261007-01-trois-etiquettes-quatre-cadrans.svg)
 
 Trois conséquences pratiques sortent de ce renversement. La première est qu'une direction peut diagnostiquer son organisation réelle en quatre questions au lieu d'un débat sur le libellé. La deuxième est que le seuil de bascule d'une topologie à l'autre n'est pas la maturité, contrairement à ce que suggèrent la plupart des grilles : c'est une propriété de file d'attente, mesurable entité par entité. La troisième est la plus contre-intuitive : réorganiser a un coût de qualité documenté, ce qui disqualifie le changement de modèle comme geste de premier recours et désigne à sa place le réglage d'un seul cadran.
 
