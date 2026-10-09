@@ -54,7 +54,7 @@ Un acheteur attentif objectera que l'escalade vers un humain, elle, ne facture p
 
 Le relevé ci-dessous distingue systématiquement ce que le fournisseur publie de ce qui provient de comparatifs secondaires, souvent rédigés par des concurrents. Cette discipline n'est pas un ornement méthodologique : sur ce sujet, la part publiée est minoritaire, et un dossier qui mélange les deux niveaux produit une grille fausse.
 
-[SCHEMA-03]
+![Matrice comparative de quatre fournisseurs : unité facturée, tarif publié, événement déclencheur, ce qui ne facture pas, et vérifiabilité par l'acheteur. La colonne de vérifiabilité reste vide chez les quatre.|1200](images/20261009-03-quatre-definitions.svg)
 
 **Fin (Intercom).** Unité : le résultat, 0,99 $. Facturation une fois par conversation. Événements facturables relevés : résolution, transfert vers une procédure, disqualification ; qualification commerciale à un tarif distinct, de l'ordre de 9,99 $ selon les relevés[^7]. Hors de l'environnement Intercom, un forfait d'entrée mensuel inclut un quota de résolutions. Sur Intercom, les sièges d'assistance restent facturés séparément. Règle de clôture reposant sur une fenêtre de silence de vingt-quatre heures d'après les relevés concordants, non confirmée dans la documentation primaire consultable.
 
