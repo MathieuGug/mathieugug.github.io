@@ -38,7 +38,7 @@ Chez Intercom, la facturation est documentée comme s'appliquant une fois par co
 
 Chez Zendesk, l'unité est la « résolution automatisée », définie par le fournisseur comme une demande traitée entièrement par l'agent sans intervention humaine, avec une définition adaptée à chaque canal selon des principes présentés comme constants[^6]. La promesse associée est explicite : pas de résolution, pas de facture[^5]. Les guides secondaires décrivent une confirmation après soixante-douze heures d'inactivité du ticket, le système examinant pendant cette fenêtre des signaux comme un retour positif ou l'absence de question de suivi. Cette durée n'apparaît pas dans la documentation primaire que l'on peut consulter, et elle est donnée ici comme un relevé secondaire à vérifier auprès du fournisseur.
 
-[SCHEMA-02]
+![Chronologie d'une conversation facturée : la fenêtre de silence convertit une absence de signal en présomption de résolution, et trois trajectoires distinctes — client servi, client qui renonce, réponse fausse non détectée — produisent le même enregistrement.|1200](images/20261009-02-anatomie-resolution.svg)
 
 La structure est la même dans les deux cas, et elle mérite d'être nommée pour ce qu'elle est. **Le compteur ne mesure pas un succès, il mesure une absence de contestation pendant un délai.** Trois trajectoires distinctes produisent le même enregistrement :
 
