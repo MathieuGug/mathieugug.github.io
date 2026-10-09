@@ -118,7 +118,7 @@ La seconde est la **matière** : l'existence effective, chez le fournisseur, des
 
 Les travaux contractuels publiés sur les déploiements agentiques convergent sur la liste des pièces à exiger. Mayer Brown recense l'accès aux journaux d'agent, aux traces de décision, aux enregistrements d'appels d'outils, aux invites et instructions système, aux identifiants de modèle et de version, aux résultats d'évaluation et aux indicateurs de dérive, à des conditions suffisantes pour alimenter un contrôle interne, une demande de régulateur ou une enquête après incident, avec des durées de rétention et des mécanismes de remise stipulés[^9]. La même littérature souligne que les stipulations héritées des contrats logiciels classiques — propriété des données, confidentialité, responsabilité, droit d'audit, conformité — sont inadaptées à des systèmes qui évoluent en continu, s'appuient sur des sous-traitants en couches et prennent des décisions automatisées.
 
-[SCHEMA-06]
+![Six décisions contractuelles rangées par la fenêtre où chacune reste possible : avant l'appel d'offres, à la signature, en exploitation. Les deux qui coûtent zéro sont aussi les deux qu'on ne peut pas rattraper après coup.|1200](images/20261009-06-six-decisions.svg)
 
 Appliquée au comptage, cette liste se réduit à quatre exigences rédigeables, qui n'ont rien d'exotique et tout de spécifique.
 
