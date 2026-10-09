@@ -14,7 +14,7 @@ Elle dépend de la règle qui déclare qu'une conversation s'est terminée par u
 
 Ce dossier tient en une question à poser avant de signer, qui remplace celle que les grilles invitent à poser. Non pas « au siège, à l'usage ou au résultat », mais **qui tient le compteur, selon quelle règle écrite, et puis-je la vérifier**. Les six décisions de la dernière section répondent à cette question, et elles sont classées par la fenêtre où chacune reste possible — l'une d'elles ne coûte rien et devient irrattrapable dès la mise en service.
 
-[SCHEMA-01]
+![Trois compteurs de facturation empilés : le siège, l'action et le résultat. Du siège à l'action, l'acheteur perd le contrôle de la valeur du compteur ; de l'action au résultat, il perd celui de sa définition.|1200](images/20261009-01-trois-compteurs.svg)
 
 ## Trois compteurs, et un seul change de camp
 
