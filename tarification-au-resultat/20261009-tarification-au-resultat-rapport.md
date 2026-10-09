@@ -76,7 +76,7 @@ Il existe un résultat théorique ancien qui décrit exactement ce que fait un c
 
 Holmström et Milgrom ont étudié en 1991 la rémunération d'un agent chargé de plusieurs tâches dont une seule est mesurable de façon fiable. Leur conclusion centrale est contre-intuitive et robuste : lorsque la mesure est incomplète, une rémunération fixe, indépendante de la performance mesurée, peut être optimale. La raison tient à l'allocation d'attention. Rémunérer fortement la dimension mesurée détourne l'effort des dimensions qui ne le sont pas, et le gain obtenu sur la première peut être inférieur à la perte subie sur les secondes. Dans sa conférence Nobel, Holmström résume le problème d'une phrase que tout acheteur d'agent devrait relire : il ne sert à rien de créer de fortes incitations pour les mauvaises actions[^10].
 
-[SCHEMA-04]
+![Une seule des cinq dimensions d'un agent de relation client est mesurée par le compteur de facturation ; les quatre autres (exactitude, satisfaction, conformité, coût aval) restent muettes, et l'effort s'y déplace.|900](images/20261009-04-dimensions-muettes.svg)
 
 La transposition est directe. Un agent de relation client exerce plusieurs tâches simultanées, dont on peut citer cinq : terminer l'échange sans escalade, donner une réponse exacte, laisser le client satisfait, respecter les obligations de conformité du secteur, éviter de produire un problème aval plus coûteux. Une seule de ces cinq est mesurée par le compteur de facturation. Quatre sont muettes.
 
