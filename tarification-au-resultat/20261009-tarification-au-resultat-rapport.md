@@ -94,7 +94,7 @@ L'argument de vente du modèle au résultat tient en une phrase : le fournisseur
 
 Il vend un résultat à prix fixe. Il achète du calcul à prix variable. Et le second compteur monte. Gartner anticipe un coût d'inférence par flux agentique multiplié par plus de cinq d'ici 2028[^1]. L'explication n'est pas une hausse du prix du jeton, qui baisse plutôt, mais l'allongement des chaînes d'exécution : plus d'appels d'outils, plus d'allers-retours de raisonnement, plus de contexte relu à chaque tour, pour une tâche de périmètre constant.
 
-[SCHEMA-05]
+![Le fournisseur entre deux compteurs : il vend un résultat à prix fixe et achète du calcul à prix croissant. Trois voies de reprise de marge, toutes observables dans le marché.|1200](images/20261009-05-ou-va-la-variance.svg)
 
 Un fournisseur pris entre ces deux compteurs dispose de trois voies de reprise, et les trois sont observables dans le marché.
 
