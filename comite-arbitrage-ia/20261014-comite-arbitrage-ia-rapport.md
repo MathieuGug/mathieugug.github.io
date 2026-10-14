@@ -42,7 +42,7 @@ Une instance qui arbitre laisse nécessairement derrière elle quatre pièces. C
 
 **Pièce 4 — une trace de refus.** Ce qu'elle rend indéniable : que l'instance **pouvait** refuser. Son substitut courant : le refus informel en amont, obtenu par un appel téléphonique avant la séance, qui évite le passage et ne laisse rien. C'est la pièce la plus coûteuse à produire et la seule qui ne se simule pas. Une instance qui n'a jamais rien arrêté en dix-huit mois de fonctionnement n'a pas démontré qu'elle le pouvait.
 
-[SCHEMA-02]
+![Quatre pièces, quatre substituts : la grille d'une instance qui arbitre|1300](images/20261014-02-quatre-pieces.svg)
 
 Les quatre pièces sont **indépendantes**, et c'est ce qui rend la grille utile. Trois sur quatre produisent des figures reconnaissables :
 
