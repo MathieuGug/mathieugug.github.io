@@ -69,7 +69,7 @@ Le rapprochement avec l'IA est courant dans la littérature de conformité, et i
 
 L'asymétrie se résume en une ligne. En banque, un superviseur peut demander à voir, pour un modèle donné, qui a approuvé quoi, sur la base de quelle validation, à quelle date, et ce qui a été refusé. En gouvernance de l'IA, la question équivalente obtient le plus souvent une charte en réponse.
 
-[SCHEMA-03]
+![Le précédent audité : SR 11-7 (2011) comparé à une charte IA type (2026) sur cinq attributs|1300](images/20261014-03-precedent-audite.svg)
 
 Deux réserves honnêtes sur ce précédent. D'abord, SR 11-7 traite de modèles aux frontières stables, dont la version se fige et se valide ; un agent qui choisit ses actions à l'exécution et enchaîne des appels d'outils ne se valide pas de la même façon. Ensuite, le régime bancaire a produit sa propre pathologie, une industrie de la validation qui consomme des ressources considérables pour un gain de maîtrise parfois marginal. L'importation doit donc être sélective. Ce qui se transporte sans difficulté, c'est la règle de saisine liée à l'inventaire, l'exigence de statut du contestataire, et le fait que l'instance soit auditée. Ce qui ne se transporte pas tel quel, c'est la cadence de revalidation annuelle d'un objet dont le comportement change à chaque mise à jour du socle.
 
