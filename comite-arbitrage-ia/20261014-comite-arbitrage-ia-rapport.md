@@ -105,7 +105,7 @@ L'article 4, sur la maîtrise de l'IA, s'applique depuis le 2 février 2025 sans
 
 À cela s'ajoute un fait de calendrier qui change l'arbitrage d'une direction en 2026. Le règlement omnibus numérique, règlement (UE) 2026/1744, approuvé en dernière lecture par le Conseil le 29 juin 2026, reporte les obligations applicables aux systèmes à haut risque autonomes de l'annexe III du 2 août 2026 au **2 décembre 2027**, et celles des systèmes de l'annexe I au 2 août 2028[^6]. Les obligations de transparence de l'article 50 ne bougent pas et s'appliquent depuis le 2 août 2026 ; deux nouvelles interdictions ajoutées à l'article 5 entrent en vigueur le 2 décembre 2026.
 
-[SCHEMA-05]
+![L'échéance qui a disparu : le calendrier du règlement sur l'IA et le report de seize mois de l'annexe III|1300](images/20261014-05-calendrier-europeen.svg)
 
 L'effet de ce report sur la gouvernance interne mérite d'être nommé sans détour. Beaucoup d'organisations avaient adossé la création de leur instance à l'échéance d'août 2026 : la date servait d'argument budgétaire et de point de rendez-vous. Le report retire cet appui. ==Seize mois de délai supplémentaire ne rendent pas l'instance moins nécessaire, mais ils suppriment la seule contrainte externe qui obligeait à la créer avant d'en avoir envie.== Pour une direction qui voulait l'instance, le report est une mauvaise nouvelle déguisée en répit.
 
