@@ -129,7 +129,7 @@ Le rapprochement entre les deux échelles est le point analytique de cette secti
 
 D'où la seule conclusion utilisable. La décision structurante d'une instance n'est pas la liste des cas qu'elle examine : c'est le **seuil de délégation** qu'elle écrit, c'est-à-dire la frontière en dessous de laquelle elle renonce explicitement à voir. Un seuil écrit transforme une saturation subie en arbitrage assumé. Il a quatre composantes : le critère (exposition, montant, nature des données, niveau d'autonomie), le délégataire nommé, l'obligation de remontée statistique à l'instance, et la liste des actes non délégables.
 
-[SCHEMA-06]
+![Le seuil de délégation : zone d'examen réel, seuil écrit, zone d'enregistrement, et les trois actes non délégables|1300](images/20261014-06-seuil-delegation.svg)
 
 Cette dernière liste est la plus courte et la plus importante. **Le refus ne se délègue pas.** La raison n'est pas symbolique : si un délégataire peut refuser, chaque refus devient négociable à son niveau, et la négociation se gagne par la pression métier. Une instance qui conserve le monopole du refus conserve la seule chose qui rend son autorisation significative. Les deux autres actes non délégables sont le relèvement d'un palier d'autonomie et la reprise après incident, pour la même raison.
 
