@@ -18,7 +18,7 @@ Ce décalage n'est pas une anomalie de l'IA. La théorie des organisations l'a d
 
 La conséquence pratique est désagréable. Une charte d'IA publiée par une organisation qui déploie vite n'est pas le signe avancé d'une gouvernance en construction. Elle peut être la trace d'un déploiement que personne n'arbitre, et dont la légitimité se fabrique ailleurs. L'implication pour un directeur data ou un directeur IA : **l'existence d'une charte ne renseigne pas sur l'existence d'une instance, et peut même renseigner contre.**
 
-[SCHEMA-01]
+![La chaîne contre-couplée : parole, décision et action, et le sens réel de la compensation|1300](images/20261014-01-chaine-contre-couplee.svg)
 
 Trois objections méritent d'être posées tout de suite.
 
