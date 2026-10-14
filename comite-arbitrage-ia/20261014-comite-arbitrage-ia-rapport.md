@@ -149,7 +149,7 @@ Une instance d'arbitrage est un objet mesurable, et quatre indicateurs suffisent
 
 **Le taux de reprise.** Part des autorisations rouvertes après incident ou après changement de périmètre, et délai de réouverture. C'est la mesure de la pièce 3. Une instance qui n'a jamais rouvert une autorisation n'a pas de procédure de reprise, elle a des avis favorables permanents.
 
-[SCHEMA-07]
+![Quatre indicateurs pour mesurer une instance : taux de refus, délai de passage, taux de saisine, taux de reprise|1300](images/20261014-07-quatre-indicateurs.svg)
 
 Deux précautions de méthode. Ces quatre indicateurs se dégradent dès qu'on les transforme en objectifs chiffrés opposables à l'instance : un taux de refus cible produit des refus de façade, un délai cible produit des examens abrégés. Ils se publient au comité exécutif comme une description d'activité, et non comme un contrat de performance. Par ailleurs, trois des quatre supposent un registre des cas d'usage tenu indépendamment des porteurs. Sans ce registre, le taux de saisine n'est pas calculable, et l'instance ne sait pas ce qu'elle ne voit pas.
 
