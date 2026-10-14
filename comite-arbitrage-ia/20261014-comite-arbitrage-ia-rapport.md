@@ -89,7 +89,7 @@ Trois enseignements pour une entreprise.
 
 **La dérogation documentée fait plus de travail que la liste des principes.** Dans ce montage, un responsable qui veut déployer sans appliquer une pratique minimale doit produire une dérogation écrite. ==La charge de la preuve est inversée : le porteur doit produire une dérogation écrite avant de déployer.== Cette inversion est reproductible dans une entreprise, et elle coûte une ligne dans un mandat.
 
-[SCHEMA-04]
+![Anatomie du conseil de gouvernance IA fédéral : présidence au niveau du numéro deux, cadence semestrielle, dérogation écrite|1300](images/20261014-04-conseil-federal.svg)
 
 Une réserve de lecture, déjà posée dans un dossier antérieur de la série et qui vaut toujours : l'application de ces mémorandums a connu des inflexions politiques que ce dossier ne traite pas. La lecture porte sur le **contenu des chartes** comme modèles de mandat, et non sur le bilan de leur mise en œuvre.
 
