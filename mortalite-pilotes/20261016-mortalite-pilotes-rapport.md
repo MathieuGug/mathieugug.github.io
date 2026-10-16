@@ -30,7 +30,7 @@ Le dernier élément porte sur la position de l'émetteur. Le projet qui publie 
 
 Reste la lecture utile. Le rapport documente un écart réel entre l'usage déclaré et l'effet constaté sur le compte de résultat, et son explication porte sur l'intégration aux processus plutôt que sur la qualité des modèles. Cette explication résiste aux critiques méthodologiques, parce qu'elle ne dépend pas du chiffre. L'écart est corroboré par des enquêtes indépendantes, avec d'autres bases et d'autres définitions, comme la suite le montre. ==L'usage du 95 % comme repère chiffré comparable à un taux interne, lui, ne résiste pas.==
 
-[SCHEMA-01]
+![Un entonnoir, quatre taux : le même portefeuille de 100 intentions d'usage calculé de quatre façons|width=1200](images/20261016-01-entonnoir-quatre-taux.svg)
 
 ## Cinq chiffres, cinq populations
 
