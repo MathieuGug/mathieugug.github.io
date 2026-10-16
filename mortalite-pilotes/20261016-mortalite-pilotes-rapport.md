@@ -32,9 +32,9 @@ Reste la lecture utile. Le rapport documente un écart réel entre l'usage décl
 
 ![Un entonnoir, quatre taux : le même portefeuille de 100 intentions d'usage calculé de quatre façons|width=1200](images/20261016-01-entonnoir-quatre-taux.svg)
 
-## Cinq chiffres, cinq populations
+## Six chiffres, six populations
 
-Les cinq chiffres qui structurent le débat depuis dix-huit mois proviennent de cinq dispositifs distincts. Les ranger côte à côte demande de nommer, pour chacun, l'unité comptée, le seuil retenu et la nature de l'affirmation.
+Les six chiffres qui structurent le débat depuis dix-huit mois proviennent de six dispositifs distincts. Les ranger côte à côte demande de nommer, pour chacun, l'unité comptée, le seuil retenu et la nature de l'affirmation.
 
 **MIT NANDA, juillet 2025 — 95 %.** Unité : des organisations. Seuil : un retour mesurable sur le compte de résultat. Nature : mesure déclarative sur un échantillon de convenance, dénominateur non explicité[^1].
 
@@ -48,7 +48,7 @@ Les cinq chiffres qui structurent le débat depuis dix-huit mois proviennent de 
 
 **RAND, août 2024 — plus de 80 %.** Le rapport *The Root Causes of Failure for Artificial Intelligence Projects* repose sur 65 entretiens approfondis avec des ingénieurs et scientifiques des données ayant au moins cinq ans de pratique[^11]. Le « plus de 80 % » qu'on lui attribue n'est pas un résultat de l'étude : c'est une estimation reprise d'ailleurs, que le rapport cite en ouverture pour poser son sujet, en précisant « selon certaines estimations ». L'apport propre de RAND est qualitatif et porte sur les causes, au premier rang desquelles une mauvaise formulation du problème à résoudre. Ce rapport est devenu, par citation, une source quantitative pour un chiffre qu'il n'a pas produit.
 
-À ces cinq entrées s'ajoute un repère utile sur l'écart entre intention et préparation. Dans la *California Management Review* de juin 2025, Brian Spisak et Gary Marcus relèvent qu'une enquête du premier trimestre 2025 auprès de plus de 2 500 dirigeants d'entreprise donne 97 % d'intentions d'adoption et 2 % de dirigeants s'estimant prêts[^12]. Les deux nombres proviennent du même questionnaire. L'écart de 95 points mesure la distance entre une déclaration d'intention et une déclaration de capacité, et non un taux d'échec.
+À ces six entrées s'ajoute un repère utile sur l'écart entre intention et préparation. Dans la *California Management Review* de juin 2025, Brian Spisak et Gary Marcus relèvent qu'une enquête du premier trimestre 2025 auprès de plus de 2 500 dirigeants d'entreprise donne 97 % d'intentions d'adoption et 2 % de dirigeants s'estimant prêts[^12]. Les deux nombres proviennent du même questionnaire. L'écart de 95 points mesure la distance entre une déclaration d'intention et une déclaration de capacité, et non un taux d'échec.
 
 ![Six chiffres, six populations : unité comptée, seuil retenu, nature de l'affirmation et base pour chacun des taux les plus cités|width=1200](images/20261016-02-cinq-populations.svg)
 
@@ -68,7 +68,7 @@ Trois conséquences en découlent, et elles pèsent plus lourd que les critiques
 
 Une organisation qui tient un registre des cas d'usage échappe aux trois. C'est l'argument le plus concret en faveur du registre, et il est indépendant des obligations réglementaires qui le réclament par ailleurs. Le registre fournit une liste, une date d'ouverture, un propriétaire et un critère de passage écrit avant le résultat. Sans lui, il n'existe pas de taux interne : il existe une estimation.
 
-[SCHEMA-03]
+![L'acte de naissance manquant : les quatre moments où un cas d'usage pourrait être inscrit et qui détient la trace à chacun|width=1200](images/20261016-03-acte-de-naissance.svg)
 
 ## Ce que mesurent les instituts statistiques
 
