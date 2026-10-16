@@ -50,7 +50,7 @@ Les cinq chiffres qui structurent le débat depuis dix-huit mois proviennent de 
 
 À ces cinq entrées s'ajoute un repère utile sur l'écart entre intention et préparation. Dans la *California Management Review* de juin 2025, Brian Spisak et Gary Marcus relèvent qu'une enquête du premier trimestre 2025 auprès de plus de 2 500 dirigeants d'entreprise donne 97 % d'intentions d'adoption et 2 % de dirigeants s'estimant prêts[^12]. Les deux nombres proviennent du même questionnaire. L'écart de 95 points mesure la distance entre une déclaration d'intention et une déclaration de capacité, et non un taux d'échec.
 
-[SCHEMA-02]
+![Six chiffres, six populations : unité comptée, seuil retenu, nature de l'affirmation et base pour chacun des taux les plus cités|width=1200](images/20261016-02-cinq-populations.svg)
 
 ## L'unité qui n'a pas d'acte de naissance
 
