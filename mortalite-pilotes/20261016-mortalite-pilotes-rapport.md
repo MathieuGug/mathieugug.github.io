@@ -102,7 +102,7 @@ Trois déplacements se sont opérés le long de cette chaîne, et chacun est inv
 
 La portée pratique est limitée mais réelle : un nombre dont on ne peut pas remonter la chaîne jusqu'à une base de calcul ne tient pas sa place dans une diapositive de comité d'investissement. Le test est rapide. On remonte deux niveaux de citation. Si le second niveau ne publie pas sa population et son seuil, le nombre sort de la diapositive.
 
-[SCHEMA-04]
+![La généalogie d'un taux : de la tribune de 2017 aux reprises de 2026, avec le changement de population à chaque reprise|width=1200](images/20261016-04-genealogie-taux.svg)
 
 ## Les trois conventions à écrire
 
