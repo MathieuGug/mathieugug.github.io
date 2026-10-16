@@ -1,0 +1,1758 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#faf6ec">
+<title>La fabrique d'un agent — l'atelier en quatre stades</title>
+<meta name="description" content="Un seul atelier, visité quatre fois. Le scrollytelling de la fabrique : Prototype, Pilote, Production, Mature. Personnages qui arrivent, instruments qui s'allument, conveyors qui tournent.">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #faf6ec;
+  --bg-2: #f3eedf;
+  --surface: #ffffff;
+  --surface-2: #fdfaf0;
+  --line: rgba(30,30,44,0.08);
+  --line-strong: rgba(30,30,44,0.18);
+  --text: #1e1e2a;
+  --text-dim: #3b3f4d;
+  --text-mid: #6b6f7c;
+  --text-faint: #9a9ca5;
+  --accent: #b8582e;
+  --accent-2: #c5a23a;
+  --carmine: #b7332c;
+  --teal: #1f5560;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 300;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  /* clip ne crée pas de scroll container — préserve `position: sticky` sur .pin
+     hidden en fallback pour Safari < 16. */
+  overflow-x: hidden;
+  overflow-x: clip;
+}
+
+body {
+  background:
+    radial-gradient(ellipse at 22% 8%, rgba(184,88,46,0.06) 0%, transparent 55%),
+    radial-gradient(ellipse at 82% 92%, rgba(75,148,102,0.05) 0%, transparent 55%),
+    var(--bg);
+  min-height: 100vh;
+  padding-top: 56px;
+}
+
+body.lock-scroll { overflow: hidden; }
+
+/* Paper grain */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.32;
+  mix-blend-mode: multiply;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(80,60,40,0.015) 1px, transparent 1px),
+    radial-gradient(circle at 70% 80%, rgba(80,60,40,0.01) 1px, transparent 1px);
+  background-size: 3px 3px, 5px 5px;
+}
+
+a { color: inherit; text-decoration: none; }
+mark { background: linear-gradient(transparent 58%, rgba(178, 59, 27, 0.14) 58%); color: inherit; padding: 0 2px; }
+
+/* ═════ TOPBAR ═════ */
+.topbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 60;
+  height: 56px; padding: 12px 28px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px;
+  background: rgba(250,246,236,0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.3s;
+}
+.topbar.scrolled { border-bottom-color: var(--line); }
+.topbar > a { font-family: 'Fraunces', serif; font-weight: 500; font-size: 15.5px; letter-spacing: -0.01em; color: var(--text); flex-shrink: 0; }
+.topbar em { font-style: italic; color: var(--accent); }
+.topbar .back { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--text-mid); }
+.topbar .back:hover { color: var(--accent); }
+.topbar .dossier-context {
+  font-family: 'JetBrains Mono', monospace; font-size: 9.5px;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  opacity: 0.55; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 320px; flex-shrink: 1; min-width: 0;
+}
+@media (max-width: 768px) { .topbar .dossier-context { display: none; } }
+.topbar .back-nav { display: inline-flex; align-items: center; gap: 14px; flex-shrink: 0; }
+.topbar .back-sep { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: var(--text-mid); user-select: none; }
+@media (max-width: 560px) {
+  .topbar { padding: 12px 16px; gap: 10px; }
+  .topbar > a { font-size: 14px; }
+  .topbar .back { font-size: 9px; letter-spacing: 0.16em; }
+  .topbar .back-nav { gap: 10px; }
+}
+@media (max-width: 380px) {
+  .topbar > a em { display: none; }
+}
+
+/* ═════ INTRO ═════ */
+.intro {
+  min-height: calc(100dvh - 56px);
+  padding: 6vh 5vw 4vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  z-index: 2;
+}
+.intro-top { max-width: 920px; }
+.eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px; font-weight: 500;
+  letter-spacing: 0.3em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 22px;
+  display: flex; align-items: center; gap: 14px;
+}
+.eyebrow::before { content: ''; width: 44px; height: 2px; background: var(--accent); }
+h1.intro-title {
+  font-family: 'Fraunces', serif;
+  font-weight: 300;
+  font-size: clamp(36px, 7vw, 72px);
+  line-height: 1.04;
+  letter-spacing: -0.025em;
+  color: var(--text);
+}
+h1.intro-title em { font-style: italic; color: var(--accent); font-weight: 400; }
+.lede {
+  margin-top: 24px;
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(16px, 2.2vw, 21px);
+  line-height: 1.5;
+  color: var(--text-dim);
+  max-width: 720px;
+}
+.lede strong { font-style: normal; color: var(--text); font-weight: 500; }
+.subtitle {
+  margin-top: 18px;
+  font-size: clamp(13px, 1.5vw, 14.5px);
+  color: var(--text-mid); max-width: 640px;
+  line-height: 1.55;
+}
+.meta-bar {
+  margin-top: 36px;
+  display: flex; flex-wrap: wrap; gap: 14px 28px;
+  font-family: 'JetBrains Mono', monospace; font-size: 10.5px;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--text-faint); font-weight: 500;
+}
+.meta-bar strong { color: var(--text-mid); font-weight: 500; }
+
+/* Parcours selector inline in intro */
+.parcours {
+  margin-top: 40px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  padding: 14px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.parcours .label {
+  font-family: 'JetBrains Mono', monospace; font-size: 9.5px;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--text-faint); margin-right: 6px;
+}
+.parcours-btn {
+  background: transparent; border: 1px solid var(--line-strong);
+  border-radius: 100px; padding: 6px 14px 6px 11px;
+  cursor: pointer; color: var(--text-dim);
+  font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  display: inline-flex; align-items: center; gap: 6px;
+  white-space: nowrap; flex-shrink: 0;
+  transition: background 0.18s, border-color 0.18s, color 0.18s, transform 0.18s;
+  letter-spacing: 0.04em;
+}
+.parcours-btn:hover { border-color: var(--text); color: var(--text); transform: translateY(-1px); }
+.parcours-btn.active {
+  background: var(--accent); border-color: var(--accent); color: var(--bg);
+}
+.parcours-btn .emoji { font-size: 13px; line-height: 1; }
+.parcours-reset {
+  margin-left: auto;
+  font-family: 'JetBrains Mono', monospace; font-size: 10px;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--text-faint); background: none; border: none; cursor: pointer;
+  padding: 4px 0;
+}
+.parcours-reset:hover { color: var(--accent); }
+.parcours-reset[hidden] { display: none; }
+.parcours-hint {
+  margin-top: 12px;
+  font-size: 12px; color: var(--text-mid);
+  font-style: italic; max-width: 580px;
+}
+
+.scroll-cue {
+  margin-top: 4vh;
+  display: inline-flex; align-items: center; gap: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.scroll-cue .mouse {
+  width: 20px; height: 32px;
+  border: 1px solid var(--text-faint); border-radius: 100px;
+  position: relative;
+}
+.scroll-cue .mouse::before {
+  content: '';
+  position: absolute; top: 6px; left: 50%;
+  width: 3px; height: 6px;
+  background: var(--accent);
+  transform: translateX(-50%);
+  border-radius: 2px;
+  animation: scrollDown 1.6s ease-in-out infinite;
+}
+@keyframes scrollDown {
+  0%, 100% { opacity: 0; transform: translate(-50%, 0); }
+  50% { opacity: 1; transform: translate(-50%, 12px); }
+}
+
+/* ═════ SCROLLY ═════ */
+.scrolly {
+  position: relative;
+  z-index: 2;
+}
+.pin {
+  position: sticky;
+  top: 56px;
+  height: calc(100vh - 56px);
+  height: calc(100dvh - 56px);
+  width: 100%;
+  overflow: hidden;
+}
+
+/* HUD */
+.hud {
+  position: absolute;
+  top: 14px; left: 16px;
+  z-index: 20;
+  display: flex; align-items: center; gap: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-mid);
+  padding: 6px 12px;
+  background: rgba(255,251,242,0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: 100px;
+  border: 1px solid var(--line-strong);
+  box-shadow: 0 2px 8px rgba(30,30,44,0.05);
+}
+.hud-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.35;
+  transition: opacity 0.6s ease;
+}
+.hud[data-scene="2"] .hud-dot { opacity: 0.55; }
+.hud[data-scene="3"] .hud-dot { opacity: 0.78; }
+.hud[data-scene="4"] .hud-dot { opacity: 1; }
+.hud b { color: var(--accent); font-weight: 500; }
+
+/* Stage chips - persistent legend on top right */
+.stages-legend {
+  position: absolute;
+  top: 14px; right: 16px;
+  z-index: 20;
+  display: flex; gap: 5px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px; letter-spacing: 0.14em;
+  text-transform: uppercase;
+  background: rgba(255,251,242,0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 6px 8px;
+  border-radius: 100px;
+  border: 1px solid var(--line-strong);
+}
+.stages-legend .stage-chip {
+  padding: 3px 9px;
+  border-radius: 100px;
+  color: var(--text-faint);
+  transition: background 0.3s, color 0.3s;
+  font-weight: 500;
+}
+.stages-legend .stage-chip.active {
+  background: var(--accent);
+  color: var(--bg);
+}
+@media (max-width: 640px) {
+  /* Sur mobile, la stages-legend chevauche le HUD — on la masque, la prog-bar reste pour la nav. */
+  .stages-legend { display: none; }
+}
+
+/* Pin viz */
+.pin-viz {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  padding: 60px 20px 100px;
+}
+.viz-wrap {
+  width: 100%;
+  max-width: 1100px;
+  position: relative;
+}
+svg.atelier {
+  width: 100%;
+  height: auto;
+  display: block;
+  max-height: calc(100dvh - 220px);
+  overflow: visible;
+}
+/* Mobile : SVG calé en haut, hauteur capée pour laisser la carte narrative au bas sans chevauchement. */
+@media (max-width: 1023px) {
+  .pin-viz {
+    align-items: flex-start;
+    padding: 56px 16px 0;
+  }
+  svg.atelier {
+    max-height: 42vh;
+    max-height: 42dvh;
+  }
+}
+
+/* Atelier element animations */
+.atelier [data-show-from] {
+  opacity: 0;
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.atelier [data-show-from].on {
+  opacity: 1;
+}
+/* Slight rise-in on appearance for select groups */
+.atelier g.lift[data-show-from] {
+  transform: translateY(8px);
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.atelier g.lift[data-show-from].on {
+  transform: translateY(0);
+}
+
+/* Title band always pinned */
+.atelier .scene-title {
+  font-family: 'JetBrains Mono', 'Consolas', monospace;
+  font-size: 13px; font-weight: 600;
+  letter-spacing: 0.16em; fill: var(--accent);
+}
+.atelier .scene-stage {
+  font-family: 'Fraunces', 'Cambria', serif;
+  font-weight: 600; font-size: 28px;
+  fill: var(--text); letter-spacing: -0.01em;
+}
+.atelier .scene-sub {
+  font-family: 'Fraunces', 'Cambria', serif;
+  font-style: italic; font-weight: 400; font-size: 17px;
+  fill: var(--text-mid);
+}
+.atelier .body-label { font-family: 'Inter', sans-serif; font-weight: 500; font-size: 13px; fill: var(--text); }
+.atelier .annotation { font-family: 'Inter', sans-serif; font-size: 11.5px; fill: var(--text-mid); }
+.atelier .caption-italic { font-family: 'Inter', sans-serif; font-style: italic; font-size: 11px; fill: var(--text-faint); }
+.atelier .mono-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600; letter-spacing: 0.12em; fill: var(--text-mid); }
+.atelier .numeric { font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 500; fill: var(--accent); }
+.atelier .threat-text { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; font-weight: 600; letter-spacing: 0.1em; fill: var(--carmine); }
+
+/* Progress bar bottom */
+.prog-line {
+  position: absolute;
+  left: 16px; right: 16px;
+  bottom: 16px;
+  z-index: 15;
+  display: flex;
+  gap: 4px;
+}
+.prog-seg {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--text-faint);
+  opacity: 0.2;
+  transition: opacity 0.3s, background 0.3s, height 0.25s cubic-bezier(0.2,0.8,0.2,1);
+}
+.prog-seg.visited { background: var(--accent); opacity: 0.5; }
+.prog-seg.current { background: var(--accent); opacity: 1; height: 5px; }
+
+/* ═════ BEATS ═════ */
+.beats-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+}
+.beat {
+  position: absolute;
+  opacity: 0;
+  transition: opacity 0.4s ease, transform 0.55s cubic-bezier(0.2,0.8,0.2,1);
+  pointer-events: none;
+  /* Default placement: bottom card */
+  bottom: 6vh;
+  left: 16px; right: 16px;
+  max-width: 440px;
+  transform: translateY(22px);
+  padding: 16px 18px 14px;
+  background: rgba(255,253,246,0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--line-strong);
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  box-shadow: 0 12px 36px rgba(30,30,44,0.10);
+}
+.beat.active {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+.beat-kicker {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px; letter-spacing: 0.22em;
+  color: var(--accent); text-transform: uppercase;
+  margin-bottom: 8px;
+  display: flex; align-items: center; gap: 8px;
+  font-weight: 500;
+}
+.beat-kicker::after {
+  content: ''; flex: 1; height: 1px;
+  background: linear-gradient(90deg, var(--accent), transparent);
+}
+.beat-title {
+  font-family: 'Fraunces', serif;
+  font-weight: 400; font-style: italic;
+  font-size: 19px; line-height: 1.2;
+  color: var(--text); margin-bottom: 8px;
+  letter-spacing: -0.005em;
+}
+.beat-body {
+  font-size: 13px; line-height: 1.55;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+}
+.beat-body strong { color: var(--text); font-weight: 500; }
+.beat-body em { font-style: italic; }
+.beat-callouts {
+  display: flex; flex-direction: column; gap: 6px;
+}
+.callout {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 8px 10px;
+  border-left: 2px solid var(--line-strong);
+  background: var(--surface-2);
+  font-size: 12px; line-height: 1.45;
+  color: var(--text-dim);
+  border-radius: 4px;
+  transition: opacity 0.2s, border-color 0.2s;
+}
+.callout .emoji { font-size: 13px; line-height: 1.2; flex-shrink: 0; }
+.callout strong { color: var(--text); font-weight: 500; }
+.callout.for-pm { border-left-color: var(--accent); }
+.callout.for-builder { border-left-color: var(--teal); }
+.callout.for-decideur { border-left-color: var(--accent-2); }
+.callout.antipattern {
+  border-left-color: var(--carmine);
+  background: rgba(183,51,44,0.05);
+}
+.callout.antipattern strong { color: var(--carmine); }
+
+/* Persona filter — non destructif */
+body[data-parcours="pm"] .callout:not(.for-pm):not(.antipattern) { opacity: 0.35; }
+body[data-parcours="builder"] .callout:not(.for-builder):not(.antipattern) { opacity: 0.35; }
+body[data-parcours="decideur"] .callout:not(.for-decideur):not(.antipattern) { opacity: 0.35; }
+body[data-parcours="pm"] .callout.for-pm,
+body[data-parcours="builder"] .callout.for-builder,
+body[data-parcours="decideur"] .callout.for-decideur {
+  border-left-width: 4px;
+  transform: translateX(0);
+}
+body[data-parcours="pm"] .callout:not(.for-pm):not(.antipattern):hover,
+body[data-parcours="builder"] .callout:not(.for-builder):not(.antipattern):hover,
+body[data-parcours="decideur"] .callout:not(.for-decideur):not(.antipattern):hover {
+  opacity: 1;
+}
+
+/* Desktop : layout flex 2 colonnes — SVG atelier à gauche, narrative card à droite, sans chevauchement.
+   Les beats restent `position: absolute` dans beats-layer (relative) pour qu'ils se superposent (un seul .active visible). */
+@media (min-width: 1024px) {
+  .pin {
+    display: flex;
+    align-items: stretch;
+    gap: 32px;
+    padding: 72px 4vw 64px;
+    overflow: hidden;
+  }
+  .pin-viz {
+    position: relative;
+    inset: auto;
+    flex: 1.45 1 0;
+    padding: 0;
+    min-width: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .viz-wrap { max-width: none; width: 100%; }
+  svg.atelier { max-height: calc(100dvh - 200px); }
+  .beats-layer {
+    position: relative;
+    inset: auto;
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 480px;
+    align-self: stretch;
+  }
+  .beat {
+    /* override mobile bottom-aligned positioning : center vertically inside beats-layer */
+    bottom: auto; left: 0; right: 0;
+    top: 50%;
+    transform: translate(0, calc(-50% + 18px));
+    width: 100%; max-width: 100%;
+    padding: 22px 24px 20px;
+  }
+  .beat.active { transform: translate(0, -50%); }
+  .beat-title { font-size: 23px; }
+  .beat-body { font-size: 14px; }
+  .callout { font-size: 12.5px; }
+}
+
+@media (max-width: 380px) {
+  .beat { padding: 14px 16px 12px; max-width: calc(100vw - 24px); }
+  .beat-title { font-size: 17px; }
+  .beat-body { font-size: 12.5px; }
+  .callout { font-size: 11.5px; padding: 7px 9px; }
+}
+
+/* ═════ OUTRO ═════ */
+.outro {
+  padding: 12vh 5vw 6vh;
+  position: relative; z-index: 3;
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+}
+.outro-head {
+  max-width: 920px;
+  margin: 0 auto 48px;
+}
+.outro-head .eyebrow { margin-bottom: 18px; }
+.outro-head h2 {
+  font-family: 'Fraunces', serif;
+  font-weight: 400;
+  font-size: clamp(26px, 5vw, 42px);
+  line-height: 1.12;
+  margin-bottom: 16px;
+  letter-spacing: -0.015em;
+}
+.outro-head h2 em { font-style: italic; color: var(--accent); font-weight: 500; }
+.outro-head p {
+  font-size: 14.5px; color: var(--text-dim);
+  line-height: 1.65; max-width: 720px;
+}
+
+.recap {
+  max-width: 1200px;
+  margin: 0 auto;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 2px 12px rgba(30,30,44,0.04);
+}
+.recap table {
+  width: 100%;
+  min-width: 800px;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+.recap th, .recap td {
+  padding: 12px 14px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--line);
+}
+.recap th {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px; letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-mid); font-weight: 500;
+  background: var(--bg-2);
+  position: sticky; top: 56px; z-index: 2;
+}
+.recap th.artefact-col { width: 18%; }
+.recap th.stage-col { width: 20.5%; }
+.recap th.s4 { color: var(--accent); }
+.recap td { color: var(--text-dim); line-height: 1.4; }
+.recap td.artefact {
+  font-family: 'Fraunces', serif;
+  font-weight: 500; font-size: 14px;
+  color: var(--text);
+}
+.recap td.artefact .num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; color: var(--text-faint);
+  letter-spacing: 0.14em;
+  margin-right: 6px;
+}
+.recap td.s4 { color: var(--text); }
+.recap tr:hover td { background: var(--bg-2); }
+
+.outro-cta {
+  max-width: 920px;
+  margin: 60px auto 0;
+  padding: 28px 30px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  display: flex; gap: 24px; align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+.outro-cta-text { flex: 1; min-width: 240px; }
+.outro-cta-eyebrow {
+  font-family: 'JetBrains Mono', monospace; font-size: 9.5px;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 8px; font-weight: 500;
+}
+.outro-cta-title {
+  font-family: 'Fraunces', serif; font-weight: 400;
+  font-size: 22px; line-height: 1.2; color: var(--text);
+}
+.outro-cta-title em { font-style: italic; color: var(--accent); font-weight: 500; }
+.outro-cta-sub {
+  margin-top: 8px; font-size: 13px;
+  color: var(--text-dim); line-height: 1.5;
+}
+.outro-cta-buttons { display: flex; flex-wrap: wrap; gap: 10px; }
+.cta-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 18px;
+  font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--text-mid);
+  border: 1px solid var(--line-strong);
+  border-radius: 100px;
+  background: var(--bg-2);
+  transition: all 0.2s ease;
+}
+.cta-btn:hover {
+  color: var(--accent); border-color: var(--accent);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(184,88,46,0.12);
+}
+.cta-btn.primary {
+  background: var(--accent); color: var(--bg);
+  border-color: var(--accent);
+}
+.cta-btn.primary:hover {
+  background: var(--carmine); border-color: var(--carmine);
+  color: var(--bg);
+}
+
+.colophon {
+  max-width: 1200px;
+  margin: 56px auto 0;
+  padding-top: 24px;
+  border-top: 1px dashed var(--line-strong);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  display: flex; gap: 24px; flex-wrap: wrap;
+  font-weight: 500;
+}
+
+@media (max-width: 720px) {
+  .outro { padding: 8vh 5vw 6vh; }
+  .recap { font-size: 11.5px; }
+  .recap th, .recap td { padding: 10px 12px; }
+  .recap td.artefact { font-size: 12.5px; }
+  .outro-cta { padding: 22px 22px; gap: 16px; flex-direction: column; align-items: flex-start; }
+}
+</style>
+<!-- og:start -->
+<meta name="author" content="Mathieu Guglielmino">
+<link rel="canonical" href="https://mathieugug.github.io/fabrique-agent/20260515-fabrique-agent-scrolly.html">
+<meta name="keywords" content="IA agentique, Mathieu Guglielmino, agents IA, dossier, fabrique, agent">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Mathieu Guglielmino">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:url" content="https://mathieugug.github.io/fabrique-agent/20260515-fabrique-agent-scrolly.html">
+<meta property="og:title" content="La fabrique d'un agent — l'atelier en quatre stades">
+<meta property="og:description" content="Un seul atelier, visité quatre fois. Le scrollytelling de la fabrique : Prototype, Pilote, Production, Mature. Personnages qui arrivent, instruments qui s'allument, conveyors qui tournent.">
+<meta property="og:image" content="https://mathieugug.github.io/fabrique-agent/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="La fabrique d'un agent — l'atelier en quatre stades — couverture social">
+<meta property="article:published_time" content="2026-05-15">
+<meta property="article:author" content="Mathieu Guglielmino">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="La fabrique d'un agent — l'atelier en quatre stades">
+<meta name="twitter:description" content="Un seul atelier, visité quatre fois. Le scrollytelling de la fabrique : Prototype, Pilote, Production, Mature. Personnages qui arrivent, instruments qui s'allument, conveyors qui tournent.">
+<meta name="twitter:image" content="https://mathieugug.github.io/fabrique-agent/og.png">
+<script type="application/ld+json">
+{"@context": "https://schema.org","@type": "Article","headline": "La fabrique d'un agent — l'atelier en quatre stades","description": "Un seul atelier, visité quatre fois. Le scrollytelling de la fabrique : Prototype, Pilote, Production, Mature. Personnages qui arrivent, instruments qui s'allument, conveyors qui tournent.","image": "https://mathieugug.github.io/fabrique-agent/og.png","url": "https://mathieugug.github.io/fabrique-agent/20260515-fabrique-agent-scrolly.html","datePublished": "2026-05-15","inLanguage": "fr-FR","author": {"@type": "Person","name": "Mathieu Guglielmino","url": "https://mathieugug.github.io/"},"publisher": {"@type": "Person","name": "Mathieu Guglielmino","url": "https://mathieugug.github.io/"}}
+</script>
+<!-- og:end -->
+</head>
+<body>
+
+<header class="topbar" id="topbar">
+  <a href="../index.html">Mathieu <em>Guglielmino</em></a>
+  <span class="dossier-context">La fabrique d'un agent</span>
+  <nav class="back-nav" aria-label="Navigation retour">
+    <a href="index.html" class="back" title="Revenir au hub du dossier">← Hub</a>
+    <span class="back-sep" aria-hidden="true">·</span>
+    <a href="../index.html#series" class="back" title="Revenir à l'accueil">Accueil</a>
+  </nav>
+</header>
+
+<section class="intro">
+  <div class="intro-top">
+    <div class="eyebrow">Dossier · La fabrique · Scrollytelling</div>
+    <h1 class="intro-title">L'<em>atelier</em>, visité <em>quatre fois</em>.</h1>
+    <p class="lede">Un agent ne devient pas un produit en ajoutant un LLM. Il devient un produit quand une équipe se dote des <strong>artefacts partagés</strong> qui font tenir sa fabrication. Voici la même fabrique, vue à quatre moments de sa vie — un dev seul devant un notebook, puis quatre personnes autour d'un dashboard, puis quatre agents autour d'un memory pool.</p>
+    <p class="subtitle">Faites défiler la page. L'atelier va se peupler, s'instrumenter, se distribuer. Les humains finiront par passer en coulisses.</p>
+    <div class="meta-bar">
+      <span><strong>15 mai 2026</strong></span>
+      <span>4 stades · 10 artefacts</span>
+      <span>Format <strong>scrollytelling</strong></span>
+      <span>≈ 6 min</span>
+    </div>
+    <div class="parcours" role="toolbar" aria-label="Sélecteur de parcours de lecture">
+      <span class="label">Parcours :</span>
+      <button class="parcours-btn" type="button" data-parcours="pm" aria-pressed="false" title="Surligne les callouts adressés au PM / PO produit"><span class="emoji">🎯</span> PM / PO</button>
+      <button class="parcours-btn" type="button" data-parcours="builder" aria-pressed="false" title="Surligne les callouts adressés au builder / tech lead"><span class="emoji">🔧</span> Builder</button>
+      <button class="parcours-btn" type="button" data-parcours="decideur" aria-pressed="false" title="Surligne les callouts adressés au cadre tech encadrant"><span class="emoji">🧭</span> Décideur</button>
+      <button class="parcours-reset" type="button" hidden>Tout afficher</button>
+    </div>
+    <p class="parcours-hint">Le sélecteur dim les callouts qui ne s'adressent pas à votre profil, sans les masquer. Optionnel — le scrolly se lit aussi en linéaire.</p>
+  </div>
+  <div class="scroll-cue">
+    <span>Défilez</span>
+    <div class="mouse"></div>
+  </div>
+</section>
+
+<div class="scrolly" id="scrolly">
+  <div class="pin">
+    <div class="hud" id="hud" data-scene="1">
+      <span class="hud-dot"></span>
+      <span><b id="hudNum">01</b> · <span id="hudName">Prototype</span></span>
+    </div>
+
+    <div class="stages-legend" id="stagesLegend" aria-label="Stades de maturité">
+      <span class="stage-chip active" data-stage="1">Prototype</span>
+      <span class="stage-chip" data-stage="2">Pilote</span>
+      <span class="stage-chip" data-stage="3">Production</span>
+      <span class="stage-chip" data-stage="4">Mature</span>
+    </div>
+
+    <div class="pin-viz">
+      <div class="viz-wrap">
+        <svg class="atelier" id="atelier" viewBox="0 0 1300 800" preserveAspectRatio="xMidYMid meet" role="img" aria-label="L'atelier de la fabrique d'un agent, visité quatre fois">
+
+          <!-- ═══ BASE — toujours visible ═══ -->
+          <!-- Fond du mur : traits verticaux discrets -->
+          <g id="background-wall" opacity="1">
+            <line x1="80"  y1="120" x2="80"  y2="720" stroke="rgba(30,30,44,0.04)" stroke-width="1"/>
+            <line x1="180" y1="120" x2="180" y2="720" stroke="rgba(30,30,44,0.04)" stroke-width="1"/>
+            <line x1="280" y1="120" x2="280" y2="720" stroke="rgba(30,30,44,0.04)" stroke-width="1"/>
+            <line x1="380" y1="120" x2="380" y2="720" stroke="rgba(30,30,44,0.04)" stroke-width="1"/>
+            <line x1="480" y1="120" x2="480" y2="720" stroke="rgba(30,30,44,0.04)" stroke-width="1"/>
+            <line x1="580" y1="120" x2="580" y2="720" stroke="rgba(30,30,44,0.04)" stroke-width="1"/>
+            <line x1="680" y1="120" x2="680" y2="720" stroke="rgba(30,30,44,0.04)" stroke-width="1"/>
+            <line x1="780" y1="120" x2="780" y2="720" stroke="rgba(30,30,44,0.04)" stroke-width="1"/>
+            <line x1="880" y1="120" x2="880" y2="720" stroke="rgba(30,30,44,0.04)" stroke-width="1"/>
+            <line x1="980" y1="120" x2="980" y2="720" stroke="rgba(30,30,44,0.04)" stroke-width="1"/>
+            <line x1="1080" y1="120" x2="1080" y2="720" stroke="rgba(30,30,44,0.04)" stroke-width="1"/>
+            <line x1="1180" y1="120" x2="1180" y2="720" stroke="rgba(30,30,44,0.04)" stroke-width="1"/>
+          </g>
+          <!-- Sol -->
+          <line x1="40" y1="720" x2="1260" y2="720" stroke="#9a9ca5" stroke-width="0.6"/>
+
+          <!-- ═══ BANDEAU TITRE (mis à jour par scene) ═══ -->
+          <g id="scene-title-band">
+            <text x="60" y="36" class="scene-title" id="sceneTitleEl">STADE 01 &#183; PROTOTYPE</text>
+            <text x="60" y="68" class="scene-stage" id="sceneStageEl">L&#39;atelier</text>
+            <text x="60" y="92" class="scene-sub" id="sceneSubEl">&#171; &#231;a parle &#187;</text>
+            <line x1="60" y1="106" x2="1240" y2="106" stroke="rgba(30,30,44,0.08)" stroke-width="1"/>
+          </g>
+
+          <!-- ═══ TABLE — toujours visible (commune aux 4 scènes) ═══ -->
+          <g id="table">
+            <rect x="380" y="600" width="540" height="18" rx="2" fill="#9a9ca5" stroke="#6b6f7c" stroke-width="0.6"/>
+            <rect x="400" y="618" width="6" height="100" fill="#9a9ca5"/>
+            <rect x="894" y="618" width="6" height="100" fill="#9a9ca5"/>
+          </g>
+
+          <!-- ═══════════════════════════════════════════════════════════════
+               ZONE WALL / DASHBOARD — top center, x=440 → 940, y=140 → 290
+               ═══════════════════════════════════════════════════════════════ -->
+
+          <!-- WALL VIDE (scene 1 only) : étiquette "mur vide" -->
+          <g data-show-from="1" data-show-to="1" class="lift">
+            <rect x="460" y="160" width="380" height="110" rx="2" fill="none" stroke="rgba(30,30,44,0.10)" stroke-width="1" stroke-dasharray="4,4"/>
+            <text x="650" y="220" class="caption-italic" text-anchor="middle">mur vide &#183; pas de dashboard, pas de m&#233;trique</text>
+          </g>
+
+          <!-- DASHBOARD 3-PANEL (scene 2 only) -->
+          <g data-show-from="2" data-show-to="2" class="lift" id="dash-3">
+            <rect x="460" y="140" width="500" height="150" rx="4" fill="#fdfaf0" stroke="rgba(30,30,44,0.18)" stroke-width="1"/>
+            <text x="475" y="162" class="mono-label">DASHBOARD &#183; 3 PILIERS</text>
+            <!-- Cadran USAGE -->
+            <g transform="translate(478, 178)">
+              <rect width="148" height="98" rx="3" fill="#faf6ec" stroke="rgba(30,30,44,0.10)"/>
+              <text x="10" y="20" class="mono-label" font-size="9">USAGE</text>
+              <line x1="10" y1="30" x2="138" y2="30" stroke="rgba(30,30,44,0.10)"/>
+              <text x="10" y="56" class="numeric" font-size="22" fill="#b8582e">1 240</text>
+              <text x="10" y="74" class="annotation" font-size="9.5">tokens / req &#183; m&#233;diane</text>
+              <!-- mini sparkline -->
+              <polyline points="10,90 28,82 46,86 64,72 82,78 100,68 118,74 138,62" fill="none" stroke="#b8582e" stroke-width="1.2"/>
+            </g>
+            <!-- Cadran PERF -->
+            <g transform="translate(636, 178)">
+              <rect width="148" height="98" rx="3" fill="#faf6ec" stroke="rgba(30,30,44,0.10)"/>
+              <text x="10" y="20" class="mono-label" font-size="9">PERFORMANCE</text>
+              <line x1="10" y1="30" x2="138" y2="30" stroke="rgba(30,30,44,0.10)"/>
+              <text x="10" y="56" class="numeric" font-size="22" fill="#b8582e">4,8s</text>
+              <text x="10" y="74" class="annotation" font-size="9.5">latence p95</text>
+              <polyline points="10,90 28,84 46,80 64,86 82,72 100,76 118,70 138,68" fill="none" stroke="#b8582e" stroke-width="1.2"/>
+            </g>
+            <!-- Cadran COMPORTEMENT -->
+            <g transform="translate(794, 178)">
+              <rect width="148" height="98" rx="3" fill="#faf6ec" stroke="rgba(30,30,44,0.10)"/>
+              <text x="10" y="20" class="mono-label" font-size="9">COMPORTEMENT</text>
+              <line x1="10" y1="30" x2="138" y2="30" stroke="rgba(30,30,44,0.10)"/>
+              <text x="10" y="56" class="numeric" font-size="22" fill="#b8582e">83 %</text>
+              <text x="10" y="74" class="annotation" font-size="9.5">eval golden 50 cas</text>
+              <!-- horizontal bar -->
+              <rect x="10" y="84" width="128" height="6" rx="3" fill="rgba(30,30,44,0.10)"/>
+              <rect x="10" y="84" width="106" height="6" rx="3" fill="#b8582e"/>
+            </g>
+          </g>
+
+          <!-- DASHBOARD 6-PANEL (scene 3 only) -->
+          <g data-show-from="3" data-show-to="3" class="lift" id="dash-6">
+            <rect x="460" y="140" width="500" height="160" rx="4" fill="#fdfaf0" stroke="rgba(30,30,44,0.20)" stroke-width="1"/>
+            <text x="475" y="160" class="mono-label">DASHBOARD &#183; 6 PILIERS</text>
+            <text x="950" y="160" class="annotation" text-anchor="end" font-size="9.5" fill="#9a9ca5">N3 actif</text>
+            <!-- 3×2 grid of mini-cells -->
+            <g transform="translate(475, 168)">
+              <!-- Row 1 -->
+              <g>
+                <rect x="0"   y="0" width="155" height="58" rx="3" fill="#faf6ec" stroke="rgba(30,30,44,0.10)"/>
+                <text x="8"   y="14" class="mono-label" font-size="8.5">USAGE</text>
+                <text x="8"   y="34" class="numeric" font-size="15">1 240</text>
+                <text x="8"   y="48" class="annotation" font-size="8.5">tokens / req</text>
+                <rect x="160" y="0" width="155" height="58" rx="3" fill="#faf6ec" stroke="rgba(30,30,44,0.10)"/>
+                <text x="168" y="14" class="mono-label" font-size="8.5">PERFORMANCE</text>
+                <text x="168" y="34" class="numeric" font-size="15">4,8s</text>
+                <text x="168" y="48" class="annotation" font-size="8.5">p95</text>
+                <rect x="320" y="0" width="155" height="58" rx="3" fill="#faf6ec" stroke="rgba(30,30,44,0.10)"/>
+                <text x="328" y="14" class="mono-label" font-size="8.5">COMPORTEMENT</text>
+                <text x="328" y="34" class="numeric" font-size="15">83 %</text>
+                <text x="328" y="48" class="annotation" font-size="8.5">tools nominal</text>
+              </g>
+              <!-- Row 2 -->
+              <g transform="translate(0, 64)">
+                <rect x="0"   y="0" width="155" height="58" rx="3" fill="#faf6ec" stroke="rgba(30,30,44,0.10)"/>
+                <text x="8"   y="14" class="mono-label" font-size="8.5">QUALIT&#201;</text>
+                <text x="8"   y="34" class="numeric" font-size="15">94 %</text>
+                <text x="8"   y="48" class="annotation" font-size="8.5">LLM-as-judge</text>
+                <rect x="160" y="0" width="155" height="58" rx="3" fill="#faf6ec" stroke="rgba(30,30,44,0.10)"/>
+                <text x="168" y="14" class="mono-label" font-size="8.5">GOUVERNANCE</text>
+                <text x="168" y="34" class="numeric" font-size="15">12</text>
+                <text x="168" y="48" class="annotation" font-size="8.5">gates / 24h</text>
+                <rect x="320" y="0" width="155" height="58" rx="3" fill="#faf6ec" stroke="rgba(30,30,44,0.10)"/>
+                <text x="328" y="14" class="mono-label" font-size="8.5">DRIFT</text>
+                <text x="328" y="34" class="numeric" font-size="15">+ 3 %</text>
+                <text x="328" y="48" class="annotation" font-size="8.5">vs J&#8211;7</text>
+              </g>
+            </g>
+          </g>
+
+          <!-- ROI GRID 5×3 (scene 4 only) -->
+          <g data-show-from="4" data-show-to="4" class="lift" id="roi-grid">
+            <rect x="460" y="140" width="500" height="160" rx="4" fill="#fdfaf0" stroke="rgba(30,30,44,0.20)" stroke-width="1"/>
+            <text x="475" y="160" class="mono-label">ROI CARDS &#183; 5 AXES &#215; 3 TEMPORALIT&#201;S</text>
+            <!-- Headers temporalités -->
+            <g transform="translate(580, 170)">
+              <text x="50"  y="0" class="annotation" text-anchor="middle" font-size="8" font-weight="600">QUICK</text>
+              <text x="170" y="0" class="annotation" text-anchor="middle" font-size="8" font-weight="600">MEDIUM</text>
+              <text x="290" y="0" class="annotation" text-anchor="middle" font-size="8" font-weight="600">STRATEGIC</text>
+            </g>
+            <!-- 5 axes × 3 = 15 cells -->
+            <g transform="translate(475, 178)">
+              <!-- Axis labels -->
+              <text x="-2" y="20" class="mono-label" font-size="8">CO&#219;T</text>
+              <text x="-2" y="42" class="mono-label" font-size="8">BIEN-&#202;TRE</text>
+              <text x="-2" y="64" class="mono-label" font-size="8">VITESSE</text>
+              <text x="-2" y="86" class="mono-label" font-size="8">VOLUME</text>
+              <text x="-2" y="108" class="mono-label" font-size="8">QUALIT&#201;</text>
+              <!-- Cells: 15 dots arranged in 5 rows × 3 cols -->
+              <g>
+                <!-- Row Coût -->
+                <circle cx="100" cy="16" r="6" fill="#b8582e" opacity="0.95"/>
+                <circle cx="220" cy="16" r="6" fill="#b8582e" opacity="0.75"/>
+                <circle cx="340" cy="16" r="6" fill="#b8582e" opacity="0.5"/>
+                <!-- Row Bien-être -->
+                <circle cx="100" cy="38" r="6" fill="#b8582e" opacity="0.6"/>
+                <circle cx="220" cy="38" r="6" fill="#b8582e" opacity="0.85"/>
+                <circle cx="340" cy="38" r="6" fill="#b8582e" opacity="0.75"/>
+                <!-- Row Vitesse -->
+                <circle cx="100" cy="60" r="6" fill="#b8582e" opacity="0.9"/>
+                <circle cx="220" cy="60" r="6" fill="#b8582e" opacity="0.75"/>
+                <circle cx="340" cy="60" r="6" fill="#b8582e" opacity="0.55"/>
+                <!-- Row Volume -->
+                <circle cx="100" cy="82" r="6" fill="#b8582e" opacity="0.7"/>
+                <circle cx="220" cy="82" r="6" fill="#b8582e" opacity="0.9"/>
+                <circle cx="340" cy="82" r="6" fill="#b8582e" opacity="0.85"/>
+                <!-- Row Qualité -->
+                <circle cx="100" cy="104" r="6" fill="#b8582e" opacity="0.6"/>
+                <circle cx="220" cy="104" r="6" fill="#b8582e" opacity="0.75"/>
+                <circle cx="340" cy="104" r="6" fill="#b8582e" opacity="0.95"/>
+              </g>
+            </g>
+          </g>
+
+          <!-- ═══════════════════════════════════════════════════════════════
+               ZONE HUMANS — left, x=100 → 380, y=420 → 640
+               ═══════════════════════════════════════════════════════════════ -->
+
+          <!-- DEV (scenes 1, 2, 3) — penché vers le notebook -->
+          <g data-show-from="1" data-show-to="3" id="character-dev">
+            <circle cx="220" cy="445" r="20" fill="#9a9ca5" stroke="#6b6f7c" stroke-width="1"/>
+            <rect x="214" y="463" width="12" height="12" rx="1" fill="#9a9ca5"/>
+            <path d="M 198 475 L 242 475 L 236 555 L 204 555 Z" fill="#6b6f7c"/>
+            <line x1="242" y1="488" x2="260" y2="540" stroke="#6b6f7c" stroke-width="7" stroke-linecap="round"/>
+            <line x1="198" y1="488" x2="290" y2="568" stroke="#6b6f7c" stroke-width="7" stroke-linecap="round"/>
+            <circle cx="292" cy="570" r="5" fill="#9a9ca5"/>
+            <line x1="212" y1="555" x2="208" y2="618" stroke="#6b6f7c" stroke-width="8" stroke-linecap="round"/>
+            <line x1="228" y1="555" x2="230" y2="618" stroke="#6b6f7c" stroke-width="8" stroke-linecap="round"/>
+            <text x="220" y="640" class="caption-italic" text-anchor="middle">DEV</text>
+          </g>
+
+          <!-- PO (scenes 2, 3) — debout, à droite du DEV -->
+          <g data-show-from="2" data-show-to="3" id="character-po" class="lift">
+            <circle cx="324" cy="455" r="18" fill="#b8582e" stroke="#6b6f7c" stroke-width="1" opacity="0.85"/>
+            <rect x="319" y="471" width="10" height="10" rx="1" fill="#b8582e" opacity="0.85"/>
+            <path d="M 305 481 L 343 481 L 339 555 L 309 555 Z" fill="#6b6f7c"/>
+            <line x1="343" y1="492" x2="362" y2="528" stroke="#6b6f7c" stroke-width="6" stroke-linecap="round"/>
+            <line x1="305" y1="492" x2="288" y2="528" stroke="#6b6f7c" stroke-width="6" stroke-linecap="round"/>
+            <line x1="316" y1="555" x2="314" y2="618" stroke="#6b6f7c" stroke-width="7" stroke-linecap="round"/>
+            <line x1="332" y1="555" x2="334" y2="618" stroke="#6b6f7c" stroke-width="7" stroke-linecap="round"/>
+            <text x="324" y="640" class="caption-italic" text-anchor="middle">PO</text>
+          </g>
+
+          <!-- SRE (scene 3 only) — derrière à gauche -->
+          <g data-show-from="3" data-show-to="3" id="character-sre" class="lift">
+            <circle cx="120" cy="468" r="17" fill="#1f5560" stroke="#6b6f7c" stroke-width="1" opacity="0.85"/>
+            <rect x="115" y="483" width="10" height="10" rx="1" fill="#1f5560" opacity="0.85"/>
+            <path d="M 102 493 L 138 493 L 134 555 L 106 555 Z" fill="#6b6f7c"/>
+            <line x1="138" y1="503" x2="156" y2="540" stroke="#6b6f7c" stroke-width="6" stroke-linecap="round"/>
+            <line x1="102" y1="503" x2="86"  y2="540" stroke="#6b6f7c" stroke-width="6" stroke-linecap="round"/>
+            <line x1="113" y1="555" x2="111" y2="618" stroke="#6b6f7c" stroke-width="7" stroke-linecap="round"/>
+            <line x1="127" y1="555" x2="129" y2="618" stroke="#6b6f7c" stroke-width="7" stroke-linecap="round"/>
+            <text x="120" y="640" class="caption-italic" text-anchor="middle">SRE</text>
+          </g>
+
+          <!-- AUDIT (scene 3 only) — derrière à droite -->
+          <g data-show-from="3" data-show-to="3" id="character-audit" class="lift">
+            <circle cx="392" cy="468" r="17" fill="#c5a23a" stroke="#6b6f7c" stroke-width="1" opacity="0.85"/>
+            <rect x="387" y="483" width="10" height="10" rx="1" fill="#c5a23a" opacity="0.85"/>
+            <path d="M 374 493 L 410 493 L 406 555 L 378 555 Z" fill="#6b6f7c"/>
+            <line x1="410" y1="503" x2="426" y2="540" stroke="#6b6f7c" stroke-width="6" stroke-linecap="round"/>
+            <line x1="374" y1="503" x2="358" y2="540" stroke="#6b6f7c" stroke-width="6" stroke-linecap="round"/>
+            <line x1="385" y1="555" x2="383" y2="618" stroke="#6b6f7c" stroke-width="7" stroke-linecap="round"/>
+            <line x1="399" y1="555" x2="401" y2="618" stroke="#6b6f7c" stroke-width="7" stroke-linecap="round"/>
+            <text x="392" y="640" class="caption-italic" text-anchor="middle">AUDIT</text>
+          </g>
+
+          <!-- HUMAINS EN COULISSES (scene 4) — petites silhouettes faded derrière une cloison -->
+          <g data-show-from="4" data-show-to="4" id="humans-bg" class="lift" opacity="1">
+            <!-- Cloison verticale -->
+            <line x1="400" y1="430" x2="400" y2="700" stroke="rgba(30,30,44,0.18)" stroke-width="1" stroke-dasharray="6,5"/>
+            <text x="100" y="448" class="mono-label" font-size="9">EN COULISSES</text>
+            <!-- 4 mini silhouettes alignées, très réduites -->
+            <g opacity="0.45" transform="translate(80, 480)">
+              <!-- Silhouette 1 DEV -->
+              <g transform="translate(0, 0)">
+                <circle cx="14" cy="14" r="9" fill="#9a9ca5"/>
+                <path d="M 4 24 L 24 24 L 22 70 L 6 70 Z" fill="#6b6f7c"/>
+                <text x="14" y="90" class="caption-italic" text-anchor="middle" font-size="9.5">dev</text>
+              </g>
+              <!-- Silhouette 2 PO -->
+              <g transform="translate(60, 0)">
+                <circle cx="14" cy="14" r="9" fill="#b8582e"/>
+                <path d="M 4 24 L 24 24 L 22 70 L 6 70 Z" fill="#6b6f7c"/>
+                <text x="14" y="90" class="caption-italic" text-anchor="middle" font-size="9.5">PO</text>
+              </g>
+              <!-- Silhouette 3 SRE -->
+              <g transform="translate(120, 0)">
+                <circle cx="14" cy="14" r="9" fill="#1f5560"/>
+                <path d="M 4 24 L 24 24 L 22 70 L 6 70 Z" fill="#6b6f7c"/>
+                <text x="14" y="90" class="caption-italic" text-anchor="middle" font-size="9.5">SRE</text>
+              </g>
+              <!-- Silhouette 4 AUDIT -->
+              <g transform="translate(180, 0)">
+                <circle cx="14" cy="14" r="9" fill="#c5a23a"/>
+                <path d="M 4 24 L 24 24 L 22 70 L 6 70 Z" fill="#6b6f7c"/>
+                <text x="14" y="90" class="caption-italic" text-anchor="middle" font-size="9.5">audit</text>
+              </g>
+            </g>
+            <text x="178" y="610" class="annotation" text-anchor="middle" font-size="11" font-style="italic" fill="#6b6f7c">on n&#39;&#233;crit plus l&#39;agent,</text>
+            <text x="178" y="624" class="annotation" text-anchor="middle" font-size="11" font-style="italic" fill="#6b6f7c">on l&#39;&#233;l&#232;ve.</text>
+          </g>
+
+          <!-- ═══════════════════════════════════════════════════════════════
+               ZONE WORKBENCH — centre, table à x=380-920, y=540-700
+               ═══════════════════════════════════════════════════════════════ -->
+
+          <!-- NOTEBOOK (scenes 1, 2, 3) -->
+          <g data-show-from="1" data-show-to="3" id="notebook">
+            <rect x="470" y="548" width="84" height="52" rx="2" fill="#faf6ec" stroke="#6b6f7c" stroke-width="1"/>
+            <rect x="554" y="545" width="84" height="55" rx="2" fill="#1e1e2a" stroke="#6b6f7c" stroke-width="1"/>
+            <rect x="558" y="549" width="76" height="47" rx="1" fill="#1a2a3a"/>
+            <rect x="562" y="553" width="40" height="2.5" rx="1" fill="#b8582e" opacity="0.7"/>
+            <rect x="562" y="559" width="58" height="2.5" rx="1" fill="#9a9ca5" opacity="0.5"/>
+            <rect x="566" y="565" width="48" height="2.5" rx="1" fill="#9a9ca5" opacity="0.4"/>
+            <rect x="566" y="571" width="36" height="2.5" rx="1" fill="#9a9ca5" opacity="0.4"/>
+            <rect x="562" y="577" width="52" height="2.5" rx="1" fill="#9a9ca5" opacity="0.3"/>
+            <rect x="562" y="583" width="28" height="2.5" rx="1" fill="#9a9ca5" opacity="0.3"/>
+            <rect x="550" y="545" width="6" height="55" rx="1" fill="#6b6f7c"/>
+            <line x1="476" y1="562" x2="540" y2="562" stroke="rgba(30,30,44,0.18)" stroke-width="1"/>
+            <line x1="476" y1="570" x2="538" y2="570" stroke="rgba(30,30,44,0.14)" stroke-width="1"/>
+            <line x1="476" y1="578" x2="540" y2="578" stroke="rgba(30,30,44,0.12)" stroke-width="1"/>
+          </g>
+
+          <!-- POST-IT BACKLOG (scenes 1, 2) -->
+          <g data-show-from="1" data-show-to="2" id="postit-backlog" transform="rotate(-3, 750, 580)" class="lift">
+            <rect x="700" y="540" width="100" height="78" rx="2" fill="#fff3b0" stroke="rgba(30,30,44,0.12)" stroke-width="0.8"/>
+            <polygon points="800,540 800,556 786,540" fill="rgba(30,30,44,0.08)"/>
+            <text x="710" y="558" class="mono-label" font-size="9">BACKLOG</text>
+            <line x1="710" y1="568" x2="790" y2="568" stroke="rgba(30,30,44,0.22)" stroke-width="1.1"/>
+            <line x1="710" y1="578" x2="780" y2="578" stroke="rgba(30,30,44,0.2)" stroke-width="1.1"/>
+            <line x1="710" y1="588" x2="788" y2="588" stroke="rgba(30,30,44,0.2)" stroke-width="1.1"/>
+            <line x1="710" y1="598" x2="775" y2="598" stroke="rgba(30,30,44,0.15)" stroke-width="1.1"/>
+            <line x1="710" y1="608" x2="785" y2="608" stroke="rgba(30,30,44,0.15)" stroke-width="1.1"/>
+          </g>
+
+          <!-- GOLDEN DATASET CARDS (scenes 2, 3) — pile à droite sur la table -->
+          <g data-show-from="2" data-show-to="3" id="golden-cards" class="lift">
+            <!-- pile inclinée de cartes -->
+            <g transform="translate(820, 560)">
+              <rect x="0"  y="14" width="68" height="42" rx="2" fill="#fdfaf0" stroke="rgba(30,30,44,0.20)" stroke-width="0.8" transform="rotate(-2, 34, 35)"/>
+              <rect x="0"  y="8"  width="68" height="42" rx="2" fill="#fdfaf0" stroke="rgba(30,30,44,0.20)" stroke-width="0.8" transform="rotate(1, 34, 29)"/>
+              <rect x="0"  y="0"  width="68" height="42" rx="2" fill="#ffffff" stroke="rgba(30,30,44,0.25)" stroke-width="0.8"/>
+              <text x="34" y="14" class="mono-label" font-size="7.5" text-anchor="middle">GOLDEN</text>
+              <text x="34" y="24" class="mono-label" font-size="7.5" text-anchor="middle">DATASET</text>
+              <text x="34" y="36" class="numeric" font-size="13" text-anchor="middle" fill="#b8582e">50</text>
+            </g>
+            <text x="854" y="624" class="caption-italic" text-anchor="middle" font-size="10">cas tir&#233;s du manuel</text>
+          </g>
+
+          <!-- VAULT / COFFRE-FORT REGISTRIES (scene 3 only) — centre arrière -->
+          <g data-show-from="3" data-show-to="3" id="vault" class="lift">
+            <!-- Corps coffre-fort -->
+            <rect x="580" y="430" width="160" height="160" rx="6" fill="#3b3f4d" stroke="#1e1e2a" stroke-width="1.5"/>
+            <rect x="592" y="442" width="136" height="136" rx="3" fill="none" stroke="#9a9ca5" stroke-width="1"/>
+            <!-- Roue -->
+            <circle cx="660" cy="510" r="22" fill="#1e1e2a" stroke="#9a9ca5" stroke-width="1.2"/>
+            <circle cx="660" cy="510" r="6" fill="#9a9ca5"/>
+            <line x1="660" y1="488" x2="660" y2="494" stroke="#9a9ca5" stroke-width="2"/>
+            <line x1="660" y1="526" x2="660" y2="532" stroke="#9a9ca5" stroke-width="2"/>
+            <line x1="638" y1="510" x2="644" y2="510" stroke="#9a9ca5" stroke-width="2"/>
+            <line x1="676" y1="510" x2="682" y2="510" stroke="#9a9ca5" stroke-width="2"/>
+            <!-- Labels TOOLS + AGENT REGISTRY -->
+            <text x="660" y="556" class="mono-label" font-size="9" text-anchor="middle" fill="#faf6ec">TOOLS &#43; AGENT</text>
+            <text x="660" y="568" class="mono-label" font-size="9" text-anchor="middle" fill="#faf6ec">REGISTRY</text>
+            <!-- least agency caption -->
+            <text x="660" y="608" class="caption-italic" text-anchor="middle" fill="#6b6f7c">least agency &#183; OBO vs autonome</text>
+          </g>
+
+          <!-- CORDON ROUGE APPROVAL GATE (scene 3 only) -->
+          <g data-show-from="3" data-show-to="3" id="approval-gate" class="lift">
+            <!-- Poteaux -->
+            <line x1="540" y1="650" x2="540" y2="700" stroke="#1e1e2a" stroke-width="3" stroke-linecap="round"/>
+            <line x1="780" y1="650" x2="780" y2="700" stroke="#1e1e2a" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="540" cy="650" r="4" fill="#1e1e2a"/>
+            <circle cx="780" cy="650" r="4" fill="#1e1e2a"/>
+            <!-- Cordon en courbe -->
+            <path d="M 540 658 Q 660 685 780 658" fill="none" stroke="#b7332c" stroke-width="4" stroke-linecap="round"/>
+            <text x="660" y="710" class="mono-label" font-size="9" text-anchor="middle" fill="#b7332c">APPROVAL GATE</text>
+          </g>
+
+          <!-- MEMORY POOL (scene 4 only) — puits central, remplace le vault -->
+          <g data-show-from="4" data-show-to="4" id="memory-pool" class="lift">
+            <!-- Puits circulaire vu de 3/4 -->
+            <ellipse cx="650" cy="510" rx="120" ry="34" fill="none" stroke="#1e1e2a" stroke-width="1.5"/>
+            <ellipse cx="650" cy="510" rx="120" ry="34" fill="#1a2a3a" opacity="0.6"/>
+            <!-- Liquide ondulé -->
+            <path d="M 540 510 Q 580 504 620 510 T 700 510 Q 740 504 760 510" fill="none" stroke="#b8582e" stroke-width="1.2" opacity="0.7"/>
+            <path d="M 545 516 Q 585 510 625 516 T 705 516 Q 745 510 755 516" fill="none" stroke="#b8582e" stroke-width="0.8" opacity="0.5"/>
+            <!-- Margelle -->
+            <ellipse cx="650" cy="494" rx="120" ry="14" fill="none" stroke="#1e1e2a" stroke-width="1.5"/>
+            <!-- Profondeur -->
+            <line x1="530" y1="494" x2="530" y2="582" stroke="#1e1e2a" stroke-width="1.2"/>
+            <line x1="770" y1="494" x2="770" y2="582" stroke="#1e1e2a" stroke-width="1.2"/>
+            <ellipse cx="650" cy="582" rx="120" ry="14" fill="#0d1421" opacity="0.4"/>
+            <!-- Label -->
+            <text x="650" y="612" class="mono-label" font-size="10" text-anchor="middle">MEMORY POOL</text>
+            <text x="650" y="624" class="caption-italic" text-anchor="middle" font-size="10">CoALA 4 piliers &#183; cycle 6 op&#233;rations</text>
+          </g>
+
+          <!-- AGENTS 4 SILHOUETTES (scene 4 only) — autour du memory pool -->
+          <g data-show-from="4" data-show-to="4" id="agents-foreground" class="lift">
+            <!-- AGENT LEAD (gauche) -->
+            <g transform="translate(440, 450)">
+              <circle cx="0" cy="0" r="16" fill="#b8582e" stroke="#1e1e2a" stroke-width="1.5"/>
+              <text x="0" y="4" class="mono-label" font-size="9" text-anchor="middle" fill="#faf6ec">L</text>
+              <path d="M -14 16 L 14 16 L 12 70 L -12 70 Z" fill="#b8582e" opacity="0.85"/>
+              <text x="0" y="92" class="caption-italic" text-anchor="middle" font-size="10">LEAD</text>
+            </g>
+            <!-- WORKER A (droite-haut) -->
+            <g transform="translate(870, 450)">
+              <circle cx="0" cy="0" r="16" fill="#1f5560" stroke="#1e1e2a" stroke-width="1.5"/>
+              <text x="0" y="4" class="mono-label" font-size="9" text-anchor="middle" fill="#faf6ec">W</text>
+              <path d="M -14 16 L 14 16 L 12 70 L -12 70 Z" fill="#1f5560" opacity="0.85"/>
+              <text x="0" y="92" class="caption-italic" text-anchor="middle" font-size="10">WORKER A</text>
+            </g>
+            <!-- WORKER B (droite-bas) -->
+            <g transform="translate(870, 588)">
+              <circle cx="0" cy="0" r="14" fill="#c5a23a" stroke="#1e1e2a" stroke-width="1.5"/>
+              <text x="0" y="4" class="mono-label" font-size="9" text-anchor="middle" fill="#faf6ec">W</text>
+              <path d="M -12 14 L 12 14 L 10 60 L -10 60 Z" fill="#c5a23a" opacity="0.85"/>
+              <text x="0" y="80" class="caption-italic" text-anchor="middle" font-size="10">WORKER B</text>
+            </g>
+            <!-- REVIEWER (centre-bas) -->
+            <g transform="translate(440, 588)">
+              <circle cx="0" cy="0" r="14" fill="#b7332c" stroke="#1e1e2a" stroke-width="1.5"/>
+              <text x="0" y="4" class="mono-label" font-size="9" text-anchor="middle" fill="#faf6ec">R</text>
+              <path d="M -12 14 L 12 14 L 10 60 L -10 60 Z" fill="#b7332c" opacity="0.85"/>
+              <text x="0" y="80" class="caption-italic" text-anchor="middle" font-size="10">REVIEWER</text>
+            </g>
+            <!-- Lignes A2A entre agents -->
+            <line x1="458" y1="455" x2="850" y2="455" stroke="#1e1e2a" stroke-width="1" stroke-dasharray="3,3" opacity="0.4"/>
+            <line x1="458" y1="585" x2="850" y2="585" stroke="#1e1e2a" stroke-width="1" stroke-dasharray="3,3" opacity="0.4"/>
+          </g>
+
+          <!-- ═══════════════════════════════════════════════════════════════
+               ZONE TOP RIGHT ARTIFACTS — x=960 → 1240
+               ═══════════════════════════════════════════════════════════════ -->
+
+          <!-- PROMPT BUBBLE PALIMPSESTE (scenes 1, 2) -->
+          <g data-show-from="1" data-show-to="2" id="prompt-bubble" class="lift">
+            <rect x="970" y="160" width="270" height="160" rx="6" fill="#faf6ec" stroke="#1e1e2a" stroke-width="1"/>
+            <text x="985" y="182" class="mono-label" font-size="9">SYSTEM PROMPT &#183; V0</text>
+            <line x1="985" y1="190" x2="1225" y2="190" stroke="rgba(30,30,44,0.10)" stroke-width="0.8"/>
+            <!-- Lignes palimpseste -->
+            <text x="985" y="208" font-family="Fraunces, serif" font-style="italic" font-size="11" fill="#1e1e2a">&#171; Tu es un agent qui aide</text>
+            <text x="985" y="222" font-family="Fraunces, serif" font-style="italic" font-size="11" fill="#1e1e2a">l&#39;utilisateur &#224; accomplir...</text>
+            <text x="985" y="240" font-family="Fraunces, serif" font-style="italic" font-size="11" fill="#1e1e2a">Outils&#160;: search, code_exec,</text>
+            <text x="985" y="254" font-family="Fraunces, serif" font-style="italic" font-size="11" fill="#1e1e2a">file_read, file_write...</text>
+            <text x="985" y="272" font-family="Fraunces, serif" font-style="italic" font-size="11" fill="#1e1e2a">Ne dis jamais &#171; impossible &#187;,</text>
+            <text x="985" y="286" font-family="Fraunces, serif" font-style="italic" font-size="11" fill="#1e1e2a">r&#233;essaie au moins 3 fois,</text>
+            <text x="985" y="300" font-family="Fraunces, serif" font-style="italic" font-size="11" fill="#9a9ca5">si tu &#233;choues relance avec... &#8594;</text>
+            <!-- Indicator overflow -->
+            <polygon points="1230,310 1240,310 1235,318" fill="#9a9ca5" opacity="0.6"/>
+          </g>
+
+          <!-- OTEL PIPE (scenes 2, 3) — tuyau du plafond vers la table -->
+          <g data-show-from="2" data-show-to="3" id="otel-pipe" class="lift">
+            <!-- Coude au plafond -->
+            <path d="M 940 120 L 940 340 L 990 340 L 990 540" fill="none" stroke="#6b6f7c" stroke-width="3" stroke-linecap="round"/>
+            <!-- Joints -->
+            <circle cx="940" cy="120" r="4" fill="#6b6f7c"/>
+            <circle cx="940" cy="340" r="4" fill="#6b6f7c"/>
+            <circle cx="990" cy="340" r="4" fill="#6b6f7c"/>
+            <circle cx="990" cy="540" r="4" fill="#6b6f7c"/>
+            <!-- Étiquette mono -->
+            <text x="952" y="240" font-family="JetBrains Mono, monospace" font-size="9" font-weight="600" letter-spacing="0.14em" fill="#b8582e">OTel</text>
+            <text x="952" y="254" font-family="JetBrains Mono, monospace" font-size="9" font-weight="600" letter-spacing="0.14em" fill="#b8582e">GenAI</text>
+            <!-- Petits "spans" qui descendent (dots animation-like, statique) -->
+            <circle cx="940" cy="170" r="2.5" fill="#b8582e" opacity="0.8"/>
+            <circle cx="940" cy="200" r="2.5" fill="#b8582e" opacity="0.6"/>
+            <circle cx="940" cy="290" r="2.5" fill="#b8582e" opacity="0.4"/>
+            <circle cx="990" cy="400" r="2.5" fill="#b8582e" opacity="0.6"/>
+            <circle cx="990" cy="470" r="2.5" fill="#b8582e" opacity="0.8"/>
+          </g>
+
+          <!-- MICROPHONE FEEDBACK (scenes 2, 3) -->
+          <g data-show-from="2" data-show-to="3" id="microphone" class="lift">
+            <!-- Capsule -->
+            <ellipse cx="1080" cy="380" rx="22" ry="32" fill="#3b3f4d" stroke="#1e1e2a" stroke-width="1.2"/>
+            <!-- Grille -->
+            <line x1="1062" y1="364" x2="1098" y2="364" stroke="#9a9ca5" stroke-width="0.6"/>
+            <line x1="1060" y1="372" x2="1100" y2="372" stroke="#9a9ca5" stroke-width="0.6"/>
+            <line x1="1060" y1="380" x2="1100" y2="380" stroke="#9a9ca5" stroke-width="0.6"/>
+            <line x1="1060" y1="388" x2="1100" y2="388" stroke="#9a9ca5" stroke-width="0.6"/>
+            <line x1="1062" y1="396" x2="1098" y2="396" stroke="#9a9ca5" stroke-width="0.6"/>
+            <!-- Pied -->
+            <line x1="1080" y1="412" x2="1080" y2="464" stroke="#1e1e2a" stroke-width="3"/>
+            <line x1="1064" y1="464" x2="1096" y2="464" stroke="#1e1e2a" stroke-width="3"/>
+            <!-- Label -->
+            <text x="1080" y="492" class="mono-label" font-size="9" text-anchor="middle">FEEDBACK</text>
+            <text x="1080" y="506" class="caption-italic" text-anchor="middle" font-size="10">thumbs &#43; raison</text>
+          </g>
+
+          <!-- SLA CLOCK (scene 3 only) -->
+          <g data-show-from="3" data-show-to="3" id="sla-clock" class="lift">
+            <circle cx="1120" cy="200" r="42" fill="#fdfaf0" stroke="#1e1e2a" stroke-width="1.5"/>
+            <!-- Graduations -->
+            <line x1="1120" y1="164" x2="1120" y2="172" stroke="#1e1e2a" stroke-width="1.5"/>
+            <line x1="1156" y1="200" x2="1148" y2="200" stroke="#1e1e2a" stroke-width="1.5"/>
+            <line x1="1120" y1="236" x2="1120" y2="228" stroke="#1e1e2a" stroke-width="1.5"/>
+            <line x1="1084" y1="200" x2="1092" y2="200" stroke="#1e1e2a" stroke-width="1.5"/>
+            <!-- Aiguilles -->
+            <line x1="1120" y1="200" x2="1120" y2="174" stroke="#1e1e2a" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="1120" y1="200" x2="1142" y2="210" stroke="#b8582e" stroke-width="1.8" stroke-linecap="round"/>
+            <circle cx="1120" cy="200" r="3" fill="#1e1e2a"/>
+            <text x="1120" y="262" class="mono-label" font-size="9" text-anchor="middle">SLA</text>
+            <text x="1120" y="274" class="numeric" font-size="11" text-anchor="middle">99,5 %</text>
+          </g>
+
+          <!-- FINOPS PUMP (scene 3 only) — au sol à droite -->
+          <g data-show-from="3" data-show-to="3" id="finops-pump" class="lift">
+            <!-- Corps de la pompe (cylindre vertical) -->
+            <rect x="1140" y="500" width="56" height="200" rx="3" fill="#3b3f4d" stroke="#1e1e2a" stroke-width="1.2"/>
+            <!-- Écran -->
+            <rect x="1150" y="515" width="36" height="36" rx="2" fill="#1a2a3a"/>
+            <text x="1168" y="530" class="numeric" font-size="9" text-anchor="middle" fill="#b8582e">0,12&#8202;&#8364;</text>
+            <text x="1168" y="544" class="annotation" font-size="7.5" text-anchor="middle" fill="#9a9ca5">/req</text>
+            <!-- Tuyau -->
+            <path d="M 1144 575 Q 1130 580 1118 600" fill="none" stroke="#6b6f7c" stroke-width="3" stroke-linecap="round"/>
+            <!-- Label -->
+            <text x="1168" y="690" class="mono-label" font-size="9" text-anchor="middle" fill="#faf6ec">FINOPS</text>
+            <text x="1168" y="710" class="caption-italic" text-anchor="middle" font-size="10">budget &#183; routing</text>
+          </g>
+
+          <!-- CONVEYOR ÉVAL (scene 4 only) — au sol, traverse de gauche à droite -->
+          <g data-show-from="4" data-show-to="4" id="eval-conveyor" class="lift">
+            <!-- Bande -->
+            <rect x="940" y="660" width="280" height="20" rx="2" fill="#3b3f4d" stroke="#1e1e2a" stroke-width="1"/>
+            <!-- Rouleaux gauche/droite -->
+            <circle cx="940" cy="670" r="12" fill="#1e1e2a" stroke="#9a9ca5" stroke-width="1"/>
+            <circle cx="1220" cy="670" r="12" fill="#1e1e2a" stroke="#9a9ca5" stroke-width="1"/>
+            <!-- "Cases" évaluation qui défilent -->
+            <rect x="960" y="664" width="40" height="12" rx="1.5" fill="#b8582e" opacity="0.85"/>
+            <rect x="1010" y="664" width="40" height="12" rx="1.5" fill="#1f5560" opacity="0.7"/>
+            <rect x="1060" y="664" width="40" height="12" rx="1.5" fill="#c5a23a" opacity="0.85"/>
+            <rect x="1110" y="664" width="40" height="12" rx="1.5" fill="#b7332c" opacity="0.75"/>
+            <rect x="1160" y="664" width="40" height="12" rx="1.5" fill="#b8582e" opacity="0.6"/>
+            <!-- Flèche -->
+            <path d="M 940 700 L 1220 700" fill="none" stroke="#1e1e2a" stroke-width="0.8" stroke-dasharray="4,3"/>
+            <polygon points="1220,696 1228,700 1220,704" fill="#1e1e2a"/>
+            <!-- Label -->
+            <text x="1080" y="650" class="mono-label" font-size="9" text-anchor="middle">&#201;VAL CONTINUE</text>
+            <text x="1080" y="715" class="caption-italic" text-anchor="middle" font-size="10">gruy&#232;re 5 couches &#43; adverse</text>
+          </g>
+
+          <!-- ═══════════════════════════════════════════════════════════════
+               ZONE THREATS — un seul artefact-menace par scène (bas droite ou autre)
+               ═══════════════════════════════════════════════════════════════ -->
+
+          <!-- THREAT BOUCLE INFINIE (scene 1 only) -->
+          <g data-show-from="1" data-show-to="1" id="threat-loop" class="lift">
+            <circle cx="1140" cy="600" r="62" fill="rgba(183,51,44,0.06)" stroke="#b7332c" stroke-width="1.5" stroke-dasharray="6,4"/>
+            <path d="M 1140 544 A 56 56 0 1 1 1092 620" fill="none" stroke="#b7332c" stroke-width="2" stroke-linecap="round"/>
+            <polygon points="1088,618 1082,630 1095,628" fill="#b7332c"/>
+            <text x="1140" y="592" class="numeric" font-size="18" text-anchor="middle" fill="#b7332c" font-weight="600">4&#8202;$/min</text>
+            <text x="1140" y="610" class="threat-text" text-anchor="middle">BOUCLE</text>
+            <text x="1140" y="684" class="caption-italic" text-anchor="middle" font-size="10">&#171; il marche sur mon laptop &#187;</text>
+          </g>
+
+          <!-- THREAT ALERTS OVERLOAD (scene 2 only) — cluster de notifs -->
+          <g data-show-from="2" data-show-to="2" id="threat-alerts" class="lift">
+            <!-- Halo -->
+            <circle cx="1140" cy="600" r="62" fill="rgba(183,51,44,0.04)" stroke="#b7332c" stroke-width="1.2" stroke-dasharray="6,4"/>
+            <!-- Notifications empilées -->
+            <g transform="translate(1100, 560)">
+              <rect x="0"  y="0"  width="80" height="16" rx="2" fill="#b7332c" opacity="0.8"/>
+              <rect x="4"  y="20" width="74" height="14" rx="2" fill="#b7332c" opacity="0.6"/>
+              <rect x="0"  y="38" width="80" height="16" rx="2" fill="#b7332c" opacity="0.7"/>
+              <rect x="4"  y="58" width="74" height="14" rx="2" fill="#b7332c" opacity="0.5"/>
+              <text x="6" y="11" class="mono-label" font-size="7.5" fill="#faf6ec" letter-spacing="0.1em">P95 &#62; 5s</text>
+              <text x="10" y="30" class="mono-label" font-size="7" fill="#faf6ec" letter-spacing="0.1em">TOK USAGE</text>
+              <text x="6" y="49" class="mono-label" font-size="7.5" fill="#faf6ec" letter-spacing="0.1em">TOOL UNK</text>
+              <text x="10" y="68" class="mono-label" font-size="7" fill="#faf6ec" letter-spacing="0.1em">FAIL RATE</text>
+            </g>
+            <text x="1140" y="690" class="caption-italic" text-anchor="middle" font-size="10">200&#8202;notifs/j &#183; personne ne lit</text>
+          </g>
+
+          <!-- THREAT RUNBOOK IGNORED (scene 3 only) — placé entre dashboard et SLA clock, hors zone FinOps -->
+          <g data-show-from="3" data-show-to="3" id="threat-runbook" class="lift">
+            <!-- Cahier fermé poussiéreux -->
+            <rect x="990"  y="340" width="60" height="80" rx="2" fill="#fdfaf0" stroke="#1e1e2a" stroke-width="1.2"/>
+            <rect x="988"  y="340" width="6"  height="80" fill="#b7332c"/>
+            <line x1="998" y1="353" x2="1042" y2="353" stroke="rgba(30,30,44,0.20)" stroke-width="0.8"/>
+            <line x1="998" y1="363" x2="1038" y2="363" stroke="rgba(30,30,44,0.15)" stroke-width="0.8"/>
+            <line x1="998" y1="373" x2="1042" y2="373" stroke="rgba(30,30,44,0.15)" stroke-width="0.8"/>
+            <line x1="998" y1="383" x2="1035" y2="383" stroke="rgba(30,30,44,0.10)" stroke-width="0.8"/>
+            <line x1="998" y1="393" x2="1042" y2="393" stroke="rgba(30,30,44,0.10)" stroke-width="0.8"/>
+            <!-- Poussière -->
+            <circle cx="990"  cy="336" r="1.5" fill="#9a9ca5" opacity="0.5"/>
+            <circle cx="1010" cy="334" r="1" fill="#9a9ca5" opacity="0.4"/>
+            <circle cx="1028" cy="333" r="1.2" fill="#9a9ca5" opacity="0.5"/>
+            <circle cx="1048" cy="336" r="1" fill="#9a9ca5" opacity="0.4"/>
+            <!-- Croix lecture (à droite du cahier) -->
+            <line x1="1050" y1="363" x2="1068" y2="381" stroke="#b7332c" stroke-width="2" stroke-linecap="round"/>
+            <line x1="1068" y1="363" x2="1050" y2="381" stroke="#b7332c" stroke-width="2" stroke-linecap="round"/>
+            <text x="1020" y="440" class="mono-label" font-size="9" text-anchor="middle" fill="#b7332c">RUNBOOK</text>
+            <text x="1020" y="454" class="caption-italic" text-anchor="middle" font-size="10">&#224; jour &#183; jamais lu</text>
+          </g>
+
+          <!-- THREAT MEMORY POISONING (scene 4 only) -->
+          <g data-show-from="4" data-show-to="4" id="threat-poison" class="lift">
+            <!-- Goutte rouge qui plonge dans le pool -->
+            <path d="M 530 405 Q 538 420 530 432 Q 522 420 530 405 Z" fill="#b7332c" opacity="0.85"/>
+            <!-- Onde de propagation -->
+            <ellipse cx="530" cy="494" rx="22" ry="6" fill="none" stroke="#b7332c" stroke-width="1.2" stroke-dasharray="3,3"/>
+            <ellipse cx="530" cy="494" rx="40" ry="11" fill="none" stroke="#b7332c" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.55"/>
+            <!-- Label -->
+            <text x="450" y="385" class="threat-text" font-size="9.5">MEMORY POISONING</text>
+            <text x="450" y="398" class="caption-italic" font-size="9.5" fill="#b7332c">MITRE ATLAS AML.T0080</text>
+          </g>
+
+          <!-- Caption bas de page (statique) -->
+          <text x="650" y="780" class="caption-italic" text-anchor="middle" font-size="11">D&#233;filez pour traverser les quatre stades &#183; les &#233;l&#233;ments fade-in / fade-out au scroll</text>
+
+        </svg>
+      </div>
+    </div>
+
+    <!-- BEATS - Narrative cards -->
+    <div class="beats-layer" id="beatsLayer">
+
+      <article class="beat" data-scene="1" id="beat-1">
+        <div class="beat-kicker">Stade 01 &middot; Prototype</div>
+        <h2 class="beat-title">L'atelier tient sur un bureau.</h2>
+        <p class="beat-body">Un dev, un notebook, un prompt qui grossit semaine après semaine. Le post-it backlog suffit. Les logs sont des <code>print()</code>. <strong>L'enjeu n'est pas la robustesse — c'est la démonstration.</strong></p>
+        <div class="beat-callouts">
+          <div class="callout antipattern">
+            <span class="emoji">⚠</span>
+            <div><strong>« Il marche sur mon laptop »</strong> — sans <code>max_turns</code>, l'agent tourne à 4&nbsp;$/min toute la nuit. La facture cachée du Prototype.</div>
+          </div>
+          <div class="callout for-pm">
+            <span class="emoji">🎯</span>
+            <div><strong>PM / PO</strong> — Démarrez avec 20-50 tâches du tracker, pas 500. Le réflexe « il faut tout couvrir » est l'ennemi du démarrage.</div>
+          </div>
+          <div class="callout for-builder">
+            <span class="emoji">🔧</span>
+            <div><strong>Builder</strong> — Trois lignes : <code>max_turns=20</code>, <code>cycle_detection=on</code>, <code>max_tokens_per_turn=4000</code>. Le scaffolding qui empêche la facture.</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="beat" data-scene="2" id="beat-2">
+        <div class="beat-kicker">Stade 02 &middot; Pilote</div>
+        <h2 class="beat-title">Un PO arrive, un dashboard s'allume.</h2>
+        <p class="beat-body">Premier utilisateur réel, premier dashboard, premières traces OTel. Le golden dataset se formalise. <strong>On découvre ce qu'on ne mesurait pas</strong> — et 70&nbsp;% des pilotes meurent ici.</p>
+        <div class="beat-callouts">
+          <div class="callout antipattern">
+            <span class="emoji">⚠</span>
+            <div><strong>« On alerte sur tout »</strong> — 200&nbsp;notifs/j dans Slack, l'oncall acquitte sans lire, le vrai incident passe inaperçu pendant 36h.</div>
+          </div>
+          <div class="callout for-pm">
+            <span class="emoji">🎯</span>
+            <div><strong>PM / PO</strong> — Capability evals partent bas (&lt;50&nbsp;%) et progressent. Quand une capability sature, <em>graduate</em>-la en régression à 90&nbsp;%&times;30 itérations.</div>
+          </div>
+          <div class="callout for-decideur">
+            <span class="emoji">🧭</span>
+            <div><strong>Décideur</strong> — Budget éval continue&nbsp;: <strong>10 à 15&nbsp;%</strong> du budget agent annuel. Sous ce seuil, vous déployez sans savoir si l'agent régresse. Non négociable.</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="beat" data-scene="3" id="beat-3">
+        <div class="beat-kicker">Stade 03 &middot; Production</div>
+        <h2 class="beat-title">Quatre personnes tiennent l'arbitrage.</h2>
+        <p class="beat-body">DEV, PO, SRE, Audit. Six piliers d'observabilité allumés. Registry des outils + des agents au coffre-fort. Cordon rouge pour l'<em>approval gate</em>. Horloge SLA au plafond, pompe FinOps au sol. <strong>L'arbitrage coût&times;latence&times;qualité se tient à la main, pas dans un fichier de config.</strong></p>
+        <div class="beat-callouts">
+          <div class="callout antipattern">
+            <span class="emoji">⚠</span>
+            <div><strong>« Le runbook est à jour, personne ne l'a lu »</strong> — l'oncall improvise à 23h40, aggrave l'incident pendant 40 min. La pratique fait la différence, pas le document.</div>
+          </div>
+          <div class="callout for-decideur">
+            <span class="emoji">🧭</span>
+            <div><strong>Décideur</strong> — OBO ≈ 17&nbsp;% du projet en gouvernance · Régime autonome ≈ 30-40&nbsp;%. Si la valeur métier &lt; 2&times; le coût autonome, restez OBO.</div>
+          </div>
+          <div class="callout for-pm">
+            <span class="emoji">🎯</span>
+            <div><strong>PM / PO</strong> — Un agent à 75&nbsp;% de succès n'a que 42&nbsp;% de chances de réussir 3 interactions consécutives. <strong>pass^k</strong>, pas la moyenne.</div>
+          </div>
+          <div class="callout for-builder">
+            <span class="emoji">🔧</span>
+            <div><strong>Builder</strong> — Dégradation propre&nbsp;: cache hit fallback, modèle low-cost à 80&nbsp;% du budget, mode read-only, refus poli. Testez-les en drill avant l'incident.</div>
+          </div>
+        </div>
+      </article>
+
+      <article class="beat" data-scene="4" id="beat-4">
+        <div class="beat-kicker">Stade 04 &middot; Mature multi-agents</div>
+        <h2 class="beat-title">Les humains passent en coulisses.</h2>
+        <p class="beat-body">Quatre agents coopèrent en avant-scène autour d'un <em>memory pool</em> partagé. Les humains conçoivent les conditions d'apprentissage, auditent la mémoire, arbitrent les mises à jour. <strong>On n'écrit plus l'agent, on l'élève.</strong></p>
+        <div class="beat-callouts">
+          <div class="callout antipattern">
+            <span class="emoji">⚠</span>
+            <div><strong>« Les agents écrivent leur mémoire mais ne la lisent jamais »</strong> — le pool se remplit, indexe, archive&nbsp;; rien ne remonte côté décision. La mémoire devient un coffre, pas un cycle.</div>
+          </div>
+          <div class="callout for-pm">
+            <span class="emoji">🎯</span>
+            <div><strong>PM / PO</strong> — Le temps gagné non réalloué = <em>soft saving</em> qui ne tient pas un audit Cigref. Documentez la ligne&nbsp;: « 4h/sem économisées · usage = formation + discovery + coaching ».</div>
+          </div>
+          <div class="callout for-builder">
+            <span class="emoji">🔧</span>
+            <div><strong>Builder</strong> — MCP = side-channel ressources externes · A2A = négociation directe via Agent Card · <em>file-based handoff</em> via <code>state/</code> = audit natif des échanges inter-agents.</div>
+          </div>
+          <div class="callout for-decideur">
+            <span class="emoji">🧭</span>
+            <div><strong>Décideur</strong> — Self-host vs managed&nbsp;: si l'agent porte &gt; 50&nbsp;% de votre marge produit, self-host (ops complexes mais souveraineté). En-dessous, managed.</div>
+          </div>
+        </div>
+      </article>
+
+    </div>
+
+    <!-- Progress bar -->
+    <div class="prog-line" id="progLine" aria-label="Progression scrolly">
+      <div class="prog-seg current" data-scene="1"></div>
+      <div class="prog-seg" data-scene="2"></div>
+      <div class="prog-seg" data-scene="3"></div>
+      <div class="prog-seg" data-scene="4"></div>
+    </div>
+  </div>
+</div>
+
+<section class="outro">
+  <div class="outro-head">
+    <div class="eyebrow">Récap &middot; dix artefacts &times; quatre stades</div>
+    <h2>La <em>matrice</em> qui se lit comme une partition.</h2>
+    <p>Chaque artefact traverse les quatre stades. Sa forme change — le post-it devient roadmap, le <code>print()</code> devient cognitive audit trail, le scratchpad devient memory pool. La fabrique d'une équipe se lit dans cette colonne&nbsp;: jusqu'où sont allés les dix artefacts.</p>
+  </div>
+
+  <div class="recap">
+    <table>
+      <thead>
+        <tr>
+          <th class="artefact-col">Artefact</th>
+          <th class="stage-col">1 &middot; Prototype</th>
+          <th class="stage-col">2 &middot; Pilote</th>
+          <th class="stage-col">3 &middot; Production</th>
+          <th class="stage-col s4">4 &middot; Mature</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="artefact"><span class="num">01</span>Backlog produit</td>
+          <td>Post-it / doc partagé</td>
+          <td>Priorisé &middot; DoD v0</td>
+          <td>Epics &middot; roadmap &middot; CLEAR</td>
+          <td class="s4">Multi-agent &middot; capacity planning</td>
+        </tr>
+        <tr>
+          <td class="artefact"><span class="num">02</span>Prompt &amp; spec</td>
+          <td>Griffonné, non versionné</td>
+          <td>Versionné git &middot; régression</td>
+          <td>Agent Card &middot; review obligatoire</td>
+          <td class="s4">A/B continu &middot; unlearning RGPD</td>
+        </tr>
+        <tr>
+          <td class="artefact"><span class="num">03</span>Tools registry</td>
+          <td>Tools en dur</td>
+          <td>Liste centralisée informelle</td>
+          <td>Registry formel &middot; least agency</td>
+          <td class="s4">Multi-agent &middot; révocation rapide</td>
+        </tr>
+        <tr>
+          <td class="artefact"><span class="num">04</span>Agent registry</td>
+          <td>Non applicable (1 agent)</td>
+          <td>Doc CMDB</td>
+          <td>Entra Agent ID &middot; ownership clair</td>
+          <td class="s4">Protocoles A2A &middot; lifecycle</td>
+        </tr>
+        <tr>
+          <td class="artefact"><span class="num">05</span>Contexte &amp; mémoire</td>
+          <td>Scratchpad seul (CoALA #1)</td>
+          <td>+ sémantique + épisodique</td>
+          <td>3 piliers &middot; cycle partiel</td>
+          <td class="s4">4 piliers &middot; memory pool partagé</td>
+        </tr>
+        <tr>
+          <td class="artefact"><span class="num">06</span>Observabilité</td>
+          <td>Logs <code>print</code></td>
+          <td>OTel GenAI &middot; 3 piliers</td>
+          <td>6 piliers &middot; L0-L4 &middot; audit trail</td>
+          <td class="s4">Cross-agent traces &middot; drift collectif</td>
+        </tr>
+        <tr>
+          <td class="artefact"><span class="num">07</span>Golden dataset &amp; éval</td>
+          <td>20-50 tasks manuelles</td>
+          <td>TestCase &middot; LLM-as-judge</td>
+          <td>Gruyère 5 couches &middot; pass^k</td>
+          <td class="s4">Adversarial &middot; τ²-bench</td>
+        </tr>
+        <tr>
+          <td class="artefact"><span class="num">08</span>HITL &amp; charte risques</td>
+          <td>Aucune charte</td>
+          <td>Politique ad hoc</td>
+          <td>3 lignes de défense &middot; OBO</td>
+          <td class="s4">Charte multi-agent &middot; kill switch</td>
+        </tr>
+        <tr>
+          <td class="artefact"><span class="num">09</span>FinOps &amp; routing</td>
+          <td>Coûts subis</td>
+          <td>Premier monitoring</td>
+          <td>Budget par agent/flow/tenant</td>
+          <td class="s4">Pool FinOps &middot; TCO arbitrage</td>
+        </tr>
+        <tr>
+          <td class="artefact"><span class="num">10</span>ROI cards &amp; rituels</td>
+          <td>« ça marche, non ? »</td>
+          <td>Premières métriques</td>
+          <td>5 axes &middot; 2 méthodes</td>
+          <td class="s4">15 cards &middot; 8 méthodes &middot; réallocation</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="outro-cta">
+    <div class="outro-cta-text">
+      <div class="outro-cta-eyebrow">Pour creuser</div>
+      <h3 class="outro-cta-title">Le <em>rapport intégral</em> et l'<em>app illustrée</em>.</h3>
+      <p class="outro-cta-sub">Le scrolly est une porte d'entrée. Le rapport markdown (≈ 10 000 mots) déploie les dix artefacts un par un, avec leur antipattern, leur signal de bascule, leurs sources. L'app illustrée donne la même matière en long format navigable.</p>
+    </div>
+    <div class="outro-cta-buttons">
+      <a class="cta-btn primary" href="20260515-fabrique-agent-app.html">Lire l'app illustrée &rarr;</a>
+      <a class="cta-btn" href="index.html">Retour au hub</a>
+    </div>
+  </div>
+
+  <div class="colophon">
+    <span>Mathieu Guglielmino &middot; 15 mai 2026</span>
+    <span>Publié à titre personnel</span>
+    <span>Format co-écrit avec l'aide d'une IA</span>
+    <span>Practice Manager Lincoln</span>
+  </div>
+</section>
+
+<script>
+(function() {
+  'use strict';
+
+  // ════════ DOM ════════
+  var SCROLLY = document.getElementById('scrolly');
+  var ATELIER = document.getElementById('atelier');
+  var HUD = document.getElementById('hud');
+  var HUD_NUM = document.getElementById('hudNum');
+  var HUD_NAME = document.getElementById('hudName');
+  var SCENE_TITLE = document.getElementById('sceneTitleEl');
+  var SCENE_STAGE = document.getElementById('sceneStageEl');
+  var SCENE_SUB = document.getElementById('sceneSubEl');
+  var BEATS = document.querySelectorAll('.beat');
+  var PROG_SEGS = document.querySelectorAll('.prog-seg');
+  var STAGE_CHIPS = document.querySelectorAll('.stages-legend .stage-chip');
+
+  // ════════ SCENE DATA ════════
+  var SCENES = [
+    { num: '01', name: 'Prototype', marker: 'STADE 01 · PROTOTYPE',  stage: 'L’atelier',         sub: '« ça parle »' },
+    { num: '02', name: 'Pilote',    marker: 'STADE 02 · PILOTE',     stage: 'L’atelier instrumenté', sub: '« ça mesure »' },
+    { num: '03', name: 'Production',marker: 'STADE 03 · PRODUCTION', stage: 'L’atelier qui tient',         sub: '« ça tient »' },
+    { num: '04', name: 'Mature',    marker: 'STADE 04 · MATURE',     stage: 'L’atelier qui apprend',       sub: '« ça apprend »' }
+  ];
+
+  // Pre-collect all SVG elements with data-show-from
+  var ATELIER_ELEMENTS = ATELIER.querySelectorAll('[data-show-from]');
+
+  // ════════ SCENE SWITCHING ════════
+  var currentScene = 0;
+  function setScene(n) {
+    if (n === currentScene) return;
+    currentScene = n;
+    // Update SVG element visibility (cumulative show with bounds)
+    for (var i = 0; i < ATELIER_ELEMENTS.length; i++) {
+      var el = ATELIER_ELEMENTS[i];
+      var from = parseInt(el.getAttribute('data-show-from'), 10);
+      var toAttr = el.getAttribute('data-show-to');
+      var to = toAttr ? parseInt(toAttr, 10) : 4;
+      var visible = n >= from && n <= to;
+      if (visible) {
+        el.classList.add('on');
+      } else {
+        el.classList.remove('on');
+      }
+    }
+    // Update SVG scene attribute
+    ATELIER.setAttribute('data-scene', n);
+    // Update HUD
+    var s = SCENES[n - 1];
+    HUD.setAttribute('data-scene', n);
+    HUD_NUM.textContent = s.num;
+    HUD_NAME.textContent = s.name;
+    SCENE_TITLE.textContent = s.marker;
+    SCENE_STAGE.textContent = s.stage;
+    SCENE_SUB.textContent = s.sub;
+    // Update beats
+    for (var b = 0; b < BEATS.length; b++) {
+      if (b === n - 1) BEATS[b].classList.add('active');
+      else BEATS[b].classList.remove('active');
+    }
+    // Update progress
+    for (var p = 0; p < PROG_SEGS.length; p++) {
+      PROG_SEGS[p].classList.remove('current', 'visited');
+      if (p === n - 1) PROG_SEGS[p].classList.add('current');
+      else if (p < n - 1) PROG_SEGS[p].classList.add('visited');
+    }
+    // Update stage chips legend
+    for (var c = 0; c < STAGE_CHIPS.length; c++) {
+      if (c === n - 1) STAGE_CHIPS[c].classList.add('active');
+      else STAGE_CHIPS[c].classList.remove('active');
+    }
+  }
+
+  // ════════ SCROLL HANDLER ════════
+  // Scrolly height = 1 vh "intro buffer" + 4 × 0.85 vh per scene (more = slower transitions)
+  var SCENE_VH = 0.85;
+  function setScrollyHeight() {
+    var vh = window.innerHeight;
+    SCROLLY.style.height = (vh + SCENES.length * SCENE_VH * vh) + 'px';
+  }
+
+  var ticking = false;
+  function update() {
+    ticking = false;
+    var rect = SCROLLY.getBoundingClientRect();
+    var vh = window.innerHeight;
+    var total = SCROLLY.offsetHeight - vh;
+    if (total <= 0) return;
+    var p = Math.max(0, Math.min(1, Math.max(0, -rect.top) / total));
+    // Each scene occupies 1/4 of the scroll range
+    var n = Math.floor(p * SCENES.length) + 1;
+    if (n > SCENES.length) n = SCENES.length;
+    if (n < 1) n = 1;
+    setScene(n);
+  }
+
+  function onScroll() {
+    if (!ticking) {
+      window.requestAnimationFrame(update);
+      ticking = true;
+    }
+  }
+
+  // ════════ STAGE CHIP CLICKS — jump to scene ════════
+  function scrollToScene(targetN) {
+    var vh = window.innerHeight;
+    var total = SCROLLY.offsetHeight - vh;
+    // Position in the middle of the target scene's range
+    var p = (targetN - 0.5) / SCENES.length;
+    var y = SCROLLY.offsetTop + p * total;
+    window.scrollTo({ top: y, behavior: 'smooth' });
+  }
+  for (var i = 0; i < STAGE_CHIPS.length; i++) {
+    (function(idx) {
+      STAGE_CHIPS[idx].style.cursor = 'pointer';
+      STAGE_CHIPS[idx].setAttribute('role', 'button');
+      STAGE_CHIPS[idx].setAttribute('tabindex', '0');
+      STAGE_CHIPS[idx].setAttribute('aria-label', 'Aller au stade ' + (idx + 1));
+      STAGE_CHIPS[idx].addEventListener('click', function() { scrollToScene(idx + 1); });
+      STAGE_CHIPS[idx].addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); scrollToScene(idx + 1); }
+      });
+    })(i);
+  }
+  for (var j = 0; j < PROG_SEGS.length; j++) {
+    (function(idx) {
+      PROG_SEGS[idx].style.cursor = 'pointer';
+      PROG_SEGS[idx].setAttribute('role', 'button');
+      PROG_SEGS[idx].setAttribute('aria-label', 'Aller au stade ' + (idx + 1));
+      PROG_SEGS[idx].addEventListener('click', function() { scrollToScene(idx + 1); });
+    })(j);
+  }
+
+  // ════════ PARCOURS SELECTOR ════════
+  (function() {
+    var STORAGE_KEY = 'fabrique-agent-scrolly-parcours';
+    var buttons = document.querySelectorAll('.parcours-btn');
+    var resetBtn = document.querySelector('.parcours-reset');
+
+    function apply(p) {
+      if (p) {
+        document.body.setAttribute('data-parcours', p);
+        resetBtn.hidden = false;
+      } else {
+        document.body.removeAttribute('data-parcours');
+        resetBtn.hidden = true;
+      }
+      for (var i = 0; i < buttons.length; i++) {
+        var match = buttons[i].dataset.parcours === p;
+        if (match) buttons[i].classList.add('active');
+        else buttons[i].classList.remove('active');
+        buttons[i].setAttribute('aria-pressed', String(match));
+      }
+      try {
+        if (p) localStorage.setItem(STORAGE_KEY, p);
+        else localStorage.removeItem(STORAGE_KEY);
+      } catch (e) { /* localStorage unavailable */ }
+    }
+
+    for (var i = 0; i < buttons.length; i++) {
+      (function(btn) {
+        btn.addEventListener('click', function() {
+          var p = btn.dataset.parcours;
+          var current = document.body.getAttribute('data-parcours');
+          apply(current === p ? null : p);
+        });
+      })(buttons[i]);
+    }
+    resetBtn.addEventListener('click', function() { apply(null); });
+
+    var saved = null;
+    try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) {}
+    if (saved) apply(saved);
+  })();
+
+  // ════════ TOPBAR SCROLL ════════
+  (function() {
+    var bar = document.getElementById('topbar');
+    window.addEventListener('scroll', function() {
+      bar.classList.toggle('scrolled', window.scrollY > 24);
+    }, { passive: true });
+  })();
+
+  // ════════ INIT ════════
+  setScrollyHeight();
+  setScene(1);
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', function() { setScrollyHeight(); update(); });
+})();
+</script>
+
+</body>
+</html>
