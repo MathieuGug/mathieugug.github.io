@@ -152,7 +152,7 @@ La mesure correcte est une **survie de cohorte** : on suit les cas d'usage ouver
 
 Ces quatre décisions ne réparent pas un portefeuille. Elles permettent de savoir dans quel état il est, ce qui est le préalable de toute réparation. Une organisation qui les applique produira un taux moins flatteur que les taux publiés la première année, par le simple effet d'un dénominateur complet. Ce renversement est le signe que la mesure fonctionne.
 
-[SCHEMA-06]
+![La fiche de convention : trois conventions à écrire, quatre décisions qui en découlent, un propriétaire par ligne|width=1200](images/20261016-06-fiche-convention.svg)
 
 ## Note de méthode
 
