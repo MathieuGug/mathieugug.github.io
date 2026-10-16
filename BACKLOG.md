@@ -4,6 +4,7 @@ _Mis à jour par la routine `Illustrated deep research · mer + ven`. Ligne édi
 > **Recadrage du 2026-07-31.** La série avait dérivé vers l'intérieur des modèles (KV-cache, attention latente et parcimonieuse, mélange d'experts, quantification, désagrégation prefill/decode, silicium). Le mécanisme est identifié : chaque dossier laissait des « suites naturelles » plus profondes que lui, et la routine les traitait comme une file à vider — la série descendait d'un cran à chaque publication. Ce backlog est désormais organisé par **piste éditoriale**, et le filon technique est **gelé** (section dédiée en bas). Un sujet ne s'ouvre que s'il passe le **test d'altitude** en trois questions de `CLAUDE.md` : décision · objet · explicabilité.
 
 ## En cours (réservé — ne pas doubler)
+- [ ] **mortalite-pilotes** — « 95 % de quoi ». Les taux d'échec des pilotes IA lus par leur convention de comptage : unité comptée, seuil de passage, date de recensement. Piste B. Réservé le 2026-10-16, branche `claude/research-mortalite-pilotes-2026-10-16`.
 - [x] **memoire-conversationnelle** — « Ce que l'agent a le droit de retenir ». Design patterns de la mémoire d'un agent conversationnel : niveaux d'engagement, autorité par origine, portée et promotion, mécanismes d'oubli, surface de contrôle scrutable. Piste C (débord A). Réservé le 2026-08-19, branche `claude/agent-memory-management-e4wv5k`.
 
 ---
