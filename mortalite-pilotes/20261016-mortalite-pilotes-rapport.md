@@ -138,7 +138,7 @@ La mesure correcte est une **survie de cohorte** : on suit les cas d'usage ouver
 
 ==Le passage du taux de stock à la survie de cohorte est le seul changement de ce dossier qui coûte du travail plutôt que de l'attention : il demande une date d'ouverture par ligne, et rien d'autre.==
 
-[SCHEMA-05]
+![Stock contre cohorte : les mêmes quarante cas d'usage comptés en ratio de stock puis en survie de cohorte|width=1200](images/20261016-05-stock-contre-cohorte.svg)
 
 ## Quatre décisions et ce qu'elles coûtent
 
