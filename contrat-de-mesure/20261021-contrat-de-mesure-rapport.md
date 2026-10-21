@@ -144,7 +144,7 @@ Le Schéma 6 résume l'ordre dans lequel ces étages se déclenchent et le déla
 
 Voici la sortie opérationnelle, rangée par moment de la vie du contrat. Chaque clause est donnée avec son coût de négociation apparent et ce qu'elle produit en preuve.
 
-[SCHEMA-07]
+![Six clauses rangées par moment de négociation, avec coût apparent et valeur probatoire|1200](images/20261021-07-six-clauses.svg)
 
 *Schéma 7 — Six clauses rangées par moment de négociation, avec leur coût apparent pour le fournisseur et leur valeur probatoire pour l'annonceur. La clause pivot est la deuxième.*
 
