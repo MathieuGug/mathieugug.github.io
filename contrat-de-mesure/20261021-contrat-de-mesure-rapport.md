@@ -56,7 +56,7 @@ Le Schéma 2 range ces trois murs dans l'ordre où ils bloquent. Ensemble, ils d
 
 Avant de rédiger une clause, il vaut la peine de regarder ce que les plateformes publient déjà sans qu'on le leur demande. La surface est plus large qu'on ne le croit, et elle est sous-exploitée.
 
-[SCHEMA-03]
+![La surface de restitution rangée en trois zones : publié par défaut, négociable, jamais communiqué|1200](images/20261021-03-surface-restitution.svg)
 
 *Schéma 3 — La surface de restitution rangée en trois zones : ce qui est publié par défaut, ce qui s'obtient sur demande, ce qui ne s'obtient pas. L'écart exploitable est dans la zone du milieu.*
 
