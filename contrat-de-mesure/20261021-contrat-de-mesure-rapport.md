@@ -124,7 +124,7 @@ Un mot sur la dépendance d'outillage, pour la borner. Le fait qu'un outil de mo
 
 Le quatrième paramètre de la clause est celui qui décide si les trois autres existent. Quatre étages de recours sont disponibles, et leur efficacité réelle est l'inverse de leur réputation.
 
-[SCHEMA-06]
+![Les quatre étages de recours, avec leur délai réaliste et leur effet|1200](images/20261021-06-recours-etages.svg)
 
 *Schéma 6 — Les quatre étages de recours, avec le délai réaliste de chacun et ce qu'il produit effectivement. Le dernier étage est le seul qui fonctionne sans l'accord du fournisseur.*
 
