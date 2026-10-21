@@ -36,7 +36,7 @@ Une dernière observation sur l'état de l'application. En quatre ans de vie du 
 
 L'exigence qui vient naturellement, dans une note de cadrage, s'écrit à peu près ainsi : « le prestataire communique la méthodologie de modélisation de ses indicateurs de conversion et en permet l'audit par un tiers mandaté ». Elle est refusée partout, et il serait confortable de n'y voir qu'un rapport de force. Trois obstacles indépendants la rendent inatteignable même d'un fournisseur coopératif.
 
-[SCHEMA-02]
+![Les trois obstacles structurels à l'audit de la méthode de mesure d'une plateforme|1200](images/20261021-02-trois-murs-audit.svg)
 
 *Schéma 2 — Les trois obstacles à l'audit de la méthode, chacun avec le chiffre qui le matérialise. Aucun ne se résout par la négociation commerciale.*
 
