@@ -18,7 +18,7 @@ Le règlement européen sur les marchés numériques contient la disposition la 
 
 Lu froidement, ce texte dit tout ce qu'un responsable de la mesure voudrait entendre. Lu comme un praticien lit un contrat, il manque l'essentiel : il ne dit pas sous quelle forme, dans quel délai, à quel niveau de détail, ni qui arbitre en cas de désaccord.
 
-[SCHEMA-01]
+![Trois régimes d'accès créés par le droit européen, comparés sur quatre questions|1200](images/20261021-01-trois-regimes-acces.svg)
 
 *Schéma 1 — Trois régimes d'accès créés par le droit européen en moins de quatre ans, lus sur les mêmes quatre questions : qui demande, qui vérifie, ce qui est produit, sous quel délai.*
 
