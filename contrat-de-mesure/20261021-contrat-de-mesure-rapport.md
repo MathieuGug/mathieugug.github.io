@@ -72,7 +72,7 @@ Reste la troisième zone du Schéma 3, celle de ce qui ne s'obtient pas. Les poi
 
 Voici la proposition de fond du dossier. Une clause de mesure utile tient en quatre paramètres, et chacun se vérifie sans accéder à la méthode.
 
-[SCHEMA-04]
+![Anatomie de la clause de restitution : quatre paramètres, leur formulation, leur vérification|1200](images/20261021-04-anatomie-clause.svg)
 
 *Schéma 4 — Anatomie de la clause de restitution : quatre paramètres, leur formulation contractuelle, leur mode de vérification, et ce que leur absence coûte.*
 
