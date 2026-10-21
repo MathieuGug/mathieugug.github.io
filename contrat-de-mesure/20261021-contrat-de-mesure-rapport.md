@@ -90,7 +90,7 @@ Une remarque sur l'économie de la négociation. Ces quatre paramètres se deman
 
 Le troisième paramètre contient une décision que beaucoup d'organisations prennent par défaut, en acceptant le niveau que le fournisseur propose. Elle mérite d'être prise explicitement, parce qu'elle détermine la liste des questions que l'entreprise pourra trancher pendant toute la durée du contrat.
 
-[SCHEMA-05]
+![L'échelle de granularité de la restitution et ce que chaque niveau permet de trancher|1200](images/20261021-05-echelle-granularite.svg)
 
 *Schéma 5 — L'échelle de granularité : quatre barreaux, et pour chacun la question qu'on peut trancher, le coût de mise en œuvre, et le plancher de confidentialité qui s'y applique.*
 
