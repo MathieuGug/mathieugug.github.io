@@ -111,7 +111,7 @@ Il est **vérifiable**. Un test de placebo qui remonte un effet là où il ne de
 
 Il est **coûteux à la main, et de ce fait toujours abandonné**. Chaque test demande une reconstruction du jeu de données, un passage de la chaîne, un dépouillement. Multiplié par six tests et par le nombre de canaux, le volume de travail dépasse ce qu'une équipe de mesure peut absorber dans un cycle budgétaire.
 
-[SCHEMA-05]
+![Le poste de travail de la réfutation : six tests de robustesse, ce que chacun attrape et que l'estimation seule laisse passer, son coût de production à la main et son caractère délégable à un agent.|1200](images/20261023-05-poste-refutation.svg)
 
 Les outils de place suivent déjà ce mouvement, ce qui donne un point d'ancrage concret. La documentation de Meridian, le modèle de mix publié par Google, décrit un rapport de santé du modèle qui attribue à chaque canal un score composite de besoin de calibration et propose à la calibration les canaux dont le score tombe sous 67,5, en pointant les signes d'incertitude élevée, de biais possible ou de ligne de base invraisemblable. La documentation rappelle que les priors de retour sur investissement livrés par défaut sont modérément informatifs et que leur calibration par des tests géographiques est l'une des manières les plus efficaces d'améliorer les estimations[^11]. Ce que décrit cette page est un travail de diagnostic routinier, codifié, répétable. C'est le genre de travail dont un agent peut prendre la charge complète, canal par canal, à une cadence qu'aucune équipe ne tient.
 
