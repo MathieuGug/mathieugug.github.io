@@ -16,7 +16,7 @@ L'argument empirique le plus net sur le premier point vient de 663 expériences 
 
 Le dossier tire de ce constat une conséquence qui va à l'encontre du placement observé sur le marché. Il existe dans la chaîne de mesure une famille de tâches à la fois mécanique, énumérable, chronophage et systématiquement abandonnée faute de temps : la **réfutation**. Tester un placebo, poser un contrôle négatif, rejouer la mesure sur une période antérieure au traitement, faire varier les priors, simuler un facteur de confusion non observé. La bibliothèque DoWhy range l'analyse causale en quatre temps (modéliser, identifier, estimer, réfuter), et le quatrième distingue l'outillage sérieux du reste[^3]. C'est aussi le seul des quatre dont un agent peut faire le tour sans produire d'erreur silencieuse : un test de réfutation qui échoue est un fait, pas une interprétation.
 
-[SCHEMA-01]
+![La chaîne de mesure rangée par détectabilité de l'erreur : six maillons croisés avec l'appétence de délégation déclarée, la détectabilité d'une erreur par contrôle automatique et la réversibilité de cette erreur.|1200](images/20261023-01-chaine-detectabilite.svg)
 
 Quatre décisions en découlent, détaillées en dernière section :
 
