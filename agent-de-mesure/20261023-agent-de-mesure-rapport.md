@@ -153,7 +153,7 @@ Les quatre arbitrages ci-dessous se prennent au niveau d'une direction data ou m
 
 **Décision 4 · Nommer le signataire de la spécification, et le distinguer du responsable du résultat.** Le dispositif tient par cette séparation. La personne qui signe l'hypothèse d'identification engage sa compétence méthodologique ; celle qui porte le résultat engage une décision budgétaire. Quand les deux rôles sont tenus par la même personne, la revue préalable devient une formalité, et le fait qu'un agent rédige la spécification achève de vider la signature de contenu.
 
-[SCHEMA-07]
+![Quatre paliers d'autonomie croisés avec les six maillons de la chaîne de mesure : le palier plafond défendable au 23 octobre 2026 et, pour chaque maillon, la condition vérifiable qui permettrait d'en monter un.|1200](images/20261023-07-paliers-autonomie.svg)
 
 Reste une question que ce dossier laisse ouverte, parce qu'aucune source disponible ne permet de la trancher. Les bancs d'essai publics savent noter ce qui est vérifiable. Personne ne sait aujourd'hui noter la qualité d'un choix d'identification sur des données d'entreprise, faute de vérité de terrain. Tant que cette lacune persiste, l'affirmation « notre agent fait de la mesure causale aussi bien qu'un analyste senior » reste non falsifiable, et doit être traitée comme telle dans une avant-vente.
 
