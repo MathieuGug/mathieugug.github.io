@@ -129,7 +129,7 @@ Elle rend la mesure rejouable. La condition pour qu'un tiers (un auditeur, un no
 
 Elle transforme le gain de débit en actif. Les quatre-vingt-une spécifications explorées, journalisées, constituent une connaissance réutilisable sur la sensibilité de la mesure aux choix de méthode. Non journalisées, elles ne sont qu'une occasion de biais.
 
-[SCHEMA-06]
+![Le circuit de signature d'une mesure déléguée : trois artefacts, qui les écrit, qui les signe et qui peut les rejouer, avec la signature de la spécification comme point de non-délégation.|1200](images/20261023-06-circuit-signature.svg)
 
 Trois artefacts suffisent, et ils ont chacun un propriétaire distinct.
 
