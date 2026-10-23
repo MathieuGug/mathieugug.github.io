@@ -49,7 +49,7 @@ Dans une tâche d'estimation causale, il y a deux branches, et une seule est obs
 
 La conséquence pratique est qu'une erreur d'identification est **silencieuse par construction**. Elle ne produit ni exception, ni avertissement, ni dégradation d'un indicateur de qualité. Elle produit un rapport de bonne tenue.
 
-[SCHEMA-02]
+![Deux chaînes comparées : en prédiction la vérité de terrain finit par être observée et la boucle de validation attrape l'erreur ; en mesure d'incrémentalité le contre-factuel n'est jamais observé et l'erreur d'identification reste silencieuse.|1200](images/20261023-02-deux-chaines.svg)
 
 Les deux travaux de Gordon et de ses coauteurs donnent la mesure de cette marge d'erreur silencieuse, et ils la donnent dans les conditions les plus favorables qu'une entreprise puisse espérer.
 
