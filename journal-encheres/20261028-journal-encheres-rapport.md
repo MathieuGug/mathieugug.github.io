@@ -148,7 +148,7 @@ Il faut enfin dire le coût, parce qu'une clause obtenue sans budget d'ingestion
 
 ## Six décisions, classées par fenêtre
 
-[SCHEMA-07]
+![Six décisions classées par fenêtre : trois avant signature, deux en exploitation, une en continu.|width=1200](images/20261028-07-six-decisions.svg)
 
 **Avant signature.** Trois décisions qui ne se rattrapent pas ensuite, ou seulement au prix d'une renégociation.
 
