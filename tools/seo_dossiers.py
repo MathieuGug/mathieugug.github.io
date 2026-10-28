@@ -181,8 +181,14 @@ def detect_accent_word(title: str) -> str | None:
         ("gouverner", "gouverner"),        # Gouverner l'agent
     ]
     low = title.lower()
+
+    def whole_word(needle: str, haystack: str) -> bool:
+        # Frontières de mot obligatoires : sans elles, la clé « roi » matchait
+        # « droit » et l'accent tombait au milieu du mot sur la carte og.
+        return re.search(r"(?<!\w)" + re.escape(needle) + r"(?!\w)", haystack) is not None
+
     for key, word in overrides:
-        if key in low and word.lower() in low:
+        if whole_word(key, low) and whole_word(word.lower(), low):
             return word
     # fallback: last word, stripped of trailing punctuation
     parts = re.split(r"[\s,]+", title.strip())

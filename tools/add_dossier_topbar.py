@@ -24,6 +24,7 @@ APPS = [
     "mcp-plateforme/20260508-mcp-plateforme-app.html",
     "measure-roi/20260507-roi-ia-generative-agentique-app.html",
     "memoire-agentique/20260430-memoire-agentique-app.html",
+    "memoire-conversationnelle/20260819-memoire-conversationnelle-app.html",
     "modeles-raisonnement/20260506-modeles-raisonnement-app.html",
     "narrative-experiences/20260505-narrative-experiences-app.html",
     "observabilite-agents-ia/20260430-observabilite-agents-ia-app.html",
