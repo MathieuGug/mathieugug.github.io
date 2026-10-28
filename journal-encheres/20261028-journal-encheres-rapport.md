@@ -56,7 +56,7 @@ Cette construction appelle une réserve que le décideur doit porter avec le chi
 
 Le chiffre le plus utile de ce dossier n'est pas une proportion de dépense. C'est un taux d'appariement, et il vient de deux audits successifs de la chaîne britannique conduits par le même cabinet pour la même organisation d'annonceurs.
 
-[SCHEMA-03]
+![Les deux audits de la chaîne britannique comparés sur quatre indicateurs : appariement 12 % puis 58 %, dépense non attribuable 15 % puis 3 %, part reçue par le média 51 % puis 65 %.|width=1200](images/20261028-03-experience-naturelle.svg)
 
 Le premier audit a collecté les données du 1er janvier au 20 mars 2020, auprès de 15 annonceurs, 12 agences, 5 plateformes d'achat, 6 places de marché et 12 éditeurs[^5]. Sur 267 millions d'impressions identifiées, 31 millions ont pu être appariées de bout en bout, soit 12 %. La part de dépense que le cabinet n'a pas pu rattacher à un bénéficiaire identifié s'élevait à 15 %, et 51 % de la dépense atteignait le propriétaire du média. Le cabinet a énuméré les explications possibles du résidu non attribuable : limites des jeux de données, frais d'intermédiaires non visibles, écrêtage d'enchère après coup, effets de change[^5]. Il a surtout posé le diagnostic qui commande la suite : le problème principal n'était pas le résidu, mais l'accès et la qualité des données.
 
