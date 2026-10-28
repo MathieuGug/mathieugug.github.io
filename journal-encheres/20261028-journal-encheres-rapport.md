@@ -24,7 +24,7 @@ Pour une direction data, la conséquence est un déplacement d'arbitrage. La que
 
 Trois niveaux de restitution coexistent dans les contrats d'achat média. Ils se ressemblent assez pour être confondus dans une réunion, et ils n'autorisent pas les mêmes constats.
 
-![Trois niveaux de restitution d'un achat média : agrégat de facturation, rapport de placement, journal d'impressions, et la case que le droit laisse vide.|width=1200](images/20261028-02-trois-restitutions.svg)
+![Trois niveaux de restitution d'un achat média : agrégat de facturation, rapport de placement, journal d'impressions, et la case que le droit laisse vide.|width=1200](images/20261028-01-trois-restitutions.svg)
 
 **Niveau 1, l'agrégat de facturation.** Un montant, une période, un volume d'impressions, parfois un prix unitaire moyen. C'est le minimum qu'un vendeur d'espace doit produire, et c'est ce que le droit français exige depuis 2018 dans son socle de base : dates et emplacements de diffusion, prix global de la campagne, prix unitaire de l'espace facturé[^7]. Ce niveau permet de payer et de comparer deux périodes. Il ne permet aucun constat sur la nature de ce qui a été acheté.
 
@@ -42,7 +42,7 @@ L'audit de référence a été publié en décembre 2023 par l'association amér
 
 Le dispositif a porté sur 123 millions de dollars de dépense programmatique de 21 annonceurs, représentant 35,5 milliards d'impressions, complétés par une trentaine d'entretiens avec des intermédiaires de la chaîne. L'appariement des impressions entre les journaux des différents acteurs a été réalisé de façon déterministe par un dispositif tiers[^1]. Il s'agit donc d'une analyse de journaux, non d'une enquête déclarative.
 
-![Cascade du budget programmatique : sur 100 unités engagées, 29 partent en coûts de transaction, une dizaine vers l'inventaire fabriqué pour la publicité, 25 vers des impressions non visibles ou non mesurables, et 36 atteignent une impression utile.|width=1200](images/20261028-01-ou-va-l-euro.svg)
+![Cascade du budget programmatique : sur 100 unités engagées, 29 partent en coûts de transaction, une dizaine vers l'inventaire fabriqué pour la publicité, 25 vers des impressions non visibles ou non mesurables, et 36 atteignent une impression utile.|width=1200](images/20261028-02-ou-va-l-euro.svg)
 
 Le résultat se lit comme une cascade. Sur 100 unités de dépense, 29 sont absorbées par les coûts de transaction de la chaîne et 71 atteignent l'éditeur[^1]. Sur ces 71, une dizaine de points partent vers des sites fabriqués pour recevoir de la publicité, dont le modèle consiste à produire de l'inventaire plutôt que de l'audience. Le reste des pertes se répartit entre impressions non visibles, non mesurables et non conformes aux critères de sécurité de marque. Au bout de la cascade, 36 unités sur 100 atteignent une impression que l'annonceur aurait acceptée s'il l'avait vue d'avance[^1].
 
