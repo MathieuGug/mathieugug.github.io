@@ -24,7 +24,7 @@ Pour une direction data, la conséquence est un déplacement d'arbitrage. La que
 
 Trois niveaux de restitution coexistent dans les contrats d'achat média. Ils se ressemblent assez pour être confondus dans une réunion, et ils n'autorisent pas les mêmes constats.
 
-[SCHEMA-02]
+![Trois niveaux de restitution d'un achat média : agrégat de facturation, rapport de placement, journal d'impressions, et la case que le droit laisse vide.|width=1200](images/20261028-02-trois-restitutions.svg)
 
 **Niveau 1, l'agrégat de facturation.** Un montant, une période, un volume d'impressions, parfois un prix unitaire moyen. C'est le minimum qu'un vendeur d'espace doit produire, et c'est ce que le droit français exige depuis 2018 dans son socle de base : dates et emplacements de diffusion, prix global de la campagne, prix unitaire de l'espace facturé[^7]. Ce niveau permet de payer et de comparer deux périodes. Il ne permet aucun constat sur la nature de ce qui a été acheté.
 
