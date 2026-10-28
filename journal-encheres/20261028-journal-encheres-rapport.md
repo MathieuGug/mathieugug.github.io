@@ -114,7 +114,7 @@ De là se déduit un ordre d'exécution, qui est l'apport principal de ce dossie
 
 Quatre textes ou décisions encadrent déjà, chacun par un bout, la question de l'accès aux données d'un achat média. Aucun ne la règle, et la case qu'ils laissent tous vide est la même.
 
-[SCHEMA-06]
+![Quatre textes et décisions entre 2017 et 2026, ce que chacun donne et ce qu'il ne donne pas, et la case qu'ils laissent tous vide.|width=1200](images/20261028-06-ce-que-le-droit-produit.svg)
 
 **Le droit français au compte rendu.** Le décret du 9 février 2017 relatif aux prestations de publicité digitale, entré en vigueur le 1er janvier 2018, applique au numérique le régime de transparence issu de la loi du 29 janvier 1993, tel que modifié en 2015[^7]. Il impose au vendeur d'espace un compte rendu à l'annonceur, et il prévoit deux niveaux : un socle commun portant sur les dates et emplacements de diffusion, le prix global de la campagne et le prix unitaire de l'espace facturé, et un niveau renforcé pour les campagnes achetées en programmatique, qui étend l'information à l'univers des sites de diffusion et aux indicateurs d'interaction. Deux limites sont structurelles. Le texte exclut de son champ les vendeurs d'espace établis dans un autre État membre, ce qui laisse hors de portée une partie significative de la chaîne. Et il organise un compte rendu dont il fixe le contenu : un agrégat enrichi, sans droit à la ligne par impression, sans format imposé, sans délai réellement opposable.
 
