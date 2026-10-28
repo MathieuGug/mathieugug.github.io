@@ -76,7 +76,7 @@ La troisième est que cette seconde réserve ne diminue pas la thèse, elle la p
 
 Le fait le plus parlant du premier audit américain n'est pas dans ses résultats. Il est dans son taux de recrutement.
 
-[SCHEMA-04]
+![Le trou d'accès : 67 entreprises volontaires pour 21 participants en 2023, 21 journaux complets sur 39 annonceurs en 2025, et un accès au contrat de plateforme médiatisé par l'agence dans 48 % des cas.|width=1200](images/20261028-04-trou-acces.svg)
 
 Soixante-sept entreprises membres avaient accepté de participer. Quarante-six n'ont pas pu aller au bout, soit parce qu'elles se sont heurtées à des obstacles juridiques, soit parce qu'elles n'ont pas pu obtenir leurs données de journal auprès de leurs plateformes d'achat, des places de marché ou de leurs prestataires de vérification[^2]. Vingt et une ont participé. Et parmi celles qui ont participé, un peu plus de la moitié seulement, 52 %, disposait d'un accès direct aux données de la plateforme d'achat par son propre contrat ; pour les 48 % restants, l'accès était médiatisé par le contrat de l'agence[^2].
 
