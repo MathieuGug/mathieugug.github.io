@@ -94,7 +94,7 @@ C'est un obstacle contractuel, et il se décompose en deux.
 
 **Le défaut de qualité de partie.** Quand le contrat de plateforme est tenu par l'agence, l'annonceur n'y est pas partie. Sa demande traverse alors un intermédiaire dont les intérêts sont, sur ce point précis, légitimement différents des siens : il est à la fois celui qui exécute l'achat et celui à qui l'on demanderait de produire la pièce permettant de le contrôler. Les 48 % d'accès médiatisé relevés par l'audit[^2] décrivent exactement cette configuration.
 
-[SCHEMA-05]
+![Qui détient quel journal le long de la chaîne : plateforme d'achat, place de marché, serveur publicitaire de l'éditeur, prestataire de vérification, et les trois jointures où l'appariement casse.|width=1200](images/20261028-05-chaine-journaux.svg)
 
 La chaîne complique encore le tableau, parce que personne n'y détient le journal entier. La plateforme d'achat connaît ce qu'elle a acheté et ce qu'elle a facturé. La place de marché connaît ce qu'elle a vendu et ce qu'elle a reversé. Le serveur publicitaire de l'éditeur connaît ce qui a été servi. Le prestataire de vérification connaît ce qui était visible et mesurable. Chacun tient un fragment, et la valeur du dispositif réside dans la jointure de ces fragments, c'est-à-dire dans l'existence d'une clé commune permettant de reconnaître la même impression dans deux journaux différents. Le taux d'appariement est le nom de cette jointure. Sans clé, douze journaux ne font pas une chaîne : ils font douze fichiers.
 
