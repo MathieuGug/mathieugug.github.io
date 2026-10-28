@@ -42,7 +42,7 @@ L'audit de référence a été publié en décembre 2023 par l'association amér
 
 Le dispositif a porté sur 123 millions de dollars de dépense programmatique de 21 annonceurs, représentant 35,5 milliards d'impressions, complétés par une trentaine d'entretiens avec des intermédiaires de la chaîne. L'appariement des impressions entre les journaux des différents acteurs a été réalisé de façon déterministe par un dispositif tiers[^1]. Il s'agit donc d'une analyse de journaux, non d'une enquête déclarative.
 
-[SCHEMA-01]
+![Cascade du budget programmatique : sur 100 unités engagées, 29 partent en coûts de transaction, une dizaine vers l'inventaire fabriqué pour la publicité, 25 vers des impressions non visibles ou non mesurables, et 36 atteignent une impression utile.|width=1200](images/20261028-01-ou-va-l-euro.svg)
 
 Le résultat se lit comme une cascade. Sur 100 unités de dépense, 29 sont absorbées par les coûts de transaction de la chaîne et 71 atteignent l'éditeur[^1]. Sur ces 71, une dizaine de points partent vers des sites fabriqués pour recevoir de la publicité, dont le modèle consiste à produire de l'inventaire plutôt que de l'audience. Le reste des pertes se répartit entre impressions non visibles, non mesurables et non conformes aux critères de sécurité de marque. Au bout de la cascade, 36 unités sur 100 atteignent une impression que l'annonceur aurait acceptée s'il l'avait vue d'avance[^1].
 
