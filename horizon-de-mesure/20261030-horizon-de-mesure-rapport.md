@@ -102,7 +102,7 @@ Quand un dispositif de mesure ne détecte pas d'effet, trois situations distinct
 
 **L'effet est trop lent pour la fenêtre.** La borne d'horizon, objet du présent dossier. La décision qui suit est d'allonger la fenêtre, ce qui coûte du temps et une zone témoin maintenue, ou de sortir la question du comparatif.
 
-[SCHEMA-06]
+![Un même « pas d'effet détecté » à l'écran et ses trois causes distinctes : effet nul, effet trop petit pour l'échantillon, effet trop lent pour la fenêtre, chacune appelant une décision différente.|width=1200](images/20261030-06-trois-nuls.svg)
 
 Les deux dernières situations se distinguent par un test simple, et il vaut la peine de le poser dans cet ordre. La borne de puissance se diagnostique sur la largeur de l'intervalle : un intervalle large autour de zéro signale un manque d'information, non une absence d'effet. La borne d'horizon se diagnostique sur la configuration de l'instrument : la demi-vie implicite du modèle, le `max_lag`, la fenêtre d'attribution, la durée du test. Ces paramètres sont connus de l'équipe qui a construit la mesure et absents de la restitution. ==Un comité qui ne demande pas la fenêtre de l'instrument avant de lire son résultat ne peut pas savoir laquelle des trois situations il a sous les yeux.==
 
