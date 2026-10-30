@@ -56,7 +56,7 @@ Entre 1982 et 1988, un ensemble de tests en marché réel a été conduit sur pa
 
 Le résultat central de ce suivi, publié en 1995, ne porte pas sur la magnitude de l'effet long. Il porte sur sa **condition d'existence** : en moyenne, quand l'augmentation de pression n'avait pas produit d'effet significatif la première année, elle n'en a produit aucun les deux suivantes[^3].
 
-[SCHEMA-04]
+![Le protocole de 1995 : un an de surpression télévisée contre groupe témoin, puis deux ans de suivi sans traitement, et le résultat conditionnel selon lequel l'absence d'effet en première année n'est pas rattrapée les deux suivantes.|width=1200](images/20261030-04-experience-lodish.svg)
 
 Ce résultat a une portée de gouvernance qu'il faut énoncer sans l'étendre. Il ne dit pas que les effets longs n'existent pas ; le même corpus documente des effets persistants là où la première année en montrait. Il ne dit rien des médias numériques, qui n'existaient pas, ni des marques jeunes, puisque l'échantillon porte sur des produits établis. Il dit une chose, et elle est utile : ==l'argument « c'est du long terme » n'est pas disponible pour sauver une campagne plate dans la fenêtre==. Dans le seul dispositif construit pour tester cette défense, la défense ne tient pas.
 
