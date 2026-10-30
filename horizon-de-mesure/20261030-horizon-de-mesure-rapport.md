@@ -8,7 +8,7 @@ En avril 2024, une étude britannique commandée par l'organisme de promotion de
 
 La même étude livre la conséquence sous une forme plus crue : 58 % du profit total attribué à la publicité se produit après la treizième semaine[^10]. Un comité qui lit un tableau de bord arrêté au trimestre regarde donc, dans ce corpus, un peu moins de la moitié du phénomène qu'il croit arbitrer.
 
-[SCHEMA-01]
+![Deux bornes, deux chiffres, une seule campagne : le retour sur investissement du même corpus passe de 1,87 £ à 13 semaines à 4,11 £ à 24 mois, 58 % du profit arrivant après la treizième semaine.|width=1200](images/20261030-01-deux-bornes-un-chiffre.svg)
 
 Cette étude est d'origine professionnelle, commanditée par une partie qui a intérêt au résultat, et son horizon de vingt-quatre mois est lui-même une borne choisie. Elle ne démontre rien sur la vraie durée des effets publicitaires. Elle démontre quelque chose de plus utile à un directeur : ==la grandeur qu'on appelle « retour sur investissement » n'existe pas sans une borne de temps, et cette borne n'est presque jamais inscrite dans la décision qui s'appuie sur elle==.
 
