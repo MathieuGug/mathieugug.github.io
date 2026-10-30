@@ -28,7 +28,7 @@ Un plan de mesure d'entreprise s'appuie en 2026 sur quatre familles d'instrument
 
 Une cinquième source d'information mérite d'être nommée pour être écartée : les tableaux de bord d'attribution multi-touches, qui offrent l'illusion d'un horizon réglable. Leur fenêtre est en apparence un paramètre d'interface, ajustable de sept à quatre-vingt-dix jours en quelques clics. Mais déplacer cette fenêtre ne change pas ce que l'outil observe ; cela change la règle d'imputation d'un événement déjà survenu entre des canaux déjà connus. Un effet qui se manifeste au-delà du dernier point de contact enregistré reste invisible quelle que soit la valeur choisie. La fenêtre d'attribution se règle, la fenêtre d'observation ne se règle pas.
 
-[SCHEMA-02]
+![Quatre instruments de mesure et leur plafond d'horizon : test géographique (2 à 8 semaines), incrémentalité en régie (jours à semaines), modèle de mix (8 à 20 semaines via max_lag), persistance (plusieurs années sans contrefactuel).|width=1200](images/20261030-02-plafonds-instruments.svg)
 
 La lecture d'ensemble vaut la peine d'être dite platement. ==Les instruments les plus crédibles sont les plus courts, et les instruments les plus longs sont les moins concluants.== Il n'existe pas, dans l'outillage disponible, de dispositif qui combine un contrefactuel propre et un horizon de plusieurs années. Cette absence n'est pas une lacune de marché qu'un fournisseur comblerait : elle tient à ce qu'un groupe témoin maintenu trois ans coûte trois ans de vente renoncée sur une fraction du territoire.
 
