@@ -118,7 +118,7 @@ De ce qui précède découlent quatre décisions. Aucune n'est technique, toutes
 
 **D4 · Ouvrir une ligne « hors arbitrage ».** La part du budget que l'organisation décide de soustraire au comparatif de retour sur investissement, parce qu'elle sait que ses instruments ne peuvent pas la juger. Trois mentions obligatoires : le montant, le motif, la date de réexamen. Cette ligne est l'inverse d'un passe-droit : elle rend visible et datée une dépense qui, aujourd'hui, se défend par un argument non mesurable sans jamais être nommée comme telle. Et elle borne le périmètre de l'argument, qui cesse de pouvoir s'étendre à toute ligne dont le résultat déplaît.
 
-[SCHEMA-07]
+![Les quatre décisions de gouvernance de l'horizon de mesure : déclarer l'horizon, déclarer la rémanence, financer une fenêtre longue, ouvrir une ligne hors arbitrage, avec pour chacune le document où elle s'inscrit et ce qu'elle rend opposable.|width=1200](images/20261030-07-cahier-decisions.svg)
 
 ## Ce qu'il faut retenir
 
