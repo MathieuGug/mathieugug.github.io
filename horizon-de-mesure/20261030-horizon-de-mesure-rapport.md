@@ -72,7 +72,7 @@ Meridian propose deux formes de courbe de rémanence, qui décrivent la manière
 
 Cette phrase mérite d'être relue par un décideur. Elle signifie que le résultat « les médias de marque ne paient pas » peut être une conséquence de trois réglages, et que l'outil documente lui-même le moyen de l'inverser. Elle signifie aussi, symétriquement, que le résultat « les médias de marque paient » peut être une conséquence des réglages opposés. Dans les deux cas, le réglage est une hypothèse injectée dans le modèle, et non un fait extrait des données. La question de ce qu'un modèle de mix sait avant d'avoir vu les données a fait l'objet d'un dossier distinct de cette série ; le présent dossier n'en retient que la borne temporelle.
 
-[SCHEMA-05]
+![Deux courbes de rémanence sur le même investissement, géométrique et binomiale, coupées par le mur vertical du max_lag : trois réglages décident si l'effet long apparaît dans le modèle.|width=1200](images/20261030-05-fenetre-modelisation.svg)
 
 Ce point n'est pas neuf. En 1995 déjà, les travaux de modélisation de persistance avançaient explicitement que les approches traditionnelles ne captaient pas les effets de tendance de la publicité sur les ventes et sous-estimaient par conséquent sérieusement son efficacité de long terme[^4]. Le même corpus établissait que l'évolution est le comportement dominant pour les ventes et les dépenses marketing, tandis que la stationnarité domine pour la part de marché[^11]. Trente ans plus tard, la borne est mieux documentée, et toujours aussi peu discutée en comité.
 
