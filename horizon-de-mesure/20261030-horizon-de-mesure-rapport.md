@@ -42,7 +42,7 @@ Le ratio de deux entre longue et courte élasticité est devenu une référence 
 
 En 2025, une méta-analyse portant sur 538 élasticités de marque en vente directe au consommateur a appliqué des corrections de biais de sélection de publication[^2]. Le résultat est sévère : le biais est significatif, ce qui implique que les estimations antérieures sont gonflées, et une moyenne rapportée d'environ 0,09 se ramène, après correction, sous 0,02[^2]. Les auteurs relèvent par ailleurs que les élasticités méta-analytiques publiées ont baissé au fil du temps, moins parce que la publicité serait devenue moins efficace que parce que les méthodes se sont améliorées[^2].
 
-[SCHEMA-03]
+![L'échelle des élasticités publicitaires publiées : 0,41 en 1984, 0,24 et 0,12 en 2011, environ 0,09 rapportée puis moins de 0,02 après correction du biais de publication en 2025 ; 53 % seulement des estimations sont significatives.|width=1200](images/20261030-03-corpus-elasticites.svg)
 
 Deux précautions s'imposent sur ce dernier point. D'abord, une élasticité corrigée de biais de publication n'est pas un rendement observable sur une campagne donnée : c'est une statistique sur un corpus académique, dont l'application à un plan média particulier demande des hypothèses supplémentaires. Ensuite, l'écart entre les versions de travail et la version publiée de cette méta-analyse mérite vérification avant toute citation chiffrée en comité.
 
