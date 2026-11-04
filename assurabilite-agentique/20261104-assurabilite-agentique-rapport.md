@@ -107,7 +107,7 @@ Le marché de l'écart attire des capitaux spécialisés. La presse d'assurance 
 
 La comparaison utile est celle de la limite unitaire et de l'exposition d'un portefeuille. Cinq millions de dollars par modèle suffisent pour un agent de recommandation sans droit d'écriture. Ils ne couvrent pas la reconstitution d'un référentiel de facturation, ni une campagne de remises appliquée à tort sur un trimestre, ni la défense d'une action collective de clients. Une entreprise qui exploite trente agents ne dispose pas de trente fois cinq millions : elle dispose d'un agrégé de vingt-cinq millions, consommé par le premier sinistre sérieux.
 
-[SCHEMA-05]
+![La capacité offerte comparée à l'exposition : limites publiées des produits d'assurance IA de 2026 face à un portefeuille de trente agents|1300](images/20261104-05-capacite-exposition.svg)
 
 ## 8. Pourquoi l'agentique bute sur les critères d'assurabilité
 
