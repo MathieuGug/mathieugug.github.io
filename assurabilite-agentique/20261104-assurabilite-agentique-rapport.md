@@ -38,7 +38,7 @@ Ce qui subsiste à la place est l'état antérieur : vingt-sept régimes nationa
 
 Une direction qui lit cette séquence comme un allègement se trompe de sens. Le retrait supprime la perspective d'un cadre qui aurait rendu l'exposition *prévisible*. La responsabilité pour faute du déployeur existait avant la proposition et continue d'exister après son retrait. Ce qui a disparu, c'est la perspective d'un socle commun de preuve et de prescription.
 
-[SCHEMA-02]
+![Trois calendriers désalignés : responsabilité, conformité et assurance entre 2024 et 2028, et la fenêtre d'exposition de douze mois|1300](images/20261104-02-trois-calendriers.svg)
 
 ## 4. Deux calendriers qui se sont désalignés
 
