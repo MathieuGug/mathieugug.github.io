@@ -12,7 +12,7 @@ Ce rapport s'appuie sur les articles 5 et 6 du texte, et non sur son titre. ==La
 
 La thèse se tient en trois temps. Le régime qui arrive en décembre couvre des dommages qu'un agent d'entreprise ne produit presque jamais. Le régime qui aurait couvert les autres a été formellement retiré en octobre 2025. Et l'assurance, qui absorbait cette zone sans le dire, est en train de l'exclure par avenant. Ce qui reste est une part conservée, dont le montant n'est écrit nulle part et dont personne n'a la charge dans la plupart des organigrammes.
 
-[SCHEMA-01]
+![Le périmètre réparable : les quatre catégories de dommages de la directive 2024/2853 croisées avec la qualité du demandeur et l'usage du bien|1300](images/20261104-01-perimetre-reparable.svg)
 
 ## 2. Ce que la directive couvre, et ce qu'elle laisse dehors
 
