@@ -75,7 +75,7 @@ La chaîne compte plusieurs maillons. Un agent d'entreprise s'appuie souvent sur
 
 Le fournisseur peut disparaître. Un plafond contractuel ne vaut que la solvabilité de celui qui le consent, et le marché des outils agentiques comporte beaucoup de sociétés jeunes.
 
-[SCHEMA-03]
+![La cascade de recours et l'endroit où elle casse : responsabilité pleine envers le tiers, recours plafonné amorti le long de la chaîne, part conservée|1300](images/20261104-03-cascade-recours.svg)
 
 ## 6. L'assurance se retire de la zone grise
 
