@@ -171,7 +171,7 @@ La **restitution des traces à la sortie** : garantir l'export des journaux, des
 
 L'échéance qui compte pour l'exposition d'une entreprise est la date de renouvellement de ses polices de responsabilité civile générale, de responsabilité civile professionnelle, de cyber et de mandataires sociaux, plus que le 9 décembre 2026. L'avenant d'exclusion s'insère au renouvellement. Le mandat au courtier se formule en quatre questions : quelles polices répondraient d'une perte causée par un agent, laquelle porte un avenant d'exclusion d'IA au renouvellement, quel en est le libellé exact, et atteint-il l'usage d'IA par les fournisseurs. Une réponse écrite à ces quatre questions vaut plus qu'une étude de marché sur l'assurance de l'IA.
 
-[SCHEMA-07]
+![L'arbre de la rétention : quatre décisions enchaînées, du plafond par conception à la provision budgétaire|1300](images/20261104-07-arbre-retention.svg)
 
 ## 11. Ce qu'il faut retenir
 
