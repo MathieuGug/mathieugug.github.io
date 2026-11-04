@@ -61,7 +61,10 @@
         const svg = region.closest('svg[data-schema-id]');
         const schemaId = svg?.dataset.schemaId;
         const cardId   = region.dataset.card;
-        const card     = window.SCHEMAS?.[schemaId]?.[cardId];
+        const schema   = window.SCHEMAS?.[schemaId];
+        // Deux formes acceptées : plate ({ "schema-01": { "ma-zone": {...} } })
+        // et imbriquée ({ "schema-01": { title, regions: { "ma-zone": {...} } } }).
+        const card     = schema?.regions?.[cardId] ?? schema?.[cardId];
         if (card) {
           openModal(card.eyebrow || '', card.title || '', card.body || '');
           return;
