@@ -93,7 +93,7 @@ S'il reste minoritaire, la couverture subsiste mais devient une variable de sous
 
 L'exercice se mène sur une liste courte. Quelle police répondrait d'une perte causée par un agent : la responsabilité civile générale, la responsabilité civile professionnelle, la police cyber, la police mandataires sociaux ? Chacune porte-t-elle un avenant d'exclusion d'IA au renouvellement en cours ? Si oui, quel libellé, et atteint-il l'usage d'IA par les fournisseurs ? La réponse tient en une page et elle n'existe presque jamais.
 
-[SCHEMA-04]
+![La frontière d'assurabilité : couverture affirmative, exposition non affirmative, zone d'exclusion, et le sens du mouvement depuis 2025|1300](images/20261104-04-frontiere-assurabilite.svg)
 
 ## 7. Ce que le marché offre, et à quelle échelle
 
