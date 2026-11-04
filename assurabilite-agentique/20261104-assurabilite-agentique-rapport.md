@@ -125,7 +125,7 @@ Trois critères concentrent la difficulté, et chacun se traduit en question d'a
 
 Un détail institutionnel mérite d'être noté : l'assureur est lui-même un déployeur. L'avis de l'EIOPA du 6 août 2025 sur la gouvernance et la gestion des risques liés à l'IA s'adresse aux superviseurs nationaux et décrit comment le droit existant de l'assurance s'applique aux systèmes d'IA utilisés par les organismes, avec une exigence de proportionnalité à l'échelle du risque de chaque système[^19]. L'organisme qui hésite à couvrir un agent de son client applique à ses propres agents une grille de même nature.
 
-[SCHEMA-06]
+![Neuf critères, trois échecs : la grille d'assurabilité de Berliner appliquée au risque d'un agent en exploitation|1300](images/20261104-06-criteres-assurabilite.svg)
 
 ## 9. Deux pertes réelles, aucune dans le périmètre
 
