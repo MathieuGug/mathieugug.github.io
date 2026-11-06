@@ -128,7 +128,7 @@ Cette politique mérite d'être lue dans le détail, parce qu'elle fournit un mo
 
 **Un retrait exige un acte distinct.** On ne supprime pas par péremption : il faut une proposition dédiée.
 
-[SCHEMA-06]
+![Schéma 06 — Deux horloges : le cycle de vie écrit du protocole face à l'absence de cycle de vie du catalogue d'entreprise.|1300](images/20261106-06-deux-horloges.svg)
 
 La première application de la politique a déprécié trois fonctionnalités au 28 juillet 2026, avec un retrait possible au plus tôt lors de la première révision publiée à partir du 28 juillet 2027[^1]. Elles continuent de fonctionner pendant toute la fenêtre ; la consigne adressée aux nouvelles implémentations est simplement de ne plus les adopter.
 
