@@ -76,7 +76,7 @@ Un dossier d'investissement agentique chiffre les appels de modèle. Il ne chiff
 
 **Il coûte de l'exactitude.** C'est le résultat le moins intuitif et le plus lourd de conséquences. Sur des évaluations d'appel d'outils, l'introduction d'une recherche d'outils à la demande, où le modèle découvre les définitions dont il a besoin au lieu de les porter toutes, fait passer un modèle de 49 % à 74 %, et un modèle plus récent de 79,5 % à 88,1 %[^11]. Les échecs les plus fréquents sont la sélection du mauvais outil et le passage de mauvais paramètres, et ils sont attribués notamment à des noms d'outils trop proches les uns des autres[^11].
 
-[SCHEMA-04]
+![Schéma 04 — Un catalogue coûte deux fois : des jetons de définitions avant le premier appel, et de l'exactitude sur l'appel lui-même.|1300](images/20261106-04-cout-du-catalogue.svg)
 
 Traduit pour un comité : ==un catalogue se dimensionne, il ne s'accumule pas==. Ajouter un outil à la liste n'est pas une opération neutre d'un point de vue économique ni d'un point de vue de fiabilité. Elle consomme du contexte, elle dégrade la sélection, et elle ajoute une surface d'autorisation. Trois coûts, aucun des trois porté par l'équipe qui publie l'outil.
 
