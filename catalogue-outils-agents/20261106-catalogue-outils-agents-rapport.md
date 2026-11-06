@@ -10,7 +10,7 @@ Ce dossier soutient une thèse simple et une conséquence inconfortable. La thè
 
 Le calendrier aide. La révision du 28 juillet 2026 du protocole dominant d'intégration d'outils a doté la couche la plus basse de la pile d'une politique de cycle de vie formelle : trois états, une fenêtre minimale de douze mois entre dépréciation et retrait, un registre des fonctionnalités dépréciées[^1]. Autrement dit, le protocole s'est donné ce que presque aucune direction data n'a encore écrit pour ses propres outils.
 
-![Trois couches d'une pile agentique et la seule qui se gouverne : le modèle s'achète, l'agent se reconfigure, l'outil se déclare.|1300](images/20261106-01-surface-de-gouvernance.svg)
+![Schéma 01 — Trois couches, une seule se gouverne : le modèle s'achète, l'agent se reconfigure, l'outil se déclare.|1300](images/20261106-01-surface-de-gouvernance.svg)
 
 ## 1. L'outil est la seule surface qui se gouverne
 
@@ -42,7 +42,7 @@ Lisons la liste par ce qu'elle ne contient pas.
 
 **Pas de politique de support.** Aucune durée d'engagement, aucune fenêtre de préavis, aucun niveau de service.
 
-[SCHEMA-02]
+![Schéma 02 — Onze champs, et quatre absences : le modèle de données canonique d'un serveur d'outils, lu par ce qu'il ne contient pas.|1300](images/20261106-02-fiche-outil.svg)
 
 Ces quatre absences ne sont pas un oubli. Le registre officiel se décrit lui-même comme un **méta-registre** : il héberge des métadonnées sur des paquets, pas le code ni les binaires, et se concentre sur « la découvrabilité et les métadonnées de base »[^6]. Il assume un périmètre étroit et renvoie explicitement la curation à d'autres : les clients tirent leurs listes de *sous-registres*, qui ajoutent de la valeur par la curation ou par des métadonnées supplémentaires[^6].
 
