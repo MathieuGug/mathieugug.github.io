@@ -56,7 +56,7 @@ La spécification en tire une règle nette. Elle impose aux clients de considér
 
 Cette règle contient un trou, et le trou est intentionnel. ==La spécification exige de distinguer les serveurs de confiance des autres, et ne définit nulle part ce qu'est un serveur de confiance.== Elle ne peut pas le faire : la confiance est une décision d'organisation, et aucun protocole ne peut la trancher à sa place. Le protocole renvoie donc la frontière de confiance au déployeur — qui, dans la très grande majorité des cas, n'a pas de liste sur laquelle tracer cette frontière.
 
-[SCHEMA-03]
+![Schéma 03 — La description d'outil est une consigne : le trajet du texte jusqu'au contexte du modèle, et le trou laissé par la notion de serveur de confiance.|1300](images/20261106-03-description-est-prompt.svg)
 
 L'incident de référence, en mai 2025, montre pourquoi la frontière ne peut pas être tracée au niveau du code. Des chercheurs ont documenté une exfiltration de données de dépôts privés passant par un serveur d'outils officiel et largement déployé : les instructions malveillantes n'étaient pas dans l'outil mais dans une donnée que l'outil rapportait, une fiche d'incident publique que l'agent avait lue et suivie. Les auteurs ont insisté sur un point : le serveur fonctionnait comme prévu, et aucun correctif côté serveur ne pouvait fermer complètement le problème[^8].
 
