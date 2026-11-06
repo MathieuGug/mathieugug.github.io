@@ -102,7 +102,7 @@ Le registre officiel offre aux éditeurs un état de dépréciation. La question
 | Noms n'ayant jamais publié qu'une seule version | 63,2 % |
 | Versions publiées par nom, en moyenne | 4,43 |
 
-[SCHEMA-05]
+![Schéma 05 — L'état existe, l'usage non : relevé du 6 novembre 2026 sur les états et les cadences de publication du registre public.|1300](images/20261106-05-mesure-registre.svg)
 
 Trois lectures.
 
