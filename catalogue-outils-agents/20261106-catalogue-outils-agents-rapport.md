@@ -38,7 +38,7 @@ Lisons la liste par ce qu'elle ne contient pas.
 
 **Pas de contact.** Rien qui dise où une alerte arrive, ni dans quel délai.
 
-**Pas d'état de cycle de vie déclaré par l'éditeur.** Le registre officiel, lui, tient un état par version (`active`, `deprecated`, `deleted`), accompagné d'un message facultatif plafonné à cinq cents caractères[^5]. Mais cet état vit dans les métadonnées du registre, sous son propre espace de noms. Il est posé par une opération d'administration, et non déclaré par l'éditeur dans la fiche de son outil. La différence compte : une information qui n'est pas dans le contrat de l'objet ne voyage pas avec lui.
+**Pas d'état de cycle de vie déclaré par l'éditeur.** Le registre officiel, lui, tient un état par version (`active`, `deprecated`, `deleted`), accompagné d'un message facultatif plafonné à cinq cents caractères[^5]. Mais cet état vit dans les métadonnées du registre, sous son propre espace de noms. Il est posé par une opération d'administration du registre ; l'éditeur ne le déclare pas dans la fiche de son outil. La différence compte : une information qui n'est pas dans le contrat de l'objet ne voyage pas avec lui.
 
 **Pas de politique de support.** Aucune durée d'engagement, aucune fenêtre de préavis, aucun niveau de service.
 
@@ -122,9 +122,9 @@ Cette politique mérite d'être lue dans le détail, parce qu'elle fournit un mo
 
 **Trois états.** Toute fonctionnalité est Active, Dépréciée ou Supprimée.
 
-**Une fenêtre minimale de douze mois.** Au moins douze mois doivent s'écouler entre la dépréciation et le premier retrait possible, et la fenêtre se compte depuis la publication de la révision qui marque la fonctionnalité comme dépréciée, non depuis l'adoption de la proposition[^13]. L'annonce officielle le formule en langage d'exploitant : une politique de dépréciation formelle avec une fenêtre minimale de douze mois, « pour que vous puissiez planifier vos montées de version au lieu d'y réagir »[^1].
+**Une fenêtre minimale de douze mois.** Au moins douze mois doivent s'écouler entre la dépréciation et le premier retrait possible, et la fenêtre se compte depuis la publication de la révision qui marque la fonctionnalité comme dépréciée, et non depuis l'adoption de la proposition qui l'a décidée[^13]. L'annonce officielle le formule en langage d'exploitant : une politique de dépréciation formelle avec une fenêtre minimale de douze mois, « pour que vous puissiez planifier vos montées de version au lieu d'y réagir »[^1].
 
-**Un registre des fonctionnalités dépréciées.** L'état s'écrit dans une liste tenue, avec une date de retrait au plus tôt, et non dans une note de version.
+**Un registre des fonctionnalités dépréciées.** L'état s'écrit dans une liste tenue, avec une date de retrait au plus tôt. Une mention dans une note de version ne suffit pas.
 
 **Un retrait exige un acte distinct.** On ne supprime pas par péremption : il faut une proposition dédiée.
 
