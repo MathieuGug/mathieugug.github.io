@@ -10,7 +10,7 @@ Ce dossier soutient une thèse simple et une conséquence inconfortable. La thè
 
 Le calendrier aide. La révision du 28 juillet 2026 du protocole dominant d'intégration d'outils a doté la couche la plus basse de la pile d'une politique de cycle de vie formelle : trois états, une fenêtre minimale de douze mois entre dépréciation et retrait, un registre des fonctionnalités dépréciées[^1]. Autrement dit, le protocole s'est donné ce que presque aucune direction data n'a encore écrit pour ses propres outils.
 
-[SCHEMA-01]
+![Trois couches d'une pile agentique et la seule qui se gouverne : le modèle s'achète, l'agent se reconfigure, l'outil se déclare.|1300](images/20261106-01-surface-de-gouvernance.svg)
 
 ## 1. L'outil est la seule surface qui se gouverne
 
