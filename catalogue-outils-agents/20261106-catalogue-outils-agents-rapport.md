@@ -168,7 +168,7 @@ Le cahier des charges tient en cinq exigences, écrites pour être opposables à
 
 **E5 · une déclaration du catalogue exportable hors console.** Le contenu minimal : pour chaque outil, son nom, la version de son contrat, son propriétaire, son état de cycle de vie, sa date de retrait au plus tôt le cas échéant, et le graphe des habilitations qui s'y rattachent. La forme : un export périodique, dans un format documenté, obtenu sans intervention humaine du fournisseur. Le test d'acceptation est simple, et il doit être joué avant la signature : demander l'export, chronométrer, et vérifier que le fichier reçu permet de répondre à la question « qui pouvait appeler cet outil le mois dernier ».
 
-[SCHEMA-07]
+![Schéma 07 — Cinq exigences par coût croissant : le cahier des charges d'un catalogue d'outils tenu comme un produit.|1300](images/20261106-07-cinq-exigences.svg)
 
 Aucune de ces cinq exigences ne porte sur un modèle, une architecture ou une capacité technique. Elles portent sur un inventaire, un poste et un contrat. C'est ce qui les rend arbitrables par une direction, et c'est aussi ce qui explique qu'elles soient si souvent reportées : elles ne produisent aucune démonstration.
 
